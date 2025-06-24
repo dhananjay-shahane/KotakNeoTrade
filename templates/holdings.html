@@ -212,7 +212,7 @@ function refreshHoldings() {
     
     fetch('/api/holdings')
         .then(response => response.json())
-        .then(data function() {
+        .then(function(data) {
             if (data.success) {
                 updateHoldingsTable(data.holdings);
                 updateHoldingsSummary(data.summary);
@@ -221,11 +221,11 @@ function refreshHoldings() {
                 showNotification('Failed to refresh holdings: ' + data.message, 'error');
             }
         })
-        .catch(error function() {
+        .catch(function(error) {
             console.error('Error refreshing holdings:', error);
             showNotification('Error refreshing holdings', 'error');
         })
-        .finally(() function() {
+        .finally(function() {
             if (refreshBtn) {
                 refreshBtn.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
                 refreshBtn.disabled = false;
@@ -297,15 +297,15 @@ function getQuote(token, exchange) {
         body: JSON.stringify(quoteData)
     })
     .then(response => response.json())
-    .then(data function() {
+    .then(function(data) {
         if (data.success) {
             console.log('Quote data:', data.data);
-            alert('Current LTP: ₹' + (data.data[0]?.ltp || 'N/A'));
+            alert('Current LTP: ₹' + (data.data[0] && data.data[0].ltp ? data.data[0].ltp : 'N/A'));
         } else {
             alert('Failed to get quote: ' + data.message);
         }
     })
-    .catch(error function() {
+    .catch(function(error) {
         console.error('Error:', error);
         alert('Error getting quote');
     });

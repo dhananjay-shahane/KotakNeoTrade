@@ -1159,7 +1159,7 @@ async function refreshQuotes() {
                                 ltpCell.classList.add('price-down');
                             }
 
-                            setTimeout(() function() {
+                            setTimeout(function() {
                                 ltpCell.classList.remove('price-up', 'price-down');
                             }, 1000);
                         }
@@ -1198,7 +1198,7 @@ async function refreshQuotes() {
 
 function simulateQuoteUpdates() {
     var quotes = document.querySelectorAll('#quotesTable .price-ltp');
-    quotes.forEach(quote function() {
+    quotes.forEach(function(quote) {
         var currentPrice = parseFloat(quote.textContent.replace(/[₹,]/g, ''));
         var change = (Math.random() - 0.5) * 20;
         var newPrice = currentPrice + change;
