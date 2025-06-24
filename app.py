@@ -29,7 +29,7 @@ def setup_library_paths():
 # Setup environment before importing other modules
 setup_library_paths()
 
-from flask import Flask
+from flask import Flask, request, make_response, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -60,51 +60,63 @@ app.config['SERVER_NAME'] = None  # Auto-detect Replit domain
 # Session configuration for Replit
 app.config['SESSION_COOKIE_SECURE'] = False  # Allow both HTTP and HTTPS for development
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Required for iframe embedding
 app.config['SESSION_COOKIE_DOMAIN'] = None  # Auto-detect domain
 
-# Add proper headers for Replit webview
+# Configure for Replit webview and DNS
 @app.after_request
 def after_request(response):
-    # Remove X-Frame-Options to allow embedding in Replit webview
+    # Remove headers that prevent embedding
     if 'X-Frame-Options' in response.headers:
         del response.headers['X-Frame-Options']
+    
+    # Add CORS headers for cross-origin access
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    
+    # Security headers
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-XSS-Protection'] = '1; mode=block'
+    
+    # Cache control for better loading
+    if request.endpoint and 'static' in request.endpoint:
+        response.headers['Cache-Control'] = 'public, max-age=3600'
+    
     return response
 
-# Test and root routes for webview
+# Handle preflight requests
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = make_response()
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add('Access-Control-Allow-Headers', "*")
+        response.headers.add('Access-Control-Allow-Methods', "*")
+        return response
+
+# Root route for direct access
+@app.route('/')
+def index():
+    return redirect(url_for('auth.login'))
+
+# Test and health routes
 @app.route('/test')
 @app.route('/health')
 def test_webview():
     domain = os.environ.get('REPLIT_DOMAINS', 'localhost:5000')
-    return f'''
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Kotak Neo Trading - Status</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-            body {{ font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }}
-            .container {{ background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
-            .success {{ color: #28a745; font-weight: bold; }}
-            .info {{ color: #17a2b8; margin: 10px 0; }}
-            .button {{ background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; margin: 10px 5px; }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1 class="success">✓ Kotak Neo Trading Application is Running</h1>
-            <div class="info">Domain: {domain}</div>
-            <div class="info">Status: Online and Functional</div>
-            <div class="info">Database: Connected</div>
-            <a href="/auth/login" class="button">Login</a>
-            <a href="/etf/signals" class="button">ETF Signals</a>
-            <a href="/dashboard" class="button">Dashboard</a>
-        </div>
-    </body>
-    </html>
-    '''
+    return f'''<!DOCTYPE html>
+<html><head><title>Kotak Neo Trading - Live</title><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>body{{font-family:Arial,sans-serif;margin:20px;background:#f8f9fa;}}
+.container{{background:white;padding:30px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1);}}
+.success{{color:#28a745;font-weight:bold;}}
+.button{{background:#007bff;color:white;padding:12px 20px;text-decoration:none;border-radius:4px;display:inline-block;margin:10px 5px;}}
+</style></head><body><div class="container">
+<h1 class="success">Application Running Successfully</h1>
+<p>Domain: {domain}</p><p>Status: Online</p><p>Database: Connected</p>
+<a href="/auth/login" class="button">Login</a>
+<a href="/etf/signals" class="button">ETF Signals</a>
+</div></body></html>'''
 # initialize the app with the extension, flask-sqlalchemy >= 3.0.x
 db.init_app(app)
 
