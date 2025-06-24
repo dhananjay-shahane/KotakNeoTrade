@@ -264,33 +264,42 @@ ETFSignalsManager.prototype.createPositionRow = function(position) {
         }
     }
 
+    // Fix data display - use actual values or meaningful defaults
+    var displaySymbol = symbol !== 'N/A' ? symbol : '-';
+    var displayQuantity = quantity > 0 ? quantity : '-';
+    var displayEntryPrice = entryPrice > 0 ? '₹' + entryPrice.toFixed(2) : '-';
+    var displayCurrentPrice = currentPrice > 0 ? '₹' + currentPrice.toFixed(2) : displayEntryPrice;
+    var displayInvestment = investment > 0 ? '₹' + investment.toFixed(0) : '-';
+    var displayTargetPrice = targetPrice > 0 ? '₹' + targetPrice.toFixed(2) : '-';
+    var displayCurrentValue = currentValue > 0 ? '₹' + currentValue.toFixed(0) : '-';
+    var displayPnl = pnl !== 0 ? '₹' + pnl.toFixed(0) : '₹0';
+    var displayChangePct = changePct !== 0 ? changePct.toFixed(2) + '%' : '0.00%';
+
     row.innerHTML = 
-        '<td><strong>' + symbol + '</strong></td>' +
-        '<td>N/A</td>' + // 30 day performance
-        '<td>' + daysHeld + '</td>' +
-        '<td>' + entryDate + '</td>' +
+        '<td><strong>' + displaySymbol + '</strong></td>' +
+        '<td>-</td>' + // 30 day performance
+        '<td>' + (daysHeld || '-') + '</td>' +
+        '<td>' + (entryDate || '-') + '</td>' +
         '<td><span class="badge ' + (status === 'ACTIVE' ? 'bg-success' : 'bg-secondary') + '">' + (status === 'ACTIVE' ? 'OPEN' : 'CLOSED') + '</span></td>' +
-        '<td>' + quantity + '</td>' +
-        '<td>₹' + entryPrice.toFixed(2) + '</td>' +
-        '<td class="' + changeClass + '">' + 
-        (currentPrice > 0 ? '₹' + currentPrice.toFixed(2) : 
-         '<span class="text-muted">₹' + entryPrice.toFixed(2) + '</span>') + '</td>' +
-        '<td class="' + changeClass + '">' + changePct.toFixed(2) + '%</td>' +
-        '<td>₹' + investment.toFixed(0) + '</td>' +
-        '<td>₹' + targetPrice.toFixed(2) + '</td>' +
-        '<td>₹' + (currentValue || (currentPrice * quantity)).toFixed(0) + '</td>' +
-        '<td class="profit">' + ((targetPrice > entryPrice ? '+' : '') + (((targetPrice - entryPrice) / entryPrice * 100)).toFixed(2)) + '%</td>' +
-        '<td class="' + pnlClass + '">₹' + pnl.toFixed(0) + '</td>' +
-        '<td>' + entryDate + '</td>' + // Entry Date (duplicate)
+        '<td>' + displayQuantity + '</td>' +
+        '<td>' + displayEntryPrice + '</td>' +
+        '<td class="' + changeClass + '">' + displayCurrentPrice + '</td>' +
+        '<td class="' + changeClass + '">' + displayChangePct + '</td>' +
+        '<td>' + displayInvestment + '</td>' +
+        '<td>' + displayTargetPrice + '</td>' +
+        '<td>' + displayCurrentValue + '</td>' +
+        '<td class="profit">' + (targetPrice > entryPrice && entryPrice > 0 ? '+' + (((targetPrice - entryPrice) / entryPrice * 100)).toFixed(2) + '%' : '-') + '</td>' +
+        '<td class="' + pnlClass + '">' + displayPnl + '</td>' +
+        '<td>' + (entryDate || '-') + '</td>' + // Entry Date (duplicate)
         '<td>-</td>' + // Expected/Expiry
         '<td>-</td>' + // Price Range
         '<td>' + changePct.toFixed(1) + '</td>' + // Performance Points (use percentage)
-        '<td>' + investment.toFixed(0) + '</td>' + // IV
-        '<td class="' + changeClass + '">' + changePct.toFixed(2) + '%</td>' + // Intraday Performance
+        '<td>' + (investment > 0 ? investment.toFixed(0) : '-') + '</td>' + // IV
+        '<td class="' + changeClass + '">' + displayChangePct + '</td>' + // Intraday Performance
         '<td><small>-</small></td>' + // Notes/Tags
         '<td><small>-</small></td>' + // Quote Time
-        '<td class="' + changeClass + '">N/A</td>' + // 7 Day Change
-        '<td class="' + changeClass + '">' + changePct.toFixed(2) + '%</td>' +
+        '<td class="' + changeClass + '">-</td>' + // 7 Day Change
+        '<td class="' + changeClass + '">' + displayChangePct + '</td>' +
         '<td>' +
         '<button class="btn btn-sm btn-primary" onclick="addDeal(\'' + symbol + '\', ' + currentPrice + ')">Add Deal</button>' +
         '</td>';

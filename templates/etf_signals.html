@@ -410,113 +410,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Function to apply column settings
     window.applyColumnSettings = function () {
-        const tableHeaders = document.getElementById('tableHeaders');
-        tableHeaders.innerHTML = '';
-
-        let headerHTML = '';
-        for (const column in visibleColumns) {
-            if (visibleColumns.hasOwnProperty(column) && visibleColumns[column]) {
-                let title = column;
-                switch (column) {
-                    case 'ETF': title = "ETF Symbol"; break;
-                    case '30': title = "30 Day Performance"; break;
-                    case 'DH': title = "Days Held"; break;
-                    case 'Date': title = "Entry Date"; break;
-                    case 'Pos': title = "Position Type"; break;
-                    case 'Qty': title = "Quantity"; break;
-                    case 'EP': title = "Entry Price"; break;
-                    case 'CMP': title = "Current Market Price (Live)"; break;
-                    case '%Chan': title = "Percentage Change"; break;
-                    case 'Inv.': title = "Investment Amount"; break;
-                    case 'TP': title = "Target Price"; break;
-                    case 'TVA': title = "Target Value Amount"; break;
-                    case 'TPR': title = "Target Profit Return"; break;
-                    case 'PL': title = "Profit/Loss"; break;
-                    case 'ED': title = "Entry Date"; break;
-                    case 'EXP': title = "Expected/Expiry"; break;
-                    case 'PR': title = "Price Range"; break;
-                    case 'PP': title = "Performance Points"; break;
-                    case 'IV': title = "Implied Volatility"; break;
-                    case 'IP': title = "Intraday Performance"; break;
-                    case 'NT': title = "Notes/Tags"; break;
-                    case 'Qt': title = "Quote Time"; break;
-                    case '7': title = "7 Day Change"; break;
-                    case '%Ch': title = "Percentage Change"; break;
-                    case 'Actions': title = "Actions"; break;
-                }
-
-                headerHTML += `<th title="${title}">${column}</th>`;
-            }
+        console.log('Applying column settings...');
+        // Don't modify the existing table headers since ETF signals manager handles this
+        // Just trigger a refresh of the data
+        if (window.etfSignalsManager) {
+            window.etfSignalsManager.loadPositions();
         }
-        tableHeaders.innerHTML = headerHTML;
-
-        renderTable(filteredSignals);
     };
 
-    // Function to fetch signals data
+    // Function to fetch signals data - delegated to ETF Signals Manager
     function fetchSignals() {
-        fetch('/api/etf-signals-data')
-            .then(response => response.json())
-            .then(function(data) {
-                signalsData = data.signals || [];
-                filteredSignals = signalsData.slice();
-                applyFilters();
-                updateCounts();
-                renderTable(filteredSignals);
-            })
-            .catch(function(error) { console.error('Error fetching signals:', error); });
+        if (window.etfSignalsManager) {
+            window.etfSignalsManager.loadPositions();
+        }
     }
 
-    // Function to render the table
+    // Table rendering is handled by ETF Signals Manager
     function renderTable(signals) {
-        const signalsTableBody = document.getElementById('signalsTableBody');
-        signalsTableBody.innerHTML = '';
-
-        const start = (currentPage - 1) * signalsPerPage;
-        const end = start + signalsPerPage;
-        const paginatedSignals = signals.slice(start, end);
-
-        paginatedSignals.forEach(function(data) {
-            const row = document.createElement('tr');
-            let rowHTML = '';
-
-            if (visibleColumns['ETF']) rowHTML += `<td>${data.symbol}</td>`;
-            if (visibleColumns['30']) rowHTML += `<td>${data.day_30}</td>`;
-            if (visibleColumns['DH']) rowHTML += `<td>${data.days_held}</td>`;
-            if (visibleColumns['Date']) rowHTML += `<td>${data.entry_date}</td>`;
-            if (visibleColumns['Pos']) rowHTML += `<td>${data.position_type}</td>`;
-            if (visibleColumns['Qty']) rowHTML += `<td>${data.quantity}</td>`;
-            if (visibleColumns['EP']) rowHTML += `<td>${data.entry_price}</td>`;
-            if (visibleColumns['CMP']) rowHTML += `
-                            <td class="text-right price-cell" style="padding: 4px 6px; border: 1px solid #4a5568; background-color: #1a202c;">
-                                <span class="cmp-value" data-symbol="${data.symbol}" style="color: #68d391; font-weight: 600; font-size: 0.9rem;">
-                                    ₹${(data.cmp && typeof data.cmp === 'number') ? data.cmp.toFixed(2) : data.cmp || '0.00'}
-                                </span>
-                            </td>
-                        `;
-            if (visibleColumns['%Chan']) rowHTML += `<td>${data.percentage_change}</td>`;
-            if (visibleColumns['Inv.']) rowHTML += `<td>${data.investment_amount}</td>`;
-            if (visibleColumns['TP']) rowHTML += `<td>${data.target_price}</td>`;
-            if (visibleColumns['TVA']) rowHTML += `<td>${data.target_value_amount}</td>`;
-            if (visibleColumns['TPR']) rowHTML += `<td>${data.target_profit_return}</td>`;
-            if (visibleColumns['PL']) rowHTML += `<td>${data.profit_loss}</td>`;
-            if (visibleColumns['ED']) rowHTML += `<td>${data.entry_date}</td>`;
-            if (visibleColumns['EXP']) rowHTML += `<td>${data.expiry}</td>`;
-            if (visibleColumns['PR']) rowHTML += `<td>${data.price_range}</td>`;
-            if (visibleColumns['PP']) rowHTML += `<td>${data.performance_points}</td>`;
-            if (visibleColumns['IV']) rowHTML += `<td>${data.implied_volatility}</td>`;
-            if (visibleColumns['IP']) rowHTML += `<td>${data.intraday_performance}</td>`;
-            if (visibleColumns['NT']) rowHTML += `<td>${data.notes_tags}</td>`;
-            if (visibleColumns['Qt']) rowHTML += `<td>${data.quote_time}</td>`;
-            if (visibleColumns['7']) rowHTML += `<td>${data.day_7}</td>`;
-            if (visibleColumns['%Ch']) rowHTML += `<td>${data.percentage_change_7}</td>`;
-            if (visibleColumns['Actions']) rowHTML += `<td><button class="btn btn-sm btn-outline-secondary">Trade</button></td>`;
-
-            row.innerHTML = rowHTML;
-            signalsTableBody.appendChild(row);
-        });
-
-        updatePaginationButtons();
+        // Delegated to ETF Signals Manager
+        console.log('Render table called with', signals ? signals.length : 0, 'signals');
     }
 
     // Function to update pagination buttons

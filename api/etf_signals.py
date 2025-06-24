@@ -39,36 +39,47 @@ def get_admin_signals():
         for row in signals_data:
             symbol, entry_price, current_price, quantity, investment_amount, position_type, status, created_at = row
             
-            # Convert to proper types
-            entry_price = float(entry_price) if entry_price else 0
-            current_price = float(current_price) if current_price else 0
-            quantity = int(quantity) if quantity else 0
-            investment_amount = float(investment_amount) if investment_amount else 0
+            # Convert to proper types with better error handling
+            try:
+                entry_price = float(entry_price) if entry_price is not None else 0.0
+                current_price = float(current_price) if current_price is not None else entry_price
+                quantity = int(quantity) if quantity is not None else 1
+                investment_amount = float(investment_amount) if investment_amount is not None else (entry_price * quantity)
+            except (ValueError, TypeError):
+                # Skip invalid records
+                continue
             
+            # Ensure we have minimum required data
+            if not symbol or entry_price <= 0:
+                continue
+                
             # Calculate P&L
             pnl = 0
             pnl_percentage = 0
             current_value = 0
             
-            if entry_price > 0 and current_price > 0 and quantity > 0:
+            if entry_price > 0 and quantity > 0:
+                if current_price <= 0:
+                    current_price = entry_price  # Fallback to entry price
+                    
                 current_value = current_price * quantity
                 pnl = (current_price - entry_price) * quantity
-                pnl_percentage = ((current_price - entry_price) / entry_price) * 100
+                pnl_percentage = ((current_price - entry_price) / entry_price) * 100 if entry_price > 0 else 0
             
             signal_data = {
-                'symbol': symbol,
-                'entry_price': entry_price,
-                'current_price': current_price,
+                'symbol': symbol or 'UNKNOWN',
+                'entry_price': round(entry_price, 2),
+                'current_price': round(current_price, 2),
                 'quantity': quantity,
-                'investment_amount': investment_amount,
-                'current_value': current_value,
+                'investment_amount': round(investment_amount, 2),
+                'current_value': round(current_value, 2),
                 'position_type': position_type or 'LONG',
                 'status': status or 'ACTIVE',
                 'created_at': created_at.isoformat() if created_at else None,
                 'pnl': round(pnl, 2),
                 'pnl_percentage': round(pnl_percentage, 2),
-                'pp': pnl_percentage,  # Use plain percentage instead of star icon
-                'target_price': entry_price * 1.1 if entry_price > 0 else 0  # Default 10% target
+                'pp': round(pnl_percentage, 2),  # Use plain percentage
+                'target_price': round(entry_price * 1.1, 2) if entry_price > 0 else 0  # Default 10% target
             }
             
             signals_list.append(signal_data)
