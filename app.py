@@ -73,17 +73,35 @@ def after_request(response):
     response.headers['X-XSS-Protection'] = '1; mode=block'
     return response
 
-# Test route for webview
+# Test and root routes for webview
 @app.route('/test')
+@app.route('/health')
 def test_webview():
-    return '''
+    domain = os.environ.get('REPLIT_DOMAINS', 'localhost:5000')
+    return f'''
     <!DOCTYPE html>
     <html>
-    <head><title>Webview Test</title></head>
+    <head>
+        <title>Kotak Neo Trading - Status</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            body {{ font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }}
+            .container {{ background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
+            .success {{ color: #28a745; font-weight: bold; }}
+            .info {{ color: #17a2b8; margin: 10px 0; }}
+            .button {{ background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; margin: 10px 5px; }}
+        </style>
+    </head>
     <body>
-        <h1>Application is working!</h1>
-        <p>Your Flask application is running correctly.</p>
-        <a href="/auth/login">Go to Login Page</a>
+        <div class="container">
+            <h1 class="success">✓ Kotak Neo Trading Application is Running</h1>
+            <div class="info">Domain: {domain}</div>
+            <div class="info">Status: Online and Functional</div>
+            <div class="info">Database: Connected</div>
+            <a href="/auth/login" class="button">Login</a>
+            <a href="/etf/signals" class="button">ETF Signals</a>
+            <a href="/dashboard" class="button">Dashboard</a>
+        </div>
     </body>
     </html>
     '''
