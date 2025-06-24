@@ -66,16 +66,19 @@ app.config['SESSION_COOKIE_DOMAIN'] = None  # Auto-detect domain
 # Configure for Replit webview and DNS
 @app.after_request
 def after_request(response):
-    # Remove headers that prevent embedding
-    if 'X-Frame-Options' in response.headers:
-        del response.headers['X-Frame-Options']
+    # Critical: Remove ALL frame-blocking headers for Replit webview
+    response.headers.pop('X-Frame-Options', None)
+    response.headers.pop('frame-options', None)
+    
+    # Allow embedding in Replit frames
+    response.headers['Content-Security-Policy'] = "frame-ancestors 'self' *.replit.dev *.replit.com replit.com"
     
     # Add CORS headers for cross-origin access
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
     
-    # Security headers
+    # Security headers (but allow framing)
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     
@@ -105,18 +108,28 @@ def index():
 @app.route('/health')
 def test_webview():
     domain = os.environ.get('REPLIT_DOMAINS', 'localhost:5000')
-    return f'''<!DOCTYPE html>
+    response = make_response(f'''<!DOCTYPE html>
 <html><head><title>Kotak Neo Trading - Live</title><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>body{{font-family:Arial,sans-serif;margin:20px;background:#f8f9fa;}}
 .container{{background:white;padding:30px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1);}}
 .success{{color:#28a745;font-weight:bold;}}
 .button{{background:#007bff;color:white;padding:12px 20px;text-decoration:none;border-radius:4px;display:inline-block;margin:10px 5px;}}
+.status{{background:#e7f3ff;padding:15px;border-radius:8px;margin:15px 0;}}
 </style></head><body><div class="container">
-<h1 class="success">Application Running Successfully</h1>
-<p>Domain: {domain}</p><p>Status: Online</p><p>Database: Connected</p>
+<h1 class="success">Kotak Neo Trading Platform</h1>
+<div class="status">
+<p><strong>Domain:</strong> {domain}</p>
+<p><strong>Status:</strong> Online and Running</p>
+<p><strong>Database:</strong> Connected</p>
+<p><strong>Webview:</strong> Enabled</p>
+</div>
 <a href="/auth/login" class="button">Login</a>
 <a href="/etf/signals" class="button">ETF Signals</a>
-</div></body></html>'''
+</div></body></html>''')
+    
+    # Ensure no frame blocking headers
+    response.headers.pop('X-Frame-Options', None)
+    return response
 # initialize the app with the extension, flask-sqlalchemy >= 3.0.x
 db.init_app(app)
 
