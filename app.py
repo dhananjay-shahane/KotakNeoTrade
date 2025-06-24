@@ -918,15 +918,8 @@ try:
     from api.admin_signals_api import admin_signals_bp
     from api.supabase_api import supabase_bp
 
-    app.register_blueprint(etf_bp)
-    app.register_blueprint(admin_bp)
-    app.register_blueprint(notifications_bp)
-    app.register_blueprint(quotes_bp)
-    app.register_blueprint(datatable_bp)
-    app.register_blueprint(enhanced_etf_bp)
-    app.register_blueprint(admin_signals_bp)
-    app.register_blueprint(supabase_bp, url_prefix='/api')
-    print("✓ Additional blueprints registered successfully")
+    # Blueprint registration moved to main.py to avoid conflicts
+    print("✓ Blueprint imports available")
     
     # Initialize realtime quotes scheduler
     try:

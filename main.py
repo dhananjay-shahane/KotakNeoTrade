@@ -42,16 +42,35 @@ try:
         app.register_blueprint(dashboard_bp)
     if 'trading' not in registered_blueprints:
         app.register_blueprint(trading_bp)
-    # Register ETF blueprint after main app setup
-    if 'etf' not in registered_blueprints:
-        try:
-            from api.etf_signals import etf_bp
-            app.register_blueprint(etf_bp)
-            print("✓ ETF signals blueprint registered at /etf")
-        except Exception as etf_error:
-            print(f"✗ Failed to register ETF blueprint: {etf_error}")
-            import traceback
-            traceback.print_exc()
+    # Register ETF blueprint
+    try:
+        import sys
+        import importlib
+        
+        # Force reload the ETF signals module to ensure clean import
+        if 'api.etf_signals' in sys.modules:
+            importlib.reload(sys.modules['api.etf_signals'])
+        
+        from api.etf_signals import etf_bp
+        
+        # Remove any existing ETF blueprint registration
+        if 'etf' in app.blueprints:
+            del app.blueprints['etf']
+            
+        app.register_blueprint(etf_bp)
+        print("✓ ETF signals blueprint registered successfully")
+        
+        # Verify the /etf/signals route exists
+        etf_routes = [rule.rule for rule in app.url_map.iter_rules() if rule.rule.startswith('/etf/')]
+        if etf_routes:
+            print(f"✓ ETF routes registered: {etf_routes}")
+        else:
+            print("✗ No ETF routes found after registration")
+                
+    except Exception as etf_error:
+        print(f"✗ ETF blueprint registration failed: {etf_error}")
+        import traceback
+        traceback.print_exc()
     if 'admin' not in registered_blueprints:
         app.register_blueprint(admin_bp)
     if 'realtime' not in registered_blueprints:
