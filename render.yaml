@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: kotak-neo-trading
+    env: python
+    plan: starter
+    buildCommand: pip install -r render_requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 120 main_render:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.10
+      - key: DATABASE_URL
+        fromDatabase:
+          name: kotak-trading-db
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DEMO_MODE
+        value: false
+      - key: ENVIRONMENT
+        value: production
+    healthCheckPath: /health
+
+databases:
+  - name: kotak-trading-db
+    databaseName: kotak_trading_db
+    user: kotak_trading_user
+    plan: starter
