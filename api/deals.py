@@ -151,54 +151,72 @@ def create_deal():
 
 @deals_bp.route('/user', methods=['GET'])
 def get_user_deals():
-    """Get all deals for current user"""
+    """Get all deals for current user from database and CSV data"""
     try:
+        from csv_data_fetcher import CSVDataFetcher
+        
         # Check if user is logged in or use default  
         user_id = session.get('user_id') or session.get('db_user_id') or session.get('ucc')
         if not user_id:
             user_id = 1  # Default user for testing
             
+        # Get deals from database
         deals = UserDeal.query.filter_by(user_id=user_id).order_by(UserDeal.created_at.desc()).all()
         
-        # Convert deals to dict format with proper type handling
-        deals_data = []
-        for deal in deals:
-            deal_dict = {
-                'id': deal.id,
-                'symbol': deal.symbol,
-                'trading_symbol': deal.trading_symbol,
-                'exchange': deal.exchange,
-                'position_type': deal.position_type,
-                'quantity': deal.quantity,
-                'entry_price': float(deal.entry_price) if deal.entry_price else 0.0,
-                'current_price': float(deal.current_price) if deal.current_price else 0.0,
-                'target_price': float(deal.target_price) if deal.target_price else None,
-                'stop_loss': float(deal.stop_loss) if deal.stop_loss else None,
-                'invested_amount': float(deal.invested_amount) if deal.invested_amount else 0.0,
-                'pnl_amount': 0.0,
-                'pnl_percentage': 0.0,
-                'status': deal.status,
-                'deal_type': deal.deal_type,
-                'notes': deal.notes,
-                'tags': deal.tags,
-                'created_at': deal.created_at.isoformat() if deal.created_at else None,
-                'entry_date': deal.entry_date.isoformat() if deal.entry_date else None,
-                'updated_at': deal.updated_at.isoformat() if deal.updated_at else None
-            }
+        # If no deals in database, try to populate from CSV data
+        if not deals:
+            csv_fetcher = CSVDataFetcher()
+            positions = csv_fetcher.fetch_positions_data()
             
-            # Calculate P&L with safe type conversion
-            if deal_dict['entry_price'] and deal_dict['current_price'] and deal_dict['quantity']:
-                entry_value = deal_dict['entry_price'] * deal_dict['quantity']
-                current_value = deal_dict['current_price'] * deal_dict['quantity']
-                deal_dict['pnl_amount'] = current_value - entry_value
+            if positions:
+                # Get or create default user
+                from models import User
+                user = User.query.filter_by(id=user_id).first()
+                if not user:
+                    user = User(
+                        ucc='DEFAULT_USER',
+                        mobile_number='0000000000',
+                        greeting_name='CSV User',
+                        user_id='CSV_USER',
+                        is_active=True
+                    )
+                    db.session.add(user)
+                    db.session.commit()
+                    user_id = user.id
                 
-                if entry_value > 0:
-                    deal_dict['pnl_percentage'] = (deal_dict['pnl_amount'] / entry_value) * 100
-            
-            deals_data.append(deal_dict)
+                # Create deals from CSV positions
+                for position in positions:
+                    try:
+                        deal = UserDeal(
+                            user_id=user_id,
+                            symbol=position['symbol'],
+                            trading_symbol=position['symbol'],
+                            exchange='NSE',
+                            position_type='LONG',
+                            quantity=position['quantity'],
+                            entry_price=position['avg_price'],
+                            current_price=position['ltp'],
+                            invested_amount=position['value'],
+                            status='ACTIVE',
+                            deal_type='CSV_IMPORT',
+                            notes=f'Real data from CSV - Current Value: ₹{position["current_value"]:.2f}',
+                            tags='REAL_DATA'
+                        )
+                        
+                        # Calculate P&L
+                        deal.calculate_pnl()
+                        db.session.add(deal)
+                        
+                    except Exception as e:
+                        logging.error(f"Error creating deal for {position.get('symbol', 'Unknown')}: {str(e)}")
+                        continue
+                
+                db.session.commit()
+                
+                # Fetch the newly created deals
+                deals = UserDeal.query.filter_by(user_id=user_id).order_by(UserDeal.created_at.desc()).all()
         
-        db.session.commit()
-        
+        # Return only real deals from database/CSV - no sample data
         return jsonify({
             'success': True,
             'deals': [deal.to_dict() for deal in deals],
@@ -292,14 +310,16 @@ def update_deal():
 
 @deals_bp.route('/stats', methods=['GET'])
 def get_deals_stats():
-    """Get deals statistics for current user"""
+    """Get deals statistics for current user - only real data"""
     try:
-        if 'user_id' not in session:
-            return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+        # Check if user is logged in or use default  
+        user_id = session.get('user_id') or session.get('db_user_id') or session.get('ucc')
+        if not user_id:
+            user_id = 1  # Default user for testing
         
-        user_id = session['user_id']
         deals = UserDeal.query.filter_by(user_id=user_id).all()
         
+        # Only return stats from real database deals - no sample data
         stats = {
             'total_deals': len(deals),
             'active_deals': len([d for d in deals if d.status == 'ACTIVE']),

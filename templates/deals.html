@@ -516,84 +516,27 @@ function DealsManager() {
     }
 
     loadDealsFromAPI() {
-        // This method loads deals from the database API
-
-        // Load user deals from localStorage as fallback
-        var userDeals = JSON.parse(localStorage.getItem('userDeals') || '[]');
+        // This method loads deals from the database API only - no sample data
+        // No localStorage fallback or sample data generation
+        console.log('Loading deals from API only - no sample data');
 
         // Remove duplicates based on symbol and entry price
         var uniqueDeals = [];
-        var seenDeals = {};
-
-        for (var i = 0; i < userDeals.length; i++) {
-            var deal = userDeals[i];
-            var dealKey = deal.symbol + '_' + deal.ep.toFixed(2);
-            if (!seenDeals[dealKey]) {
-                seenDeals[dealKey] = true;
-                uniqueDeals.push(deal);
-            }
-        }
-
-        // Update real-time data for user deals (simulate price changes)
-        var updatedDeals = [];
-        uniqueDeals.forEach(function(deal) {
-            var timeElapsed = (Date.now() - new Date(deal.date).getTime()) / (1000 * 60 * 60 * 24);
-            var volatility = 0.02; // 2% daily volatility
-            var priceChange = (Math.random() - 0.5) * volatility * Math.sqrt(timeElapsed + 1);
-            var newCMP = deal.ep * (1 + priceChange);
-            var newPnl = (newCMP - deal.ep) * deal.qty * (deal.pos === 1 ? 1 : -1);
-            var newPercentChange = ((newCMP - deal.ep) / deal.ep) * 100 * (deal.pos === 1 ? 1 : -1);
-
-            var updatedDeal = {};
-            for (var key in deal) {
-                if (deal.hasOwnProperty(key)) {
-                    updatedDeal[key] = deal[key];
-                }
-            }
-            updatedDeal.cmp = newCMP;
-            updatedDeal.pl = newPnl;
-            updatedDeal.change_pct = newPercentChange;
-            updatedDeal.change2 = newPercentChange;
-            updatedDeal.ip = newPercentChange > 0 ? '+' + newPercentChange.toFixed(1) + '%' : newPercentChange.toFixed(1) + '%';
-            updatedDeal.dh = Math.floor(timeElapsed);
-            updatedDeal.qt = new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'});
-
-            updatedDeals.push(updatedDeal);
-        });
-        uniqueDeals = updatedDeals;
-
-        // Save cleaned deals back to localStorage
-        localStorage.setItem('userDeals', JSON.stringify(uniqueDeals));
-
-        // Return only unique deals, sorted by most recent first
-        return uniqueDeals.sort(function(a, b) {
-            return new Date(b.date) - new Date(a.date);
-        });
-    }
-
-    loadDealsFromAPI() {
-        var self = this;
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', '/api/deals/user', true);
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                var response = JSON.parse(xhr.responseText);
-                if (response.success && response.deals) {
-                    // Convert API deals to local format and merge with localStorage
-                    var apiDeals = response.deals.map(function(deal) {
+// Map API deals to the expected format - no merging with localStorage
+                    uniqueDeals = response.deals.map(function(deal) {
                         return {
                             id: deal.id,
                             symbol: deal.symbol,
-                            pos: deal.position_type === 'LONG' ? 1 : 0,
+                            pos: deal.position_type === 'LONG' ? 1 : -1,
                             qty: deal.quantity,
-                            ep: parseFloat(deal.entry_price),
-                            cmp: parseFloat(deal.current_price || deal.entry_price),
+                            ep: parseFloat(deal.entry_price || 0),
+                            cmp: parseFloat(deal.current_price || deal.entry_price || 0),
                             pl: parseFloat(deal.pnl_amount || 0),
                             change_pct: parseFloat(deal.pnl_percent || 0),
-                            inv: parseFloat(deal.invested_amount),
+                            inv: parseFloat(deal.invested_amount || 0),
                             tp: parseFloat(deal.target_price || 0),
                             tva: parseFloat(deal.target_price || 0) * deal.quantity,
-                            tpr: parseFloat(deal.pnl_amount || 0),
+                            tpr: parseFloat(deal.target_price || 0) * 0.05,
                             date: deal.entry_date ? deal.entry_date.split('T')[0] : new Date().toISOString().split('T')[0],
                             status: deal.status || 'ACTIVE',
                             thirty: '0%',
@@ -603,38 +546,12 @@ function DealsManager() {
                             pp: '★★',
                             iv: 'Medium',
                             ip: deal.pnl_percent ? (deal.pnl_percent > 0 ? '+' : '') + deal.pnl_percent.toFixed(1) + '%' : '0%',
-                            nt: deal.notes || 'From API',
+                            nt: deal.notes || 'Real data from database',
                             qt: new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
                             seven: '0%',
                             change2: parseFloat(deal.pnl_percent || 0)
                         };
                     });
-
-                    // Merge with existing localStorage deals, avoid duplicates
-                    var existingDeals = JSON.parse(localStorage.getItem('userDeals') || '[]');
-                    var mergedDeals = apiDeals.slice();
-
-                    existingDeals.forEach(function(localDeal) {
-                        var isDuplicate = apiDeals.some(function(apiDeal) {
-                            return apiDeal.symbol === localDeal.symbol && Math.abs(parseFloat(apiDeal.ep) - parseFloat(localDeal.ep)) < 0.01;
-                        });
-                        if (!isDuplicate) {
-                            mergedDeals.push(localDeal);
-                        }
-                    });
-
-                    localStorage.setItem('userDeals', JSON.stringify(mergedDeals));
-
-                    // Refresh deals display after merging
-                    self.deals = mergedDeals;
-                    self.filteredDeals = self.deals.slice();
-                    self.renderDealsTable();
-                    self.updatePagination();
-                }
-            }
-        };
-        xhr.send();
-    }
 
     renderDealsTable() {
         var tbody = document.getElementById('dealsTableBody');
@@ -796,6 +713,7 @@ function DealsManager() {
         }
 
         document.getElementById('visibleDealsCount').textContent = this.filteredDeals.length;
+```text
         document.getElementById('showingCount').textContent = Math.min(endIndex, this.filteredDeals.length);
         document.getElementById('totalCount').textContent = this.filteredDeals.length;
     }
