@@ -62,6 +62,14 @@ app.config['SESSION_COOKIE_SECURE'] = False  # Allow both HTTP and HTTPS for dev
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_DOMAIN'] = None  # Auto-detect domain
+
+# Add proper headers for Replit webview
+@app.after_request
+def after_request(response):
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    return response
 # initialize the app with the extension, flask-sqlalchemy >= 3.0.x
 db.init_app(app)
 

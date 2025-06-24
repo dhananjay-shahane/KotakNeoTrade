@@ -33,11 +33,17 @@ try:
     # Import realtime quotes after creating the manager
     from api.realtime_quotes import quotes_bp as realtime_bp
 
-    # Register core blueprints only once
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(main_bp)
-    app.register_blueprint(dashboard_bp)
-    app.register_blueprint(trading_bp)
+    # Check if blueprints are already registered to avoid duplicates
+    registered_blueprints = [bp.name for bp in app.blueprints.values()]
+    
+    if 'auth' not in registered_blueprints:
+        app.register_blueprint(auth_bp)
+    if 'main' not in registered_blueprints:
+        app.register_blueprint(main_bp)
+    if 'dashboard_api' not in registered_blueprints:
+        app.register_blueprint(dashboard_bp)
+    if 'trading_api' not in registered_blueprints:
+        app.register_blueprint(trading_bp)
     # Register ETF blueprint
     try:
         import sys
@@ -67,15 +73,23 @@ try:
         print(f"✗ ETF blueprint registration failed: {etf_error}")
         import traceback
         traceback.print_exc()
-    # Register additional blueprints
-    app.register_blueprint(admin_bp)
-    app.register_blueprint(realtime_bp)
-    app.register_blueprint(deals_bp)
-    app.register_blueprint(notifications_bp)
-    app.register_blueprint(supabase_bp)
-    app.register_blueprint(admin_signals_bp)
-    app.register_blueprint(signals_datatable_bp)
-    app.register_blueprint(enhanced_etf_bp)
+    # Register additional blueprints only if not already registered
+    if 'admin' not in registered_blueprints:
+        app.register_blueprint(admin_bp)
+    if 'quotes' not in registered_blueprints:
+        app.register_blueprint(realtime_bp)
+    if 'deals' not in registered_blueprints:
+        app.register_blueprint(deals_bp)
+    if 'notifications' not in registered_blueprints:
+        app.register_blueprint(notifications_bp)
+    if 'supabase' not in registered_blueprints:
+        app.register_blueprint(supabase_bp)
+    if 'admin_signals' not in registered_blueprints:
+        app.register_blueprint(admin_signals_bp)
+    if 'signals_datatable' not in registered_blueprints:
+        app.register_blueprint(signals_datatable_bp)
+    if 'enhanced_etf' not in registered_blueprints:
+        app.register_blueprint(enhanced_etf_bp)
 
     print("✓ Additional blueprints registered successfully")
 except Exception as e:
