@@ -877,7 +877,7 @@
     <!-- Custom JavaScript -->
     <script>
         // Mobile sidebar toggle
-        function toggleSidebar.prototype.toggleSidebar = function() {
+        function toggleSidebar() {
             var sidebar = document.getElementById('sidebar');
             var overlay = document.getElementById('sidebarOverlay');
             var isOpen = sidebar.classList.contains('show');
@@ -908,7 +908,7 @@
         });
 
         // Handle window resize
-        window.addEventListener('resize', function.prototype.function = function() {
+        window.addEventListener('resize', function() {
             var sidebar = document.getElementById('sidebar');
             var overlay = document.getElementById('sidebarOverlay');
 
@@ -920,7 +920,7 @@
         });
 
         // User menu toggle
-        function toggleUserMenu.prototype.toggleUserMenu = function() {
+        function toggleUserMenu() {
             var userMenu = document.getElementById('userMenu');
             var isVisible = userMenu.style.display !== 'none';
             userMenu.style.display = isVisible ? 'none' : 'block';
@@ -937,22 +937,22 @@
         });
 
         // Show notifications
-        function showNotifications.prototype.showNotifications = function() {
+        function showNotifications() {
             showToaster('Live Market Updates', 'Portfolio value updated successfully', 'success');
             setTimeout(function() { showToaster('Order Status', 'Order execution completed', 'info'); }, 500);
             setTimeout(function() { showToaster('Market Alert', 'High volatility detected in selected stocks', 'warning'); }, 1000);
         }
 
         // Theme Toggle Functionality
-        function initializeTheme.prototype.initializeTheme = function() {
-            //            // Get saved theme from localStorage or default to 'dark'
+        function initializeTheme() {
+            // Get saved theme from localStorage or default to 'dark'
             var savedTheme = localStorage.getItem('theme') || 'dark';
 
             // Apply the theme immediately before DOM content loads
             document.documentElement.setAttribute('data-theme', savedTheme);
 
             // Wait for DOM to be ready before setting up toggle
-            function setupThemeToggle.prototype.setupThemeToggle = function() {
+            function setupThemeToggle() {
                 var themeToggle = document.getElementById('themeToggle');
                 if (!themeToggle) {
                     // Element doesn't exist on this page - skip silently
@@ -963,7 +963,7 @@
                 themeToggle.checked = savedTheme === 'light';
 
                 // Add event listener for theme changes
-                themeToggle.addEventListener('change', function.prototype.function = function() {
+                themeToggle.addEventListener('change', function() {
                     var newTheme = this.checked ? 'light' : 'dark';
                     document.documentElement.setAttribute('data-theme', newTheme);
                     localStorage.setItem('theme', newTheme);
@@ -1017,12 +1017,12 @@
             container.appendChild(toaster);
 
             // Show animation
-            setTimeout(() function.prototype.function = function() {
+            setTimeout(function() {
                 toaster.classList.add('show');
             }, 100);
 
             // Auto-remove after 3 seconds
-            setTimeout(() function.prototype.function = function() {
+            setTimeout(function() {
                 removeToaster(toaster);
             }, 3000);
         }
@@ -1030,7 +1030,7 @@
         function removeToaster(toaster) {
             if (toaster && toaster.parentElement) {
                 toaster.classList.remove('show');
-                setTimeout(() function.prototype.function = function() {
+                setTimeout(function() {
                     if (toaster.parentElement) {
                         toaster.parentElement.removeChild(toaster);
                     }
@@ -1082,7 +1082,7 @@
         // Auto-refresh data every 30 seconds (only for authenticated users)
         var isAuthenticated = {{ 'true' if session.authenticated else 'false' }};
         if (isAuthenticated) {
-            setInterval(function.prototype.function = function() {
+            setInterval(function() {
                 if (!document.hidden) {
                     var currentPage = window.location.pathname;
                     if (currentPage === '/dashboard' && window.realTimeDashboard) {
@@ -1094,7 +1094,7 @@
         }
 
         // Toggle sidebar function
-        function toggleSidebar.prototype.toggleSidebar = function() {
+        function toggleSidebarAlt() {
             var sidebar = document.querySelector('.sidebar');
             var overlay = document.querySelector('.sidebar-overlay');
 
@@ -1123,7 +1123,7 @@
         });
 
         // Debug function to check theme toggle
-        function debugThemeToggle.prototype.debugThemeToggle = function() {
+        function debugThemeToggle() {
             var toggle = document.getElementById('themeToggle');
             var saved = localStorage.getItem('theme');
             if (toggle) {
@@ -1137,9 +1137,9 @@
         initializeTheme();
 
         // Initialize everything when DOM is ready
-        document.addEventListener('DOMContentLoaded', function.prototype.function = function() {
+        document.addEventListener('DOMContentLoaded', function() {
             // Debug theme setup
-            setTimeout(() function.prototype.function = function() {
+            setTimeout(function() {
                 debugThemeToggle();
             }, 100);
 
