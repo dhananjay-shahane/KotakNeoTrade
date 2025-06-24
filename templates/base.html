@@ -732,10 +732,6 @@
         </div>
 
         <div class="header-right">
-            <div class="status-indicator live">
-                <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
-                <span>Live Market</span>
-            </div>
 
             <!-- Theme Toggle Switch -->
             <div class="theme-toggle">
@@ -815,7 +811,7 @@
             </div>
             <div class="nav-item">
                 <a href="{{ url_for('holdings') }}" class="nav-link {% if request.endpoint == 'holdings' %}active{% endif %}">
-                    <i class="fas fa-walvar nav-icon"></i>
+                    <i class="fas fa-hands-helping nav-icon"></i>
                     <span>Holdings</span>
                 </a>
             </div>
@@ -830,9 +826,6 @@
         <div class="dropdown-divider"></div>
         <a class="dropdown-item" href="#" onclick="showUserProfile()">
             <i class="fas fa-id-card me-2"></i>View Profile
-        </a>
-        <a class="dropdown-item" href="#" onclick="showAccountSummary()">
-            <i class="fas fa-chart-bar me-2"></i>Account Summary
         </a>
         <div class="dropdown-divider"></div>
         <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">

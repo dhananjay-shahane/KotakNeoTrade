@@ -514,10 +514,10 @@ DealsManager.prototype.loadDeals = function() {
                                 dh: deal.days_held || 0,
                                 ed: deal.entry_date ? deal.entry_date.split('T')[0] : new Date().toISOString().split('T')[0],
                                 pr: '0%',
-                                pp: '★★',
+                                pp: deal.pp || '-',
                                 iv: 'Medium',
                                 ip: deal.pnl_percent ? (deal.pnl_percent > 0 ? '+' : '') + deal.pnl_percent.toFixed(1) + '%' : '0%',
-                                nt: deal.notes || 'Real data from database',
+                                nt: deal.notes || '--',
                                 qt: new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
                                 seven: '0%',
                                 change2: parseFloat(deal.pnl_percent || 0)
@@ -645,7 +645,7 @@ DealsManager.prototype.renderDealsTable = function() {
                     cellContent = deal.pp || '-';
                     break;
                 case 'iv':
-                    cellContent = '<span class="badge bg-info">' + (deal.iv || 'Low') + '</span>';
+                    cellContent = '<span class="badge bg-info">' + (deal.iv || '--') + '</span>';
                     break;
                 case 'ip':
                     cellContent = deal.ip || '-';
@@ -672,18 +672,12 @@ DealsManager.prototype.renderDealsTable = function() {
                     break;
                 case 'actions':
                     cellContent = 
-                        '<div class="dropdown">' +
-                            '<button class="btn btn-xs btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">' +
-                                '<i class="fas fa-ellipsis-v"></i>' +
-                            '</button>' +
-                            '<ul class="dropdown-menu dropdown-menu-dark">' +
-                                '<li><a class="dropdown-item" href="#" onclick="buyTrade(\'' + deal.symbol + '\', ' + deal.cmp + ')"><i class="fas fa-arrow-up text-success me-2"></i>Buy Trade</a></li>' +
-                                '<li><a class="dropdown-item" href="#" onclick="sellTrade(\'' + deal.symbol + '\', ' + deal.cmp + ')"><i class="fas fa-arrow-down text-danger me-2"></i>Sell Trade</a></li>' +
-                                '<li><hr class="dropdown-divider"></li>' +
-                                '<li><a class="dropdown-item" href="#" onclick="viewChart(\'' + deal.symbol + '\')"><i class="fas fa-chart-line text-info me-2"></i>View Chart</a></li>' +
-                                '<li><a class="dropdown-item" href="#" onclick="viewDealDetails(\'' + deal.id + '\')"><i class="fas fa-eye text-warning me-2"></i>View Details</a></li>' +
-                            '</ul>' +
-                        '</div>';
+                        '<ul class="d-flex gap-2 list-unstyled">' + 
+                            '<li><a class="dropdown-item" href="#" onclick="buyTrade(\'' + deal.symbol + '\', ' + deal.cmp + ')"><i class="fas fa-arrow-up text-success"></i></a></li>' +
+                            '<li><a class="dropdown-item" href="#" onclick="sellTrade(\'' + deal.symbol + '\', ' + deal.cmp + ')"><i class="fas fa-arrow-down text-danger"></i></a></li>' +
+                            // '<li><a class="dropdown-item" href="#" onclick="viewChart(\'' + deal.symbol + '\')"><i class="fas fa-chart-line text-info"></i></a></li>' +
+                            // '<li><a class="dropdown-item" href="#" onclick="viewDealDetails(\'' + deal.id + '\')"><i class="fas fa-eye text-warning"></i></a></li>' +
+                        '</ul>';
                     break;
                 default:
                     cellContent = '';

@@ -192,7 +192,7 @@ ETFSignalsManager.prototype.createSignalRow = function(signal) {
         '<td>' + (signal.thirty || '-') + '</td>' +
         '<td>' + (signal.dh || '0') + '</td>' +
         '<td>' + entryDate + '</td>' +
-        '<td><span class="badge ' + (status === 'ACTIVE' ? 'bg-success' : 'bg-secondary') + '">' + positionType + '</span></td>' +
+        // '<td><span class="badge ' + (status === 'ACTIVE' ? 'bg-success' : 'bg-secondary') + '">' + positionType + '</span></td>' +
         '<td>' + quantity + '</td>' +
         '<td>₹' + entryPrice.toFixed(2) + '</td>' +
         '<td class="' + changeClass + '">₹' + currentPrice.toFixed(2) + '</td>' +

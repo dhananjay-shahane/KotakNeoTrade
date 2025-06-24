@@ -118,38 +118,7 @@ def handle_preflight():
 from flask import render_template, request, redirect, url_for, session, jsonify, flash, make_response
 
 # Root route - ultra-simple webview
-@app.route('/')
-def index():
-    return '''<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Kotak Neo Trading</title>
-<style>
-body{margin:0;padding:30px;background:#4338ca;color:white;font-family:system-ui;text-align:center;min-height:90vh;display:flex;align-items:center;justify-content:center}
-.box{background:rgba(255,255,255,0.1);padding:40px;border-radius:15px;max-width:600px}
-h1{font-size:2.5rem;margin-bottom:20px}
-.green{color:#22c55e;font-weight:bold}
-a{color:#fbbf24;text-decoration:none;margin:0 15px;padding:8px 16px;background:rgba(255,255,255,0.1);border-radius:8px}
-a:hover{background:rgba(255,255,255,0.2)}
-</style>
-</head>
-<body>
-<div class="box">
-<h1>Kotak Neo Trading Platform</h1>
-<p class="green">● SYSTEM ONLINE</p>
-<p>Database Connected | Flask Application Running</p>
-<p>Port: 5000 | Webview: Ready</p>
-<div style="margin-top:30px">
-<a href="/auth/login">Login Portal</a>
-<a href="/etf/signals">ETF Signals</a>
-<a href="/health">Health Check</a>
-</div>
-<p style="margin-top:30px;opacity:0.8;font-size:0.9rem">Domain: ''' + str(os.environ.get('REPLIT_DOMAINS', 'localhost:5000')) + '''</p>
-</div>
-</body>
-</html>'''
-
+# @app.route('/')  
 @app.route('/webview')
 def simple_webview():
     html_content = '''<!DOCTYPE html>
@@ -920,7 +889,7 @@ def get_etf_signals_data():
                 'change_pct': pnl_pct,
                 'change2': pnl_pct,
                 'status': 'ACTIVE' if signal.pos == 1 else 'CLOSED',
-                'pos': signal.pos or 0,
+                # 'pos': signal.pos or 0,
                 'date': str(signal.date) if signal.date else '',
                 'dh': signal.dh or '0',
                 'ed': str(signal.ed) if signal.ed else '',
@@ -929,7 +898,7 @@ def get_etf_signals_data():
                 'tva': float(signal.tva) if signal.tva else 0,
                 'tpr': signal.tpr or '0',
                 'pr': signal.pr or f'{pnl_pct:.2f}%',
-                'pp': signal.pp or '⭐',
+                'pp': signal.pp or '--  ',
                 'iv': float(signal.iv) if signal.iv else investment,
                 'ip': f'{pnl_pct:.2f}%',
                 'nt': signal.nt or '',
@@ -970,118 +939,6 @@ def get_etf_signals_data():
         app.logger.error(f"ETF Signals API Error: {str(e)}")
         import traceback
         traceback.print_exc()
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'signals': [],
-            'portfolio': {
-                'total_positions': 0,
-                'active_positions': 0,
-                'closed_positions': 0,
-                'total_investment': 0,
-                'current_value': 0,
-                'total_pnl': 0,
-                'return_percent': 0
-            }
-        }), 500
-
-
-@app.route('/api/etf-signals-data-backup')
-def get_etf_signals_data_backup():
-    """Backup API endpoint for ETF signals data"""
-    try:
-        app.logger.info("ETF Signals API: Found 12 CSV trade signals")
-
-        # Return sample data from the CSV we imported
-        signals_list = [{
-            'id': 1,
-            'etf': 'MID150BEES',
-            'ep': 227.02,
-            'cmp': 222.19,
-            'qty': 200,
-            'pos': 1,
-            'inv': 45404,
-            'pl': -966,
-            'change_pct': -2.13,
-            'change2': -2.13,
-            'status': 'ACTIVE',
-            'date': '2024-11-22',
-            'dh': '#N/A',
-            'tp': 254.26,
-            'tva': 50852,
-            'pp': '⭐',
-            'iv': 147000,
-            'ip': '3.20%',
-            'thirty': '#N/A',
-            'seven': '#N/A',
-            'chan': '-2.13%',
-            'priority': None
-        }, {
-            'id': 2,
-            'etf': 'FINIETF',
-            'ep': 26.63,
-            'cmp': 30.47,
-            'qty': 4000,
-            'pos': 1,
-            'inv': 106520,
-            'pl': 15360,
-            'change_pct': 14.42,
-            'change2': 14.42,
-            'status': 'ACTIVE',
-            'date': '2025-01-03',
-            'dh': '#N/A',
-            'tp': 29.83,
-            'tva': 119302,
-            'pp': '⭐',
-            'iv': 310440,
-            'ip': '6.75%',
-            'thirty': '#N/A',
-            'seven': '#N/A',
-            'chan': '14.42%',
-            'priority': None
-        }, {
-            'id': 3,
-            'etf': 'HDFCPVTBAN',
-            'ep': 24.84,
-            'cmp': 28.09,
-            'qty': 4400,
-            'pos': 1,
-            'inv': 109296,
-            'pl': 14300,
-            'change_pct': 13.08,
-            'change2': 13.08,
-            'status': 'ACTIVE',
-            'date': '2025-01-09',
-            'dh': '#N/A',
-            'tp': 27.82,
-            'tva': 122412,
-            'pp': '⭐',
-            'iv': 109296,
-            'ip': '2.38%',
-            'thirty': '#N/A',
-            'seven': '#N/A',
-            'chan': '13.08%',
-            'priority': None
-        }]
-
-        portfolio_summary = {
-            'total_positions': 12,
-            'active_positions': 10,
-            'closed_positions': 2,
-            'total_investment': 1024000,
-            'current_value': 1085000,
-            'total_pnl': 61000,
-            'return_percent': 5.96
-        }
-
-        return jsonify({
-            'success': True,
-            'signals': signals_list,
-            'portfolio': portfolio_summary
-        })
-
-    except Exception as e:
-        app.logger.error(f"ETF Signals API Error: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e),
