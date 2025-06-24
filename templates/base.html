@@ -942,7 +942,6 @@
 
         // Theme Toggle Functionality
         function initializeTheme.prototype.initializeTheme = function() {
-```text
             //            // Get saved theme from localStorage or default to 'dark'
             var savedTheme = localStorage.getItem('theme') || 'dark';
 
@@ -1145,7 +1144,7 @@
             var currentPath = window.location.pathname;
             var navLinks = document.querySelectorAll('.nav-link');
 
-            navLinks.forEach(link function.prototype.function = function() {
+            navLinks.forEach(function(link) {
                 var href = link.getAttribute('href');
                 if (href && currentPath === href) {
                     link.classList.add('active');
@@ -1154,7 +1153,8 @@
 
             // Convert flash messages to toasters
             var alerts = document.querySelectorAll('.alert');
-            alerts.forEach(alert function.prototype.function = function() {
+            for (var i = 0; i < alerts.length; i++) {
+                var alert = alerts[i];
                 if (alert && alert.textContent) {
                     var message = alert.textContent.trim();
                     var type = alert.classList && alert.classList.contains('alert-success') ? 'success' : 'error';
@@ -1163,7 +1163,7 @@
                     }
                     alert.remove();
                 }
-            });
+            }
         });
     </script>
 

@@ -662,3 +662,519 @@ forceUpdate() {
             }
         }
     }
+// ETF Signals Manager - ES5 Compatible
+function ETFSignalsManager() {
+    var self = this;
+    this.signals = [];
+    this.filteredSignals = [];
+    this.currentPage = 1;
+    this.itemsPerPage = 25;
+    this.isLoading = false;
+    this.refreshInterval = null;
+    this.sortField = 'id';
+    this.sortDirection = 'desc';
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            self.init();
+        });
+    } else {
+        this.init();
+    }
+}
+// ETF Signals Manager - ES5 Compatible
+function ETFSignalsManager() {
+    var self = this;
+    this.signals = [];
+    this.filteredSignals = [];
+    this.currentPage = 1;
+    this.itemsPerPage = 25;
+    this.isLoading = false;
+    this.refreshInterval = null;
+    this.sortField = 'id';
+    this.sortDirection = 'desc';
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            self.init();
+        });
+    } else {
+        this.init();
+    }
+}
+ETFSignalsManager.prototype.init = function() {
+    console.log('ETF Signals Manager initialized');
+    this.setupEventListeners();
+    this.loadSignals();
+    this.startAutoRefresh();
+};
+// ETF Signals Manager - ES5 Compatible
+function ETFSignalsManager() {
+    var self = this;
+    this.signals = [];
+    this.filteredSignals = [];
+    this.currentPage = 1;
+    this.itemsPerPage = 25;
+    this.isLoading = false;
+    this.refreshInterval = null;
+    this.sortField = 'id';
+    this.sortDirection = 'desc';
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            self.init();
+        });
+    } else {
+        this.init();
+    }
+}
+ETFSignalsManager.prototype.init = function() {
+    console.log('ETF Signals Manager initialized');
+    this.setupEventListeners();
+    this.loadSignals();
+    this.startAutoRefresh();
+};
+ETFSignalsManager.prototype.setupEventListeners = function() {
+    var self = this;
+
+    // Refresh button
+    var refreshBtn = document.getElementById('refreshSignalsBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            self.loadSignals();
+        });
+    }
+
+    // Auto-refresh controls
+    var autoRefreshToggle = document.getElementById('autoRefreshToggle');
+    if (autoRefreshToggle) {
+        autoRefreshToggle.addEventListener('change', function(e) {
+            if (e.target.checked) {
+                self.startAutoRefresh();
+            } else {
+                self.stopAutoRefresh();
+            }
+        });
+    }
+
+    // Search functionality
+    var searchInput = document.getElementById('signalSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            self.applyFilters();
+        });
+    }
+
+    // Items per page selector
+    var itemsPerPageSelect = document.getElementById('itemsPerPage');
+    if (itemsPerPageSelect) {
+        itemsPerPageSelect.addEventListener('change', function(e) {
+            self.itemsPerPage = parseInt(e.target.value);
+            self.currentPage = 1;
+            self.renderSignalsTable();
+            self.updatePagination();
+        });
+    }
+};
+// ETF Signals Manager - ES5 Compatible
+function ETFSignalsManager() {
+    var self = this;
+    this.signals = [];
+    this.filteredSignals = [];
+    this.currentPage = 1;
+    this.itemsPerPage = 25;
+    this.isLoading = false;
+    this.refreshInterval = null;
+    this.sortField = 'id';
+    this.sortDirection = 'desc';
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            self.init();
+        });
+    } else {
+        this.init();
+    }
+}
+ETFSignalsManager.prototype.init = function() {
+    console.log('ETF Signals Manager initialized');
+    this.setupEventListeners();
+    this.loadSignals();
+    this.startAutoRefresh();
+};
+ETFSignalsManager.prototype.setupEventListeners = function() {
+    var self = this;
+
+    // Refresh button
+    var refreshBtn = document.getElementById('refreshSignalsBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            self.loadSignals();
+        });
+    }
+
+    // Auto-refresh controls
+    var autoRefreshToggle = document.getElementById('autoRefreshToggle');
+    if (autoRefreshToggle) {
+        autoRefreshToggle.addEventListener('change', function(e) {
+            if (e.target.checked) {
+                self.startAutoRefresh();
+            } else {
+                self.stopAutoRefresh();
+            }
+        });
+    }
+
+    // Search functionality
+    var searchInput = document.getElementById('signalSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            self.applyFilters();
+        });
+    }
+
+    // Items per page selector
+    var itemsPerPageSelect = document.getElementById('itemsPerPage');
+    if (itemsPerPageSelect) {
+        itemsPerPageSelect.addEventListener('change', function(e) {
+            self.itemsPerPage = parseInt(e.target.value);
+            self.currentPage = 1;
+            self.renderSignalsTable();
+            self.updatePagination();
+        });
+    }
+};
+ETFSignalsManager.prototype.loadSignals = function() {
+    var self = this;
+
+    if (this.isLoading) return;
+
+    this.isLoading = true;
+    this.showLoadingState();
+
+    fetch('/api/etf-signals-data')
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                self.signals = data.signals || [];
+                self.filteredSignals = self.signals.slice();
+                self.renderSignalsTable();
+                self.updatePagination();
+                self.updatePortfolioSummary(data.portfolio);
+                self.showSuccessMessage('Loaded ' + self.signals.length + ' signals');
+            } else {
+                throw new Error(data.error || 'Failed to load signals');
+            }
+        })
+        .catch(function(error) {
+            console.error('Error loading signals:', error);
+            self.showErrorMessage(error.message);
+        })
+        .finally(function() {
+            self.isLoading = false;
+            self.hideLoadingState();
+        });
+};
+// ETF Signals Manager - ES5 Compatible
+function ETFSignalsManager() {
+    var self = this;
+    this.signals = [];
+    this.filteredSignals = [];
+    this.currentPage = 1;
+    this.itemsPerPage = 25;
+    this.isLoading = false;
+    this.refreshInterval = null;
+    this.sortField = 'id';
+    this.sortDirection = 'desc';
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            self.init();
+        });
+```text
+        });
+    } else {
+        this.init();
+    }
+}
+ETFSignalsManager.prototype.init = function() {
+    console.log('ETF Signals Manager initialized');
+    this.setupEventListeners();
+    this.loadSignals();
+    this.startAutoRefresh();
+};
+ETFSignalsManager.prototype.setupEventListeners = function() {
+    var self = this;
+
+    // Refresh button
+    var refreshBtn = document.getElementById('refreshSignalsBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            self.loadSignals();
+        });
+    }
+
+    // Auto-refresh controls
+    var autoRefreshToggle = document.getElementById('autoRefreshToggle');
+    if (autoRefreshToggle) {
+        autoRefreshToggle.addEventListener('change', function(e) {
+            if (e.target.checked) {
+                self.startAutoRefresh();
+            } else {
+                self.stopAutoRefresh();
+            }
+        });
+    }
+
+    // Search functionality
+    var searchInput = document.getElementById('signalSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            self.applyFilters();
+        });
+    }
+
+    // Items per page selector
+    var itemsPerPageSelect = document.getElementById('itemsPerPage');
+    if (itemsPerPageSelect) {
+        itemsPerPageSelect.addEventListener('change', function(e) {
+            self.itemsPerPage = parseInt(e.target.value);
+            self.currentPage = 1;
+            self.renderSignalsTable();
+            self.updatePagination();
+        });
+    }
+};
+ETFSignalsManager.prototype.loadSignals = function() {
+    var self = this;
+
+    if (this.isLoading) return;
+
+    this.isLoading = true;
+    this.showLoadingState();
+
+    fetch('/api/etf-signals-data')
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                self.signals = data.signals || [];
+                self.filteredSignals = self.signals.slice();
+                self.renderSignalsTable();
+                self.updatePagination();
+                self.updatePortfolioSummary(data.portfolio);
+                self.showSuccessMessage('Loaded ' + self.signals.length + ' signals');
+            } else {
+                throw new Error(data.error || 'Failed to load signals');
+            }
+        })
+        .catch(function(error) {
+            console.error('Error loading signals:', error);
+            self.showErrorMessage(error.message);
+        })
+        .finally(function() {
+            self.isLoading = false;
+            self.hideLoadingState();
+        });
+};
+ETFSignalsManager.prototype.renderSignalsTable = function() {
+    var tbody = document.getElementById('signalsTableBody');
+    if (!tbody) return;
+
+    var startIdx = (this.currentPage - 1) * this.itemsPerPage;
+    var endIdx = startIdx + this.itemsPerPage;
+    var pageSignals = this.filteredSignals.slice(startIdx, endIdx);
+
+    if (pageSignals.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="12" class="text-center">No signals found</td></tr>';
+        return;
+    }
+
+    var self = this;
+    tbody.innerHTML = pageSignals.map(function(signal) {
+        return self.createSignalRow(signal);
+    }).join('');
+};
+
+ETFSignalsManager.prototype.createSignalRow = function(signal) {
+    var pnlClass = signal.pl >= 0 ? 'text-success' : 'text-danger';
+    var statusClass = signal.status === 'ACTIVE' ? 'badge-success' : 'badge-secondary';
+    var changeClass = signal.change_pct >= 0 ? 'text-success' : 'text-danger';
+
+    return '<tr>' +
+        '<td>' + (signal.etf || 'N/A') + '</td>' +
+        '<td>₹' + (signal.ep || 0).toFixed(2) + '</td>' +
+        '<td>₹' + (signal.cmp || 0).toFixed(2) + '</td>' +
+        '<td>' + (signal.qty || 0) + '</td>' +
+        '<td>₹' + (signal.inv || 0).toLocaleString() + '</td>' +
+        '<td class="' + pnlClass + '">₹' + (signal.pl || 0).toLocaleString() + '</td>' +
+        '<td class="' + changeClass + '">' + (signal.change_pct || 0).toFixed(2) + '%</td>' +
+        '<td><span class="badge ' + statusClass + '">' + (signal.status || 'UNKNOWN') + '</span></td>' +
+        '<td>' + (signal.date || 'N/A') + '</td>' +
+        '<td>₹' + (signal.tp || 0).toFixed(2) + '</td>' +
+        '<td>₹' + (signal.tva || 0).toLocaleString() + '</td>' +
+        '<td>' +
+            '<button class="btn btn-primary btn-sm" onclick="addDealFromSignal(' + signal.id + ')">' +
+                '<i class="fas fa-plus me-1"></i>Add Deal' +
+            '</button>' +
+        '</td>' +
+    '</tr>';
+};
+ETFSignalsManager.prototype.updatePortfolioSummary = function(portfolio) {
+    if (!portfolio) return;
+
+    var elements = {
+        'totalPositions': portfolio.total_positions || 0,
+        'activePositions': portfolio.active_positions || 0,
+        'totalInvestment': '₹' + (portfolio.total_investment || 0).toLocaleString(),
+        'currentValue': '₹' + (portfolio.current_value || 0).toLocaleString(),
+        'totalPnl': '₹' + (portfolio.total_pnl || 0).toLocaleString(),
+        'returnPercent': (portfolio.return_percent || 0).toFixed(2) + '%'
+    };
+
+    for (var id in elements) {
+        var element = document.getElementById(id);
+        if (element) element.textContent = elements[id];
+    }
+};
+
+ETFSignalsManager.prototype.applyFilters = function() {
+    var searchInput = document.getElementById('signalSearch');
+    var searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+
+    var self = this;
+    this.filteredSignals = this.signals.filter(function(signal) {
+        return (signal.etf && signal.etf.toLowerCase().indexOf(searchTerm) !== -1) ||
+               (signal.status && signal.status.toLowerCase().indexOf(searchTerm) !== -1);
+    });
+
+    this.currentPage = 1;
+    this.renderSignalsTable();
+    this.updatePagination();
+};
+
+ETFSignalsManager.prototype.updatePagination = function() {
+    var totalPages = Math.ceil(this.filteredSignals.length / this.itemsPerPage);
+    var paginationInfo = document.getElementById('paginationInfo');
+
+    if (paginationInfo) {
+        var startItem = (this.currentPage - 1) * this.itemsPerPage + 1;
+        var endItem = Math.min(this.currentPage * this.itemsPerPage, this.filteredSignals.length);
+        paginationInfo.textContent = 'Showing ' + startItem + '-' + endItem + ' of ' + this.filteredSignals.length + ' signals';
+    }
+
+    // Update pagination buttons
+    var prevBtn = document.getElementById('prevPageBtn');
+    var nextBtn = document.getElementById('nextPageBtn');
+
+    if (prevBtn) prevBtn.disabled = this.currentPage <= 1;
+    if (nextBtn) nextBtn.disabled = this.currentPage >= totalPages;
+};
+
+ETFSignalsManager.prototype.showLoadingState = function() {
+    var refreshBtn = document.getElementById('refreshSignalsBtn');
+    if (refreshBtn) {
+        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
+        refreshBtn.disabled = true;
+    }
+};
+
+ETFSignalsManager.prototype.hideLoadingState = function() {
+    var refreshBtn = document.getElementById('refreshSignalsBtn');
+    if (refreshBtn) {
+        refreshBtn.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
+        refreshBtn.disabled = false;
+    }
+};
+
+ETFSignalsManager.prototype.showSuccessMessage = function(message) {
+    console.log('Success:', message);
+};
+
+ETFSignalsManager.prototype.showErrorMessage = function(message) {
+    console.error('Error:', message);
+    var tbody = document.getElementById('signalsTableBody');
+    if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="12" class="text-center text-danger">' + message + '</td></tr>';
+    }
+};
+
+ETFSignalsManager.prototype.startAutoRefresh = function() {
+    var self = this;
+    this.stopAutoRefresh();
+    this.refreshInterval = setInterval(function() {
+        self.loadSignals();
+    }, 30000);
+};
+
+ETFSignalsManager.prototype.stopAutoRefresh = function() {
+    if (this.refreshInterval) {
+        clearInterval(this.refreshInterval);
+        this.refreshInterval = null;
+    }
+};
+// Initialize the ETF Signals Manager
+window.etfSignalsManager = new ETFSignalsManager();
+
+// Global functions for HTML event handlers
+function refreshSignals() {
+    window.etfSignalsManager.loadSignals();
+}
+
+function addDealFromSignal(signalId) {
+    var signal = null;
+    for (var i = 0; i < window.etfSignalsManager.signals.length; i++) {
+        if (window.etfSignalsManager.signals[i].id === signalId) {
+            signal = window.etfSignalsManager.signals[i];
+            break;
+        }
+    }
+
+    if (!signal) {
+        alert('Signal not found');
+        return;
+    }
+
+    var signalData = {
+        symbol: signal.etf,
+        qty: signal.qty,
+        cmp: signal.cmp,
+        pos: signal.pos,
+        tp: signal.tp,
+        nt: signal.nt || ''
+    };
+
+    fetch('/api/deals/create-from-signal', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            signal_data: signalData
+        })
+    })
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(data) {
+        if (data.success) {
+            alert('Deal added successfully!');
+            // Optionally redirect to deals page
+            window.location.href = '/deals';
+        } else {
+            alert('Error adding deal: ' + data.message);
+        }
+    })
+    .catch(function(error) {
+        console.error('Error:', error);
+        alert('Error adding deal');
+    });
+}
