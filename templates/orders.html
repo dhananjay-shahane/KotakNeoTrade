@@ -201,7 +201,7 @@ function updateOrdersTable(orders) {
 
     var tableHTML = '';
     
-    orders.forEach(order function() {
+    orders.forEach(function(order) {
         var orderTime = order.orderTime || order.ordEntTm || order.exchOrdId || 'N/A';
         var orderId = order.nOrdNo || order.orderId || order.exchOrdId || 'N/A';
         var symbol = order.trdSym || order.sym || order.tradingSymbol || 'N/A';
@@ -308,7 +308,7 @@ function updateOrdersSummary(orders) {
     var totalOrders = orders.length;
     var completed = 0, pending = 0, rejected = 0, cancelled = 0, buyOrders = 0;
 
-    orders.forEach(order function() {
+    orders.forEach(function(order) {
         var status = (order.ordSt || order.status || '').toLowerCase();
         var transType = order.transType || order.transactionType || '';
 

@@ -39,10 +39,8 @@ def get_admin_signals():
 
         # No sample data creation - only show real admin_trade_signals data
 
-        # Get ALL active admin trade signals - don't filter by user
-        signals = AdminTradeSignal.query.filter_by(
-            status='ACTIVE'  # Only active signals
-        ).order_by(AdminTradeSignal.created_at.desc()).all()  # Get all records
+        # Get ALL admin trade signals from database (no filtering)
+        signals = AdminTradeSignal.query.order_by(AdminTradeSignal.created_at.desc()).all()
 
         if not signals:
             logger.info("No admin trade signals found in database - showing empty table")
@@ -58,7 +56,7 @@ def get_admin_signals():
                     'active_positions': 0,
                     'closed_positions': 0
                 },
-                'message': 'No admin trade signals found. Only real database records are displayed.'
+                'message': 'ETF signals page configured to show data from admin_trade_signals table. Add signals to the database to display them here.'
             })
 
         logger.info(f"📊 Found {len(signals)} admin trade signals in database (showing only these 14 records)")

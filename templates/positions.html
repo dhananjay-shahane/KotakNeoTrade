@@ -748,11 +748,11 @@ function getQuote(token, exchange) {
         body: JSON.stringify(quoteData)
     })
     .then(response => response.json())
-    .then(data function() {
+    .then(function(data) {
         if (data.success) {
             console.log('Quote data:', data.data);
             // Display quote data in a modal or update UI
-            alert('Current LTP: ₹' + (data.data[0]?.ltp || 'N/A'));
+            alert('Current LTP: ₹' + (data.data[0] && data.data[0].ltp ? data.data[0].ltp : 'N/A'));
         } else {
             alert('Failed to get quote: ' + data.message);
         }
