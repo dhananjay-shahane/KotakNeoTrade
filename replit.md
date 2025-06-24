@@ -104,15 +104,15 @@ The application follows a modern Flask architecture with clear separation of con
 
 ## Recent Changes
 
-- **June 24, 2025** - Successfully completed migration to external PostgreSQL database with authentic CSV trading data
+- **June 24, 2025** - Successfully completed migration and CSV data import to external PostgreSQL database
   - Connected application to external PostgreSQL database: postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db
-  - Successfully imported 15 authentic ETF trading positions from user's comprehensive CSV portfolio
-  - ETF signals API now returns real trading data: FINIETF (+14.42%), HDFCPVTBAN (+13.08%), INFRABEES (+6.07%), MOM30IETF (+2.01%)
-  - Complete portfolio data with entry prices, current prices, P&L calculations, and position details
-  - ETF signals page displays live data from external database via `/api/etf-signals-data` endpoint
-  - All CSV columns properly mapped and stored: ETF, Date, Pos, Qty, EP, CMP, %Chan, Inv., TP, TVA, TPR, PL, etc.
-  - Application running cleanly on port 5000 with external database connectivity
-  - JavaScript ES6 compatibility issues resolved for maximum browser support
+  - Fixed database schema constraints and imported authentic CSV trading data with proper admin_user_id and target_user_id
+  - Successfully imported authentic ETF trading positions from comprehensive CSV portfolio 
+  - ETF signals API now displays real trading data from external database
+  - Portfolio includes positions like FINIETF, HDFCPVTBAN, INFRABEES, MOM30IETF with actual P&L calculations
+  - All CSV columns properly mapped: ETF, Date, Pos, Qty, EP, CMP, %Chan, Inv., TP, TVA, TPR, PL, ED, EXP, PR, PP, IV, IP, NT, Qt, etc.
+  - Application running on port 5000 with external database connectivity
+  - Resolved JavaScript ES6 compatibility issues for cross-browser support
 
 ## Recent Changes
 
