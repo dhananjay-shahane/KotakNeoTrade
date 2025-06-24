@@ -1,3 +1,4 @@
+
 // ETF Signals Manager - ES5 Compatible
 function ETFSignalsManager() {
     this.positions = [];
@@ -97,8 +98,6 @@ ETFSignalsManager.prototype.setupEventListeners = function() {
         });
     }
 
-    // Auto refresh toggle removed
-
     // Export buttons
     var exportCsvBtn = document.getElementById('exportCsvBtn');
     if (exportCsvBtn) {
@@ -127,6 +126,7 @@ ETFSignalsManager.prototype.loadPositions = function() {
             if (xhr.status === 200) {
                 try {
                     var data = JSON.parse(xhr.responseText);
+                    console.log('API Response:', data);
                     if (data.success) {
                         self.positions = data.signals || [];
                         self.renderPositionsTable();
@@ -192,7 +192,7 @@ ETFSignalsManager.prototype.renderPositionsTable = function() {
 
     if (!this.positions || this.positions.length === 0) {
         var row = tbody.insertRow();
-        row.innerHTML = '<td colspan="25" class="text-center text-muted">No admin trade signals found in database. Only real admin_trade_signals records are displayed.</td>';
+        row.innerHTML = '<td colspan="25" class="text-center text-muted">No ETF signals found in database.</td>';
         return;
     }
 
@@ -208,45 +208,41 @@ ETFSignalsManager.prototype.renderPositionsTable = function() {
 ETFSignalsManager.prototype.createPositionRow = function(position) {
     var row = document.createElement('tr');
 
-    // Ensure we have valid data with fallbacks - map API fields correctly
-    var symbol = position.symbol || 'N/A';
-    var entryPrice = parseFloat(position.entry_price || 0);
-    var currentPrice = parseFloat(position.current_price || 0);
-    var quantity = parseInt(position.quantity || 0);
-    var pnl = parseFloat(position.pnl || 0);
-    var changePct = parseFloat(position.pnl_percentage || 0);
-    var investment = parseFloat(position.investment_amount || (entryPrice * quantity));
-    var targetPrice = parseFloat(position.target_price || entryPrice * 1.1); // Default 10% target
-    var createdAt = position.created_at || '';
-    var positionType = position.position_type || 'LONG';
+    // Extract data from position object with proper fallbacks
+    var symbol = position.symbol || position.etf || 'N/A';
+    var entryPrice = parseFloat(position.entry_price || position.ep || 0);
+    var currentPrice = parseFloat(position.current_price || position.cmp || entryPrice);
+    var quantity = parseInt(position.quantity || position.qty || 0);
+    var pnl = parseFloat(position.pnl || position.pl || 0);
+    var changePct = parseFloat(position.pnl_percentage || position.change_pct || 0);
+    var investment = parseFloat(position.investment_amount || position.inv || (entryPrice * quantity));
+    var targetPrice = parseFloat(position.target_price || position.tp || entryPrice * 1.1);
+    var createdAt = position.created_at || position.date || '';
+    var positionType = position.position_type || (position.pos === 1 ? 'LONG' : 'SHORT') || 'LONG';
     var status = position.status || 'ACTIVE';
 
-    // Always show current price directly, even if same as entry price
-    if (!currentPrice || currentPrice <= 0) {
-        currentPrice = entryPrice; // Fallback to entry price if no CMP available
-        changePct = 0; // No change when no valid CMP
-        console.log('No CMP available for', symbol, ', using entry price');
-    } else {
-        // Calculate change percentage based on actual CMP vs entry price
+    // Calculate change percentage if not provided
+    if (!changePct && entryPrice > 0) {
         changePct = ((currentPrice - entryPrice) / entryPrice) * 100;
-        console.log('Displaying CMP for', symbol, ':', currentPrice, 'Change:', changePct.toFixed(2) + '%');
     }
 
-    // Recalculate P&L based on current price
-    var currentValue = currentPrice * quantity;
-    pnl = currentValue - investment;
+    // Recalculate P&L if not provided
+    if (!pnl && quantity > 0 && entryPrice > 0) {
+        var currentValue = currentPrice * quantity;
+        pnl = currentValue - investment;
+    }
 
     var pnlClass = pnl >= 0 ? 'profit' : 'loss';
     var changeClass = changePct >= 0 ? 'profit' : 'loss';
 
-    // Create formatted date from created_at
+    // Format date
     var entryDate = '';
     if (createdAt) {
         try {
-            var date = new Date(createdAt);
+            var date = typeof createdAt === 'string' ? new Date(createdAt) : createdAt;
             entryDate = date.toLocaleDateString('en-GB');
         } catch (e) {
-            entryDate = '';
+            entryDate = createdAt.toString();
         }
     }
 
@@ -254,7 +250,7 @@ ETFSignalsManager.prototype.createPositionRow = function(position) {
     var daysHeld = '';
     if (createdAt) {
         try {
-            var entryDateObj = new Date(createdAt);
+            var entryDateObj = typeof createdAt === 'string' ? new Date(createdAt) : createdAt;
             var today = new Date();
             var diffTime = Math.abs(today - entryDateObj);
             var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -264,16 +260,18 @@ ETFSignalsManager.prototype.createPositionRow = function(position) {
         }
     }
 
-    // Fix data display - use actual values or meaningful defaults
+    // Format display values
     var displaySymbol = symbol !== 'N/A' ? symbol : '-';
     var displayQuantity = quantity > 0 ? quantity : '-';
     var displayEntryPrice = entryPrice > 0 ? '₹' + entryPrice.toFixed(2) : '-';
     var displayCurrentPrice = currentPrice > 0 ? '₹' + currentPrice.toFixed(2) : displayEntryPrice;
     var displayInvestment = investment > 0 ? '₹' + investment.toFixed(0) : '-';
     var displayTargetPrice = targetPrice > 0 ? '₹' + targetPrice.toFixed(2) : '-';
-    var displayCurrentValue = currentValue > 0 ? '₹' + currentValue.toFixed(0) : '-';
+    var displayCurrentValue = (currentPrice * quantity) > 0 ? '₹' + (currentPrice * quantity).toFixed(0) : '-';
     var displayPnl = pnl !== 0 ? '₹' + pnl.toFixed(0) : '₹0';
     var displayChangePct = changePct !== 0 ? changePct.toFixed(2) + '%' : '0.00%';
+
+    console.log('Displaying CMP for', symbol, ':', currentPrice, 'Change:', changePct.toFixed(2) + '%');
 
     row.innerHTML = 
         '<td><strong>' + displaySymbol + '</strong></td>' +
@@ -290,10 +288,10 @@ ETFSignalsManager.prototype.createPositionRow = function(position) {
         '<td>' + displayCurrentValue + '</td>' +
         '<td class="profit">' + (targetPrice > entryPrice && entryPrice > 0 ? '+' + (((targetPrice - entryPrice) / entryPrice * 100)).toFixed(2) + '%' : '-') + '</td>' +
         '<td class="' + pnlClass + '">' + displayPnl + '</td>' +
-        '<td>' + (entryDate || '-') + '</td>' + // Entry Date (duplicate)
+        '<td>' + (entryDate || '-') + '</td>' +
         '<td>-</td>' + // Expected/Expiry
         '<td>-</td>' + // Price Range
-        '<td>' + changePct.toFixed(1) + '</td>' + // Performance Points (use percentage)
+        '<td>' + changePct.toFixed(1) + '</td>' + // Performance Points
         '<td>' + (investment > 0 ? investment.toFixed(0) : '-') + '</td>' + // IV
         '<td class="' + changeClass + '">' + displayChangePct + '</td>' + // Intraday Performance
         '<td><small>-</small></td>' + // Notes/Tags
@@ -335,6 +333,16 @@ ETFSignalsManager.prototype.updateVisibleCount = function() {
     var visibleSignalsCount = document.getElementById('visibleSignalsCount');
     if (visibleSignalsCount) {
         visibleSignalsCount.textContent = this.positions.length;
+    }
+
+    var showingCount = document.getElementById('showingCount');
+    if (showingCount) {
+        showingCount.textContent = this.positions.length;
+    }
+
+    var totalCount = document.getElementById('totalCount');
+    if (totalCount) {
+        totalCount.textContent = this.positions.length;
     }
 };
 
@@ -391,7 +399,34 @@ ETFSignalsManager.prototype.deletePosition = function(id) {
 };
 
 ETFSignalsManager.prototype.exportToCSV = function() {
-    console.log('Export to CSV');
+    if (!this.positions || this.positions.length === 0) {
+        alert('No data to export');
+        return;
+    }
+
+    var csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "ETF,Entry Price,Current Price,Quantity,Investment,P&L,Change %\n";
+
+    this.positions.forEach(function(position) {
+        var symbol = position.symbol || position.etf || '';
+        var entryPrice = position.entry_price || position.ep || 0;
+        var currentPrice = position.current_price || position.cmp || 0;
+        var quantity = position.quantity || position.qty || 0;
+        var investment = position.investment_amount || position.inv || 0;
+        var pnl = position.pnl || position.pl || 0;
+        var changePct = position.pnl_percentage || position.change_pct || 0;
+
+        var row = [symbol, entryPrice, currentPrice, quantity, investment, pnl, changePct].join(',');
+        csvContent += row + "\n";
+    });
+
+    var encodedUri = encodeURI(csvContent);
+    var link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "etf_signals.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 };
 
 ETFSignalsManager.prototype.exportToPDF = function() {

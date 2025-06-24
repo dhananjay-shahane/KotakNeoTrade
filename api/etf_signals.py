@@ -327,7 +327,14 @@ def get_etf_signals_data():
     """API endpoint to get ETF signals data from database (admin_trade_signals for user zhz3j)"""
     try:
         # Redirect to main signals endpoint
-        return get_admin_signals()
+        response = get_admin_signals()
+        
+        # Log the response for debugging
+        if hasattr(response, 'get_json'):
+            response_data = response.get_json()
+            logger.info(f"ETF Signals API: Returning {len(response_data.get('signals', []))} signals")
+        
+        return response
         
     except Exception as e:
         logger.error(f"Error in etf-signals-data endpoint: {e}")
