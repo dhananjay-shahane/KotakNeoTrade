@@ -936,8 +936,8 @@
         // Show notifications
         function showNotifications.prototype.showNotifications = function() {
             showToaster('Live Market Updates', 'Portfolio value updated successfully', 'success');
-            setTimeout(() => showToaster('Order Status', 'Order execution completed', 'info'), 500);
-            setTimeout(() => showToaster('Market Alert', 'High volatility detected in selected stocks', 'warning'), 1000);
+            setTimeout(function() { showToaster('Order Status', 'Order execution completed', 'info'); }, 500);
+            setTimeout(function() { showToaster('Market Alert', 'High volatility detected in selected stocks', 'warning'); }, 1000);
         }
 
         // Theme Toggle Functionality
