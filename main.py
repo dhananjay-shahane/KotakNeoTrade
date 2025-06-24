@@ -97,8 +97,12 @@ if __name__ == '__main__':
         print("🚀 Starting Flask application...")
 
         # Start real-time quotes scheduler
-        from realtime_quotes_manager import start_realtime_quotes_scheduler
-        start_realtime_quotes_scheduler()
+        try:
+            from realtime_quotes_manager import start_realtime_quotes_scheduler
+            start_realtime_quotes_scheduler()
+            print("📊 Real-time quotes scheduler started")
+        except ImportError:
+            print("⚠️  Real-time quotes manager not available, skipping")
 
         # Start Yahoo Finance scheduler
         from yahoo_scheduler import start_yahoo_scheduler
