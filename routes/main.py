@@ -469,14 +469,25 @@ def api_user_profile():
             from datetime import datetime
             login_time = datetime.now().strftime('%B %d, %Y at %I:%M:%S %p')
 
-        # Return user session info
+        # Return comprehensive user session info
         profile_data = {
-            'greeting_name': session.get('user_name', 'User'),
-            'ucc': session.get('user_id', 'N/A'),
+            'greeting_name': session.get('greeting_name', session.get('user_name', 'User')),
+            'ucc': session.get('ucc', 'N/A'),
+            'user_id': session.get('user_id', 'N/A'),
+            'client_code': session.get('client_code', 'N/A'),
+            'mobile_number': session.get('mobile_number', 'N/A'),
             'login_time': login_time,
+            'access_token': session.get('access_token', 'N/A')[:20] + '...' if session.get('access_token') else 'N/A',
             'session_token': session.get('session_token', 'N/A')[:20] + '...' if session.get('session_token') else 'N/A',
+            'sid': session.get('sid', 'N/A'),
+            'rid': session.get('rid', 'N/A'),
             'token_status': 'Valid' if session.get('authenticated') else 'Invalid',
-            'needs_reauth': not session.get('authenticated', False)
+            'authenticated': session.get('authenticated', False),
+            'needs_reauth': not session.get('authenticated', False),
+            'is_trial_account': session.get('is_trial_account', False),
+            'account_type': session.get('account_type', 'Regular'),
+            'branch_code': session.get('branch_code', 'N/A'),
+            'product_code': session.get('product_code', 'N/A')
         }
 
         return jsonify({

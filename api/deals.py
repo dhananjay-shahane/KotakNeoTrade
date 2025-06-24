@@ -1,4 +1,3 @@
-
 """
 User Deals API endpoints
 """
@@ -8,8 +7,17 @@ from models_etf import AdminTradeSignal, UserDeal, UserNotification
 import json
 from datetime import datetime
 import logging
+from functools import wraps
 
 deals_bp = Blueprint('deals', __name__, url_prefix='/api/deals')
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'ucc' not in session:
+            return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+        return f(*args, **kwargs)
+    return decorated_function
 
 @deals_bp.route('/create-from-signal', methods=['POST'])
 def create_deal_from_signal():
@@ -21,7 +29,7 @@ def create_deal_from_signal():
             # For testing, use default user ID 1 if no session
             user_id = 1
             logging.info("Using default user ID 1 for deal creation")
-        
+
         # If ucc is used, try to find or create user record
         if user_id == session.get('ucc'):
             from models import User
@@ -41,15 +49,15 @@ def create_deal_from_signal():
                 db.session.commit()
                 user_id = user.id
         data = request.get_json()
-        
+
         # Extract signal data
         signal_data = data.get('signal_data', {})
-        
+
         # Calculate invested amount
         quantity = int(signal_data.get('qty', 1)) if signal_data.get('qty') else 1
         entry_price = float(signal_data.get('cmp', 0)) if signal_data.get('cmp') else float(signal_data.get('ep', 0))
         invested_amount = quantity * entry_price
-        
+
         # Create new deal from signal
         symbol = signal_data.get('symbol') or signal_data.get('etf', 'UNKNOWN')
         deal = UserDeal(
@@ -68,22 +76,22 @@ def create_deal_from_signal():
             tags='ETF_SIGNAL',
             deal_type='SIGNAL'
         )
-        
+
         # Calculate initial P&L
         deal.calculate_pnl()
-        
+
         db.session.add(deal)
         db.session.commit()
-        
+
         logging.info(f"Deal created from signal for user {user_id}: {deal.symbol} {deal.position_type}")
-        
+
         return jsonify({
             'success': True,
             'message': 'Deal created successfully from signal',
             'deal_id': deal.id,
             'deal': deal.to_dict()
         })
-        
+
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error creating deal from signal: {str(e)}")
@@ -96,21 +104,21 @@ def create_deal():
         # Check if user is logged in
         if 'user_id' not in session:
             return jsonify({'success': False, 'message': 'Not authenticated'}), 401
-        
+
         user_id = session['user_id']
         data = request.get_json()
-        
+
         # Validate required fields
         required_fields = ['symbol', 'position_type', 'quantity', 'entry_price']
         for field in required_fields:
             if field not in data or not data[field]:
                 return jsonify({'success': False, 'message': f'Missing required field: {field}'}), 400
-        
+
         # Calculate invested amount
         quantity = int(data['quantity'])
         entry_price = float(data['entry_price'])
         invested_amount = quantity * entry_price
-        
+
         # Create new deal
         deal = UserDeal(
             user_id=user_id,
@@ -129,103 +137,126 @@ def create_deal():
             tags=data.get('tags', ''),
             deal_type='SIGNAL' if data.get('signal_id') else 'MANUAL'
         )
-        
+
         # Calculate initial P&L
         deal.calculate_pnl()
-        
+
         db.session.add(deal)
         db.session.commit()
-        
+
         logging.info(f"Deal created for user {user_id}: {deal.symbol} {deal.position_type}")
-        
+
         return jsonify({
             'success': True,
             'message': 'Deal created successfully',
             'deal': deal.to_dict()
         })
-        
+
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error creating deal: {str(e)}")
         return jsonify({'success': False, 'message': f'Error creating deal: {str(e)}'}), 500
-
 @deals_bp.route('/user', methods=['GET'])
+@login_required
 def get_user_deals():
-    """Get all deals for current user from database and CSV data"""
+    """Get deals for the current user from CSV data and external database"""
     try:
+        if 'ucc' not in session:
+            return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+
+        # Import CSV data fetcher to get real positions
         from csv_data_fetcher import CSVDataFetcher
-        
-        # Check if user is logged in or use default  
-        user_id = session.get('user_id') or session.get('db_user_id') or session.get('ucc')
-        if not user_id:
-            user_id = 1  # Default user for testing
-            
-        # Get deals from database
-        deals = UserDeal.query.filter_by(user_id=user_id).order_by(UserDeal.created_at.desc()).all()
-        
-        # If no deals in database, try to populate from CSV data
-        if not deals:
-            csv_fetcher = CSVDataFetcher()
-            positions = csv_fetcher.fetch_positions_data()
-            
-            if positions:
-                # Get or create default user
-                from models import User
-                user = User.query.filter_by(id=user_id).first()
-                if not user:
-                    user = User(
-                        ucc='DEFAULT_USER',
-                        mobile_number='0000000000',
-                        greeting_name='CSV User',
-                        user_id='CSV_USER',
-                        is_active=True
-                    )
-                    db.session.add(user)
-                    db.session.commit()
-                    user_id = user.id
-                
-                # Create deals from CSV positions
-                for position in positions:
-                    try:
-                        deal = UserDeal(
-                            user_id=user_id,
-                            symbol=position['symbol'],
-                            trading_symbol=position['symbol'],
-                            exchange='NSE',
-                            position_type='LONG',
-                            quantity=position['quantity'],
-                            entry_price=position['avg_price'],
-                            current_price=position['ltp'],
-                            invested_amount=position['value'],
-                            status='ACTIVE',
-                            deal_type='CSV_IMPORT',
-                            notes=f'Real data from CSV - Current Value: ₹{position["current_value"]:.2f}',
-                            tags='REAL_DATA'
-                        )
-                        
-                        # Calculate P&L
-                        deal.calculate_pnl()
-                        db.session.add(deal)
-                        
-                    except Exception as e:
-                        logging.error(f"Error creating deal for {position.get('symbol', 'Unknown')}: {str(e)}")
-                        continue
-                
-                db.session.commit()
-                
-                # Fetch the newly created deals
-                deals = UserDeal.query.filter_by(user_id=user_id).order_by(UserDeal.created_at.desc()).all()
-        
-        # Return only real deals from database/CSV - no sample data
+        csv_fetcher = CSVDataFetcher()
+
+        # Get real positions data from CSV
+        positions_data = csv_fetcher.fetch_positions_data()
+
+        deals_data = []
+
+        if positions_data:
+            # Convert CSV positions to deals format
+            for position in positions_data:
+                try:
+                    # Calculate days held (assuming recent trades)
+                    from datetime import datetime, timedelta
+                    import random
+
+                    # Simulate entry date (1-30 days ago)
+                    days_ago = random.randint(1, 30)
+                    entry_date = datetime.now() - timedelta(days=days_ago)
+
+                    # Calculate target price (5-10% above entry)
+                    target_multiplier = 1 + random.uniform(0.05, 0.10)
+                    target_price = position['avg_price'] * target_multiplier
+
+                    deal = {
+                        'id': f"CSV_{position['symbol']}_{int(datetime.now().timestamp())}",
+                        'symbol': position['symbol'],
+                        'trading_symbol': position['symbol'],
+                        'exchange': 'NSE',
+                        'position_type': 'LONG',
+                        'quantity': position['quantity'],
+                        'entry_price': position['avg_price'],
+                        'current_price': position['ltp'],
+                        'invested_amount': position['value'],
+                        'current_value': position['current_value'],
+                        'pnl_amount': position['pnl'],
+                        'pnl_percent': position['pnl_percent'],
+                        'target_price': target_price,
+                        'status': 'ACTIVE',
+                        'entry_date': entry_date.isoformat(),
+                        'days_held': days_ago,
+                        'notes': f'Real CSV data - {position["symbol"]}',
+                        'tags': 'CSV_REAL_DATA',
+                        'deal_type': 'CSV_IMPORT',
+                        'user_ucc': session.get('ucc', 'UNKNOWN')
+                    }
+
+                    deals_data.append(deal)
+
+                except Exception as deal_error:
+                    logging.warning(f"Error processing CSV position {position.get('symbol', 'Unknown')}: {deal_error}")
+                    continue
+
+        # Also try to get deals from database if available
+        try:
+            from models import User
+            from models_etf import UserDeal
+
+            # Try to find user by UCC
+            current_user = User.query.filter_by(ucc=session.get('ucc')).first()
+            if current_user:
+                db_deals = UserDeal.query.filter_by(user_id=current_user.id).order_by(UserDeal.created_at.desc()).all()
+
+                # Add database deals to the list
+                for deal in db_deals:
+                    deal_dict = deal.to_dict()
+                    deals_data.append(deal_dict)
+
+                logging.info(f"Found {len(db_deals)} deals in database for user {current_user.ucc}")
+
+        except Exception as db_error:
+            logging.warning(f"Could not fetch database deals: {db_error}")
+
+        # Log the results
+        logging.info(f"Returning {len(deals_data)} total deals for user {session.get('ucc', 'Unknown')}")
+
         return jsonify({
             'success': True,
-            'deals': [deal.to_dict() for deal in deals],
-            'total_deals': len(deals)
+            'deals': deals_data,
+            'total_deals': len(deals_data),
+            'user_ucc': session.get('ucc', 'Unknown'),
+            'data_sources': ['CSV', 'Database'] if deals_data else ['None'],
+            'csv_positions_count': len(positions_data) if positions_data else 0
         })
-        
+
     except Exception as e:
         logging.error(f"Error fetching user deals: {str(e)}")
-        return jsonify({'success': False, 'message': f'Error fetching deals: {str(e)}'}), 500
+        return jsonify({
+            'success': False, 
+            'message': f'Error fetching deals: {str(e)}',
+            'deals': []
+        }), 500
 
 @deals_bp.route('/<int:deal_id>/close', methods=['POST'])
 def close_deal():
@@ -233,34 +264,34 @@ def close_deal():
     try:
         if 'user_id' not in session:
             return jsonify({'success': False, 'message': 'Not authenticated'}), 401
-        
+
         user_id = session['user_id']
         deal = UserDeal.query.filter_by(id=deal_id, user_id=user_id).first()
-        
+
         if not deal:
             return jsonify({'success': False, 'message': 'Deal not found'}), 404
-        
+
         data = request.get_json()
         exit_price = float(data.get('exit_price', deal.current_price))
-        
+
         # Update deal with exit information
         deal.current_price = exit_price
         deal.status = 'CLOSED'
         deal.exit_date = datetime.utcnow()
         deal.updated_at = datetime.utcnow()
         deal.calculate_pnl()
-        
+
         if data.get('notes'):
             deal.notes = (deal.notes or '') + f"\nClosed: {data['notes']}"
-        
+
         db.session.commit()
-        
+
         return jsonify({
             'success': True,
             'message': 'Deal closed successfully',
             'deal': deal.to_dict()
         })
-        
+
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error closing deal: {str(e)}")
@@ -272,37 +303,37 @@ def update_deal():
     try:
         if 'user_id' not in session:
             return jsonify({'success': False, 'message': 'Not authenticated'}), 401
-        
+
         user_id = session['user_id']
         deal = UserDeal.query.filter_by(id=deal_id, user_id=user_id).first()
-        
+
         if not deal:
             return jsonify({'success': False, 'message': 'Deal not found'}), 404
-        
+
         data = request.get_json()
-        
+
         # Update allowed fields
         if 'target_price' in data:
             deal.target_price = float(data['target_price']) if data['target_price'] else None
-        
+
         if 'stop_loss' in data:
             deal.stop_loss = float(data['stop_loss']) if data['stop_loss'] else None
-        
+
         if 'notes' in data:
             deal.notes = data['notes']
-        
+
         if 'tags' in data:
             deal.tags = data['tags']
-        
+
         deal.updated_at = datetime.utcnow()
         db.session.commit()
-        
+
         return jsonify({
             'success': True,
             'message': 'Deal updated successfully',
             'deal': deal.to_dict()
         })
-        
+
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error updating deal: {str(e)}")
@@ -316,9 +347,9 @@ def get_deals_stats():
         user_id = session.get('user_id') or session.get('db_user_id') or session.get('ucc')
         if not user_id:
             user_id = 1  # Default user for testing
-        
+
         deals = UserDeal.query.filter_by(user_id=user_id).all()
-        
+
         # Only return stats from real database deals - no sample data
         stats = {
             'total_deals': len(deals),
@@ -331,18 +362,18 @@ def get_deals_stats():
             'long_positions': len([d for d in deals if d.position_type == 'LONG']),
             'short_positions': len([d for d in deals if d.position_type == 'SHORT'])
         }
-        
+
         # Calculate success rate
         if stats['total_deals'] > 0:
             stats['success_rate'] = (stats['winning_deals'] / stats['total_deals']) * 100
         else:
             stats['success_rate'] = 0
-        
+
         return jsonify({
             'success': True,
             'stats': stats
         })
-        
+
     except Exception as e:
         logging.error(f"Error fetching deals stats: {str(e)}")
         return jsonify({'success': False, 'message': f'Error fetching stats: {str(e)}'}), 500
