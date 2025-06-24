@@ -38,7 +38,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="C:\Users\Dhananjay\Downloads\KotakNeoTrader (3)\KotakNeoTrader\venv"
+VIRTUAL_ENV="C:\Users\Dhananjay\Documents\GitHub\KotakNeoTrade\venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"
