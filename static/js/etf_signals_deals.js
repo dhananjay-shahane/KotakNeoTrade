@@ -230,8 +230,8 @@ ETFSignalsManager.prototype.renderSignalsTable = function() {
                     break;
                 case 'actions':
                     cellContent = 
-                        '<button class="btn btn-sm btn-primary" onclick="addDeal(\'' + 
-                        (signal.symbol || signal.etf || '') + '\', ' + (signal.cmp || signal.ep || 0) + ')">' +
+                        '<button class="btn btn-sm btn-primary" onclick="addDealFromSignal(\'' + 
+                        (signal.symbol || signal.etf || '') + '\', ' + JSON.stringify(signal).replace(/'/g, "\\'") + ')">' +
                         'Add Deal</button>';
                     break;
                 default:
@@ -393,6 +393,64 @@ function setRefreshInterval(interval, text) {
             currentIntervalSpan.textContent = text;
         }
     }
+}
+
+// Add Deal functionality
+function addDealFromSignal(symbol, signalData) {
+    try {
+        var signal = typeof signalData === 'string' ? JSON.parse(signalData) : signalData;
+        
+        if (!confirm('Add deal for ' + symbol + ' at ₹' + (signal.cmp || signal.ep || 0).toFixed(2) + '?')) {
+            return;
+        }
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/deals/create-from-signal', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        showMessage('Deal created successfully for ' + symbol, 'success');
+                    } else {
+                        showMessage('Failed to create deal: ' + response.message, 'error');
+                    }
+                } else {
+                    showMessage('Failed to create deal. Please try again.', 'error');
+                }
+            }
+        };
+        
+        xhr.send(JSON.stringify({
+            signal_data: signal
+        }));
+        
+    } catch (error) {
+        console.error('Error adding deal:', error);
+        showMessage('Error adding deal. Please try again.', 'error');
+    }
+}
+
+function showMessage(message, type) {
+    var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    var alertHtml = '<div class="alert ' + alertClass + ' alert-dismissible fade show" role="alert">' +
+                    message +
+                    '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                    '</div>';
+    
+    var container = document.querySelector('.container-fluid') || document.body;
+    var alertDiv = document.createElement('div');
+    alertDiv.innerHTML = alertHtml;
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    setTimeout(function() {
+        var alert = document.querySelector('.alert');
+        if (alert) {
+            alert.remove();
+        }
+    }, 5000);
 }
 
 function exportSignals() {

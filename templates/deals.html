@@ -482,11 +482,32 @@ function DealsManager() {
 
     async loadDeals() {
         try {
-            // Generate sample deals data matching ETF signals format
-            this.deals = this.generateSampleDeals();
-            this.filteredDeals = this.deals.slice();
-            this.renderDealsTable();
-            this.updatePagination();
+            // Load deals from API
+            var xhr = new XMLHttpRequest();
+            var self = this;
+            xhr.open('GET', '/api/deals/user', true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.success) {
+                            self.deals = response.deals || [];
+                            self.filteredDeals = self.deals.slice();
+                            self.renderDealsTable();
+                            self.updatePagination();
+                        } else {
+                            self.showError('Failed to load deals: ' + response.message);
+                        }
+                    } else {
+                        console.log('No deals found, showing empty table');
+                        self.deals = [];
+                        self.filteredDeals = [];
+                        self.renderDealsTable();
+                        self.updatePagination();
+                    }
+                }
+            };
+            xhr.send();
 
         } catch (error) {
             console.error('Error loading deals:', error);
@@ -494,9 +515,8 @@ function DealsManager() {
         }
     }
 
-    generateSampleDeals() {
-        // First try to load deals from API
-        this.loadDealsFromAPI();
+    loadDealsFromAPI() {
+        // This method is called by loadDeals() above
 
         // Load user deals from localStorage as fallback
         var userDeals = JSON.parse(localStorage.getItem('userDeals') || '[]');
