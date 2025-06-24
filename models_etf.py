@@ -332,6 +332,44 @@ class UserDeal(db.Model):
     user = db.relationship('User', backref='deals')
     signal = db.relationship('AdminTradeSignal', backref='deals')
 
+    @property
+    def days_held(self):
+        """Calculate days held for the deal"""
+        if self.entry_date:
+            end_date = self.exit_date or datetime.utcnow()
+            return (end_date - self.entry_date).days
+        return 0
+
+    def calculate_pnl(self):
+        """Calculate P&L based on current price vs entry price"""
+        try:
+            if not self.current_price or not self.entry_price or not self.quantity:
+                self.pnl_amount = 0.0
+                self.pnl_percent = 0.0
+                return
+
+            # Calculate P&L based on position type
+            if self.position_type == 'LONG':
+                self.pnl_amount = (float(self.current_price) - float(self.entry_price)) * int(self.quantity)
+            else:  # SHORT
+                self.pnl_amount = (float(self.entry_price) - float(self.current_price)) * int(self.quantity)
+
+            # Calculate percentage
+            if self.invested_amount and float(self.invested_amount) > 0:
+                self.pnl_percent = (float(self.pnl_amount) / float(self.invested_amount)) * 100
+            else:
+                self.pnl_percent = 0.0
+
+            # Update current value
+            self.current_value = float(self.invested_amount or 0) + float(self.pnl_amount or 0)
+            self.last_price_update = datetime.utcnow()
+
+        except Exception as e:
+            logging.error(f"Error calculating P&L for deal {self.id}: {e}")
+            self.pnl_amount = 0.0
+            self.pnl_percent = 0.0
+            self.current_value = float(self.invested_amount or 0)
+
     def to_dict(self):
         """Convert to dictionary for API responses"""
         try:

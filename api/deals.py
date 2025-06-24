@@ -1,6 +1,4 @@
-"""
-User Deals API endpoints
-"""
+"""Fix calculate_pnl method calls in deals API and handle potential calculation errors."""
 from flask import Blueprint, request, jsonify, session
 from models import db, User
 from models_etf import AdminTradeSignal, UserDeal, UserNotification
@@ -77,8 +75,16 @@ def create_deal_from_signal():
             deal_type='SIGNAL'
         )
 
+        # Set current price to entry price initially
+        deal.current_price = entry_price
+
         # Calculate initial P&L
-        deal.calculate_pnl()
+        try:
+            deal.calculate_pnl()
+        except Exception as calc_error:
+            logging.warning(f"Could not calculate P&L for new deal: {calc_error}")
+            deal.pnl_amount = 0.0
+            deal.pnl_percent = 0.0
 
         db.session.add(deal)
         db.session.commit()
@@ -138,8 +144,16 @@ def create_deal():
             deal_type='SIGNAL' if data.get('signal_id') else 'MANUAL'
         )
 
+        # Set current price to entry price initially
+        deal.current_price = entry_price
+
         # Calculate initial P&L
-        deal.calculate_pnl()
+        try:
+            deal.calculate_pnl()
+        except Exception as calc_error:
+            logging.warning(f"Could not calculate P&L for new deal: {calc_error}")
+            deal.pnl_amount = 0.0
+            deal.pnl_percent = 0.0
 
         db.session.add(deal)
         db.session.commit()
@@ -163,7 +177,7 @@ def get_user_deals():
         # Check session for user authentication
         user_ucc = session.get('ucc')
         user_id = session.get('user_id') or session.get('db_user_id')
-        
+
         if not user_ucc and not user_id:
             logging.warning("No authenticated user found in session")
             return jsonify({
@@ -181,16 +195,16 @@ def get_user_deals():
             from models_etf import UserDeal
 
             current_user = None
-            
+
             # Try to find user by UCC first, then by user_id
             if user_ucc:
                 current_user = User.query.filter_by(ucc=user_ucc).first()
                 logging.info(f"Looking for user with UCC: {user_ucc}")
-            
+
             if not current_user and user_id:
                 current_user = User.query.get(user_id)
                 logging.info(f"Looking for user with ID: {user_id}")
-            
+
             if current_user:
                 logging.info(f"Found user: {current_user.id} with UCC: {current_user.ucc}")
                 db_deals = UserDeal.query.filter_by(user_id=current_user.id).order_by(UserDeal.created_at.desc()).all()
@@ -211,7 +225,7 @@ def get_user_deals():
                 total_users = User.query.count()
                 total_deals = UserDeal.query.count()
                 logging.info(f"Total users in database: {total_users}, Total deals: {total_deals}")
-                
+
                 # If no user found but we have session data, create a default user
                 if user_ucc:
                     try:
@@ -278,7 +292,14 @@ def close_deal():
         deal.status = 'CLOSED'
         deal.exit_date = datetime.utcnow()
         deal.updated_at = datetime.utcnow()
-        deal.calculate_pnl()
+
+        # Calculate initial P&L
+        try:
+            deal.calculate_pnl()
+        except Exception as calc_error:
+            logging.warning(f"Could not calculate P&L for deal: {calc_error}")
+            deal.pnl_amount = 0.0
+            deal.pnl_percent = 0.0
 
         if data.get('notes'):
             deal.notes = (deal.notes or '') + f"\nClosed: {data['notes']}"
