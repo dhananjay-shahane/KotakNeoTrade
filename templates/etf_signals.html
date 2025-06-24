@@ -103,9 +103,26 @@
             <span class="badge bg-primary ms-2" id="visibleSignalsCount">0</span>
         </h5>
         <div class="d-flex gap-2 align-items-center">
-            <button class="btn btn-sm btn-outline-light" onclick="exportSignals()">
-                <i class="fas fa-download me-1"></i>Export
-            </button>
+            <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="autoRefreshToggle" checked>
+                        <label class="form-check-label text-light" for="autoRefreshToggle">
+                            Auto Refresh <span id="currentInterval">30s</span>
+                        </label>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-clock me-1"></i><span id="refreshIntervalDropdown">30s</span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(30000, '30s')">30 seconds</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(60000, '1m')">1 minute</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(300000, '5m')">5 minutes</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(0, 'Off')">Disable</a></li>
+                        </ul>
+                    </div>
+                    <button class="btn btn-sm btn-outline-light" onclick="exportSignals()">
+                        <i class="fas fa-download me-1"></i>Export
+                    </button>
         </div>
     </div>
 
