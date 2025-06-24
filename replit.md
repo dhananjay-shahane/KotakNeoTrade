@@ -104,13 +104,14 @@ The application follows a modern Flask architecture with clear separation of con
 
 ## Recent Changes
 
-- **June 24, 2025** - Successfully resolved ETF signals API issues and completed migration
-  - Fixed ETF signals page to use working `/api/etf-signals-data` endpoint instead of broken `/etf/signals`
-  - API now returns 3 active ETF signals with real P&L calculations: NIFTYBEES (+1.32%), GOLDBEES (+2.46%), BANKBEES (-1.21%)
-  - Fixed remaining JavaScript ES6 compatibility issues for maximum browser support
-  - ETF signals page now displays authentic trading data from admin_trade_signals database table
+- **June 24, 2025** - Successfully resolved all ETF signals API issues and completed migration
+  - Fixed both JavaScript (etf_signals.js) and HTML template API calls to use working `/api/etf-signals-data`
+  - Removed all references to broken `/etf/signals` endpoint that was causing 404 errors
+  - API now returns 3 active ETF signals with authentic P&L calculations from database
+  - ETF signals page displays real trading data: NIFTYBEES (+1.32%), GOLDBEES (+2.46%), BANKBEES (-1.21%)
   - Portfolio summary shows total investment ₹61,722.50 with current value ₹61,985.00 (+0.43% return)
-  - Application running successfully on port 5000 with all core functionality operational
+  - All JavaScript ES6 compatibility issues resolved for maximum browser support
+  - Application running successfully on port 5000 with all APIs functional
 
 ## Recent Changes
 

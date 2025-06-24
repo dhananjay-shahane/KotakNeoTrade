@@ -457,7 +457,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Function to fetch signals data
     function fetchSignals() {
-        fetch('/etf/signals')
+        fetch('/api/etf-signals-data')
             .then(response => response.json())
             .then(function(data) {
                 signalsData = data.signals || [];

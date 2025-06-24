@@ -118,7 +118,7 @@ ETFSignalsManager.prototype.loadPositions = function() {
     this.showLoading(true);
 
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', '/etf/signals', true);
+    xhr.open('GET', '/api/etf-signals-data', true);
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
             self.showLoading(false);
