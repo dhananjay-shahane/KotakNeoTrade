@@ -333,41 +333,47 @@ class UserDeal(db.Model):
     signal = db.relationship('AdminTradeSignal', backref='deals')
 
     def to_dict(self):
-        """Convert UserDeal to dictionary for API responses"""
-        from datetime import datetime
-
-        # Calculate days held
-        days_held = 0
-        if self.created_at:
-            days_held = (datetime.utcnow() - self.created_at).days
-
-        return {
-            'id': self.id,
-            'user_id': self.user_id,
-            'signal_id': self.signal_id,
-            'symbol': self.symbol,
-            'trading_symbol': self.trading_symbol,
-            'exchange': self.exchange,
-            'position_type': self.position_type,
-            'quantity': self.quantity,
-            'entry_price': float(self.entry_price) if self.entry_price else 0.0,
-            'current_price': float(self.current_price) if self.current_price else float(self.entry_price) if self.entry_price else 0.0,
-            'target_price': float(self.target_price) if self.target_price else None,
-            'stop_loss': float(self.stop_loss) if self.stop_loss else None,
-            'invested_amount': float(self.invested_amount) if self.invested_amount else 0.0,
-            'current_value': float(self.current_value) if self.current_value else 0.0,
-            'pnl_amount': float(self.pnl_amount) if self.pnl_amount else 0.0,
-            'pnl_percent': float(self.pnl_percent) if self.pnl_percent else 0.0,
-            'status': self.status,
-            'deal_type': self.deal_type,
-            'notes': self.notes,
-            'tags': self.tags,
-            'entry_date': self.created_at.isoformat() if self.created_at else None,
-            'exit_date': self.exit_date.isoformat() if self.exit_date else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'days_held': days_held
-        }
+        """Convert to dictionary for API responses"""
+        try:
+            return {
+                'id': self.id,
+                'symbol': self.symbol or '',
+                'trading_symbol': self.trading_symbol or '',
+                'exchange': self.exchange or 'NSE',
+                'position_type': self.position_type or 'LONG',
+                'quantity': int(self.quantity) if self.quantity else 0,
+                'entry_price': float(self.entry_price) if self.entry_price else 0.0,
+                'current_price': float(self.current_price) if self.current_price else float(self.entry_price) if self.entry_price else 0.0,
+                'target_price': float(self.target_price) if self.target_price else None,
+                'stop_loss': float(self.stop_loss) if self.stop_loss else None,
+                'invested_amount': float(self.invested_amount) if self.invested_amount else 0.0,
+                'pnl_amount': float(self.pnl_amount) if self.pnl_amount else 0.0,
+                'pnl_percent': float(self.pnl_percent) if self.pnl_percent else 0.0,
+                'status': self.status or 'ACTIVE',
+                'entry_date': self.entry_date.isoformat() if self.entry_date else None,
+                'exit_date': self.exit_date.isoformat() if self.exit_date else None,
+                'notes': self.notes or '',
+                'tags': self.tags or '',
+                'deal_type': self.deal_type or 'MANUAL',
+                'days_held': self.days_held if self.days_held is not None else 0,
+                'created_at': self.created_at.isoformat() if self.created_at else None,
+                'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            }
+        except Exception as e:
+            logging.error(f"Error converting UserDeal {self.id} to dict: {e}")
+            # Return minimal safe dictionary
+            return {
+                'id': getattr(self, 'id', 0),
+                'symbol': getattr(self, 'symbol', 'UNKNOWN'),
+                'position_type': getattr(self, 'position_type', 'LONG'),
+                'quantity': 0,
+                'entry_price': 0.0,
+                'current_price': 0.0,
+                'pnl_amount': 0.0,
+                'pnl_percent': 0.0,
+                'status': 'ACTIVE',
+                'invested_amount': 0.0
+            }
 
     def __repr__(self):
         return f'<UserDeal {self.id}: {self.symbol} {self.position_type}>'

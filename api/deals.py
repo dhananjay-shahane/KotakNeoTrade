@@ -157,12 +157,21 @@ def create_deal():
         logging.error(f"Error creating deal: {str(e)}")
         return jsonify({'success': False, 'message': f'Error creating deal: {str(e)}'}), 500
 @deals_bp.route('/user', methods=['GET'])
-@login_required
 def get_user_deals():
     """Get deals for the current user from external database only"""
     try:
-        if 'ucc' not in session:
-            return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+        # Check session for user authentication
+        user_ucc = session.get('ucc')
+        user_id = session.get('user_id') or session.get('db_user_id')
+        
+        if not user_ucc and not user_id:
+            logging.warning("No authenticated user found in session")
+            return jsonify({
+                'success': True,
+                'deals': [],
+                'total_deals': 0,
+                'message': 'No authenticated user found'
+            })
 
         deals_data = []
 
@@ -171,27 +180,55 @@ def get_user_deals():
             from models import User
             from models_etf import UserDeal
 
-            # Try to find user by UCC
-            user_ucc = session.get('ucc')
-            logging.info(f"Looking for user with UCC: {user_ucc}")
+            current_user = None
             
-            current_user = User.query.filter_by(ucc=user_ucc).first()
+            # Try to find user by UCC first, then by user_id
+            if user_ucc:
+                current_user = User.query.filter_by(ucc=user_ucc).first()
+                logging.info(f"Looking for user with UCC: {user_ucc}")
+            
+            if not current_user and user_id:
+                current_user = User.query.get(user_id)
+                logging.info(f"Looking for user with ID: {user_id}")
+            
             if current_user:
                 logging.info(f"Found user: {current_user.id} with UCC: {current_user.ucc}")
                 db_deals = UserDeal.query.filter_by(user_id=current_user.id).order_by(UserDeal.created_at.desc()).all()
 
                 # Convert database deals to response format
                 for deal in db_deals:
-                    deal_dict = deal.to_dict()
-                    deals_data.append(deal_dict)
+                    try:
+                        deal_dict = deal.to_dict()
+                        deals_data.append(deal_dict)
+                    except Exception as deal_error:
+                        logging.error(f"Error converting deal {deal.id} to dict: {deal_error}")
+                        continue
 
                 logging.info(f"Found {len(db_deals)} deals in database for user {current_user.ucc}")
             else:
-                logging.warning(f"No user found for UCC: {user_ucc}")
+                logging.warning(f"No user found for UCC: {user_ucc} or ID: {user_id}")
                 # Check if there are any users in the database
                 total_users = User.query.count()
                 total_deals = UserDeal.query.count()
                 logging.info(f"Total users in database: {total_users}, Total deals: {total_deals}")
+                
+                # If no user found but we have session data, create a default user
+                if user_ucc:
+                    try:
+                        new_user = User(
+                            ucc=user_ucc,
+                            mobile_number=session.get('mobile_number', ''),
+                            greeting_name=session.get('greeting_name', str(user_ucc)),
+                            user_id=str(user_ucc),
+                            is_active=True
+                        )
+                        db.session.add(new_user)
+                        db.session.commit()
+                        current_user = new_user
+                        logging.info(f"Created new user with UCC: {user_ucc}")
+                    except Exception as create_error:
+                        logging.error(f"Error creating new user: {create_error}")
+                        db.session.rollback()
 
         except Exception as db_error:
             logging.error(f"Database error fetching deals: {db_error}")
@@ -202,13 +239,13 @@ def get_user_deals():
             }), 500
 
         # Log the results
-        logging.info(f"Returning {len(deals_data)} deals from database for user {session.get('ucc', 'Unknown')}")
+        logging.info(f"Returning {len(deals_data)} deals from database for user {user_ucc or user_id}")
 
         return jsonify({
             'success': True,
             'deals': deals_data,
             'total_deals': len(deals_data),
-            'user_ucc': session.get('ucc', 'Unknown'),
+            'user_ucc': user_ucc or 'Unknown',
             'data_sources': ['Database'] if deals_data else ['None']
         })
 
