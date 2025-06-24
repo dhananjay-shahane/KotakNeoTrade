@@ -3,8 +3,10 @@ services:
     name: kotak-neo-trading
     env: python
     plan: starter
-    buildCommand: pip install -r render_requirements.txt
-    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 120 main_render:app
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r render_requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 120 --max-requests 1000 --preload main_render:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.10
@@ -18,10 +20,19 @@ services:
         value: false
       - key: ENVIRONMENT
         value: production
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_DEBUG
+        value: False
     healthCheckPath: /health
+    disk:
+      name: kotak-trading-disk
+      mountPath: /opt/render/project/src/flask_session
+      sizeGB: 1
 
 databases:
   - name: kotak-trading-db
     databaseName: kotak_trading_db
     user: kotak_trading_user
     plan: starter
+    region: oregon
