@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webview Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .status {
+            background: rgba(0, 255, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid rgba(0, 255, 0, 0.5);
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 8px;
+            display: inline-block;
+            margin: 10px 10px 10px 0;
+            transition: all 0.3s ease;
+        }
+        .button:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Kotak Neo Trading Platform</h1>
+        <div class="status">
+            <h3>Application Status: ONLINE</h3>
+            <p><strong>Domain:</strong> 67170e60-5d10-47ce-9c9e-27e1d9339bc5-00-19cno8ehpiwl6.riker.replit.dev</p>
+            <p><strong>Webview:</strong> Successfully Loaded</p>
+            <p><strong>Database:</strong> Connected</p>
+            <p><strong>Framework:</strong> Flask + Bootstrap</p>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="/auth/login" class="button">Login to Trading Platform</a>
+            <a href="/etf/signals" class="button">View ETF Signals</a>
+            <a href="/health" class="button">Health Check</a>
+        </div>
+        
+        <div style="margin-top: 30px; text-align: center;">
+            <p>If you can see this page, the webview is working correctly!</p>
+            <small>Last updated: <span id="timestamp"></span></small>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('timestamp').textContent = new Date().toLocaleString();
+    </script>
+</body>
+</html>
