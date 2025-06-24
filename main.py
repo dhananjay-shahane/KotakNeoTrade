@@ -116,6 +116,11 @@ if __name__ == '__main__':
 
         # Get port from environment or default to 5000
         port = int(os.environ.get('PORT', 5000))
+        
+        print(f"🌐 Application will be available at:")
+        print(f"   Local: http://0.0.0.0:{port}")
+        if os.environ.get('REPLIT_DOMAINS'):
+            print(f"   External: https://{os.environ.get('REPLIT_DOMAINS')}")
 
         # Run with proper Replit configuration
         app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
