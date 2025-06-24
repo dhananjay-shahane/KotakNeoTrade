@@ -516,7 +516,7 @@ function DealsManager() {
     }
 
     loadDealsFromAPI() {
-        // This method is called by loadDeals() above
+        // This method loads deals from the database API
 
         // Load user deals from localStorage as fallback
         var userDeals = JSON.parse(localStorage.getItem('userDeals') || '[]');

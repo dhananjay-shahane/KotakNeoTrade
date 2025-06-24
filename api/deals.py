@@ -160,19 +160,42 @@ def get_user_deals():
             
         deals = UserDeal.query.filter_by(user_id=user_id).order_by(UserDeal.created_at.desc()).all()
         
-        # Update current prices and P&L for active deals
+        # Convert deals to dict format with proper type handling
+        deals_data = []
         for deal in deals:
-            if deal.status == 'ACTIVE':
-                # Calculate P&L with proper type conversion
-                if deal.entry_price and deal.current_price and deal.quantity:
-                    entry_value = float(deal.entry_price) * int(deal.quantity)
-                    current_value = float(deal.current_price) * int(deal.quantity)
-                    deal.pnl_amount = current_value - entry_value
-                    
-                    if entry_value > 0:
-                        deal.pnl_percentage = (deal.pnl_amount / entry_value) * 100
-                    else:
-                        deal.pnl_percentage = 0
+            deal_dict = {
+                'id': deal.id,
+                'symbol': deal.symbol,
+                'trading_symbol': deal.trading_symbol,
+                'exchange': deal.exchange,
+                'position_type': deal.position_type,
+                'quantity': deal.quantity,
+                'entry_price': float(deal.entry_price) if deal.entry_price else 0.0,
+                'current_price': float(deal.current_price) if deal.current_price else 0.0,
+                'target_price': float(deal.target_price) if deal.target_price else None,
+                'stop_loss': float(deal.stop_loss) if deal.stop_loss else None,
+                'invested_amount': float(deal.invested_amount) if deal.invested_amount else 0.0,
+                'pnl_amount': 0.0,
+                'pnl_percentage': 0.0,
+                'status': deal.status,
+                'deal_type': deal.deal_type,
+                'notes': deal.notes,
+                'tags': deal.tags,
+                'created_at': deal.created_at.isoformat() if deal.created_at else None,
+                'entry_date': deal.entry_date.isoformat() if deal.entry_date else None,
+                'updated_at': deal.updated_at.isoformat() if deal.updated_at else None
+            }
+            
+            # Calculate P&L with safe type conversion
+            if deal_dict['entry_price'] and deal_dict['current_price'] and deal_dict['quantity']:
+                entry_value = deal_dict['entry_price'] * deal_dict['quantity']
+                current_value = deal_dict['current_price'] * deal_dict['quantity']
+                deal_dict['pnl_amount'] = current_value - entry_value
+                
+                if entry_value > 0:
+                    deal_dict['pnl_percentage'] = (deal_dict['pnl_amount'] / entry_value) * 100
+            
+            deals_data.append(deal_dict)
         
         db.session.commit()
         
