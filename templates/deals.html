@@ -530,34 +530,64 @@ function DealsManager() {
                         if (response.success && response.deals) {
                             // Map API deals to the expected format
                             var uniqueDeals = response.deals.map(function(deal) {
-                        return {
-                            id: deal.id,
-                            symbol: deal.symbol,
-                            pos: deal.position_type === 'LONG' ? 1 : -1,
-                            qty: deal.quantity,
-                            ep: parseFloat(deal.entry_price || 0),
-                            cmp: parseFloat(deal.current_price || deal.entry_price || 0),
-                            pl: parseFloat(deal.pnl_amount || 0),
-                            change_pct: parseFloat(deal.pnl_percent || 0),
-                            inv: parseFloat(deal.invested_amount || 0),
-                            tp: parseFloat(deal.target_price || 0),
-                            tva: parseFloat(deal.target_price || 0) * deal.quantity,
-                            tpr: parseFloat(deal.target_price || 0) * 0.05,
-                            date: deal.entry_date ? deal.entry_date.split('T')[0] : new Date().toISOString().split('T')[0],
-                            status: deal.status || 'ACTIVE',
-                            thirty: '0%',
-                            dh: deal.days_held || 0,
-                            ed: deal.entry_date ? deal.entry_date.split('T')[0] : new Date().toISOString().split('T')[0],
-                            pr: '0%',
-                            pp: '★★',
-                            iv: 'Medium',
-                            ip: deal.pnl_percent ? (deal.pnl_percent > 0 ? '+' : '') + deal.pnl_percent.toFixed(1) + '%' : '0%',
-                            nt: deal.notes || 'Real data from database',
-                            qt: new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
-                            seven: '0%',
-                            change2: parseFloat(deal.pnl_percent || 0)
-                        };
-                    });
+                                return {
+                                    id: deal.id,
+                                    symbol: deal.symbol,
+                                    pos: deal.position_type === 'LONG' ? 1 : -1,
+                                    qty: deal.quantity,
+                                    ep: parseFloat(deal.entry_price || 0),
+                                    cmp: parseFloat(deal.current_price || deal.entry_price || 0),
+                                    pl: parseFloat(deal.pnl_amount || 0),
+                                    change_pct: parseFloat(deal.pnl_percent || 0),
+                                    inv: parseFloat(deal.invested_amount || 0),
+                                    tp: parseFloat(deal.target_price || 0),
+                                    tva: parseFloat(deal.target_price || 0) * deal.quantity,
+                                    tpr: parseFloat(deal.target_price || 0) * 0.05,
+                                    date: deal.entry_date ? deal.entry_date.split('T')[0] : new Date().toISOString().split('T')[0],
+                                    status: deal.status || 'ACTIVE',
+                                    thirty: '0%',
+                                    dh: deal.days_held || 0,
+                                    ed: deal.entry_date ? deal.entry_date.split('T')[0] : new Date().toISOString().split('T')[0],
+                                    pr: '0%',
+                                    pp: '★★',
+                                    iv: 'Medium',
+                                    ip: deal.pnl_percent ? (deal.pnl_percent > 0 ? '+' : '') + deal.pnl_percent.toFixed(1) + '%' : '0%',
+                                    nt: deal.notes || 'Real data from database',
+                                    qt: new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
+                                    seven: '0%',
+                                    change2: parseFloat(deal.pnl_percent || 0)
+                                };
+                            });
+
+                            self.deals = uniqueDeals;
+                            self.filteredDeals = self.deals.slice();
+                            self.renderDealsTable();
+                            self.updatePagination();
+                        } else {
+                            console.log('No deals found in API response');
+                            self.deals = [];
+                            self.filteredDeals = [];
+                            self.renderDealsTable();
+                            self.updatePagination();
+                        }
+                    } catch (e) {
+                        console.error('Error parsing API response:', e);
+                        self.deals = [];
+                        self.filteredDeals = [];
+                        self.renderDealsTable();
+                        self.updatePagination();
+                    }
+                } else {
+                    console.log('API request failed, showing empty table');
+                    self.deals = [];
+                    self.filteredDeals = [];
+                    self.renderDealsTable();
+                    self.updatePagination();
+                }
+            }
+        };
+        xhr.send();
+    }
 
     renderDealsTable() {
         var tbody = document.getElementById('dealsTableBody');
@@ -683,7 +713,7 @@ function DealsManager() {
                     case 'actions':
                         cellContent = `
                             <div class="dropdown">
-                                <button class="btn btn-xs btn-outline-secondary dropdown-toggle"type="button"` data-bs-toggle="dropdown" aria-expanded="false">
+                                <button class="btn btn-xs btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="fas fa-ellipsis-v"></i>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-dark">
@@ -1022,15 +1052,7 @@ function submitTrade() {
         alert(type + ' order for ' + quantity + ' ' + symbol + ' at ₹' + price + ' has been placed successfully');
     }
 
-        // Check if deal with same symbol already exists in localStorage to avoid duplicates
-                    var userDeals = JSON.parse(localStorage.getItem('userDeals') || '[]');
-                    var existingDealIndex = -1;
-                    for (var i = 0; i < userDeals.length; i++) {
-                        if (userDeals[i].symbol === symbol && Math.abs(parseFloat(userDeals[i].ep) - parseFloat(price)) < 0.01) {
-                            existingDealIndex = i;
-                            break;
-                        }
-                    }
+        
 
     // Refresh deals table
     setTimeout(function() {

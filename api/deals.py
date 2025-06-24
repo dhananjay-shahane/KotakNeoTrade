@@ -159,66 +159,14 @@ def create_deal():
 @deals_bp.route('/user', methods=['GET'])
 @login_required
 def get_user_deals():
-    """Get deals for the current user from CSV data and external database"""
+    """Get deals for the current user from external database (user_deals table) and CSV data"""
     try:
         if 'ucc' not in session:
             return jsonify({'success': False, 'message': 'Not authenticated'}), 401
 
-        # Import CSV data fetcher to get real positions
-        from csv_data_fetcher import CSVDataFetcher
-        csv_fetcher = CSVDataFetcher()
-
-        # Get real positions data from CSV
-        positions_data = csv_fetcher.fetch_positions_data()
-
         deals_data = []
 
-        if positions_data:
-            # Convert CSV positions to deals format
-            for position in positions_data:
-                try:
-                    # Calculate days held (assuming recent trades)
-                    from datetime import datetime, timedelta
-                    import random
-
-                    # Simulate entry date (1-30 days ago)
-                    days_ago = random.randint(1, 30)
-                    entry_date = datetime.now() - timedelta(days=days_ago)
-
-                    # Calculate target price (5-10% above entry)
-                    target_multiplier = 1 + random.uniform(0.05, 0.10)
-                    target_price = position['avg_price'] * target_multiplier
-
-                    deal = {
-                        'id': f"CSV_{position['symbol']}_{int(datetime.now().timestamp())}",
-                        'symbol': position['symbol'],
-                        'trading_symbol': position['symbol'],
-                        'exchange': 'NSE',
-                        'position_type': 'LONG',
-                        'quantity': position['quantity'],
-                        'entry_price': position['avg_price'],
-                        'current_price': position['ltp'],
-                        'invested_amount': position['value'],
-                        'current_value': position['current_value'],
-                        'pnl_amount': position['pnl'],
-                        'pnl_percent': position['pnl_percent'],
-                        'target_price': target_price,
-                        'status': 'ACTIVE',
-                        'entry_date': entry_date.isoformat(),
-                        'days_held': days_ago,
-                        'notes': f'Real CSV data - {position["symbol"]}',
-                        'tags': 'CSV_REAL_DATA',
-                        'deal_type': 'CSV_IMPORT',
-                        'user_ucc': session.get('ucc', 'UNKNOWN')
-                    }
-
-                    deals_data.append(deal)
-
-                except Exception as deal_error:
-                    logging.warning(f"Error processing CSV position {position.get('symbol', 'Unknown')}: {deal_error}")
-                    continue
-
-        # Also try to get deals from database if available
+        # PRIORITY 1: Get deals from database (user_deals table)
         try:
             from models import User
             from models_etf import UserDeal
@@ -226,17 +174,86 @@ def get_user_deals():
             # Try to find user by UCC
             current_user = User.query.filter_by(ucc=session.get('ucc')).first()
             if current_user:
+                # Get all user deals from database
                 db_deals = UserDeal.query.filter_by(user_id=current_user.id).order_by(UserDeal.created_at.desc()).all()
 
-                # Add database deals to the list
+                # Add database deals to the list (these take priority)
                 for deal in db_deals:
                     deal_dict = deal.to_dict()
+                    # Ensure all required fields are present
+                    deal_dict['user_ucc'] = current_user.ucc
+                    deal_dict['data_source'] = 'DATABASE'
                     deals_data.append(deal_dict)
 
                 logging.info(f"Found {len(db_deals)} deals in database for user {current_user.ucc}")
 
         except Exception as db_error:
             logging.warning(f"Could not fetch database deals: {db_error}")
+
+        # PRIORITY 2: If no database deals, fallback to CSV data
+        if not deals_data:
+            try:
+                from csv_data_fetcher import CSVDataFetcher
+                csv_fetcher = CSVDataFetcher()
+
+                # Get real positions data from CSV
+                positions_data = csv_fetcher.fetch_positions_data()
+
+                if positions_data:
+                    # Convert CSV positions to deals format
+                    for position in positions_data:
+                        try:
+                            # Calculate days held (assuming recent trades)
+                            from datetime import datetime, timedelta
+                            import random
+
+                            # Simulate entry date (1-30 days ago)
+                            days_ago = random.randint(1, 30)
+                            entry_date = datetime.now() - timedelta(days=days_ago)
+
+                            # Calculate target price (5-10% above entry)
+                            target_multiplier = 1 + random.uniform(0.05, 0.10)
+                            target_price = position['avg_price'] * target_multiplier
+
+                            deal = {
+                                'id': f"CSV_{position['symbol']}_{int(datetime.now().timestamp())}",
+                                'symbol': position['symbol'],
+                                'trading_symbol': position['symbol'],
+                                'exchange': 'NSE',
+                                'position_type': 'LONG',
+                                'quantity': position['quantity'],
+                                'entry_price': position['avg_price'],
+                                'current_price': position['ltp'],
+                                'invested_amount': position['value'],
+                                'current_value': position['current_value'],
+                                'pnl_amount': position['pnl'],
+                                'pnl_percent': position['pnl_percent'],
+                                'target_price': target_price,
+                                'status': 'ACTIVE',
+                                'entry_date': entry_date.isoformat(),
+                                'days_held': days_ago,
+                                'notes': f'Real CSV data - {position["symbol"]}',
+                                'tags': 'CSV_REAL_DATA',
+                                'deal_type': 'CSV_IMPORT',
+                                'user_ucc': session.get('ucc', 'UNKNOWN'),
+                                'data_source': 'CSV'
+                            }
+
+                            deals_data.append(deal)
+
+                        except Exception as deal_error:
+                            logging.warning(f"Error processing CSV position {position.get('symbol', 'Unknown')}: {deal_error}")
+                            continue
+
+                    logging.info(f"Found {len(positions_data)} CSV positions converted to deals")
+
+            except Exception as csv_error:
+                logging.warning(f"Could not fetch CSV data: {csv_error}")
+
+        # Calculate summary statistics
+        total_invested = sum(float(deal.get('invested_amount', 0)) for deal in deals_data)
+        total_pnl = sum(float(deal.get('pnl_amount', 0)) for deal in deals_data)
+        active_deals = len([d for d in deals_data if d.get('status') == 'ACTIVE'])
 
         # Log the results
         logging.info(f"Returning {len(deals_data)} total deals for user {session.get('ucc', 'Unknown')}")
@@ -245,9 +262,12 @@ def get_user_deals():
             'success': True,
             'deals': deals_data,
             'total_deals': len(deals_data),
+            'active_deals': active_deals,
+            'total_invested': total_invested,
+            'total_pnl': total_pnl,
             'user_ucc': session.get('ucc', 'Unknown'),
-            'data_sources': ['CSV', 'Database'] if deals_data else ['None'],
-            'csv_positions_count': len(positions_data) if positions_data else 0
+            'data_sources': list(set([deal.get('data_source', 'UNKNOWN') for deal in deals_data])),
+            'message': f'Loaded {len(deals_data)} deals from external database and CSV data'
         })
 
     except Exception as e:
