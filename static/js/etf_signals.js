@@ -187,15 +187,18 @@ ETFSignalsManager.prototype.renderPositionsTable = function() {
 ETFSignalsManager.prototype.createPositionRow = function(position) {
     var row = document.createElement('tr');
 
-    // Ensure we have valid data with fallbacks
-    var symbol = position.symbol || position.etf || 'N/A';
-    var entryPrice = parseFloat(position.ep || position.entry_price || 0);
-    var currentPrice = parseFloat(position.cmp || position.current_price || 0);
-    var quantity = parseInt(position.qty || position.quantity || 0);
-    var pnl = parseFloat(position.pl || position.pnl_amount || 0);
-    var changePct = parseFloat(position.change_pct || position.change_percent || 0);
-    var investment = parseFloat(position.inv || position.invested_amount || (entryPrice * quantity));
-    var targetPrice = parseFloat(position.tp || position.target_price || 0);
+    // Ensure we have valid data with fallbacks - map API fields correctly
+    var symbol = position.symbol || 'N/A';
+    var entryPrice = parseFloat(position.entry_price || 0);
+    var currentPrice = parseFloat(position.current_price || 0);
+    var quantity = parseInt(position.quantity || 0);
+    var pnl = parseFloat(position.pnl || 0);
+    var changePct = parseFloat(position.pnl_percentage || 0);
+    var investment = parseFloat(position.investment_amount || (entryPrice * quantity));
+    var targetPrice = parseFloat(position.target_price || entryPrice * 1.1); // Default 10% target
+    var createdAt = position.created_at || '';
+    var positionType = position.position_type || 'LONG';
+    var status = position.status || 'ACTIVE';
 
     // Always show current price directly, even if same as entry price
     if (!currentPrice || currentPrice <= 0) {
@@ -215,32 +218,57 @@ ETFSignalsManager.prototype.createPositionRow = function(position) {
     var pnlClass = pnl >= 0 ? 'profit' : 'loss';
     var changeClass = changePct >= 0 ? 'profit' : 'loss';
 
+    // Create formatted date from created_at
+    var entryDate = '';
+    if (createdAt) {
+        try {
+            var date = new Date(createdAt);
+            entryDate = date.toLocaleDateString('en-GB');
+        } catch (e) {
+            entryDate = '';
+        }
+    }
+
+    // Calculate days held
+    var daysHeld = '';
+    if (createdAt) {
+        try {
+            var entryDateObj = new Date(createdAt);
+            var today = new Date();
+            var diffTime = Math.abs(today - entryDateObj);
+            var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            daysHeld = diffDays.toString();
+        } catch (e) {
+            daysHeld = '0';
+        }
+    }
+
     row.innerHTML = 
         '<td><strong>' + symbol + '</strong></td>' +
-        '<td>' + (position.thirty || '0%') + '</td>' +
-        '<td>' + (position.dh || '0') + '</td>' +
-        '<td>' + (position.date || '') + '</td>' +
-        '<td><span class="badge ' + (position.pos == 1 ? 'bg-success' : 'bg-secondary') + '">' + (position.pos == 1 ? '1 (OPEN)' : '0 (CLOSED)') + '</span></td>' +
+        '<td>N/A</td>' + // 30 day performance
+        '<td>' + daysHeld + '</td>' +
+        '<td>' + entryDate + '</td>' +
+        '<td><span class="badge ' + (status === 'ACTIVE' ? 'bg-success' : 'bg-secondary') + '">' + (status === 'ACTIVE' ? 'OPEN' : 'CLOSED') + '</span></td>' +
         '<td>' + quantity + '</td>' +
         '<td>₹' + entryPrice.toFixed(2) + '</td>' +
         '<td class="' + changeClass + '">' + 
         (currentPrice > 0 ? '₹' + currentPrice.toFixed(2) : 
-         '<span class="text-muted">-</span>') + '</td>' +
+         '<span class="text-muted">₹' + entryPrice.toFixed(2) + '</span>') + '</td>' +
         '<td class="' + changeClass + '">' + changePct.toFixed(2) + '%</td>' +
         '<td>₹' + investment.toFixed(0) + '</td>' +
         '<td>₹' + targetPrice.toFixed(2) + '</td>' +
         '<td>₹' + (currentValue || (currentPrice * quantity)).toFixed(0) + '</td>' +
         '<td class="profit">' + ((targetPrice > entryPrice ? '+' : '') + (((targetPrice - entryPrice) / entryPrice * 100)).toFixed(2)) + '%</td>' +
         '<td class="' + pnlClass + '">₹' + pnl.toFixed(0) + '</td>' +
-        '<td>' + (position.ed || '') + '</td>' +
-        '<td>' + (position.exp || '') + '</td>' +
-        '<td>' + (position.pr || '0%') + '</td>' +
-        '<td>' + (position.pp || changePct.toFixed(1)) + '</td>' +
-        '<td>' + (position.iv || investment.toFixed(0)) + '</td>' +
-        '<td class="' + changeClass + '">' + (position.ip || changePct.toFixed(2) + '%') + '</td>' +
-        '<td><small>' + (position.nt || '') + '</small></td>' +
-        '<td><small>' + (position.qt || '') + '</small></td>' +
-        '<td class="' + changeClass + '">' + (position.seven || '0%') + '</td>' +
+        '<td>' + entryDate + '</td>' + // Entry Date (duplicate)
+        '<td>-</td>' + // Expected/Expiry
+        '<td>-</td>' + // Price Range
+        '<td>' + changePct.toFixed(1) + '</td>' + // Performance Points (use percentage)
+        '<td>' + investment.toFixed(0) + '</td>' + // IV
+        '<td class="' + changeClass + '">' + changePct.toFixed(2) + '%</td>' + // Intraday Performance
+        '<td><small>-</small></td>' + // Notes/Tags
+        '<td><small>-</small></td>' + // Quote Time
+        '<td class="' + changeClass + '">N/A</td>' + // 7 Day Change
         '<td class="' + changeClass + '">' + changePct.toFixed(2) + '%</td>' +
         '<td>' +
         '<button class="btn btn-sm btn-primary" onclick="addDeal(\'' + symbol + '\', ' + currentPrice + ')">Add Deal</button>' +

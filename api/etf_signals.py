@@ -67,7 +67,8 @@ def get_admin_signals():
                 'created_at': created_at.isoformat() if created_at else None,
                 'pnl': round(pnl, 2),
                 'pnl_percentage': round(pnl_percentage, 2),
-                'pp': pnl_percentage  # Remove star icon, use plain percentage
+                'pp': pnl_percentage,  # Use plain percentage instead of star icon
+                'target_price': entry_price * 1.1 if entry_price > 0 else 0  # Default 10% target
             }
             
             signals_list.append(signal_data)
