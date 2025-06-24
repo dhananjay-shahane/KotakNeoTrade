@@ -57,28 +57,36 @@ app.config['APPLICATION_ROOT'] = '/'
 app.config['PREFERRED_URL_SCHEME'] = 'https'
 app.config['SERVER_NAME'] = None  # Auto-detect Replit domain
 
-# Session configuration for Replit webview
-app.config['SESSION_COOKIE_SECURE'] = False  # Allow both HTTP and HTTPS
-app.config['SESSION_COOKIE_HTTPONLY'] = False  # Allow JavaScript access for webview
-app.config['SESSION_COOKIE_SAMESITE'] = None  # No SameSite restriction for iframe
-app.config['SESSION_COOKIE_DOMAIN'] = None  # Auto-detect domain
+# Session configuration for webview compatibility
+app.config['SESSION_COOKIE_SECURE'] = False
+app.config['SESSION_COOKIE_HTTPONLY'] = False
+app.config['SESSION_COOKIE_SAMESITE'] = None
+app.config['SESSION_COOKIE_DOMAIN'] = None
+app.config['SESSION_COOKIE_PATH'] = '/'
 
 # Configure for Replit webview and DNS
 @app.after_request
 def after_request(response):
-    # Remove ALL frame-blocking headers for webview compatibility
-    headers_to_remove = ['X-Frame-Options', 'frame-options', 'Content-Security-Policy', 'X-XSS-Protection']
+    # Completely remove ALL headers that could block iframe embedding
+    headers_to_remove = [
+        'X-Frame-Options', 'frame-options', 'Content-Security-Policy', 
+        'X-XSS-Protection', 'Referrer-Policy', 'Permissions-Policy'
+    ]
     for header in headers_to_remove:
         response.headers.pop(header, None)
     
-    # Add unrestricted CORS headers
+    # Add permissive CORS headers
     response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Methods'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, HEAD'
     response.headers['Access-Control-Allow-Headers'] = '*'
     response.headers['Access-Control-Allow-Credentials'] = 'true'
+    response.headers['Access-Control-Max-Age'] = '86400'
     
-    # Minimal security headers only
-    response.headers['X-Content-Type-Options'] = 'nosniff'
+    # Ensure no cache issues
+    if request.endpoint in ['test_webview', 'simple_webview']:
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
     
     return response
 
@@ -92,36 +100,121 @@ def handle_preflight():
         response.headers.add('Access-Control-Allow-Methods', "*")
         return response
 
-# Root route for direct access
+# Root route for webview compatibility
 @app.route('/')
 def index():
+    # For webview preview, show the test page directly
+    if request.headers.get('X-Forwarded-For') or 'replit' in request.headers.get('User-Agent', '').lower():
+        return simple_webview()
     return redirect(url_for('auth.login'))
 
 # Test and health routes
 @app.route('/test')
 @app.route('/health')
 def test_webview():
-    with open('webview_test.html', 'r') as f:
-        html_content = f.read()
+    try:
+        with open('webview_fix.html', 'r') as f:
+            html_content = f.read()
+    except FileNotFoundError:
+        # Fallback if file doesn't exist
+        html_content = simple_webview().get_data(as_text=True)
     
     response = make_response(html_content)
+    response.headers['Content-Type'] = 'text/html; charset=utf-8'
     
-    # Completely remove all frame-blocking headers
+    # Remove all frame-blocking headers
     for header in ['X-Frame-Options', 'frame-options', 'Content-Security-Policy', 'X-XSS-Protection']:
         response.headers.pop(header, None)
     
     return response
 
+# Preview route specifically for Replit webview
+@app.route('/preview')
+def preview():
+    return test_webview()
+
 # Simple webview test route
 @app.route('/webview')
 def simple_webview():
-    return '''<!DOCTYPE html>
-<html><head><title>Simple Test</title></head>
-<body style="font-family:Arial; padding:20px; background:#4CAF50; color:white;">
-<h1>WEBVIEW WORKING!</h1>
-<p>If you see this, webview is functional.</p>
-<a href="/health" style="color:yellow;">Health Check</a>
-</body></html>'''
+    html_content = '''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webview Test - Kotak Neo Trading</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 30px; 
+            background: linear-gradient(135deg, #4CAF50, #45a049); 
+            color: white; 
+            margin: 0;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .container {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+        h1 { 
+            font-size: 3em; 
+            margin-bottom: 20px; 
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .status {
+            background: rgba(255,255,255,0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        a { 
+            color: #FFD700; 
+            text-decoration: none; 
+            font-weight: bold; 
+            padding: 10px 20px;
+            background: rgba(255,215,0,0.2);
+            border-radius: 5px;
+            display: inline-block;
+            margin: 10px;
+        }
+        a:hover { 
+            background: rgba(255,215,0,0.4); 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 WEBVIEW WORKING!</h1>
+        <div class="status">
+            <p><strong>Status:</strong> Preview Successfully Loaded</p>
+            <p><strong>Application:</strong> Kotak Neo Trading Platform</p>
+            <p><strong>Framework:</strong> Flask + Bootstrap</p>
+            <p><strong>Time:</strong> <span id="time"></span></p>
+        </div>
+        <div>
+            <a href="/health">📊 Health Check</a>
+            <a href="/auth/login">🔐 Login Portal</a>
+            <a href="/etf/signals">📈 ETF Signals</a>
+        </div>
+    </div>
+    <script>
+        document.getElementById('time').textContent = new Date().toLocaleString();
+        console.log('Webview loaded successfully at ' + new Date());
+    </script>
+</body>
+</html>'''
+    
+    response = make_response(html_content)
+    response.headers['Content-Type'] = 'text/html; charset=utf-8'
+    
+    # Ensure no frame-blocking headers
+    for header in ['X-Frame-Options', 'Content-Security-Policy']:
+        response.headers.pop(header, None)
+    
+    return response
 # initialize the app with the extension, flask-sqlalchemy >= 3.0.x
 db.init_app(app)
 
