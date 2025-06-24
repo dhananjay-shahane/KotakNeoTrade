@@ -1,0 +1,86 @@
+# ============================================================================
+# STEP 8: Get Positions Data
+# ============================================================================
+
+def get_positions():
+    """Fetch current positions from your trading account"""
+    try:
+        print("📊 Fetching positions data...")
+        
+        # Get positions
+        positions_response = client.positions()
+        
+        if positions_response and 'data' in positions_response:
+            positions_data = positions_response['data']
+            
+            print(f"✅ Successfully retrieved {len(positions_data)} positions")
+            
+            # Convert to DataFrame for better visualization
+            if positions_data:
+                df_positions = pd.DataFrame(positions_data)
+                
+                # Display key columns if they exist
+                key_columns = ['tradingsymbol', 'exchange', 'product', 'quantity', 
+                             'averageprice', 'ltp', 'pnl', 'unrealised']
+                available_columns = [col for col in key_columns if col in df_positions.columns]
+                
+                if available_columns:
+                    print("\n📋 Positions Summary:")
+                    print(df_positions[available_columns].to_string(index=False))
+                else:
+                    print("\n📋 All Positions Data:")
+                    print(df_positions.to_string(index=False))
+                
+                return positions_response
+            else:
+                print("📊 No positions found in your account")
+                return positions_response
+        else:
+            print("❌ No position data received")
+            return None
+            
+    except Exception as e:
+        print(f"❌ Failed to fetch positions: {str(e)}")
+        return None
+
+# Function to display positions in a formatted way
+def display_positions_summary(positions_response):
+    """Display positions in a user-friendly format"""
+    if not positions_response or 'data' not in positions_response:
+        print("❌ No positions data to display")
+        return
+    
+    positions = positions_response['data']
+    
+    if not positions:
+        print("📊 No open positions found")
+        return
+    
+    print("\n" + "="*80)
+    print("📊 POSITIONS SUMMARY")
+    print("="*80)
+    
+    total_pnl = 0
+    
+    for i, position in enumerate(positions, 1):
+        print(f"\n📈 Position #{i}")
+        print(f"   Symbol: {position.get('tradingsymbol', 'N/A')}")
+        print(f"   Exchange: {position.get('exchange', 'N/A')}")
+        print(f"   Product: {position.get('product', 'N/A')}")
+        print(f"   Quantity: {position.get('quantity', 'N/A')}")
+        print(f"   Avg Price: ₹{position.get('averageprice', 0)}")
+        print(f"   LTP: ₹{position.get('ltp', 0)}")
+        print(f"   P&L: ₹{position.get('pnl', 0)}")
+        print(f"   Unrealized P&L: ₹{position.get('unrealised', 0)}")
+        
+        # Add to total P&L if available
+        if position.get('pnl'):
+            total_pnl += float(position.get('pnl', 0))
+    
+    print(f"\n💰 Total P&L: ₹{total_pnl:.2f}")
+    print("="*80)
+
+# Uncomment the line below after successful login to fetch positions
+# positions_data = get_positions()
+
+print("⏳ Ready to fetch positions after successful login")

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETF Trading Signals</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { background: #2d2d2d; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .summary { display: flex; gap: 15px; margin-bottom: 20px; }
+        .summary-item { background: #3d3d3d; padding: 10px; border-radius: 6px; text-align: center; flex: 1; }
+        .summary-item .label { font-size: 12px; color: #ccc; }
+        .summary-item .value { font-size: 16px; font-weight: bold; margin-top: 5px; }
+        .table-container { background: #2d2d2d; border-radius: 8px; padding: 15px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 8px 4px; text-align: center; border: 1px solid #444; font-size: 11px; }
+        th { background: #3d3d3d; font-weight: bold; }
+        .profit { color: #28a745; }
+        .loss { color: #dc3545; }
+        .loading { text-align: center; padding: 40px; color: #ccc; }
+        .error { color: #dc3545; text-align: center; padding: 40px; }
+        .btn { background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+        .btn:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>ETF Trading Signals - Portfolio Dashboard</h2>
+            <button class="btn" onclick="loadETFData()">Refresh Data</button>
+        </div>
+
+        <div class="summary" id="summarySection">
+            <div class="summary-item">
+                <div class="label">Total Positions</div>
+                <div class="value" id="totalPositions">-</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">Investment</div>
+                <div class="value" id="totalInvestment">-</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">Current Value</div>
+                <div class="value" id="currentValue">-</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">P&L</div>
+                <div class="value" id="totalPnL">-</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">Return %</div>
+                <div class="value" id="returnPercent">-</div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Symbol</th><th>Date</th><th>Pos</th><th>Qty</th><th>EP</th><th>CMP</th><th>%Change</th>
+                        <th>Investment</th><th>Current Value</th><th>P&L</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="etfTableBody">
+                    <tr><td colspan="11" class="loading">Loading ETF signals...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function loadETFData() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/etf-signals-data', true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    var data = JSON.parse(xhr.responseText);
+                    if (data.success) {
+                        showETFSignals(data.signals);
+                        showSummary(data.portfolio);
+                    } else {
+                        showError('Failed to load data');
+                    }
+                }
+            };
+            xhr.send();
+        }
+
+        function showETFSignals(signals) {
+            var tbody = document.getElementById('etfTableBody');
+            tbody.innerHTML = '';
+            
+            for (var i = 0; i < signals.length; i++) {
+                var signal = signals[i];
+                var row = tbody.insertRow();
+                
+                var pnl = parseFloat(signal.pl || 0);
+                var changePct = parseFloat(signal.change_pct || 0);
+                var pnlClass = pnl >= 0 ? 'profit' : 'loss';
+                var changeClass = changePct >= 0 ? 'profit' : 'loss';
+                
+                row.innerHTML = 
+                    '<td><strong>' + (signal.etf || '-') + '</strong></td>' +
+                    '<td>' + (signal.date || '-') + '</td>' +
+                    '<td>' + (signal.pos === 1 ? 'LONG' : 'SHORT') + '</td>' +
+                    '<td>' + (signal.qty || 0) + '</td>' +
+                    '<td>₹' + parseFloat(signal.ep || 0).toFixed(2) + '</td>' +
+                    '<td>₹' + parseFloat(signal.cmp || signal.ep || 0).toFixed(2) + '</td>' +
+                    '<td class="' + changeClass + '">' + changePct.toFixed(2) + '%</td>' +
+                    '<td>₹' + parseFloat(signal.inv || 0).toLocaleString() + '</td>' +
+                    '<td>₹' + (parseFloat(signal.inv || 0) + pnl).toLocaleString() + '</td>' +
+                    '<td class="' + pnlClass + '">₹' + pnl.toLocaleString() + '</td>' +
+                    '<td><button class="btn">Add Deal</button></td>';
+            }
+        }
+
+        function showSummary(portfolio) {
+            if (!portfolio) return;
+            
+            document.getElementById('totalPositions').textContent = portfolio.total_positions || 0;
+            document.getElementById('totalInvestment').textContent = '₹' + (portfolio.total_investment || 0).toLocaleString();
+            document.getElementById('currentValue').textContent = '₹' + (portfolio.current_value || 0).toLocaleString();
+            document.getElementById('totalPnL').textContent = '₹' + (portfolio.total_pnl || 0).toLocaleString();
+            document.getElementById('returnPercent').textContent = (portfolio.return_percent || 0).toFixed(2) + '%';
+            
+            var pnlElement = document.getElementById('totalPnL');
+            var returnElement = document.getElementById('returnPercent');
+            var pnl = portfolio.total_pnl || 0;
+            
+            pnlElement.className = 'value ' + (pnl >= 0 ? 'profit' : 'loss');
+            returnElement.className = 'value ' + (pnl >= 0 ? 'profit' : 'loss');
+        }
+
+        function showError(message) {
+            document.getElementById('etfTableBody').innerHTML = 
+                '<tr><td colspan="11" class="error">' + message + '</td></tr>';
+        }
+
+        // Load data when page loads
+        loadETFData();
+        
+        // Auto-refresh every 30 seconds
+        setInterval(loadETFData, 30000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,670 @@
+{% extends "base.html" %}
+
+{% block title %}ETF Signals - Kotak Neo Trading{% endblock %}
+
+{% block extra_css %}
+<style>
+    .signals-table {
+        font-size: 0.75rem;
+        background: var(--card-bg);
+    }
+    .signals-table th {
+        background: var(--secondary-color);
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 0.7rem;
+        text-align: center;
+        padding: 6px 3px;
+        border: 1px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        white-space: nowrap;
+    }
+    .signals-table td {
+        padding: 4px 3px;
+        text-align: center;
+        border: 1px solid var(--border-color);
+        vertical-align: middle;
+        white-space: nowrap;
+        font-size: 0.75rem;
+    }
+    .profit { color: var(--success-color); }
+    .loss { color: var(--danger-color); }
+    .neutral { color: var(--warning-color); }
+    .table-container {
+        height: 70vh;
+        overflow-x: auto;
+        overflow-y: auto;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        position: relative;
+    }
+    .portfolio-summary {
+        background: var(--card-bg);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid var(--border-color);
+    }
+    .summary-card {
+        background: var(--dark-bg);
+        border-radius: 6px;
+        padding: 10px;
+        text-align: center;
+        border: 1px solid var(--border-color);
+    }
+    .live-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 5px;
+    }
+    .live-indicator.connected {
+        background: var(--success-color);
+        animation: pulse 2s infinite;
+    }
+    .live-indicator.disconnected {
+        background: var(--danger-color);
+    }
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">ETF Signals</h1>
+        <p class="text-muted mb-0">ETF trading signals and portfolio management</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-light" onclick="refreshSignals()">
+            <i class="fas fa-sync-alt me-1"></i>Refresh
+        </button>
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#columnSettingsModal">
+            <i class="fas fa-cog me-1"></i>Columns
+        </button>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#signalFiltersModal">
+            <i class="fas fa-filter me-1"></i>Filters
+        </button>
+    </div>
+</div>
+
+<!-- ETF Signals Table -->
+<div class="card bg-secondary border-0 shadow-lg">
+    <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 text-light">
+            <i class="fas fa-chart-line me-2 text-primary"></i>ETF Trading Signals
+            <span class="badge bg-primary ms-2" id="visibleSignalsCount">0</span>
+        </h5>
+        <div class="d-flex gap-2 align-items-center">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="autoRefreshToggle" checked>
+                <label class="form-check-label text-light" for="autoRefreshToggle">
+                    Auto Refresh
+                </label>
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" id="refreshIntervalDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-clock me-1"></i><span id="currentInterval">30s</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(5000, '5s')">5 seconds</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(10000, '10s')">10 seconds</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(30000, '30s')">30 seconds</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(60000, '1m')">1 minute</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(300000, '5m')">5 minutes</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(600000, '10m')">10 minutes</a></li>
+                </ul>
+            </div>
+            <button class="btn btn-sm btn-outline-light" onclick="exportSignals()">
+                <i class="fas fa-download me-1"></i>Export
+            </button>
+        </div>
+    </div>
+
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0 signals-table" id="signalsTable">
+                <thead>
+                    <tr id="tableHeaders">
+                        <th title="ETF Symbol">ETF</th>
+                        <th title="30 Day Performance">30</th>
+                        <th title="Days Held">DH</th>
+                        <th title="Entry Date">Date</th>
+                        <th title="Position Type">Pos</th>
+                        <th title="Quantity">Qty</th>
+                        <th title="Entry Price">EP</th>
+                        <th title="Current Market Price (Live)">CMP</th>
+                        <th title="Percentage Change">%Chan</th>
+                        <th title="Investment Amount">Inv.</th>
+                        <th title="Target Price">TP</th>
+                        <th title="Target Value Amount">TVA</th>
+                        <th title="Target Profit Return">TPR</th>
+                        <th title="Profit/Loss">PL</th>
+                        <th title="Entry Date">ED</th>
+                        <th title="Expected/Expiry">EXP</th>
+                        <th title="Price Range">PR</th>
+                        <th title="Performance Points">PP</th>
+                        <th title="Implied Volatility">IV</th>
+                        <th title="Intraday Performance">IP</th>
+                        <th title="Notes/Tags">NT</th>
+                        <th title="Quote Time">Qt</th>
+                        <th title="7 Day Change">7</th>
+                        <th title="Percentage Change">%Ch</th>
+                        <th title="Actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="signalsTableBody">
+                    <!-- Dynamic content will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card-footer bg-dark border-0 d-flex justify-content-between align-items-center text-light">
+        <div class="d-flex align-items-center gap-3">
+            <small>Showing <span id="showingCount">0</span> of <span id="totalCount">0</span> signals</small>
+        </div>
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-sm btn-outline-light" onclick="previousPage()" id="prevBtn" disabled>
+                <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-light" disabled>
+                Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-light" onclick="nextPage()" id="nextBtn" disabled>
+                Next <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Column Settings Modal -->
+<div class="modal fade" id="columnSettingsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title text-light">
+                    <i class="fas fa-cog me-2"></i>Column Settings
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Select which columns to display in the signals table:</p>
+                <div class="row" id="columnCheckboxes">
+                    <!-- Column checkboxes will be populated here -->
+                </div>
+                <hr class="border-secondary">
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAllColumns()">Select All</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetDefaultColumns()">Reset to Default</button>
+                </div>
+            </div>
+            <div class="modal-footer border-top border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="applyColumnSettings()">Apply Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Signal Filters Modal -->
+<div class="modal fade" id="signalFiltersModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title text-light">
+                    <i class="fas fa-filter me-2"></i>Signal Filters
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label text-light">Order Type</label>
+                    <select class="form-select bg-secondary text-light" id="orderTypeFilter">
+                        <option value="">All Orders</option>
+                        <option value="BUY">Buy Orders</option>
+                        <option value="SELL">Sell Orders</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-light">Status</label>
+                    <select class="form-select bg-secondary text-light" id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="EXECUTED">Executed</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="CANCELLED">Cancelled</option>
+                        <option value="REJECTED">Rejected</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-light">Symbol</label>
+                    <input type="text" class="form-control bg-secondary text-light" id="symbolFilter" placeholder="Enter symbol...">
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label text-light">Min P&L</label>
+                        <input type="number" class="form-control bg-secondary text-light" id="minPnlFilter" placeholder="-10000">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-light">Max P&L</label>
+                        <input type="number" class="form-control bg-secondary text-light" id="maxPnlFilter" placeholder="10000">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top border-secondary">
+                <button type="button" class="btn btn-secondary" onclick="clearFilters()">Clear Filters</button>
+                <button type="button" class="btn btn-primary" onclick="applyFilters()" data-bs-dismiss="modal">Apply Filters</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/etf_signals.js') }}"></script>
+<script>
+    // Function to update the CMP value in the table
+    function updateCMPValue(symbol, cmp) {
+        // Find the cell with the matching symbol
+        const cmpCells = document.querySelectorAll(`.cmp-value[data-symbol="${symbol}"]`);
+        cmpCells.forEach(cell => {
+            cell.textContent = `₹${cmp.toFixed(2)}`;  // Update the CMP value
+        });
+    }
+
+    // Example usage (assuming you have a way to get live CMP data)
+    // setInterval(() => {
+    //     // Replace with your logic to fetch live CMP data
+    //     const liveCMPData = {
+    //         "RELIANCE": 2500.50,
+    //         "TCS": 3500.75,
+    //         "HDFC": 1500.20
+    //     };
+
+    //     // Update CMP values in the table
+    //     for (const symbol in liveCMPData) {
+    //         if (liveCMPData.hasOwnProperty(symbol)) {
+    //             updateCMPValue(symbol, liveCMPData[symbol]);
+    //         }
+    //     }
+    // }, 5000); // Update every 5 seconds (adjust as needed)
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Initial column settings (you can customize these)
+    let visibleColumns = {
+        'ETF': true,
+        '30': true,
+        'DH': true,
+        'Date': true,
+        'Pos': true,
+        'Qty': true,
+        'EP': true,
+        'CMP': true,
+        '%Chan': true,
+        'Inv.': true,
+        'TP': true,
+        'TVA': true,
+        'TPR': true,
+        'PL': true,
+        'ED': true,
+        'EXP': true,
+        'PR': true,
+        'PP': true,
+        'IV': true,
+        'IP': true,
+        'NT': true,
+        'Qt': true,
+        '7': true,
+        '%Ch': true,
+        'Actions': true // Keep the Actions column
+    };
+
+    let signalsData = [];
+    let filteredSignals = [];
+    let currentPage = 1;
+    const signalsPerPage = 10;
+
+    // Function to initialize column settings modal
+    function initializeColumnSettings() {
+        const columnCheckboxesDiv = document.getElementById('columnCheckboxes');
+        columnCheckboxesDiv.innerHTML = ''; // Clear existing checkboxes
+
+        for (const column in visibleColumns) {
+            if (visibleColumns.hasOwnProperty(column)) {
+                const div = document.createElement('div');
+                div.classList.add('col-md-3', 'mb-2');
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `checkbox-${column}`;
+                checkbox.classList.add('form-check-input');
+                checkbox.checked = visibleColumns[column];
+
+                checkbox.addEventListener('change', function () {
+                    visibleColumns[column] = this.checked;
+                    applyColumnSettings(); // Re-render the table when a checkbox is changed
+                });
+
+                const label = document.createElement('label');
+                label.htmlFor = `checkbox-${column}`;
+                label.classList.add('form-check-label', 'text-light');
+                label.textContent = column;
+
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                columnCheckboxesDiv.appendChild(div);
+            }
+        }
+    }
+
+    // Function to select all columns
+    window.selectAllColumns = function () {
+        for (const column in visibleColumns) {
+            if (visibleColumns.hasOwnProperty(column)) {
+                visibleColumns[column] = true;
+            }
+        }
+        initializeColumnSettings(); // Re-render the modal
+        applyColumnSettings(); // Re-render the table
+    };
+
+    // Function to reset to default columns
+    window.resetDefaultColumns = function () {
+        visibleColumns = {
+            'ETF': true,
+            '30': true,
+            'DH': true,
+            'Date': true,
+            'Pos': true,
+            'Qty': true,
+            'EP': true,
+            'CMP': true,
+            '%Chan': true,
+            'Inv.': true,
+            'TP': true,
+            'TVA': true,
+            'TPR': true,
+            'PL': true,
+            'ED': true,
+            'EXP': true,
+            'PR': true,
+            'PP': true,
+            'IV': true,
+            'IP': true,
+            'NT': true,
+            'Qt': true,
+            '7': true,
+            '%Ch': true,
+            'Actions': true // Keep the Actions column
+        };
+        initializeColumnSettings(); // Re-render the modal
+        applyColumnSettings(); // Re-render the table
+    };
+
+    // Function to apply column settings
+    window.applyColumnSettings = function () {
+        const tableHeaders = document.getElementById('tableHeaders');
+        tableHeaders.innerHTML = '';
+
+        let headerHTML = '';
+        for (const column in visibleColumns) {
+            if (visibleColumns.hasOwnProperty(column) && visibleColumns[column]) {
+                let title = column;
+                switch (column) {
+                    case 'ETF': title = "ETF Symbol"; break;
+                    case '30': title = "30 Day Performance"; break;
+                    case 'DH': title = "Days Held"; break;
+                    case 'Date': title = "Entry Date"; break;
+                    case 'Pos': title = "Position Type"; break;
+                    case 'Qty': title = "Quantity"; break;
+                    case 'EP': title = "Entry Price"; break;
+                    case 'CMP': title = "Current Market Price (Live)"; break;
+                    case '%Chan': title = "Percentage Change"; break;
+                    case 'Inv.': title = "Investment Amount"; break;
+                    case 'TP': title = "Target Price"; break;
+                    case 'TVA': title = "Target Value Amount"; break;
+                    case 'TPR': title = "Target Profit Return"; break;
+                    case 'PL': title = "Profit/Loss"; break;
+                    case 'ED': title = "Entry Date"; break;
+                    case 'EXP': title = "Expected/Expiry"; break;
+                    case 'PR': title = "Price Range"; break;
+                    case 'PP': title = "Performance Points"; break;
+                    case 'IV': title = "Implied Volatility"; break;
+                    case 'IP': title = "Intraday Performance"; break;
+                    case 'NT': title = "Notes/Tags"; break;
+                    case 'Qt': title = "Quote Time"; break;
+                    case '7': title = "7 Day Change"; break;
+                    case '%Ch': title = "Percentage Change"; break;
+                    case 'Actions': title = "Actions"; break;
+                }
+
+                headerHTML += `<th title="${title}">${column}</th>`;
+            }
+        }
+        tableHeaders.innerHTML = headerHTML;
+
+        renderTable(filteredSignals);
+    };
+
+    // Function to fetch signals data
+    function fetchSignals() {
+        fetch('/etf_signals_data')
+            .then(response => response.json())
+            .then(data => {
+                signalsData = data;
+                filteredSignals = [...signalsData];
+                applyFilters();
+                updateCounts();
+                renderTable(filteredSignals);
+            })
+            .catch(error => console.error('Error fetching signals:', error));
+    }
+
+    // Function to render the table
+    function renderTable(signals) {
+        const signalsTableBody = document.getElementById('signalsTableBody');
+        signalsTableBody.innerHTML = '';
+
+        const start = (currentPage - 1) * signalsPerPage;
+        const end = start + signalsPerPage;
+        const paginatedSignals = signals.slice(start, end);
+
+        paginatedSignals.forEach(data => {
+            const row = document.createElement('tr');
+            let rowHTML = '';
+
+            if (visibleColumns['ETF']) rowHTML += `<td>${data.symbol}</td>`;
+            if (visibleColumns['30']) rowHTML += `<td>${data.day_30}</td>`;
+            if (visibleColumns['DH']) rowHTML += `<td>${data.days_held}</td>`;
+            if (visibleColumns['Date']) rowHTML += `<td>${data.entry_date}</td>`;
+            if (visibleColumns['Pos']) rowHTML += `<td>${data.position_type}</td>`;
+            if (visibleColumns['Qty']) rowHTML += `<td>${data.quantity}</td>`;
+            if (visibleColumns['EP']) rowHTML += `<td>${data.entry_price}</td>`;
+            if (visibleColumns['CMP']) rowHTML += `
+                            <td class="text-right price-cell" style="padding: 4px 6px; border: 1px solid #4a5568; background-color: #1a202c;">
+                                <span class="cmp-value" data-symbol="${data.symbol}" style="color: #68d391; font-weight: 600; font-size: 0.9rem;">
+                                    ₹${(data.cmp && typeof data.cmp === 'number') ? data.cmp.toFixed(2) : data.cmp || '0.00'}
+                                </span>
+                            </td>
+                        `;
+            if (visibleColumns['%Chan']) rowHTML += `<td>${data.percentage_change}</td>`;
+            if (visibleColumns['Inv.']) rowHTML += `<td>${data.investment_amount}</td>`;
+            if (visibleColumns['TP']) rowHTML += `<td>${data.target_price}</td>`;
+            if (visibleColumns['TVA']) rowHTML += `<td>${data.target_value_amount}</td>`;
+            if (visibleColumns['TPR']) rowHTML += `<td>${data.target_profit_return}</td>`;
+            if (visibleColumns['PL']) rowHTML += `<td>${data.profit_loss}</td>`;
+            if (visibleColumns['ED']) rowHTML += `<td>${data.entry_date}</td>`;
+            if (visibleColumns['EXP']) rowHTML += `<td>${data.expiry}</td>`;
+            if (visibleColumns['PR']) rowHTML += `<td>${data.price_range}</td>`;
+            if (visibleColumns['PP']) rowHTML += `<td>${data.performance_points}</td>`;
+            if (visibleColumns['IV']) rowHTML += `<td>${data.implied_volatility}</td>`;
+            if (visibleColumns['IP']) rowHTML += `<td>${data.intraday_performance}</td>`;
+            if (visibleColumns['NT']) rowHTML += `<td>${data.notes_tags}</td>`;
+            if (visibleColumns['Qt']) rowHTML += `<td>${data.quote_time}</td>`;
+            if (visibleColumns['7']) rowHTML += `<td>${data.day_7}</td>`;
+            if (visibleColumns['%Ch']) rowHTML += `<td>${data.percentage_change_7}</td>`;
+            if (visibleColumns['Actions']) rowHTML += `<td><button class="btn btn-sm btn-outline-secondary">Trade</button></td>`;
+
+            row.innerHTML = rowHTML;
+            signalsTableBody.appendChild(row);
+        });
+
+        updatePaginationButtons();
+    }
+
+    // Function to update pagination buttons
+    function updatePaginationButtons() {
+        const totalPages = Math.ceil(filteredSignals.length / signalsPerPage);
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const currentPageSpan = document.getElementById('currentPage');
+        const totalPagesSpan = document.getElementById('totalPages');
+
+        currentPageSpan.textContent = currentPage;
+        totalPagesSpan.textContent = totalPages;
+
+        prevBtn.disabled = currentPage <= 1;
+        nextBtn.disabled = currentPage >= totalPages;
+    }
+
+    // Function to go to the previous page
+    window.previousPage = function () {
+        if (currentPage > 1) {
+            currentPage--;
+            renderTable(filteredSignals);
+            updatePaginationButtons();
+        }
+    };
+
+    // Function to go to the next page
+    window.nextPage = function () {
+        const totalPages = Math.ceil(filteredSignals.length / signalsPerPage);
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderTable(filteredSignals);
+            updatePaginationButtons();
+        }
+    };
+
+    // Function to update counts
+    function updateCounts() {
+        const showingCount = document.getElementById('showingCount');
+        const totalCount = document.getElementById('totalCount');
+        const visibleSignalsCount = document.getElementById('visibleSignalsCount');
+
+        showingCount.textContent = filteredSignals.length > 0 ? ((currentPage - 1) * signalsPerPage) + 1 : 0;
+        totalCount.textContent = signalsData.length;
+        visibleSignalsCount.textContent = filteredSignals.length;
+
+        if (filteredSignals.length > 0) {
+            showingCount.textContent = Math.min(filteredSignals.length, ((currentPage - 1) * signalsPerPage) + signalsPerPage);
+        } else {
+            showingCount.textContent = '0';
+        }
+    }
+
+    // Function to apply filters
+    window.applyFilters = function () {
+        const orderTypeFilter = document.getElementById('orderTypeFilter').value;
+        const statusFilter = document.getElementById('statusFilter').value;
+        const symbolFilter = document.getElementById('symbolFilter').value.toUpperCase();
+        const minPnlFilter = parseFloat(document.getElementById('minPnlFilter').value) || -Infinity;
+        const maxPnlFilter = parseFloat(document.getElementById('maxPnlFilter').value) || Infinity;
+
+        filteredSignals = signalsData.filter(data => {
+            if (orderTypeFilter && data.order_type !== orderTypeFilter) return false;
+            if (statusFilter && data.status !== statusFilter) return false;
+            if (symbolFilter && !data.symbol.toUpperCase().includes(symbolFilter)) return false;
+            if (data.profit_loss < minPnlFilter || data.profit_loss > maxPnlFilter) return false;
+            return true;
+        });
+
+        currentPage = 1; // Reset to first page after filtering
+        updateCounts();
+        renderTable(filteredSignals);
+        updatePaginationButtons();
+    };
+
+    // Function to clear filters
+    window.clearFilters = function () {
+        document.getElementById('orderTypeFilter').value = '';
+        document.getElementById('statusFilter').value = '';
+        document.getElementById('symbolFilter').value = '';
+        document.getElementById('minPnlFilter').value = '';
+        document.getElementById('maxPnlFilter').value = '';
+        applyFilters();
+    };
+
+    // Function to refresh signals
+    window.refreshSignals = function () {
+        fetchSignals();
+    };
+
+    // Function to export signals
+    window.exportSignals = function () {
+        const csvContent = "data:text/csv;charset=utf-8," +
+            Object.keys(signalsData[0]).join(",") + "\n" +
+            signalsData.map(row => Object.values(row).join(",")).join("\n");
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "etf_signals.csv");
+        document.body.appendChild(link); // Required for FF
+
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    // Auto-refresh functionality
+    let autoRefreshInterval;
+
+    function setAutoRefresh(enabled) {
+        if (enabled) {
+            const refreshIntervalDropdown = document.getElementById('refreshIntervalDropdown');
+            let currentInterval = refreshIntervalDropdown.textContent.trim();
+            let intervalMs = 30000;
+
+            if (currentInterval === '5s') intervalMs = 5000;
+            else if (currentInterval === '10s') intervalMs = 10000;
+            else if (currentInterval === '1m') intervalMs = 60000;
+            else if (currentInterval === '5m') intervalMs = 300000;
+            else if (currentInterval === '10m') intervalMs = 600000;
+
+            autoRefreshInterval = setInterval(fetchSignals, intervalMs);
+        } else {
+            clearInterval(autoRefreshInterval);
+        }
+    }
+
+    const autoRefreshToggle = document.getElementById('autoRefreshToggle');
+    autoRefreshToggle.addEventListener('change', function () {
+        setAutoRefresh(this.checked);
+    });
+
+    // Set refresh interval
+    window.setRefreshInterval = function (interval, text) {
+        const currentIntervalSpan = document.getElementById('currentInterval');
+        currentIntervalSpan.textContent = text;
+        clearInterval(autoRefreshInterval);
+        if (autoRefreshToggle.checked) {
+            autoRefreshInterval = setInterval(fetchSignals, interval);
+        }
+    };
+
+    // Initialize the page
+    initializeColumnSettings();
+    fetchSignals();
+    setAutoRefresh(autoRefreshToggle.checked);
+});
+</script>
+{% endblock %}

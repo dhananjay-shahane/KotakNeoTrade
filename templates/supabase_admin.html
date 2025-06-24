@@ -1,0 +1,237 @@
+
+{% extends "base.html" %}
+
+{% block title %}Supabase Admin - ETF Trading{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-database me-2"></i>
+                        Supabase Integration Dashboard
+                    </h5>
+                    <div>
+                        <button class="btn btn-outline-info btn-sm" onclick="checkSupabaseStatus()">
+                            <i class="fas fa-check-circle"></i> Check Status
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Status Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div id="status-alert" class="alert alert-info">
+                                <i class="fas fa-spinner fa-spin"></i> Checking Supabase connection...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sync Operations -->
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-primary">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0"><i class="fas fa-users"></i> User Sync</h6>
+                                </div>
+                                <div class="card-body text-center">
+                                    <p class="text-muted">Sync users between local DB and Supabase</p>
+                                    <button class="btn btn-primary btn-sm" onclick="syncUsers()">
+                                        <i class="fas fa-sync"></i> Sync Users
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0"><i class="fas fa-chart-line"></i> Signal Sync</h6>
+                                </div>
+                                <div class="card-body text-center">
+                                    <p class="text-muted">Sync ETF signals to Supabase</p>
+                                    <button class="btn btn-success btn-sm" onclick="syncSignals()">
+                                        <i class="fas fa-sync"></i> Sync Signals
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-warning">
+                                <div class="card-header bg-warning text-white">
+                                    <h6 class="mb-0"><i class="fas fa-quote-right"></i> Quote Sync</h6>
+                                </div>
+                                <div class="card-body text-center">
+                                    <p class="text-muted">Sync real-time quotes to Supabase</p>
+                                    <button class="btn btn-warning btn-sm" onclick="syncQuotes()">
+                                        <i class="fas fa-sync"></i> Sync Quotes
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Real-time Features -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card border-info">
+                                <div class="card-header bg-info text-white">
+                                    <h6 class="mb-0"><i class="fas fa-broadcast-tower"></i> Real-time Features</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p class="text-muted">Test real-time subscriptions</p>
+                                            <button class="btn btn-info btn-sm" onclick="testRealtime()">
+                                                <i class="fas fa-play"></i> Test Real-time
+                                            </button>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div id="realtime-status" class="alert alert-secondary">
+                                                Real-time status: Not connected
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Logs Section -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-list"></i> Operation Logs</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div id="operation-logs" style="height: 200px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 5px;">
+                                        <small class="text-muted">Logs will appear here...</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function addLog(message, type = 'info') {
+    var logs = document.getElementById('operation-logs');
+    var timestamp = new Date().toLocaleTimeString();
+    var logClass = type === 'error' ? 'text-danger' : type === 'success' ? 'text-success' : 'text-info';
+    
+    logs.innerHTML += `<div class="${logClass}"><small>[${timestamp}] ${message}</small></div>`;
+    logs.scrollTop = logs.scrollHeight;
+}
+
+function checkSupabaseStatus() {
+    addLog('Checking Supabase connection status...');
+    
+    fetch('/api/supabase/status')
+        .then(response => response.json())
+        .then(data function() {
+            var statusAlert = document.getElementById('status-alert');
+            if (data.success && data.connected) {
+                statusAlert.className = 'alert alert-success';
+                statusAlert.innerHTML = '<i class="fas fa-check-circle"></i> Supabase is connected and ready!';
+                addLog('Supabase connection successful', 'success');
+            } else {
+                statusAlert.className = 'alert alert-warning';
+                statusAlert.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Supabase not configured';
+                addLog('Supabase not configured', 'error');
+            }
+        })
+        .catch(function(error) {
+            var statusAlert = document.getElementById('status-alert');
+            statusAlert.className = 'alert alert-danger';
+            statusAlert.innerHTML = '<i class="fas fa-times-circle"></i> Connection error';
+            addLog('Connection error: ' + error.message, 'error');
+        });
+}
+
+function syncUsers() {
+    addLog('Starting user synchronization...');
+    
+    fetch('/api/supabase/sync-users')
+        .then(response => response.json())
+        .then(data function() {
+            if (data.success) {
+                addLog('User sync completed: ' + data.stats.synced + ' synced, ' + data.stats.errors + ' errors', 'success');
+            } else {
+                addLog('User sync failed: ' + data.error, 'error');
+            }
+        })
+        .catch(function(error) {
+            addLog('User sync error: ' + error.message, 'error');
+        });
+}
+
+function syncSignals() {
+    addLog('Starting signal synchronization...');
+    
+    fetch('/api/supabase/sync-signals')
+        .then(response => response.json())
+        .then(data function() {
+            if (data.success) {
+                addLog(`Signal sync completed: ${data.stats.synced} synced, ${data.stats.errors} errors`, 'success');
+            } else {
+                addLog(`Signal sync failed: ${data.error}`, 'error');
+            }
+        })
+        .catch(error function() {
+            addLog(`Signal sync error: ${error.message}`, 'error');
+        });
+}
+
+function syncQuotes() {
+    addLog('Starting quote synchronization...');
+    
+    fetch('/api/supabase/sync-quotes')
+        .then(response => response.json())
+        .then(data function() {
+            if (data.success) {
+                addLog(`Quote sync completed: ${data.quotes_synced} quotes synced`, 'success');
+            } else {
+                addLog(`Quote sync failed: ${data.error}`, 'error');
+            }
+        })
+        .catch(error function() {
+            addLog(`Quote sync error: ${error.message}`, 'error');
+        });
+}
+
+function testRealtime() {
+    addLog('Testing real-time subscriptions...');
+    
+    fetch('/api/supabase/realtime-test')
+        .then(response => response.json())
+        .then(data function() {
+            var realtimeStatus = document.getElementById('realtime-status');
+            if (data.success) {
+                realtimeStatus.className = 'alert alert-success';
+                realtimeStatus.textContent = 'Real-time subscriptions activated!';
+                addLog('Real-time test successful', 'success');
+            } else {
+                realtimeStatus.className = 'alert alert-danger';
+                realtimeStatus.textContent = `Real-time test failed: ${data.error}`;
+                addLog(`Real-time test failed: ${data.error}`, 'error');
+            }
+        })
+        .catch(error function() {
+            addLog(`Real-time test error: ${error.message}`, 'error');
+        });
+}
+
+// Check status on page load
+document.addEventListener('DOMContentLoaded', function() {
+    checkSupabaseStatus();
+});
+</script>
+{% endblock %}

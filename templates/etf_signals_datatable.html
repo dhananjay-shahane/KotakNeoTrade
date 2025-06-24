@@ -1,0 +1,562 @@
+{% extends "base.html" %}
+
+{% block title %}ETF Trading Signals{% endblock %}
+
+{% block extra_css %}
+<!-- DataTables CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/colreorder/1.7.0/css/colReorder.bootstrap5.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/fixedheader/3.4.0/css/fixedHeader.bootstrap5.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+
+<style>
+.signals-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.signals-card {
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+.table-responsive {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.dataTables_wrapper .dataTables_length select,
+.dataTables_wrapper .dataTables_filter input {
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.btn-refresh {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    border: none;
+    color: white;
+}
+
+.btn-refresh:hover {
+    background: linear-gradient(45deg, #20c997, #28a745);
+    color: white;
+}
+
+.stats-card {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.pnl-positive {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.pnl-negative {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.live-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #28a745;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+    margin-right: 5px;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.column-toggle {
+    margin-bottom: 1rem;
+}
+
+.column-toggle .btn {
+    margin: 2px;
+    font-size: 0.875rem;
+}
+
+.last-update {
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="signals-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-0">
+                    <i class="fas fa-chart-line me-3"></i>ETF Trading Signals
+                </h1>
+                <p class="mb-0 mt-2">Real-time portfolio tracking with live market data</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-refresh" id="refreshData">
+                    <i class="fas fa-sync-alt me-2"></i>Refresh Data
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <!-- Portfolio Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0">Total Investment</h6>
+                        <h4 class="mb-0" id="totalInvestment">₹0.00</h4>
+                    </div>
+                    <i class="fas fa-walvar fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0">Current Value</h6>
+                        <h4 class="mb-0" id="currentValue">₹0.00</h4>
+                    </div>
+                    <i class="fas fa-chart-area fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0">Total P&L</h6>
+                        <h4 class="mb-0" id="totalPnL">₹0.00</h4>
+                    </div>
+                    <i class="fas fa-balance-scale fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0">Active Signals</h6>
+                        <h4 class="mb-0" id="activeSignals">0</h4>
+                    </div>
+                    <i class="fas fa-signal fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signals Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card signals-card">
+                <div class="card-header bg-white">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h5 class="mb-0">
+                                <span class="live-indicator"></span>
+                                Your ETF Signals
+                            </h5>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <small class="last-update">
+                                Last updated: <span id="lastUpdate">Loading...</span>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <!-- Column Toggle Buttons -->
+                    <div class="column-toggle">
+                        <label class="form-label fw-bold">Show/Hide Columns:</label>
+                        <div id="columnToggles">
+                            <!-- Column toggle buttons will be generated here -->
+                        </div>
+                    </div>
+
+                    <!-- DataTable -->
+                    <div class="table-responsive">
+                        <table id="signalsTable" class="table table-striped table-hover" style="width:100%">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>ETF Name</th>
+                                    <th>Signal</th>
+                                    <th>Qty</th>
+                                    <th>Entry Price</th>
+                                    <th>Current Price</th>
+                                    <th>Target</th>
+                                    <th>Stop Loss</th>
+                                    <th>Investment</th>
+                                    <th>Current Value</th>
+                                    <th>P&L Amount</th>
+                                    <th>P&L %</th>
+                                    <th>Status</th>
+                                    <th>Priority</th>
+                                    <th>Entry Date</th>
+                                    <th>Last Update</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data will be loaded via AJAX -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Signal Details Modal -->
+<div class="modal fade" id="signalModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Signal Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="signalModalBody">
+                <!-- Signal details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- DataTables JS -->
+<script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/colreorder/1.7.0/js/dataTables.colReorder.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/fixedheader/3.4.0/js/dataTables.fixedHeader.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+
+<script>
+var signalsTable;
+var autoRefreshInterval;
+
+$(document).ready(function() {
+    initializeDataTable();
+    setupAutoRefresh();
+    setupColumnToggles();
+    
+    // Refresh button click
+    $('#refreshData').click(function() {
+        refreshData();
+    });
+});
+
+function initializeDataTable() {
+    signalsTable = $('#signalsTable').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: '/api/datatable/etf-signals/user',
+            type: 'POST',
+            contentType: 'application/json',
+            data: function(d) {
+                return JSON.stringify(d);
+            },
+            error: function(xhr, error, thrown) {
+                console.error('DataTable AJAX error:', error);
+                showAlert('Error loading data: ' + error, 'danger');
+            }
+        },
+        columns: [
+            { data: 'symbol', name: 'symbol' },
+            { data: 'etf_name', name: 'etf_name' },
+            { data: 'signal_type_badge', name: 'signal_type', orderable: false },
+            { data: 'quantity', name: 'quantity' },
+            { data: 'entry_price_formatted', name: 'entry_price' },
+            { data: 'current_price_formatted', name: 'current_price' },
+            { data: 'target_price_formatted', name: 'target_price', orderable: false },
+            { data: 'stop_loss_formatted', name: 'stop_loss', orderable: false },
+            { data: 'investment_formatted', name: 'invested_amount' },
+            { data: 'current_value_formatted', name: 'current_value' },
+            { 
+                data: 'pnl_amount_formatted', 
+                name: 'pnl_amount',
+                render: function(data, type, row) {
+                    var pnl = parseFloat(row.pnl_amount) || 0;
+                    var className = pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
+                    return `<span class="${className}">${data}</span>`;
+                }
+            },
+            { 
+                data: 'pnl_percent_formatted', 
+                name: 'pnl_percent',
+                render: function(data, type, row) {
+                    var pnl = parseFloat(row.pnl_percent) || 0;
+                    var className = pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
+                    return `<span class="${className}">${data}</span>`;
+                }
+            },
+            { data: 'status_badge', name: 'status', orderable: false },
+            { data: 'priority_badge', name: 'priority', orderable: false },
+            { 
+                data: 'created_at', 
+                name: 'created_at',
+                render: function(data) {
+                    return data ? new Date(data).toLocaleDateString() : 'N/A';
+                }
+            },
+            { data: 'last_update', name: 'last_update', orderable: false },
+            {
+                data: null,
+                orderable: false,
+                render: function(data, type, row) {
+                    return `
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="viewSignalDetails(${row.id})">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-info" onclick="showPriceHistory('${row.symbol}')">
+                            <i class="fas fa-chart-line"></i>
+                        </button>
+                    `;
+                }
+            }
+        ],
+        order: [[14, 'desc']], // Order by created_at descending
+        pageLength: 25,
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+        responsive: true,
+        colReorder: true,
+        fixedHeader: true,
+        dom: 'Blfrtip',
+        buttons: [
+            'copy', 'csv', 'excel', 'pdf', 'print',
+            {
+                text: 'Column visibility',
+                extend: 'colvis'
+            }
+        ],
+        drawCallback: function(settings) {
+            updatePortfolioSummary();
+            updateLastUpdate();
+        },
+        initComplete: function() {
+            // Enable individual column searching
+            this.api().columns().every(function() {
+                var column = this;
+                var header = $(column.header());
+                
+                if (header.hasClass('searchable')) {
+                    var input = $('<input type="text" placeholder="Search..." class="form-control form-control-sm mt-1">')
+                        .appendTo(header)
+                        .on('keyup change clear', function() {
+                            if (column.search() !== this.value) {
+                                column.search(this.value).draw();
+                            }
+                        });
+                }
+            });
+        }
+    });
+}
+
+function setupColumnToggles() {
+    var columns = [
+        { idx: 1, name: 'ETF Name' },
+        { idx: 6, name: 'Target' },
+        { idx: 7, name: 'Stop Loss' },
+        { idx: 8, name: 'Investment' },
+        { idx: 9, name: 'Current Value' },
+        { idx: 13, name: 'Priority' },
+        { idx: 14, name: 'Entry Date' },
+        { idx: 15, name: 'Last Update' }
+    ];
+    
+    var togglesContainer = $('#columnToggles');
+    
+    columns.forEach(col function() {
+        var btn = $(`<button class="btn btn-sm btn-outline-secondary" data-column="${col.idx}">
+            ${col.name}
+        </button>`);
+        
+        btn.click(function() {
+            var column = signalsTable.column(col.idx);
+            column.visible(!column.visible());
+            $(this).toggleClass('btn-outline-secondary btn-secondary');
+        });
+        
+        togglesContainer.append(btn);
+    });
+}
+
+function setupAutoRefresh() {
+    // Refresh data every 30 seconds
+    autoRefreshInterval = setInterval(function() {
+        refreshData();
+    }, 30000);
+}
+
+function refreshData() {
+    if (signalsTable) {
+        signalsTable.ajax.reload(null, false); // Don't reset pagination
+    }
+    
+    // Also refresh quotes
+    fetch('/api/quotes/force-update', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }).catch(error function() {
+        console.error('Error forcing quote update:', error);
+    });
+}
+
+function updatePortfolioSummary() {
+    var data = signalsTable.data();
+    var totalInvestment = 0;
+    var totalCurrentValue = 0;
+    var activeSignalsCount = 0;
+    
+    data.each(function(row) {
+        var investment = parseFloat(row.invested_amount) || 0;
+        var currentValue = parseFloat(row.current_value) || investment;
+        
+        totalInvestment += investment;
+        totalCurrentValue += currentValue;
+        
+        if (row.status === 'ACTIVE') {
+            activeSignalsCount++;
+        }
+    });
+    
+    var totalPnL = totalCurrentValue - totalInvestment;
+    
+    $('#totalInvestment').text('₹' + totalInvestment.toLocaleString('en-IN', {minimumFractionDigits: 2}));
+    $('#currentValue').text('₹' + totalCurrentValue.toLocaleString('en-IN', {minimumFractionDigits: 2}));
+    $('#totalPnL').text('₹' + totalPnL.toLocaleString('en-IN', {minimumFractionDigits: 2}))
+        .removeClass('pnl-positive pnl-negative')
+        .addClass(totalPnL >= 0 ? 'pnl-positive' : 'pnl-negative');
+    $('#activeSignals').text(activeSignalsCount);
+}
+
+function updateLastUpdate() {
+    $('#lastUpdate').text(new Date().toLocaleTimeString());
+}
+
+function viewSignalDetails(signalId) {
+    // Load signal details in modal
+    fetch(`/api/etf/signal/${signalId}`)
+        .then(response => response.json())
+        .then(data function() {
+            if (data.success) {
+                displaySignalDetails(data.signal);
+            } else {
+                showAlert('Error loading signal details: ' + data.message, 'danger');
+            }
+        })
+        .catch(error function() {
+            console.error('Error:', error);
+            showAlert('Error loading signal details', 'danger');
+        });
+}
+
+function displaySignalDetails(signal) {
+    var modalBody = $('#signalModalBody');
+    
+    var html = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Basic Information</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>Symbol:</strong></td><td>${signal.symbol}</td></tr>
+                    <tr><td><strong>ETF Name:</strong></td><td>${signal.etf_name || 'N/A'}</td></tr>
+                    <tr><td><strong>Signal Type:</strong></td><td>${signal.signal_type}</td></tr>
+                    <tr><td><strong>Status:</strong></td><td>${signal.status}</td></tr>
+                    <tr><td><strong>Priority:</strong></td><td>${signal.priority}</td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6>Price Information</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>Entry Price:</strong></td><td>₹${parseFloat(signal.entry_price).toLocaleString()}</td></tr>
+                    <tr><td><strong>Current Price:</strong></td><td>₹${parseFloat(signal.current_price).toLocaleString()}</td></tr>
+                    <tr><td><strong>Target Price:</strong></td><td>₹${signal.target_price ? parseFloat(signal.target_price).toLocaleString() : 'N/A'}</td></tr>
+                    <tr><td><strong>Stop Loss:</strong></td><td>₹${signal.stop_loss ? parseFloat(signal.stop_loss).toLocaleString() : 'N/A'}</td></tr>
+                </table>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-12">
+                <h6>P&L Information</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>Quantity:</strong></td><td>${signal.quantity}</td></tr>
+                    <tr><td><strong>Investment:</strong></td><td>₹${parseFloat(signal.invested_amount).toLocaleString()}</td></tr>
+                    <tr><td><strong>Current Value:</strong></td><td>₹${parseFloat(signal.current_value).toLocaleString()}</td></tr>
+                    <tr><td><strong>P&L Amount:</strong></td><td class="${parseFloat(signal.pnl_amount) >= 0 ? 'pnl-positive' : 'pnl-negative'}">₹${parseFloat(signal.pnl_amount).toLocaleString()}</td></tr>
+                    <tr><td><strong>P&L Percentage:</strong></td><td class="${parseFloat(signal.pnl_percent) >= 0 ? 'pnl-positive' : 'pnl-negative'}">${parseFloat(signal.pnl_percent).toFixed(2)}%</td></tr>
+                </table>
+            </div>
+        </div>
+    `;
+    
+    modalBody.html(html);
+    $('#signalModal').modal('show');
+}
+
+function showPriceHistory(symbol) {
+    // This would open a price history chart
+    window.open(`/api/quotes/history/${symbol}?hours=24`, '_blank');
+}
+
+function showAlert(message, type = 'info') {
+    var alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    // Remove existing alerts
+    $('.alert').remove();
+    
+    // Add new alert at the top of the container
+    $('.container-fluid').prepend(alertHtml);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() function() {
+        $('.alert').fadeOut();
+    }, 5000);
+}
+
+// Cleanup on page unload
+$(window).on('beforeunload', function() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+});
+</script>
+{% endblock %}

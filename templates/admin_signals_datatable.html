@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Trade Signals - DataTable</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_paginate {
+            margin-bottom: 1rem;
+        }
+
+        .table-responsive {
+            border-radius: 0.375rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+
+        .badge {
+            font-size: 0.75rem;
+        }
+
+        .text-success { color: #198754 !important; }
+        .text-danger { color: #dc3545 !important; }
+        .text-warning { color: #fd7e14 !important; }
+
+        .table thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            z-index: 9999;
+        }
+
+        .loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="mb-0">
+                        <i class="fas fa-chart-line me-2 text-primary"></i>
+                        Admin Trade Signals
+                    </h2>
+                    <div class="d-flex gap-2">
+                        <button id="refreshBtn" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-sync-alt me-1"></i> Refresh
+                        </button>
+                        <span class="badge bg-info" id="signalsCount">Loading...</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table id="adminSignalsTable" class="table table-striped table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>user_target_id</th>
+                                        <th>Symbol</th>
+                                        <th>30</th>
+                                        <th>DH</th>
+                                        <th>Date</th>
+                                        <th>Pos</th>
+                                        <th>Qty</th>
+                                        <th>EP</th>
+                                        <th>CMP</th>
+                                        <th>%Chan</th>
+                                        <th>Inv.</th>
+                                        <th>TP</th>
+                                        <th>TVA</th>
+                                        <th>TPR</th>
+                                        <th>PL</th>
+                                        <th>ED</th>
+                                        <th>PR</th>
+                                        <th>PP</th>
+                                        <th>IV</th>
+                                        <th>IP</th>
+                                        <th>NT</th>
+                                        <th>Qt</th>
+                                        <th>7</th>
+                                        <th>%Ch</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be loaded via AJAX -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+
+    <!-- DataTables JS -->
+    <script type="text/javascript" src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+
+    <script>
+            function AdminSignalsDataTable() {
+                var self = this;
+                this.table = null;
+
+                this.init = function() {
+                    this.setupDataTable();
+                    this.setupEventListeners();
+                };
+
+                this.setupDataTable = function() {
+                    self.table = $('#adminSignalsTable').DataTable({
+                        "processing": true,
+                        "serverSide": true,
+                        "ajax": {
+                            "url": "/api/datatable/admin-signals",
+                            "type": "POST",
+                            "contentType": "application/json",
+                            "data": function(d) {
+                                return JSON.stringify(d);
+                            },
+                        beforeSend: function() {
+                            $('#loadingOverlay').show();
+                        },
+                        complete: function() {
+                            $('#loadingOverlay').hide();
+                        },
+                        error: function(xhr, error, thrown) {
+                            console.error('DataTable AJAX Error:', error, thrown);
+                            alert('Error loading data. Please try again.');
+                            $('#loadingOverlay').hide();
+                        }
+                        },
+                        "columns": [
+                            {"data": "user_target_id", "name": "user_target_id"},
+                            {"data": "Symbol", "name": "Symbol"},
+                            {"data": "30", "name": "30", defaultContent: '-'},
+                            {"data": "DH", "name": "DH", defaultContent: '-'},
+                            {"data": "Date", "name": "Date"},
+                            {"data": "Pos", "name": "Pos"},
+                            {"data": "Qty", "name": "Qty"},
+                            {"data": "EP", "name": "EP"},
+                            {"data": "CMP", "name": "CMP"},
+                            {"data": "%Chan", "name": "%Chan"},
+                            {"data": "Inv.", "name": "Inv."},
+                            {"data": "TP", "name": "TP"},
+                            {"data": "TVA", "name": "TVA", defaultContent: '-'},
+                            {"data": "TPR", "name": "TPR", defaultContent: '-'},
+                            {"data": "PL", "name": "PL"},
+                            {"data": "ED", "name": "ED", defaultContent: '-'},
+                            {"data": "PR", "name": "PR", defaultContent: '-'},
+                            {"data": "PP", "name": "PP", defaultContent: '-'},
+                            {"data": "IV", "name": "IV", defaultContent: '-'},
+                            {"data": "IP", "name": "IP", defaultContent: '-'},
+                            {"data": "NT", "name": "NT", defaultContent: '-'},
+                            {"data": "Qt", "name": "Qt", defaultContent: '-'},
+                            {"data": "7", "name": "7", defaultContent: '-'},
+                            {"data": "%Ch", "name": "%Ch", defaultContent: '-'}
+                        ],
+                        "pageLength": 25,
+                        "responsive": true,
+                        "scrollX": true,
+                        "order": [[4, "desc"]], // Sort by Date column
+                        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+                             '<"row"<"col-sm-12"tr>>' +
+                             '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+                        drawCallback: function(settings) {
+                            $('#signalsCount').text(settings.json.recordsTotal + ' signals');
+                        },
+                        "language": {
+                            processing: '<i class="fas fa-spinner fa-spin"></i> Loading signals...',
+                            "emptyTable": "No admin signals available",
+                            zeroRecords: 'No matching signals found',
+                            info: 'Showing _START_ to _END_ of _TOTAL_ signals',
+                            infoEmpty: 'Showing 0 to 0 of 0 signals',
+                            infoFiltered: '(filtered from _MAX_ total signals)',
+                            search: 'Search signals:'
+                        }
+                    });
+                };
+
+                this.setupEventListeners = function() {
+                    // Refresh button
+                    $('#refreshBtn').on('click', function() {
+                        self.refreshTable();
+                    });
+
+                    // Auto-refresh every 30 seconds
+                    setInterval(function() {
+                        self.refreshTable();
+                    }, 30000);
+                };
+
+                this.refreshTable = function() {
+                    if (self.table) {
+                        self.table.ajax.reload(null, false);
+                    }
+                };
+
+                // Initialize
+                this.init();
+            }
+
+            // Initialize when document is ready
+            $(document).ready(function() {
+                new AdminSignalsDataTable();
+            });
+    </script>
+</body>
+</html>

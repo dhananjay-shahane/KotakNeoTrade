@@ -1,0 +1,1100 @@
+
+{% extends "base.html" %}
+
+{% block title %}Default Deals - Kotak Neo Trading{% endblock %}
+
+{% block extra_css %}
+<style>
+    .signals-table {
+        font-size: 0.75rem;
+        background: var(--card-bg);
+    }
+    .signals-table th {
+        background: var(--secondary-color);
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 0.7rem;
+        text-align: center;
+        padding: 6px 3px;
+        border: 1px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        white-space: nowrap;
+    }
+    .signals-table td {
+        padding: 4px 3px;
+        text-align: center;
+        border: 1px solid var(--border-color);
+        vertical-align: middle;
+        white-space: nowrap;
+        font-size: 0.75rem;
+    }
+    .profit { color: var(--success-color); }
+    .loss { color: var(--danger-color); }
+    .neutral { color: var(--warning-color); }
+    .table-container {
+        height: 70vh;
+        overflow-x: auto;
+        overflow-y: auto;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        position: relative;
+    }
+    .portfolio-summary {
+        background: var(--card-bg);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid var(--border-color);
+    }
+    .summary-card {
+        background: var(--dark-bg);
+        border-radius: 6px;
+        padding: 10px;
+        text-align: center;
+        border: 1px solid var(--border-color);
+    }
+    .live-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 5px;
+    }
+    .live-indicator.connected {
+        background: var(--success-color);
+        animation: pulse 2s infinite;
+    }
+    .live-indicator.disconnected {
+        background: var(--danger-color);
+    }
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">Default Deals</h1>
+        <p class="text-muted mb-0">All trading deals and positions</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-light" onclick="refreshDeals()">
+            <i class="fas fa-sync-alt me-1"></i>Refresh
+        </button>
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#columnSettingsModal">
+            <i class="fas fa-cog me-1"></i>Columns
+        </button>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#dealFiltersModal">
+            <i class="fas fa-filter me-1"></i>Filters
+        </button>
+    </div>
+</div>
+
+<!-- Portfolio Summary -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="summary-card">
+            <h6 class="text-muted mb-2">Total Deals</h6>
+            <h4 class="text-primary mb-0" id="totalDealsCount">0</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="summary-card">
+            <h6 class="text-muted mb-2">Total Investment</h6>
+            <h4 class="text-warning mb-0" id="totalInvestment">₹0</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="summary-card">
+            <h6 class="text-muted mb-2">Current Value</h6>
+            <h4 class="text-info mb-0" id="currentValue">₹0</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="summary-card">
+            <h6 class="text-muted mb-2">Total P&L</h6>
+            <h4 class="mb-0" id="totalPnL">₹0</h4>
+        </div>
+    </div>
+</div>
+
+<!-- Deals Table -->
+<div class="card bg-secondary border-0 shadow-lg">
+    <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 text-light">
+            <i class="fas fa-list me-2 text-primary"></i>All Trading Deals
+            <span class="badge bg-primary ms-2" id="visibleDealsCount">0</span>
+        </h5>
+        <div class="d-flex gap-2 align-items-center">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="autoRefreshToggle" checked>
+                <label class="form-check-label text-light" for="autoRefreshToggle">
+                    Auto Refresh
+                </label>
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" id="refreshIntervalDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-clock me-1"></i><span id="currentInterval">30s</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(5000, '5s')">5 seconds</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(10000, '10s')">10 seconds</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(30000, '30s')">30 seconds</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(60000, '1m')">1 minute</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(300000, '5m')">5 minutes</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(600000, '10m')">10 minutes</a></li>
+                </ul>
+            </div>
+            <button class="btn btn-sm btn-outline-light" onclick="exportDeals()">
+                <i class="fas fa-download me-1"></i>Export
+            </button>
+        </div>
+    </div>
+
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0 signals-table" id="dealsTable">
+                <thead>
+                    <tr id="tableHeaders">
+                        <!-- Dynamic headers will be generated here -->
+                    </tr>
+                </thead>
+                <tbody id="dealsTableBody">
+                    <!-- Dynamic content will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card-footer bg-dark border-0 d-flex justify-content-between align-items-center text-light">
+        <div class="d-flex align-items-center gap-3">
+            <small>Showing <span id="showingCount">0</span> of <span id="totalCount">0</span> deals</small>
+        </div>
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-sm btn-outline-light" onclick="previousPage()" id="prevBtn" disabled>
+                <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-light" disabled>
+                Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-light" onclick="nextPage()" id="nextBtn" disabled>
+                Next <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Column Settings Modal -->
+<div class="modal fade" id="columnSettingsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title text-light">
+                    <i class="fas fa-cog me-2"></i>Column Settings
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Select which columns to display in the deals table:</p>
+                <div class="row" id="columnCheckboxes">
+                    <!-- Column checkboxes will be populated here -->
+                </div>
+                <hr class="border-secondary">
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAllColumns()">Select All</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetDefaultColumns()">Reset to Default</button>
+                </div>
+            </div>
+            <div class="modal-footer border-top border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="applyColumnSettings()">Apply Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Deal Filters Modal -->
+<div class="modal fade" id="dealFiltersModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title text-light">
+                    <i class="fas fa-filter me-2"></i>Deal Filters
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label text-light">Order Type</label>
+                    <select class="form-select bg-secondary text-light" id="orderTypeFilter">
+                        <option value="">All Orders</option>
+                        <option value="BUY">Buy Orders</option>
+                        <option value="SELL">Sell Orders</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-light">Status</label>
+                    <select class="form-select bg-secondary text-light" id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="EXECUTED">Executed</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="CANCELLED">Cancelled</option>
+                        <option value="REJECTED">Rejected</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-light">Symbol</label>
+                    <input type="text" class="form-control bg-secondary text-light" id="symbolFilter" placeholder="Enter symbol...">
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label text-light">Min P&L</label>
+                        <input type="number" class="form-control bg-secondary text-light" id="minPnlFilter" placeholder="-10000">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-light">Max P&L</label>
+                        <input type="number" class="form-control bg-secondary text-light" id="maxPnlFilter" placeholder="10000">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top border-secondary">
+                <button type="button" class="btn btn-secondary" onclick="clearFilters()">Clear Filters</button>
+                <button type="button" class="btn btn-primary" onclick="applyFilters()" data-bs-dismiss="modal">Apply Filters</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trade Modal -->
+<div class="modal fade" id="tradeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title text-light" id="tradeModalLabel">
+                    <i class="fas fa-handshake me-2"></i>Place Trade
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="tradeForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light">Symbol</label>
+                            <input type="text" class="form-control bg-secondary text-light" id="tradeSymbol" readonly>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light">Type</label>
+                            <select class="form-select bg-secondary text-light" id="tradeType">
+                                <option value="BUY">BUY</option>
+                                <option value="SELL">SELL</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light">Price</label>
+                            <input type="number" class="form-control bg-secondary text-light" id="tradePrice" step="0.01" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light">Quantity</label>
+                            <input type="number" class="form-control bg-secondary text-light" id="tradeQuantity" min="1" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitTrade()">Place Trade</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart Modal -->
+<div class="modal fade" id="chartModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title text-light" id="chartModalLabel">
+                    <i class="fas fa-chart-line me-2"></i>Price Chart
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="chartContainer">
+                    <canvas id="priceChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+            <div class="modal-footer border-top border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+function DefaultDealsManager() {
+        this.deals = [];
+        this.filteredDeals = [];
+        this.currentPage = 1;
+        this.pageSize = 20;
+        this.autoRefresh = true;
+        this.refreshInterval = null;
+        this.refreshIntervalTime = 30000; // Default 30 seconds
+
+        // Available columns configuration
+        this.availableColumns = {
+            'symbol': { label: 'Symbol', default: true, width: '80px' },
+            'type': { label: 'Type', default: true, width: '60px' },
+            'date': { label: 'Date', default: true, width: '80px' },
+            'pos': { label: 'Pos', default: true, width: '50px' },
+            'qty': { label: 'Qty', default: true, width: '60px' },
+            'ep': { label: 'Entry Price', default: true, width: '80px' },
+            'cmp': { label: 'CMP', default: true, width: '80px' },
+            'change_pct': { label: '%Change', default: true, width: '70px' },
+            'investment': { label: 'Investment', default: true, width: '90px' },
+            'current_value': { label: 'Current Value', default: true, width: '90px' },
+            'pnl': { label: 'P&L', default: true, width: '80px' },
+            'pnl_pct': { label: 'P&L %', default: true, width: '70px' },
+            'status': { label: 'Status', default: true, width: '70px' },
+            'source': { label: 'Source', default: false, width: '80px' },
+            'days_held': { label: 'Days', default: false, width: '50px' },
+            'actions': { label: 'Actions', default: true, width: '100px' }
+        };
+
+        this.selectedColumns = this.getDefaultColumns();
+        this.init();
+    }
+
+    getDefaultColumns() {
+        return Object.keys(this.availableColumns).filter(col => this.availableColumns[col].default);
+    }
+
+    init() {
+        this.generateColumnCheckboxes();
+        this.updateTableHeaders();
+        this.loadDeals();
+        this.startAutoRefresh();
+
+        // Auto refresh toggle
+        document.getElementById('autoRefreshToggle').addEventListener('change', (e) function() {
+            this.autoRefresh = e.target.checked;
+            if (this.autoRefresh) {
+                this.startAutoRefresh();
+            } else {
+                this.stopAutoRefresh();
+            }
+        });
+    }
+
+    generateColumnCheckboxes() {
+        var container = document.getElementById('columnCheckboxes');
+        container.innerHTML = '';
+
+        Object.keys(this.availableColumns).forEach(column function() {
+            var colInfo = this.availableColumns[column];
+            var colDiv = document.createElement('div');
+            colDiv.className = 'col-md-4 col-lg-3 mb-2';
+
+            colDiv.innerHTML = `
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="col_${column}" 
+                           ${this.selectedColumns.includes(column) ? 'checked' : ''}>
+                    <label class="form-check-label text-light" for="col_${column}">
+                        ${colInfo.label}
+                    </label>
+                </div>
+            `;
+
+            container.appendChild(colDiv);
+        });
+    }
+
+    updateTableHeaders() {
+        var headersRow = document.getElementById('tableHeaders');
+        headersRow.innerHTML = '';
+
+        this.selectedColumns.forEach(column function() {
+            var th = document.createElement('th');
+            var colInfo = this.availableColumns[column];
+            th.style.width = colInfo.width;
+            th.className = 'text-center';
+            th.style.backgroundColor = 'var(--secondary-color)';
+            th.style.color = 'var(--text-primary)';
+            th.style.fontWeight = '600';
+            th.style.fontSize = '0.7rem';
+            th.style.padding = '6px 3px';
+            th.style.border = '1px solid var(--border-color)';
+            th.style.position = 'sticky';
+            th.style.top = '0';
+            th.style.zIndex = '10';
+            th.style.whiteSpace = 'nowrap';
+            th.textContent = colInfo.label;
+            headersRow.appendChild(th);
+        });
+    }
+
+    async loadDeals() {
+        try {
+            // Generate comprehensive sample deals data
+            this.deals = this.generateDefaultDeals();
+            this.filteredDeals = [...this.deals];
+            this.renderDealsTable();
+            this.updatePagination();
+            this.updateSummary();
+
+        } catch (error) {
+            console.error('Error loading deals:', error);
+            this.showError('Failed to load deals data');
+        }
+    }
+
+    generateDefaultDeals() {
+        // Generate a comprehensive list of sample deals
+        var symbols = ['RELIANCE', 'TCS', 'HDFC', 'INFY', 'ICICIBANK', 'SBI', 'BHARTIARTL', 'ITC', 'HDFCBANK', 'LT', 
+                        'ASIANPAINT', 'MARUTI', 'BAJFINANCE', 'TITAN', 'NESTLEIND', 'KOTAKBANK', 'ULTRACEMCO', 'ADANIPORTS',
+                        'NIFTYBEES', 'BANKBEES', 'ITBEES', 'LIQUIDBEES', 'GOLDSHARE', 'CONSUMBEES', 'MID150BEES'];
+        
+        var dealTypes = ['EQUITY', 'ETF', 'FUTURES', 'OPTIONS'];
+        var statuses = ['EXECUTED', 'PENDING', 'PARTIALLY_FILLED', 'CANCELLED'];
+        var sources = ['MANUAL', 'SIGNAL', 'ALGO', 'COPY_TRADE'];
+        
+        var defaultDeals = [];
+        
+        // Generate 50 sample deals
+        for (var i = 0; i < 50; i++) {
+            var symbol = symbols[Math.floor(Math.random() * symbols.length)];
+            var dealType = dealTypes[Math.floor(Math.random() * dealTypes.length)];
+            var isLong = Math.random() > 0.4; // 60% long positions
+            var quantity = Math.floor(Math.random() * 500) + 1;
+            var entryPrice = Math.random() * 3000 + 50;
+            var daysAgo = Math.floor(Math.random() * 365);
+            var volatility = 0.03; // 3% daily volatility
+            var priceChange = (Math.random() - 0.5) * volatility * Math.sqrt(daysAgo + 1);
+            var currentPrice = entryPrice * (1 + priceChange);
+            var investment = entryPrice * quantity;
+            var currentValue = currentPrice * quantity;
+            var pnl = (currentPrice - entryPrice) * quantity * (isLong ? 1 : -1);
+            var pnlPct = (pnl / investment) * 100;
+            
+            var deal = {
+                id: `DEAL${1000 + i}`,
+                symbol: symbol,
+                type: dealType,
+                date: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', {
+                    day: '2-digit', 
+                    month: 'short', 
+                    year: '2-digit'
+                }),
+                pos: isLong ? 1 : 0,
+                position_type: isLong ? 'LONG' : 'SHORT',
+                qty: quantity,
+                ep: entryPrice,
+                cmp: currentPrice,
+                change_pct: ((currentPrice - entryPrice) / entryPrice) * 100,
+                investment: investment,
+                current_value: currentValue,
+                pnl: pnl,
+                pnl_pct: pnlPct,
+                status: statuses[Math.floor(Math.random() * statuses.length)],
+                source: sources[Math.floor(Math.random() * sources.length)],
+                days_held: daysAgo,
+                created_at: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000)
+            };
+            
+            defaultDeals.push(deal);
+        }
+        
+        // Add user deals from localStorage if any
+        var userDeals = JSON.parse(localStorage.getItem('userDeals') || '[]');
+        userDeals.forEach(userDeal function() {
+            var mappedDeal = {
+                id: userDeal.id || `USER${Date.now()}`,
+                symbol: userDeal.symbol,
+                type: 'ETF',
+                date: userDeal.date,
+                pos: userDeal.pos,
+                position_type: userDeal.pos === 1 ? 'LONG' : 'SHORT',
+                qty: userDeal.qty,
+                ep: userDeal.ep,
+                cmp: userDeal.cmp,
+                change_pct: userDeal.change_pct,
+                investment: userDeal.inv,
+                current_value: userDeal.cmp * userDeal.qty,
+                pnl: userDeal.pl,
+                pnl_pct: (userDeal.pl / userDeal.inv) * 100,
+                status: userDeal.status || 'EXECUTED',
+                source: 'SIGNAL',
+                days_held: userDeal.dh || 0,
+                created_at: new Date(userDeal.date)
+            };
+            defaultDeals.push(mappedDeal);
+        });
+        
+        // Sort by most recent first
+        return defaultDeals.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
+
+    renderDealsTable() {
+        var tbody = document.getElementById('dealsTableBody');
+        var startIndex = (this.currentPage - 1) * this.pageSize;
+        var endIndex = startIndex + this.pageSize;
+        var pageDeals = this.filteredDeals.slice(startIndex, endIndex);
+
+        tbody.innerHTML = '';
+
+        if (pageDeals.length === 0) {
+            var row = document.createElement('tr');
+            row.innerHTML = `
+                <td colspan="${this.selectedColumns.length}" class="text-center py-4">
+                    <i class="fas fa-list fa-3x mb-3 text-primary"></i>
+                    <h6 class="text-light">No Deals Found</h6>
+                    <p class="text-muted mb-0">No trading deals match the current filters</p>
+                </td>
+            `;
+            tbody.appendChild(row);
+            return;
+        }
+
+        pageDeals.forEach(deal function() {
+            var row = document.createElement('tr');
+
+            this.selectedColumns.forEach(columnKey function() {
+                var cell = document.createElement('td');
+                cell.className = 'text-center';
+                cell.style.padding = '4px 3px';
+                cell.style.border = '1px solid var(--border-color)';
+                cell.style.fontSize = '0.75rem';
+
+                var cellContent = '';
+                var bgColor = '';
+
+                switch(columnKey) {
+                    case 'symbol':
+                        cellContent = `<strong>${deal.symbol}</strong>`;
+                        break;
+                    case 'type':
+                        cellContent = `<span class="badge bg-info">${deal.type}</span>`;
+                        break;
+                    case 'date':
+                        cellContent = deal.date;
+                        break;
+                    case 'pos':
+                        cellContent = `<span class="badge ${deal.pos === 1 ? 'bg-success' : 'bg-danger'}">${deal.position_type}</span>`;
+                        break;
+                    case 'qty':
+                        cellContent = deal.qty.toLocaleString('en-IN');
+                        break;
+                    case 'ep':
+                        cellContent = '₹' + deal.ep.toFixed(2);
+                        break;
+                    case 'cmp':
+                        cellContent = '₹' + deal.cmp.toFixed(2);
+                        break;
+                    case 'change_pct':
+                        bgColor = deal.change_pct >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                        cellContent = `${deal.change_pct >= 0 ? '+' : ''}${deal.change_pct.toFixed(2)}%`;
+                        break;
+                    case 'investment':
+                        cellContent = '₹' + deal.investment.toLocaleString('en-IN', {maximumFractionDigits: 0});
+                        break;
+                    case 'current_value':
+                        cellContent = '₹' + deal.current_value.toLocaleString('en-IN', {maximumFractionDigits: 0});
+                        break;
+                    case 'pnl':
+                        bgColor = deal.pnl >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                        cellContent = `₹${deal.pnl >= 0 ? '+' : ''}${deal.pnl.toFixed(0)}`;
+                        break;
+                    case 'pnl_pct':
+                        bgColor = deal.pnl_pct >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                        cellContent = `${deal.pnl_pct >= 0 ? '+' : ''}${deal.pnl_pct.toFixed(2)}%`;
+                        break;
+                    case 'status':
+                        var statusColors = {
+                            'EXECUTED': 'bg-success',
+                            'PENDING': 'bg-warning',
+                            'PARTIALLY_FILLED': 'bg-info',
+                            'CANCELLED': 'bg-danger'
+                        };
+                        cellContent = `<span class="badge ${statusColors[deal.status] || 'bg-secondary'}">${deal.status}</span>`;
+                        break;
+                    case 'source':
+                        cellContent = `<small class="text-muted">${deal.source}</small>`;
+                        break;
+                    case 'days_held':
+                        cellContent = deal.days_held + 'd';
+                        break;
+                    case 'actions':
+                        cellContent = `
+                            <div class="dropdown">
+                                <button class="btn btn-xs btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-dark">
+                                    <li><a class="dropdown-item" href="#" onclick="buyTrade('${deal.symbol}', ${deal.cmp})"><i class="fas fa-arrow-up text-success me-2"></i>Buy Trade</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="sellTrade('${deal.symbol}', ${deal.cmp})"><i class="fas fa-arrow-down text-danger me-2"></i>Sell Trade</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="#" onclick="viewChart('${deal.symbol}')"><i class="fas fa-chart-line text-info me-2"></i>View Chart</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="viewDealDetails('${deal.id}')"><i class="fas fa-eye text-warning me-2"></i>View Details</a></li>
+                                    ${deal.status === 'PENDING' ? `
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="#" onclick="modifyOrder('${deal.id}')"><i class="fas fa-edit text-info me-2"></i>Modify Order</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="cancelOrder('${deal.id}')"><i class="fas fa-times text-danger me-2"></i>Cancel Order</a></li>
+                                    ` : ''}
+                                </ul>
+                            </div>
+                        `;
+                        break;
+                    default:
+                        cellContent = '';
+                }
+
+                if (bgColor) {
+                    cell.style.backgroundColor = bgColor;
+                    cell.style.color = 'white';
+                    cell.style.fontWeight = 'bold';
+                }
+
+                cell.innerHTML = cellContent;
+                row.appendChild(cell);
+            });
+
+            tbody.appendChild(row);
+        });
+
+        document.getElementById('visibleDealsCount').textContent = this.filteredDeals.length;
+        document.getElementById('showingCount').textContent = Math.min(endIndex, this.filteredDeals.length);
+        document.getElementById('totalCount').textContent = this.filteredDeals.length;
+    }
+
+    updateSummary() {
+        var totalInvestment = 0;
+        var totalCurrentValue = 0;
+        var totalPnL = 0;
+
+        this.filteredDeals.forEach(deal function() {
+            totalInvestment += deal.investment;
+            totalCurrentValue += deal.current_value;
+            totalPnL += deal.pnl;
+        });
+
+        document.getElementById('totalDealsCount').textContent = this.filteredDeals.length;
+        document.getElementById('totalInvestment').textContent = '₹' + totalInvestment.toLocaleString('en-IN', {maximumFractionDigits: 0});
+        document.getElementById('currentValue').textContent = '₹' + totalCurrentValue.toLocaleString('en-IN', {maximumFractionDigits: 0});
+        
+        var pnlElement = document.getElementById('totalPnL');
+        pnlElement.textContent = `₹${totalPnL >= 0 ? '+' : ''}${totalPnL.toFixed(0)}`;
+        pnlElement.className = totalPnL >= 0 ? 'text-success mb-0' : 'text-danger mb-0';
+    }
+
+    updatePagination() {
+        var totalPages = Math.ceil(this.filteredDeals.length / this.pageSize);
+
+        document.getElementById('currentPage').textContent = this.currentPage;
+        document.getElementById('totalPages').textContent = totalPages;
+
+        document.getElementById('prevBtn').disabled = this.currentPage <= 1;
+        document.getElementById('nextBtn').disabled = this.currentPage >= totalPages;
+    }
+
+    startAutoRefresh() {
+        if (this.refreshInterval) clearInterval(this.refreshInterval);
+        if (this.autoRefresh) {
+            this.refreshInterval = setInterval(() function() {
+                this.loadDeals();
+            }, this.refreshIntervalTime);
+        }
+    }
+
+    stopAutoRefresh() {
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+            this.refreshInterval = null;
+        }
+    }
+
+    showError(message) {
+        var tbody = document.getElementById('dealsTableBody');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="${this.selectedColumns.length}" class="text-center py-4">
+                    <i class="fas fa-exclamation-triangle fa-3x mb-3 text-danger"></i>
+                    <h6 class="text-danger">${message}</h6>
+                    <button class="btn btn-outline-primary btn-sm mt-2" onclick="window.defaultDealsManager.loadDeals()">
+                        <i class="fas fa-sync me-1"></i>Retry
+                    </button>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Global functions for column settings and filters
+function applyColumnSettings() {
+    window.defaultDealsManager.selectedColumns = [];
+
+    Object.keys(window.defaultDealsManager.availableColumns).forEach(column function() {
+        var checkbox = document.getElementById(`col_${column}`);
+        if (checkbox && checkbox.checked) {
+            window.defaultDealsManager.selectedColumns.push(column);
+        }
+    });
+
+    window.defaultDealsManager.updateTableHeaders();
+    window.defaultDealsManager.renderDealsTable();
+
+    bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal')).hide();
+}
+
+function selectAllColumns() {
+    Object.keys(window.defaultDealsManager.availableColumns).forEach(column function() {
+        var checkbox = document.getElementById(`col_${column}`);
+        if (checkbox) checkbox.checked = true;
+    });
+}
+
+function resetDefaultColumns() {
+    Object.keys(window.defaultDealsManager.availableColumns).forEach(column function() {
+        var checkbox = document.getElementById(`col_${column}`);
+        if (checkbox) {
+            checkbox.checked = window.defaultDealsManager.availableColumns[column].default;
+        }
+    });
+}
+
+function applyFilters() {
+    var orderType = document.getElementById('orderTypeFilter').value;
+    var status = document.getElementById('statusFilter').value;
+    var symbol = document.getElementById('symbolFilter').value.toLowerCase();
+    var minPnl = parseFloat(document.getElementById('minPnlFilter').value) || -Infinity;
+    var maxPnl = parseFloat(document.getElementById('maxPnlFilter').value) || Infinity;
+
+    window.defaultDealsManager.filteredDeals = window.defaultDealsManager.deals.filter(deal function() {
+        var matchesOrderType = !orderType || 
+            (orderType === 'BUY' && deal.pos === 1) || 
+            (orderType === 'SELL' && deal.pos === 0);
+        var matchesStatus = !status || deal.status === status;
+        var matchesSymbol = !symbol || deal.symbol.toLowerCase().includes(symbol);
+        var matchesPnl = deal.pnl >= minPnl && deal.pnl <= maxPnl;
+
+        return matchesOrderType && matchesStatus && matchesSymbol && matchesPnl;
+    });
+
+    window.defaultDealsManager.currentPage = 1;
+    window.defaultDealsManager.renderDealsTable();
+    window.defaultDealsManager.updatePagination();
+    window.defaultDealsManager.updateSummary();
+}
+
+function clearFilters() {
+    document.getElementById('orderTypeFilter').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('symbolFilter').value = '';
+    document.getElementById('minPnlFilter').value = '';
+    document.getElementById('maxPnlFilter').value = '';
+
+    window.defaultDealsManager.filteredDeals = [...window.defaultDealsManager.deals];
+    window.defaultDealsManager.currentPage = 1;
+    window.defaultDealsManager.renderDealsTable();
+    window.defaultDealsManager.updatePagination();
+    window.defaultDealsManager.updateSummary();
+}
+
+function refreshDeals() {
+    window.defaultDealsManager.loadDeals();
+}
+
+function previousPage() {
+    if (window.defaultDealsManager.currentPage > 1) {
+        window.defaultDealsManager.currentPage--;
+        window.defaultDealsManager.renderDealsTable();
+        window.defaultDealsManager.updatePagination();
+    }
+}
+
+function nextPage() {
+    var totalPages = Math.ceil(window.defaultDealsManager.filteredDeals.length / window.defaultDealsManager.pageSize);
+    if (window.defaultDealsManager.currentPage < totalPages) {
+        window.defaultDealsManager.currentPage++;
+        window.defaultDealsManager.renderDealsTable();
+        window.defaultDealsManager.updatePagination();
+    }
+}
+
+function viewDealDetails(dealId) {
+    var deal = window.defaultDealsManager.deals.find(d => d.id === dealId);
+    if (deal) {
+        alert(`Deal Details:\n\nSymbol: ${deal.symbol}\nType: ${deal.type}\nPosition: ${deal.position_type}\nQuantity: ${deal.qty}\nEntry: ₹${deal.ep.toFixed(2)}\nCurrent: ₹${deal.cmp.toFixed(2)}\nP&L: ₹${deal.pnl.toFixed(2)}\nStatus: ${deal.status}`);
+    }
+}
+
+function modifyOrder(dealId) {
+    alert(`Modify order functionality for ${dealId} - to be implemented`);
+}
+
+function cancelOrder(dealId) {
+    if (confirm(`Are you sure you want to cancel order ${dealId}?`)) {
+        alert(`Cancel order functionality for ${dealId} - to be implemented`);
+    }
+}
+
+function buyTrade(symbol, currentPrice) {
+    var modal = new bootstrap.Modal(document.getElementById('tradeModal'));
+    document.getElementById('tradeModalLabel').innerHTML = '<i class="fas fa-arrow-up text-success me-2"></i>Buy Trade';
+    document.getElementById('tradeSymbol').value = symbol;
+    document.getElementById('tradeType').value = 'BUY';
+    document.getElementById('tradePrice').value = currentPrice.toFixed(2);
+    document.getElementById('tradeQuantity').value = '1';
+    modal.show();
+}
+
+function sellTrade(symbol, currentPrice) {
+    var modal = new bootstrap.Modal(document.getElementById('tradeModal'));
+    document.getElementById('tradeModalLabel').innerHTML = '<i class="fas fa-arrow-down text-danger me-2"></i>Sell Trade';
+    document.getElementById('tradeSymbol').value = symbol;
+    document.getElementById('tradeType').value = 'SELL';
+    document.getElementById('tradePrice').value = currentPrice.toFixed(2);
+    document.getElementById('tradeQuantity').value = '1';
+    modal.show();
+}
+
+function viewChart(symbol) {
+    var modal = new bootstrap.Modal(document.getElementById('chartModal'));
+    document.getElementById('chartModalLabel').innerHTML = `<i class="fas fa-chart-line text-info me-2"></i>Chart - ${symbol}`;
+    
+    // Clear previous chart
+    var chartContainer = document.getElementById('chartContainer');
+    chartContainer.innerHTML = '<canvas id="priceChart" width="400" height="200"></canvas>';
+    
+    // Generate sample chart data
+    var ctx = document.getElementById('priceChart').getContext('2d');
+    var labels = [];
+    var data = [];
+    var basePrice = Math.random() * 1000 + 500;
+    
+    for (var i = 29; i >= 0; i--) {
+        var date = new Date();
+        date.setDate(date.getDate() - i);
+        labels.push(date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }));
+        
+        var volatility = 0.02;
+        var change = (Math.random() - 0.5) * volatility;
+        var price = basePrice * (1 + change * i * 0.1);
+        data.push(price.toFixed(2));
+    }
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: symbol + ' Price',
+                data: data,
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                tension: 0.1,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: symbol + ' - 30 Day Price Chart',
+                    color: '#fff'
+                },
+                legend: {
+                    labels: {
+                        color: '#fff'
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    ticks: {
+                        color: '#fff',
+                        callback: function(value) {
+                            return '₹' + value;
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#fff'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                }
+            }
+        }
+    });
+    
+    modal.show();
+}
+
+function setRefreshInterval(intervalMs, displayText) {
+    window.defaultDealsManager.refreshIntervalTime = intervalMs;
+    document.getElementById('currentInterval').textContent = displayText;
+    
+    // Restart auto-refresh with new interval
+    if (window.defaultDealsManager.autoRefresh) {
+        window.defaultDealsManager.startAutoRefresh();
+    }
+    
+    // Store preference in localStorage
+    localStorage.setItem('defaultDealsRefreshInterval', intervalMs);
+    localStorage.setItem('defaultDealsRefreshIntervalDisplay', displayText);
+}
+
+function submitTrade() {
+    var symbol = document.getElementById('tradeSymbol').value;
+    var type = document.getElementById('tradeType').value;
+    var price = parseFloat(document.getElementById('tradePrice').value);
+    var quantity = parseInt(document.getElementById('tradeQuantity').value);
+    
+    if (!symbol || !price || !quantity) {
+        alert('Please fill all required fields');
+        return;
+    }
+    
+    var tradeData = {
+        symbol: symbol,
+        type: type,
+        price: price,
+        quantity: quantity,
+        timestamp: new Date().toISOString()
+    };
+    
+    // Simulate trade execution
+    console.log('Executing trade:', tradeData);
+    
+    // Show success message
+    var modal = bootstrap.Modal.getInstance(document.getElementById('tradeModal'));
+    modal.hide();
+    
+    if (window.tradingDashboard && window.tradingDashboard.showNotification) {
+        window.tradingDashboard.showNotification(
+            `${type} order for ${quantity} ${symbol} at ₹${price} has been placed successfully`,
+            'success'
+        );
+    } else {
+        alert(`${type} order for ${quantity} ${symbol} at ₹${price} has been placed successfully`);
+    }
+    
+    // Refresh deals table
+    setTimeout(() function() {
+        window.defaultDealsManager.loadDeals();
+    }, 1000);
+}
+
+function exportDeals() {
+    var data = window.defaultDealsManager.filteredDeals;
+    if (!data || data.length === 0) {
+        alert('No data to export');
+        return;
+    }
+
+    var csvContent = "data:text/csv;charset=utf-8," + 
+        Object.keys(data[0]).join(",") + "\n" +
+        data.map(row => Object.values(row).join(",")).join("\n");
+
+    var encodedUri = encodeURI(csvContent);
+    var link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `default_deals_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Initialize Default Deals Manager on page load
+document.addEventListener('DOMContentLoaded', function() {
+    window.defaultDealsManager = new DefaultDealsManager();
+    
+    // Load saved refresh interval
+    var savedInterval = localStorage.getItem('defaultDealsRefreshInterval');
+    var savedDisplay = localStorage.getItem('defaultDealsRefreshIntervalDisplay');
+    
+    if (savedInterval && savedDisplay) {
+        window.defaultDealsManager.refreshIntervalTime = parseInt(savedInterval);
+        document.getElementById('currentInterval').textContent = savedDisplay;
+    }
+    
+    // Fix dropdown positioning using fixed positioning
+    document.addEventListener('shown.bs.dropdown', function(e) {
+        var dropdown = e.target.closest('.dropdown');
+        var toggle = dropdown.querySelector('.dropdown-toggle');
+        var menu = dropdown.querySelector('.dropdown-menu');
+        
+        if (menu && toggle) {
+            // Get button position relative to viewport
+            var rect = toggle.getBoundingClientRect();
+            var menuHeight = 200; // Estimated menu height
+            var menuWidth = 160;
+            
+            // Reset positioning
+            menu.style.position = 'fixed';
+            menu.style.zIndex = '10000';
+            menu.style.transform = 'none';
+            menu.style.margin = '0';
+            
+            // Calculate position
+            var top = rect.bottom + 2; // 2px gap below button
+            var left = rect.left;
+            
+            // Check if menu would overflow bottom of viewport
+            if (top + menuHeight > window.innerHeight - 20) {
+                top = rect.top - menuHeight - 2; // Position above button
+            }
+            
+            // Check if menu would overflow right of viewport
+            if (left + menuWidth > window.innerWidth - 20) {
+                left = rect.right - menuWidth; // Align to right edge of button
+            }
+            
+            // Ensure menu doesn't go off left edge
+            if (left < 10) {
+                left = 10;
+            }
+            
+            // Apply positioning
+            menu.style.top = top + 'px';
+            menu.style.left = left + 'px';
+            menu.style.right = 'auto';
+            menu.style.bottom = 'auto';
+        }
+    });
+
+    // Clean up when dropdown is hidden
+    document.addEventListener('hidden.bs.dropdown', function(e) {
+        var dropdown = e.target.closest('.dropdown');
+        var menu = dropdown.querySelector('.dropdown-menu');
+        
+        if (menu) {
+            menu.style.position = '';
+            menu.style.top = '';
+            menu.style.left = '';
+            menu.style.right = '';
+            menu.style.bottom = '';
+            menu.style.transform = '';
+            menu.style.margin = '';
+            menu.style.zIndex = '';
+        }
+    });
+});
+</script>
+{% endblock %}

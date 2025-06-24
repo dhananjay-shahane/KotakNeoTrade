@@ -1,0 +1,267 @@
+<replit_final_file>
+    {% extends "base.html" %} {% block title %}Login - Kotak Neo Trading{%
+    endblock %} {% block extra_head %}
+    <style>
+        .login-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .form-control:focus {
+            border-color: #28a745;
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+        }
+
+        .totp-input {
+            font-size: 1.2rem;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            border: none;
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(45deg, #218838, #1aa085);
+            transform: translateY(-1px);
+        }
+    </style>
+    {% endblock %} {% block content %}
+    <div
+        class="login-container d-flex align-items-center justify-content-center"
+    >
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-6 col-lg-6">
+                    <div class="card login-card shadow-lg">
+                        <div
+                            class="card-header text-center py-4 border-bottom-0"
+                        >
+                            <h2 class="mb-0">
+                                <i
+                                    class="fas fa-shield-alt text-success me-2"
+                                ></i>
+                                Kotak Neo Login
+                            </h2>
+                            <p class="text-muted mb-0">
+                                Secure TOTP Authentication
+                            </p>
+                        </div>
+
+                        <div class="card-body p-4">
+                            <!-- Flash Messages -->
+                            {% with messages =
+                            get_flashed_messages(with_categories=true) %} {% if
+                            messages %} {% for category, message in messages %}
+                            <div
+                                class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
+                                role="alert"
+                            >
+                                {{ message }}
+                                <button
+                                    type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="alert"
+                                ></button>
+                            </div>
+                            {% endfor %} {% endif %} {% endwith %}
+
+                            <!-- TOTP Login Form -->
+                            <div class="alert alert-info mb-4">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>TOTP Authentication Required:</strong>
+                                Use your authenticator app to get the TOTP code
+                            </div>
+
+                            <form
+                                method="POST"
+                                action="{{ url_for('login') }}"
+                                id="totpForm"
+                            >
+                                <!-- Mobile Number -->
+                                <div class="mb-3">
+                                    <label
+                                        for="mobile_number"
+                                        class="form-label"
+                                    >
+                                        <i
+                                            class="fas fa-mobile-alt text-primary me-2"
+                                        ></i
+                                        >Mobile Number
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        class="form-control"
+                                        id="mobile_number"
+                                        name="mobile_number"
+                                        placeholder="Enter registered mobile number"
+                                        pattern="[0-9]{10}"
+                                        maxlength="10"
+                                        required
+                                    />
+                                    <div class="form-text">
+                                        Enter your 10-digit mobile number
+                                        registered with Kotak Neo
+                                    </div>
+                                </div>
+
+                                <!-- UCC -->
+                                <div class="mb-3">
+                                    <label for="ucc" class="form-label">
+                                        <i
+                                            class="fas fa-id-card text-warning me-2"
+                                        ></i
+                                        >UCC (User Client Code)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="ucc"
+                                        name="ucc"
+                                        placeholder="Enter your UCC"
+                                        required
+                                    />
+                                </div>
+
+                                <!-- MPIN -->
+                                <div class="mb-3">
+                                    <label for="mpin" class="form-label">
+                                        <i
+                                            class="fas fa-lock text-danger me-2"
+                                        ></i
+                                        >MPIN
+                                    </label>
+                                    <input
+                                        type="password"
+                                        class="form-control totp-input"
+                                        id="mpin"
+                                        name="mpin"
+                                        placeholder="******"
+                                        maxlength="6"
+                                        pattern="[0-9]{6}"
+                                        required
+                                    />
+                                    <div class="form-text">
+                                        <i class="fas fa-shield-alt me-1"></i>
+                                        Enter your 6-digit MPIN
+                                    </div>
+                                </div>
+
+                                <!-- TOTP Code -->
+                                <div class="mb-4">
+                                    <label for="totp" class="form-label">
+                                        <i
+                                            class="fas fa-key text-success me-2"
+                                        ></i
+                                        >TOTP Code
+                                    </label>
+                                    <input
+                                        type="text"
+                                        class="form-control totp-input"
+                                        id="totp"
+                                        name="totp"
+                                        placeholder="000000"
+                                        maxlength="6"
+                                        pattern="[0-9]{6}"
+                                        required
+                                    />
+                                    <div class="form-text">
+                                        <i class="fas fa-clock me-1"></i>
+                                        Enter the 6-digit code from your
+                                        authenticator app
+                                    </div>
+                                </div>
+
+                                <!-- Submit Button -->
+                                <button
+                                    type="submit"
+                                    class="btn btn-success w-100 py-3 mb-3"
+                                    id="totpSubmit"
+                                >
+                                    <i class="fas fa-sign-in-alt me-2"></i>Login
+                                    with TOTP
+                                </button>
+                            </form>
+
+
+
+                            <!-- Info Alert -->
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Security Note:</strong> Ensure you have
+                                enabled TOTP in your Kotak Neo account settings
+                                before attempting to login.
+                            </div>
+                        </div>
+
+                        <div
+                            class="card-footer text-center py-3 bg-transparent border-top-0"
+                        >
+                            <small class="text-muted">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                Secure TOTP-based authentication
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // TOTP input formatting
+            var totpInput = document.getElementById("totp");
+            var mpinInput = document.getElementById("mpin");
+
+            // Auto-format TOTP input
+            totpInput.addEventListener("input", function (e) {
+                var value = e.target.value.replace(/\D/g, "");
+                if (value.length > 6) value = value.substr(0, 6);
+                e.target.value = value;
+            });
+
+            // Auto-format mobile number input
+            var mobileInput = document.getElementById("mobile_number");
+            mobileInput.addEventListener("input", function (e) {
+                var value = e.target.value.replace(/\D/g, "");
+                if (value.length > 10) value = value.substr(0, 10);
+                e.target.value = value;
+            });
+
+            // Auto-format MPIN input (6 digits)
+            mpinInput.addEventListener("input", function (e) {
+                var value = e.target.value.replace(/\D/g, "");
+                if (value.length > 6) value = value.substr(0, 6);
+                e.target.value = value;
+
+                // Auto-focus to TOTP when MPIN is complete
+                if (value.length === 6) {
+                    totpInput.focus();
+                }
+            });
+
+            // Form submission loading state
+            var form = document.getElementById("totpForm");
+            form.addEventListener("submit", function (e) {
+                var submitBtn = document.getElementById("totpSubmit");
+                submitBtn.disabled = true;
+                submitBtn.innerHTML =
+                    '<i class="fas fa-spinner fa-spin me-2"></i>Authenticating...';
+            });
+
+            // Auto-focus first input
+            document.getElementById("mobile_number").focus();
+        });
+    </script>
+
+    {% endblock %}</replit_final_file
+>

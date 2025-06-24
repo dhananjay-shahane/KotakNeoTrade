@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETF Trading Signals - Kotak Neo Trading</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .signals-table { font-size: 0.75rem; background: #1a1a1a; }
+        .signals-table th { background: #2d2d2d; color: #fff; font-weight: 600; font-size: 0.7rem; text-align: center; padding: 6px 3px; border: 1px solid #444; }
+        .signals-table td { padding: 4px 3px; text-align: center; border: 1px solid #444; font-size: 0.7rem; }
+        .table-container { max-height: 600px; overflow-y: auto; border: 1px solid #444; border-radius: 8px; margin-top: 15px; }
+        .profit { color: #28a745; font-weight: 600; }
+        .loss { color: #dc3545; font-weight: 600; }
+        .neutral { color: #6c757d; }
+        .portfolio-summary { background: #2d2d2d; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+        .summary-card { background: #3d3d3d; border-radius: 6px; padding: 10px; text-align: center; }
+        .toolbar { background: #2d2d2d; border-radius: 8px; padding: 10px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/"><i class="fas fa-chart-line me-2"></i>Kotak Neo Trading</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/dashboard">Dashboard</a>
+                <a class="nav-link" href="/positions">Positions</a>
+                <a class="nav-link" href="/holdings">Holdings</a>
+                <a class="nav-link active" href="/etf-signals">ETF Signals</a>
+                <a class="nav-link" href="/logout">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-3">
+        <div class="portfolio-summary">
+            <div class="row">
+                <div class="col-12 mb-2">
+                    <h5 class="mb-3"><i class="fas fa-chart-pie me-2"></i>ETF Portfolio Summary</h5>
+                </div>
+                <div class="col-md-2">
+                    <div class="summary-card">
+                        <div class="text-muted small">Total Positions</div>
+                        <div class="h6 mb-0" id="totalPositions">0</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="summary-card">
+                        <div class="text-muted small">Investment</div>
+                        <div class="h6 mb-0" id="totalInvestment">₹0</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="summary-card">
+                        <div class="text-muted small">Current Value</div>
+                        <div class="h6 mb-0" id="currentValue">₹0</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="summary-card">
+                        <div class="text-muted small">P&L</div>
+                        <div class="h6 mb-0" id="totalPnL">₹0</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="summary-card">
+                        <div class="text-muted small">Return %</div>
+                        <div class="h6 mb-0" id="returnPercent">0%</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="summary-card">
+                        <div class="text-muted small">Profit/Loss</div>
+                        <div class="small">
+                            <span class="profit" id="profitPositions">0</span> / 
+                            <span class="loss" id="lossPositions">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-success btn-sm" onclick="loadData()">
+                    <i class="fas fa-plus"></i> Add Deal
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="loadData()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+                <button class="btn btn-warning btn-sm">
+                    <i class="fas fa-download"></i> Export
+                </button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="table table-dark table-striped signals-table">
+                <thead>
+                    <tr>
+                        <th>Symbol</th><th>30</th><th>DH</th><th>Date</th><th>Pos</th><th>Qty</th><th>EP</th><th>CMP</th><th>%Chan</th><th>Inv.</th><th>TP</th><th>TVA</th><th>TPR</th><th>PL</th><th>ED</th><th>PR</th><th>PP</th><th>IV</th><th>IP</th><th>NT</th><th>Qt</th><th>7</th><th>%Ch</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="signalsTableBody">
+                    <tr><td colspan="24" class="text-center text-muted">Loading ETF signals...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Ensure no external scripts interfere
+        window.addEventListener('error', function(e) {
+            console.log('Script error:', e.message, e.filename, e.lineno);
+        });
+
+        function loadData() {
+            console.log('Loading ETF signals data...');
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/etf-signals-data', true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    console.log('Response status:', xhr.status);
+                    console.log('Response text:', xhr.responseText.substring(0, 500));
+                    
+                    if (xhr.status === 200) {
+                        try {
+                            var data = JSON.parse(xhr.responseText);
+                            if (data.success && data.signals) {
+                                displaySignals(data.signals);
+                                displaySummary(data.portfolio);
+                                console.log('Successfully loaded ' + data.signals.length + ' signals');
+                            } else {
+                                console.error('API returned error:', data);
+                                document.getElementById('signalsTableBody').innerHTML = 
+                                    '<tr><td colspan="24" class="text-center text-danger">Error: ' + (data.error || 'Unknown error') + '</td></tr>';
+                            }
+                        } catch (parseError) {
+                            console.error('JSON parse error:', parseError);
+                            document.getElementById('signalsTableBody').innerHTML = 
+                                '<tr><td colspan="24" class="text-center text-danger">Parse error: ' + parseError.message + '</td></tr>';
+                        }
+                    } else {
+                        console.error('HTTP error:', xhr.status, xhr.statusText);
+                        document.getElementById('signalsTableBody').innerHTML = 
+                            '<tr><td colspan="24" class="text-center text-danger">HTTP ' + xhr.status + ': ' + xhr.statusText + '</td></tr>';
+                    }
+                }
+            };
+            xhr.send();
+        }
+
+        function displaySignals(signals) {
+            var tbody = document.getElementById('signalsTableBody');
+            tbody.innerHTML = '';
+            
+            if (!signals || signals.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="24" class="text-center text-muted">No signals found</td></tr>';
+                return;
+            }
+
+            for (var i = 0; i < signals.length; i++) {
+                var signal = signals[i];
+                var row = tbody.insertRow();
+                
+                var percentChange = signal.change_pct || 0;
+                var pnl = signal.pl || 0;
+                var percentClass = percentChange > 0 ? 'profit' : percentChange < 0 ? 'loss' : 'neutral';
+                var pnlClass = pnl > 0 ? 'profit' : pnl < 0 ? 'loss' : 'neutral';
+                
+                row.innerHTML = 
+                    '<td><strong>' + (signal.etf || '-') + '</strong></td>' +
+                    '<td class="' + percentClass + '">' + (signal.thirty || '-') + '</td>' +
+                    '<td>' + (signal.dh || '-') + '</td>' +
+                    '<td>' + (signal.date || '-') + '</td>' +
+                    '<td><span class="badge ' + (signal.pos === 1 ? 'bg-success' : 'bg-danger') + '">' + (signal.pos === 1 ? 'LONG' : 'SHORT') + '</span></td>' +
+                    '<td>' + (signal.qty || 0) + '</td>' +
+                    '<td>₹' + parseFloat(signal.ep || 0).toFixed(2) + '</td>' +
+                    '<td class="' + pnlClass + '">₹' + parseFloat(signal.cmp || signal.ep || 0).toFixed(2) + '</td>' +
+                    '<td class="' + percentClass + '">' + parseFloat(percentChange).toFixed(2) + '%</td>' +
+                    '<td>₹' + parseFloat(signal.inv || 0).toFixed(0) + '</td>' +
+                    '<td>₹' + parseFloat(signal.tp || 0).toFixed(2) + '</td>' +
+                    '<td>₹' + parseFloat(signal.tva || 0).toFixed(0) + '</td>' +
+                    '<td class="profit">₹' + parseFloat(signal.tpr || 0).toFixed(0) + '</td>' +
+                    '<td class="' + pnlClass + '">₹' + parseFloat(pnl).toFixed(0) + '</td>' +
+                    '<td>' + (signal.ed || '-') + '</td>' +
+                    '<td>' + (signal.pr || '-') + '</td>' +
+                    '<td>' + (signal.pp || '-') + '</td>' +
+                    '<td><span class="badge bg-info">₹' + parseFloat(signal.iv || 0).toFixed(0) + '</span></td>' +
+                    '<td class="' + percentClass + '">' + (signal.ip || '-') + '</td>' +
+                    '<td><small>' + (signal.nt || '-') + '</small></td>' +
+                    '<td><small>' + (signal.qt || '-') + '</small></td>' +
+                    '<td class="' + percentClass + '">' + (signal.seven || '-') + '</td>' +
+                    '<td class="' + percentClass + '">' + parseFloat(percentChange).toFixed(2) + '%</td>' +
+                    '<td><button class="btn btn-sm btn-outline-success" title="Add Deal"><i class="fas fa-plus"></i></button></td>';
+            }
+        }
+
+        function displaySummary(portfolio) {
+            if (!portfolio) return;
+            
+            document.getElementById('totalPositions').textContent = portfolio.total_positions || 0;
+            document.getElementById('totalInvestment').textContent = '₹' + (portfolio.total_investment || 0).toLocaleString('en-IN');
+            document.getElementById('currentValue').textContent = '₹' + (portfolio.current_value || 0).toLocaleString('en-IN');
+            document.getElementById('totalPnL').textContent = '₹' + (portfolio.total_pnl || 0).toLocaleString('en-IN');
+            document.getElementById('returnPercent').textContent = (portfolio.return_percent || 0).toFixed(2) + '%';
+            document.getElementById('profitPositions').textContent = portfolio.active_positions || 0;
+            document.getElementById('lossPositions').textContent = portfolio.closed_positions || 0;
+            
+            var pnlElement = document.getElementById('totalPnL');
+            var returnElement = document.getElementById('returnPercent');
+            var pnl = portfolio.total_pnl || 0;
+            var returnPercent = portfolio.return_percent || 0;
+            
+            pnlElement.className = 'h6 mb-0 ' + (pnl >= 0 ? 'text-success' : 'text-danger');
+            returnElement.className = 'h6 mb-0 ' + (returnPercent >= 0 ? 'text-success' : 'text-danger');
+        }
+
+        // Load data when page loads
+        setTimeout(loadData, 100);
+        
+        // Auto-refresh every 10 seconds
+        setInterval(loadData, 10000);
+    </script>
+</body>
+</html>
