@@ -1,26 +1,26 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+# # Byte-compiled / optimized / DLL files
+# __pycache__/
+# *.py[cod]
+# *$py.class
 
-# Virtual environment folders
-.venv/
-venv/
+# # Virtual environment folders
+# .venv/
+# venv/
 
-# Environment variables
-.env
+# # Environment variables
+# .env
 
-# User-specific files
-user_sessions.json
+# # User-specific files
+# # user_sessions.json
 
-# Log files
-*.log
+# # Log files
+# *.log
 
-# Docker ignore (optional)
-.dockerignore
+# # Docker ignore (optional)
+# .dockerignore
 
-# System files
-*.lock
+# # System files
+# *.lock
 
-# VS Code settings (optional)
-.vscode/
+# # VS Code settings (optional)
+# .vscode/
