@@ -379,50 +379,97 @@ function exportSignals() {
 }
 
 function addDeal(symbol, price) {
-    if (!confirm('Add deal for ' + symbol + ' at ₹' + price.toFixed(2) + '?')) {
-        return;
-    }
-
-    var signalData = {
-        symbol: symbol,
-        pos: 1,
-        qty: 1,
-        cmp: price,
-        ep: price,
-        tp: price * 1.05,
-        inv: price * 1,
-        pl: 0,
-        change_pct: 0
-    };
-
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/deals/create-from-signal', true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-            if (xhr.status === 200) {
-                try {
-                    var response = JSON.parse(xhr.responseText);
-                    if (response.success) {
-                        alert('Deal created successfully for ' + symbol + '!');
-                        setTimeout(function() {
-                            window.location.href = '/deals?symbol=' + encodeURIComponent(symbol) + '&price=' + price.toFixed(2);
-                        }, 1000);
-                    } else {
-                        alert('Failed to create deal: ' + (response.message || 'Unknown error'));
-                    }
-                } catch (parseError) {
-                    console.error('Failed to parse API response:', parseError);
-                    alert('Invalid response from server');
+    // Use SweetAlert2 for better confirmation dialog
+    Swal.fire({
+        title: 'Add Deal',
+        html: `
+            <div class="text-start">
+                <p><strong>Symbol:</strong> ${symbol}</p>
+                <p><strong>Entry Price:</strong> ₹${price.toFixed(2)}</p>
+                <p><strong>Quantity:</strong> 1</p>
+                <p><strong>Position:</strong> LONG</p>
+                <p><strong>Investment:</strong> ₹${price.toFixed(2)}</p>
+            </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, Add Deal!',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Show loading
+            Swal.fire({
+                title: 'Creating Deal...',
+                text: 'Please wait while we process your request',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
                 }
-            } else {
-                alert('Failed to create deal. Server returned status: ' + xhr.status);
-            }
-        }
-    };
+            });
 
-    xhr.send(JSON.stringify({signal_data: signalData}));
+            var signalData = {
+                symbol: symbol,
+                pos: 1,
+                qty: 1,
+                cmp: price,
+                ep: price,
+                tp: price * 1.05,
+                inv: price * 1,
+                pl: 0,
+                change_pct: 0
+            };
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/deals/create-from-signal', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.success) {
+                                Swal.fire({
+                                    title: 'Success!',
+                                    text: 'Deal created successfully for ' + symbol,
+                                    icon: 'success',
+                                    confirmButtonColor: '#28a745'
+                                }).then(() => {
+                                    window.location.href = '/deals?symbol=' + encodeURIComponent(symbol) + '&price=' + price.toFixed(2);
+                                });
+                            } else {
+                                Swal.fire({
+                                    title: 'Failed!',
+                                    text: response.message || 'Unknown error occurred',
+                                    icon: 'error',
+                                    confirmButtonColor: '#dc3545'
+                                });
+                            }
+                        } catch (parseError) {
+                            console.error('Failed to parse API response:', parseError);
+                            Swal.fire({
+                                title: 'Error!',
+                                text: 'Invalid response from server',
+                                icon: 'error',
+                                confirmButtonColor: '#dc3545'
+                            });
+                        }
+                    } else {
+                        Swal.fire({
+                            title: 'Server Error!',
+                            text: 'Server returned status: ' + xhr.status + '. Please try again or contact support.',
+                            icon: 'error',
+                            confirmButtonColor: '#dc3545'
+                        });
+                    }
+                }
+            };
+
+            xhr.send(JSON.stringify({signal_data: signalData}));
+        }
+    });
 }
 
 // Initialize the ETF Signals Manager

@@ -15,11 +15,29 @@ deals_bp = Blueprint('deals', __name__, url_prefix='/api/deals')
 def create_deal_from_signal():
     """Create a new deal from ETF signal data"""
     try:
-        # Check if user is logged in
-        if 'user_id' not in session:
-            return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+        # Check if user is logged in - try multiple session keys
+        user_id = session.get('user_id') or session.get('db_user_id') or session.get('ucc')
+        if not user_id:
+            return jsonify({'success': False, 'message': 'Not authenticated - please login'}), 401
         
-        user_id = session['user_id']
+        # If ucc is used, try to find or create user record
+        if user_id == session.get('ucc'):
+            from models import User
+            user = User.query.filter_by(ucc=user_id).first()
+            if user:
+                user_id = user.id
+            else:
+                # Create user record if doesn't exist
+                user = User(
+                    ucc=user_id,
+                    mobile_number=session.get('mobile_number', ''),
+                    greeting_name=session.get('greeting_name', user_id),
+                    user_id=user_id,
+                    is_active=True
+                )
+                db.session.add(user)
+                db.session.commit()
+                user_id = user.id
         data = request.get_json()
         
         # Extract signal data
