@@ -21,7 +21,7 @@ try:
     from routes.main import main_bp
     from api.dashboard import dashboard_api as dashboard_bp
     from api.trading import trading_api as trading_bp
-    from api.etf_signals import etf_bp
+    # Import etf_bp after app initialization to avoid circular imports
     from api.admin import admin_bp
     from api.realtime_quotes import quotes_bp as realtime_bp
     from api.deals import deals_bp
@@ -42,8 +42,16 @@ try:
         app.register_blueprint(dashboard_bp)
     if 'trading' not in registered_blueprints:
         app.register_blueprint(trading_bp)
+    # Register ETF blueprint after main app setup
     if 'etf' not in registered_blueprints:
-        app.register_blueprint(etf_bp)
+        try:
+            from api.etf_signals import etf_bp
+            app.register_blueprint(etf_bp)
+            print("✓ ETF signals blueprint registered at /etf")
+        except Exception as etf_error:
+            print(f"✗ Failed to register ETF blueprint: {etf_error}")
+            import traceback
+            traceback.print_exc()
     if 'admin' not in registered_blueprints:
         app.register_blueprint(admin_bp)
     if 'realtime' not in registered_blueprints:

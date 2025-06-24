@@ -1043,12 +1043,12 @@
                 .then(function(data) {
                     if (data.success) {
                         var profile = data.data;
-                        var profileInfo = `Account Details:\n`;
-                        profileInfo += `UCC: ${profile.ucc || 'N/A'}\n`;
-                        profileInfo += `Name: ${profile.greeting_name || 'N/A'}\n`;
-                        profileInfo += `User ID: ${profile.user_id || 'N/A'}\n`;
-                        profileInfo += `Account Type: ${profile.account_type || 'N/A'}\n`;
-                        profileInfo += `Branch: ${profile.branch_code || 'N/A'}`;
+                                        var profileInfo = 'Account Details:\n';
+                        profileInfo += 'UCC: ' + (profile.ucc || 'N/A') + '\n';
+                        profileInfo += 'Name: ' + (profile.greeting_name || 'N/A') + '\n';
+                        profileInfo += 'User ID: ' + (profile.user_id || 'N/A') + '\n';
+                        profileInfo += 'Account Type: ' + (profile.account_type || 'N/A') + '\n';
+                        profileInfo += 'Branch: ' + (profile.branch_code || 'N/A');
                         alert(profileInfo);
                     }
                 })
