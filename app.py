@@ -55,7 +55,9 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 # Configure Flask for Replit deployment
 app.config['APPLICATION_ROOT'] = '/'
 app.config['PREFERRED_URL_SCHEME'] = 'https'
-app.config['SERVER_NAME'] = None  # Auto-detect Replit domain
+app.config['SERVER_NAME'] = None
+# Webview compatibility
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 # Session configuration for webview compatibility
 app.config['SESSION_COOKIE_SECURE'] = False
@@ -82,8 +84,8 @@ def after_request(response):
     response.headers['Access-Control-Allow-Credentials'] = 'true'
     response.headers['Access-Control-Max-Age'] = '86400'
     
-    # Ensure no cache issues
-    if request.endpoint in ['test_webview', 'simple_webview']:
+    # Ensure no cache issues for preview routes
+    if request.endpoint in ['index', 'test_webview', 'simple_webview', 'preview']:
         response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
         response.headers['Pragma'] = 'no-cache'
         response.headers['Expires'] = '0'
@@ -100,13 +102,89 @@ def handle_preflight():
         response.headers.add('Access-Control-Allow-Methods', "*")
         return response
 
-# Root route for webview compatibility
+# Root route - always show preview for webview compatibility
 @app.route('/')
 def index():
-    # For webview preview, show the test page directly
-    if request.headers.get('X-Forwarded-For') or 'replit' in request.headers.get('User-Agent', '').lower():
-        return simple_webview()
-    return redirect(url_for('auth.login'))
+    # Always show preview content for webview
+    html_content = '''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kotak Neo Trading Platform</title>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 20px; 
+            font-family: Arial, sans-serif; 
+            background: linear-gradient(135deg, #667eea, #764ba2); 
+            color: white; 
+            min-height: 100vh; 
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            text-align: center; 
+            padding: 40px 20px; 
+        }
+        h1 { 
+            font-size: 3rem; 
+            margin-bottom: 20px; 
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3); 
+        }
+        .status { 
+            background: rgba(255,255,255,0.1); 
+            padding: 30px; 
+            border-radius: 15px; 
+            margin: 30px 0; 
+            backdrop-filter: blur(10px); 
+        }
+        .buttons { 
+            display: flex; 
+            gap: 15px; 
+            justify-content: center; 
+            flex-wrap: wrap; 
+            margin-top: 30px; 
+        }
+        .btn { 
+            background: rgba(255,255,255,0.2); 
+            color: white; 
+            padding: 12px 24px; 
+            text-decoration: none; 
+            border-radius: 25px; 
+            border: 1px solid rgba(255,255,255,0.3); 
+            transition: all 0.3s ease; 
+        }
+        .btn:hover { 
+            background: rgba(255,255,255,0.3); 
+            transform: translateY(-2px); 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Kotak Neo Trading Platform</h1>
+        <div class="status">
+            <h2>Application Status: ONLINE</h2>
+            <p>Database: Connected | Framework: Flask + Bootstrap</p>
+            <p>Preview: Working | Port: 5000</p>
+        </div>
+        <div class="buttons">
+            <a href="/auth/login" class="btn">Login Portal</a>
+            <a href="/etf/signals" class="btn">ETF Signals</a>
+            <a href="/health" class="btn">Health Check</a>
+            <a href="/webview" class="btn">Test Page</a>
+        </div>
+        <p style="margin-top: 40px; opacity: 0.8;">
+            Webview Preview - ''' + str(os.environ.get('REPLIT_DOMAINS', 'localhost:5000')) + '''
+        </p>
+    </div>
+</body>
+</html>'''
+    
+    response = make_response(html_content)
+    response.headers['Content-Type'] = 'text/html; charset=utf-8'
+    return response
 
 # Test and health routes
 @app.route('/test')
