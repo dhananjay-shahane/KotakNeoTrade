@@ -8,7 +8,7 @@
     <!-- Theme persistence script (runs immediately) -->
     <script>
         // Apply saved theme immediately to prevent flash
-        (function.prototype.function = function() {
+        (function() {
             var savedTheme = localStorage.getItem('theme') || 'dark';
             document.documentElement.setAttribute('data-theme', savedTheme);
         })();
@@ -1037,10 +1037,10 @@
         }
 
         // Show user profile
-        function showUserProfile.prototype.showUserProfile = function() {
+        function showUserProfile() {
             fetch('/api/user/profile')
-                .then(response => response.json())
-                .then(data function.prototype.function = function() {
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
                     if (data.success) {
                         var profile = data.data;
                         var profileInfo = `Account Details:\n`;
@@ -1052,16 +1052,16 @@
                         alert(profileInfo);
                     }
                 })
-                .catch(error function.prototype.function = function() {
+                .catch(function(error) {
                     alert('Unable to load profile information');
                 });
         }
 
         // Show account summary
-        function showAccountSummary.prototype.showAccountSummary = function() {
+        function showAccountSummary() {
             fetch('/api/portfolio/summary')
-                .then(response => response.json())
-                .then(data function.prototype.function = function() {
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
                     if (data.success) {
                         var summary = data.data;
                         var summaryInfo = `Portfolio Summary:\n`;
@@ -1072,7 +1072,7 @@
                         alert(summaryInfo);
                     }
                 })
-                .catch(error function.prototype.function = function() {
+                .catch(function(error) {
                     alert('Unable to load account summary');
                 });
         }

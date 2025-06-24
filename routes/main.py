@@ -138,6 +138,8 @@ def dashboard():
         flash(f'Error loading dashboard: {str(e)}', 'error')
         return render_template('dashboard.html', data={})
 
+# ETF signals route removed - handled by app.py
+
 @main_bp.route('/positions')
 @login_required
 def positions():
