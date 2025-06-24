@@ -66,10 +66,27 @@ app.config['SESSION_COOKIE_DOMAIN'] = None  # Auto-detect domain
 # Add proper headers for Replit webview
 @app.after_request
 def after_request(response):
-    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    # Remove X-Frame-Options to allow embedding in Replit webview
+    if 'X-Frame-Options' in response.headers:
+        del response.headers['X-Frame-Options']
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     return response
+
+# Test route for webview
+@app.route('/test')
+def test_webview():
+    return '''
+    <!DOCTYPE html>
+    <html>
+    <head><title>Webview Test</title></head>
+    <body>
+        <h1>Application is working!</h1>
+        <p>Your Flask application is running correctly.</p>
+        <a href="/auth/login">Go to Login Page</a>
+    </body>
+    </html>
+    '''
 # initialize the app with the extension, flask-sqlalchemy >= 3.0.x
 db.init_app(app)
 
