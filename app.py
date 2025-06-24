@@ -58,6 +58,9 @@ app.config['PREFERRED_URL_SCHEME'] = 'https'
 app.config['SERVER_NAME'] = None
 # Webview compatibility
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+# Force HTTPS for external access
+if os.environ.get('REPLIT_DOMAINS'):
+    app.config['PREFERRED_URL_SCHEME'] = 'https'
 
 # Session configuration for webview compatibility
 app.config['SESSION_COOKIE_SECURE'] = False
@@ -92,9 +95,13 @@ def after_request(response):
     
     return response
 
-# Handle preflight requests
+# Handle preflight requests and ensure proper routing
 @app.before_request
 def handle_preflight():
+    # Log request for debugging
+    if request.endpoint:
+        print(f"Request to {request.endpoint}: {request.url}")
+    
     if request.method == "OPTIONS":
         response = make_response()
         response.headers.add("Access-Control-Allow-Origin", "*")
@@ -102,88 +109,31 @@ def handle_preflight():
         response.headers.add('Access-Control-Allow-Methods', "*")
         return response
 
-# Root route - always show preview for webview compatibility
+# Root route - webview optimized
 @app.route('/')
 def index():
-    # Always show preview content for webview
-    html_content = '''<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kotak Neo Trading Platform</title>
-    <style>
-        body { 
-            margin: 0; 
-            padding: 20px; 
-            font-family: Arial, sans-serif; 
-            background: linear-gradient(135deg, #667eea, #764ba2); 
-            color: white; 
-            min-height: 100vh; 
-        }
-        .container { 
-            max-width: 800px; 
-            margin: 0 auto; 
-            text-align: center; 
-            padding: 40px 20px; 
-        }
-        h1 { 
-            font-size: 3rem; 
-            margin-bottom: 20px; 
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3); 
-        }
-        .status { 
-            background: rgba(255,255,255,0.1); 
-            padding: 30px; 
-            border-radius: 15px; 
-            margin: 30px 0; 
-            backdrop-filter: blur(10px); 
-        }
-        .buttons { 
-            display: flex; 
-            gap: 15px; 
-            justify-content: center; 
-            flex-wrap: wrap; 
-            margin-top: 30px; 
-        }
-        .btn { 
-            background: rgba(255,255,255,0.2); 
-            color: white; 
-            padding: 12px 24px; 
-            text-decoration: none; 
-            border-radius: 25px; 
-            border: 1px solid rgba(255,255,255,0.3); 
-            transition: all 0.3s ease; 
-        }
-        .btn:hover { 
-            background: rgba(255,255,255,0.3); 
-            transform: translateY(-2px); 
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Kotak Neo Trading Platform</h1>
-        <div class="status">
-            <h2>Application Status: ONLINE</h2>
-            <p>Database: Connected | Framework: Flask + Bootstrap</p>
-            <p>Preview: Working | Port: 5000</p>
-        </div>
-        <div class="buttons">
-            <a href="/auth/login" class="btn">Login Portal</a>
-            <a href="/etf/signals" class="btn">ETF Signals</a>
-            <a href="/health" class="btn">Health Check</a>
-            <a href="/webview" class="btn">Test Page</a>
-        </div>
-        <p style="margin-top: 40px; opacity: 0.8;">
-            Webview Preview - ''' + str(os.environ.get('REPLIT_DOMAINS', 'localhost:5000')) + '''
-        </p>
-    </div>
-</body>
-</html>'''
+    # Load optimized webview content
+    try:
+        with open('webview_ready.html', 'r') as f:
+            html_content = f.read()
+    except FileNotFoundError:
+        # Fallback content
+        html_content = '''<!DOCTYPE html>
+<html><head><title>Kotak Neo Trading</title><meta charset="UTF-8">
+<style>body{background:#667eea;color:white;font-family:Arial;text-align:center;padding:50px;}
+h1{font-size:3rem;margin-bottom:20px;}</style></head>
+<body><h1>Kotak Neo Trading Platform</h1><p>Application Online | Database Connected</p>
+<p><a href="/auth/login" style="color:#FFD700">Login Portal</a> | 
+<a href="/etf/signals" style="color:#FFD700">ETF Signals</a></p></body></html>'''
     
     response = make_response(html_content)
     response.headers['Content-Type'] = 'text/html; charset=utf-8'
+    
+    # Ensure no caching for webview
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    
     return response
 
 # Test and health routes
