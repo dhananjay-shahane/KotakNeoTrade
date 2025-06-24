@@ -36,12 +36,6 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
-# Setup environment
-setup_production_environment()
-
-# Import the main Flask app
-from app import app
-
 # Production configuration
 app.config.update(
     DEBUG=False,

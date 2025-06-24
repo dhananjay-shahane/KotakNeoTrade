@@ -6,12 +6,14 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+
 # Setup library paths for pandas/numpy dependencies
 def setup_library_paths():
     """Setup LD_LIBRARY_PATH for required libraries"""
     # Critical: Set library paths before any imports that might use them
     import os
-    os.environ['LD_LIBRARY_PATH'] = '/nix/store/xvzz97yk73hw03v5dhhz3j47ggwf1yq1-gcc-13.2.0-lib/lib:/nix/store/026hln0aq1hyshaxsdvhg0kmcm6yf45r-zlib-1.2.13/lib'
+    os.environ[
+        'LD_LIBRARY_PATH'] = '/nix/store/xvzz97yk73hw03v5dhhz3j47ggwf1yq1-gcc-13.2.0-lib/lib:/nix/store/026hln0aq1hyshaxsdvhg0kmcm6yf45r-zlib-1.2.13/lib'
     print(f"Set LD_LIBRARY_PATH: {os.environ['LD_LIBRARY_PATH']}")
 
     # Force reload of dynamic libraries by importing ctypes
@@ -25,6 +27,7 @@ def setup_library_paths():
             print("Preloaded libstdc++")
     except Exception as e:
         print(f"Library preload warning: {e}")
+
 
 # Setup environment before importing other modules
 setup_library_paths()
@@ -43,7 +46,8 @@ db = SQLAlchemy(model_class=Base)
 # create the app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
-app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1) # needed for url_for to generate with https
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1,
+                        x_host=1)  # needed for url_for to generate with https
 
 # configure the database, relative to the app instance folder
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
@@ -69,30 +73,32 @@ app.config['SESSION_COOKIE_SAMESITE'] = None
 app.config['SESSION_COOKIE_DOMAIN'] = None
 app.config['SESSION_COOKIE_PATH'] = '/'
 
+
 # Configure for Replit webview and DNS
 @app.after_request
 def after_request(response):
     # Remove ALL headers that could interfere with webview display
     headers_to_remove = [
-        'X-Frame-Options', 'frame-options', 'Content-Security-Policy', 
+        'X-Frame-Options', 'frame-options', 'Content-Security-Policy',
         'X-XSS-Protection', 'Referrer-Policy', 'Permissions-Policy',
         'X-Content-Type-Options', 'Strict-Transport-Security'
     ]
     for header in headers_to_remove:
         response.headers.pop(header, None)
-    
+
     # Complete webview compatibility - remove X-Frame-Options entirely
     response.headers.pop('X-Frame-Options', None)
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Methods'] = '*'
     response.headers['Access-Control-Allow-Headers'] = '*'
     response.headers['Access-Control-Allow-Credentials'] = 'true'
-    
+
     # Minimal caching headers
     response.headers['Cache-Control'] = 'no-cache'
     response.headers['Pragma'] = 'no-cache'
-    
+
     return response
+
 
 # Handle preflight requests and ensure proper routing
 @app.before_request
@@ -100,7 +106,7 @@ def handle_preflight():
     # Log request for debugging
     if request.endpoint:
         print(f"Request to {request.endpoint}: {request.url}")
-    
+
     if request.method == "OPTIONS":
         response = make_response()
         response.headers.add("Access-Control-Allow-Origin", "*")
@@ -108,11 +114,13 @@ def handle_preflight():
         response.headers.add('Access-Control-Allow-Methods', "*")
         return response
 
+# Import Flask components
+from flask import render_template, request, redirect, url_for, session, jsonify, flash, make_response
+
 # Root route - ultra-simple webview
 @app.route('/')
 def index():
-    return '''
-<!DOCTYPE html>
+    return '''<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -142,24 +150,6 @@ a:hover{background:rgba(255,255,255,0.2)}
 </body>
 </html>'''
 
-# Health and test routes - simplified
-@app.route('/health')
-@app.route('/test') 
-@app.route('/preview')
-def test_webview():
-    try:
-        with open('webview_test_final.html', 'r') as f:
-            return f.read()
-    except FileNotFoundError:
-        return '''<!DOCTYPE html><html><head><title>Health Check</title></head>
-<body style="background:#059669;color:white;text-align:center;padding:50px;font-family:Arial">
-<h1>Kotak Neo Trading - Health Check</h1>
-<p style="color:#22c55e;font-size:1.2rem">✓ Application Running Successfully</p>
-<p>Database: Connected | Port: 5000 | Status: Online</p>
-<a href="/" style="color:#fbbf24">Back to Home</a>
-</body></html>'''
-
-# Simple webview test route
 @app.route('/webview')
 def simple_webview():
     html_content = '''<!DOCTYPE html>
@@ -232,15 +222,17 @@ def simple_webview():
     </script>
 </body>
 </html>'''
-    
+
     response = make_response(html_content)
     response.headers['Content-Type'] = 'text/html; charset=utf-8'
-    
+
     # Ensure no frame-blocking headers
     for header in ['X-Frame-Options', 'Content-Security-Policy']:
         response.headers.pop(header, None)
-    
+
     return response
+
+
 # initialize the app with the extension, flask-sqlalchemy >= 3.0.x
 db.init_app(app)
 
@@ -293,9 +285,11 @@ try:
     if supabase_client and supabase_client.is_connected():
         logging.info("✅ Supabase integration active")
     else:
-        logging.warning("⚠️ Supabase not configured, using local database only")
+        logging.warning(
+            "⚠️ Supabase not configured, using local database only")
 except:
     logging.warning("⚠️ Supabase not configured, using local database only")
+
 
 def validate_current_session():
     """Validate current session and check expiration"""
@@ -340,6 +334,7 @@ def validate_current_session():
         session.clear()
         return False
 
+
 def require_auth(f):
     """Decorator to require authentication for routes"""
     from functools import wraps
@@ -349,9 +344,12 @@ def require_auth(f):
         if not validate_current_session():
             return redirect(url_for('login', expired='true'))
         return f(*args, **kwargs)
+
     return decorated_function
 
-# @app.route('/')   
+
+# @app.route('/')
+
 
 @app.route('/test-csv')
 def test_csv():
@@ -412,6 +410,7 @@ def test_csv():
     except Exception as e:
         return f"<html><body><h1>Error testing CSV data</h1><p>{str(e)}</p></body></html>"
 
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     """Login page with TOTP authentication only"""
@@ -446,7 +445,8 @@ def login():
                 return render_template('login.html')
 
             # Execute TOTP login
-            result = neo_client.execute_totp_login(mobile_number, ucc, totp, mpin)
+            result = neo_client.execute_totp_login(mobile_number, ucc, totp,
+                                                   mpin)
 
             if result and result.get('success'):
                 client = result.get('client')
@@ -459,8 +459,10 @@ def login():
                 session['sid'] = session_data.get('sid')
                 session['ucc'] = ucc
                 session['client'] = client
-                session['login_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                session['greeting_name'] = session_data.get('greetingName', ucc)
+                session['login_time'] = datetime.now().strftime(
+                    '%Y-%m-%d %H:%M:%S')
+                session['greeting_name'] = session_data.get(
+                    'greetingName', ucc)
                 session.permanent = True
 
                 # Set session expiration (24 hours from now)
@@ -471,44 +473,64 @@ def login():
                 session['rid'] = session_data.get('rid')
                 session['user_id'] = session_data.get('user_id')
                 session['client_code'] = session_data.get('client_code')
-                session['is_trial_account'] = session_data.get('is_trial_account')
+                session['is_trial_account'] = session_data.get(
+                    'is_trial_account')
 
                 # Store user data in database
                 try:
                     login_response = {
                         'success': True,
                         'data': {
-                            'ucc': ucc,
-                            'mobile_number': mobile_number,
-                            'greeting_name': session_data.get('greetingName'),
-                            'user_id': session_data.get('user_id'),
-                            'client_code': session_data.get('client_code'),
-                            'product_code': session_data.get('product_code'),
-                            'account_type': session_data.get('account_type'),
-                            'branch_code': session_data.get('branch_code'),
-                            'is_trial_account': session_data.get('is_trial_account', False),
-                            'access_token': session_data.get('access_token'),
-                            'session_token': session_data.get('session_token'),
-                            'sid': session_data.get('sid'),
-                            'rid': session_data.get('rid')
+                            'ucc':
+                            ucc,
+                            'mobile_number':
+                            mobile_number,
+                            'greeting_name':
+                            session_data.get('greetingName'),
+                            'user_id':
+                            session_data.get('user_id'),
+                            'client_code':
+                            session_data.get('client_code'),
+                            'product_code':
+                            session_data.get('product_code'),
+                            'account_type':
+                            session_data.get('account_type'),
+                            'branch_code':
+                            session_data.get('branch_code'),
+                            'is_trial_account':
+                            session_data.get('is_trial_account', False),
+                            'access_token':
+                            session_data.get('access_token'),
+                            'session_token':
+                            session_data.get('session_token'),
+                            'sid':
+                            session_data.get('sid'),
+                            'rid':
+                            session_data.get('rid')
                         }
                     }
 
-                    db_user = user_manager.create_or_update_user(login_response)
-                    user_session = user_manager.create_user_session(db_user.id, login_response)
+                    db_user = user_manager.create_or_update_user(
+                        login_response)
+                    user_session = user_manager.create_user_session(
+                        db_user.id, login_response)
 
                     session['db_user_id'] = db_user.id
                     session['db_session_id'] = user_session.session_id
 
-                    logging.info(f"User data stored in database for UCC: {ucc}")
+                    logging.info(
+                        f"User data stored in database for UCC: {ucc}")
 
                 except Exception as db_error:
-                    logging.error(f"Failed to store user data in database: {db_error}")
+                    logging.error(
+                        f"Failed to store user data in database: {db_error}")
 
                 flash('Successfully authenticated with TOTP!', 'success')
                 return redirect(url_for('dashboard'))
             else:
-                error_msg = result.get('message', 'Authentication failed') if result else 'Login failed'
+                error_msg = result.get(
+                    'message',
+                    'Authentication failed') if result else 'Login failed'
                 flash(f'TOTP login failed: {error_msg}', 'error')
 
         except Exception as e:
@@ -517,12 +539,14 @@ def login():
 
     return render_template('login.html')
 
+
 @app.route('/logout')
 def logout():
     """Logout and clear session"""
     session.clear()
     flash('Logged out successfully', 'info')
     return redirect(url_for('login'))
+
 
 @app.route('/dashboard')
 @require_auth
@@ -580,14 +604,18 @@ def dashboard():
             dashboard_data.setdefault('holdings', [])
             dashboard_data.setdefault('limits', {})
             dashboard_data.setdefault('recent_orders', [])
-            dashboard_data.setdefault('total_positions', len(dashboard_data['positions']))
-            dashboard_data.setdefault('total_holdings', len(dashboard_data['holdings']))
-            dashboard_data.setdefault('total_orders', len(dashboard_data['recent_orders']))
+            dashboard_data.setdefault('total_positions',
+                                      len(dashboard_data['positions']))
+            dashboard_data.setdefault('total_holdings',
+                                      len(dashboard_data['holdings']))
+            dashboard_data.setdefault('total_orders',
+                                      len(dashboard_data['recent_orders']))
 
         except Exception as dashboard_error:
             logging.error(f"Dashboard data fetch failed: {dashboard_error}")
             # For errors, show dashboard with empty data
-            flash(f'Some data could not be loaded: {str(dashboard_error)}', 'warning')
+            flash(f'Some data could not be loaded: {str(dashboard_error)}',
+                  'warning')
             dashboard_data = {
                 'positions': [],
                 'holdings': [],
@@ -614,6 +642,7 @@ def dashboard():
             'total_orders': 0
         }
         return render_template('dashboard.html', data=empty_data)
+
 
 @app.route('/positions')
 @require_auth
@@ -649,6 +678,7 @@ def positions():
         flash(f'Error loading positions: {str(e)}', 'error')
         return render_template('positions.html', positions=[])
 
+
 @app.route('/holdings')
 @require_auth
 def holdings():
@@ -682,6 +712,7 @@ def holdings():
         logging.error(f"Holdings page error: {e}")
         flash(f'Error loading holdings: {str(e)}', 'error')
         return render_template('holdings.html', holdings=[])
+
 
 @app.route('/orders')
 @require_auth
@@ -717,6 +748,7 @@ def orders():
         flash(f'Error loading orders: {str(e)}', 'error')
         return render_template('orders.html', orders=[])
 
+
 @app.route('/charts')
 @require_auth
 def charts():
@@ -724,10 +756,12 @@ def charts():
 
     return render_template('charts.html')
 
+
 @app.route('/etf-signals')
 def etf_signals():
     """ETF Trading Signals page"""
     return render_template('etf_signals.html')
+
 
 @app.route('/etf-signals-advanced')
 @require_auth
@@ -735,11 +769,13 @@ def etf_signals_advanced():
     """Advanced ETF Trading Signals page with datatable"""
     return render_template('etf_signals_datatable.html')
 
+
 @app.route('/admin-signals-datatable')
 @require_auth
 def admin_signals_datatable():
     """Admin Trade Signals Datatable with Kotak Neo integration"""
     return render_template('admin_signals_datatable.html')
+
 
 @app.route('/admin-signals')
 @require_auth
@@ -747,17 +783,20 @@ def admin_signals():
     """Admin Panel for managing trading signals with advanced datatable"""
     return render_template('admin_signals_datatable.html')
 
+
 @app.route('/admin-signals-basic')
 @require_auth
 def admin_signals_basic():
     """Basic Admin Panel for sending trading signals"""
     return render_template('admin_signals.html')
 
+
 @app.route('/supabase-admin')
 @require_auth
 def supabase_admin():
     """Supabase Integration Admin Dashboard"""
     return render_template('supabase_admin.html')
+
 
 # API endpoints
 @app.route('/api/dashboard-data')
@@ -768,7 +807,6 @@ def get_dashboard_data_api():
 
     try:
 
-
         client = session.get('client')
         if not client:
             return jsonify({'error': 'No active client'}), 400
@@ -778,6 +816,7 @@ def get_dashboard_data_api():
     except Exception as e:
         logging.error(f"Dashboard data error: {e}")
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/positions')
 def get_positions_api():
@@ -796,6 +835,7 @@ def get_positions_api():
         logging.error(f"Positions API error: {e}")
         return jsonify({'error': str(e)}), 500
 
+
 @app.route('/api/holdings')
 def get_holdings_api():
     """API endpoint to get holdings"""
@@ -812,6 +852,7 @@ def get_holdings_api():
     except Exception as e:
         logging.error(f"Holdings API error: {e}")
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/etf-signals-data')
 def get_etf_signals_data():
@@ -831,7 +872,8 @@ def get_etf_signals_data():
         result = db.session.execute(query)
         signals = result.fetchall()
 
-        app.logger.info(f"ETF Signals API: Found {len(signals)} CSV trade signals")
+        app.logger.info(
+            f"ETF Signals API: Found {len(signals)} CSV trade signals")
 
         # Format signals data from CSV structure
         signals_list = []
@@ -848,7 +890,8 @@ def get_etf_signals_data():
             entry_price = float(signal.ep) if signal.ep else 0
             current_price = float(signal.cmp) if signal.cmp else 0
             quantity = int(signal.qty) if signal.qty else 0
-            investment = float(signal.inv) if signal.inv else (entry_price * quantity)
+            investment = float(signal.inv) if signal.inv else (entry_price *
+                                                               quantity)
 
             if entry_price > 0:
                 pnl_pct = ((current_price - entry_price) / entry_price) * 100
@@ -900,7 +943,8 @@ def get_etf_signals_data():
 
         # Calculate portfolio summary
         total_pnl = total_current_value - total_investment
-        return_percent = (total_pnl / total_investment * 100) if total_investment > 0 else 0
+        return_percent = (total_pnl / total_investment *
+                          100) if total_investment > 0 else 0
 
         portfolio_summary = {
             'total_positions': len(signals_list),
@@ -912,7 +956,9 @@ def get_etf_signals_data():
             'return_percent': return_percent
         }
 
-        app.logger.info(f"ETF Signals API: Returning {len(signals_list)} CSV signals with {active_positions} active positions")
+        app.logger.info(
+            f"ETF Signals API: Returning {len(signals_list)} CSV signals with {active_positions} active positions"
+        )
 
         return jsonify({
             'success': True,
@@ -947,29 +993,76 @@ def get_etf_signals_data_backup():
         app.logger.info("ETF Signals API: Found 12 CSV trade signals")
 
         # Return sample data from the CSV we imported
-        signals_list = [
-            {
-                'id': 1, 'etf': 'MID150BEES', 'ep': 227.02, 'cmp': 222.19, 'qty': 200, 'pos': 1,
-                'inv': 45404, 'pl': -966, 'change_pct': -2.13, 'change2': -2.13,
-                'status': 'ACTIVE', 'date': '2024-11-22', 'dh': '#N/A',
-                'tp': 254.26, 'tva': 50852, 'pp': '⭐', 'iv': 147000, 'ip': '3.20%',
-                'thirty': '#N/A', 'seven': '#N/A', 'chan': '-2.13%', 'priority': None
-            },
-            {
-                'id': 2, 'etf': 'FINIETF', 'ep': 26.63, 'cmp': 30.47, 'qty': 4000, 'pos': 1,
-                'inv': 106520, 'pl': 15360, 'change_pct': 14.42, 'change2': 14.42,
-                'status': 'ACTIVE', 'date': '2025-01-03', 'dh': '#N/A',
-                'tp': 29.83, 'tva': 119302, 'pp': '⭐', 'iv': 310440, 'ip': '6.75%',
-                'thirty': '#N/A', 'seven': '#N/A', 'chan': '14.42%', 'priority': None
-            },
-            {
-                'id': 3, 'etf': 'HDFCPVTBAN', 'ep': 24.84, 'cmp': 28.09, 'qty': 4400, 'pos': 1,
-                'inv': 109296, 'pl': 14300, 'change_pct': 13.08, 'change2': 13.08,
-                'status': 'ACTIVE', 'date': '2025-01-09', 'dh': '#N/A',
-                'tp': 27.82, 'tva': 122412, 'pp': '⭐', 'iv': 109296, 'ip': '2.38%',
-                'thirty': '#N/A', 'seven': '#N/A', 'chan': '13.08%', 'priority': None
-            }
-        ]
+        signals_list = [{
+            'id': 1,
+            'etf': 'MID150BEES',
+            'ep': 227.02,
+            'cmp': 222.19,
+            'qty': 200,
+            'pos': 1,
+            'inv': 45404,
+            'pl': -966,
+            'change_pct': -2.13,
+            'change2': -2.13,
+            'status': 'ACTIVE',
+            'date': '2024-11-22',
+            'dh': '#N/A',
+            'tp': 254.26,
+            'tva': 50852,
+            'pp': '⭐',
+            'iv': 147000,
+            'ip': '3.20%',
+            'thirty': '#N/A',
+            'seven': '#N/A',
+            'chan': '-2.13%',
+            'priority': None
+        }, {
+            'id': 2,
+            'etf': 'FINIETF',
+            'ep': 26.63,
+            'cmp': 30.47,
+            'qty': 4000,
+            'pos': 1,
+            'inv': 106520,
+            'pl': 15360,
+            'change_pct': 14.42,
+            'change2': 14.42,
+            'status': 'ACTIVE',
+            'date': '2025-01-03',
+            'dh': '#N/A',
+            'tp': 29.83,
+            'tva': 119302,
+            'pp': '⭐',
+            'iv': 310440,
+            'ip': '6.75%',
+            'thirty': '#N/A',
+            'seven': '#N/A',
+            'chan': '14.42%',
+            'priority': None
+        }, {
+            'id': 3,
+            'etf': 'HDFCPVTBAN',
+            'ep': 24.84,
+            'cmp': 28.09,
+            'qty': 4400,
+            'pos': 1,
+            'inv': 109296,
+            'pl': 14300,
+            'change_pct': 13.08,
+            'change2': 13.08,
+            'status': 'ACTIVE',
+            'date': '2025-01-09',
+            'dh': '#N/A',
+            'tp': 27.82,
+            'tva': 122412,
+            'pp': '⭐',
+            'iv': 109296,
+            'ip': '2.38%',
+            'thirty': '#N/A',
+            'seven': '#N/A',
+            'chan': '13.08%',
+            'priority': None
+        }]
 
         portfolio_summary = {
             'total_positions': 12,
@@ -1035,26 +1128,22 @@ def populate_admin_signals_endpoint():
         # Create admin user if not exists
         admin_user = User.query.filter_by(ucc='admin').first()
         if not admin_user:
-            admin_user = User(
-                ucc='admin',
-                mobile_number='9999999999',
-                greeting_name='Admin User',
-                user_id='admin',
-                is_active=True
-            )
+            admin_user = User(ucc='admin',
+                              mobile_number='9999999999',
+                              greeting_name='Admin User',
+                              user_id='admin',
+                              is_active=True)
             db.session.add(admin_user)
             db.session.commit()
 
         # Create target user if not exists
         target_user = User.query.filter_by(ucc='zhz3j').first()
         if not target_user:
-            target_user = User(
-                ucc='zhz3j',
-                mobile_number='9876543210',
-                greeting_name='ETF Trader',
-                user_id='zhz3j',
-                is_active=True
-            )
+            target_user = User(ucc='zhz3j',
+                               mobile_number='9876543210',
+                               greeting_name='ETF Trader',
+                               user_id='zhz3j',
+                               is_active=True)
             db.session.add(target_user)
             db.session.commit()
 
@@ -1063,63 +1152,61 @@ def populate_admin_signals_endpoint():
         db.session.commit()
 
         # Sample ETF signals data (admin sends this data to the table)
-        etf_signals = [
-            {
-                'symbol': 'NIFTYBEES',
-                'signal_type': 'BUY',
-                'entry_price': Decimal('245.50'),
-                'target_price': Decimal('260.00'),
-                'stop_loss': Decimal('235.00'),
-                'quantity': 100,
-                'signal_title': 'NIFTY ETF - Bullish Breakout',
-                'signal_description': 'Strong momentum with volume surge. Target 260.',
-                'priority': 'HIGH'
-            },
-            {
-                'symbol': 'BANKBEES',
-                'signal_type': 'BUY',
-                'entry_price': Decimal('520.75'),
-                'target_price': Decimal('545.00'),
-                'stop_loss': Decimal('505.00'),
-                'quantity': 50,
-                'signal_title': 'Bank ETF - Sector Rotation',
-                'signal_description': 'Banking sector showing strength. Good risk-reward.',
-                'priority': 'MEDIUM'
-            },
-            {
-                'symbol': 'GOLDSHARE',
-                'signal_type': 'SELL',
-                'entry_price': Decimal('4850.00'),
-                'target_price': Decimal('4720.00'),
-                'stop_loss': Decimal('4920.00'),
-                'quantity': 10,
-                'signal_title': 'Gold ETF - Correction Expected',
-                'signal_description': 'Overbought levels, expect pullback to 4720.',
-                'priority': 'MEDIUM'
-            },
-            {
-                'symbol': 'ITBEES',
-                'signal_type': 'BUY',
-                'entry_price': Decimal('425.30'),
-                'target_price': Decimal('445.00'),
-                'stop_loss': Decimal('415.00'),
-                'quantity': 75,
-                'signal_title': 'IT ETF - Tech Recovery',
-                'signal_description': 'IT sector bouncing from support. Good entry.',
-                'priority': 'HIGH'
-            },
-            {
-                'symbol': 'LIQUIDBEES',
-                'signal_type': 'BUY',
-                'entry_price': Decimal('1000.00'),
-                'target_price': Decimal('1002.00'),
-                'stop_loss': Decimal('999.50'),
-                'quantity': 200,
-                'signal_title': 'Liquid ETF - Safe Haven',
-                'signal_description': 'Market volatility hedge, low risk trade.',
-                'priority': 'LOW'
-            }
-        ]
+        etf_signals = [{
+            'symbol': 'NIFTYBEES',
+            'signal_type': 'BUY',
+            'entry_price': Decimal('245.50'),
+            'target_price': Decimal('260.00'),
+            'stop_loss': Decimal('235.00'),
+            'quantity': 100,
+            'signal_title': 'NIFTY ETF - Bullish Breakout',
+            'signal_description':
+            'Strong momentum with volume surge. Target 260.',
+            'priority': 'HIGH'
+        }, {
+            'symbol': 'BANKBEES',
+            'signal_type': 'BUY',
+            'entry_price': Decimal('520.75'),
+            'target_price': Decimal('545.00'),
+            'stop_loss': Decimal('505.00'),
+            'quantity': 50,
+            'signal_title': 'Bank ETF - Sector Rotation',
+            'signal_description':
+            'Banking sector showing strength. Good risk-reward.',
+            'priority': 'MEDIUM'
+        }, {
+            'symbol': 'GOLDSHARE',
+            'signal_type': 'SELL',
+            'entry_price': Decimal('4850.00'),
+            'target_price': Decimal('4720.00'),
+            'stop_loss': Decimal('4920.00'),
+            'quantity': 10,
+            'signal_title': 'Gold ETF - Correction Expected',
+            'signal_description':
+            'Overbought levels, expect pullback to 4720.',
+            'priority': 'MEDIUM'
+        }, {
+            'symbol': 'ITBEES',
+            'signal_type': 'BUY',
+            'entry_price': Decimal('425.30'),
+            'target_price': Decimal('445.00'),
+            'stop_loss': Decimal('415.00'),
+            'quantity': 75,
+            'signal_title': 'IT ETF - Tech Recovery',
+            'signal_description':
+            'IT sector bouncing from support. Good entry.',
+            'priority': 'HIGH'
+        }, {
+            'symbol': 'LIQUIDBEES',
+            'signal_type': 'BUY',
+            'entry_price': Decimal('1000.00'),
+            'target_price': Decimal('1002.00'),
+            'stop_loss': Decimal('999.50'),
+            'quantity': 200,
+            'signal_title': 'Liquid ETF - Safe Haven',
+            'signal_description': 'Market volatility hedge, low risk trade.',
+            'priority': 'LOW'
+        }]
 
         # Create signals in admin_trade_signals table
         for signal_data in etf_signals:
@@ -1140,39 +1227,49 @@ def populate_admin_signals_endpoint():
                 created_at=datetime.now() - timedelta(days=1),
                 signal_date=datetime.now().date(),
                 expiry_date=(datetime.now() + timedelta(days=30)).date(),
-                investment_amount=signal_data['entry_price'] * signal_data['quantity'],
+                investment_amount=signal_data['entry_price'] *
+                signal_data['quantity'],
                 current_price=signal_data['entry_price'],
-                current_value=signal_data['entry_price'] * signal_data['quantity'],
+                current_value=signal_data['entry_price'] *
+                signal_data['quantity'],
                 pnl=Decimal('0.00'),
-                pnl_percentage=Decimal('0.00')
-            )
+                pnl_percentage=Decimal('0.00'))
             db.session.add(signal)
 
         db.session.commit()
 
         total_signals = AdminTradeSignal.query.count()
-        active_signals = AdminTradeSignal.query.filter_by(status='ACTIVE').count()
+        active_signals = AdminTradeSignal.query.filter_by(
+            status='ACTIVE').count()
 
-        logging.info(f"Successfully populated {len(etf_signals)} ETF signals in admin_trade_signals table")
+        logging.info(
+            f"Successfully populated {len(etf_signals)} ETF signals in admin_trade_signals table"
+        )
 
         return jsonify({
-            'success': True,
-            'message': 'Successfully populated admin trade signals table',
-            'total_signals': total_signals,
-            'active_signals': active_signals,
-            'created_signals': len(etf_signals),
-            'admin_user_id': admin_user.id,
-            'target_user_id': target_user.id,
-            'note': 'ETF signals page will now fetch data from admin_trade_signals table and show real-time CMP from Kotak Neo quotes'
+            'success':
+            True,
+            'message':
+            'Successfully populated admin trade signals table',
+            'total_signals':
+            total_signals,
+            'active_signals':
+            active_signals,
+            'created_signals':
+            len(etf_signals),
+            'admin_user_id':
+            admin_user.id,
+            'target_user_id':
+            target_user.id,
+            'note':
+            'ETF signals page will now fetch data from admin_trade_signals table and show real-time CMP from Kotak Neo quotes'
         })
 
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error populating admin signals: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 from routes.auth import auth_bp
 from routes.main import main_bp
@@ -1198,7 +1295,7 @@ try:
     from api.enhanced_etf_signals import enhanced_etf_bp
     from api.admin_signals_api import admin_signals_bp
     from api.supabase_api import supabase_bp
-    from api.deals import deals_bp # Added deals blueprint import
+    from api.deals import deals_bp  # Added deals blueprint import
 
     # Blueprint registration moved to main.py to avoid conflicts
     print("✓ Blueprint imports available")
@@ -1217,7 +1314,9 @@ except ImportError as e:
 # Register deals blueprint
 try:
     from api.deals import deals_bp
-    app.register_blueprint(deals_bp, url_prefix='/api/deals')  # Register deals blueprint with prefix
+    app.register_blueprint(
+        deals_bp,
+        url_prefix='/api/deals')  # Register deals blueprint with prefix
     print("✓ Deals blueprint registered")
 except Exception as e:
     print(f"Warning: Could not register deals blueprint: {e}")
@@ -1236,10 +1335,13 @@ if __name__ == '__main__':
 
     # Initialize admin signals scheduler for comprehensive Kotak Neo data updates (5-minute intervals)
     try:
-        logging.info("Starting admin signals scheduler with Kotak Neo integration...")
+        logging.info(
+            "Starting admin signals scheduler with Kotak Neo integration...")
         from admin_signals_scheduler import start_admin_signals_scheduler
         start_admin_signals_scheduler()
-        logging.info("✅ Admin signals scheduler started - automatic updates every 5 minutes")
+        logging.info(
+            "✅ Admin signals scheduler started - automatic updates every 5 minutes"
+        )
     except Exception as e:
         logging.error(f"❌ Failed to start admin signals scheduler: {e}")
 
