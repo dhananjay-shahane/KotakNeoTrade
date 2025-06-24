@@ -66,7 +66,8 @@ def get_admin_signals():
                 'status': status or 'ACTIVE',
                 'created_at': created_at.isoformat() if created_at else None,
                 'pnl': round(pnl, 2),
-                'pnl_percentage': round(pnl_percentage, 2)
+                'pnl_percentage': round(pnl_percentage, 2),
+                'pp': pnl_percentage  # Remove star icon, use plain percentage
             }
             
             signals_list.append(signal_data)

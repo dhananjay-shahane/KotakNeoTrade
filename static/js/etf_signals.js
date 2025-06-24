@@ -2,7 +2,6 @@
 function ETFSignalsManager() {
     this.positions = [];
     this.liveDataInterval = null;
-    this.autoRefreshInterval = 10000; // 10 seconds
     this.searchTimeout = null;
     
     // Initialize after DOM is ready
@@ -19,7 +18,6 @@ function ETFSignalsManager() {
 ETFSignalsManager.prototype.init = function() {
     this.setupEventListeners();
     this.loadPositions();
-    this.startAutoRefresh();
     this.initLiveDataConnection();
 };
 
@@ -50,14 +48,7 @@ ETFSignalsManager.prototype.setupEventListeners = function() {
         });
     }
 
-    // Auto refresh interval change
-    var autoRefreshInterval = document.getElementById('autoRefreshInterval');
-    if (autoRefreshInterval) {
-        autoRefreshInterval.addEventListener('change', function(e) {
-            self.autoRefreshInterval = parseInt(e.target.value) * 1000;
-            self.startAutoRefresh();
-        });
-    }
+    // Auto refresh interval removed
 
     // ETF symbol search
     var etfSymbol = document.getElementById('etfSymbol');
@@ -85,17 +76,7 @@ ETFSignalsManager.prototype.setupEventListeners = function() {
         });
     }
 
-    // Auto refresh toggle
-    var autoRefreshToggle = document.getElementById('autoRefreshToggle');
-    if (autoRefreshToggle) {
-        autoRefreshToggle.addEventListener('change', function(e) {
-            if (e.target.checked) {
-                self.startAutoRefresh();
-            } else {
-                self.stopAutoRefresh();
-            }
-        });
-    }
+    // Auto refresh toggle removed
 
     // Export buttons
     var exportCsvBtn = document.getElementById('exportCsvBtn');
@@ -300,23 +281,13 @@ ETFSignalsManager.prototype.updateVisibleCount = function() {
 };
 
 ETFSignalsManager.prototype.startAutoRefresh = function() {
-    var self = this;
-    this.stopAutoRefresh();
-
-    if (this.autoRefreshInterval > 0) {
-        this.liveDataInterval = setInterval(function() {
-            self.loadPositions();
-        }, this.autoRefreshInterval);
-        console.log('Auto refresh started:', this.autoRefreshInterval + 'ms');
-    }
+    // Auto refresh functionality removed
+    console.log('Auto refresh disabled');
 };
 
 ETFSignalsManager.prototype.stopAutoRefresh = function() {
-    if (this.liveDataInterval) {
-        clearInterval(this.liveDataInterval);
-        this.liveDataInterval = null;
-        console.log('Auto refresh stopped');
-    }
+    // Auto refresh functionality removed
+    console.log('Auto refresh disabled');
 };
 
 ETFSignalsManager.prototype.initLiveDataConnection = function() {
@@ -367,14 +338,8 @@ function refreshSignals() {
 }
 
 function setRefreshInterval(interval, text) {
-    if (window.etfSignalsManager) {
-        window.etfSignalsManager.autoRefreshInterval = interval;
-        window.etfSignalsManager.startAutoRefresh();
-        var currentInterval = document.getElementById('currentInterval');
-        if (currentInterval) {
-            currentInterval.textContent = text;
-        }
-    }
+    // Auto refresh functionality removed
+    console.log('Auto refresh disabled');
 }
 
 function exportSignals() {

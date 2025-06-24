@@ -103,25 +103,6 @@
             <span class="badge bg-primary ms-2" id="visibleSignalsCount">0</span>
         </h5>
         <div class="d-flex gap-2 align-items-center">
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="autoRefreshToggle" checked>
-                <label class="form-check-label text-light" for="autoRefreshToggle">
-                    Auto Refresh
-                </label>
-            </div>
-            <div class="dropdown">
-                <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" id="refreshIntervalDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fas fa-clock me-1"></i><span id="currentInterval">30s</span>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-dark">
-                    <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(5000, '5s')">5 seconds</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(10000, '10s')">10 seconds</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(30000, '30s')">30 seconds</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(60000, '1m')">1 minute</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(300000, '5m')">5 minutes</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(600000, '10m')">10 minutes</a></li>
-                </ul>
-            </div>
             <button class="btn btn-sm btn-outline-light" onclick="exportSignals()">
                 <i class="fas fa-download me-1"></i>Export
             </button>
