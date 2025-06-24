@@ -104,14 +104,15 @@ The application follows a modern Flask architecture with clear separation of con
 
 ## Recent Changes
 
-- **June 24, 2025** - Successfully connected to external PostgreSQL database and imported authentic CSV trading data
-  - Imported authentic CSV trading data from user's comprehensive portfolio into admin_trade_signals table
-  - Database contains 15 ETF trading positions with real entry dates, prices, and P&L calculations
-  - Active positions: FINIETF (+14.42%), HDFCPVTBAN (+13.08%), INFRABEES (+6.07%), MOM30IETF (+2.01%)
-  - Portfolio includes diverse ETF holdings: MID150BEES, ITETF, FMCGIETF, JUNIORBEES, AUTOIETF, PHARMABEES, TNIDETF, HEALTHIETF
-  - ETF signals page now displays authentic CSV data from external database via `/api/etf-signals-data`
-  - All CSV columns properly mapped: ETF, 30, DH, Date, Pos, Qty, EP, CMP, %Chan, Inv., TP, TVA, TPR, PL, ED, EXP, PR, PP, IV, IP, NT, Qt, 7, %Ch
-  - Production-ready system with real trading data stored in external PostgreSQL database
+- **June 24, 2025** - Successfully completed migration to external PostgreSQL database with authentic CSV trading data
+  - Connected application to external PostgreSQL database: postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db
+  - Successfully imported 15 authentic ETF trading positions from user's comprehensive CSV portfolio
+  - ETF signals API now returns real trading data: FINIETF (+14.42%), HDFCPVTBAN (+13.08%), INFRABEES (+6.07%), MOM30IETF (+2.01%)
+  - Complete portfolio data with entry prices, current prices, P&L calculations, and position details
+  - ETF signals page displays live data from external database via `/api/etf-signals-data` endpoint
+  - All CSV columns properly mapped and stored: ETF, Date, Pos, Qty, EP, CMP, %Chan, Inv., TP, TVA, TPR, PL, etc.
+  - Application running cleanly on port 5000 with external database connectivity
+  - JavaScript ES6 compatibility issues resolved for maximum browser support
 
 ## Recent Changes
 
