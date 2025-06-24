@@ -22,17 +22,26 @@ class Config:
     }
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # Session configuration
+    # Session configuration for Replit
     SESSION_TYPE = 'filesystem'
     SESSION_PERMANENT = True
     SESSION_FILE_DIR = './flask_session'
     SESSION_FILE_THRESHOLD = 500
     PERMANENT_SESSION_LIFETIME = timedelta(hours=24)
+    SESSION_COOKIE_SECURE = True  # Use secure cookies for HTTPS
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_DOMAIN = None  # Auto-detect domain
     
     # Trading configuration
     AUTO_REFRESH_INTERVAL = 30  # seconds
     MAX_API_RETRIES = 3
     API_TIMEOUT = 30  # seconds
+    
+    # Replit deployment configuration
+    APPLICATION_ROOT = '/'
+    PREFERRED_URL_SCHEME = 'https'
+    SERVER_NAME = None  # Allow any host
 
 class DevelopmentConfig(Config):
     """Development configuration"""

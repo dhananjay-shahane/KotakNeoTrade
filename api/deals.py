@@ -246,6 +246,9 @@ def get_user_deals():
 
         except Exception as db_error:
             logging.error(f"Database error fetching deals: {db_error}")
+
+        except Exception as db_error:
+            logging.error(f"Database error fetching deals: {db_error}")
             return jsonify({
                 'success': False, 
                 'message': f'Database error: {str(db_error)}',

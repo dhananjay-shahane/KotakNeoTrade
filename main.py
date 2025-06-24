@@ -109,7 +109,11 @@ if __name__ == '__main__':
         start_yahoo_scheduler()
         print("📈 Yahoo Finance scheduler started")
 
-        app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
+        # Get port from environment or default to 5000
+        port = int(os.environ.get('PORT', 5000))
+
+        # Run with proper Replit configuration
+        app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
     except Exception as e:
         print(f"❌ Error starting application: {str(e)}")
         import traceback

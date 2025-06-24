@@ -58,9 +58,10 @@ app.config['PREFERRED_URL_SCHEME'] = 'https'
 app.config['SERVER_NAME'] = None  # Allow any host for Replit compatibility
 
 # Additional configurations for proper external access
-app.config['SESSION_COOKIE_SECURE'] = False  # Allow HTTP for development
+app.config['SESSION_COOKIE_SECURE'] = True  # Use secure cookies for HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_DOMAIN'] = None  # Let Flask auto-detect domain
 # initialize the app with the extension, flask-sqlalchemy >= 3.0.x
 db.init_app(app)
 
