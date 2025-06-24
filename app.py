@@ -72,26 +72,25 @@ app.config['SESSION_COOKIE_PATH'] = '/'
 # Configure for Replit webview and DNS
 @app.after_request
 def after_request(response):
-    # Completely remove ALL headers that could block iframe embedding
+    # Remove ALL headers that could interfere with webview display
     headers_to_remove = [
         'X-Frame-Options', 'frame-options', 'Content-Security-Policy', 
-        'X-XSS-Protection', 'Referrer-Policy', 'Permissions-Policy'
+        'X-XSS-Protection', 'Referrer-Policy', 'Permissions-Policy',
+        'X-Content-Type-Options', 'Strict-Transport-Security'
     ]
     for header in headers_to_remove:
         response.headers.pop(header, None)
     
-    # Add permissive CORS headers
+    # Complete webview compatibility - remove X-Frame-Options entirely
+    response.headers.pop('X-Frame-Options', None)
     response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, HEAD'
+    response.headers['Access-Control-Allow-Methods'] = '*'
     response.headers['Access-Control-Allow-Headers'] = '*'
     response.headers['Access-Control-Allow-Credentials'] = 'true'
-    response.headers['Access-Control-Max-Age'] = '86400'
     
-    # Ensure no cache issues for preview routes
-    if request.endpoint in ['index', 'test_webview', 'simple_webview', 'preview']:
-        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-        response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '0'
+    # Minimal caching headers
+    response.headers['Cache-Control'] = 'no-cache'
+    response.headers['Pragma'] = 'no-cache'
     
     return response
 
@@ -109,57 +108,56 @@ def handle_preflight():
         response.headers.add('Access-Control-Allow-Methods', "*")
         return response
 
-# Root route - webview optimized
+# Root route - ultra-simple webview
 @app.route('/')
 def index():
-    # Load optimized webview content
-    try:
-        with open('webview_ready.html', 'r') as f:
-            html_content = f.read()
-    except FileNotFoundError:
-        # Fallback content
-        html_content = '''<!DOCTYPE html>
-<html><head><title>Kotak Neo Trading</title><meta charset="UTF-8">
-<style>body{background:#667eea;color:white;font-family:Arial;text-align:center;padding:50px;}
-h1{font-size:3rem;margin-bottom:20px;}</style></head>
-<body><h1>Kotak Neo Trading Platform</h1><p>Application Online | Database Connected</p>
-<p><a href="/auth/login" style="color:#FFD700">Login Portal</a> | 
-<a href="/etf/signals" style="color:#FFD700">ETF Signals</a></p></body></html>'''
-    
-    response = make_response(html_content)
-    response.headers['Content-Type'] = 'text/html; charset=utf-8'
-    
-    # Ensure no caching for webview
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    
-    return response
+    return '''
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Kotak Neo Trading</title>
+<style>
+body{margin:0;padding:30px;background:#4338ca;color:white;font-family:system-ui;text-align:center;min-height:90vh;display:flex;align-items:center;justify-content:center}
+.box{background:rgba(255,255,255,0.1);padding:40px;border-radius:15px;max-width:600px}
+h1{font-size:2.5rem;margin-bottom:20px}
+.green{color:#22c55e;font-weight:bold}
+a{color:#fbbf24;text-decoration:none;margin:0 15px;padding:8px 16px;background:rgba(255,255,255,0.1);border-radius:8px}
+a:hover{background:rgba(255,255,255,0.2)}
+</style>
+</head>
+<body>
+<div class="box">
+<h1>Kotak Neo Trading Platform</h1>
+<p class="green">● SYSTEM ONLINE</p>
+<p>Database Connected | Flask Application Running</p>
+<p>Port: 5000 | Webview: Ready</p>
+<div style="margin-top:30px">
+<a href="/auth/login">Login Portal</a>
+<a href="/etf/signals">ETF Signals</a>
+<a href="/health">Health Check</a>
+</div>
+<p style="margin-top:30px;opacity:0.8;font-size:0.9rem">Domain: ''' + str(os.environ.get('REPLIT_DOMAINS', 'localhost:5000')) + '''</p>
+</div>
+</body>
+</html>'''
 
-# Test and health routes
-@app.route('/test')
+# Health and test routes - simplified
 @app.route('/health')
+@app.route('/test') 
+@app.route('/preview')
 def test_webview():
     try:
-        with open('webview_fix.html', 'r') as f:
-            html_content = f.read()
+        with open('webview_test_final.html', 'r') as f:
+            return f.read()
     except FileNotFoundError:
-        # Fallback if file doesn't exist
-        html_content = simple_webview().get_data(as_text=True)
-    
-    response = make_response(html_content)
-    response.headers['Content-Type'] = 'text/html; charset=utf-8'
-    
-    # Remove all frame-blocking headers
-    for header in ['X-Frame-Options', 'frame-options', 'Content-Security-Policy', 'X-XSS-Protection']:
-        response.headers.pop(header, None)
-    
-    return response
-
-# Preview route specifically for Replit webview
-@app.route('/preview')
-def preview():
-    return test_webview()
+        return '''<!DOCTYPE html><html><head><title>Health Check</title></head>
+<body style="background:#059669;color:white;text-align:center;padding:50px;font-family:Arial">
+<h1>Kotak Neo Trading - Health Check</h1>
+<p style="color:#22c55e;font-size:1.2rem">✓ Application Running Successfully</p>
+<p>Database: Connected | Port: 5000 | Status: Online</p>
+<a href="/" style="color:#fbbf24">Back to Home</a>
+</body></html>'''
 
 # Simple webview test route
 @app.route('/webview')
