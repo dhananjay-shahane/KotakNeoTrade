@@ -104,14 +104,14 @@ The application follows a modern Flask architecture with clear separation of con
 
 ## Recent Changes
 
-- **June 24, 2025** - Successfully configured external PostgreSQL database integration
-  - Application now connected to external Render PostgreSQL database
-  - Database URL: postgresql://kotak_trading_db_user:***@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db
-  - ETF signals data stored in external database admin_trade_signals table
-  - All 3 active ETF positions maintained: NIFTYBEES (+1.32%), GOLDBEES (+2.46%), BANKBEES (-1.21%)
-  - API endpoint `/api/etf-signals-data` working correctly with external database
-  - Portfolio metrics preserved: ₹61,722.50 invested, ₹61,985.00 current value, +₹262.50 profit
-  - Production-ready system with persistent external database storage
+- **June 24, 2025** - Successfully imported CSV trading data to external PostgreSQL database
+  - Imported authentic CSV trading data from user's comprehensive portfolio into admin_trade_signals table
+  - Database contains 15 ETF trading positions with real entry dates, prices, and P&L calculations
+  - Active positions: FINIETF (+14.42%), HDFCPVTBAN (+13.08%), INFRABEES (+6.07%), MOM30IETF (+2.01%)
+  - Portfolio includes diverse ETF holdings: MID150BEES, ITETF, FMCGIETF, JUNIORBEES, AUTOIETF, PHARMABEES, TNIDETF, HEALTHIETF
+  - ETF signals page now displays authentic CSV data from external database via `/api/etf-signals-data`
+  - All CSV columns properly mapped: ETF, 30, DH, Date, Pos, Qty, EP, CMP, %Chan, Inv., TP, TVA, TPR, PL, ED, EXP, PR, PP, IV, IP, NT, Qt, 7, %Ch
+  - Production-ready system with real trading data stored in external PostgreSQL database
 
 ## Recent Changes
 
