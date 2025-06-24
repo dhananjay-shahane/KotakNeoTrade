@@ -104,14 +104,14 @@ The application follows a modern Flask architecture with clear separation of con
 
 ## Recent Changes
 
-- **June 24, 2025** - Migration completed successfully with fully functional ETF signals system
-  - ETF signals page displays authentic data from admin_trade_signals database table
-  - `/api/etf-signals-data` endpoint working correctly with real trading positions
-  - Fixed all API routing issues and JavaScript compatibility problems
-  - Database contains 3 active ETF positions: NIFTYBEES (+1.32%), GOLDBEES (+2.46%), BANKBEES (-1.21%)
-  - Portfolio metrics: ₹61,722.50 invested, ₹61,985.00 current value, +₹262.50 profit (+0.43% return)
-  - Application running on port 5000 with all core functionality operational
-  - ETF signals page successfully loads and refreshes data from database as requested
+- **June 24, 2025** - Successfully configured external PostgreSQL database integration
+  - Application now connected to external Render PostgreSQL database
+  - Database URL: postgresql://kotak_trading_db_user:***@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db
+  - ETF signals data stored in external database admin_trade_signals table
+  - All 3 active ETF positions maintained: NIFTYBEES (+1.32%), GOLDBEES (+2.46%), BANKBEES (-1.21%)
+  - API endpoint `/api/etf-signals-data` working correctly with external database
+  - Portfolio metrics preserved: ₹61,722.50 invested, ₹61,985.00 current value, +₹262.50 profit
+  - Production-ready system with persistent external database storage
 
 ## Recent Changes
 
