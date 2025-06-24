@@ -172,8 +172,12 @@ def get_user_deals():
             from models_etf import UserDeal
 
             # Try to find user by UCC
-            current_user = User.query.filter_by(ucc=session.get('ucc')).first()
+            user_ucc = session.get('ucc')
+            logging.info(f"Looking for user with UCC: {user_ucc}")
+            
+            current_user = User.query.filter_by(ucc=user_ucc).first()
             if current_user:
+                logging.info(f"Found user: {current_user.id} with UCC: {current_user.ucc}")
                 db_deals = UserDeal.query.filter_by(user_id=current_user.id).order_by(UserDeal.created_at.desc()).all()
 
                 # Convert database deals to response format
@@ -183,7 +187,11 @@ def get_user_deals():
 
                 logging.info(f"Found {len(db_deals)} deals in database for user {current_user.ucc}")
             else:
-                logging.info(f"No user found for UCC: {session.get('ucc')}")
+                logging.warning(f"No user found for UCC: {user_ucc}")
+                # Check if there are any users in the database
+                total_users = User.query.count()
+                total_deals = UserDeal.query.count()
+                logging.info(f"Total users in database: {total_users}, Total deals: {total_deals}")
 
         except Exception as db_error:
             logging.error(f"Database error fetching deals: {db_error}")

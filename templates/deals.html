@@ -563,6 +563,31 @@ function DealsManager() {
                         };
                     });
 
+self.deals = uniqueDeals;
+                            self.filteredDeals = self.deals.slice();
+                            self.renderDealsTable();
+                            self.updatePagination();
+                            console.log('Loaded ' + uniqueDeals.length + ' deals from API');
+                        } else {
+                            console.log('No deals found in API response');
+                            self.deals = [];
+                            self.filteredDeals = [];
+                            self.renderDealsTable();
+                            self.updatePagination();
+                        }
+                    } catch (parseError) {
+                        console.error('Failed to parse deals API response:', parseError);
+                        self.showError('Invalid response from server');
+                    }
+                } else {
+                    console.error('Deals API call failed with status:', xhr.status);
+                    self.showError('Failed to load deals from server');
+                }
+            }
+        };
+        xhr.send();
+    }
+
     renderDealsTable() {
         var tbody = document.getElementById('dealsTableBody');
         var startIndex = (this.currentPage - 1) * this.pageSize;
