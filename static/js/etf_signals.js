@@ -1,11 +1,10 @@
-
 // ETF Signals Manager - ES5 Compatible
 function ETFSignalsManager() {
     this.positions = [];
     this.liveDataInterval = null;
     this.autoRefreshInterval = 30000; // Default 30 seconds
     this.searchTimeout = null;
-    
+
     // Initialize after DOM is ready
     var self = this;
     if (document.readyState === 'loading') {
@@ -349,7 +348,7 @@ ETFSignalsManager.prototype.updateVisibleCount = function() {
 ETFSignalsManager.prototype.startAutoRefresh = function() {
     var self = this;
     this.stopAutoRefresh(); // Clear any existing interval
-    
+
     if (this.autoRefreshInterval && this.autoRefreshInterval > 0) {
         this.liveDataInterval = setInterval(function() {
             self.loadPositions();
@@ -481,3 +480,64 @@ if (document.readyState === 'complete' || document.readyState === 'interactive')
         console.log('ETF Signals Manager initialized (fallback)');
     }
 }
+// Update auto-refresh functionality for Yahoo Finance
+        this.autoRefreshInterval = null;
+        this.updateInterval = 300000; // 5 minutes (Yahoo Finance rate limits)
+
+        // Setup auto-refresh controls
+        this.setupAutoRefresh();
+// Add Yahoo Finance update button to refresh section
+        const refreshSection = document.querySelector('.auto-refresh-section');
+        if (refreshSection) {
+            const updateBtn = document.createElement('button');
+            updateBtn.className = 'btn btn-success btn-sm me-2';
+            updateBtn.innerHTML = '<i class="fas fa-chart-line"></i> Update from Yahoo Finance';
+            updateBtn.onclick = () => this.forceYahooUpdate();
+            refreshSection.appendChild(updateBtn);
+        }
+forceUpdate() {
+        console.log('🔄 Force updating ETF signals...');
+        this.loadSignals();
+    }
+
+    async forceYahooUpdate() {
+        console.log('🔄 Force updating prices from Yahoo Finance...');
+
+        const updateBtn = document.querySelector('button[onclick*="forceYahooUpdate"]');
+        if (updateBtn) {
+            updateBtn.disabled = true;
+            updateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+        }
+
+        try {
+            const response = await fetch('/api/yahoo/update-prices', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                console.log(`✅ Updated ${result.signals_updated} signals and ${result.quotes_updated} quotes`);
+                this.showNotification(`Updated ${result.signals_updated} signals from Yahoo Finance`, 'success');
+
+                // Reload signals to show updated data
+                setTimeout(() => {
+                    this.loadSignals();
+                }, 1000);
+            } else {
+                console.error('❌ Failed to update from Yahoo Finance:', result.error);
+                this.showNotification('Failed to update prices from Yahoo Finance', 'danger');
+            }
+        } catch (error) {
+            console.error('❌ Error updating from Yahoo Finance:', error);
+            this.showNotification('Error updating prices from Yahoo Finance', 'danger');
+        } finally {
+            if (updateBtn) {
+                updateBtn.disabled = false;
+                updateBtn.innerHTML = '<i class="fas fa-chart-line"></i> Update from Yahoo Finance';
+            }
+        }
+    }

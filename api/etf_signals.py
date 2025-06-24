@@ -11,12 +11,13 @@ logger = logging.getLogger(__name__)
 
 @etf_bp.route('/signals', methods=['GET'])
 def get_admin_signals():
-    """Get ETF signals data from admin_trade_signals table with real-time CMP from Kotak Neo"""
+    """Get ETF signals data from admin_trade_signals table with real-time prices from Yahoo Finance"""
     try:
         # Get ALL admin trade signals from database using direct SQL query
         result = db.session.execute(text("""
             SELECT symbol, entry_price, current_price, quantity, investment_amount, 
-                   position_type, status, created_at
+                   position_type, status, created_at, pnl, pnl_percentage, change_percent,
+                   target_price, stop_loss, last_update_time
             FROM admin_trade_signals 
             ORDER BY created_at DESC
         """))
@@ -37,7 +38,7 @@ def get_admin_signals():
         total_current_value = 0
         
         for row in signals_data:
-            symbol, entry_price, current_price, quantity, investment_amount, position_type, status, created_at = row
+            symbol, entry_price, current_price, quantity, investment_amount, position_type, status, created_at, pnl, pnl_percentage, change_percent, target_price, stop_loss, last_update_time = row
             
             # Convert to proper types with better error handling
             try:
@@ -76,10 +77,13 @@ def get_admin_signals():
                 'position_type': position_type or 'LONG',
                 'status': status or 'ACTIVE',
                 'created_at': created_at.isoformat() if created_at else None,
-                'pnl': round(pnl, 2),
-                'pnl_percentage': round(pnl_percentage, 2),
-                'pp': round(pnl_percentage, 2),  # Use plain percentage
-                'target_price': round(entry_price * 1.1, 2) if entry_price > 0 else 0  # Default 10% target
+                'pnl': round(pnl, 2) if pnl else round((current_price - entry_price) * quantity, 2),
+                'pnl_percentage': round(pnl_percentage, 2) if pnl_percentage else round(((current_price - entry_price) / entry_price) * 100, 2),
+                'pp': round(pnl_percentage, 2) if pnl_percentage else round(((current_price - entry_price) / entry_price) * 100, 2),
+                'target_price': round(target_price, 2) if target_price else round(entry_price * 1.1, 2),
+                'stop_loss': round(stop_loss, 2) if stop_loss else round(entry_price * 0.9, 2),
+                'last_update_time': last_update_time.isoformat() if last_update_time else None,
+                'data_source': 'Yahoo Finance'
             }
             
             signals_list.append(signal_data)

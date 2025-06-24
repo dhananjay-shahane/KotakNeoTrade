@@ -132,7 +132,7 @@ def validate_current_session():
                 session['client'] = 'demo_client'
                 session.permanent = True
             return True
-            
+
         # Check if user is authenticated
         if not session.get('authenticated'):
             return False
@@ -179,14 +179,14 @@ def test_csv():
     try:
         from trading_functions import TradingFunctions
         trading_func = TradingFunctions()
-        
+
         # Get dashboard data from CSV
         dashboard_data = trading_func.get_dashboard_data(None)
-        
+
         # Format for display
         positions = dashboard_data.get('positions', [])
         summary = dashboard_data.get('summary', {})
-        
+
         html = f"""
         <html>
         <head><title>CSV Data Test</title></head>
@@ -196,7 +196,7 @@ def test_csv():
             <p>Total Positions: {summary.get('total_positions', 0)}</p>
             <p>Total Investment: ₹{summary.get('total_investment', 0):,.2f}</p>
             <p>Total P&L: ₹{summary.get('total_pnl', 0):,.2f}</p>
-            
+
             <h2>Current Positions</h2>
             <table border="1">
                 <tr>
@@ -208,7 +208,7 @@ def test_csv():
                     <th>P&L</th>
                 </tr>
         """
-        
+
         for pos in positions:
             html += f"""
                 <tr>
@@ -220,15 +220,15 @@ def test_csv():
                     <td>₹{pos.get('pnl', 0):,.2f}</td>
                 </tr>
             """
-        
+
         html += """
             </table>
         </body>
         </html>
         """
-        
+
         return html
-        
+
     except Exception as e:
         return f"<html><body><h1>Error testing CSV data</h1><p>{str(e)}</p></body></html>"
 
@@ -639,7 +639,7 @@ def get_etf_signals_data():
     try:
         from sqlalchemy import text
         app.logger.info("ETF Signals API: Starting CSV data fetch")
-        
+
         # Query admin_trade_signals table for CSV ETF data
         query = text("""
             SELECT id, etf, ep, cmp, qty, pos, inv, pl, chan, date, dh, ed, exp, tp, tva, tpr, pr, pp, iv, ip, nt, qt, seven, ch, thirty
@@ -647,29 +647,29 @@ def get_etf_signals_data():
             WHERE etf IS NOT NULL
             ORDER BY date DESC, id DESC
         """)
-        
+
         result = db.session.execute(query)
         signals = result.fetchall()
-        
+
         app.logger.info(f"ETF Signals API: Found {len(signals)} CSV trade signals")
-        
+
         # Format signals data from CSV structure
         signals_list = []
         total_investment = 0
         total_current_value = 0
         active_positions = 0
-        
+
         for signal in signals:
             # Only include records with valid data
             if not signal.etf or not signal.ep or not signal.cmp or not signal.qty:
                 continue
-                
+
             # Calculate values
             entry_price = float(signal.ep) if signal.ep else 0
             current_price = float(signal.cmp) if signal.cmp else 0
             quantity = int(signal.qty) if signal.qty else 0
             investment = float(signal.inv) if signal.inv else (entry_price * quantity)
-            
+
             if entry_price > 0:
                 pnl_pct = ((current_price - entry_price) / entry_price) * 100
                 pnl_amount = (current_price - entry_price) * quantity
@@ -678,13 +678,13 @@ def get_etf_signals_data():
                 pnl_pct = 0
                 pnl_amount = 0
                 current_value = 0
-            
+
             # Count active positions
             if signal.pos == 1:  # Position = 1 means active
                 active_positions += 1
                 total_investment += investment
                 total_current_value += current_value
-            
+
             signal_data = {
                 'id': signal.id,
                 'etf': signal.etf,
@@ -717,11 +717,11 @@ def get_etf_signals_data():
                 'priority': None
             }
             signals_list.append(signal_data)
-        
+
         # Calculate portfolio summary
         total_pnl = total_current_value - total_investment
         return_percent = (total_pnl / total_investment * 100) if total_investment > 0 else 0
-        
+
         portfolio_summary = {
             'total_positions': len(signals_list),
             'active_positions': active_positions,
@@ -731,15 +731,15 @@ def get_etf_signals_data():
             'total_pnl': total_pnl,
             'return_percent': return_percent
         }
-        
+
         app.logger.info(f"ETF Signals API: Returning {len(signals_list)} CSV signals with {active_positions} active positions")
-        
+
         return jsonify({
             'success': True,
             'signals': signals_list,
             'portfolio': portfolio_summary
         })
-        
+
     except Exception as e:
         app.logger.error(f"ETF Signals API Error: {str(e)}")
         import traceback
@@ -765,7 +765,7 @@ def get_etf_signals_data_backup():
     """Backup API endpoint for ETF signals data"""
     try:
         app.logger.info("ETF Signals API: Found 12 CSV trade signals")
-        
+
         # Return sample data from the CSV we imported
         signals_list = [
             {
@@ -790,7 +790,7 @@ def get_etf_signals_data_backup():
                 'thirty': '#N/A', 'seven': '#N/A', 'chan': '13.08%', 'priority': None
             }
         ]
-        
+
         portfolio_summary = {
             'total_positions': 12,
             'active_positions': 10,
@@ -800,13 +800,13 @@ def get_etf_signals_data_backup():
             'total_pnl': 61000,
             'return_percent': 5.96
         }
-        
+
         return jsonify({
             'success': True,
             'signals': signals_list,
             'portfolio': portfolio_summary
         })
-        
+
     except Exception as e:
         app.logger.error(f"ETF Signals API Error: {str(e)}")
         return jsonify({
@@ -851,7 +851,7 @@ def populate_admin_signals_endpoint():
         from models import User
         from datetime import datetime, timedelta
         from decimal import Decimal
-        
+
         # Create admin user if not exists
         admin_user = User.query.filter_by(ucc='admin').first()
         if not admin_user:
@@ -864,7 +864,7 @@ def populate_admin_signals_endpoint():
             )
             db.session.add(admin_user)
             db.session.commit()
-        
+
         # Create target user if not exists
         target_user = User.query.filter_by(ucc='zhz3j').first()
         if not target_user:
@@ -877,11 +877,11 @@ def populate_admin_signals_endpoint():
             )
             db.session.add(target_user)
             db.session.commit()
-        
+
         # Clear existing signals
         AdminTradeSignal.query.delete()
         db.session.commit()
-        
+
         # Sample ETF signals data (admin sends this data to the table)
         etf_signals = [
             {
@@ -940,7 +940,7 @@ def populate_admin_signals_endpoint():
                 'priority': 'LOW'
             }
         ]
-        
+
         # Create signals in admin_trade_signals table
         for signal_data in etf_signals:
             signal = AdminTradeSignal(
@@ -967,14 +967,14 @@ def populate_admin_signals_endpoint():
                 pnl_percentage=Decimal('0.00')
             )
             db.session.add(signal)
-        
+
         db.session.commit()
-        
+
         total_signals = AdminTradeSignal.query.count()
         active_signals = AdminTradeSignal.query.filter_by(status='ACTIVE').count()
-        
+
         logging.info(f"Successfully populated {len(etf_signals)} ETF signals in admin_trade_signals table")
-        
+
         return jsonify({
             'success': True,
             'message': 'Successfully populated admin trade signals table',
@@ -985,7 +985,7 @@ def populate_admin_signals_endpoint():
             'target_user_id': target_user.id,
             'note': 'ETF signals page will now fetch data from admin_trade_signals table and show real-time CMP from Kotak Neo quotes'
         })
-        
+
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error populating admin signals: {str(e)}")
@@ -1021,7 +1021,7 @@ try:
 
     # Blueprint registration moved to main.py to avoid conflicts
     print("✓ Blueprint imports available")
-    
+
     # Initialize realtime quotes scheduler
     try:
         from realtime_quotes_manager import start_quotes_scheduler
@@ -1029,7 +1029,7 @@ try:
         print("✓ Realtime quotes scheduler started")
     except Exception as e:
         print(f"Warning: Could not start quotes scheduler: {e}")
-        
+
 except ImportError as e:
     print(f"Warning: Could not import additional blueprint: {e}")
 

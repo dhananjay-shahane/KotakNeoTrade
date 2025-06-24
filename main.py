@@ -46,27 +46,27 @@ try:
     try:
         import sys
         import importlib
-        
+
         # Force reload the ETF signals module to ensure clean import
         if 'api.etf_signals' in sys.modules:
             importlib.reload(sys.modules['api.etf_signals'])
-        
+
         from api.etf_signals import etf_bp
-        
+
         # Remove any existing ETF blueprint registration
         if 'etf' in app.blueprints:
             del app.blueprints['etf']
-            
+
         app.register_blueprint(etf_bp)
         print("✓ ETF signals blueprint registered successfully")
-        
+
         # Verify the /etf/signals route exists
         etf_routes = [rule.rule for rule in app.url_map.iter_rules() if rule.rule.startswith('/etf/')]
         if etf_routes:
             print(f"✓ ETF routes registered: {etf_routes}")
         else:
             print("✗ No ETF routes found after registration")
-                
+
     except Exception as etf_error:
         print(f"✗ ETF blueprint registration failed: {etf_error}")
         import traceback
@@ -91,3 +91,22 @@ try:
     print("✓ Additional blueprints registered successfully")
 except Exception as e:
     print(f"✗ Error registering blueprints: {e}")
+
+if __name__ == '__main__':
+    try:
+        print("🚀 Starting Flask application...")
+
+        # Start real-time quotes scheduler
+        from realtime_quotes_manager import start_realtime_quotes_scheduler
+        start_realtime_quotes_scheduler()
+
+        # Start Yahoo Finance scheduler
+        from yahoo_scheduler import start_yahoo_scheduler
+        start_yahoo_scheduler()
+        print("📈 Yahoo Finance scheduler started")
+
+        app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
+    except Exception as e:
+        print(f"❌ Error starting application: {str(e)}")
+        import traceback
+        traceback.print_exc()
