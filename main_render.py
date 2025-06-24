@@ -5,28 +5,36 @@ Production-ready deployment configuration
 import os
 import sys
 import logging
-from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Add current directory to Python path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# Setup logging for production
+def setup_production_environment():
+    """Setup production environment configuration"""
+    os.environ.setdefault('FLASK_ENV', 'production')
+    os.environ.setdefault('FLASK_DEBUG', 'False')
+    
+    # Ensure required environment variables
+    if not os.environ.get('DATABASE_URL'):
+        raise ValueError("DATABASE_URL environment variable is required")
+    
+    if not os.environ.get('SESSION_SECRET'):
+        raise ValueError("SESSION_SECRET environment variable is required")
+    
+    # Create session directory
+    os.makedirs('flask_session', exist_ok=True)
+
+# Setup production environment first
+setup_production_environment()
+
+# Import the main Flask app
+from app import app
+
+# Configure logging for production
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger(__name__)
-
-def setup_production_environment():
-    """Setup production environment configuration"""
-    # Production environment variables
-    os.environ['FLASK_ENV'] = 'production'
-    os.environ['FLASK_DEBUG'] = 'False'
-    
-    # Create necessary directories
-    os.makedirs('flask_session', exist_ok=True)
-    
-    logger.info("Production environment configured")
 
 # Setup environment
 setup_production_environment()
