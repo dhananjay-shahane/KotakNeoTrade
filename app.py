@@ -1018,6 +1018,7 @@ try:
     from api.enhanced_etf_signals import enhanced_etf_bp
     from api.admin_signals_api import admin_signals_bp
     from api.supabase_api import supabase_bp
+    from api.deals import deals_bp # Added deals blueprint import
 
     # Blueprint registration moved to main.py to avoid conflicts
     print("✓ Blueprint imports available")
@@ -1032,6 +1033,13 @@ try:
 
 except ImportError as e:
     print(f"Warning: Could not import additional blueprint: {e}")
+
+# Register deals blueprint
+try:
+    app.register_blueprint(deals_bp, url_prefix='/api/deals')  # Register deals blueprint with prefix
+    print("✓ Deals blueprint registered")
+except Exception as e:
+    print(f"Warning: Could not register deals blueprint: {e}")
 
 if __name__ == '__main__':
     with app.app_context():

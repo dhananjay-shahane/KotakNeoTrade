@@ -5,10 +5,68 @@ User Deals API endpoints
 from flask import Blueprint, request, jsonify, session
 from models import db, User
 from models_etf import AdminTradeSignal, UserDeal, UserNotification
+import json
 from datetime import datetime
 import logging
 
 deals_bp = Blueprint('deals', __name__, url_prefix='/api/deals')
+
+@deals_bp.route('/create-from-signal', methods=['POST'])
+def create_deal_from_signal():
+    """Create a new deal from ETF signal data"""
+    try:
+        # Check if user is logged in
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+        
+        user_id = session['user_id']
+        data = request.get_json()
+        
+        # Extract signal data
+        signal_data = data.get('signal_data', {})
+        
+        # Calculate invested amount
+        quantity = int(signal_data.get('qty', 1))
+        entry_price = float(signal_data.get('cmp', 0))
+        invested_amount = quantity * entry_price
+        
+        # Create new deal from signal
+        deal = UserDeal(
+            user_id=user_id,
+            symbol=signal_data.get('symbol', '').upper(),
+            trading_symbol=signal_data.get('symbol', '').upper(),
+            exchange='NSE',
+            position_type='LONG' if signal_data.get('pos') == 1 else 'SHORT',
+            quantity=quantity,
+            entry_price=entry_price,
+            current_price=entry_price,
+            target_price=float(signal_data.get('tp', 0)) if signal_data.get('tp') else None,
+            stop_loss=entry_price * 0.95,  # Default 5% stop loss
+            invested_amount=invested_amount,
+            notes=f'Added from ETF signals - {signal_data.get("nt", "")}',
+            tags='ETF_SIGNAL',
+            deal_type='SIGNAL'
+        )
+        
+        # Calculate initial P&L
+        deal.calculate_pnl()
+        
+        db.session.add(deal)
+        db.session.commit()
+        
+        logging.info(f"Deal created from signal for user {user_id}: {deal.symbol} {deal.position_type}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Deal created successfully from signal',
+            'deal_id': deal.id,
+            'deal': deal.to_dict()
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error creating deal from signal: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error creating deal: {str(e)}'}), 500
 
 @deals_bp.route('/create', methods=['POST'])
 def create_deal():

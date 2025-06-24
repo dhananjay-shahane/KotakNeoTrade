@@ -461,8 +461,129 @@ function exportSignals() {
 }
 
 function addDeal(symbol, price) {
-    var dealUrl = '/deals?symbol=' + encodeURIComponent(symbol) + '&price=' + price;
-    window.location.href = dealUrl;
+    // Find the current signal data for this symbol
+    var currentSignal = null;
+    if (window.etfSignalsManager && window.etfSignalsManager.signals) {
+        currentSignal = window.etfSignalsManager.signals.find(function(signal) {
+            return (signal.symbol || signal.etf) === symbol;
+        });
+    }
+
+    // Show confirmation dialog
+    if (!confirm('Add deal for ' + symbol + ' at ₹' + price.toFixed(2) + '?')) {
+        return;
+    }
+
+    // Create complete signal data for the deal
+    var signalData = {
+        symbol: symbol,
+        pos: 1, // LONG position
+        qty: 1,
+        cmp: price,
+        ep: price,
+        tp: currentSignal ? currentSignal.tp : (price * 1.05),
+        inv: price * 1,
+        pl: 0,
+        change_pct: 0,
+        thirty: currentSignal ? currentSignal.thirty : '0%',
+        dh: 0,
+        date: new Date().toISOString().split('T')[0],
+        ed: new Date().toISOString().split('T')[0],
+        pr: currentSignal ? currentSignal.pr : '0%',
+        pp: currentSignal ? currentSignal.pp : '★★',
+        iv: currentSignal ? currentSignal.iv : 'Medium',
+        ip: '0%',
+        nt: 'Added from ETF signals',
+        qt: new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
+        seven: currentSignal ? currentSignal.seven : '0%',
+        change2: 0
+    };
+
+    // Send POST request to create deal in database
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/deals/create-from-signal', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            console.log('API Response Status:', xhr.status);
+            console.log('API Response Text:', xhr.responseText);
+            if (xhr.status === 200) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        // Show success message
+                        alert('Deal created successfully for ' + symbol + '!');
+
+                        // Add to localStorage for immediate display
+                        var userDeals = JSON.parse(localStorage.getItem('userDeals') || '[]');
+                        var existingDealIndex = -1;
+                        for (var i = 0; i < userDeals.length; i++) {
+                            if (userDeals[i].symbol === symbol && Math.abs(parseFloat(userDeals[i].ep) - parseFloat(price)) < 0.01) {
+                                existingDealIndex = i;
+                                break;
+                            }
+                        }
+
+                        // Only add if no duplicate exists
+                        if (existingDealIndex === -1) {
+                            var newDeal = {
+                                id: response.deal_id || 'deal_' + Date.now(),
+                                symbol: symbol,
+                                pos: 1, // LONG position
+                                qty: 1,
+                                ep: price,
+                                cmp: price,
+                                pl: 0,
+                                change_pct: 0,
+                                inv: price * 1,
+                                tp: signalData.tp,
+                                tva: signalData.tp * 1,
+                                tpr: (signalData.tp - price) * 1,
+                                date: signalData.date,
+                                status: 'ACTIVE',
+                                thirty: signalData.thirty,
+                                dh: 0,
+                                ed: signalData.ed,
+                                pr: signalData.pr,
+                                pp: signalData.pp,
+                                iv: signalData.iv,
+                                ip: signalData.ip,
+                                nt: signalData.nt,
+                                qt: signalData.qt,
+                                seven: signalData.seven,
+                                change2: 0
+                            };
+                            userDeals.unshift(newDeal);
+                            localStorage.setItem('userDeals', JSON.stringify(userDeals));
+                        }
+
+                        // Trigger storage event to update deals page if it's open in another tab
+                        var storageEvent = document.createEvent('Event');
+                        storageEvent.initEvent('storage', true, true);
+                        storageEvent.key = 'userDeals';
+                        storageEvent.newValue = JSON.stringify(userDeals);
+                        window.dispatchEvent(storageEvent);
+
+                        // Navigate to deals page with symbol and price parameters
+                        setTimeout(function() {
+                            window.location.href = '/deals?symbol=' + encodeURIComponent(symbol) + '&price=' + price.toFixed(2);
+                        }, 1000);
+                    } else {
+                        alert('Failed to create deal: ' + (response.message || 'Unknown error'));
+                    }
+                } catch (parseError) {
+                    console.error('Failed to parse API response:', parseError);
+                    alert('Invalid response from server');
+                }
+            } else {
+                console.error('API call failed with status:', xhr.status);
+                alert('Failed to create deal. Server returned status: ' + xhr.status);
+            }
+        }
+    };
+
+    xhr.send(JSON.stringify({signal_data: signalData}));
 }
 
 // Initialize ETF Signals Manager when DOM is ready

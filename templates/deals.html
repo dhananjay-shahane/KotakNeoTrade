@@ -554,7 +554,7 @@ function DealsManager() {
     loadDealsFromAPI() {
         var self = this;
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', '/api/etf/user-deals', true);
+        xhr.open('GET', '/api/deals/user', true);
         xhr.onreadystatechange = function() {
             if (xhr.readyState === 4 && xhr.status === 200) {
                 var response = JSON.parse(xhr.responseText);
