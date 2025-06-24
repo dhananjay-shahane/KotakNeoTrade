@@ -28,7 +28,7 @@ class Config:
     SESSION_FILE_DIR = './flask_session'
     SESSION_FILE_THRESHOLD = 500
     PERMANENT_SESSION_LIFETIME = timedelta(hours=24)
-    SESSION_COOKIE_SECURE = True  # Use secure cookies for HTTPS
+    SESSION_COOKIE_SECURE = False  # Allow both HTTP and HTTPS for development
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
     SESSION_COOKIE_DOMAIN = None  # Auto-detect domain

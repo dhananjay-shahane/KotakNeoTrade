@@ -37,8 +37,9 @@ def setup_replit_domain():
         print("✅ All required environment variables are set")
     
     print("\n🚀 Domain Configuration Complete!")
-    print("Your app will be accessible at: https://<your-repl-name>.replit.app")
-    print("The domain will be automatically assigned by Replit.")
+    print("Your app will be accessible at: https://<your-repl-name>.<username>.repl.co")
+    print("The domain will be automatically assigned by Replit when you run your app.")
+    print("Use the 'Open in new tab' button in the Replit webview to get the correct URL.")
 
 if __name__ == "__main__":
     setup_replit_domain()
