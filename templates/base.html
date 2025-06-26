@@ -51,10 +51,33 @@
                 </label>
             </div>
 
-            <button class="notification-btn" onclick="showNotifications()">
+            <!-- <button class="notification-btn" onclick="showNotifications()">
                 <i class="fas fa-bell"></i>
                 <span class="notification-badge">3</span>
-            </button>
+            </button> -->
+
+            <div class="notification-container">
+                <button class="notification-btn" onclick="toggleNotificationInbox()">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge" id="notificationCount">0</span>
+                </button>
+                
+                <!-- Notification Inbox Dropdown -->
+                <div class="notification-inbox" id="notificationInbox" style="display: none;">
+                    <div class="notification-header flex justify-content-between align-items-center">
+                        <h6><i class="fas fa-inbox me-2"></i>Notifications</h6>
+                        <button class="btn-close-inbox" onclick="closeNotificationInbox()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="notification-list" id="notificationList">
+                        <div class="no-notifications">
+                            <i class="fas fa-bell-slash"></i>
+                            <p>No new notifications</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div class="user-profile" onclick="toggleUserMenu()">
                 <div class="user-avatar text-muted">

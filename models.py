@@ -107,3 +107,44 @@ class UserPreferences(db.Model):
     
     def __repr__(self):
         return f'<UserPreferences for User {self.user_id}>'
+
+
+
+
+
+class DefaultDeal(db.Model):
+    __tablename__ = 'default_deals'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_target_id = db.Column(db.String(50), nullable=True)
+    symbol = db.Column(db.String(20), nullable=False, index=True)
+    exchange = db.Column(db.String(10), nullable=True)
+    position_type = db.Column(db.String(10), nullable=True)
+    quantity = db.Column(db.Integer, nullable=True)
+    entry_price = db.Column(db.Numeric(10, 2), nullable=True)
+    current_price = db.Column(db.Numeric(10, 2), nullable=True)
+    price_change_percent = db.Column(db.Numeric(5, 2), nullable=True)
+    investment_amount = db.Column(db.Numeric(12, 2), nullable=True)
+    target_price = db.Column(db.Numeric(10, 2), nullable=True)
+    total_value = db.Column(db.Numeric(12, 2), nullable=True)
+    target_pnl_ratio = db.Column(db.Numeric(5, 2), nullable=True)
+    pnl = db.Column(db.Numeric(12, 2), nullable=True)
+    entry_date = db.Column(db.Date, nullable=True)
+    exit_date = db.Column(db.Date, nullable=True)
+    profit_ratio = db.Column(db.Numeric(5, 2), nullable=True)
+    profit_price = db.Column(db.Numeric(10, 2), nullable=True)
+    intrinsic_value = db.Column(db.Numeric(10, 2), nullable=True)
+    intrinsic_price = db.Column(db.Numeric(10, 2), nullable=True)
+    notes = db.Column(db.Text, nullable=True)
+    quantity_traded = db.Column(db.Integer, nullable=True)
+    seven_day_change = db.Column(db.Numeric(5, 2), nullable=True)
+    change_amount = db.Column(db.Numeric(10, 2), nullable=True)
+    signal_strength = db.Column(db.String(20), nullable=True)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    
+    # Foreign key to admin signals
+    admin_signal_id = db.Column(db.Integer, nullable=True)
+    
+    def __repr__(self):
+        return f'<DefaultDeal {self.symbol}>'

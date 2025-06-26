@@ -128,3 +128,4 @@ if __name__ == '__main__':
         print(f"❌ Error starting application: {str(e)}")
         import traceback
         traceback.print_exc()
+

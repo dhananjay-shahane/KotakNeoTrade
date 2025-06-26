@@ -81,7 +81,7 @@
                         <h2 class="mb-0 fw-bold text-white" id="totalHoldings">{{ data.total_holdings or 0 }}</h2>
                         <small class="text-white-50" id="holdingsValue">
                             <i class="fas fa-walvar me-1"></i>
-                            {% if data.holdings %}
+                           {% if data.holdings %}
                                 {% set holdings_value = data.holdings|sum(attribute='mktPrice')|float if data.holdings else 0.0 %}
                                 ₹{{ "%.2f"|format(holdings_value) }}
                             {% else %}

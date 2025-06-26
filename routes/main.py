@@ -643,12 +643,6 @@ def charts():
     """Charts page for trading analysis"""
     return render_template('charts.html')
 
-@main_bp.route('/signals')
-@login_required
-def signals():
-    """Trading signals page"""
-    return render_template('signals.html')
-
 @main_bp.route('/deals')
 @login_required
 def deals():
@@ -671,10 +665,3 @@ def admin_panel():
         logging.error(f"Admin panel error: {str(e)}")
         flash('Error loading admin panel', 'error')
         return redirect(url_for('main.dashboard'))
-
-@main_bp.route('/admin-signals-datatable')
-def admin_signals_datatable():
-    """Admin Trade Signals DataTable page"""
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-    return render_template('admin_signals_datatable.html')

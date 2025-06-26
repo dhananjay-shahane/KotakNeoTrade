@@ -343,3 +343,190 @@
             // Show account summary modal
             new bootstrap.Modal(document.getElementById('accountSummaryModal')).show();
         }
+
+        // notification functionality
+        // Close user menu when clicking outside
+        document.addEventListener('click', function(event) {
+            var userProfile = document.querySelector('.user-profile');
+            var userMenu = document.getElementById('userMenu');
+            var notificationContainer = document.querySelector('.notification-container');
+            var notificationInbox = document.getElementById('notificationInbox');
+
+            if (userProfile && userMenu && !userProfile.contains(event.target)) {
+                userMenu.style.display = 'none';
+            }
+            
+            // Close notification inbox when clicking outside
+            if (notificationContainer && notificationInbox && 
+                !notificationContainer.contains(event.target) && 
+                notificationInbox.style.display !== 'none') {
+                closeNotificationInbox();
+            }
+        });
+
+        // Notification Inbox Management
+        
+        var notificationInboxData = [];
+        var notificationCheckInterval = null;
+
+        function toggleNotificationInbox() {
+            var inbox = document.getElementById('notificationInbox');
+            var isVisible = inbox.style.display !== 'none';
+            
+            if (isVisible) {
+                closeNotificationInbox();
+            } else {
+                openNotificationInbox();
+            }
+        }
+
+        function openNotificationInbox() {
+            var inbox = document.getElementById('notificationInbox');
+            inbox.style.display = 'block';
+            loadNotifications();
+            
+            // Auto-close after 10 seconds
+            setTimeout(function() {
+                closeNotificationInbox();
+            }, 10000);
+        }
+
+        function closeNotificationInbox() {
+            var inbox = document.getElementById('notificationInbox');
+            inbox.style.display = 'none';
+        }
+
+        function loadNotifications() {
+            fetch('/api/notifications')
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        notificationInboxData = data.notifications || [];
+                        updateNotificationBadge(data.unread_count || 0);
+                        renderNotifications();
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Error loading notifications:', error);
+                });
+        }
+
+        function renderNotifications() {
+            var listElement = document.getElementById('notificationList');
+            
+            if (notificationInboxData.length === 0) {
+                listElement.innerHTML = `
+                    <div class="no-notifications">
+                        <i class="fas fa-bell-slash"></i>
+                        <p>No new notifications</p>
+                    </div>
+                `;
+                return;
+            }
+
+            var html = '';
+            for (var i = 0; i < notificationInboxData.length; i++) {
+                var notification = notificationInboxData[i];
+                var timeAgo = formatTimeAgo(new Date(notification.created_at));
+                var unreadClass = !notification.is_read ? 'unread' : '';
+                
+                html += `
+                    <div class="notification-item ${unreadClass}" onclick="markNotificationAsRead(${notification.id})">
+                        <div class="notification-title">${notification.title}</div>
+                        <div class="notification-message">${notification.message}</div>
+                        <div class="notification-time">
+                            <i class="fas fa-clock"></i>
+                            ${timeAgo}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            listElement.innerHTML = html;
+        }
+
+        function updateNotificationBadge(count) {
+            var badge = document.getElementById('notificationCount');
+            if (badge) {
+                badge.textContent = count > 0 ? count : '0';
+                badge.style.display = count > 0 ? 'flex' : 'none';
+            }
+        }
+
+        function markNotificationAsRead(notificationId) {
+            fetch('/api/notifications/' + notificationId + '/read', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    // Update local data
+                    for (var i = 0; i < notificationInboxData.length; i++) {
+                        if (notificationInboxData[i].id === notificationId) {
+                            notificationInboxData[i].is_read = true;
+                            break;
+                        }
+                    }
+                    renderNotifications();
+                    loadNotifications(); // Refresh count
+                }
+            })
+            .catch(function(error) {
+                console.error('Error marking notification as read:', error);
+            });
+        }
+
+        function formatTimeAgo(date) {
+            var now = new Date();
+            var diffInMs = now - date;
+            var diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+            var diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+            var diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+            if (diffInMinutes < 1) {
+                return 'Just now';
+            } else if (diffInMinutes < 60) {
+                return diffInMinutes + ' minutes ago';
+            } else if (diffInHours < 24) {
+                return diffInHours + ' hours ago';
+            } else {
+                return diffInDays + ' days ago';
+            }
+        }
+
+        function addNewNotification(title, message) {
+            var newNotification = {
+                id: Date.now(),
+                title: title,
+                message: message,
+                created_at: new Date().toISOString(),
+                is_read: false
+            };
+            
+            notificationInboxData.unshift(newNotification);
+            updateNotificationBadge(notificationInboxData.filter(function(n) { return !n.is_read; }).length);
+            
+            if (document.getElementById('notificationInbox').style.display !== 'none') {
+                renderNotifications();
+            }
+            
+            // Show toaster as well
+            showToaster(title, message, 'info');
+        }
+
+        // Auto-refresh notifications every 30 seconds
+        function startNotificationPolling() {
+            notificationCheckInterval = setInterval(function() {
+                if (document.getElementById('notificationInbox').style.display === 'none') {
+                    loadNotifications();
+                }
+            }, 30000);
+        }
+
+        // Show notifications (legacy function for compatibility)
+        function showNotifications() {
+            openNotificationInbox();
+        }

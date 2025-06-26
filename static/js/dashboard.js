@@ -11,6 +11,9 @@ TradingDashboard.prototype.init = function() {
     this.setupEventListeners();
     this.startAutoRefresh();
     this.initializeWebSocket();
+    
+    // Fetch initial data immediately
+    this.fetchLatestData();
     console.log('Trading Dashboard initialized');
 };
 
@@ -101,36 +104,35 @@ TradingDashboard.prototype.startAutoRefresh = function() {
 };
 
 TradingDashboard.prototype.refreshData = function() {
-    if (this.isConnected) {
-        this.fetchLatestData();
-    }
+    this.fetchLatestData();
 };
 
 TradingDashboard.prototype.fetchLatestData = function() {
     var self = this;
-    fetch('/api/portfolio_summary')
+    fetch('/api/dashboard-data')
         .then(function(response) {
             return response.json();
         })
-        // .then(function(data) {
-        //     self.updateDashboard(data);
-        // })
-        // .catch(function(error) {
-        //     console.warn('Error fetching dashboard data:', error);
-        // });
-        console.log(response);
+        .then(function(data) {
+            self.updateDashboard(data);
+        })
+        .catch(function(error) {
+            console.warn('Error fetching dashboard data:', error);
+        });
 };
 
 TradingDashboard.prototype.updateDashboard = function(data) {
     try {
+        console.log('Updating dashboard with data:', data);
+        
+        // Update summary cards with actual data structure
+        this.updateSummaryCards(data);
+        
         if (data.positions) {
             this.updatePositionsTable(data.positions);
         }
         if (data.holdings) {
             this.updateHoldingsTable(data.holdings);
-        }
-        if (data.summary) {
-            this.updateSummaryCards(data.summary);
         }
     } catch (error) {
         console.warn('Error updating dashboard:', error);
@@ -185,25 +187,57 @@ TradingDashboard.prototype.createHoldingRow = function(holding) {
     return row;
 };
 
-TradingDashboard.prototype.updateSummaryCards = function(summary) {
-    var elements = {
-        totalPnl: document.querySelector('#totalPnl'),
-        totalValue: document.querySelector('#totalValue'),
-        todayPnl: document.querySelector('#todayPnl')
-    };
-
-    if (elements.totalPnl && summary.total_pnl !== undefined) {
-        elements.totalPnl.textContent = '₹' + summary.total_pnl.toFixed(2);
-        elements.totalPnl.className = summary.total_pnl >= 0 ? 'text-success' : 'text-danger';
-    }
-
-    if (elements.totalValue && summary.total_value !== undefined) {
-        elements.totalValue.textContent = '₹' + summary.total_value.toFixed(2);
-    }
-
-    if (elements.todayPnl && summary.today_pnl !== undefined) {
-        elements.todayPnl.textContent = '₹' + summary.today_pnl.toFixed(2);
-        elements.todayPnl.className = summary.today_pnl >= 0 ? 'text-success' : 'text-danger';
+TradingDashboard.prototype.updateSummaryCards = function(data) {
+    try {
+        console.log('Updating summary cards with:', data);
+        
+        // Update positions count
+        var totalPositionsEl = document.querySelector('#totalPositions');
+        if (totalPositionsEl && data.total_positions !== undefined) {
+            totalPositionsEl.textContent = data.total_positions || 0;
+        }
+        
+        // Update holdings count
+        var totalHoldingsEl = document.querySelector('#totalHoldings');
+        if (totalHoldingsEl && data.total_holdings !== undefined) {
+            totalHoldingsEl.textContent = data.total_holdings || 0;
+        }
+        
+        // Update today's orders count
+        var todayOrdersEl = document.querySelector('#todayOrders');
+        if (todayOrdersEl && data.total_orders !== undefined) {
+            todayOrdersEl.textContent = data.total_orders || 0;
+        }
+        
+        // Also try the alternate ID in case template uses different one
+        var totalOrdersEl = document.querySelector('#totalOrders');
+        if (totalOrdersEl && data.total_orders !== undefined) {
+            totalOrdersEl.textContent = data.total_orders || 0;
+        }
+        
+        // Update available margin
+        var availableMarginEl = document.querySelector('#availableMargin');
+        if (availableMarginEl && data.limits && data.limits.Net !== undefined) {
+            var margin = parseFloat(data.limits.Net) || 0;
+            availableMarginEl.textContent = '₹' + margin.toFixed(2);
+        }
+        
+        // Update holdings value display
+        var holdingsValueEl = document.querySelector('#holdingsValue');
+        if (holdingsValueEl && data.holdings) {
+            var totalValue = 0;
+            for (var i = 0; i < data.holdings.length; i++) {
+                var holding = data.holdings[i];
+                if (holding.mktPrice) {
+                    totalValue += parseFloat(holding.mktPrice) || 0;
+                }
+            }
+            holdingsValueEl.innerHTML = '<i class="fas fa-wallet me-1"></i>₹' + totalValue.toFixed(2);
+        }
+        
+        console.log('Summary cards updated successfully');
+    } catch (error) {
+        console.error('Error updating summary cards:', error);
     }
 };
 
@@ -832,4 +866,41 @@ function cancelOrder(orderNo) {
             alert('Error cancelling order');
         });
     }
+}
+
+
+// Manual update function for dashboard elements
+function updateDashboardElements(data) {
+    console.log('Updating dashboard elements with:', data);
+    
+    // Update positions
+    var totalPositionsEl = document.querySelector('#totalPositions');
+    if (totalPositionsEl && data.total_positions !== undefined) {
+        totalPositionsEl.textContent = data.total_positions || 0;
+        console.log('Updated positions:', data.total_positions);
+    }
+    
+    // Update holdings
+    var totalHoldingsEl = document.querySelector('#totalHoldings');
+    if (totalHoldingsEl && data.total_holdings !== undefined) {
+        totalHoldingsEl.textContent = data.total_holdings || 0;
+        console.log('Updated holdings:', data.total_holdings);
+    }
+    
+    // Update orders
+    var todayOrdersEl = document.querySelector('#todayOrders');
+    if (todayOrdersEl && data.total_orders !== undefined) {
+        todayOrdersEl.textContent = data.total_orders || 0;
+        console.log('Updated orders:', data.total_orders);
+    }
+    
+    // Update margin
+    var availableMarginEl = document.querySelector('#availableMargin');
+    if (availableMarginEl && data.limits && data.limits.Net !== undefined) {
+        var margin = parseFloat(data.limits.Net) || 0;
+        availableMarginEl.textContent = '₹' + margin.toFixed(2);
+        console.log('Updated margin:', margin);
+    }
+    
+    console.log('Dashboard elements updated successfully');
 }
