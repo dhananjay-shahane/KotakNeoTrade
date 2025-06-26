@@ -21,700 +21,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
     <!-- Custom CSS -->
-    <style>
-        :root {
-            --sidebar-width: 250px;
-            --header-height: 60px;
-            --primary-color: #2563eb;
-            --secondary-color: #1e293b;
-            --accent-color: #0ea5e9;
-            --success-color: #10b981;
-            --warning-color: #f59e0b;
-            --danger-color: #ef4444;
-            --dark-bg: #0f172a;
-            --card-bg: #1e293b;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --border-color: #334155;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background-color: var(--dark-bg);
-            color: var(--text-primary);
-            overflow-x: hidden;
-        }
-
-        /* Fixed Header */
-        .main-header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: var(--header-height);
-            background: var(--secondary-color);
-            border-bottom: 1px solid var(--border-color);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            padding: 0 1rem;
-            backdrop-filter: blur(10px);
-        }
-
-        .header-left {
-            display: flex;
-            align-items: center;
-            margin-left: var(--sidebar-width);
-            transition: margin-left 0.3s ease;
-            flex: 1;
-        }
-
-        .header-brand {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .header-right {
-            margin-left: auto;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .status-indicator {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 0.75rem;
-            background: var(--success-color);
-            border-radius: 0.5rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-        }
-
-        .status-indicator.live {
-            background: var(--success-color);
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        .notification-btn {
-            position: relative;
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 1.125rem;
-            padding: 0.5rem;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .notification-btn:hover {
-            color: var(--text-primary);
-            background: var(--card-bg);
-        }
-
-        .notification-badge {
-            position: absolute;
-            top: 0.25rem;
-            right: 0.25rem;
-            background: var(--danger-color);
-            color: white;
-            font-size: 0.625rem;
-            padding: 0.125rem 0.25rem;
-            border-radius: 50%;
-            min-width: 1rem;
-            height: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.5rem;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
-        }
-
-        .user-profile:hover {
-            background: var(--card-bg);
-        }
-
-        .user-avatar {
-            width: 2rem;
-            height: 2rem;
-            border-radius: 50%;
-            background: var(--primary-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 0.875rem;
-        }
-
-        .user-info h6 {
-            font-size: 0.875rem;
-            margin: 0;
-        }
-
-        .user-info small {
-            color: var(--text-secondary);
-            font-size: 0.75rem;
-        }
-
-        /* Fixed Sidebar */
-        .sidebar {
-            position: fixed;
-            top: var(--header-height);
-            left: 0;
-            width: var(--sidebar-width);
-            height: calc(100vh - var(--header-height));
-            background: var(--secondary-color);
-            border-right: 1px solid var(--border-color);
-            z-index: 999;
-            overflow-y: auto;
-            transition: transform 0.3s ease;
-        }
-
-        .sidebar-nav {
-            padding: 1rem 0;
-        }
-
-        .nav-item {
-            margin: 0.25rem 0;
-        }
-
-        .nav-link {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem 1.5rem;
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            border: none;
-            position: relative;
-        }
-
-        .nav-link:hover {
-            color: var(--text-primary);
-            background: rgba(37, 99, 235, 0.1);
-        }
-
-        .nav-link.active {
-            color: var(--primary-color);
-            background: rgba(37, 99, 235, 0.15);
-        }
-
-        .nav-link.active::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 3px;
-            background: var(--primary-color);
-        }
-
-        .nav-icon {
-            width: 1.25rem;
-            text-align: center;
-            font-size: 1rem;
-        }
-
-        /* Main Content */
-        .main-content {
-            margin-left: var(--sidebar-width);
-            margin-top: var(--header-height);
-            padding: 1rem 2rem;
-            min-height: calc(100vh - var(--header-height));
-            transition: margin-left 0.3s ease;
-        }
-
-        /* Mobile Toggle Button */
-        .mobile-toggle {
-            display: none;
-            background: none;
-            border: none;
-            color: var(--text-primary);
-            font-size: 1.25rem;
-            padding: 0.5rem;
-            border-radius: 0.375rem;
-            transition: all 0.2s ease;
-            cursor: pointer;
-            z-index: 1001;
-        }
-
-        .mobile-toggle:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--primary-color);
-        }
-
-        .mobile-toggle:focus {
-            outline: none;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        /* Mobile Responsiveness */
-        @media (max-width: 992px) {
-            .mobile-toggle {
-                display: flex !important;
-                align-items: center;
-                justify-content: center;
-            }
-
-            .sidebar {
-                transform: translateX(-100%);
-                box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-            }
-
-            .sidebar.show {
-                transform: translateX(0);
-            }
-
-            .header-left {
-                margin-left: 0;
-            }
-
-            .main-content {
-                margin-left: 0;
-            }
-
-            .user-info {
-                display: none;
-            }
-
-            .header-brand span {
-                display: none;
-            }
-
-            /* Overlay when sidebar is open */
-            .sidebar-overlay {
-                display: none;
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.5);
-                z-index: 998;
-            }
-
-            .sidebar-overlay.show {
-                display: block;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .header-brand span {
-                display: none;
-            }
-
-            .status-indicator span {
-                display: none;
-            }
-
-            .theme-toggle {
-                margin-right: 0.5rem;
-            }
-        }
-
-        @media (min-width: 993px) {
-            .mobile-toggle {
-                display: none !important;
-            }
-        }
-
-        /* Cards and Components */
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 0.75rem;
-            color: var(--text-primary);
-        }
-
-        .card-header {
-            background: transparent;
-            border-bottom: 1px solid var(--border-color);
-            font-weight: 600;
-        }
-
-        .btn-primary {
-            background: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-
-        .btn-primary:hover {
-            background: #1d4ed8;
-            border-color: #1d4ed8;
-        }
-
-        .alert {
-            border: none;
-            border-radius: 0.5rem;
-        }
-
-        .table-dark {
-            --bs-table-bg: var(--card-bg);
-        }
-
-        /* Dropdown Styles */
-        .dropdown-menu {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 0.5rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-        }
-
-        .dropdown-item {
-            color: var(--text-primary);
-            padding: 0.75rem 1rem;
-        }
-
-        .dropdown-item:hover {
-            background: rgba(37, 99, 235, 0.1);
-            color: var(--text-primary);
-        }
-
-        .dropdown-divider {
-            border-color: var(--border-color);
-        }
-
-        /* Theme Toggle Styles */
-        .theme-toggle {
-            display: flex;
-            align-items: center;
-            margin-right: 1rem;
-        }
-
-        .theme-toggle-input {
-            display: none;
-        }
-
-        .theme-toggle-label {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 1.5rem;
-            padding: 0.25rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            width: 3.5rem;
-            height: 1.75rem;
-            overflow: hidden;
-        }
-
-        .theme-toggle-label:hover {
-            background: rgba(37, 99, 235, 0.1);
-            border-color: var(--primary-color);
-        }
-
-        .theme-icon-light,
-        .theme-icon-dark {
-            position: absolute;
-            font-size: 0.7rem;
-            transition: all 0.3s ease;
-            z-index: 2;
-            pointer-events: none;
-        }
-
-        .theme-icon-light {
-            left: 0.4rem;
-            color: #f59e0b;
-        }
-
-        .theme-icon-dark {
-            right: 0.4rem;
-            color: #64748b;
-        }
-
-        .theme-toggle-slider {
-            position: absolute;
-            top: 0.15rem;
-            left: 0.15rem;
-            width: 1.25rem;
-            height: 1.25rem;
-            background: var(--primary-color);
-            border-radius: 50%;
-            transition: transform 0.3s ease;
-            z-index: 1;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        .theme-toggle-input:checked + .theme-toggle-label .theme-toggle-slider {
-            transform: translateX(1.6rem);
-        }
-
-        .theme-toggle-input:checked + .theme-toggle-label {
-            background: var(--primary-color);
-        }
-
-        .theme-toggle-input:checked + .theme-toggle-label .theme-icon-light {
-            opacity: 0.3;
-        }
-
-        .theme-toggle-input:checked + .theme-toggle-label .theme-icon-dark {
-            opacity: 1;
-            color: #e2e8f0;
-        }
-
-        .theme-toggle-input:not(:checked) + .theme-toggle-label .theme-icon-light {
-            opacity: 1;
-        }
-
-        .theme-toggle-input:not(:checked) + .theme-toggle-label .theme-icon-dark {
-            opacity: 0.3;
-        }
-
-        /* Light Theme Variables */
-        :root[data-theme="light"] {
-            --primary-color: #2563eb;
-            --secondary-color: #ffffff;
-            --accent-color: #0ea5e9;
-            --success-color: #059669;
-            --warning-color: #d97706;
-            --danger-color: #dc2626;
-            --dark-bg: #f8fafc;
-            --card-bg: #ffffff;
-            --text-primary: #111827;
-            --text-secondary: #4b5563;
-            --border-color: #d1d5db;
-        }
-
-        /* Light theme specific overrides */
-        :root[data-theme="light"] .main-header {
-            background: #ffffff;
-            border-bottom-color: #e5e7eb;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        :root[data-theme="light"] .sidebar {
-            background: #ffffff;
-            border-right-color: #e5e7eb;
-            box-shadow: 1px 0 3px rgba(0, 0, 0, 0.1);
-        }
-
-        :root[data-theme="light"] .card {
-            background: #ffffff;
-            border-color: #e5e7eb;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        :root[data-theme="light"] .table-dark {
-            --bs-table-bg: #ffffff;
-            --bs-table-color: #111827;
-            --bs-table-border-color: #e5e7eb;
-        }
-
-        :root[data-theme="light"] .table-dark thead th {
-            border-bottom-color: #d1d5db;
-            color: #374151;
-        }
-
-        :root[data-theme="light"] .table-hover > tbody > tr:hover {
-            background-color: rgba(59, 130, 246, 0.05);
-        }
-
-        :root[data-theme="light"] .btn-primary {
-            background: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-
-        :root[data-theme="light"] .notification-btn {
-            color: #6b7280;
-        }
-
-        :root[data-theme="light"] .notification-btn:hover {
-            background: #f3f4f6;
-            color: #374151;
-        }
-
-        :root[data-theme="light"] .user-profile:hover {
-            background: #f3f4f6;
-        }
-
-        :root[data-theme="light"] .nav-link {
-            color: #6b7280;
-        }
-
-        :root[data-theme="light"] .nav-link:hover {
-            background: rgba(37, 99, 235, 0.1);
-            color: #374151;
-        }
-
-        :root[data-theme="light"] .nav-link.active {
-            color: var(--primary-color);
-            background: rgba(37, 99, 235, 0.1);
-        }
-
-        :root[data-theme="light"] .theme-toggle-label {
-            background: #f9fafb;
-            border-color: #d1d5db;
-        }
-
-        :root[data-theme="light"] .theme-icon-light {
-            color: #f59e0b;
-        }
-
-        :root[data-theme="light"] .theme-icon-dark {
-            color: #6b7280;
-        }
-
-        :root[data-theme="light"] .dropdown-menu {
-            background: #ffffff;
-            border-color: #e5e7eb;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-        }
-
-        :root[data-theme="light"] .dropdown-item {
-            color: #374151;
-        }
-
-        :root[data-theme="light"] .dropdown-item:hover {
-            background: #f3f4f6;
-            color: #111827;
-        }
-
-        :root[data-theme="light"] .toaster {
-            background: #ffffff;
-            border-color: #e5e7eb;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-        }
-
-        :root[data-theme="light"] .toaster-title {
-            color: #111827;
-        }
-
-        :root[data-theme="light"] .toaster-message {
-            color: #6b7280;
-        }
-
-        :root[data-theme="light"] .toaster-close {
-            color: #9ca3af;
-        }
-
-        :root[data-theme="light"] .toaster-close:hover {
-            color: #374151;
-            background: rgba(0, 0, 0, 0.05);
-        }
-
-        /* Toaster Styles */
-        .toaster-container {
-            position: fixed;
-            top: calc(var(--header-height) + 1rem);
-            right: 1rem;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            max-width: 400px;
-        }
-
-        .toaster {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 0.5rem;
-            padding: 1rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            transform: translateX(100%);
-            opacity: 0;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: flex-start;
-            gap: 0.75rem;
-        }
-
-        .toaster.show {
-            transform: translateX(0);
-            opacity: 1;
-        }
-
-        .toaster-icon {
-            flex-shrink: 0;
-            width: 1.25rem;
-            height: 1.25rem;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            color: white;
-        }
-
-        .toaster-icon.success {
-            background: var(--success-color);
-        }
-
-        .toaster-icon.error {
-            background: var(--danger-color);
-        }
-
-        .toaster-icon.warning {
-            background: var(--warning-color);
-        }
-
-        .toaster-icon.info {
-            background: var(--accent-color);
-        }
-
-        .toaster-content {
-            flex: 1;
-        }
-
-        .toaster-title {
-            font-weight: 600;
-            font-size: 0.875rem;
-            margin-bottom: 0.25rem;
-            color: var(--text-primary);
-        }
-
-        .toaster-message {
-            font-size: 0.8125rem;
-            color: var(--text-secondary);
-            line-height: 1.4;
-        }
-
-        .toaster-close {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            padding: 0.25rem;
-            border-radius: 0.25rem;
-            transition: all 0.2s ease;
-        }
-
-        .toaster-close:hover {
-            background: rgba(0, 0, 0, 0.1);
-            color: var(--text-primary);
-        }
-    </style>
-
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    
     {% block head %}{% endblock %}
 </head>
 <body>
@@ -749,7 +57,7 @@
             </button>
 
             <div class="user-profile" onclick="toggleUserMenu()">
-                <div class="user-avatar">
+                <div class="user-avatar text-muted">
                     {{ session.get('greeting_name', session.get('ucc', 'User'))[0].upper() }}
                 </div>
                 <div class="user-info">
@@ -776,7 +84,7 @@
             <div class="nav-item">
                 <a href="{{ url_for('etf_signals') }}" class="nav-link {% if request.endpoint == 'etf_signals' %}active{% endif %}">
                     <i class="fas fa-chart-bar nav-icon"></i>
-                    <span>ETF Signals</span>
+                    <span>Trading Signals</span>
                 </a>
             </div>
             <div class="nav-item">
@@ -832,6 +140,129 @@
             <i class="fas fa-sign-out-alt me-2"></i>Logout
         </a>
     </div>
+
+    <!-- User Profile Modal -->
+    <div class="modal fade" id="userProfileModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header border-bottom border-secondary">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user-circle me-2"></i>User Profile
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center mb-4">
+                            <div class="user-profile-avatar mb-3">
+                                <i class="fas fa-user-circle fa-5x text-primary"></i>
+                            </div>
+                            <h4 class="text-muted">{{ session.get('ucc', 'User') }}</h4>
+                            <span class="badge bg-success">Active Trader</span>
+                        </div>
+                        <div class="col-md-8">
+                            <h6 class="text-primary mb-3">
+                                <i class="fas fa-info-circle me-2"></i>Account Information
+                            </h6>
+                            <div class="row">
+                                <div class="col-sm-6 mb-3">
+                                    <label class="form-label text-muted">UCC (User Code)</label>
+                                    <div class="form-control bg-secondary text-muted border-0">
+                                        {{ session.get('ucc', 'N/A') }}
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 mb-3">
+                                    <label class="form-label text-muted">Account Status</label>
+                                    <div class="form-control bg-success text-muted border-0">
+                                        {% if session.get('authenticated') %}
+                                        <span class="text-muted"><i class="fas fa-check-circle me-1"></i>Active & Authenticated</span>
+                                        {% else %}
+                                        <span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>Not Authenticated</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-6 mb-3">
+                                    <label class="form-label text-muted">Session Token</label>
+                                    <div class="form-control bg-secondary text-muted border-0" style="font-family: monospace; font-size: 0.8rem;">
+                                        {{ session.get('session_token', 'N/A')[:20] if session.get('session_token') else 'N/A' }}...
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 mb-3">
+                                    <label class="form-label text-muted">Access Token</label>
+                                    <div class="form-control bg-secondary text-muted border-0" style="font-family: monospace; font-size: 0.8rem;">
+                                        {{ session.get('access_token', 'N/A')[:20] if session.get('access_token') else 'N/A' }}...
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-6 mb-3">
+                                    <label class="form-label text-muted">Login Time</label>
+                                    <div class="form-control bg-secondary text-muted border-0">
+                                        <span id="loginTime">{{ session.get('login_time', 'Today') }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 mb-3">
+                                    <label class="form-label text-muted">Session ID</label>
+                                    <div class="form-control bg-secondary text-muted border-0" style="font-family: monospace; font-size: 0.8rem;">
+                                        {{ session.get('sid', 'N/A')[:15] if session.get('sid') else 'N/A' }}...
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-6 mb-3">
+                                    <label class="form-label text-muted">Greeting Name</label>
+                                    <div class="form-control bg-secondary text-muted border-0">
+                                        {{ session.get('greeting_name', 'User') }}
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 mb-3">
+                                    <label class="form-label text-muted">Client Code</label>
+                                    <div class="form-control bg-secondary text-muted border-0">
+                                        {{ session.get('client_code', 'N/A') }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="border-secondary">
+
+                    <h6 class="text-primary mb-3">
+                        <i class="fas fa-shield-alt me-2"></i>Security & Settings
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="list-group list-group-flush">
+                                <div class="list-group-item bg-transparent text-muted border-secondary">
+                                    <i class="fas fa-key me-2 text-success"></i>
+                                    Two-Factor Authentication: <span class="text-success">Enabled</span>
+                                </div>
+                                <div class="list-group-item bg-transparent text-muted border-secondary">
+                                    <i class="fas fa-clock me-2 text-info"></i>
+                                    Session Timeout: <span class="text-info">30 minutes</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="list-group list-group-flush">
+                                <div class="list-group-item bg-transparent text-muted border-secondary">
+                                    <i class="fas fa-chart-line me-2 text-warning"></i>
+                                    Trading Status: <span class="text-success">Active</span>
+                                </div>
+                                <div class="list-group-item bg-transparent text-muted border-secondary">
+                                    <i class="fas fa-database me-2 text-primary"></i>
+                                    Data Refresh: <span class="text-info">Real-time</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {% endif %}
 
     <!-- Toaster Container -->
@@ -868,337 +299,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- Custom JavaScript -->
-    <script>
-        // Mobile sidebar toggle
-        function toggleSidebar() {
-            var sidebar = document.getElementById('sidebar');
-            var overlay = document.getElementById('sidebarOverlay');
-            var isOpen = sidebar.classList.contains('show');
-
-            if (isOpen) {
-                sidebar.classList.remove('show');
-                overlay.classList.remove('show');
-                document.body.style.overflow = '';
-            } else {
-                sidebar.classList.add('show');
-                overlay.classList.add('show');
-                document.body.style.overflow = 'hidden';
-            }
-        }
-
-        // Close sidebar when clicking outside on mobile
-        document.addEventListener('click', function(event) {
-            var sidebar = document.getElementById('sidebar');
-            var toggle = document.querySelector('.mobile-toggle');
-            var overlay = document.getElementById('sidebarOverlay');
-
-            if (window.innerWidth <= 992 && 
-                sidebar && sidebar.classList.contains('show') && 
-                !sidebar.contains(event.target) && 
-                !toggle.contains(event.target)) {
-                toggleSidebar();
-            }
-        });
-
-        // Handle window resize
-        window.addEventListener('resize', function() {
-            var sidebar = document.getElementById('sidebar');
-            var overlay = document.getElementById('sidebarOverlay');
-
-            if (window.innerWidth > 992) {
-                sidebar.classList.remove('show');
-                overlay.classList.remove('show');
-                document.body.style.overflow = '';
-            }
-        });
-
-        // User menu toggle
-        function toggleUserMenu() {
-            var userMenu = document.getElementById('userMenu');
-            var isVisible = userMenu.style.display !== 'none';
-            userMenu.style.display = isVisible ? 'none' : 'block';
-        }
-
-        // Close user menu when clicking outside
-        document.addEventListener('click', function(event) {
-            var userProfile = document.querySelector('.user-profile');
-            var userMenu = document.getElementById('userMenu');
-
-            if (userProfile && userMenu && !userProfile.contains(event.target)) {
-                userMenu.style.display = 'none';
-            }
-        });
-
-        // Show notifications
-        function showNotifications() {
-            showToaster('Live Market Updates', 'Portfolio value updated successfully', 'success');
-            setTimeout(function() { showToaster('Order Status', 'Order execution completed', 'info'); }, 500);
-            setTimeout(function() { showToaster('Market Alert', 'High volatility detected in selected stocks', 'warning'); }, 1000);
-        }
-
-        // Theme Toggle Functionality
-        function initializeTheme() {
-            // Get saved theme from localStorage or default to 'dark'
-            var savedTheme = localStorage.getItem('theme') || 'dark';
-
-            // Apply the theme immediately before DOM content loads
-            document.documentElement.setAttribute('data-theme', savedTheme);
-
-            // Wait for DOM to be ready before setting up toggle
-            function setupThemeToggle() {
-                var themeToggle = document.getElementById('themeToggle');
-                if (!themeToggle) {
-                    // Element doesn't exist on this page - skip silently
-                    return;
-                }
-
-                // Set toggle state based on saved theme
-                themeToggle.checked = savedTheme === 'light';
-
-                // Add event listener for theme changes
-                themeToggle.addEventListener('change', function() {
-                    var newTheme = this.checked ? 'light' : 'dark';
-                    document.documentElement.setAttribute('data-theme', newTheme);
-                    localStorage.setItem('theme', newTheme);
-
-                    // Show confirmation toast
-                    var message = newTheme === 'light' ? 'Switched to light mode' : 'Switched to dark mode';
-                    if (typeof showToaster === 'function') {
-                        showToaster('Theme Updated', message, 'info');
-                    }
-
-                    console.log('Theme changed to:', newTheme);
-                });
-            }
-
-            // If DOM is already loaded, setup immediately
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', setupThemeToggle);
-            } else {
-                setupThemeToggle();
-            }
-        }
-
-        // Toaster Functionality
-        function showToaster(title, message, type = 'info') {
-            var container = document.getElementById('toasterContainer');
-            if (!container) return;
-
-            var toaster = document.createElement('div');
-            toaster.className = 'toaster';
-
-            var iconMap = {
-                success: 'fas fa-check',
-                error: 'fas fa-times',
-                warning: 'fas fa-exclamation-triangle',
-                info: 'fas fa-info'
-            };
-
-            toaster.innerHTML = `
-                <div class="toaster-icon ${type}">
-                    <i class="${iconMap[type]}"></i>
-                </div>
-                <div class="toaster-content">
-                    <div class="toaster-title">${title}</div>
-                    <div class="toaster-message">${message}</div>
-                </div>
-                <button class="toaster-close" onclick="removeToaster(this.parentElement)">
-                    <i class="fas fa-times"></i>
-                </button>
-            `;
-
-            container.appendChild(toaster);
-
-            // Show animation
-            setTimeout(function() {
-                toaster.classList.add('show');
-            }, 100);
-
-            // Auto-remove after 3 seconds
-            setTimeout(function() {
-                removeToaster(toaster);
-            }, 3000);
-        }
-
-        function removeToaster(toaster) {
-            if (toaster && toaster.parentElement) {
-                toaster.classList.remove('show');
-                setTimeout(function() {
-                    if (toaster.parentElement) {
-                        toaster.parentElement.removeChild(toaster);
-                    }
-                }, 300);
-            }
-        }
-
-        // Show user profile
-        function showUserProfile() {
-            fetch('/api/user/profile')
-                .then(function(response) { return response.json(); })
-                .then(function(data) {
-                    if (data.success) {
-                        var profile = data.data;
-                                        var profileInfo = 'Account Details:\n';
-                        profileInfo += 'UCC: ' + (profile.ucc || 'N/A') + '\n';
-                        profileInfo += 'Name: ' + (profile.greeting_name || 'N/A') + '\n';
-                        profileInfo += 'User ID: ' + (profile.user_id || 'N/A') + '\n';
-                        profileInfo += 'Account Type: ' + (profile.account_type || 'N/A') + '\n';
-                        profileInfo += 'Branch: ' + (profile.branch_code || 'N/A');
-                        alert(profileInfo);
-                    }
-                })
-                .catch(function(error) {
-                    alert('Unable to load profile information');
-                });
-        }
-
-        // Show account summary
-        function showAccountSummary() {
-            fetch('/api/portfolio/summary')
-                .then(function(response) { return response.json(); })
-                .then(function(data) {
-                    if (data.success) {
-                        var summary = data.data;
-                        var summaryInfo = `Portfolio Summary:\n`;
-                        summaryInfo += `Net Worth: ₹${summary.net_worth || 'N/A'}\n`;
-                        summaryInfo += `Available Margin: ₹${summary.available_margin || 'N/A'}\n`;
-                        summaryInfo += `Used Margin: ₹${summary.used_margin || 'N/A'}\n`;
-                        summaryInfo += `P&L: ₹${summary.total_pnl || 'N/A'}`;
-                        alert(summaryInfo);
-                    }
-                })
-                .catch(function(error) {
-                    alert('Unable to load account summary');
-                });
-        }
-
-        // Auto-refresh data every 30 seconds (only for authenticated users)
-        var isAuthenticated = {{ 'true' if session.authenticated else 'false' }};
-        if (isAuthenticated) {
-            setInterval(function() {
-                if (!document.hidden) {
-                    var currentPage = window.location.pathname;
-                    if (currentPage === '/dashboard' && window.realTimeDashboard) {
-                        // Use AJAX refresh instead of page reload
-                        window.realTimeDashboard.refreshData();
-                    }
-                }
-            }, 30000);
-        }
-
-        // Toggle sidebar function
-        function toggleSidebarAlt() {
-            var sidebar = document.querySelector('.sidebar');
-            var overlay = document.querySelector('.sidebar-overlay');
-
-            if (!sidebar) {
-                return; // Sidebar element doesn't exist, skip
-            }
-
-            var isOpen = sidebar.classList.contains('active');
-
-            if (isOpen) {
-                sidebar.classList.remove('active');
-                if (overlay) overlay.classList.remove('active');
-                document.body.style.overflow = '';
-            } else {
-                sidebar.classList.add('active');
-                if (overlay) overlay.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            }
-        }
-
-        // Close sidebar when clicking overlay
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('sidebar-overlay')) {
-                toggleSidebar();
-            }
-        });
-
-        // Debug function to check theme toggle
-        function debugThemeToggle() {
-            var toggle = document.getElementById('themeToggle');
-            var saved = localStorage.getItem('theme');
-            if (toggle) {
-                console.log('Theme toggle element:', toggle);
-                console.log('Saved theme:', saved);
-                console.log('Current theme attribute:', document.documentElement.getAttribute('data-theme'));
-            }
-        }
-
-        // Initialize theme immediately (before DOM loads)
-        initializeTheme();
-
-        // Initialize everything when DOM is ready
-        document.addEventListener('DOMContentLoaded', function() {
-            // Debug theme setup
-            setTimeout(function() {
-                debugThemeToggle();
-            }, 100);
-
-            // Highlight active navigation
-            var currentPath = window.location.pathname;
-            var navLinks = document.querySelectorAll('.nav-link');
-
-            navLinks.forEach(function(link) {
-                var href = link.getAttribute('href');
-                if (href && currentPath === href) {
-                    link.classList.add('active');
-                }
-            });
-
-            // Convert flash messages to toasters
-            var alerts = document.querySelectorAll('.alert');
-            for (var i = 0; i < alerts.length; i++) {
-                var alert = alerts[i];
-                if (alert && alert.textContent) {
-                    var message = alert.textContent.trim();
-                    var type = alert.classList && alert.classList.contains('alert-success') ? 'success' : 'error';
-                    if (typeof showToaster === 'function') {
-                        showToaster('System Message', message, type);
-                    }
-                    alert.remove();
-                }
-            }
-        });
-    </script>
-
-<script>
-        // Theme toggle functionality
-        document.addEventListener('DOMContentLoaded', function.prototype.function = function() {
-            var themeToggle = document.getElementById('themeToggle');
-
-            var savedTheme = localStorage.getItem('theme') || 'dark';
-            document.documentElement.setAttribute('data-bs-theme', savedTheme);
-
-            if (themeToggle) {
-                // Update icon based on current theme
-                var icon = themeToggle.querySelector('i');
-                if (icon) {
-                    icon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-                }
-
-                themeToggle.addEventListener('click', function.prototype.function = function() {
-                    var currentTheme = document.documentElement.getAttribute('data-bs-theme');
-                    var newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-                    document.documentElement.setAttribute('data-bs-theme', newTheme);
-                    localStorage.setItem('theme', newTheme);
-
-                    // Update icon
-                    var icon = this.querySelector('i');
-                    if (icon) {
-                        icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-                    }
-                });
-            }
-        });
-    </script>
-
     {% if session.authenticated %}
+    <script src="{{ url_for('static', filename='js/base.js') }}"></script>
     <script src="{{ url_for('static', filename='js/websocket.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/real-time-dashboard.js') }}"></script>
     {% endif %}
 
     {% block scripts %}{% endblock %}

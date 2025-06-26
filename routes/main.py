@@ -284,6 +284,9 @@ def api_portfolio_summary():
         # Get dashboard data
         dashboard_data = trading_functions.get_dashboard_data(client)
 
+        if not dashboard_data or not isinstance(dashboard_data, dict):
+            return jsonify({'success': False, 'message': 'Failed to fetch dashboard data.'}), 500
+
         # Calculate summary statistics
         limits_data = dashboard_data.get('limits', {})
         portfolio_summary = {
@@ -327,6 +330,7 @@ def api_portfolio_summary():
             'success': False,
             'message': str(e)
         }), 500
+
 
 @main_bp.route('/api/portfolio_details')
 @login_required

@@ -1,14 +1,14 @@
 # # Byte-compiled / optimized / DLL files
- __pycache__/
- *.py[cod]
+__pycache__/
+*.py[cod]
 *$py.class
 
 # # Virtual environment folders
-# .venv/
- venv/
+.venv/
+venv/
 
 # # Environment variables
- .env
+.env
 
 # # User-specific files
  user_sessions.json
@@ -24,3 +24,7 @@
 
 # # VS Code settings (optional)
 .vscode/
+
+
+# attachments
+ attached_assets

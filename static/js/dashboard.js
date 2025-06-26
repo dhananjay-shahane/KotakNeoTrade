@@ -108,16 +108,17 @@ TradingDashboard.prototype.refreshData = function() {
 
 TradingDashboard.prototype.fetchLatestData = function() {
     var self = this;
-    fetch('/api/dashboard-data')
+    fetch('/api/portfolio_summary')
         .then(function(response) {
             return response.json();
         })
-        .then(function(data) {
-            self.updateDashboard(data);
-        })
-        .catch(function(error) {
-            console.warn('Error fetching dashboard data:', error);
-        });
+        // .then(function(data) {
+        //     self.updateDashboard(data);
+        // })
+        // .catch(function(error) {
+        //     console.warn('Error fetching dashboard data:', error);
+        // });
+        console.log(response);
 };
 
 TradingDashboard.prototype.updateDashboard = function(data) {
@@ -239,5 +240,596 @@ document.addEventListener('DOMContentLoaded', function() {
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
     if (typeof window.tradingDashboard === 'undefined') {
         window.tradingDashboard = new TradingDashboard();
+    }
+}
+
+function modifyOrder(orderId) {
+    // For now, just show a message that modify functionality is coming soon
+    showNotification('Order modification feature coming soon!', 'info');
+}
+
+function showNotification(message, type = 'info') {
+    var alertClass = type === 'success' ? 'alert-success' : 
+                     type === 'error' ? 'alert-danger' : 
+                     type === 'warning' ? 'alert-warning' : 'alert-info';
+    
+    var notification = document.createElement('div');
+    notification.className = `alert ${alertClass} position-fixed shadow-lg`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 350px; max-width: 400px;';
+    notification.innerHTML = `
+        <div class="d-flex align-items-center">
+            <div class="flex-grow-1">${message}</div>
+            <button type="button" class="btn-close" onclick="this.closest('.alert').remove()"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 5 seconds
+    // setTimeout(() function() {
+    //     if (notification.parentElement) {
+    //         notification.style.opacity = '0';
+    //         notification.style.transition = 'opacity 0.3s ease';
+    //         setTimeout(() => notification.remove(), 300);
+    //     }
+    // }, 5000);
+}
+
+function refreshDashboard() {
+    if (window.realTimeDashboard) {
+        window.realTimeDashboard.manualRefresh();
+    } else {
+        window.location.reload();
+    }
+}
+
+// Event listeners for position management buttons
+document.addEventListener('DOMContentLoaded', function() {
+    // Place order buttons
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.place-order-btn')) {
+            var btn = e.target.closest('.place-order-btn');
+            var type = btn.dataset.type;
+            var symbol = btn.dataset.symbol;
+            var token = btn.dataset.token;
+            var exchange = btn.dataset.exchange;
+            openPlaceOrderModal(type, symbol, token, exchange);
+        }
+        
+        // Square off buttons
+        if (e.target.closest('.square-off-btn')) {
+            var btn = e.target.closest('.square-off-btn');
+            var symbol = btn.dataset.symbol;
+            var quantity = btn.dataset.quantity;
+            var token = btn.dataset.token;
+            var exchange = btn.dataset.exchange;
+            var product = btn.dataset.product;
+            openSquareOffModal(symbol, quantity, token, exchange, product);
+        }
+        
+        // Position details buttons
+        if (e.target.closest('.position-details-btn')) {
+            var btn = e.target.closest('.position-details-btn');
+            var symbol = btn.dataset.symbol;
+            var positionData = JSON.parse(btn.dataset.position);
+            showPositionDetails(symbol, positionData);
+        }
+    });
+});
+
+async function refreshQuotes() {
+    var button = document.querySelector('[onclick="refreshQuotes()"]');
+    if (button) {
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
+        button.disabled = true;
+    }
+
+    try {
+        // Fetch fresh quote data from server
+        var response = await fetch('/api/live_quotes');
+        var data = await response.json();
+
+        if (data.success) {
+            // Update quotes table with real data
+            var quotesTableBody = document.getElementById('quotesTableBody');
+            if (quotesTableBody && data.quotes) {
+                data.quotes.forEach(quote, function() {
+                    var row = document.querySelector(`tr[data-symbol="${quote.symbol}"]`);
+                    if (row) {
+                        var ltpCell = row.querySelector('.price-ltp');
+                        var changeCell = row.querySelector('.price-change');
+                        var changePctCell = row.cells[3];
+                        var timeCell = row.querySelector('small');
+
+                        if (ltpCell) {
+                            var oldPrice = parseFloat(ltpCell.textContent.replace(/[₹,]/g, ''));
+                            var newPrice = parseFloat(quote.ltp);
+
+                            ltpCell.textContent = `₹${newPrice.toFixed(2)}`;
+
+                            // Add animation based on price change
+                            if (newPrice > oldPrice) {
+                                ltpCell.classList.add('price-up');
+                            } else if (newPrice < oldPrice) {
+                                ltpCell.classList.add('price-down');
+                            }
+
+                            setTimeout(function() {
+                                ltpCell.classList.remove('price-up', 'price-down');
+                            }, 1000);
+                        }
+
+                        if (changeCell && quote.change !== undefined) {
+                            changeCell.textContent = `${quote.change >= 0 ? '+' : ''}${parseFloat(quote.change).toFixed(2)}`;
+                            changeCell.className = `price-change ${quote.change >= 0 ? 'text-success' : 'text-danger'}`;
+                        }
+
+                        if (changePctCell && quote.changePct !== undefined) {
+                            changePctCell.textContent = `${quote.changePct >= 0 ? '+' : ''}${parseFloat(quote.changePct).toFixed(2)}%`;
+                            changePctCell.className = quote.changePct >= 0 ? 'text-success' : 'text-danger';
+                        }
+
+                        if (timeCell) {
+                            timeCell.textContent = new Date().toLocaleTimeString();
+                        }
+                    }
+                });
+            }
+        } else {
+            // Fallback to simulated updates if API fails
+            simulateQuoteUpdates();
+        }
+    } catch (error) {
+        console.error('Error refreshing quotes:', error);
+        // Fallback to simulated updates
+        simulateQuoteUpdates();
+    }
+
+    if (button) {
+        button.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
+        button.disabled = false;
+    }
+}
+
+function simulateQuoteUpdates() {
+    var quotes = document.querySelectorAll('#quotesTable .price-ltp');
+    quotes.forEach(function(quote) {
+        var currentPrice = parseFloat(quote.textContent.replace(/[₹,]/g, ''));
+        var change = (Math.random() - 0.5) * 20;
+        var newPrice = currentPrice + change;
+
+        quote.textContent = `₹${newPrice.toFixed(2)}`;
+
+        var row = quote.closest('tr');
+        var changeCell = row.querySelector('.price-change');
+        var changePctCell = row.cells[3];
+
+        if (changeCell && changePctCell) {
+            var changePercent = (change / currentPrice * 100);
+            changeCell.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}`;
+            changeCell.className = `price-change ${change >= 0 ? 'text-success' : 'text-danger'}`;
+
+            changePctCell.textContent = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%`;
+            changePctCell.className = change >= 0 ? 'text-success' : 'text-danger';
+        }
+
+        quote.classList.add(change >= 0 ? 'price-up' : 'price-down');
+        setTimeout(()=>{}, function() {
+            quote.classList.remove('price-up', 'price-down');
+        }, 1000);
+    });
+}
+
+async function refreshPositions() {
+    var button = document.querySelector('[onclick="refreshPositions()"]');
+    if (button) {
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
+        button.disabled = true;
+    }
+
+    try {
+        var response = await fetch('/api/positions');
+        var data = await response.json();
+
+        if (data.success && data.positions) {
+            var positionsTableBody = document.getElementById('positionsTableBody');
+            if (positionsTableBody) {
+                // Update positions with fresh data
+                data.positions.forEach(position, function() {
+                    var row = document.querySelector(`tr[data-position-symbol="${position.trdSym || position.sym}"]`);
+                    if (row) {
+                        var ltpCell = row.querySelector('.price-ltp');
+                        var pnlCell = row.querySelector('.position-pnl');
+
+                        if (ltpCell && position.ltp) {
+                            var oldPrice = parseFloat(ltpCell.textContent.replace(/[₹,]/g, ''));
+                            var newPrice = parseFloat(position.ltp);
+
+                            ltpCell.textContent = `₹${newPrice.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+
+                            if (newPrice !== oldPrice) {
+                                ltpCell.classList.add(newPrice > oldPrice ? 'price-up' : 'price-down');
+                                setTimeout(()=>{}, function() {
+                                    ltpCell.classList.remove('price-up', 'price-down');
+                                }, 1000);
+                            }
+                        }
+
+                        if (pnlCell && position.pnl !== undefined) {
+                            var pnl = parseFloat(position.pnl);
+                            pnlCell.innerHTML = `<span class="fw-bold ${pnl > 0 ? 'text-success' : pnl < 0 ? 'text-danger' : 'text-muted'}">₹${pnl.toFixed(2)}</span>`;
+                        }
+                    }
+                });
+
+                console.log('Positions refreshed successfully');
+            }
+        }
+    } catch (error) {
+        console.error('Error refreshing positions:', error);
+        // Fallback to simulated updates
+        simulatePositionUpdates();
+    }
+
+    if (button) {
+        button.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
+        button.disabled = false;
+    }
+}
+
+function simulatePositionUpdates() {
+    var positions = document.querySelectorAll('#positionsTable .price-ltp');
+    positions.forEach(position, function() {
+        var currentPrice = parseFloat(position.textContent.replace(/[₹,]/g, ''));
+        var change = (Math.random() - 0.5) * 10;
+        var newPrice = currentPrice + change;
+
+        position.textContent = `₹${newPrice.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        position.classList.add(change >= 0 ? 'price-up' : 'price-down');
+        setTimeout(()=>{}, function() {
+            position.classList.remove('price-up', 'price-down');
+        }, 1000);
+    });
+}
+
+
+
+async function refreshPortfolioSummary() {
+    try {
+        var response = await fetch('/api/portfolio_summary');
+        var data = await response.json();
+
+        console.log(data);
+
+        if (data.success) {
+            // Update portfolio summary cards
+            var totalPositionsEl = document.getElementById('totalPositions');
+            var totalHoldingsEl = document.getElementById('totalHoldings');
+            var totalOrdersEl = document.getElementById('totalOrders');
+            var availableMarginEl = document.getElementById('availableMargin');
+
+            if (totalPositionsEl && data.total_positions !== undefined) {
+                totalPositionsEl.textContent = data.total_positions;
+            }
+            if (totalHoldingsEl && data.total_holdings !== undefined) {
+                totalHoldingsEl.textContent = data.total_holdings;
+            }
+            if (totalOrdersEl && data.total_orders !== undefined) {
+                totalOrdersEl.textContent = data.total_orders;
+            }
+            if (availableMarginEl && data.available_margin !== undefined) {
+                availableMarginEl.textContent = `₹${parseFloat(data.available_margin).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+            }
+        }
+    } catch (error) {
+        console.error('Error refreshing portfolio summary:', error);
+    }
+}
+
+// Add function to refresh portfolio data
+function refreshPortfolioData() {
+    if (window.tradingDashboard) {
+        window.tradingDashboard.refreshPortfolioDetails();
+    }
+}
+
+// Set last login time on page load and load user profile
+document.addEventListener('DOMContentLoaded', function() {
+    // Load user profile data which will set the correct login time
+    loadUserProfile();
+
+    // Set portfolio last update time
+    var portfolioUpdateElement = document.getElementById('portfolioLastUpdate');
+    if (portfolioUpdateElement) {
+        var now = new Date();
+        portfolioUpdateElement.textContent = now.toLocaleTimeString();
+    }
+});
+
+// Function to format date in the desired format: DD/MM/YYYY HH:MM AM/PM
+function formatLoginTime(date) {
+    var day = String(date.getDate()).padStart(2, '0');
+    var month = String(date.getMonth() + 1).padStart(2, '0');
+    var year = date.getFullYear();
+    
+    var hours = date.getHours();
+    var minutes = String(date.getMinutes()).padStart(2, '0');
+    var ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    
+    return `${day}/${month}/${year} ${hours}:${minutes}${ampm}`;
+}
+
+// Function to load user profile data
+async function loadUserProfile() {
+    try {
+        var response = await fetch('/api/user_profile');
+        var data = await response.json();
+
+        if (data.success && data.profile) {
+            var profile = data.profile;
+
+            // Update login time in dashboard header
+            var lastLoginElement = document.getElementById('lastLoginTime');
+            if (lastLoginElement) {
+                if (profile.login_time && profile.login_time !== 'N/A') {
+                    // Format the login time properly
+                    var loginDate = new Date(profile.login_time);
+                    var formattedTime = formatLoginTime(loginDate);
+                    lastLoginElement.textContent = formattedTime;
+                } else {
+                    var now = new Date();
+                    var formattedTime = formatLoginTime(now);
+                    lastLoginElement.textContent = formattedTime;
+                }
+            }
+
+            // Update login time in profile modal if available
+            var loginTimeElement = document.getElementById('loginTime');
+            if (loginTimeElement) {
+                if (profile.login_time && profile.login_time !== 'N/A') {
+                    var loginDate = new Date(profile.login_time);
+                    loginTimeElement.textContent = formatLoginTime(loginDate);
+                } else {
+                    var now = new Date();
+                    loginTimeElement.textContent = formatLoginTime(now);
+                }
+            }
+
+            console.log('User profile loaded:', profile);
+        } else {
+            // Set current time as login time if no profile data
+            var lastLoginElement = document.getElementById('lastLoginTime');
+            if (lastLoginElement && (lastLoginElement.textContent === 'Loading...' || lastLoginElement.textContent === 'Today')) {
+                var now = new Date();
+                var formattedTime = formatLoginTime(now);
+                lastLoginElement.textContent = formattedTime;
+            }
+            
+            var loginTimeElement = document.getElementById('loginTime');
+            if (loginTimeElement && (loginTimeElement.textContent === 'Loading...' || loginTimeElement.textContent === 'Today')) {
+                var now = new Date();
+                loginTimeElement.textContent = formatLoginTime(now);
+            }
+        }
+    } catch (error) {
+        console.error('Error loading user profile:', error);
+        // Set current time as fallback
+        var lastLoginElement = document.getElementById('lastLoginTime');
+        if (lastLoginElement && (lastLoginElement.textContent === 'Loading...' || lastLoginElement.textContent === 'Today')) {
+            var now = new Date();
+            var formattedTime = formatLoginTime(now);
+            lastLoginElement.textContent = formattedTime;
+        }
+        
+        var loginTimeElement = document.getElementById('loginTime');
+        if (loginTimeElement && (loginTimeElement.textContent === 'Loading...' || loginTimeElement.textContent === 'Today')) {
+            var now = new Date();
+            loginTimeElement.textContent = formatLoginTime(now);
+        }
+    }
+}
+
+// Auto-refresh specific sections every 15 seconds instead of full page
+setInterval(()=>{}, function() {
+    refreshQuotes();
+    refreshPositions();
+    refreshPortfolioSummary();
+}, 15000);
+
+
+
+// Update user profile section
+        async function updateUserProfile() {
+            try {
+                var response = await fetch('/api/user_profile');
+                var data = await response.json();
+
+                if (data.success && data.profile) {
+                    var profile = data.profile;
+
+                    // Update profile information
+                    document.getElementById('userUCC').textContent = profile.ucc;
+                    document.getElementById('userGreeting').textContent = profile.greeting_name;
+                    document.getElementById('loginTime').textContent = profile.login_time;
+
+                    // Show truncated tokens for security
+                    document.getElementById('accessTokenDisplay').value = profile.access_token;
+                    document.getElementById('sessionTokenDisplay').value = profile.session_token;
+                    document.getElementById('sidDisplay').value = profile.sid;
+
+                    // Update token status
+                    var tokenStatusText = document.getElementById('tokenStatusText');
+                    var refreshTokenBtn = document.getElementById('refreshTokenBtn');
+                    var authWarning = document.getElementById('authWarning');
+
+                    if (profile.token_status === 'Valid') {
+                        tokenStatusText.textContent = 'Valid';
+                        tokenStatusText.className = 'text-success';
+                        refreshTokenBtn.style.display = 'none';
+                        authWarning.style.display = 'none';
+                    } else if (profile.token_status === 'Expired') {
+                        tokenStatusText.textContent = 'Expired';
+                        tokenStatusText.className = 'text-danger';
+                        refreshTokenBtn.style.display = 'block';
+                        authWarning.style.display = 'block';
+                        refreshTokenBtn.onclick = () => window.location.href = '/login';
+                    } else {
+                        tokenStatusText.textContent = 'Invalid';
+                        tokenStatusText.className = 'text-warning';
+                        refreshTokenBtn.style.display = 'block';
+                        authWarning.style.display = 'block';
+                        refreshTokenBtn.onclick = () => window.location.href = '/login';
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating user profile:', error);
+                // Show error state
+                var tokenStatusText = document.getElementById('tokenStatusText');
+                tokenStatusText.textContent = 'Error';
+                tokenStatusText.className = 'text-danger';
+            }
+        }
+
+// Order Management Functions
+function showOrderManagement(symbol) {
+    fetch(`/api/orders?symbol=${symbol}`)
+        .then(response => response.json())
+        .then(data ,function() {
+            if (data.success && data.orders.length > 0) {
+                showOrderModal(data.orders);
+            } else {
+                alert('No pending orders found for ' + symbol);
+            }
+        })
+        .catch(error, function() {
+            console.error('Error fetching orders:', error);
+            alert('Error fetching orders');
+        });
+}
+
+function showOrderModal(orders) {
+    var modalContent = `
+        <div class="modal fade" id="orderManagementModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content bg-dark">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Manage Orders</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Symbol</th>
+                                        <th>Type</th>
+                                        <th>Qty</th>
+                                        <th>Price</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
+    
+    orders.forEach(order, function() {
+        modalContent += `
+            <tr>
+                <td><strong>${order.trdSym || order.sym}</strong></td>
+                <td><span class="badge ${order.trnsTp === 'BUY' ? 'bg-success' : 'bg-danger'}">${order.trnsTp}</span></td>
+                <td>${order.qty}</td>
+                <td>₹${order.prc || 'Market'}</td>
+                <td><span class="badge bg-warning">${order.ordSt}</span></td>
+                <td>
+                    <button class="btn btn-xs btn-primary me-1" onclick="modifyOrder('${order.nOrdNo}', '${order.trdSym}', ${order.qty}, ${order.prc || 0})">
+                        <i class="fas fa-edit"></i> Modify
+                    </button>
+                    <button class="btn btn-xs btn-danger" onclick="cancelOrder('${order.nOrdNo}')">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </td>
+            </tr>`;
+    });
+    
+    modalContent += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    
+    var existingModal = document.getElementById('orderManagementModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    document.body.insertAdjacentHTML('beforeend', modalContent);
+    new bootstrap.Modal(document.getElementById('orderManagementModal')).show();
+}
+
+function modifyOrder(orderNo, symbol, currentQty, currentPrice) {
+    var newQty = prompt(`Modify quantity for ${symbol}:`, currentQty);
+    var newPrice = prompt(`Modify price for ${symbol}:`, currentPrice);
+    
+    if (newQty && newPrice) {
+        var modifyData = {
+            order_no: orderNo,
+            quantity: parseInt(newQty),
+            price: parseFloat(newPrice)
+        };
+        
+        fetch('/api/modify_order', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(modifyData)
+        })
+        .then(response => response.json())
+        .then(data, function() {
+            if (data.success) {
+                alert('Order modified successfully!');
+                bootstrap.Modal.getInstance(document.getElementById('orderManagementModal')).hide();
+                refreshDashboard();
+            } else {
+                alert('Failed to modify order: ' + data.message);
+            }
+        })
+        .catch(error, function() {
+            console.error('Error:', error);
+            alert('Error modifying order');
+        });
+    }
+}
+
+function cancelOrder(orderNo) {
+    if (confirm('Are you sure you want to cancel this order?')) {
+        fetch('/api/cancel_order', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ order_no: orderNo })
+        })
+        .then(response => response.json())
+        .then(data, function() {
+            if (data.success) {
+                alert('Order cancelled successfully!');
+                bootstrap.Modal.getInstance(document.getElementById('orderManagementModal')).hide();
+                refreshDashboard();
+            } else {
+                alert('Failed to cancel order: ' + data.message);
+            }
+        })
+        .catch(error, function() {
+            console.error('Error:', error);
+            alert('Error cancelling order');
+        });
     }
 }

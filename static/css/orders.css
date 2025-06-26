@@ -1,0 +1,17 @@
+.data-updated {
+    animation: highlightUpdate 1s ease-in-out;
+}
+
+@keyframes highlightUpdate {
+    0% { background-color: rgba(0, 123, 255, 0.2); }
+    100% { background-color: transparent; }
+}
+
+.table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.4rem;
+    font-size: 0.75rem;
+}

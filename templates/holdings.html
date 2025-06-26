@@ -18,6 +18,45 @@
 </div>
 
 {% if holdings %}
+<!-- Summary Footer -->
+<div class="card-footer bg-secondary mb-4 p-2">
+    <div class="row text-center">
+        <div class="col-md-3">
+            <h6 class="text-muted mb-1">Total Holdings</h6>
+            <h5 class="mb-0" id="totalHoldingsCount">{{ holdings|length if holdings else 0 }}</h5>
+        </div>
+        <div class="col-md-3">
+            <h6 class="text-muted mb-1">Total Invested</h6>
+            {% set total_invested = 0 %}
+            {% if holdings %}
+                {% for holding in holdings %}
+                    {% set invested = holding.holdingCost|float if holding.holdingCost else 0.0 %}
+                    {% set total_invested = total_invested + invested %}
+                {% endfor %}
+            {% endif %}
+            <h5 class="mb-0 text-info" id="totalInvested">₹{{ "%.2f"|format(total_invested) }}</h5>
+        </div>
+        <div class="col-md-3">
+            <h6 class="text-muted mb-1">Current Value</h6>
+            {% set total_current = 0 %}
+            {% if holdings %}
+                {% for holding in holdings %}
+                    {% set current = holding.mktValue|float if holding.mktValue else 0.0 %}
+                    {% set total_current = total_current + current %}
+                {% endfor %}
+            {% endif %}
+            <h5 class="mb-0 text-warning" id="currentValue">₹{{ "%.2f"|format(total_current) }}</h5>
+        </div>
+        <div class="col-md-3">
+            <h6 class="text-muted mb-1">Total P&L</h6>
+            {% set total_pnl = total_current - total_invested %}
+            <h5 class="mb-0 {% if total_pnl > 0 %}text-success{% elif total_pnl < 0 %}text-danger{% else %}text-muted{% endif %}" id="totalPnl">
+                {% if total_pnl > 0 %}+{% endif %}₹{{ "%.2f"|format(total_pnl) }}
+            </h5>
+        </div>
+    </div>
+</div>
+
 <div class="card bg-secondary">
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -81,7 +120,7 @@
                                 <button class="btn btn-success btn-sm" onclick="buyHolding('{{ holding.displaySymbol or holding.symbol }}')">
                                     <i class="fas fa-plus"></i> Buy
                                 </button>
-                                <button class="btn btn-danger btn-sm" onclick="sellHolding('{{ holding.displaySymbol or holding.symbol }}', {{ holding.sellableQuantity or holding.quantity or 0 }})">
+                                <button class="btn btn-danger btn-sm" onclick="sellHolding('{{ holding.displaySymbol or holding.symbol }}', '{{ holding.sellableQuantity or holding.quantity or 0 }}')">
                                     <i class="fas fa-minus"></i> Sell
                                 </button>
                                 <button class="btn btn-info btn-sm" onclick="getQuote('{{ holding.instrumentToken }}', '{{ holding.exchangeSegment }}')">
@@ -93,45 +132,6 @@
                     {% endfor %}
                 </tbody>
             </table>
-        </div>
-    </div>
-    
-    <!-- Summary Footer -->
-    <div class="card-footer bg-dark">
-        <div class="row text-center">
-            <div class="col-md-3">
-                <h6 class="text-muted mb-1">Total Holdings</h6>
-                <h5 class="mb-0" id="totalHoldingsCount">{{ holdings|length if holdings else 0 }}</h5>
-            </div>
-            <div class="col-md-3">
-                <h6 class="text-muted mb-1">Total Invested</h6>
-                {% set total_invested = 0 %}
-                {% if holdings %}
-                    {% for holding in holdings %}
-                        {% set invested = holding.holdingCost|float if holding.holdingCost else 0.0 %}
-                        {% set total_invested = total_invested + invested %}
-                    {% endfor %}
-                {% endif %}
-                <h5 class="mb-0 text-info" id="totalInvested">₹{{ "%.2f"|format(total_invested) }}</h5>
-            </div>
-            <div class="col-md-3">
-                <h6 class="text-muted mb-1">Current Value</h6>
-                {% set total_current = 0 %}
-                {% if holdings %}
-                    {% for holding in holdings %}
-                        {% set current = holding.mktValue|float if holding.mktValue else 0.0 %}
-                        {% set total_current = total_current + current %}
-                    {% endfor %}
-                {% endif %}
-                <h5 class="mb-0 text-warning" id="currentValue">₹{{ "%.2f"|format(total_current) }}</h5>
-            </div>
-            <div class="col-md-3">
-                <h6 class="text-muted mb-1">Total P&L</h6>
-                {% set total_pnl = total_current - total_invested %}
-                <h5 class="mb-0 {% if total_pnl > 0 %}text-success{% elif total_pnl < 0 %}text-danger{% else %}text-muted{% endif %}" id="totalPnl">
-                    {% if total_pnl > 0 %}+{% endif %}₹{{ "%.2f"|format(total_pnl) }}
-                </h5>
-            </div>
         </div>
     </div>
 </div>
@@ -152,10 +152,10 @@
 <!-- Holding Action Modal -->
 <div class="modal fade" id="holdingActionModal" tabindex="-1">
     <div class="modal-dialog">
-        <div class="modal-content bg-dark">
+        <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="holdingActionTitle">Trade Holding</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form id="holdingActionForm">
@@ -164,13 +164,13 @@
                     
                     <div class="mb-3">
                         <label class="form-label">Quantity</label>
-                        <input type="number" class="form-control bg-secondary text-light" name="quantity" id="actionQuantity" min="1" required>
+                        <input type="number" class="form-control bg-secondary text-muted" name="quantity" id="actionQuantity" min="1" required>
                         <div class="form-text" id="maxQuantityText"></div>
                     </div>
                     
                     <div class="mb-3">
                         <label class="form-label">Order Type</label>
-                        <select class="form-select bg-secondary text-light" name="order_type" required>
+                        <select class="form-select bg-secondary text-muted" name="order_type" required>
                             <option value="MARKET">MARKET</option>
                             <option value="LIMIT">LIMIT</option>
                         </select>
@@ -178,12 +178,12 @@
                     
                     <div class="mb-3">
                         <label class="form-label">Price (for LIMIT orders)</label>
-                        <input type="number" class="form-control bg-secondary text-light" name="price" step="0.01">
+                        <input type="number" class="form-control bg-secondary text-muted" name="price" step="0.01">
                     </div>
                     
                     <div class="mb-3">
                         <label class="form-label">Product</label>
-                        <select class="form-select bg-secondary text-light" name="product" required>
+                        <select class="form-select bg-secondary text-muted" name="product" required>
                             <option value="CNC">CNC</option>
                             <option value="MIS">MIS</option>
                         </select>
@@ -202,225 +202,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-function refreshHoldings() {
-    var refreshBtn = document.querySelector('button[onclick="refreshHoldings()"]');
-    if (refreshBtn) {
-        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...';
-        refreshBtn.disabled = true;
-    }
-    
-    fetch('/api/holdings')
-        .then(response => response.json())
-        .then(function(data) {
-            if (data.success) {
-                updateHoldingsTable(data.holdings);
-                updateHoldingsSummary(data.summary);
-                showNotification('Holdings refreshed successfully', 'success');
-            } else {
-                showNotification('Failed to refresh holdings: ' + data.message, 'error');
-            }
-        })
-        .catch(function(error) {
-            console.error('Error refreshing holdings:', error);
-            showNotification('Error refreshing holdings', 'error');
-        })
-        .finally(function() {
-            if (refreshBtn) {
-                refreshBtn.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
-                refreshBtn.disabled = false;
-            }
-        });
-}
-
-function buyHolding(symbol) {
-    document.getElementById('actionSymbol').value = symbol;
-    document.getElementById('actionType').value = 'BUY';
-    document.getElementById('actionQuantity').value = '';
-    document.getElementById('holdingActionTitle').textContent = 'Buy More: ' + symbol;
-    document.getElementById('maxQuantityText').textContent = '';
-    new bootstrap.Modal(document.getElementById('holdingActionModal')).show();
-}
-
-function sellHolding(symbol, maxQuantity) {
-    document.getElementById('actionSymbol').value = symbol;
-    document.getElementById('actionType').value = 'SELL';
-    document.getElementById('actionQuantity').value = maxQuantity;
-    document.getElementById('actionQuantity').max = maxQuantity;
-    document.getElementById('holdingActionTitle').textContent = 'Sell Holding: ' + symbol;
-    document.getElementById('maxQuantityText').textContent = 'Maximum quantity: ' + maxQuantity;
-    new bootstrap.Modal(document.getElementById('holdingActionModal')).show();
-}
-
-function submitHoldingAction() {
-    var form = document.getElementById('holdingActionForm');
-    var formData = new FormData(form);
-    var orderData = Object.fromEntries(formData.entries());
-    
-    fetch('/api/place_order', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData)
-    })
-    .then(response => response.json())
-    .then(data function() {
-        if (data.success) {
-            alert('Order placed successfully!');
-            bootstrap.Modal.getInstance(document.getElementById('holdingActionModal')).hide();
-            refreshHoldings();
-        } else {
-            alert('Failed to place order: ' + data.message);
-        }
-    })
-    .catch(error function() {
-        console.error('Error:', error);
-        alert('Error placing order');
-    });
-}
-
-function getQuote(token, exchange) {
-    var quoteData = {
-        instrument_tokens: [{
-            instrument_token: token,
-            exchange_segment: exchange
-        }],
-        quote_type: "ltp"
-    };
-    
-    fetch('/api/quotes', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(quoteData)
-    })
-    .then(response => response.json())
-    .then(function(data) {
-        if (data.success) {
-            console.log('Quote data:', data.data);
-            alert('Current LTP: ₹' + (data.data[0] && data.data[0].ltp ? data.data[0].ltp : 'N/A'));
-        } else {
-            alert('Failed to get quote: ' + data.message);
-        }
-    })
-    .catch(function(error) {
-        console.error('Error:', error);
-        alert('Error getting quote');
-    });
-}
-
-// Auto-refresh holdings every 2 minutes (reduced frequency)
-setInterval(refreshHoldings, 120000);
-
-function updateHoldingsTable(holdings) {
-    var tableBody = document.querySelector('table tbody');
-    if (!tableBody) return;
-    
-    if (!holdings || holdings.length === 0) {
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="9" class="text-center py-5">
-                    <i class="fas fa-walvar fa-3x text-muted mb-3"></i>
-                    <h4 class="text-muted">No Holdings Found</h4>
-                    <p class="text-muted">You don't have any holdings in your portfolio.</p>
-                </td>
-            </tr>
-        `;
-        return;
-    }
-    
-    tableBody.innerHTML = '';
-    
-    holdings.forEach(holding function() {
-        var row = document.createElement('tr');
-        var quantity = parseFloat(holding.quantity || 0);
-        var avgPrice = parseFloat(holding.averagePrice || 0);
-        var ltp = parseFloat(holding.closingPrice || 0);
-        var investedValue = parseFloat(holding.holdingCost || 0);
-        var marketValue = parseFloat(holding.mktValue || 0);
-        var pnl = marketValue - investedValue;
-        var pnlPercent = investedValue > 0 ? (pnl / investedValue * 100) : 0;
-        var dayChange = avgPrice > 0 ? ((ltp - avgPrice) / avgPrice * 100) : 0;
-        
-        row.innerHTML = `
-            <td>
-                <strong>${holding.displaySymbol || holding.symbol || 'N/A'}</strong>
-                ${holding.instrumentName ? `<br><small class="text-muted">${holding.instrumentName}</small>` : ''}
-            </td>
-            <td>
-                <span class="badge bg-info">${holding.exchangeSegment || 'N/A'}</span>
-            </td>
-            <td class="text-info">${quantity}</td>
-            <td>₹${avgPrice.toFixed(2)}</td>
-            <td>₹${ltp.toFixed(2)}</td>
-            <td>₹${marketValue.toFixed(2)}</td>
-            <td>
-                <span class="${pnl >= 0 ? 'text-success' : 'text-danger'}">
-                    ₹${pnl.toFixed(2)}
-                    ${investedValue > 0 ? `<br><small>(${pnlPercent.toFixed(2)}%)</small>` : ''}
-                </span>
-            </td>
-            <td>
-                <span class="${dayChange >= 0 ? 'text-success' : 'text-danger'}">
-                    ${dayChange.toFixed(2)}%
-                </span>
-            </td>
-            <td>
-                <div class="btn-group btn-group-sm">
-                    <button class="btn btn-success btn-sm" onclick="buyHolding('${holding.displaySymbol || holding.symbol}')">
-                        <i class="fas fa-plus"></i> Buy
-                    </button>
-                    <button class="btn btn-danger btn-sm" onclick="sellHolding('${holding.displaySymbol || holding.symbol}', ${holding.sellableQuantity || holding.quantity || 0})">
-                        <i class="fas fa-minus"></i> Sell
-                    </button>
-                    <button class="btn btn-info btn-sm" onclick="getQuote('${holding.instrumentToken}', '${holding.exchangeSegment}')">
-                        <i class="fas fa-chart-line"></i>
-                    </button>
-                </div>
-            </td>
-        `;
-        tableBody.appendChild(row);
-    });
-}
-
-function updateHoldingsSummary(summary) {
-    var totalHoldingsEl = document.getElementById('totalHoldingsCount');
-    var totalInvestedEl = document.getElementById('totalInvested');
-    var currentValueEl = document.getElementById('currentValue');
-    var totalPnlEl = document.getElementById('totalPnl');
-    
-    if (totalHoldingsEl) totalHoldingsEl.textContent = summary.total_holdings || 0;
-    if (totalInvestedEl) totalInvestedEl.textContent = `₹${(summary.total_invested || 0).toFixed(2)}`;
-    if (currentValueEl) {
-        currentValueEl.textContent = `₹${(summary.current_value || 0).toFixed(2)}`;
-        var pnl = (summary.current_value || 0) - (summary.total_invested || 0);
-        if (totalPnlEl) {
-            totalPnlEl.textContent = `${pnl >= 0 ? '+' : ''}₹${pnl.toFixed(2)}`;
-            totalPnlEl.className = `mb-0 ${pnl >= 0 ? 'text-success' : 'text-danger'}`;
-        }
-    }
-}
-
-function showNotification(message, type = 'info') {
-    // Create toast notification
-    var toast = document.createElement('div');
-    toast.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    toast.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    // Auto-remove after 3 seconds
-    setTimeout(() function() {
-        if (toast.parentNode) {
-            toast.parentNode.removeChild(toast);
-        }
-    }, 3000);
-}
-</script>
+<script src="{{url_for('static', filename="js/holdings.js")}}"></script>
 {% endblock %}
