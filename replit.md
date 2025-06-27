@@ -104,9 +104,9 @@ The application follows a modern Flask architecture with clear separation of con
 
 ## Recent Changes
 
-- **June 27, 2025** - Updated table formatting across all pages with capital letters and removed Actions column
+- **June 27, 2025** - Updated table formatting across all pages with capital letters and selective Actions column removal
   - Made all table headings capital letters (SYMBOL, QUANTITY, P&L, etc.) across holdings, positions, and dashboard pages
-  - Removed Actions column from holdings table to clean up interface and remove unnecessary buttons
+  - Removed Actions column from holdings table only to clean up interface (positions page keeps Actions for trading functionality)
   - Standardized table header formatting for consistent professional appearance
   - All table headers now use uniform capital letter styling across the entire application
 
