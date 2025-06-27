@@ -28,7 +28,12 @@ PositionsManager.prototype.loadPositions = function() {
                     var response = JSON.parse(xhr.responseText);
                     console.log('Positions API Response:', response);
                     
-                    if (response.stat === 'Ok' && response.data && Array.isArray(response.data)) {
+                    if (response.success && response.positions && Array.isArray(response.positions)) {
+                        this.positions = response.positions;
+                        this.displayPositions();
+                        this.updateSummaryCards();
+                    } else if (response.stat === 'Ok' && response.data && Array.isArray(response.data)) {
+                        // Handle direct Kotak Neo API format
                         this.positions = response.data;
                         this.displayPositions();
                         this.updateSummaryCards();
