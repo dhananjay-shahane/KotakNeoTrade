@@ -832,10 +832,12 @@ def get_etf_signals_data():
 
         # Query admin_trade_signals table for CSV ETF data
         query = text("""
-            SELECT id, etf, ep, cmp, qty, pos, inv, pl, chan, date, dh, ed, exp, tp, tva, tpr, pr, pp, iv, ip, nt, qt, seven, ch, thirty
+            SELECT id, symbol, entry_price, current_price, quantity, signal_type, investment_amount, 
+                   pnl, change_percent, signal_date, target_price, created_at, updated_at,
+                   current_value, pnl_percentage, status, signal_title, signal_description
             FROM admin_trade_signals 
-            WHERE etf IS NOT NULL
-            ORDER BY date DESC, id DESC
+            WHERE symbol IS NOT NULL
+            ORDER BY signal_date DESC, id DESC
         """)
 
         result = db.session.execute(query)
@@ -844,7 +846,7 @@ def get_etf_signals_data():
         app.logger.info(
             f"ETF Signals API: Found {len(signals)} CSV trade signals")
 
-        # Format signals data from CSV structure
+        # Format signals data from database structure
         signals_list = []
         total_investment = 0
         total_current_value = 0
@@ -852,14 +854,14 @@ def get_etf_signals_data():
 
         for signal in signals:
             # Only include records with valid data
-            if not signal.etf or not signal.ep or not signal.cmp or not signal.qty:
+            if not signal.symbol or not signal.entry_price or not signal.quantity:
                 continue
 
             # Calculate values
-            entry_price = float(signal.ep) if signal.ep else 0
-            current_price = float(signal.cmp) if signal.cmp else 0
-            quantity = int(signal.qty) if signal.qty else 0
-            investment = float(signal.inv) if signal.inv else (entry_price *
+            entry_price = float(signal.entry_price) if signal.entry_price else 0
+            current_price = float(signal.current_price) if signal.current_price else entry_price
+            quantity = int(signal.quantity) if signal.quantity else 0
+            investment = float(signal.investment_amount) if signal.investment_amount else (entry_price *
                                                                quantity)
 
             if entry_price > 0:
@@ -872,40 +874,39 @@ def get_etf_signals_data():
                 current_value = 0
 
             # Count active positions
-            if signal.pos == 1:  # Position = 1 means active
+            if signal.status == 'ACTIVE':
                 active_positions += 1
                 total_investment += investment
                 total_current_value += current_value
 
             signal_data = {
                 'id': signal.id,
-                'etf': signal.etf,
-                'signal_type': 'BUY' if signal.pos == 1 else 'SELL',
+                'etf': signal.symbol,
+                'signal_type': signal.signal_type or 'BUY',
                 'ep': entry_price,
                 'cmp': current_price,
                 'qty': quantity,
                 'inv': investment,
-                'pl': float(signal.pl) if signal.pl else pnl_amount,
-                'change_pct': pnl_pct,
+                'pl': float(signal.pnl) if signal.pnl else pnl_amount,
+                'change_pct': float(signal.change_percent) if signal.change_percent else pnl_pct,
                 'change2': pnl_pct,
-                'status': 'ACTIVE' if signal.pos == 1 else 'CLOSED',
-                # 'pos': signal.pos or 0,
-                'date': str(signal.date) if signal.date else '',
-                'dh': signal.dh or '0',
-                'ed': str(signal.ed) if signal.ed else '',
-                'exp': str(signal.exp) if signal.exp else '',
-                'tp': float(signal.tp) if signal.tp else 0,
-                'tva': float(signal.tva) if signal.tva else 0,
-                'tpr': signal.tpr or '0',
-                'pr': signal.pr or f'{pnl_pct:.2f}%',
-                'pp': signal.pp or '--  ',
-                'iv': float(signal.iv) if signal.iv else investment,
+                'status': signal.status or 'ACTIVE',
+                'date': str(signal.signal_date) if signal.signal_date else str(signal.created_at.date()) if signal.created_at else '',
+                'dh': '0',
+                'ed': '',
+                'exp': '',
+                'tp': float(signal.target_price) if signal.target_price else 0,
+                'tva': float(signal.current_value) if signal.current_value else current_value,
+                'tpr': f'{pnl_pct:.2f}%',
+                'pr': f'{pnl_pct:.2f}%',
+                'pp': '--',
+                'iv': investment,
                 'ip': f'{pnl_pct:.2f}%',
-                'nt': signal.nt or '',
-                'qt': float(signal.qt) if signal.qt else '',
-                'seven': signal.seven or f'{pnl_pct:.2f}%',
-                'thirty': signal.thirty or f'{pnl_pct:.2f}%',
-                'chan': signal.chan or f'{pnl_pct:.2f}%',
+                'nt': signal.signal_title or '',
+                'qt': quantity,
+                'seven': f'{pnl_pct:.2f}%',
+                'thirty': f'{pnl_pct:.2f}%',
+                'chan': f'{pnl_pct:.2f}%',
                 'priority': None
             }
             signals_list.append(signal_data)
