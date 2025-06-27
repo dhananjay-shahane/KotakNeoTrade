@@ -172,6 +172,7 @@
                         <th class="sortable border-0" onclick="sortTable('dayChange')" style="cursor: pointer;">
                             <i class="fas fa-sort me-1 text-muted"></i>DAY CHANGE <i class="fas fa-sort-up d-none" id="sort-dayChange-asc"></i><i class="fas fa-sort-down d-none" id="sort-dayChange-desc"></i>
                         </th>
+                        <th class="border-0">ACTIONS</th>
                     </tr>
                 </thead>
                 <tbody id="holdingsTableBody">
@@ -237,6 +238,19 @@
                                     N/A
                                 {% endif %}
                             </span>
+                        </td>
+                        <td class="border-0">
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-success btn-sm" onclick="buyHolding('{{ holding.displaySymbol or holding.symbol }}')">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="sellHolding('{{ holding.displaySymbol or holding.symbol }}', '{{ holding.sellableQuantity or holding.quantity or 0 }}')">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <button class="btn btn-outline-light btn-sm" onclick="getQuote('{{ holding.instrumentToken }}', '{{ holding.exchangeSegment }}')">
+                                    <i class="fas fa-chart-line"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
