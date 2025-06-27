@@ -271,21 +271,19 @@
                 updateFontPreview(savedFontSize);
             }
 
-            // Load theme and set active theme option
+            // Load theme
             var savedTheme = localStorage.getItem('theme') || 'dark';
-            var themeOptions = document.querySelectorAll('.theme-option');
-            themeOptions.forEach(function(option) {
-                option.classList.remove('active');
-                if (option.getAttribute('data-theme') === savedTheme) {
-                    option.classList.add('active');
-                }
-                
-                // Add click handler
-                option.addEventListener('click', function() {
-                    themeOptions.forEach(function(opt) { opt.classList.remove('active'); });
-                    this.classList.add('active');
-                });
-            });
+            var themeSelect = document.getElementById('themeSelect');
+            if (themeSelect) {
+                themeSelect.value = savedTheme;
+            }
+
+            // Load auto refresh setting
+            var savedRefresh = localStorage.getItem('auto-refresh-interval') || '30';
+            var autoRefreshSelect = document.getElementById('autoRefreshSelect');
+            if (autoRefreshSelect) {
+                autoRefreshSelect.value = savedRefresh;
+            }
         }
 
         function updateFontPreview(fontSize) {
@@ -297,7 +295,8 @@
 
         function applySettings() {
             var fontSizeSelect = document.getElementById('fontSizeSelect');
-            var activeThemeOption = document.querySelector('.theme-option.active');
+            var themeSelect = document.getElementById('themeSelect');
+            var autoRefreshSelect = document.getElementById('autoRefreshSelect');
 
             // Apply font size
             if (fontSizeSelect) {
@@ -311,8 +310,8 @@
             }
 
             // Apply theme
-            if (activeThemeOption) {
-                var newTheme = activeThemeOption.getAttribute('data-theme');
+            if (themeSelect) {
+                var newTheme = themeSelect.value;
                 document.documentElement.setAttribute('data-theme', newTheme);
                 localStorage.setItem('theme', newTheme);
                 
@@ -324,6 +323,17 @@
                 
                 if (typeof showToaster === 'function') {
                     showToaster('Theme Updated', 'Switched to ' + newTheme + ' mode', 'success');
+                }
+            }
+
+            // Apply auto refresh
+            if (autoRefreshSelect) {
+                var newRefresh = autoRefreshSelect.value;
+                localStorage.setItem('auto-refresh-interval', newRefresh);
+                
+                if (typeof showToaster === 'function') {
+                    var message = newRefresh === '0' ? 'Auto refresh disabled' : 'Auto refresh set to ' + newRefresh + ' seconds';
+                    showToaster('Auto Refresh Updated', message, 'success');
                 }
             }
 

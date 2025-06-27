@@ -11,7 +11,7 @@
         (function() {
             var savedTheme = localStorage.getItem('theme') || 'dark';
             document.documentElement.setAttribute('data-theme', savedTheme);
-
+            
             var savedFontSize = localStorage.getItem('website-font-size') || '14';
             document.documentElement.style.setProperty('--global-font-size', savedFontSize + 'px');
         })();
@@ -25,7 +25,7 @@
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
-
+    
     {% block head %}{% endblock %}
 </head>
 <body>
@@ -69,7 +69,7 @@
                     <i class="fas fa-bell"></i>
                     <span class="notification-badge" id="notificationCount">0</span>
                 </button>
-
+                
                 <!-- Notification Inbox Dropdown -->
                 <div class="notification-inbox" id="notificationInbox" style="display: none;">
                     <div class="notification-header flex justify-content-between align-items-center">
@@ -296,111 +296,83 @@
 
     <!-- Settings Modal -->
     <div class="modal fade" id="settingsModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content settings-modal">
-                <div class="modal-header settings-header">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header border-bottom border-secondary">
                     <h5 class="modal-title">
-                        <i class="fas fa-cog me-3 settings-icon"></i>
-                        <span>Application Settings</span>
+                        <i class="fas fa-cog me-2"></i>Application Settings
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body settings-body">
+                <div class="modal-body">
                     <!-- Font Size Settings -->
-                    <div class="settings-card">
-                        <div class="settings-card-header">
-                            <div class="settings-icon-wrapper">
-                                <i class="fas fa-text-height"></i>
-                            </div>
-                            <div class="settings-title-section">
-                                <h6 class="settings-card-title">Typography</h6>
-                                <p class="settings-card-subtitle">Customize font size for better readability</p>
-                            </div>
+                    <div class="settings-section">
+                        <h6>
+                            <i class="fas fa-text-height"></i>
+                            Font Size Settings
+                        </h6>
+                        <div class="settings-control-group">
+                            <label for="fontSizeSelect">Font Size:</label>
+                            <select id="fontSizeSelect" class="form-select">
+                                <option value="10">10px (Minimum)</option>
+                                <option value="11">11px</option>
+                                <option value="12">12px</option>
+                                <option value="13">13px</option>
+                                <option value="14" selected>14px (Default)</option>
+                                <option value="15">15px</option>
+                                <option value="16">16px</option>
+                                <option value="17">17px</option>
+                                <option value="18">18px</option>
+                                <option value="20">20px</option>
+                                <option value="22">22px</option>
+                                <option value="24">24px</option>
+                                <option value="26">26px</option>
+                                <option value="28">28px</option>
+                                <option value="30">30px (Maximum)</option>
+                            </select>
                         </div>
-                        <div class="settings-card-body">
-                            <div class="form-group">
-                                <label for="fontSizeSelect" class="form-label">Font Size</label>
-                                <select id="fontSizeSelect" class="form-select settings-select">
-                                    <option value="10">10px - Extra Small</option>
-                                    <option value="11">11px - Small</option>
-                                    <option value="12">12px - Small</option>
-                                    <option value="13">13px - Normal</option>
-                                    <option value="14" selected>14px - Default</option>
-                                    <option value="15">15px - Medium</option>
-                                    <option value="16">16px - Medium</option>
-                                    <option value="17">17px - Large</option>
-                                    <option value="18">18px - Large</option>
-                                    <option value="20">20px - Extra Large</option>
-                                    <option value="22">22px - Extra Large</option>
-                                    <option value="24">24px - Huge</option>
-                                    <option value="26">26px - Huge</option>
-                                    <option value="28">28px - Maximum</option>
-                                    <option value="30">30px - Maximum</option>
-                                </select>
-                            </div>
-                            <div class="font-size-preview">
-                                <div class="preview-header">
-                                    <i class="fas fa-eye me-2"></i>Preview
-                                </div>
-                                <div class="preview-content">
-                                    <h6 class="preview-title">Sample Heading</h6>
-                                    <p class="preview-text mb-2">This is how regular text will appear with the selected font size.</p>
-                                    <small class="preview-small text-muted">Small text and additional details will scale proportionally.</small>
-                                </div>
-                            </div>
+                        <div class="font-size-preview">
+                            <p class="mb-2">Preview Text</p>
+                            <small class="text-muted">This is how the text will appear with the selected font size.</small>
                         </div>
                     </div>
 
                     <!-- Theme Settings -->
-                    <div class="settings-card">
-                        <div class="settings-card-header">
-                            <div class="settings-icon-wrapper">
-                                <i class="fas fa-palette"></i>
-                            </div>
-                            <div class="settings-title-section">
-                                <h6 class="settings-card-title">Appearance</h6>
-                                <p class="settings-card-subtitle">Choose your preferred color scheme</p>
-                            </div>
+                    <div class="settings-section">
+                        <h6>
+                            <i class="fas fa-palette"></i>
+                            Theme Settings
+                        </h6>
+                        <div class="settings-control-group">
+                            <label for="themeSelect">Theme:</label>
+                            <select id="themeSelect" class="form-select">
+                                <option value="dark">Dark Theme</option>
+                                <option value="light">Light Theme</option>
+                            </select>
                         </div>
-                        <div class="settings-card-body">
-                            <div class="theme-options">
-                                <div class="theme-option" data-theme="dark">
-                                    <div class="theme-preview dark-theme">
-                                        <div class="theme-preview-header"></div>
-                                        <div class="theme-preview-body">
-                                            <div class="theme-preview-text"></div>
-                                            <div class="theme-preview-text short"></div>
-                                        </div>
-                                    </div>
-                                    <div class="theme-details">
-                                        <h6>Dark Theme</h6>
-                                        <p>Easy on the eyes for extended use</p>
-                                    </div>
-                                </div>
-                                <div class="theme-option" data-theme="light">
-                                    <div class="theme-preview light-theme">
-                                        <div class="theme-preview-header"></div>
-                                        <div class="theme-preview-body">
-                                            <div class="theme-preview-text"></div>
-                                            <div class="theme-preview-text short"></div>
-                                        </div>
-                                    </div>
-                                    <div class="theme-details">
-                                        <h6>Light Theme</h6>
-                                        <p>Clean and bright interface</p>
-                                    </div>
-                                </div>
-                            </div>
+                    </div>
+
+                    <!-- Auto Refresh Settings -->
+                    <div class="settings-section">
+                        <h6>
+                            <i class="fas fa-sync-alt"></i>
+                            Auto Refresh
+                        </h6>
+                        <div class="settings-control-group">
+                            <label for="autoRefreshSelect">Refresh Interval:</label>
+                            <select id="autoRefreshSelect" class="form-select">
+                                <option value="10">10 seconds</option>
+                                <option value="30" selected>30 seconds</option>
+                                <option value="60">1 minute</option>
+                                <option value="300">5 minutes</option>
+                                <option value="0">Disabled</option>
+                            </select>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer settings-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-2"></i>Cancel
-                    </button>
-                    <button type="button" class="btn btn-primary" onclick="applySettings()">
-                        <i class="fas fa-check me-2"></i>Apply Settings
-                    </button>
+                <div class="modal-footer border-top border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="applySettings()">Apply Settings</button>
                 </div>
             </div>
         </div>
@@ -425,7 +397,7 @@
                 {% endfor %}
             </div>
         {% endif %}
-    {% endif %}
+    {% endwith %}
 
     <!-- Main Content -->
     <main class="{% if session.authenticated %}main-content{% else %}container-fluid{% endif %}">
