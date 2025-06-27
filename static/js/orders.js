@@ -455,14 +455,29 @@ async function updateAvailableMargin() {
         var response = await fetch('/api/dashboard-data');
         var data = await response.json();
         
-        if (data.success && data.limits) {
-            var availableMargin = parseFloat(data.limits.Net || 0);
+        if (data && data.limits) {
+            // Try different possible field names for available margin from API
+            var availableMargin = parseFloat(
+                data.limits.Net || 
+                data.limits.available_margin || 
+                data.limits.availableMargin ||
+                data.limits.cash ||
+                data.limits.available_cash ||
+                0
+            );
+            
             var marginElement = document.getElementById('availableMarginAmount');
             if (marginElement) {
                 marginElement.textContent = '₹' + availableMargin.toLocaleString('en-IN', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
                 });
+            }
+        } else {
+            console.log('No limits data available from API');
+            var marginElement = document.getElementById('availableMarginAmount');
+            if (marginElement) {
+                marginElement.textContent = '₹0.00';
             }
         }
     } catch (error) {

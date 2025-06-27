@@ -16,21 +16,18 @@ class TradingFunctions:
         try:
             self.logger.info("Fetching comprehensive dashboard data...")
 
-            # Use notebook data fetcher for real-time data
+            # Only use API client - no CSV fallback
             if hasattr(client, 'positions') and callable(getattr(client, 'positions')):
-                # Try API client first
                 try:
                     dashboard_data = self._fetch_from_api_client(client)
                     self.logger.info("Retrieved data from API client")
                     return dashboard_data
                 except Exception as e:
-                    self.logger.warning(f"API client failed: {str(e)}, falling back to notebook data")
-
-            # Use CSV data fetcher for real trading data
-            dashboard_data = self.csv_fetcher.get_comprehensive_dashboard_data()
-            self.logger.info("Retrieved data from CSV fetcher")
-
-            return dashboard_data
+                    self.logger.error(f"API client failed: {str(e)}")
+                    return self._get_default_dashboard_structure()
+            else:
+                self.logger.error("No valid API client available")
+                return self._get_default_dashboard_structure()
 
         except Exception as e:
             self.logger.error(f"Error in get_dashboard_data: {str(e)}")

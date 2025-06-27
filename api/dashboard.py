@@ -49,7 +49,9 @@ def get_dashboard_data_api():
                 'total_holdings': 0,
                 'total_orders': 0
             }
-            
+        
+        # Add success flag
+        dashboard_data['success'] = True
         return jsonify(dashboard_data)
 
     except Exception as e:
