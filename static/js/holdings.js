@@ -11,6 +11,8 @@ function refreshHoldings() {
             if (data.success) {
                 updateHoldingsTable(data.holdings);
                 updateHoldingsSummary(data.summary);
+                // Recalculate cards after table update
+                setTimeout(calculateAndUpdateCards, 100);
                 showNotification('Holdings refreshed successfully', 'success');
             } else {
                 showNotification('Failed to refresh holdings: ' + data.message, 'error');
@@ -387,10 +389,73 @@ function updateHoldingsSummary(summary) {
     }
 }
 
-// Initialize default sort by symbol A-Z
+// Calculate and update card values from table data
+function calculateAndUpdateCards() {
+    var tableBody = document.getElementById('holdingsTableBody');
+    if (!tableBody) return;
+    
+    var rows = tableBody.querySelectorAll('tr[data-symbol]');
+    var totalHoldings = rows.length;
+    var totalInvested = 0;
+    var totalCurrent = 0;
+    
+    rows.forEach(function(row) {
+        var invested = parseFloat(row.dataset.avgPrice || 0) * parseFloat(row.dataset.quantity || 0);
+        var current = parseFloat(row.dataset.marketValue || 0);
+        
+        totalInvested += invested;
+        totalCurrent += current;
+    });
+    
+    var totalPnl = totalCurrent - totalInvested;
+    
+    // Update cards
+    var totalHoldingsEl = document.getElementById('totalHoldingsCount');
+    var totalInvestedEl = document.getElementById('totalInvested');
+    var currentValueEl = document.getElementById('currentValue');
+    var totalPnlEl = document.getElementById('totalPnl');
+    
+    if (totalHoldingsEl) {
+        totalHoldingsEl.textContent = totalHoldings;
+    }
+    
+    if (totalInvestedEl) {
+        totalInvestedEl.textContent = '₹' + Math.round(totalInvested).toLocaleString('en-IN');
+    }
+    
+    if (currentValueEl) {
+        currentValueEl.textContent = '₹' + Math.round(totalCurrent).toLocaleString('en-IN');
+    }
+    
+    if (totalPnlEl) {
+        totalPnlEl.textContent = (totalPnl >= 0 ? '+' : '') + '₹' + Math.round(Math.abs(totalPnl)).toLocaleString('en-IN');
+        
+        // Update P&L card color
+        var pnlCard = totalPnlEl.closest('.card');
+        if (pnlCard) {
+            var gradient = totalPnl >= 0 
+                ? 'linear-gradient(135deg, #166534, #22c55e)' 
+                : 'linear-gradient(135deg, #991b1b, #ef4444)';
+            pnlCard.style.background = gradient;
+        }
+    }
+    
+    console.log('Cards updated:', {
+        holdings: totalHoldings,
+        invested: totalInvested,
+        current: totalCurrent,
+        pnl: totalPnl
+    });
+}
+
+// Initialize default sort by symbol A-Z and calculate cards
 document.addEventListener('DOMContentLoaded', function() {
-    // Wait a moment for the table to load, then sort
+    // Wait a moment for the table to load, then sort and calculate
     setTimeout(function() {
         sortTable('symbol');
-    }, 100);
+        calculateAndUpdateCards();
+    }, 500);
+    
+    // Also update cards when page loads
+    setTimeout(calculateAndUpdateCards, 1000);
 });

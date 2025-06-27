@@ -19,13 +19,17 @@
 
 {% if holdings %}
 <!-- Calculate totals for cards -->
-{% set total_invested = 0 %}
-{% set total_current = 0 %}
+{% set total_invested = 0.0 %}
+{% set total_current = 0.0 %}
 {% for holding in holdings %}
-    {% set invested = holding.holdingCost|float if holding.holdingCost else 0.0 %}
-    {% set current = holding.mktValue|float if holding.mktValue else 0.0 %}
-    {% set total_invested = total_invested + invested %}
-    {% set total_current = total_current + current %}
+    {% if holding.holdingCost %}
+        {% set invested = holding.holdingCost|float %}
+        {% set total_invested = total_invested + invested %}
+    {% endif %}
+    {% if holding.mktValue %}
+        {% set current = holding.mktValue|float %}
+        {% set total_current = total_current + current %}
+    {% endif %}
 {% endfor %}
 {% set total_pnl = total_current - total_invested %}
 {% set pnl_percentage = (total_pnl / total_invested * 100) if total_invested > 0 else 0 %}
@@ -44,7 +48,7 @@
                             </div>
                             <h6 class="mb-0 text-white-50 small">Total Holdings</h6>
                         </div>
-                        <h3 class="mb-0 fw-bold" id="totalHoldingsCount">{{ holdings|length }}</h3>
+                        <h3 class="mb-0 fw-bold" id="totalHoldingsCount">{{ holdings|length if holdings else 0 }}</h3>
                         <small class="text-white-50">Active Stocks</small>
                     </div>
                     <div class="text-end">
