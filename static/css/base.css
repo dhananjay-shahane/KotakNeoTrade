@@ -485,6 +485,43 @@
         }
 
         .settings-section h6 {
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .settings-control-group .form-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .settings-control-group .form-select {
+            transition: all 0.2s ease;
+        }
+
+        .settings-control-group .form-select:focus {
+            box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
+            border-color: var(--primary-color);
+        }
+
+        .font-size-preview {
+            transition: font-size 0.2s ease;
+            margin-top: 1rem;
+        }
+
+        /* Modal improvements */
+        .modal-content {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color), #1e40af);
+        }
+
+        .modal-header .modal-title {
+            font-weight: 600;
+        }
+
+        .settings-section h6 {
             color: var(--primary-color);
             margin-bottom: 1rem;
             font-weight: 600;

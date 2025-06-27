@@ -278,12 +278,7 @@
                 themeSelect.value = savedTheme;
             }
 
-            // Load auto refresh setting
-            var savedRefresh = localStorage.getItem('auto-refresh-interval') || '30';
-            var autoRefreshSelect = document.getElementById('autoRefreshSelect');
-            if (autoRefreshSelect) {
-                autoRefreshSelect.value = savedRefresh;
-            }
+
         }
 
         function updateFontPreview(fontSize) {
@@ -296,7 +291,6 @@
         function applySettings() {
             var fontSizeSelect = document.getElementById('fontSizeSelect');
             var themeSelect = document.getElementById('themeSelect');
-            var autoRefreshSelect = document.getElementById('autoRefreshSelect');
 
             // Apply font size
             if (fontSizeSelect) {
@@ -326,16 +320,7 @@
                 }
             }
 
-            // Apply auto refresh
-            if (autoRefreshSelect) {
-                var newRefresh = autoRefreshSelect.value;
-                localStorage.setItem('auto-refresh-interval', newRefresh);
-                
-                if (typeof showToaster === 'function') {
-                    var message = newRefresh === '0' ? 'Auto refresh disabled' : 'Auto refresh set to ' + newRefresh + ' seconds';
-                    showToaster('Auto Refresh Updated', message, 'success');
-                }
-            }
+
 
             // Close modal
             var modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
