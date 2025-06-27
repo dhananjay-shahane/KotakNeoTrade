@@ -70,7 +70,7 @@ PositionsManager.prototype.displayPositions = function() {
     if (!tbody) return;
 
     if (this.positions.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="12" class="text-center py-4 text-muted">No positions found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="13" class="text-center py-4 text-muted">No positions found</td></tr>';
         return;
     }
 
@@ -159,6 +159,12 @@ PositionsManager.prototype.displayPositions = function() {
         html += '<td><span class="badge ' + (positionType === 'LONG' ? 'bg-success' : positionType === 'SHORT' ? 'bg-danger' : 'bg-secondary') + '">' + positionType + '</span></td>';
         html += '<td><small>' + expiryDisplay + '</small></td>';
         html += '<td><small class="text-muted">' + lastUpdated + '</small></td>';
+        html += '<td>';
+        html += '<button class="btn btn-sm btn-success me-1" onclick="openPlaceOrderModal(\'' + (position.trdSym || position.sym || 'N/A') + '\', \'' + (position.exSeg || 'NSE') + '\', \'BUY\')" title="Buy">';
+        html += '<i class="fas fa-plus"></i> Buy</button>';
+        html += '<button class="btn btn-sm btn-danger" onclick="openPlaceOrderModal(\'' + (position.trdSym || position.sym || 'N/A') + '\', \'' + (position.exSeg || 'NSE') + '\', \'SELL\')" title="Sell">';
+        html += '<i class="fas fa-minus"></i> Sell</button>';
+        html += '</td>';
         html += '</tr>';
     }
 
@@ -278,7 +284,7 @@ PositionsManager.prototype.updateElement = function(id, value) {
 PositionsManager.prototype.showError = function(message) {
     var tbody = document.getElementById('positionsTableBody');
     if (tbody) {
-        tbody.innerHTML = '<tr><td colspan="12" class="text-center py-4 text-danger">' +
+        tbody.innerHTML = '<tr><td colspan="13" class="text-center py-4 text-danger">' +
             '<i class="fas fa-exclamation-triangle me-2"></i>' + message + '</td></tr>';
     }
 };
@@ -442,4 +448,112 @@ function sortPositionsBySymbol() {
         });
         window.positionsManager.displayPositions(); // Redisplay after sorting
     }
+}
+
+// Function to open place order modal
+function openPlaceOrderModal(symbol, exchange, transactionType) {
+    document.getElementById('orderSymbol').value = symbol;
+    document.getElementById('orderExchange').value = exchange;
+    document.getElementById('orderTransactionType').value = transactionType;
+    
+    // Set default values
+    document.getElementById('orderProduct').value = 'CNC';
+    document.getElementById('orderType').value = 'MKT';
+    document.getElementById('orderQuantity').value = '1';
+    document.getElementById('orderPrice').value = '';
+    document.getElementById('orderTriggerPrice').value = '';
+    document.getElementById('orderValidity').value = 'DAY';
+    document.getElementById('orderDisclosedQuantity').value = '0';
+    
+    // Update modal title based on transaction type
+    var modalTitle = document.getElementById('placeOrderModalLabel');
+    if (transactionType === 'BUY') {
+        modalTitle.innerHTML = '<i class="fas fa-arrow-up text-success me-2"></i>Buy Order - ' + symbol;
+    } else {
+        modalTitle.innerHTML = '<i class="fas fa-arrow-down text-danger me-2"></i>Sell Order - ' + symbol;
+    }
+    
+    var modal = new bootstrap.Modal(document.getElementById('placeOrderModal'));
+    modal.show();
+}
+
+// Function to submit place order
+function submitPlaceOrder() {
+    var orderData = {
+        exchange_segment: document.getElementById('orderExchange').value,
+        product: document.getElementById('orderProduct').value,
+        price: document.getElementById('orderPrice').value || "0",
+        order_type: document.getElementById('orderType').value,
+        quantity: document.getElementById('orderQuantity').value,
+        validity: document.getElementById('orderValidity').value,
+        trading_symbol: document.getElementById('orderSymbol').value,
+        transaction_type: document.getElementById('orderTransactionType').value,
+        amo: "NO",
+        disclosed_quantity: document.getElementById('orderDisclosedQuantity').value || "0",
+        market_protection: "0",
+        pf: "N",
+        trigger_price: document.getElementById('orderTriggerPrice').value || "0",
+        tag: "positions_order"
+    };
+
+    // Validate required fields
+    if (!orderData.quantity || orderData.quantity <= 0) {
+        alert('Please enter a valid quantity');
+        return;
+    }
+
+    if (orderData.order_type === 'L' && (!orderData.price || orderData.price <= 0)) {
+        alert('Please enter a valid price for limit order');
+        return;
+    }
+
+    if ((orderData.order_type === 'SL' || orderData.order_type === 'SL-M') && (!orderData.trigger_price || orderData.trigger_price <= 0)) {
+        alert('Please enter a valid trigger price for stop loss order');
+        return;
+    }
+
+    // Show loading state
+    var submitButton = document.querySelector('#placeOrderModal .btn-primary');
+    var originalText = submitButton.textContent;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Placing Order...';
+    submitButton.disabled = true;
+
+    // Make API call to place order
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/trading/place_order', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            submitButton.textContent = originalText;
+            submitButton.disabled = false;
+            
+            if (xhr.status === 200) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        alert('Order placed successfully! Order ID: ' + (response.order_id || 'N/A'));
+                        bootstrap.Modal.getInstance(document.getElementById('placeOrderModal')).hide();
+                        // Refresh positions after order placement
+                        if (window.positionsManager) {
+                            window.positionsManager.loadPositions();
+                        }
+                    } else {
+                        alert('Error placing order: ' + (response.message || 'Unknown error'));
+                    }
+                } catch (e) {
+                    alert('Error processing response: ' + e.message);
+                }
+            } else {
+                try {
+                    var errorResponse = JSON.parse(xhr.responseText);
+                    alert('Error placing order: ' + (errorResponse.message || 'Request failed'));
+                } catch (e) {
+                    alert('Error placing order: Request failed with status ' + xhr.status);
+                }
+            }
+        }
+    };
+    
+    xhr.send(JSON.stringify(orderData));
 }

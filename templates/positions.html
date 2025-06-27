@@ -132,11 +132,12 @@
                         <th>Position</th>
                         <th>Expiry</th>
                         <th>Last Updated</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="positionsTableBody">
                     <tr>
-                        <td colspan="12" class="text-center py-4">
+                        <td colspan="13" class="text-center py-4">
                             <div class="spinner-border text-primary" role="status">
                                 <span class="visually-hidden">Loading positions...</span>
                             </div>
@@ -145,6 +146,86 @@
                     </tr>
                 </tbody>
             </table>
+        </div>
+    </div>
+</div>
+
+<!-- Place Order Modal -->
+<div class="modal fade" id="placeOrderModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title text-light" id="placeOrderModalLabel">
+                    <i class="fas fa-shopping-cart me-2"></i>Place Order
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="placeOrderForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light">Symbol</label>
+                            <input type="text" class="form-control bg-secondary text-light" id="orderSymbol" readonly>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light">Transaction Type</label>
+                            <select class="form-select bg-secondary text-light" id="orderTransactionType">
+                                <option value="BUY">BUY</option>
+                                <option value="SELL">SELL</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light">Exchange</label>
+                            <input type="text" class="form-control bg-secondary text-light" id="orderExchange" readonly>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light">Product</label>
+                            <select class="form-select bg-secondary text-light" id="orderProduct">
+                                <option value="CNC">CNC</option>
+                                <option value="MIS">MIS</option>
+                                <option value="NRML">NRML</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light">Order Type</label>
+                            <select class="form-select bg-secondary text-light" id="orderType">
+                                <option value="MKT">Market</option>
+                                <option value="L">Limit</option>
+                                <option value="SL">Stop Loss</option>
+                                <option value="SL-M">Stop Loss Market</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light">Quantity</label>
+                            <input type="number" class="form-control bg-secondary text-light" id="orderQuantity" min="1" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light">Price</label>
+                            <input type="number" class="form-control bg-secondary text-light" id="orderPrice" step="0.01">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light">Trigger Price</label>
+                            <input type="number" class="form-control bg-secondary text-light" id="orderTriggerPrice" step="0.01">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light">Validity</label>
+                            <select class="form-select bg-secondary text-light" id="orderValidity">
+                                <option value="DAY">DAY</option>
+                                <option value="IOC">IOC</option>
+                                <option value="GTT">GTT</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light">Disclosed Quantity</label>
+                            <input type="number" class="form-control bg-secondary text-light" id="orderDisclosedQuantity" min="0" value="0">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitPlaceOrder()">Place Order</button>
+            </div>
         </div>
     </div>
 </div>
