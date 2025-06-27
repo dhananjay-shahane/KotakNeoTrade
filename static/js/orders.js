@@ -370,29 +370,86 @@ async function submitModifyOrder() {
 }
 
 async function cancelOrder(orderId) {
-    if (confirm('Are you sure you want to cancel this order?')) {
-        try {
-            var response = await fetch('/api/cancel_order', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({order_id: orderId, isVerify: true})
+    // Show SweetAlert confirmation popup
+    Swal.fire({
+        title: 'Cancel Order?',
+        text: 'Are you sure you want to cancel this order? This action cannot be undone.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, Cancel Order',
+        cancelButtonText: 'No, Keep Order',
+        background: '#2d3748',
+        color: '#ffffff',
+        customClass: {
+            popup: 'swal-dark-popup',
+            title: 'swal-dark-title',
+            content: 'swal-dark-content'
+        }
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            // Show loading spinner
+            Swal.fire({
+                title: 'Cancelling Order...',
+                text: 'Please wait while we cancel your order.',
+                icon: 'info',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                background: '#2d3748',
+                color: '#ffffff',
+                didOpen: () => {
+                    Swal.showLoading()
+                }
             });
 
-            var data = await response.json();
+            try {
+                var response = await fetch('/api/cancel_order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({order_id: orderId, isVerify: true})
+                });
 
-            if (data.success) {
-                showNotification('Order cancelled successfully!', 'success');
-                await loadOrdersData(); // Refresh the table
-            } else {
-                showNotification('Failed to cancel order: ' + data.message, 'error');
+                var data = await response.json();
+
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Order Cancelled!',
+                        text: 'Your order has been cancelled successfully.',
+                        icon: 'success',
+                        confirmButtonColor: '#28a745',
+                        background: '#2d3748',
+                        color: '#ffffff',
+                        timer: 3000,
+                        timerProgressBar: true
+                    });
+                    await loadOrdersData(); // Refresh the table
+                } else {
+                    Swal.fire({
+                        title: 'Cancellation Failed',
+                        text: 'Failed to cancel order: ' + (data.message || 'Unknown error'),
+                        icon: 'error',
+                        confirmButtonColor: '#dc3545',
+                        background: '#2d3748',
+                        color: '#ffffff'
+                    });
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'An error occurred while cancelling the order. Please try again.',
+                    icon: 'error',
+                    confirmButtonColor: '#dc3545',
+                    background: '#2d3748',
+                    color: '#ffffff'
+                });
             }
-        } catch (error) {
-            console.error('Error:', error);
-            showNotification('Error cancelling order', 'error');
         }
-    }
+    });
 }
 
 function viewOrderDetails(orderId) {
