@@ -77,14 +77,14 @@ PositionsManager.prototype.displayPositions = function() {
     for (var i = 0; i < this.positions.length; i++) {
         var position = this.positions[i];
         
-        // Calculate net quantity and position type
-        var buyQty = parseFloat(position.flBuyQty || 0);
-        var sellQty = parseFloat(position.flSellQty || 0);
+        // Calculate net quantity and position type using all available fields
+        var buyQty = parseFloat(position.flBuyQty || position.cfBuyQty || 0);
+        var sellQty = parseFloat(position.flSellQty || position.cfSellQty || 0);
         var netQty = buyQty - sellQty;
         
-        // Calculate P&L
-        var buyAmt = parseFloat(position.buyAmt || 0);
-        var sellAmt = parseFloat(position.sellAmt || 0);
+        // Calculate P&L using all available amount fields
+        var buyAmt = parseFloat(position.buyAmt || position.cfBuyAmt || 0);
+        var sellAmt = parseFloat(position.sellAmt || position.cfSellAmt || 0);
         var pnl = sellAmt - buyAmt;
         
         // Determine position type
@@ -157,24 +157,49 @@ PositionsManager.prototype.updateSummaryCards = function() {
     for (var i = 0; i < this.positions.length; i++) {
         var position = this.positions[i];
         
-        var buyQty = parseFloat(position.flBuyQty || 0);
-        var sellQty = parseFloat(position.flSellQty || 0);
+        // Use correct field names from Kotak Neo API
+        var buyQty = parseFloat(position.flBuyQty || position.cfBuyQty || 0);
+        var sellQty = parseFloat(position.flSellQty || position.cfSellQty || 0);
         var netQty = buyQty - sellQty;
         
-        var buyAmt = parseFloat(position.buyAmt || 0);
-        var sellAmt = parseFloat(position.sellAmt || 0);
+        var buyAmt = parseFloat(position.buyAmt || position.cfBuyAmt || 0);
+        var sellAmt = parseFloat(position.sellAmt || position.cfSellAmt || 0);
         var pnl = sellAmt - buyAmt;
         
         totalPnl += pnl;
         
+        // Debug individual position
+        var symbol = position.trdSym || position.sym || 'Unknown';
+        console.log('Position Debug - ' + symbol + ':');
+        console.log('  Buy Qty:', buyQty, 'Sell Qty:', sellQty, 'Net Qty:', netQty);
+        console.log('  Buy Amt:', buyAmt, 'Sell Amt:', sellAmt, 'P&L:', pnl);
+        
         if (netQty > 0) {
             longPositions++;
             longValue += buyAmt;
+            console.log('  Classification: LONG');
         } else if (netQty < 0) {
             shortPositions++;
-            shortValue += Math.abs(sellAmt);
+            // For short positions, use the absolute value of net quantity times current price
+            var currentPrice = parseFloat(position.stkPrc || position.upldPrc || 0);
+            if (currentPrice > 0) {
+                shortValue += Math.abs(netQty) * currentPrice;
+                console.log('  Classification: SHORT, Value added:', Math.abs(netQty) * currentPrice);
+            } else {
+                shortValue += Math.abs(sellAmt);
+                console.log('  Classification: SHORT, Value added (fallback):', Math.abs(sellAmt));
+            }
+        } else {
+            console.log('  Classification: SQUARED (netQty = 0)');
         }
     }
+    
+    // Debug logging for position classification
+    console.log('Position Summary Debug:');
+    console.log('Total Positions:', totalPositions);
+    console.log('Long Positions:', longPositions, 'Value:', longValue);
+    console.log('Short Positions:', shortPositions, 'Value:', shortValue);
+    console.log('Total P&L:', totalPnl);
     
     // Update summary cards
     this.updateElement('totalPositionsCount', totalPositions);
