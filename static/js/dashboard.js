@@ -300,7 +300,9 @@ TradingDashboard.prototype.populatePositionsTable = function(tableId, positions,
     tableBody.innerHTML = '';
     
     if (positions.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No positions</td></tr>';
+        var emptyIcon = tableId === 'longPositionsTable' ? 'fa-chart-line' : 'fa-chart-line-down';
+        var emptyMessage = tableId === 'longPositionsTable' ? 'No long positions' : 'No short positions';
+        tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-light py-3"><i class="fas ' + emptyIcon + ' me-2"></i>' + emptyMessage + '</td></tr>';
         return;
     }
     
@@ -312,10 +314,11 @@ TradingDashboard.prototype.populatePositionsTable = function(tableId, positions,
         var pnlIcon = position.pnl >= 0 ? '▲' : '▼';
         
         var row = document.createElement('tr');
+        row.className = 'border-0';
         row.innerHTML = 
-            '<td><small><strong>' + position.symbol + '</strong></small></td>' +
-            '<td><small>' + position.quantity.toFixed(0) + '</small></td>' +
-            '<td><small class="' + pnlClass + '">' + pnlIcon + ' ₹' + Math.abs(position.pnl).toFixed(2) + '</small></td>';
+            '<td class="ps-3 border-0"><div class="d-flex align-items-center"><small class="text-white fw-bold">' + position.symbol + '</small></div></td>' +
+            '<td class="border-0"><small class="text-light fw-semibold">' + position.quantity.toFixed(0) + '</small></td>' +
+            '<td class="pe-3 border-0"><small class="' + pnlClass + ' fw-bold">' + pnlIcon + ' ₹' + Math.abs(position.pnl).toFixed(2) + '</small></td>';
         
         tableBody.appendChild(row);
     }
@@ -323,7 +326,8 @@ TradingDashboard.prototype.populatePositionsTable = function(tableId, positions,
     // Add "view more" row if there are more positions
     if (positions.length > 5) {
         var moreRow = document.createElement('tr');
-        moreRow.innerHTML = '<td colspan="3" class="text-center"><small><a href="/positions" class="text-primary">+' + (positions.length - 5) + ' more positions</a></small></td>';
+        moreRow.className = 'border-0';
+        moreRow.innerHTML = '<td colspan="3" class="text-center border-0 py-2"><small><a href="/positions" class="text-info text-decoration-none fw-semibold"><i class="fas fa-external-link-alt me-1"></i>+' + (positions.length - 5) + ' more positions</a></small></td>';
         tableBody.appendChild(moreRow);
     }
 };
