@@ -7,32 +7,33 @@ function DealsManager() {
     this.refreshInterval = null;
     this.refreshIntervalTime = 30000;
     this.searchTimeout = null;
+    this.sortDirection = 'asc';
 
     this.availableColumns = {
-        'symbol': { label: 'Symbol', default: true, width: '70px' },
-        'thirty': { label: '30', default: false, width: '50px' },
-        'dh': { label: 'DH', default: true, width: '50px' },
-        'date': { label: 'Date', default: true, width: '70px' },
-        'pos': { label: 'Pos', default: true, width: '50px' },
-        'qty': { label: 'Qty', default: true, width: '50px' },
-        'ep': { label: 'EP', default: true, width: '70px' },
-        'cmp': { label: 'CMP', default: true, width: '70px' },
-        'change_pct': { label: '%Chan', default: true, width: '60px' },
-        'inv': { label: 'Inv.', default: true, width: '70px' },
-        'tp': { label: 'TP', default: true, width: '60px' },
-        'tva': { label: 'TVA', default: true, width: '70px' },
-        'tpr': { label: 'TPR', default: true, width: '70px' },
-        'pl': { label: 'PL', default: true, width: '60px' },
-        'ed': { label: 'ED', default: false, width: '70px' },
-        'pr': { label: 'PR', default: true, width: '80px' },
-        'pp': { label: 'PP', default: true, width: '50px' },
-        'iv': { label: 'IV', default: true, width: '60px' },
-        'ip': { label: 'IP', default: true, width: '60px' },
-        'nt': { label: 'NT', default: false, width: '60px' },
-        'qt': { label: 'Qt', default: false, width: '60px' },
-        'seven': { label: '7', default: false, width: '50px' },
-        'change2': { label: '%Ch', default: false, width: '60px' },
-        'actions': { label: 'Actions', default: true, width: '80px' }
+        'symbol': { label: 'SYMBOL', default: true, width: '70px', sortable: true },
+        'thirty': { label: '30', default: false, width: '50px', sortable: true },
+        'dh': { label: 'DH', default: true, width: '50px', sortable: true },
+        'date': { label: 'DATE', default: true, width: '70px', sortable: true },
+        'pos': { label: 'POS', default: true, width: '50px', sortable: true },
+        'qty': { label: 'QTY', default: true, width: '50px', sortable: true },
+        'ep': { label: 'EP', default: true, width: '70px', sortable: true },
+        'cmp': { label: 'CMP', default: true, width: '70px', sortable: true },
+        'change_pct': { label: '%CHAN', default: true, width: '60px', sortable: true },
+        'inv': { label: 'INV.', default: true, width: '70px', sortable: true },
+        'tp': { label: 'TP', default: true, width: '60px', sortable: true },
+        'tva': { label: 'TVA', default: true, width: '70px', sortable: true },
+        'tpr': { label: 'TPR', default: true, width: '70px', sortable: true },
+        'pl': { label: 'PL', default: true, width: '60px', sortable: true },
+        'ed': { label: 'ED', default: false, width: '70px', sortable: true },
+        'pr': { label: 'PR', default: true, width: '80px', sortable: true },
+        'pp': { label: 'PP', default: true, width: '50px', sortable: true },
+        'iv': { label: 'IV', default: true, width: '60px', sortable: true },
+        'ip': { label: 'IP', default: true, width: '60px', sortable: true },
+        'nt': { label: 'NT', default: false, width: '60px', sortable: true },
+        'qt': { label: 'QT', default: false, width: '60px', sortable: true },
+        'seven': { label: '7', default: false, width: '50px', sortable: true },
+        'change2': { label: '%CH', default: false, width: '60px', sortable: true },
+        'actions': { label: 'ACTIONS', default: true, width: '80px', sortable: false }
     };
 
     this.selectedColumns = this.getDefaultColumns();
@@ -124,8 +125,21 @@ DealsManager.prototype.updateTableHeaders = function() {
         th.style.top = '0';
         th.style.zIndex = '10';
         th.style.whiteSpace = 'nowrap';
-        th.textContent = colInfo.label;
-        th.title = self.getColumnTooltip(column);
+        
+        if (colInfo.sortable) {
+            th.style.cursor = 'pointer';
+            th.onclick = function(col) {
+                return function() {
+                    sortDealsByColumn(col);
+                };
+            }(column);
+            th.innerHTML = colInfo.label + ' <i class="fas fa-sort ms-1"></i>';
+            th.title = self.getColumnTooltip(column) + ' - Click to sort';
+        } else {
+            th.textContent = colInfo.label;
+            th.title = self.getColumnTooltip(column);
+        }
+        
         headersRow.appendChild(th);
     }
 };
@@ -695,6 +709,72 @@ function exportDeals() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+}
+
+// Function to sort deals by any column
+function sortDealsByColumn(column) {
+    if (window.dealsManager) {
+        window.dealsManager.sortDirection = window.dealsManager.sortDirection === 'asc' ? 'desc' : 'asc';
+        var direction = window.dealsManager.sortDirection;
+        
+        window.dealsManager.filteredDeals.sort(function(a, b) {
+            var valueA, valueB;
+            
+            switch(column) {
+                case 'symbol':
+                    valueA = (a.symbol || '').toLowerCase();
+                    valueB = (b.symbol || '').toLowerCase();
+                    break;
+                case 'qty':
+                    valueA = parseFloat(a.qty || 0);
+                    valueB = parseFloat(b.qty || 0);
+                    break;
+                case 'ep':
+                    valueA = parseFloat(a.ep || 0);
+                    valueB = parseFloat(b.ep || 0);
+                    break;
+                case 'cmp':
+                    valueA = parseFloat(a.cmp || 0);
+                    valueB = parseFloat(b.cmp || 0);
+                    break;
+                case 'change_pct':
+                    valueA = parseFloat(a.change_pct || 0);
+                    valueB = parseFloat(b.change_pct || 0);
+                    break;
+                case 'inv':
+                    valueA = parseFloat(a.inv || 0);
+                    valueB = parseFloat(b.inv || 0);
+                    break;
+                case 'tp':
+                    valueA = parseFloat(a.tp || 0);
+                    valueB = parseFloat(b.tp || 0);
+                    break;
+                case 'pl':
+                    valueA = parseFloat(a.pl || 0);
+                    valueB = parseFloat(b.pl || 0);
+                    break;
+                case 'date':
+                    valueA = a.date || '';
+                    valueB = b.date || '';
+                    break;
+                case 'pos':
+                    valueA = a.pos || 0;
+                    valueB = b.pos || 0;
+                    break;
+                default:
+                    return 0;
+            }
+            
+            if (typeof valueA === 'string') {
+                return direction === 'asc' ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
+            } else {
+                return direction === 'asc' ? valueA - valueB : valueB - valueA;
+            }
+        });
+        
+        window.dealsManager.renderDealsTable();
+        window.dealsManager.updatePagination();
+    }
 }
 
 // Initialize Deals Manager on page load

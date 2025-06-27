@@ -108,18 +108,18 @@
             <table class="table table-dark table-hover mb-0" id="positionsTable">
                 <thead class="table-primary">
                     <tr>
-                        <th style="cursor: pointer;" title="Click to sort A-Z">SYMBOL <i class="fas fa-sort ms-1"></i></th>
-                        <th>PRODUCT</th>
-                        <th>EXCHANGE</th>
-                        <th>BUY QTY</th>
-                        <th>SELL QTY</th>
-                        <th>NET QTY</th>
-                        <th>BUY AMOUNT</th>
-                        <th>SELL AMOUNT</th>
-                        <th>P&L</th>
-                        <th>POSITION</th>
-                        <th>EXPIRY</th>
-                        <th>LAST UPDATED</th>
+                        <th style="cursor: pointer;" title="Click to sort A-Z" onclick="sortPositionsByColumn('symbol')">SYMBOL <i class="fas fa-sort ms-1"></i></th>
+                        <th style="cursor: pointer;" title="Click to sort" onclick="sortPositionsByColumn('product')">PRODUCT <i class="fas fa-sort ms-1"></i></th>
+                        <th style="cursor: pointer;" title="Click to sort" onclick="sortPositionsByColumn('exchange')">EXCHANGE <i class="fas fa-sort ms-1"></i></th>
+                        <th style="cursor: pointer;" title="Click to sort" onclick="sortPositionsByColumn('buyQty')">BUY QTY <i class="fas fa-sort ms-1"></i></th>
+                        <th style="cursor: pointer;" title="Click to sort" onclick="sortPositionsByColumn('sellQty')">SELL QTY <i class="fas fa-sort ms-1"></i></th>
+                        <th style="cursor: pointer;" title="Click to sort" onclick="sortPositionsByColumn('netQty')">NET QTY <i class="fas fa-sort ms-1"></i></th>
+                        <th style="cursor: pointer;" title="Click to sort" onclick="sortPositionsByColumn('buyAmt')">BUY AMOUNT <i class="fas fa-sort ms-1"></i></th>
+                        <th style="cursor: pointer;" title="Click to sort" onclick="sortPositionsByColumn('sellAmt')">SELL AMOUNT <i class="fas fa-sort ms-1"></i></th>
+                        <th style="cursor: pointer;" title="Click to sort" onclick="sortPositionsByColumn('pnl')">P&L <i class="fas fa-sort ms-1"></i></th>
+                        <th style="cursor: pointer;" title="Click to sort" onclick="sortPositionsByColumn('position')">POSITION <i class="fas fa-sort ms-1"></i></th>
+                        <th style="cursor: pointer;" title="Click to sort" onclick="sortPositionsByColumn('expiry')">EXPIRY <i class="fas fa-sort ms-1"></i></th>
+                        <th style="cursor: pointer;" title="Click to sort" onclick="sortPositionsByColumn('lastUpdated')">LAST UPDATED <i class="fas fa-sort ms-1"></i></th>
                         <th>ACTIONS</th>
                     </tr>
                 </thead>

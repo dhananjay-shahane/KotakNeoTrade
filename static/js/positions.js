@@ -8,6 +8,7 @@ function PositionsManager() {
     this.refreshInterval = null;
     this.autoRefreshTime = 30000; // 30 seconds default
     this.currentFilter = 'ALL'; // Track current filter
+    this.sortDirection = 'asc'; // Track sort direction
     this.initialize();
 }
 
@@ -447,6 +448,75 @@ function sortPositionsBySymbol() {
             return symbolA.localeCompare(symbolB);
         });
         window.positionsManager.displayPositions(); // Redisplay after sorting
+    }
+}
+
+// Function to sort positions by any column
+function sortPositionsByColumn(column) {
+    if (window.positionsManager) {
+        window.positionsManager.sortDirection = window.positionsManager.sortDirection === 'asc' ? 'desc' : 'asc';
+        var direction = window.positionsManager.sortDirection;
+        
+        window.positionsManager.positions.sort(function(a, b) {
+            var valueA, valueB;
+            
+            switch(column) {
+                case 'symbol':
+                    valueA = (a.trdSym || a.sym || '').toLowerCase();
+                    valueB = (b.trdSym || b.sym || '').toLowerCase();
+                    break;
+                case 'product':
+                    valueA = (a.prod || '').toLowerCase();
+                    valueB = (b.prod || '').toLowerCase();
+                    break;
+                case 'exchange':
+                    valueA = (a.exSeg || '').toLowerCase();
+                    valueB = (b.exSeg || '').toLowerCase();
+                    break;
+                case 'buyQty':
+                    valueA = parseFloat(a.flBuyQty || a.cfBuyQty || 0);
+                    valueB = parseFloat(b.flBuyQty || b.cfBuyQty || 0);
+                    break;
+                case 'sellQty':
+                    valueA = parseFloat(a.flSellQty || a.cfSellQty || 0);
+                    valueB = parseFloat(b.flSellQty || b.cfSellQty || 0);
+                    break;
+                case 'netQty':
+                    valueA = (parseFloat(a.flBuyQty || a.cfBuyQty || 0)) - (parseFloat(a.flSellQty || a.cfSellQty || 0));
+                    valueB = (parseFloat(b.flBuyQty || b.cfBuyQty || 0)) - (parseFloat(b.flSellQty || b.cfSellQty || 0));
+                    break;
+                case 'buyAmt':
+                    valueA = parseFloat(a.buyAmt || a.cfBuyAmt || 0);
+                    valueB = parseFloat(b.buyAmt || b.cfBuyAmt || 0);
+                    break;
+                case 'sellAmt':
+                    valueA = parseFloat(a.sellAmt || a.cfSellAmt || 0);
+                    valueB = parseFloat(b.sellAmt || b.cfSellAmt || 0);
+                    break;
+                case 'pnl':
+                    valueA = parseFloat(a.sellAmt || a.cfSellAmt || 0) - parseFloat(a.buyAmt || a.cfBuyAmt || 0);
+                    valueB = parseFloat(b.sellAmt || b.cfSellAmt || 0) - parseFloat(b.buyAmt || b.cfBuyAmt || 0);
+                    break;
+                case 'expiry':
+                    valueA = a.expDt || '';
+                    valueB = b.expDt || '';
+                    break;
+                case 'lastUpdated':
+                    valueA = a.hsUpTm || '';
+                    valueB = b.hsUpTm || '';
+                    break;
+                default:
+                    return 0;
+            }
+            
+            if (typeof valueA === 'string') {
+                return direction === 'asc' ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
+            } else {
+                return direction === 'asc' ? valueA - valueB : valueB - valueA;
+            }
+        });
+        
+        window.positionsManager.displayPositions();
     }
 }
 

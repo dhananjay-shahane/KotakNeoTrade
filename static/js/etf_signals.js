@@ -8,7 +8,7 @@ function ETFSignalsManager() {
     this.isLoading = false;
     this.refreshInterval = null;
     this.sortField = 'id';
-    this.sortDirection = 'desc';
+    this.sortDirection = 'asc';
 
     // Initialize when DOM is ready
     if (document.readyState === 'loading') {
@@ -470,6 +470,68 @@ function addDeal(symbol, price) {
             xhr.send(JSON.stringify({signal_data: signalData}));
         }
     });
+}
+
+// Function to sort signals by any column
+function sortSignalsByColumn(column) {
+    if (window.etfSignalsManager) {
+        window.etfSignalsManager.sortDirection = window.etfSignalsManager.sortDirection === 'asc' ? 'desc' : 'asc';
+        var direction = window.etfSignalsManager.sortDirection;
+        
+        window.etfSignalsManager.filteredSignals.sort(function(a, b) {
+            var valueA, valueB;
+            
+            switch(column) {
+                case 'symbol':
+                    valueA = (a.etf || a.symbol || '').toLowerCase();
+                    valueB = (b.etf || b.symbol || '').toLowerCase();
+                    break;
+                case 'ep':
+                    valueA = parseFloat(a.ep || a.entry_price || 0);
+                    valueB = parseFloat(b.ep || b.entry_price || 0);
+                    break;
+                case 'cmp':
+                    valueA = parseFloat(a.cmp || a.current_price || 0);
+                    valueB = parseFloat(b.cmp || b.current_price || 0);
+                    break;
+                case 'qty':
+                    valueA = parseInt(a.qty || a.quantity || 0);
+                    valueB = parseInt(b.qty || b.quantity || 0);
+                    break;
+                case 'changePct':
+                    valueA = parseFloat(a.change_pct || a.pp || 0);
+                    valueB = parseFloat(b.change_pct || b.pp || 0);
+                    break;
+                case 'inv':
+                    valueA = parseFloat(a.inv || a.investment_amount || 0);
+                    valueB = parseFloat(b.inv || b.investment_amount || 0);
+                    break;
+                case 'tp':
+                    valueA = parseFloat(a.tp || a.target_price || 0);
+                    valueB = parseFloat(b.tp || b.target_price || 0);
+                    break;
+                case 'pl':
+                    valueA = parseFloat(a.pl || a.pnl || 0);
+                    valueB = parseFloat(b.pl || b.pnl || 0);
+                    break;
+                case 'date':
+                    valueA = a.date || a.created_at || '';
+                    valueB = b.date || b.created_at || '';
+                    break;
+                default:
+                    return 0;
+            }
+            
+            if (typeof valueA === 'string') {
+                return direction === 'asc' ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
+            } else {
+                return direction === 'asc' ? valueA - valueB : valueB - valueA;
+            }
+        });
+        
+        window.etfSignalsManager.renderSignalsTable();
+        window.etfSignalsManager.updatePagination();
+    }
 }
 
 // Initialize the ETF Signals Manager
