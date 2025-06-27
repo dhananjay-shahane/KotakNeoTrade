@@ -104,6 +104,13 @@ The application follows a modern Flask architecture with clear separation of con
 
 ## Recent Changes
 
+- **June 27, 2025** - Added small positions tables to dashboard page
+  - Created two separate tables for long and short positions data
+  - Tables show Symbol, Quantity, and P&L with color-coded indicators
+  - Limited to 5 rows each with "view more" links to full positions page
+  - Tables automatically populate from real Kotak Neo API positions data
+  - Improved settings modal by removing auto refresh section as requested
+
 - **June 27, 2025** - Enhanced positions page with comprehensive P&L analysis and auto-sync system
   - Rebuilt positions page to display all data from Kotak Neo API response format
   - Added comprehensive P&L summary cards: Total Positions, Long Positions, Short Positions, Total P&L

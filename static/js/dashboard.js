@@ -235,9 +235,96 @@ TradingDashboard.prototype.updateSummaryCards = function(data) {
             holdingsValueEl.innerHTML = '<i class="fas fa-wallet me-1"></i>₹' + totalValue.toFixed(2);
         }
         
+        // Update positions tables
+        this.updatePositionsTables(data.positions || []);
+        
         console.log('Summary cards updated successfully');
     } catch (error) {
         console.error('Error updating summary cards:', error);
+    }
+};
+
+TradingDashboard.prototype.updatePositionsTables = function(positions) {
+    try {
+        var longPositions = [];
+        var shortPositions = [];
+        
+        // Separate long and short positions
+        for (var i = 0; i < positions.length; i++) {
+            var position = positions[i];
+            var netQty = parseFloat(position.flBuyQty || 0) - parseFloat(position.flSellQty || 0);
+            
+            if (netQty > 0) {
+                longPositions.push({
+                    symbol: position.trdSym || position.sym || 'N/A',
+                    quantity: netQty,
+                    buyAmt: parseFloat(position.buyAmt || 0),
+                    sellAmt: parseFloat(position.sellAmt || 0),
+                    pnl: parseFloat(position.buyAmt || 0) - parseFloat(position.sellAmt || 0)
+                });
+            } else if (netQty < 0) {
+                shortPositions.push({
+                    symbol: position.trdSym || position.sym || 'N/A',
+                    quantity: Math.abs(netQty),
+                    buyAmt: parseFloat(position.buyAmt || 0),
+                    sellAmt: parseFloat(position.sellAmt || 0),
+                    pnl: parseFloat(position.sellAmt || 0) - parseFloat(position.buyAmt || 0)
+                });
+            }
+        }
+        
+        // Update long positions table
+        this.populatePositionsTable('longPositionsTable', longPositions, 'longPositionsCount');
+        
+        // Update short positions table
+        this.populatePositionsTable('shortPositionsTable', shortPositions, 'shortPositionsCount');
+        
+        console.log('Positions tables updated: Long=' + longPositions.length + ', Short=' + shortPositions.length);
+    } catch (error) {
+        console.error('Error updating positions tables:', error);
+    }
+};
+
+TradingDashboard.prototype.populatePositionsTable = function(tableId, positions, countId) {
+    var tableBody = document.getElementById(tableId);
+    var countBadge = document.getElementById(countId);
+    
+    if (!tableBody) return;
+    
+    // Update count badge
+    if (countBadge) {
+        countBadge.textContent = positions.length;
+    }
+    
+    // Clear existing rows
+    tableBody.innerHTML = '';
+    
+    if (positions.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No positions</td></tr>';
+        return;
+    }
+    
+    // Add position rows (limit to first 5 for small table)
+    var maxRows = Math.min(positions.length, 5);
+    for (var i = 0; i < maxRows; i++) {
+        var position = positions[i];
+        var pnlClass = position.pnl >= 0 ? 'text-success' : 'text-danger';
+        var pnlIcon = position.pnl >= 0 ? '▲' : '▼';
+        
+        var row = document.createElement('tr');
+        row.innerHTML = 
+            '<td><small><strong>' + position.symbol + '</strong></small></td>' +
+            '<td><small>' + position.quantity.toFixed(0) + '</small></td>' +
+            '<td><small class="' + pnlClass + '">' + pnlIcon + ' ₹' + Math.abs(position.pnl).toFixed(2) + '</small></td>';
+        
+        tableBody.appendChild(row);
+    }
+    
+    // Add "view more" row if there are more positions
+    if (positions.length > 5) {
+        var moreRow = document.createElement('tr');
+        moreRow.innerHTML = '<td colspan="3" class="text-center"><small><a href="/positions" class="text-primary">+' + (positions.length - 5) + ' more positions</a></small></td>';
+        tableBody.appendChild(moreRow);
     }
 };
 

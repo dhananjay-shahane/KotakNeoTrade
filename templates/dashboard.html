@@ -161,6 +161,69 @@
     </div>
 </div>
 
+<!-- Positions Tables -->
+<div class="row mb-4">
+    <!-- Long Positions Table -->
+    <div class="col-md-6 mb-3">
+        <div class="card bg-secondary">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 text-success">
+                    <i class="fas fa-arrow-up me-2"></i>Long Positions
+                </h6>
+                <span class="badge bg-success" id="longPositionsCount">0</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Qty</th>
+                                <th>P&L</th>
+                            </tr>
+                        </thead>
+                        <tbody id="longPositionsTable">
+                            <tr>
+                                <td colspan="3" class="text-center text-muted">Loading positions...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Short Positions Table -->
+    <div class="col-md-6 mb-3">
+        <div class="card bg-secondary">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 text-danger">
+                    <i class="fas fa-arrow-down me-2"></i>Short Positions
+                </h6>
+                <span class="badge bg-danger" id="shortPositionsCount">0</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Qty</th>
+                                <th>P&L</th>
+                            </tr>
+                        </thead>
+                        <tbody id="shortPositionsTable">
+                            <tr>
+                                <td colspan="3" class="text-center text-muted">Loading positions...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Recent Orders -->
 {% if data.recent_orders %}
 <div class="row mb-4">
