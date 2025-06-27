@@ -1129,10 +1129,89 @@ def populate_admin_signals_endpoint():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/sync-default-deals', methods=['POST'])
+def sync_default_deals_endpoint():
+    """API endpoint to sync all admin_trade_signals to default_deals table"""
+    try:
+        synced_count = sync_admin_signals_to_default_deals()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Successfully synced {synced_count} admin signals to default deals',
+            'synced_count': synced_count
+        })
+        
+    except Exception as e:
+        logging.error(f"Error in sync default deals endpoint: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/default-deals-data')
+def get_default_deals_data():
+    """API endpoint to get all default deals data"""
+    try:
+        from models import DefaultDeal
+        from sqlalchemy import text
+        
+        # Get all default deals with formatted data
+        query = text("""
+            SELECT id, user_target_id, symbol, exchange, position_type, quantity, 
+                   entry_price, current_price, price_change_percent, investment_amount,
+                   target_price, total_value, target_pnl_ratio, pnl, entry_date,
+                   profit_ratio, profit_price, intrinsic_value, intrinsic_price,
+                   notes, quantity_traded, seven_day_change, change_amount,
+                   signal_strength, created_at, updated_at, admin_signal_id
+            FROM default_deals 
+            ORDER BY created_at DESC
+        """)
+        
+        result = db.session.execute(query)
+        deals = result.fetchall()
+        
+        # Format deals data
+        deals_list = []
+        for deal in deals:
+            deal_data = {
+                'id': deal.id,
+                'user_target_id': deal.user_target_id,
+                'symbol': deal.symbol,
+                'exchange': deal.exchange,
+                'position_type': deal.position_type,
+                'quantity': deal.quantity,
+                'entry_price': float(deal.entry_price) if deal.entry_price else 0,
+                'current_price': float(deal.current_price) if deal.current_price else 0,
+                'price_change_percent': float(deal.price_change_percent) if deal.price_change_percent else 0,
+                'investment_amount': float(deal.investment_amount) if deal.investment_amount else 0,
+                'target_price': float(deal.target_price) if deal.target_price else 0,
+                'total_value': float(deal.total_value) if deal.total_value else 0,
+                'pnl': float(deal.pnl) if deal.pnl else 0,
+                'entry_date': str(deal.entry_date) if deal.entry_date else '',
+                'profit_ratio': float(deal.profit_ratio) if deal.profit_ratio else 0,
+                'notes': deal.notes or '',
+                'signal_strength': deal.signal_strength or 'ACTIVE',
+                'admin_signal_id': deal.admin_signal_id
+            }
+            deals_list.append(deal_data)
+        
+        app.logger.info(f"Default deals API: Returning {len(deals_list)} deals")
+        
+        return jsonify({
+            'success': True,
+            'data': deals_list,
+            'total': len(deals_list)
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error getting default deals data: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 from routes.auth import auth_bp
 from routes.main import main_bp
 from api.dashboard import dashboard_api
 from api.trading import trading_api
+from sync_default_deals import sync_admin_signals_to_default_deals, update_default_deal_from_admin_signal
+from auto_sync_triggers import initialize_auto_sync
 # ETF signals blueprint will be registered separately
 
 # Register blueprints

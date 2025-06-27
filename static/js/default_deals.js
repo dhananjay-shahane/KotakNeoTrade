@@ -164,12 +164,84 @@ DealsManager.prototype.setupEventListeners = function() {
     // Filter event listeners can be added here
 };
 
+// Global function for sync button
+function syncDefaultDeals() {
+    console.log('Syncing admin_trade_signals to default_deals...');
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/sync-default-deals', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        console.log('Sync successful:', response.message);
+                        showSuccessMessage('Synced ' + response.synced_count + ' records from admin signals');
+                        // Refresh the deals table after sync
+                        if (window.dealsManager) {
+                            window.dealsManager.loadDeals();
+                        }
+                    } else {
+                        console.error('Sync failed:', response.error);
+                        showErrorMessage('Sync failed: ' + response.error);
+                    }
+                } catch (e) {
+                    console.error('Failed to parse sync response:', e);
+                    showErrorMessage('Failed to parse server response');
+                }
+            } else {
+                console.error('Sync request failed with status:', xhr.status);
+                showErrorMessage('Failed to sync data from server');
+            }
+        }
+    };
+    xhr.send();
+}
+
+function showSuccessMessage(message) {
+    var alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed';
+    alertDiv.style.top = '20px';
+    alertDiv.style.right = '20px';
+    alertDiv.style.zIndex = '9999';
+    alertDiv.innerHTML = 
+        '<i class="fas fa-check-circle me-2"></i>' + message +
+        '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(function() {
+        if (alertDiv.parentNode) {
+            alertDiv.parentNode.removeChild(alertDiv);
+        }
+    }, 5000);
+}
+
+function showErrorMessage(message) {
+    var alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+    alertDiv.style.top = '20px';
+    alertDiv.style.right = '20px';
+    alertDiv.style.zIndex = '9999';
+    alertDiv.innerHTML = 
+        '<i class="fas fa-exclamation-circle me-2"></i>' + message +
+        '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(function() {
+        if (alertDiv.parentNode) {
+            alertDiv.parentNode.removeChild(alertDiv);
+        }
+    }, 5000);
+}
+
 DealsManager.prototype.loadDeals = function() {
     var self = this;
     console.log('Loading deals from external database...');
 
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', '/api/deals/user', true);
+    xhr.open('GET', '/api/default-deals-data', true);
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
@@ -178,34 +250,42 @@ DealsManager.prototype.loadDeals = function() {
                     var response = JSON.parse(xhr.responseText);
                     console.log('API Response:', response);
 
-                    if (response.success && response.deals && Array.isArray(response.deals)) {
-                        var uniqueDeals = response.deals.map(function(deal) {
+                    if (response.success && response.data && Array.isArray(response.data)) {
+                        var uniqueDeals = response.data.map(function(deal) {
+                            var changePercent = parseFloat(deal.price_change_percent || 0);
+                            var pnl = parseFloat(deal.pnl || 0);
+                            var investment = parseFloat(deal.investment_amount || 0);
+                            var currentPrice = parseFloat(deal.current_price || deal.entry_price || 0);
+                            var entryPrice = parseFloat(deal.entry_price || 0);
+                            var quantity = parseInt(deal.quantity || 0);
+                            
                             return {
                                 id: deal.id,
                                 symbol: deal.symbol || '',
-                                pos: deal.position_type === 'LONG' ? 1 : -1,
-                                qty: deal.quantity || 0,
-                                ep: parseFloat(deal.entry_price || 0),
-                                cmp: parseFloat(deal.current_price || deal.entry_price || 0),
-                                pl: parseFloat(deal.pnl_amount || 0),
-                                change_pct: parseFloat(deal.pnl_percent || 0),
-                                inv: parseFloat(deal.invested_amount || 0),
+                                pos: deal.position_type === 'BUY' ? 1 : -1,
+                                qty: quantity,
+                                ep: entryPrice,
+                                cmp: currentPrice,
+                                pl: pnl,
+                                change_pct: changePercent,
+                                inv: investment,
                                 tp: parseFloat(deal.target_price || 0),
-                                tva: parseFloat(deal.target_price || 0) * (deal.quantity || 0),
-                                tpr: parseFloat(deal.target_price || 0) * 0.05,
-                                date: deal.entry_date ? deal.entry_date.split('T')[0] : new Date().toISOString().split('T')[0],
-                                status: deal.status || 'ACTIVE',
-                                thirty: '0%',
-                                dh: deal.days_held || 0,
-                                ed: deal.entry_date ? deal.entry_date.split('T')[0] : new Date().toISOString().split('T')[0],
-                                pr: '0%',
-                                pp: deal.pp || '-',
-                                iv: 'Medium',
-                                ip: deal.pnl_percent ? (deal.pnl_percent > 0 ? '+' : '') + deal.pnl_percent.toFixed(1) + '%' : '0%',
+                                tva: parseFloat(deal.total_value || 0),
+                                tpr: parseFloat(deal.profit_ratio || 0),
+                                date: deal.entry_date || new Date().toISOString().split('T')[0],
+                                status: deal.signal_strength || 'ACTIVE',
+                                thirty: changePercent.toFixed(2) + '%',
+                                dh: Math.floor((new Date() - new Date(deal.entry_date || new Date())) / (1000 * 60 * 60 * 24)) || 0,
+                                ed: deal.entry_date || '',
+                                pr: changePercent.toFixed(2) + '%',
+                                pp: deal.notes ? deal.notes.substring(0, 10) + '...' : '-',
+                                iv: investment.toLocaleString('en-IN'),
+                                ip: changePercent > 0 ? '+' + changePercent.toFixed(1) + '%' : changePercent.toFixed(1) + '%',
                                 nt: deal.notes || '--',
                                 qt: new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
-                                seven: '0%',
-                                change2: parseFloat(deal.pnl_percent || 0)
+                                seven: changePercent.toFixed(2) + '%',
+                                change2: changePercent,
+                                admin_signal_id: deal.admin_signal_id
                             };
                         });
 
