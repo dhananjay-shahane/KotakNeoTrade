@@ -463,6 +463,63 @@
             font-size: var(--global-font-size) !important;
         }
 
+        /* Settings Modal Styles */
+        .settings-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.125rem;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .settings-btn:hover {
+            color: var(--text-primary);
+            background: var(--card-bg);
+        }
+
+        .settings-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .settings-section h6 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .font-size-preview {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+
+        .settings-control-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .settings-control-group label {
+            min-width: 120px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .settings-control-group .form-select {
+            flex: 1;
+            max-width: 150px;
+        }
+
         /* Scale headings proportionally */
         h1 { font-size: calc(var(--global-font-size) * 2.5) !important; }
         h2 { font-size: calc(var(--global-font-size) * 2) !important; }

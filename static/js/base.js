@@ -255,6 +255,95 @@
             }
         }
 
+        // Settings Modal Functionality
+        function showSettingsModal() {
+            // Load current settings
+            loadCurrentSettings();
+            new bootstrap.Modal(document.getElementById('settingsModal')).show();
+        }
+
+        function loadCurrentSettings() {
+            // Load font size
+            var savedFontSize = localStorage.getItem('website-font-size') || '14';
+            var fontSizeSelect = document.getElementById('fontSizeSelect');
+            if (fontSizeSelect) {
+                fontSizeSelect.value = savedFontSize;
+                updateFontPreview(savedFontSize);
+            }
+
+            // Load theme
+            var savedTheme = localStorage.getItem('theme') || 'dark';
+            var themeSelect = document.getElementById('themeSelect');
+            if (themeSelect) {
+                themeSelect.value = savedTheme;
+            }
+
+            // Load auto refresh setting
+            var savedRefresh = localStorage.getItem('auto-refresh-interval') || '30';
+            var autoRefreshSelect = document.getElementById('autoRefreshSelect');
+            if (autoRefreshSelect) {
+                autoRefreshSelect.value = savedRefresh;
+            }
+        }
+
+        function updateFontPreview(fontSize) {
+            var preview = document.querySelector('.font-size-preview');
+            if (preview) {
+                preview.style.fontSize = fontSize + 'px';
+            }
+        }
+
+        function applySettings() {
+            var fontSizeSelect = document.getElementById('fontSizeSelect');
+            var themeSelect = document.getElementById('themeSelect');
+            var autoRefreshSelect = document.getElementById('autoRefreshSelect');
+
+            // Apply font size
+            if (fontSizeSelect) {
+                var newFontSize = fontSizeSelect.value;
+                document.documentElement.style.setProperty('--global-font-size', newFontSize + 'px');
+                localStorage.setItem('website-font-size', newFontSize);
+                
+                if (typeof showToaster === 'function') {
+                    showToaster('Font Size Updated', 'Font size changed to ' + newFontSize + 'px', 'success');
+                }
+            }
+
+            // Apply theme
+            if (themeSelect) {
+                var newTheme = themeSelect.value;
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                
+                // Update theme toggle if it exists
+                var themeToggle = document.getElementById('themeToggle');
+                if (themeToggle) {
+                    themeToggle.checked = newTheme === 'light';
+                }
+                
+                if (typeof showToaster === 'function') {
+                    showToaster('Theme Updated', 'Switched to ' + newTheme + ' mode', 'success');
+                }
+            }
+
+            // Apply auto refresh
+            if (autoRefreshSelect) {
+                var newRefresh = autoRefreshSelect.value;
+                localStorage.setItem('auto-refresh-interval', newRefresh);
+                
+                if (typeof showToaster === 'function') {
+                    var message = newRefresh === '0' ? 'Auto refresh disabled' : 'Auto refresh set to ' + newRefresh + ' seconds';
+                    showToaster('Auto Refresh Updated', message, 'success');
+                }
+            }
+
+            // Close modal
+            var modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
+            if (modal) {
+                modal.hide();
+            }
+        }
+
         // Font Size Control Functionality
         function initializeFontSize() {
             // Get saved font size from localStorage or default to 14px
@@ -274,30 +363,9 @@
                 // Set select value based on saved font size
                 fontSizeSelect.value = savedFontSize;
 
-                // Add event listener for font size changes
+                // Add event listener for font size changes in settings modal
                 fontSizeSelect.addEventListener('change', function() {
-                    var newFontSize = this.value;
-                    document.documentElement.style.setProperty('--global-font-size', newFontSize + 'px');
-                    localStorage.setItem('website-font-size', newFontSize);
-
-                    // Add visual feedback with animation
-                    var fontControl = document.querySelector('.font-size-control .bg-dark');
-                    if (fontControl) {
-                        fontControl.style.transform = 'scale(1.05)';
-                        fontControl.style.borderColor = 'var(--success-color)';
-                        setTimeout(function() {
-                            fontControl.style.transform = 'scale(1)';
-                            fontControl.style.borderColor = 'var(--border-color)';
-                        }, 200);
-                    }
-
-                    // Show confirmation toast
-                    var message = 'Font size changed to ' + newFontSize + 'px';
-                    if (typeof showToaster === 'function') {
-                        showToaster('Font Size Updated', message, 'success');
-                    }
-
-                    console.log('Font size changed to:', newFontSize + 'px');
+                    updateFontPreview(this.value);
                 });
             }
 
