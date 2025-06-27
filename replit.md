@@ -104,6 +104,12 @@ The application follows a modern Flask architecture with clear separation of con
 
 ## Recent Changes
 
+- **June 27, 2025** - Updated table formatting across all pages with capital letters and removed Actions column
+  - Made all table headings capital letters (SYMBOL, QUANTITY, P&L, etc.) across holdings, positions, and dashboard pages
+  - Removed Actions column from holdings table to clean up interface and remove unnecessary buttons
+  - Standardized table header formatting for consistent professional appearance
+  - All table headers now use uniform capital letter styling across the entire application
+
 - **June 27, 2025** - Enhanced holdings page with 4-card UI and advanced sorting features
   - Redesigned holdings page with 4 modern gradient cards: Total Holdings, Total Invested, Current Value, Total P&L
   - Fixed card data display issues with proper calculation and formatting
