@@ -27,11 +27,8 @@ PositionsManager.prototype.loadPositions = function() {
                 try {
                     var response = JSON.parse(xhr.responseText);
                     console.log('Positions API Response:', response);
-                    console.log('Response keys:', Object.keys(response));
-                    console.log('Response.success:', response.success);
-                    console.log('Response.positions type:', typeof response.positions);
-                    console.log('Response.positions isArray:', Array.isArray(response.positions));
                     
+                    // Handle different response formats
                     if (response.success && response.positions && Array.isArray(response.positions)) {
                         console.log('Using wrapped API format with', response.positions.length, 'positions');
                         this.positions = response.positions;
@@ -42,13 +39,17 @@ PositionsManager.prototype.loadPositions = function() {
                         this.positions = response.data;
                         this.displayPositions();
                         this.updateSummaryCards();
+                    } else if (Array.isArray(response)) {
+                        console.log('Using direct array format with', response.length, 'positions');
+                        this.positions = response;
+                        this.displayPositions();
+                        this.updateSummaryCards();
                     } else if (response.success === false && response.message) {
                         console.error('API returned error:', response.message);
                         this.showError(response.message);
                     } else {
                         console.error('Invalid positions response format:', response);
-                        console.error('Expected: {success: true, positions: []} or {stat: "Ok", data: []}');
-                        this.showError('Invalid response format from positions API');
+                        this.showError('Unable to load positions data');
                     }
                 } catch (e) {
                     console.error('Failed to parse positions response:', e);
