@@ -1,5 +1,8 @@
 var ordersData = [];
 var refreshInterval = null;
+var currentSortColumn = '';
+var currentSortDirection = 'asc';
+var currentFilter = 'all';
 
 // Load orders when page loads
 document.addEventListener('DOMContentLoaded', function() {
@@ -34,6 +37,103 @@ async function loadOrdersData() {
     }
 }
 
+function filterOrders(orders, filter) {
+    if (filter === 'all') return orders;
+    
+    return orders.filter(function(order) {
+        var status = (order.ordSt || order.status || '').toLowerCase();
+        var transType = order.transType || order.transactionType || '';
+        
+        switch(filter) {
+            case 'completed':
+                return status.includes('complete') || status.includes('executed');
+            case 'pending':
+                return status.includes('pending') || status.includes('open');
+            case 'rejected':
+                return status.includes('reject');
+            case 'cancelled':
+                return status.includes('cancel');
+            case 'buy':
+                return transType === 'BUY';
+            default:
+                return true;
+        }
+    });
+}
+
+function sortTable(column) {
+    if (currentSortColumn === column) {
+        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSortColumn = column;
+        currentSortDirection = 'asc';
+    }
+    
+    // Update sort icons
+    document.querySelectorAll('#ordersTable th i[id^="sort-"]').forEach(function(icon) {
+        icon.className = 'fas fa-sort ms-1';
+    });
+    
+    var sortIcon = document.getElementById('sort-' + column);
+    if (sortIcon) {
+        sortIcon.className = 'fas fa-sort-' + (currentSortDirection === 'asc' ? 'up' : 'down') + ' ms-1';
+    }
+    
+    // Sort the data
+    ordersData.sort(function(a, b) {
+        var aVal, bVal;
+        
+        switch(column) {
+            case 'symbol':
+                aVal = (a.trdSym || a.sym || '').toLowerCase();
+                bVal = (b.trdSym || b.sym || '').toLowerCase();
+                break;
+            case 'time':
+                aVal = a.orderTime || a.ordEntTm || '';
+                bVal = b.orderTime || b.ordEntTm || '';
+                break;
+            case 'orderid':
+                aVal = a.nOrdNo || a.orderId || '';
+                bVal = b.nOrdNo || b.orderId || '';
+                break;
+            case 'type':
+                aVal = (a.transType || '').toLowerCase();
+                bVal = (b.transType || '').toLowerCase();
+                break;
+            case 'quantity':
+                aVal = parseFloat(a.qty || 0);
+                bVal = parseFloat(b.qty || 0);
+                break;
+            case 'price':
+                aVal = parseFloat(a.prc || 0);
+                bVal = parseFloat(b.prc || 0);
+                break;
+            case 'status':
+                aVal = (a.ordSt || a.status || '').toLowerCase();
+                bVal = (b.ordSt || b.status || '').toLowerCase();
+                break;
+            case 'product':
+                aVal = (a.prod || '').toLowerCase();
+                bVal = (b.prod || '').toLowerCase();
+                break;
+            case 'exchange':
+                aVal = (a.exSeg || '').toLowerCase();
+                bVal = (b.exSeg || '').toLowerCase();
+                break;
+            default:
+                return 0;
+        }
+        
+        if (typeof aVal === 'string' && typeof bVal === 'string') {
+            return currentSortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+        } else {
+            return currentSortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+        }
+    });
+    
+    updateOrdersTable(ordersData);
+}
+
 function updateOrdersTable(orders) {
     var tableBody = document.getElementById('ordersTableBody');
 
@@ -43,7 +143,7 @@ function updateOrdersTable(orders) {
     }
 
     var tableHTML = '';
-    var displayOrders = orders; // Initialize displayOrders with all orders
+    var displayOrders = filterOrders(orders, currentFilter);
 
     displayOrders.forEach(function(order) {
         var orderTime = order.orderTime || order.ordEntTm || order.exchOrdId || 'N/A';
@@ -58,6 +158,11 @@ function updateOrdersTable(orders) {
         var product = order.prod || order.product || 'N/A';
         var exchange = order.exSeg || order.exchange || order.exchangeSegment || 'N/A';
         var rejectionReason = order.rejRsn || order.rejectionReason || '';
+        
+        // Clean up long RMS error messages
+        if (rejectionReason.includes('RMS:Margin Exceeds')) {
+            rejectionReason = 'RMS: Margin Exceeds';
+        }
 
         // Format price
         var formattedPrice = parseFloat(price) || 0;
@@ -332,9 +437,30 @@ function showNotification(message, type = 'info') {
     document.body.appendChild(toast);
 
     // Auto-remove after 5 seconds
-    setTimeout(()=>{}, function() {
+    setTimeout(function() {
         if (toast.parentNode) {
             toast.parentNode.removeChild(toast);
         }
     }, 5000);
 }
+
+// Add filter card click functionality
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.filter-card').forEach(function(card) {
+        card.addEventListener('click', function() {
+            var filter = this.getAttribute('data-filter');
+            currentFilter = filter;
+            
+            // Remove active class from all cards
+            document.querySelectorAll('.filter-card').forEach(function(c) {
+                c.style.opacity = '0.7';
+            });
+            
+            // Add active class to clicked card
+            this.style.opacity = '1';
+            
+            // Update table with filtered data
+            updateOrdersTable(ordersData);
+        });
+    });
+});

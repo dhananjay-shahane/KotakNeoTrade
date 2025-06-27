@@ -53,3 +53,34 @@
     opacity: 1;
     color: #fff;
 }
+
+/* Orders Page Styles */
+
+/* Table header sorting */
+#ordersTable th[style*="cursor"] {
+    user-select: none;
+}
+
+#ordersTable th[style*="cursor"]:hover {
+    background: linear-gradient(135deg, #0b5ed7 0%, #0a58ca 100%);
+}
+
+#ordersTable th[style*="cursor"]:active {
+    transform: scale(0.98);
+}
+
+/* Filter cards hover effect */
+.filter-card {
+    transition: all 0.3s ease;
+    opacity: 0.7;
+}
+
+.filter-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 123, 255, 0.15) !important;
+    opacity: 1 !important;
+}
+
+.filter-card:first-child {
+    opacity: 1;
+}
