@@ -18,7 +18,7 @@ PositionsManager.prototype.initialize = function() {
 
 PositionsManager.prototype.loadPositions = function() {
     console.log('Loading positions data...');
-    
+
     var xhr = new XMLHttpRequest();
     xhr.open('GET', '/api/positions', true);
     xhr.onreadystatechange = function() {
@@ -27,7 +27,7 @@ PositionsManager.prototype.loadPositions = function() {
                 try {
                     var response = JSON.parse(xhr.responseText);
                     console.log('Positions API Response:', response);
-                    
+
                     // Handle different response formats
                     if (response.success && response.positions && Array.isArray(response.positions)) {
                         console.log('Using wrapped API format with', response.positions.length, 'positions');
@@ -67,26 +67,49 @@ PositionsManager.prototype.loadPositions = function() {
 PositionsManager.prototype.displayPositions = function() {
     var tbody = document.getElementById('positionsTableBody');
     if (!tbody) return;
-    
+
     if (this.positions.length === 0) {
         tbody.innerHTML = '<tr><td colspan="12" class="text-center py-4 text-muted">No positions found</td></tr>';
         return;
     }
-    
+
+    // Filter positions based on active filters
+    var activeFilter = document.querySelector('input[name="positionTypeFilter"]:checked');
+    var filterValue = activeFilter ? activeFilter.value : 'ALL';
+
+    var filteredPositions = this.positions.filter(function(position) {
+        if (filterValue === 'ALL') {
+            return true;
+        } else {
+            // Calculate net quantity and position type using all available fields
+            var buyQty = parseFloat(position.flBuyQty || position.cfBuyQty || 0);
+            var sellQty = parseFloat(position.flSellQty || position.cfSellQty || 0);
+            var netQty = buyQty - sellQty;
+
+            if (filterValue === 'LONG' && netQty > 0) {
+                return true;
+            } else if (filterValue === 'SHORT' && netQty < 0) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    });
+
     var html = '';
-    for (var i = 0; i < this.positions.length; i++) {
-        var position = this.positions[i];
-        
+    for (var i = 0; i < filteredPositions.length; i++) {
+        var position = filteredPositions[i];
+
         // Calculate net quantity and position type using all available fields
         var buyQty = parseFloat(position.flBuyQty || position.cfBuyQty || 0);
         var sellQty = parseFloat(position.flSellQty || position.cfSellQty || 0);
         var netQty = buyQty - sellQty;
-        
+
         // Calculate P&L using all available amount fields
         var buyAmt = parseFloat(position.buyAmt || position.cfBuyAmt || 0);
         var sellAmt = parseFloat(position.sellAmt || position.cfSellAmt || 0);
         var pnl = sellAmt - buyAmt;
-        
+
         // Determine position type
         var positionType = '';
         var positionClass = '';
@@ -100,7 +123,7 @@ PositionsManager.prototype.displayPositions = function() {
             positionType = 'SQUARED';
             positionClass = 'text-muted';
         }
-        
+
         // Format P&L display
         var pnlDisplay = '';
         var pnlClass = '';
@@ -114,13 +137,13 @@ PositionsManager.prototype.displayPositions = function() {
             pnlDisplay = '₹0.00';
             pnlClass = 'text-muted';
         }
-        
+
         // Format expiry date
         var expiryDisplay = position.expDt || 'N/A';
-        
+
         // Format last updated time
         var lastUpdated = position.hsUpTm || 'N/A';
-        
+
         html += '<tr>';
         html += '<td><strong>' + (position.trdSym || position.sym || 'N/A') + '</strong></td>';
         html += '<td><span class="badge bg-secondary">' + (position.prod || 'N/A') + '</span></td>';
@@ -136,13 +159,13 @@ PositionsManager.prototype.displayPositions = function() {
         html += '<td><small class="text-muted">' + lastUpdated + '</small></td>';
         html += '</tr>';
     }
-    
+
     tbody.innerHTML = html;
-    
+
     // Update table count
     var countElement = document.getElementById('positionsTableCount');
     if (countElement) {
-        countElement.textContent = this.positions.length;
+        countElement.textContent = filteredPositions.length;
     }
 };
 
@@ -153,27 +176,27 @@ PositionsManager.prototype.updateSummaryCards = function() {
     var longValue = 0;
     var shortValue = 0;
     var totalPnl = 0;
-    
+
     for (var i = 0; i < this.positions.length; i++) {
         var position = this.positions[i];
-        
+
         // Use correct field names from Kotak Neo API
         var buyQty = parseFloat(position.flBuyQty || position.cfBuyQty || 0);
         var sellQty = parseFloat(position.flSellQty || position.cfSellQty || 0);
         var netQty = buyQty - sellQty;
-        
+
         var buyAmt = parseFloat(position.buyAmt || position.cfBuyAmt || 0);
         var sellAmt = parseFloat(position.sellAmt || position.cfSellAmt || 0);
         var pnl = sellAmt - buyAmt;
-        
+
         totalPnl += pnl;
-        
+
         // Debug individual position
         var symbol = position.trdSym || position.sym || 'Unknown';
         console.log('Position Debug - ' + symbol + ':');
         console.log('  Buy Qty:', buyQty, 'Sell Qty:', sellQty, 'Net Qty:', netQty);
         console.log('  Buy Amt:', buyAmt, 'Sell Amt:', sellAmt, 'P&L:', pnl);
-        
+
         if (netQty > 0) {
             longPositions++;
             longValue += buyAmt;
@@ -193,25 +216,25 @@ PositionsManager.prototype.updateSummaryCards = function() {
             console.log('  Classification: SQUARED (netQty = 0)');
         }
     }
-    
+
     // Debug logging for position classification
     console.log('Position Summary Debug:');
     console.log('Total Positions:', totalPositions);
     console.log('Long Positions:', longPositions, 'Value:', longValue);
     console.log('Short Positions:', shortPositions, 'Value:', shortValue);
     console.log('Total P&L:', totalPnl);
-    
+
     // Update summary cards
     this.updateElement('totalPositionsCount', totalPositions);
     this.updateElement('longPositionsCount', longPositions);
     this.updateElement('shortPositionsCount', shortPositions);
     this.updateElement('longPositionsValue', '₹' + longValue.toLocaleString('en-IN', {minimumFractionDigits: 2}));
     this.updateElement('shortPositionsValue', '₹' + shortValue.toLocaleString('en-IN', {minimumFractionDigits: 2}));
-    
+
     // Update total P&L with appropriate color
     var totalPnlElement = document.getElementById('totalPnlValue');
     var pnlBadgeElement = document.getElementById('pnlBadge');
-    
+
     if (totalPnlElement) {
         var pnlDisplay = '';
         if (totalPnl > 0) {
@@ -226,12 +249,12 @@ PositionsManager.prototype.updateSummaryCards = function() {
         }
         totalPnlElement.textContent = pnlDisplay;
     }
-    
+
     if (pnlBadgeElement) {
         var totalInvestment = longValue + shortValue;
         var pnlPercentage = totalInvestment > 0 ? (totalPnl / totalInvestment * 100) : 0;
         var percentageDisplay = (pnlPercentage >= 0 ? '+' : '') + pnlPercentage.toFixed(2) + '%';
-        
+
         pnlBadgeElement.textContent = percentageDisplay;
         if (pnlPercentage > 0) {
             pnlBadgeElement.className = 'badge bg-success';
@@ -262,7 +285,7 @@ PositionsManager.prototype.setupAutoRefresh = function() {
     if (this.refreshInterval) {
         clearInterval(this.refreshInterval);
     }
-    
+
     if (this.autoRefreshTime > 0) {
         this.refreshInterval = setInterval(function() {
             this.loadPositions();
@@ -281,7 +304,7 @@ function setAutoRefresh(seconds) {
     if (window.positionsManager) {
         window.positionsManager.autoRefreshTime = seconds * 1000;
         window.positionsManager.setupAutoRefresh();
-        
+
         var intervalElement = document.getElementById('refreshInterval');
         if (intervalElement) {
             if (seconds === 0) {
@@ -293,7 +316,42 @@ function setAutoRefresh(seconds) {
     }
 }
 
+// Function to filter positions based on position type (LONG/SHORT/ALL)
+function filterPositions(type) {
+    if (window.positionsManager) {
+        window.positionsManager.displayPositions(); // Redisplay based on current filter
+    }
+}
+
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
     window.positionsManager = new PositionsManager();
+
+    // Add event listeners to filter buttons
+    var filterButtons = document.querySelectorAll('input[name="positionTypeFilter"]');
+    filterButtons.forEach(function(button) {
+        button.addEventListener('change', function() {
+            filterPositions(this.value);
+        });
+    });
+
+    // Add event listener to symbol table header for sorting
+    var symbolHeader = document.getElementById('symbolHeader');
+    if (symbolHeader) {
+        symbolHeader.addEventListener('click', function() {
+            sortPositionsBySymbol();
+        });
+    }
 });
+
+// Function to sort positions by symbol
+function sortPositionsBySymbol() {
+    if (window.positionsManager) {
+        window.positionsManager.positions.sort(function(a, b) {
+            var symbolA = a.trdSym || a.sym || '';
+            var symbolB = b.trdSym || b.sym || '';
+            return symbolA.localeCompare(symbolB);
+        });
+        window.positionsManager.displayPositions(); // Redisplay after sorting
+    }
+}
