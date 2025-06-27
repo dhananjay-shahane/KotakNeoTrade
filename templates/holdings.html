@@ -183,7 +183,7 @@
                     {% set avg_price = holding.averagePrice|float if holding.averagePrice else 0.0 %}
                     {% set ltp = holding.closingPrice|float if holding.closingPrice else 0.0 %}
                     {% set day_change_pct = ((ltp - avg_price) / avg_price * 100) if avg_price > 0 else 0 %}
-                    
+
                     <tr class="border-0" 
                         data-symbol="{{ holding.displaySymbol or holding.symbol or 'N/A' }}"
                         data-exchange="{{ holding.exchangeSegment or 'N/A' }}"
@@ -193,7 +193,7 @@
                         data-market-value="{{ market_value }}"
                         data-pnl="{{ pnl }}"
                         data-day-change="{{ day_change_pct }}">
-                        
+
                         <td class="border-0">
                             <div class="d-flex align-items-center">
                                 <div class="me-2">
@@ -282,37 +282,28 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="holdingActionForm">
-                    <input type="hidden" name="trading_symbol" id="actionSymbol">
-                    <input type="hidden" name="transaction_type" id="actionType">
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Quantity</label>
-                        <input type="number" class="form-control bg-secondary text-muted" name="quantity" id="actionQuantity" min="1" required>
-                        <div class="form-text" id="maxQuantityText"></div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Order Type</label>
-                        <select class="form-select bg-secondary text-muted" name="order_type" required>
-                            <option value="MARKET">MARKET</option>
-                            <option value="LIMIT">LIMIT</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Price (for LIMIT orders)</label>
-                        <input type="number" class="form-control bg-secondary text-muted" name="price" step="0.01">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Product</label>
-                        <select class="form-select bg-secondary text-muted" name="product" required>
-                            <option value="CNC">CNC</option>
-                            <option value="MIS">MIS</option>
-                        </select>
-                    </div>
-                </form>
+                
+<form id="holdingActionForm">
+                        <input type="hidden" id="actionSymbol" name="actionSymbol">
+                        <input type="hidden" id="actionType" name="actionType">
+                        <div class="mb-3">
+                            <label for="actionQuantity" class="form-label">Quantity</label>
+                            <input type="number" class="form-control" id="actionQuantity" name="actionQuantity" required min="1">
+                            <div class="form-text" id="maxQuantityText"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="orderType" class="form-label">Order Type</label>
+                            <select class="form-select" id="orderType" name="orderType" onchange="togglePriceField()">
+                                <option value="MKT">Market Order</option>
+                                <option value="L">Limit Order</option>
+                            </select>
+                        </div>
+                        <div class="mb-3" id="priceField" style="display: none;">
+                            <label for="actionPrice" class="form-label">Price (₹)</label>
+                            <input type="number" class="form-control" id="actionPrice" name="actionPrice" step="0.01" min="0">
+                        </div>
+                    </form>
+
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

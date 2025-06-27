@@ -13,19 +13,46 @@ trading_functions = TradingFunctions()
 @trading_api.route('/place_order', methods=['POST'])
 @login_required
 def place_order():
-    """Place a new order"""
+    """Place a new order using client.place_order"""
     try:
         client = session.get('client')
         if not client:
             return jsonify({'success': False, 'message': 'Session expired'}), 401
 
         order_data = request.get_json()
-        result = trading_functions.place_order(client, order_data)
+        
+        # Use client.place_order directly with proper parameters
+        result = client.place_order(
+            exchange_segment=order_data.get('exchange_segment', 'nse_cm'),
+            product=order_data.get('product', 'CNC'),
+            price=order_data.get('price', '0'),
+            order_type=order_data.get('order_type', 'MKT'),
+            quantity=order_data.get('quantity'),
+            validity=order_data.get('validity', 'DAY'),
+            trading_symbol=order_data.get('trading_symbol'),
+            transaction_type=order_data.get('transaction_type'),
+            amo=order_data.get('amo', 'NO'),
+            disclosed_quantity=order_data.get('disclosed_quantity', '0'),
+            market_protection=order_data.get('market_protection', '0'),
+            pf=order_data.get('pf', 'N'),
+            trigger_price=order_data.get('trigger_price', '0'),
+            tag=order_data.get('tag', 'Holdings')
+        )
 
-        if result['success']:
-            return jsonify(result)
+        if result and 'stat' in result and result['stat'] == 'Ok':
+            return jsonify({
+                'success': True,
+                'message': 'Order placed successfully',
+                'order_id': result.get('nOrdNo', 'N/A'),
+                'data': result
+            })
         else:
-            return jsonify(result), 400
+            error_msg = result.get('message', 'Order placement failed') if result else 'Order placement failed'
+            return jsonify({
+                'success': False,
+                'message': error_msg,
+                'data': result
+            }), 400
 
     except Exception as e:
         logging.error(f"Place order error: {str(e)}")

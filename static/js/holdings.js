@@ -52,9 +52,33 @@ function sellHolding(symbol, maxQuantity) {
 function submitHoldingAction() {
     var form = document.getElementById('holdingActionForm');
     var formData = new FormData(form);
-    var orderData = Object.fromEntries(formData.entries());
     
-    fetch('/api/place_order', {
+    // Get form values
+    var symbol = formData.get('actionSymbol');
+    var transactionType = formData.get('actionType');
+    var quantity = formData.get('actionQuantity');
+    var price = formData.get('actionPrice') || '0';
+    var orderType = formData.get('orderType') || 'MKT';
+    
+    // Prepare order data for client.place_order
+    var orderData = {
+        exchange_segment: "nse_cm",
+        product: "CNC", // Cash and Carry for holdings
+        price: price,
+        order_type: orderType,
+        quantity: quantity,
+        validity: "DAY",
+        trading_symbol: symbol,
+        transaction_type: transactionType,
+        amo: "NO",
+        disclosed_quantity: "0",
+        market_protection: "0",
+        pf: "N",
+        trigger_price: "0",
+        tag: "Holdings"
+    };
+    
+    fetch('/api/trading/place_order', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -62,18 +86,18 @@ function submitHoldingAction() {
         body: JSON.stringify(orderData)
     })
     .then(response => response.json())
-    .then(data, function() {
+    .then(function(data) {
         if (data.success) {
-            alert('Order placed successfully!');
+            showNotification('Order placed successfully!', 'success');
             bootstrap.Modal.getInstance(document.getElementById('holdingActionModal')).hide();
             refreshHoldings();
         } else {
-            alert('Failed to place order: ' + data.message);
+            showNotification('Failed to place order: ' + data.message, 'error');
         }
     })
-    .catch(error, function() {
+    .catch(function(error) {
         console.error('Error:', error);
-        alert('Error placing order');
+        showNotification('Error placing order', 'error');
     });
 }
 
@@ -106,6 +130,21 @@ function getQuote(token, exchange) {
         console.error('Error:', error);
         alert('Error getting quote');
     });
+}
+
+function togglePriceField() {
+    var orderType = document.getElementById('orderType').value;
+    var priceField = document.getElementById('priceField');
+    var priceInput = document.getElementById('actionPrice');
+    
+    if (orderType === 'L') {
+        priceField.style.display = 'block';
+        priceInput.required = true;
+    } else {
+        priceField.style.display = 'none';
+        priceInput.required = false;
+        priceInput.value = '';
+    }
 }
 
 // Auto-refresh holdings every 2 minutes (reduced frequency)
