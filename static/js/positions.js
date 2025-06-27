@@ -7,6 +7,7 @@ function PositionsManager() {
     this.positions = [];
     this.refreshInterval = null;
     this.autoRefreshTime = 30000; // 30 seconds default
+    this.currentFilter = 'ALL'; // Track current filter
     this.initialize();
 }
 
@@ -73,9 +74,8 @@ PositionsManager.prototype.displayPositions = function() {
         return;
     }
 
-    // Filter positions based on active filters
-    var activeFilter = document.querySelector('input[name="positionTypeFilter"]:checked');
-    var filterValue = activeFilter ? activeFilter.value : 'ALL';
+    // Filter positions based on current filter
+    var filterValue = this.currentFilter || 'ALL';
 
     var filteredPositions = this.positions.filter(function(position) {
         if (filterValue === 'ALL') {
@@ -95,6 +95,8 @@ PositionsManager.prototype.displayPositions = function() {
             }
         }
     });
+
+    console.log('Filtering positions:', filterValue, 'Total:', this.positions.length, 'Filtered:', filteredPositions.length);
 
     var html = '';
     for (var i = 0; i < filteredPositions.length; i++) {
@@ -323,24 +325,75 @@ function filterPositions(type) {
     }
 }
 
+// Function to filter positions by type with visual feedback
+function filterPositionsByType(type) {
+    if (window.positionsManager) {
+        // Remove active class from all cards
+        var cards = document.querySelectorAll('.position-filter-card');
+        cards.forEach(function(card) {
+            card.classList.remove('border-primary', 'bg-primary-subtle');
+        });
+
+        // Add active class to clicked card
+        var activeCard;
+        if (type === 'ALL') {
+            activeCard = document.querySelector('.total-positions-card');
+        } else if (type === 'LONG') {
+            activeCard = document.querySelector('.long-positions-card');
+        } else if (type === 'SHORT') {
+            activeCard = document.querySelector('.short-positions-card');
+        }
+
+        if (activeCard) {
+            activeCard.classList.add('border-primary', 'bg-primary-subtle');
+        }
+
+        // Set the current filter and refresh display
+        window.positionsManager.currentFilter = type;
+        window.positionsManager.displayPositions();
+
+        console.log('Filtering positions by type:', type);
+    }
+}
+
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
     window.positionsManager = new PositionsManager();
 
-    // Add event listeners to filter buttons
-    var filterButtons = document.querySelectorAll('input[name="positionTypeFilter"]');
-    filterButtons.forEach(function(button) {
-        button.addEventListener('change', function() {
-            filterPositions(this.value);
+    // Add click event listeners to position filter cards
+    var totalPositionsCard = document.querySelector('.total-positions-card');
+    var longPositionsCard = document.querySelector('.long-positions-card');
+    var shortPositionsCard = document.querySelector('.short-positions-card');
+
+    if (totalPositionsCard) {
+        totalPositionsCard.addEventListener('click', function() {
+            filterPositionsByType('ALL');
         });
-    });
+        totalPositionsCard.style.cursor = 'pointer';
+    }
+
+    if (longPositionsCard) {
+        longPositionsCard.addEventListener('click', function() {
+            filterPositionsByType('LONG');
+        });
+        longPositionsCard.style.cursor = 'pointer';
+    }
+
+    if (shortPositionsCard) {
+        shortPositionsCard.addEventListener('click', function() {
+            filterPositionsByType('SHORT');
+        });
+        shortPositionsCard.style.cursor = 'pointer';
+    }
 
     // Add event listener to symbol table header for sorting
-    var symbolHeader = document.getElementById('symbolHeader');
+    var symbolHeader = document.querySelector('#positionsTable th:first-child');
     if (symbolHeader) {
         symbolHeader.addEventListener('click', function() {
             sortPositionsBySymbol();
         });
+        symbolHeader.style.cursor = 'pointer';
+        symbolHeader.title = 'Click to sort A-Z';
     }
 });
 

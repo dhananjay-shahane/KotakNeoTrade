@@ -214,6 +214,7 @@
 .position-filter-card {
     transition: all 0.3s ease;
     border: 2px solid transparent !important;
+    cursor: pointer;
 }
 
 .position-filter-card:hover {
@@ -224,10 +225,11 @@
 
 .position-filter-card.border-primary {
     border-color: #007bff !important;
+    box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4) !important;
 }
 
 .position-filter-card.bg-primary-subtle {
-    background-color: rgba(0, 123, 255, 0.1) !important;
+    background-color: rgba(0, 123, 255, 0.15) !important;
 }
 
 .position-filter-card .card-body {
@@ -237,4 +239,21 @@
 .position-filter-card:hover .card-body {
     background-color: rgba(255, 255, 255, 0.05);
     border-radius: 0.375rem;
+}
+
+.position-filter-card:active {
+    transform: translateY(-1px);
+}
+
+/* Table header sorting */
+#positionsTable th[style*="cursor"] {
+    user-select: none;
+}
+
+#positionsTable th[style*="cursor"]:hover {
+    background: linear-gradient(135deg, #0b5ed7 0%, #0a58ca 100%);
+}
+
+#positionsTable th[style*="cursor"]:active {
+    transform: scale(0.98);
 }
