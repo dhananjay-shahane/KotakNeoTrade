@@ -296,24 +296,24 @@
 
     <!-- Settings Modal -->
     <div class="modal fade" id="settingsModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content bg-dark border-secondary">
+        <div class="modal-dialog">
+            <div class="modal-content">
                 <div class="modal-header border-bottom border-secondary">
-                    <h5 class="modal-title text-light d-flex align-items-center">
-                        <i class="fas fa-cog me-2 text-primary"></i>Application Settings
+                    <h5 class="modal-title">
+                        <i class="fas fa-cog me-2"></i>Application Settings
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <!-- Font Size Settings -->
-                    <div class="settings-section mb-4">
-                        <h6 class="text-primary d-flex align-items-center mb-3">
-                            <i class="fas fa-text-height me-2"></i>
+                    <div class="settings-section">
+                        <h6>
+                            <i class="fas fa-text-height"></i>
                             Font Size Settings
                         </h6>
-                        <div class="settings-control-group mb-3">
-                            <label for="fontSizeSelect" class="form-label text-light">Font Size:</label>
-                            <select id="fontSizeSelect" class="form-select bg-secondary text-light border-secondary">
+                        <div class="settings-control-group">
+                            <label for="fontSizeSelect">Font Size:</label>
+                            <select id="fontSizeSelect" class="form-select">
                                 <option value="10">10px (Minimum)</option>
                                 <option value="11">11px</option>
                                 <option value="12">12px</option>
@@ -331,21 +331,21 @@
                                 <option value="30">30px (Maximum)</option>
                             </select>
                         </div>
-                        <div class="font-size-preview bg-secondary border border-secondary rounded p-3">
-                            <p class="mb-2 text-light">Preview Text</p>
+                        <div class="font-size-preview">
+                            <p class="mb-2">Preview Text</p>
                             <small class="text-muted">This is how the text will appear with the selected font size.</small>
                         </div>
                     </div>
 
                     <!-- Theme Settings -->
                     <div class="settings-section">
-                        <h6 class="text-primary d-flex align-items-center mb-3">
-                            <i class="fas fa-palette me-2"></i>
+                        <h6>
+                            <i class="fas fa-palette"></i>
                             Theme Settings
                         </h6>
                         <div class="settings-control-group">
-                            <label for="themeSelect" class="form-label text-light">Theme:</label>
-                            <select id="themeSelect" class="form-select bg-secondary text-light border-secondary">
+                            <label for="themeSelect">Theme:</label>
+                            <select id="themeSelect" class="form-select">
                                 <option value="dark">Dark Theme</option>
                                 <option value="light">Light Theme</option>
                             </select>
