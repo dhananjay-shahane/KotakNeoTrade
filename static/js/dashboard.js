@@ -249,29 +249,46 @@ TradingDashboard.prototype.updatePositionsTables = function(positions) {
         var longPositions = [];
         var shortPositions = [];
         
-        // Separate long and short positions
+        // Separate long and short positions with enhanced data processing
         for (var i = 0; i < positions.length; i++) {
             var position = positions[i];
-            var netQty = parseFloat(position.flBuyQty || 0) - parseFloat(position.flSellQty || 0);
             
-            if (netQty > 0) {
-                longPositions.push({
-                    symbol: position.trdSym || position.sym || 'N/A',
-                    quantity: netQty,
-                    buyAmt: parseFloat(position.buyAmt || 0),
-                    sellAmt: parseFloat(position.sellAmt || 0),
-                    pnl: parseFloat(position.buyAmt || 0) - parseFloat(position.sellAmt || 0)
-                });
-            } else if (netQty < 0) {
-                shortPositions.push({
+            // Calculate net quantity more accurately
+            var buyQty = parseFloat(position.flBuyQty || position.cfBuyQty || 0);
+            var sellQty = parseFloat(position.flSellQty || position.cfSellQty || 0);
+            var netQty = buyQty - sellQty;
+            
+            // Calculate P&L more accurately
+            var buyAmt = parseFloat(position.buyAmt || position.cfBuyAmt || 0);
+            var sellAmt = parseFloat(position.sellAmt || position.cfSellAmt || 0);
+            var currentPrice = parseFloat(position.ltp || position.stkPrc || 0);
+            
+            if (Math.abs(netQty) > 0) { // Only include positions with actual quantity
+                var positionData = {
                     symbol: position.trdSym || position.sym || 'N/A',
                     quantity: Math.abs(netQty),
-                    buyAmt: parseFloat(position.buyAmt || 0),
-                    sellAmt: parseFloat(position.sellAmt || 0),
-                    pnl: parseFloat(position.sellAmt || 0) - parseFloat(position.buyAmt || 0)
-                });
+                    buyAmt: buyAmt,
+                    sellAmt: sellAmt,
+                    currentPrice: currentPrice,
+                    product: position.prod || 'N/A',
+                    exchange: position.exSeg || 'N/A'
+                };
+                
+                if (netQty > 0) {
+                    // Long position: bought more than sold
+                    positionData.pnl = (currentPrice * netQty) - buyAmt + sellAmt;
+                    longPositions.push(positionData);
+                } else {
+                    // Short position: sold more than bought
+                    positionData.pnl = sellAmt - buyAmt - (currentPrice * Math.abs(netQty));
+                    shortPositions.push(positionData);
+                }
             }
         }
+        
+        // Sort positions by P&L (highest first)
+        longPositions.sort(function(a, b) { return b.pnl - a.pnl; });
+        shortPositions.sort(function(a, b) { return b.pnl - a.pnl; });
         
         // Update long positions table
         this.populatePositionsTable('longPositionsTable', longPositions, 'longPositionsCount');
@@ -279,9 +296,23 @@ TradingDashboard.prototype.updatePositionsTables = function(positions) {
         // Update short positions table
         this.populatePositionsTable('shortPositionsTable', shortPositions, 'shortPositionsCount');
         
-        console.log('Positions tables updated: Long=' + longPositions.length + ', Short=' + shortPositions.length);
+        console.log('Positions tables updated successfully:');
+        console.log('- Long positions: ' + longPositions.length);
+        console.log('- Short positions: ' + shortPositions.length);
+        
+        // Log sample data for debugging
+        if (longPositions.length > 0) {
+            console.log('Sample long position:', longPositions[0]);
+        }
+        if (shortPositions.length > 0) {
+            console.log('Sample short position:', shortPositions[0]);
+        }
+        
     } catch (error) {
         console.error('Error updating positions tables:', error);
+        // Show error state in tables
+        this.populatePositionsTable('longPositionsTable', [], 'longPositionsCount');
+        this.populatePositionsTable('shortPositionsTable', [], 'shortPositionsCount');
     }
 };
 
@@ -300,35 +331,76 @@ TradingDashboard.prototype.populatePositionsTable = function(tableId, positions,
     tableBody.innerHTML = '';
     
     if (positions.length === 0) {
-        var emptyIcon = tableId === 'longPositionsTable' ? 'fa-chart-line' : 'fa-chart-line-down';
-        var emptyMessage = tableId === 'longPositionsTable' ? 'No long positions' : 'No short positions';
-        tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-light py-3"><i class="fas ' + emptyIcon + ' me-2"></i>' + emptyMessage + '</td></tr>';
+        var emptyIcon = tableId === 'longPositionsTable' ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down';
+        var emptyMessage = tableId === 'longPositionsTable' ? 'No long positions found' : 'No short positions found';
+        var emptySubtext = tableId === 'longPositionsTable' ? 'Start buying to see positions here' : 'Start shorting to see positions here';
+        
+        tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-white py-4">' +
+            '<div class="d-flex flex-column align-items-center">' +
+            '<i class="fas ' + emptyIcon + ' fs-4 mb-2 opacity-50"></i>' +
+            '<div class="fw-semibold">' + emptyMessage + '</div>' +
+            '<small class="text-white-50">' + emptySubtext + '</small>' +
+            '</div></td></tr>';
         return;
     }
     
-    // Add position rows (limit to first 5 for small table)
-    var maxRows = Math.min(positions.length, 5);
-    for (var i = 0; i < maxRows; i++) {
+    // Show all positions (no limit for better display)
+    for (var i = 0; i < positions.length; i++) {
         var position = positions[i];
         var pnlClass = position.pnl >= 0 ? 'text-success' : 'text-danger';
-        var pnlIcon = position.pnl >= 0 ? '▲' : '▼';
+        var pnlIcon = position.pnl >= 0 ? '↗' : '↘';
+        var pnlBg = position.pnl >= 0 ? 'bg-success' : 'bg-danger';
         
         var row = document.createElement('tr');
-        row.className = 'border-0';
+        row.className = 'border-0 position-row';
+        row.style.transition = 'all 0.2s ease';
+        
         row.innerHTML = 
-            '<td class="ps-3 border-0"><div class="d-flex align-items-center"><small class="text-white fw-bold">' + position.symbol + '</small></div></td>' +
-            '<td class="border-0"><small class="text-light fw-semibold">' + position.quantity.toFixed(0) + '</small></td>' +
-            '<td class="pe-3 border-0"><small class="' + pnlClass + ' fw-bold">' + pnlIcon + ' ₹' + Math.abs(position.pnl).toFixed(2) + '</small></td>';
+            '<td class="ps-3 border-0 py-2">' +
+                '<div class="d-flex align-items-center">' +
+                    '<div class="position-symbol">' +
+                        '<div class="text-white fw-bold fs-6">' + position.symbol + '</div>' +
+                        '<small class="text-white-50">Stock</small>' +
+                    '</div>' +
+                '</div>' +
+            '</td>' +
+            '<td class="border-0 py-2">' +
+                '<div class="text-white fw-semibold">' + Math.abs(position.quantity).toLocaleString() + '</div>' +
+                '<small class="text-white-50">Shares</small>' +
+            '</td>' +
+            '<td class="pe-3 border-0 py-2">' +
+                '<div class="d-flex align-items-center justify-content-end">' +
+                    '<div class="text-end">' +
+                        '<div class="' + pnlClass + ' fw-bold">' +
+                            '<span class="badge ' + pnlBg + ' bg-opacity-25 text-white px-2 py-1">' +
+                                pnlIcon + ' ₹' + Math.abs(position.pnl).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}) +
+                            '</span>' +
+                        '</div>' +
+                        '<small class="text-white-50">P&L</small>' +
+                    '</div>' +
+                '</div>' +
+            '</td>';
+        
+        // Add hover effect
+        row.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = 'rgba(255,255,255,0.1)';
+        });
+        row.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = 'transparent';
+        });
         
         tableBody.appendChild(row);
     }
     
-    // Add "view more" row if there are more positions
-    if (positions.length > 5) {
-        var moreRow = document.createElement('tr');
-        moreRow.className = 'border-0';
-        moreRow.innerHTML = '<td colspan="3" class="text-center border-0 py-2"><small><a href="/positions" class="text-info text-decoration-none fw-semibold"><i class="fas fa-external-link-alt me-1"></i>+' + (positions.length - 5) + ' more positions</a></small></td>';
-        tableBody.appendChild(moreRow);
+    // Add view all positions link at the bottom
+    if (positions.length > 0) {
+        var viewAllRow = document.createElement('tr');
+        viewAllRow.className = 'border-0';
+        viewAllRow.innerHTML = '<td colspan="3" class="text-center border-0 py-3">' +
+            '<a href="/positions" class="text-white text-decoration-none fw-semibold d-inline-flex align-items-center">' +
+            '<i class="fas fa-external-link-alt me-2"></i>View All Positions' +
+            '</a></td>';
+        tableBody.appendChild(viewAllRow);
     }
 };
 

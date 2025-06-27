@@ -679,6 +679,63 @@ body.bg-dark {
     transform: scale(1.1);
 }
 
+/* Enhanced Positions Cards */
+.position-row {
+    cursor: pointer;
+}
+
+.position-row:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    transform: translateX(5px);
+}
+
+.position-symbol {
+    transition: all 0.2s ease;
+}
+
+.position-row:hover .position-symbol {
+    transform: scale(1.05);
+}
+
+/* Positions table styling */
+.table-responsive {
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.badge.bg-opacity-25 {
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Smooth animations for data updates */
+@keyframes positionUpdate {
+    0% { 
+        background-color: rgba(255, 255, 255, 0.2);
+        transform: scale(1.02);
+    }
+    100% { 
+        background-color: transparent;
+        transform: scale(1);
+    }
+}
+
+.position-updated {
+    animation: positionUpdate 1s ease-out;
+}
+
+/* Loading states */
+.loading-shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
 /* Gradient backgrounds */
 .bg-gradient-primary {
     background: var(--gradient-primary) !important;
