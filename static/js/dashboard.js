@@ -335,11 +335,11 @@ TradingDashboard.prototype.populatePositionsTable = function(tableId, positions,
         var emptyMessage = tableId === 'longPositionsTable' ? 'No long positions found' : 'No short positions found';
         var emptySubtext = tableId === 'longPositionsTable' ? 'Start buying to see positions here' : 'Start shorting to see positions here';
         
-        tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-white py-4">' +
+        tableBody.innerHTML = '<tr><td colspan="3" class="text-center py-4">' +
             '<div class="d-flex flex-column align-items-center">' +
             '<i class="fas ' + emptyIcon + ' fs-4 mb-2 opacity-50"></i>' +
             '<div class="fw-semibold">' + emptyMessage + '</div>' +
-            '<small class="text-white-50">' + emptySubtext + '</small>' +
+            '<small class="">' + emptySubtext + '</small>' +
             '</div></td></tr>';
         return;
     }

@@ -165,16 +165,16 @@
 <div class="row mb-4">
     <!-- Long Positions Table -->
     <div class="col-md-6 mb-3">
-        <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, #10b981, #059669); border-radius: 16px;">
-            <div class="card-header bg-transparent border-0 pb-2 pt-3">
+        <div class="card border-0 shadow-lg bg-secondary" style="border-radius: 16px;">
+            <div class="card-header border-0 pb-2 pt-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center">
                         <div class="bg-white bg-opacity-25 rounded-circle p-2 me-3 shadow-sm">
-                            <i class="fas fa-trending-up text-white fs-5"></i>
+                            <i class="fas fa-chart-line text-success fs-5"></i>
                         </div>
                         <div>
                             <h6 class="mb-0 text-white fw-bold fs-6">Long Positions</h6>
-                            <small class="text-white-50">Active Buys</small>
+                            <small class="text-muted">Active Buys</small>
                         </div>
                     </div>
                     <div class="d-flex align-items-center">
@@ -184,15 +184,15 @@
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive" style="border-radius: 0 0 16px 16px; overflow: hidden;">
-                    <table class="table table-dark table-hover table-sm mb-0" style="background: rgba(0,0,0,0.3);">
-                        <thead style="background: rgba(0,0,0,0.4);">
+                    <table class="table table-hover table-sm mb-0">
+                        <thead>
                             <tr>
-                                <th class="text-white fw-semibold border-0 ps-3 py-3">SYMBOL</th>
-                                <th class="text-white fw-semibold border-0 py-3">QTY</th>
-                                <th class="text-white fw-semibold border-0 pe-3 py-3">P&L</th>
+                                <th class="fw-semibold border-0 ps-3 py-3">SYMBOL</th>
+                                <th class="fw-semibold border-0 py-3">QTY</th>
+                                <th class="fw-semibold border-0 pe-3 py-3">P&L</th>
                             </tr>
                         </thead>
-                        <tbody id="longPositionsTable" style="background: rgba(0,0,0,0.2);">
+                        <tbody id="longPositionsTable">
                             <tr>
                                 <td colspan="3" class="text-center text-white py-4">
                                     <i class="fas fa-spinner fa-spin me-2"></i>Loading positions...
@@ -207,16 +207,16 @@
 
     <!-- Short Positions Table -->
     <div class="col-md-6 mb-3">
-        <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, #ef4444, #dc2626); border-radius: 16px;">
+        <div class="card border-0 shadow-lg bg-secondary">
             <div class="card-header bg-transparent border-0 pb-2 pt-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center">
                         <div class="bg-white bg-opacity-25 rounded-circle p-2 me-3 shadow-sm">
-                            <i class="fas fa-trending-down text-white fs-5"></i>
+                            <i class="fas fa-long-arrow-down text-danger fs-5"></i>
                         </div>
                         <div>
                             <h6 class="mb-0 text-white fw-bold fs-6">Short Positions</h6>
-                            <small class="text-white-50">Active Sells</small>
+                            <small class="">Active Sells</small>
                         </div>
                     </div>
                     <div class="d-flex align-items-center">
