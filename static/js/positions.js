@@ -321,13 +321,48 @@ function setAutoRefresh(seconds) {
 // Function to filter positions based on position type (LONG/SHORT/ALL)
 function filterPositions(type) {
     if (window.positionsManager) {
+        window.positionsManager.currentFilter = type || 'ALL';
         window.positionsManager.displayPositions(); // Redisplay based on current filter
+        console.log('Filtering positions by type:', window.positionsManager.currentFilter);
     }
 }
+
+// Add filterPositions method to PositionsManager prototype
+PositionsManager.prototype.filterPositions = function(type) {
+    this.currentFilter = type || 'ALL';
+    this.displayPositions();
+    console.log('Filtering positions by type:', this.currentFilter);
+};
 
 // Function to filter positions by type with visual feedback
 function filterPositionsByType(type) {
     if (window.positionsManager) {
+        // Remove active class from all filter buttons
+        var filterButtons = document.querySelectorAll('.card-header .btn');
+        filterButtons.forEach(function(btn) {
+            btn.classList.remove('btn-primary', 'btn-success', 'btn-danger');
+            if (type === 'ALL') {
+                btn.classList.add('btn-outline-primary');
+            } else if (type === 'LONG') {
+                btn.classList.add('btn-outline-success');
+            } else if (type === 'SHORT') {
+                btn.classList.add('btn-outline-danger');
+            }
+        });
+
+        // Add active class to clicked button
+        var clickedButton = event.target;
+        if (clickedButton) {
+            clickedButton.classList.remove('btn-outline-primary', 'btn-outline-success', 'btn-outline-danger');
+            if (type === 'ALL') {
+                clickedButton.classList.add('btn-primary');
+            } else if (type === 'LONG') {
+                clickedButton.classList.add('btn-success');
+            } else if (type === 'SHORT') {
+                clickedButton.classList.add('btn-danger');
+            }
+        }
+
         // Remove active class from all cards
         var cards = document.querySelectorAll('.position-filter-card');
         cards.forEach(function(card) {

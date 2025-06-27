@@ -103,13 +103,13 @@
                 <span class="badge bg-primary ms-2" id="positionsTableCount">0</span>
             </h5>
             <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-outline-primary" onclick="window.positionsManager.filterPositions(null)" title="Show All Positions">
+                <button class="btn btn-sm btn-outline-primary" onclick="filterPositionsByType('ALL')" title="Show All Positions">
                     <i class="fas fa-list me-1"></i>All
                 </button>
-                <button class="btn btn-sm btn-outline-success" onclick="window.positionsManager.filterPositions('LONG')" title="Show Long Positions">
+                <button class="btn btn-sm btn-outline-success" onclick="filterPositionsByType('LONG')" title="Show Long Positions">
                     <i class="fas fa-arrow-up me-1"></i>Long
                 </button>
-                <button class="btn btn-sm btn-outline-danger" onclick="window.positionsManager.filterPositions('SHORT')" title="Show Short Positions">
+                <button class="btn btn-sm btn-outline-danger" onclick="filterPositionsByType('SHORT')" title="Show Short Positions">
                     <i class="fas fa-arrow-down me-1"></i>Short
                 </button>
             </div>
