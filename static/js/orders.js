@@ -284,6 +284,9 @@ function updateOrdersSummary(orders) {
     document.getElementById('rejectedOrdersCount').textContent = rejected;
     document.getElementById('cancelledOrdersCount').textContent = cancelled;
     document.getElementById('buyOrdersCount').textContent = buyOrders;
+    
+    // Update available margin
+    updateAvailableMargin();
 }
 
 function showNoOrdersMessage() {
@@ -308,6 +311,9 @@ function showNoOrdersMessage() {
     document.getElementById('rejectedOrdersCount').textContent = '0';
     document.getElementById('cancelledOrdersCount').textContent = '0';
     document.getElementById('buyOrdersCount').textContent = '0';
+    
+    // Update available margin even when no orders
+    updateAvailableMargin();
 }
 
 async function refreshOrdersTable() {
@@ -442,6 +448,30 @@ function showNotification(message, type = 'info') {
             toast.parentNode.removeChild(toast);
         }
     }, 5000);
+}
+
+async function updateAvailableMargin() {
+    try {
+        var response = await fetch('/api/dashboard-data');
+        var data = await response.json();
+        
+        if (data.success && data.limits) {
+            var availableMargin = parseFloat(data.limits.Net || 0);
+            var marginElement = document.getElementById('availableMarginAmount');
+            if (marginElement) {
+                marginElement.textContent = '₹' + availableMargin.toLocaleString('en-IN', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching available margin:', error);
+        var marginElement = document.getElementById('availableMarginAmount');
+        if (marginElement) {
+            marginElement.textContent = '₹0.00';
+        }
+    }
 }
 
 // Add filter card click functionality
