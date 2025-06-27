@@ -255,6 +255,52 @@
             }
         }
 
+        // Font Size Control Functionality
+        function initializeFontSize() {
+            // Get saved font size from localStorage or default to 14px
+            var savedFontSize = localStorage.getItem('website-font-size') || '14';
+            
+            // Apply the font size immediately
+            document.documentElement.style.setProperty('--global-font-size', savedFontSize + 'px');
+            
+            // Wait for DOM to be ready before setting up select
+            function setupFontSizeControl() {
+                var fontSizeSelect = document.getElementById('fontSizeSelect');
+                if (!fontSizeSelect) {
+                    // Element doesn't exist on this page - skip silently
+                    return;
+                }
+
+                // Set select value based on saved font size
+                fontSizeSelect.value = savedFontSize;
+
+                // Add event listener for font size changes
+                fontSizeSelect.addEventListener('change', function() {
+                    var newFontSize = this.value;
+                    document.documentElement.style.setProperty('--global-font-size', newFontSize + 'px');
+                    localStorage.setItem('website-font-size', newFontSize);
+
+                    // Show confirmation toast
+                    var message = 'Font size changed to ' + newFontSize + 'px';
+                    if (typeof showToaster === 'function') {
+                        showToaster('Font Size Updated', message, 'info');
+                    }
+
+                    console.log('Font size changed to:', newFontSize + 'px');
+                });
+            }
+
+            // If DOM is already loaded, setup immediately
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', setupFontSizeControl);
+            } else {
+                setupFontSizeControl();
+            }
+        }
+
+        // Initialize font size immediately (before DOM loads)
+        initializeFontSize();
+
         // Initialize theme immediately (before DOM loads)
         initializeTheme();
 
@@ -264,6 +310,12 @@
             setTimeout(function() {
                 debugThemeToggle();
             }, 100);
+
+            // Ensure font size control is working
+            var fontSizeSelect = document.getElementById('fontSizeSelect');
+            if (fontSizeSelect) {
+                console.log('Font size control initialized with value:', fontSizeSelect.value);
+            }
 
             // Highlight active navigation
             var currentPath = window.location.pathname;

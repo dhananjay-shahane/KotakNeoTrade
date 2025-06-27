@@ -5,12 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Kotak Neo Trading{% endblock %}</title>
 
-    <!-- Theme persistence script (runs immediately) -->
+    <!-- Theme and Font Size persistence script (runs immediately) -->
     <script>
-        // Apply saved theme immediately to prevent flash
+        // Apply saved theme and font size immediately to prevent flash
         (function() {
             var savedTheme = localStorage.getItem('theme') || 'dark';
             document.documentElement.setAttribute('data-theme', savedTheme);
+            
+            var savedFontSize = localStorage.getItem('website-font-size') || '14';
+            document.documentElement.style.setProperty('--global-font-size', savedFontSize + 'px');
         })();
     </script>
 
@@ -40,6 +43,26 @@
         </div>
 
         <div class="header-right">
+
+            <!-- Font Size Control -->
+            <div class="font-size-control me-3">
+                <label for="fontSizeSelect" class="form-label text-muted me-2 small">Font:</label>
+                <select id="fontSizeSelect" class="form-select form-select-sm" style="width: auto; min-width: 80px;">
+                    <option value="12">12px</option>
+                    <option value="13">13px</option>
+                    <option value="14" selected>14px</option>
+                    <option value="15">15px</option>
+                    <option value="16">16px</option>
+                    <option value="17">17px</option>
+                    <option value="18">18px</option>
+                    <option value="20">20px</option>
+                    <option value="22">22px</option>
+                    <option value="24">24px</option>
+                    <option value="26">26px</option>
+                    <option value="28">28px</option>
+                    <option value="30">30px</option>
+                </select>
+            </div>
 
             <!-- Theme Toggle Switch -->
             <div class="theme-toggle">
