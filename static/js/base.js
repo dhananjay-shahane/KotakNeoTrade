@@ -280,10 +280,21 @@
                     document.documentElement.style.setProperty('--global-font-size', newFontSize + 'px');
                     localStorage.setItem('website-font-size', newFontSize);
 
+                    // Add visual feedback with animation
+                    var fontControl = document.querySelector('.font-size-control .bg-dark');
+                    if (fontControl) {
+                        fontControl.style.transform = 'scale(1.05)';
+                        fontControl.style.borderColor = 'var(--success-color)';
+                        setTimeout(function() {
+                            fontControl.style.transform = 'scale(1)';
+                            fontControl.style.borderColor = 'var(--border-color)';
+                        }, 200);
+                    }
+
                     // Show confirmation toast
                     var message = 'Font size changed to ' + newFontSize + 'px';
                     if (typeof showToaster === 'function') {
-                        showToaster('Font Size Updated', message, 'info');
+                        showToaster('Font Size Updated', message, 'success');
                     }
 
                     console.log('Font size changed to:', newFontSize + 'px');
