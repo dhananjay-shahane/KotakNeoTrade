@@ -197,10 +197,11 @@ def api_positions():
                 'message': error_message,
                 'error': error_message,
                 'positions': []
-            }), 400
+            }), 200  # Changed to 200 to avoid JS error handling issues
 
         # Ensure positions_data is a list
         if not isinstance(positions_data, list):
+            logging.warning(f"Positions data is not a list, type: {type(positions_data)}")
             positions_data = []
 
         # Calculate summary statistics
@@ -239,7 +240,7 @@ def api_positions():
                 elif net_qty < 0:
                     short_positions += 1
 
-        return jsonify({
+        response_data = {
             'success': True,
             'positions': positions_data,
             'total_positions': len(positions_data) if positions_data else 0,
@@ -251,7 +252,10 @@ def api_positions():
                 'short_positions': short_positions
             },
             'timestamp': int(time.time())
-        })
+        }
+        
+        logging.info(f"Returning positions API response: success={response_data['success']}, positions_count={len(positions_data)}")
+        return jsonify(response_data)
     except Exception as e:
         error_message = str(e)
         logging.error(f"API positions error: {error_message}")

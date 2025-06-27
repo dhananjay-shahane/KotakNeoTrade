@@ -27,18 +27,27 @@ PositionsManager.prototype.loadPositions = function() {
                 try {
                     var response = JSON.parse(xhr.responseText);
                     console.log('Positions API Response:', response);
+                    console.log('Response keys:', Object.keys(response));
+                    console.log('Response.success:', response.success);
+                    console.log('Response.positions type:', typeof response.positions);
+                    console.log('Response.positions isArray:', Array.isArray(response.positions));
                     
                     if (response.success && response.positions && Array.isArray(response.positions)) {
+                        console.log('Using wrapped API format with', response.positions.length, 'positions');
                         this.positions = response.positions;
                         this.displayPositions();
                         this.updateSummaryCards();
                     } else if (response.stat === 'Ok' && response.data && Array.isArray(response.data)) {
-                        // Handle direct Kotak Neo API format
+                        console.log('Using direct Kotak Neo API format with', response.data.length, 'positions');
                         this.positions = response.data;
                         this.displayPositions();
                         this.updateSummaryCards();
+                    } else if (response.success === false && response.message) {
+                        console.error('API returned error:', response.message);
+                        this.showError(response.message);
                     } else {
                         console.error('Invalid positions response format:', response);
+                        console.error('Expected: {success: true, positions: []} or {stat: "Ok", data: []}');
                         this.showError('Invalid response format from positions API');
                     }
                 } catch (e) {
