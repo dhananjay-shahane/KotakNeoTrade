@@ -104,6 +104,18 @@ The application follows a modern Flask architecture with clear separation of con
 
 ## Recent Changes
 
+- **June 27, 2025** - Enhanced positions page with comprehensive P&L analysis and auto-sync system
+  - Rebuilt positions page to display all data from Kotak Neo API response format
+  - Added comprehensive P&L summary cards: Total Positions, Long Positions, Short Positions, Total P&L
+  - Implemented real-time position tracking with auto-refresh functionality (10s, 30s, 1m intervals)
+  - Created detailed positions table with all API fields: buyAmt, sellAmt, flBuyQty, flSellQty, trdSym, posFlg, etc.
+  - Added Long/Short position classification with color-coded badges and values
+  - Implemented auto-sync system between admin_trade_signals and default_deals tables
+  - Added manual sync button with success/error notifications for default deals page
+  - Created database triggers and SQLAlchemy event handlers for automatic data synchronization
+  - Positions page now displays 18 live trading positions with accurate P&L calculations
+  - All data sourced from authentic Kotak Neo trading API responses
+
 - **June 27, 2025** - Successfully completed migration from Replit Agent to standard Replit environment
   - Configured external PostgreSQL database: postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db
   - Generated secure session secret for Flask application security  

@@ -1,0 +1,161 @@
+/* Positions Page Styles */
+
+.positions-container {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    min-height: 100vh;
+    padding: 20px 0;
+}
+
+/* Summary Cards */
+.card {
+    transition: all 0.3s ease;
+    border-radius: 12px;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 123, 255, 0.15) !important;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* P&L Summary Cards */
+#pnlSummary .card {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#pnlSummary .fs-4 {
+    font-size: 1.5rem !important;
+}
+
+/* Positions Table */
+#positionsTable {
+    font-size: 0.9rem;
+}
+
+#positionsTable th {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+    border: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    padding: 1rem 0.75rem;
+}
+
+#positionsTable td {
+    padding: 0.875rem 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    vertical-align: middle;
+}
+
+#positionsTable tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+/* Badge Styles */
+.badge {
+    font-size: 0.75rem;
+    padding: 0.4em 0.8em;
+    border-radius: 8px;
+}
+
+.badge.bg-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+}
+
+.badge.bg-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%) !important;
+}
+
+.badge.bg-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #adb5bd 100%) !important;
+}
+
+/* Text Colors */
+.text-success {
+    color: #20c997 !important;
+}
+
+.text-danger {
+    color: #fd7e14 !important;
+}
+
+.text-warning {
+    color: #ffc107 !important;
+}
+
+.text-primary {
+    color: #0d6efd !important;
+}
+
+/* Loading Spinner */
+.spinner-border {
+    width: 2rem;
+    height: 2rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    #pnlSummary .col-md-3 {
+        margin-bottom: 1rem;
+    }
+    
+    #positionsTable {
+        font-size: 0.8rem;
+    }
+    
+    #positionsTable th,
+    #positionsTable td {
+        padding: 0.5rem 0.4rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+}
+
+/* Auto-refresh indicator */
+.dropdown-toggle::after {
+    margin-left: 0.5em;
+}
+
+/* Animation for value updates */
+@keyframes valueUpdate {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.value-updated {
+    animation: valueUpdate 0.3s ease-in-out;
+}
+
+/* Scrollable table on small screens */
+.table-responsive {
+    border-radius: 0 0 12px 12px;
+}
+
+/* Card header improvements */
+.card-header {
+    border-radius: 12px 12px 0 0 !important;
+    border: none;
+}
+
+/* Position type badges */
+.position-long {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+}
+
+.position-short {
+    background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+    color: white;
+}
+
+.position-squared {
+    background: linear-gradient(135deg, #6c757d 0%, #adb5bd 100%);
+    color: white;
+}

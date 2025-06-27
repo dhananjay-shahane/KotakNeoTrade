@@ -2,387 +2,127 @@
 
 {% block title %}Positions - Kotak Neo Trading{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/positions.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="row mb-4">
-    <div class="col">
-        <h2>
-            <i class="fas fa-chart-pie me-2"></i>Current Positions
-        </h2>
-        <p class="text-muted">Real-time position tracking and P&L analysis</p>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">Live Positions</h1>
+        <p class="text-muted mb-0">Real-time position tracking with comprehensive P&L analysis</p>
     </div>
-    <div class="col-auto">
-        <button class="btn btn-primary" onclick="refreshPositions()">
-            <i class="fas fa-sync me-1"></i>Refresh
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary" onclick="refreshPositions()">
+            <i class="fas fa-sync-alt me-1"></i>Refresh
         </button>
-    </div>
-</div>
-
-{% if positions %}
-<!-- Positions Summary -->
-<!-- <div class="row mb-4" id="positionsSummary">
-    <div class="col-md-3">
-        <div class="card bg-primary">
-            <div class="card-body text-center">
-                <h4 class="mb-1" id="totalPositionsCount">{{ positions|length }}</h4>
-                <p class="mb-0"><i class="fas fa-chart-pie me-1"></i>Total Positions</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-success">
-            <div class="card-body text-center">
-                {% set total_pnl = 0.0 %}
-                {% if positions %}
-                    {% for position in positions %}
-                        {% set pnl = (position.urPnl or position.pnl or position.rpnl or position.cfBuyQty or 0)|float %}
-                        {% if position.urPnl %}
-                            {% set pnl = position.urPnl|float %}
-                        {% elif position.pnl %}
-                            {% set pnl = position.pnl|float %}
-                        {% elif position.rpnl %}
-                            {% set pnl = position.rpnl|float %}
-                        {% else %}
-                            {% set pnl = 0.0 %}
-                        {% endif %}
-                        {% set total_pnl = total_pnl + pnl %}
-                    {% endfor %}
-                {% endif %}
-                <h4 class="mb-1 {% if total_pnl > 0 %}text-muted{% elif total_pnl < 0 %}text-muted{% else %}text-muted{% endif %}" id="totalPnl">₹{{ "%.2f"|format(total_pnl) }}</h4>
-                <p class="mb-0"><i class="fas fa-chart-line me-1"></i>Total P&L</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-info">
-            <div class="card-body text-center">
-                {% set realized_pnl = 0.0 %}
-                {% if positions %}
-                    {% for position in positions %}
-                        {% set rpnl = 0.0 %}
-                        {% if position.rlPnl %}
-                            {% set rpnl = position.rlPnl|float %}
-                        {% elif position.realised_pnl %}
-                            {% set rpnl = position.realised_pnl|float %}
-                        {% elif position.rpnl %}
-                            {% set rpnl = position.rpnl|float %}
-                        {% elif position.cfBuyQty and position.cfSellQty %}
-                            {% set buy_val = (position.cfBuyQty|float * position.cfBuyAvgPrc|float) if position.cfBuyAvgPrc else 0 %}
-                            {% set sell_val = (position.cfSellQty|float * position.cfSellAvgPrc|float) if position.cfSellAvgPrc else 0 %}
-                            {% set rpnl = sell_val - buy_val %}
-                        {% endif %}
-                        {% set realized_pnl = realized_pnl + rpnl %}
-                    {% endfor %}
-                {% endif %}
-                <h4 class="mb-1" id="realizedPnl">₹{{ "%.2f"|format(realized_pnl) }}</h4>
-                <p class="mb-0"><i class="fas fa-money-bill me-1"></i>Realized P&L</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-warning">
-            <div class="card-body text-center">
-                {% set unrealized_pnl = 0.0 %}
-                {% if positions %}
-                    {% for position in positions %}
-                        {% set upnl = 0.0 %}
-                        {% if position.urPnl %}
-                            {% set upnl = position.urPnl|float %}
-                        {% elif position.unrealised %}
-                            {% set upnl = position.unrealised|float %}
-                        {% elif position.pnl %}
-                            {% set upnl = position.pnl|float %}
-                        {% elif position.flBuyQty and position.flSellQty and position.mktPrice %}
-                            {% set net_qty = (position.flBuyQty|float - position.flSellQty|float) %}
-                            {% if net_qty != 0 %}
-                                {% set avg_price = 0 %}
-                                {% if net_qty > 0 and position.flBuyAvgPrc %}
-                                    {% set avg_price = position.flBuyAvgPrc|float %}
-                                {% elif net_qty < 0 and position.flSellAvgPrc %}
-                                    {% set avg_price = position.flSellAvgPrc|float %}
-                                {% endif %}
-                                {% if avg_price > 0 %}
-                                    {% set upnl = (position.mktPrice|float - avg_price) * net_qty %}
-                                {% endif %}
-                            {% endif %}
-                        {% endif %}
-                        {% set unrealized_pnl = unrealized_pnl + upnl %}
-                    {% endfor %}
-                {% endif %}
-                <h4 class="mb-1" id="unrealizedPnl">₹{{ "%.2f"|format(unrealized_pnl) }}</h4>
-                <p class="mb-0"><i class="fas fa-clock me-1"></i>Unrealized P&L</p>
-            </div>
-        </div>
-    </div>
-</div> -->
-
-<!-- Summary Footer -->
-<div class="card-footer bg-secondary mb-4 p-2" id="positionsFooterSummary">
-    <div class="row text-center">
-        <div class="col-md-3">
-            <h6 class="text-muted mb-1">Total Positions</h6>
-            <h5 class="mb-0" id="footerTotalPositions">{{ positions|length }}</h5>
-        </div>
-        <div class="col-md-3">
-            <h6 class="text-muted mb-1">Total P&L</h6>
-            {% set total_pnl = 0.0 %}
-            {% if positions %}
-                {% for position in positions %}
-                    {% set pnl = 0.0 %}
-                    {% if position.urPnl %}
-                        {% set pnl = position.urPnl|float %}
-                    {% elif position.pnl %}
-                        {% set pnl = position.pnl|float %}
-                    {% elif position.rpnl %}
-                        {% set pnl = position.rpnl|float %}
-                    {% endif %}
-                    {% set total_pnl = total_pnl + pnl %}
-                {% endfor %}
-            {% endif %}
-            <h5 class="mb-0 {% if total_pnl > 0 %}text-success{% elif total_pnl < 0 %}text-danger{% else %}text-muted{% endif %}" id="footerTotalPnl">
-                ₹{{ "%.2f"|format(total_pnl) }}
-            </h5>
-        </div>
-        <div class="col-md-3">
-            <h6 class="text-muted mb-1">Long Positions</h6>
-            {% set long_positions = 0 %}
-            {% if positions %}
-                {% for position in positions %}
-                    {% set net_qty = (position.flBuyQty or position.buyQty or 0)|int - (position.flSellQty or position.sellQty or 0)|int %}
-                    {% if net_qty > 0 %}
-                        {% set long_positions = long_positions + 1 %}
-                    {% endif %}
-                {% endfor %}
-            {% endif %}
-            <h5 class="mb-0 text-success" id="footerLongPositions">{{ long_positions }}</h5>
-        </div>
-        <div class="col-md-3">
-            <h6 class="text-muted mb-1">Short Positions</h6>
-            {% set short_positions = 0 %}
-            {% if positions %}
-                {% for position in positions %}
-                    {% set net_qty = (position.flBuyQty or position.buyQty or 0)|int - (position.flSellQty or position.sellQty or 0)|int %}
-                    {% if net_qty < 0 %}
-                        {% set short_positions = short_positions + 1 %}
-                    {% endif %}
-                {% endfor %}
-            {% endif %}
-            <h5 class="mb-0 text-danger" id="footerShortPositions">{{ short_positions }}</h5>
+        <div class="dropdown">
+            <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-clock me-1"></i>Auto Refresh: <span id="refreshInterval">30s</span>
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" onclick="setAutoRefresh(10)">10 seconds</a></li>
+                <li><a class="dropdown-item" href="#" onclick="setAutoRefresh(30)">30 seconds</a></li>
+                <li><a class="dropdown-item" href="#" onclick="setAutoRefresh(60)">1 minute</a></li>
+                <li><a class="dropdown-item" href="#" onclick="setAutoRefresh(0)">Disable</a></li>
+            </ul>
         </div>
     </div>
 </div>
 
-<div class="card bg-secondary">
-    <div class="card-header">
-        <h5 class="mb-0">
-            <i class="fas fa-list me-2"></i>Position Details
+<!-- P&L Summary Cards -->
+<div class="row mb-4" id="pnlSummary">
+    <div class="col-md-3">
+        <div class="card bg-dark border-0 shadow">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <i class="fas fa-chart-pie text-primary fs-4"></i>
+                    <span class="badge bg-secondary" id="totalPositionsCount">0</span>
+                </div>
+                <h4 class="text-light mb-1">Total Positions</h4>
+                <p class="text-muted mb-0 small">Active trading positions</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-dark border-0 shadow">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <i class="fas fa-chart-line text-success fs-4"></i>
+                    <span class="badge bg-success" id="longPositionsCount">0</span>
+                </div>
+                <h4 class="text-success mb-1" id="longPositionsValue">₹0.00</h4>
+                <p class="text-muted mb-0 small">Long Positions</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-dark border-0 shadow">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <i class="fas fa-chart-line-down text-danger fs-4"></i>
+                    <span class="badge bg-danger" id="shortPositionsCount">0</span>
+                </div>
+                <h4 class="text-danger mb-1" id="shortPositionsValue">₹0.00</h4>
+                <p class="text-muted mb-0 small">Short Positions</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-dark border-0 shadow">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <i class="fas fa-calculator text-warning fs-4"></i>
+                    <span class="badge" id="pnlBadge">0%</span>
+                </div>
+                <h4 class="mb-1" id="totalPnlValue">₹0.00</h4>
+                <p class="text-muted mb-0 small">Total P&L</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Live Positions Table -->
+<div class="card bg-secondary border-0 shadow-lg">
+    <div class="card-header bg-dark border-0">
+        <h5 class="mb-0 text-light">
+            <i class="fas fa-table me-2 text-primary"></i>Live Trading Positions
+            <span class="badge bg-primary ms-2" id="positionsTableCount">0</span>
         </h5>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-dark table-hover mb-0">
+            <table class="table table-dark table-hover mb-0" id="positionsTable">
                 <thead class="table-primary">
                     <tr>
                         <th>Symbol</th>
-                        <th>Exchange</th>
                         <th>Product</th>
+                        <th>Exchange</th>
                         <th>Buy Qty</th>
                         <th>Sell Qty</th>
                         <th>Net Qty</th>
-                        <th>Buy Avg</th>
-                        <th>Sell Avg</th>
-                        <th>LTP</th>
+                        <th>Buy Amount</th>
+                        <th>Sell Amount</th>
                         <th>P&L</th>
-                        <th>Actions</th>
+                        <th>Position</th>
+                        <th>Expiry</th>
+                        <th>Last Updated</th>
                     </tr>
                 </thead>
                 <tbody id="positionsTableBody">
-                    {% if positions %}
-                        {% for position in positions %}
-                        <tr data-position-id="{{ position.tok or loop.index }}">
-                            <td>
-                                <strong>{{ position.trdSym or position.sym or position.tradingsymbol or 'N/A' }}</strong>
-                                {% if position.series %}
-                                    <br><small class="text-muted">{{ position.series }}</small>
-                                {% endif %}
-                                {% if position.opTyp and position.opTyp != 'XX' %}
-                                    <br><small class="text-warning">{{ position.opTyp }} {{ position.stkPrc or position.strike_price or '' }}</small>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <span class="badge bg-info">{{ position.exSeg or position.exchange or 'NSE' }}</span>
-                            </td>
-                            <td>
-                                <span class="badge bg-secondary">{{ position.prdCode or position.product or 'CNC' }}</span>
-                            </td>
-                            <td class="text-success">
-                                {{ position.flBuyQty or position.buyQty or '0' }}
-                            </td>
-                            <td class="text-danger">
-                                {{ position.flSellQty or position.sellQty or '0' }}
-                            </td>
-                            <td>
-                                {% set net_qty = (position.flBuyQty or position.buyQty or 0)|int - (position.flSellQty or position.sellQty or 0)|int %}
-                                <span class="{% if net_qty > 0 %}text-success{% elif net_qty < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                    {{ net_qty }}
-                                </span>
-                            </td>
-                            <td>
-                                {% if (position.flBuyQty or position.buyQty or 0)|int > 0 %}
-                                    ₹{{ "%.2f"|format((position.flBuyAvgPrc or position.buyAvgPrc or position.avgBuyPrice or 0)|float) }}
-                                {% else %}
-                                    <span class="text-muted">N/A</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if (position.flSellQty or position.sellQty or 0)|int > 0 %}
-                                    ₹{{ "%.2f"|format((position.flSellAvgPrc or position.sellAvgPrc or position.avgSellPrice or 0)|float) }}
-                                {% else %}
-                                    <span class="text-muted">N/A</span>
-                                {% endif %}
-                            </td>
-                            <td class="price-ltp">₹{{ "%.2f"|format((position.mktPrice or position.ltp or position.LastPrice or 0)|float) }}</td>
-                            <td>
-                                {% set pnl = 0.0 %}
-                                {% if position.urPnl %}
-                                    {% set pnl = position.urPnl|float %}
-                                {% elif position.pnl %}
-                                    {% set pnl = position.pnl|float %}
-                                {% elif position.rpnl %}
-                                    {% set pnl = position.rpnl|float %}
-                                {% elif position.unrealised %}
-                                    {% set pnl = position.unrealised|float %}
-                                {% elif position.flBuyQty and position.flSellQty and position.mktPrice %}
-                                    {% set net_qty = (position.flBuyQty|float - position.flSellQty|float) %}
-                                    {% if net_qty != 0 %}
-                                        {% set avg_price = 0 %}
-                                        {% if net_qty > 0 and position.flBuyAvgPrc %}
-                                            {% set avg_price = position.flBuyAvgPrc|float %}
-                                        {% elif net_qty < 0 and position.flSellAvgPrc %}
-                                            {% set avg_price = position.flSellAvgPrc|float %}
-                                        {% endif %}
-                                        {% if avg_price > 0 %}
-                                            {% set pnl = (position.mktPrice|float - avg_price) * net_qty %}
-                                        {% endif %}
-                                    {% endif %}
-                                {% endif %}
-                                
-                                <span class="position-pnl {% if pnl > 0 %}text-success{% elif pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                    ₹{{ "%.2f"|format(pnl) }}
-                                    {% if pnl != 0 %}
-                                        {% set investment = 0 %}
-                                        {% if position.buyAmt %}
-                                            {% set investment = position.buyAmt|float %}
-                                        {% elif position.flBuyQty and position.flBuyAvgPrc %}
-                                            {% set investment = position.flBuyQty|float * position.flBuyAvgPrc|float %}
-                                        {% endif %}
-                                        {% if investment > 0 %}
-                                            <br><small>({{ "%.2f"|format((pnl/investment)*100) }}%)</small>
-                                        {% endif %}
-                                    {% endif %}
-                                </span>
-                            </td>
-                            <td>
-                                <div class="btn-group btn-group-sm">
-                                    {% if net_qty > 0 %}
-                                        <button class="btn btn-danger btn-sm" onclick="sellPosition('{{ position.trdSym or position.sym }}', { net_qty })">
-                                            <i class="fas fa-minus"></i> Sell
-                                        </button>
-                                    {% elif net_qty < 0 %}
-                                        <button class="btn btn-success btn-sm" onclick="buyPosition('{{ position.trdSym or position.sym }}',{ net_qty , abs })">
-                                            <i class="fas fa-plus"></i> Buy
-                                        </button>
-                                    {% endif %}
-                                    <button class="btn btn-info btn-sm" onclick="getQuote('{{ position.tok }}', '{{ position.exSeg }}')">
-                                        <i class="fas fa-chart-line"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    {% else %}
-                        <tr>
-                            <td colspan="11" class="text-center py-5">
-                                <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
-                                <h4 class="text-muted">No Positions Found</h4>
-                                <p class="text-muted">You don't have any open positions at the moment.</p>
-                                <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">
-                                    <i class="fas fa-plus me-1"></i>Place Order
-                                </a>
-                            </td>
-                        </tr>
-                    {% endif %}
+                    <tr>
+                        <td colspan="12" class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading positions...</span>
+                            </div>
+                            <p class="mt-2 mb-0 text-muted">Loading live positions data...</p>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
     </div>
-    
 </div>
 
-{% else %}
-<div class="card bg-secondary">
-    <div class="card-body text-center py-5">
-        <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
-        <h4 class="text-muted">No Positions Found</h4>
-        <p class="text-muted">You don't have any open positions at the moment.</p>
-        <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
-            <i class="fas fa-plus me-1"></i>Place Order
-        </a>
-    </div>
-</div>
-{% endif %}
-
-<!-- Position Action Modal -->
-<div class="modal fade" id="positionActionModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content bg-dark">
-            <div class="modal-header">
-                <h5 class="modal-title" id="positionActionTitle">Position Action</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="positionActionForm">
-                    <input type="hidden" name="trading_symbol" id="actionSymbol">
-                    <input type="hidden" name="transaction_type" id="actionType">
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Quantity</label>
-                        <input type="number" class="form-control bg-secondary text-muted" name="quantity" id="actionQuantity" min="1" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Order Type</label>
-                        <select class="form-select bg-secondary text-muted" name="order_type" required>
-                            <option value="MARKET">MARKET</option>
-                            <option value="LIMIT">LIMIT</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Price (for LIMIT orders)</label>
-                        <input type="number" class="form-control bg-secondary text-muted" name="price" step="0.01">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Product</label>
-                        <select class="form-select bg-secondary text-muted" name="product" required>
-                            <option value="CNC">CNC</option>
-                            <option value="MIS">MIS</option>
-                            <option value="NRML">NRML</option>
-                        </select>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="submitPositionAction()">
-                    <i class="fas fa-check me-1"></i>Execute
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block scripts %}
-<script src="{{url_for('static', filename="js/positions.js")}}"></script>
+<script src="{{ url_for('static', filename='js/positions.js') }}"></script>
 {% endblock %}
