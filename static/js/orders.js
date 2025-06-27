@@ -36,15 +36,16 @@ async function loadOrdersData() {
 
 function updateOrdersTable(orders) {
     var tableBody = document.getElementById('ordersTableBody');
-    
+
     if (!orders || orders.length === 0) {
         showNoOrdersMessage();
         return;
     }
 
     var tableHTML = '';
-    
-    orders.forEach(function(order) {
+    var displayOrders = orders; // Initialize displayOrders with all orders
+
+    displayOrders.forEach(function(order) {
         var orderTime = order.orderTime || order.ordEntTm || order.exchOrdId || 'N/A';
         var orderId = order.nOrdNo || order.orderId || order.exchOrdId || 'N/A';
         var symbol = order.trdSym || order.sym || order.tradingSymbol || 'N/A';
@@ -60,7 +61,7 @@ function updateOrdersTable(orders) {
 
         // Format price
         var formattedPrice = parseFloat(price) || 0;
-        
+
         // Status badge styling
         var statusClass = 'bg-info';
         var statusLower = status.toLowerCase();
@@ -139,7 +140,7 @@ function updateOrdersTable(orders) {
     });
 
     tableBody.innerHTML = tableHTML;
-    
+
     // Add update animation
     tableBody.classList.add('data-updated');
     setTimeout(()=>{}, function() {
@@ -151,7 +152,8 @@ function updateOrdersSummary(orders) {
     var totalOrders = orders.length;
     var completed = 0, pending = 0, rejected = 0, cancelled = 0, buyOrders = 0;
 
-    orders.forEach(function(order) {
+    var displayOrders = orders;
+    displayOrders.forEach(function(order) {
         var status = (order.ordSt || order.status || '').toLowerCase();
         var transType = order.transType || order.transactionType || '';
 
@@ -193,7 +195,7 @@ function showNoOrdersMessage() {
             </td>
         </tr>
     `;
-    
+
     // Reset summary counts
     document.getElementById('totalOrdersCount').textContent = '0';
     document.getElementById('completedOrdersCount').textContent = '0';
@@ -206,10 +208,10 @@ function showNoOrdersMessage() {
 async function refreshOrdersTable() {
     var button = document.querySelector('[onclick="refreshOrdersTable()"]');
     var originalHtml = button.innerHTML;
-    
+
     button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...';
     button.disabled = true;
-    
+
     try {
         await loadOrdersData();
         showNotification('Orders refreshed successfully', 'success');
@@ -231,7 +233,7 @@ async function submitModifyOrder() {
     var form = document.getElementById('modifyOrderForm');
     var formData = new FormData(form);
     var orderData = Object.fromEntries(formData.entries());
-    
+
     try {
         var response = await fetch('/api/modify_order', {
             method: 'POST',
@@ -284,7 +286,7 @@ async function cancelOrder(orderId) {
 
 function viewOrderDetails(orderId) {
     var order = ordersData.find(o => (o.nOrdNo || o.orderId || o.exchOrdId) === orderId);
-    
+
     document.getElementById('orderDetailsContent').innerHTML = `
         <div class="row">
             <div class="col-md-6">
@@ -314,7 +316,7 @@ function viewOrderDetails(orderId) {
             </div>
         ` : ''}
     `;
-    
+
     new bootstrap.Modal(document.getElementById('orderDetailsModal')).show();
 }
 

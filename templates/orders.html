@@ -21,32 +21,54 @@
     </div>
 </div>
 
-<!-- Summary Footer -->
-<div class="card-footer bg-secondary mb-4 p-2" id="ordersSummary">
-    <div class="row text-center">
-        <div class="col-md-2">
-            <h6 class="text-muted mb-1">Total Orders</h6>
-            <h5 class="mb-0" id="totalOrdersCount">0</h5>
+<!-- Summary Cards -->
+<div class="row mb-4" id="ordersSummary">
+    <div class="col-md-2 mb-3">
+        <div class="card bg-primary text-white filter-card" data-filter="all" style="cursor: pointer;">
+            <div class="card-body text-center p-3">
+                <h6 class="card-title mb-1">TOTAL ORDERS</h6>
+                <h4 class="mb-0" id="totalOrdersCount">0</h4>
+            </div>
         </div>
-        <div class="col-md-2">
-            <h6 class="text-muted mb-1">Completed</h6>
-            <h5 class="mb-0 text-success" id="completedOrdersCount">0</h5>
+    </div>
+    <div class="col-md-2 mb-3">
+        <div class="card bg-success text-white filter-card" data-filter="completed" style="cursor: pointer;">
+            <div class="card-body text-center p-3">
+                <h6 class="card-title mb-1">COMPLETED</h6>
+                <h4 class="mb-0" id="completedOrdersCount">0</h4>
+            </div>
         </div>
-        <div class="col-md-2">
-            <h6 class="text-muted mb-1">Pending</h6>
-            <h5 class="mb-0 text-warning" id="pendingOrdersCount">0</h5>
+    </div>
+    <div class="col-md-2 mb-3">
+        <div class="card bg-warning text-white filter-card" data-filter="pending" style="cursor: pointer;">
+            <div class="card-body text-center p-3">
+                <h6 class="card-title mb-1">PENDING</h6>
+                <h4 class="mb-0" id="pendingOrdersCount">0</h4>
+            </div>
         </div>
-        <div class="col-md-2">
-            <h6 class="text-muted mb-1">Rejected</h6>
-            <h5 class="mb-0 text-danger" id="rejectedOrdersCount">0</h5>
+    </div>
+    <div class="col-md-2 mb-3">
+        <div class="card bg-danger text-white filter-card" data-filter="rejected" style="cursor: pointer;">
+            <div class="card-body text-center p-3">
+                <h6 class="card-title mb-1">REJECTED</h6>
+                <h4 class="mb-0" id="rejectedOrdersCount">0</h4>
+            </div>
         </div>
-        <div class="col-md-2">
-            <h6 class="text-muted mb-1">Cancelled</h6>
-            <h5 class="mb-0 text-danger" id="cancelledOrdersCount">0</h5>
+    </div>
+    <div class="col-md-2 mb-3">
+        <div class="card bg-secondary text-white filter-card" data-filter="cancelled" style="cursor: pointer;">
+            <div class="card-body text-center p-3">
+                <h6 class="card-title mb-1">CANCELLED</h6>
+                <h4 class="mb-0" id="cancelledOrdersCount">0</h4>
+            </div>
         </div>
-        <div class="col-md-2">
-            <h6 class="text-muted mb-1">Buy Orders</h6>
-            <h5 class="mb-0 text-info" id="buyOrdersCount">0</h5>
+    </div>
+    <div class="col-md-2 mb-3">
+        <div class="card bg-info text-white filter-card" data-filter="buy" style="cursor: pointer;">
+            <div class="card-body text-center p-3">
+                <h6 class="card-title mb-1">BUY ORDERS</h6>
+                <h4 class="mb-0" id="buyOrdersCount">0</h4>
+            </div>
         </div>
     </div>
 </div>
@@ -57,16 +79,34 @@
             <table class="table table-dark table-hover mb-0" id="ordersTable">
                 <thead class="table-primary">
                     <tr>
-                        <th>Time</th>
-                        <th>Order ID</th>
-                        <th>Symbol</th>
-                        <th>Type</th>
-                        <th>Quantity</th>
-                        <th>Price</th>
-                        <th>Status</th>
-                        <th>Product</th>
-                        <th>Exchange</th>
-                        <th>Actions</th>
+                        <th style="cursor: pointer;" onclick="sortTable('time')">
+                            TIME <i class="fas fa-sort ms-1" id="sort-time"></i>
+                        </th>
+                        <th style="cursor: pointer;" onclick="sortTable('orderid')">
+                            ORDER ID <i class="fas fa-sort ms-1" id="sort-orderid"></i>
+                        </th>
+                        <th style="cursor: pointer;" onclick="sortTable('symbol')">
+                            SYMBOL <i class="fas fa-sort ms-1" id="sort-symbol"></i>
+                        </th>
+                        <th style="cursor: pointer;" onclick="sortTable('type')">
+                            TYPE <i class="fas fa-sort ms-1" id="sort-type"></i>
+                        </th>
+                        <th style="cursor: pointer;" onclick="sortTable('quantity')">
+                            QUANTITY <i class="fas fa-sort ms-1" id="sort-quantity"></i>
+                        </th>
+                        <th style="cursor: pointer;" onclick="sortTable('price')">
+                            PRICE <i class="fas fa-sort ms-1" id="sort-price"></i>
+                        </th>
+                        <th style="cursor: pointer;" onclick="sortTable('status')">
+                            STATUS <i class="fas fa-sort ms-1" id="sort-status"></i>
+                        </th>
+                        <th style="cursor: pointer;" onclick="sortTable('product')">
+                            PRODUCT <i class="fas fa-sort ms-1" id="sort-product"></i>
+                        </th>
+                        <th style="cursor: pointer;" onclick="sortTable('exchange')">
+                            EXCHANGE <i class="fas fa-sort ms-1" id="sort-exchange"></i>
+                        </th>
+                        <th>ACTIONS</th>
                     </tr>
                 </thead>
                 <tbody id="ordersTableBody">
