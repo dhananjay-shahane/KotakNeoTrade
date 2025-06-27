@@ -104,6 +104,14 @@ The application follows a modern Flask architecture with clear separation of con
 
 ## Recent Changes
 
+- **June 27, 2025** - Enhanced holdings page with 4-card UI and advanced sorting features
+  - Redesigned holdings page with 4 modern gradient cards: Total Holdings, Total Invested, Current Value, Total P&L
+  - Fixed card data display issues with proper calculation and formatting
+  - Added sortable table headers with A-Z symbol sorting and visual indicators
+  - Implemented clickable column sorting for all data fields with dynamic sort icons
+  - Enhanced table styling with improved typography, icons, and borderless design
+  - All data properly sourced from authentic Kotak Neo API holdings data
+
 - **June 27, 2025** - Added small positions tables to dashboard page
   - Created two separate tables for long and short positions data
   - Tables show Symbol, Quantity, and P&L with color-coded indicators

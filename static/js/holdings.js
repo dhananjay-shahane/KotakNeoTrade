@@ -335,26 +335,38 @@ function updateSortIndicators(activeColumn, direction) {
     }
 }
 
-// Enhanced refresh function with card updates
+// Enhanced refresh function with 4-card updates
 function updateHoldingsSummary(summary) {
+    var totalHoldingsEl = document.getElementById('totalHoldingsCount');
     var totalInvestedEl = document.getElementById('totalInvested');
     var currentValueEl = document.getElementById('currentValue');
     var totalPnlEl = document.getElementById('totalPnl');
     
     if (summary) {
+        var totalHoldings = summary.total_holdings || 0;
         var totalInvested = summary.total_invested || 0;
         var currentValue = summary.current_value || 0;
         var totalPnl = currentValue - totalInvested;
         var pnlPercentage = totalInvested > 0 ? (totalPnl / totalInvested * 100) : 0;
         
+        // Update Total Holdings
+        if (totalHoldingsEl) {
+            totalHoldingsEl.textContent = totalHoldings;
+        }
+        
+        // Update Total Invested
         if (totalInvestedEl) {
-            totalInvestedEl.textContent = '₹' + totalInvested.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            totalInvestedEl.textContent = '₹' + Math.round(totalInvested).toLocaleString('en-IN');
         }
+        
+        // Update Current Value
         if (currentValueEl) {
-            currentValueEl.textContent = '₹' + currentValue.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            currentValueEl.textContent = '₹' + Math.round(currentValue).toLocaleString('en-IN');
         }
+        
+        // Update Total P&L
         if (totalPnlEl) {
-            totalPnlEl.textContent = (totalPnl >= 0 ? '+' : '') + '₹' + Math.abs(totalPnl).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            totalPnlEl.textContent = (totalPnl >= 0 ? '+' : '') + '₹' + Math.round(Math.abs(totalPnl)).toLocaleString('en-IN');
             
             // Update the P&L card gradient dynamically
             var pnlCard = totalPnlEl.closest('.card');
@@ -365,6 +377,13 @@ function updateHoldingsSummary(summary) {
                 pnlCard.style.background = gradient;
             }
         }
+        
+        console.log('Holdings summary updated:', {
+            holdings: totalHoldings,
+            invested: totalInvested,
+            current: currentValue,
+            pnl: totalPnl
+        });
     }
 }
 

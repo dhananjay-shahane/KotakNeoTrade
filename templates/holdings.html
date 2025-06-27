@@ -18,29 +18,57 @@
 </div>
 
 {% if holdings %}
-<!-- Enhanced Summary Cards -->
+<!-- Calculate totals for cards -->
+{% set total_invested = 0 %}
+{% set total_current = 0 %}
+{% for holding in holdings %}
+    {% set invested = holding.holdingCost|float if holding.holdingCost else 0.0 %}
+    {% set current = holding.mktValue|float if holding.mktValue else 0.0 %}
+    {% set total_invested = total_invested + invested %}
+    {% set total_current = total_current + current %}
+{% endfor %}
+{% set total_pnl = total_current - total_invested %}
+{% set pnl_percentage = (total_pnl / total_invested * 100) if total_invested > 0 else 0 %}
+
+<!-- Enhanced Summary Cards (4 Cards) -->
 <div class="row mb-4">
-    <!-- Total Investments Card -->
-    <div class="col-md-4 mb-3">
+    <!-- Total Holdings Card -->
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #4338ca, #6366f1);">
+            <div class="card-body text-white p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="bg-white bg-opacity-20 rounded-circle p-2 me-2">
+                                <i class="fas fa-list text-white"></i>
+                            </div>
+                            <h6 class="mb-0 text-white-50 small">Total Holdings</h6>
+                        </div>
+                        <h3 class="mb-0 fw-bold" id="totalHoldingsCount">{{ holdings|length }}</h3>
+                        <small class="text-white-50">Active Stocks</small>
+                    </div>
+                    <div class="text-end">
+                        <i class="fas fa-chart-bar fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Invested Card -->
+    <div class="col-lg-3 col-md-6 mb-3">
         <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #1e3a8a, #3b82f6);">
-            <div class="card-body text-white">
+            <div class="card-body text-white p-3">
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
                         <div class="d-flex align-items-center mb-2">
                             <div class="bg-white bg-opacity-20 rounded-circle p-2 me-2">
                                 <i class="fas fa-coins text-white"></i>
                             </div>
-                            <h6 class="mb-0 text-white-50">Total Invested</h6>
+                            <h6 class="mb-0 text-white-50 small">Total Invested</h6>
                         </div>
-                        {% set total_invested = 0 %}
-                        {% if holdings %}
-                            {% for holding in holdings %}
-                                {% set invested = holding.holdingCost|float if holding.holdingCost else 0.0 %}
-                                {% set total_invested = total_invested + invested %}
-                            {% endfor %}
-                        {% endif %}
-                        <h3 class="mb-0 fw-bold" id="totalInvested">₹{{ "{:,.2f}".format(total_invested) }}</h3>
-                        <small class="text-white-50">{{ holdings|length }} Holdings</small>
+                        <h3 class="mb-0 fw-bold" id="totalInvested">₹{{ "{:,.0f}".format(total_invested) }}</h3>
+                        <small class="text-white-50">Investment Capital</small>
                     </div>
                     <div class="text-end">
                         <i class="fas fa-arrow-trend-up fa-2x opacity-50"></i>
@@ -51,26 +79,19 @@
     </div>
 
     <!-- Current Value Card -->
-    <div class="col-md-4 mb-3">
+    <div class="col-lg-3 col-md-6 mb-3">
         <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #7c2d12, #ea580c);">
-            <div class="card-body text-white">
+            <div class="card-body text-white p-3">
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
                         <div class="d-flex align-items-center mb-2">
                             <div class="bg-white bg-opacity-20 rounded-circle p-2 me-2">
                                 <i class="fas fa-chart-line text-white"></i>
                             </div>
-                            <h6 class="mb-0 text-white-50">Current Value</h6>
+                            <h6 class="mb-0 text-white-50 small">Current Value</h6>
                         </div>
-                        {% set total_current = 0 %}
-                        {% if holdings %}
-                            {% for holding in holdings %}
-                                {% set current = holding.mktValue|float if holding.mktValue else 0.0 %}
-                                {% set total_current = total_current + current %}
-                            {% endfor %}
-                        {% endif %}
-                        <h3 class="mb-0 fw-bold" id="currentValue">₹{{ "{:,.2f}".format(total_current) }}</h3>
-                        <small class="text-white-50">Live Market Value</small>
+                        <h3 class="mb-0 fw-bold" id="currentValue">₹{{ "{:,.0f}".format(total_current) }}</h3>
+                        <small class="text-white-50">Market Value</small>
                     </div>
                     <div class="text-end">
                         <i class="fas fa-wallet fa-2x opacity-50"></i>
@@ -81,23 +102,21 @@
     </div>
 
     <!-- Total P&L Card -->
-    <div class="col-md-4 mb-3">
-        {% set total_pnl = total_current - total_invested %}
-        {% set pnl_percentage = (total_pnl / total_invested * 100) if total_invested > 0 else 0 %}
+    <div class="col-lg-3 col-md-6 mb-3">
         <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, {% if total_pnl >= 0 %}#166534, #22c55e{% else %}#991b1b, #ef4444{% endif %});">
-            <div class="card-body text-white">
+            <div class="card-body text-white p-3">
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
                         <div class="d-flex align-items-center mb-2">
                             <div class="bg-white bg-opacity-20 rounded-circle p-2 me-2">
                                 <i class="fas fa-{% if total_pnl >= 0 %}arrow-up{% else %}arrow-down{% endif %} text-white"></i>
                             </div>
-                            <h6 class="mb-0 text-white-50">Total P&L</h6>
+                            <h6 class="mb-0 text-white-50 small">Total P&L</h6>
                         </div>
                         <h3 class="mb-0 fw-bold" id="totalPnl">
-                            {% if total_pnl > 0 %}+{% endif %}₹{{ "{:,.2f}".format(total_pnl) }}
+                            {% if total_pnl > 0 %}+{% endif %}₹{{ "{:,.0f}".format(total_pnl) }}
                         </h3>
-                        <small class="text-white-50">{% if total_pnl > 0 %}+{% endif %}{{ "{:.2f}".format(pnl_percentage) }}% Returns</small>
+                        <small class="text-white-50">{% if total_pnl > 0 %}+{% endif %}{{ "{:.1f}".format(pnl_percentage) }}% Returns</small>
                     </div>
                     <div class="text-end">
                         <i class="fas fa-{% if total_pnl >= 0 %}trophy{% else %}chart-line-down{% endif %} fa-2x opacity-50"></i>
