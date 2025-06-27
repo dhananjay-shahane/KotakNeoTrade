@@ -18,112 +18,213 @@
 </div>
 
 {% if holdings %}
-<!-- Summary Footer -->
-<div class="card-footer bg-secondary mb-4 p-2">
-    <div class="row text-center">
-        <div class="col-md-3">
-            <h6 class="text-muted mb-1">Total Holdings</h6>
-            <h5 class="mb-0" id="totalHoldingsCount">{{ holdings|length if holdings else 0 }}</h5>
+<!-- Enhanced Summary Cards -->
+<div class="row mb-4">
+    <!-- Total Investments Card -->
+    <div class="col-md-4 mb-3">
+        <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #1e3a8a, #3b82f6);">
+            <div class="card-body text-white">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="bg-white bg-opacity-20 rounded-circle p-2 me-2">
+                                <i class="fas fa-coins text-white"></i>
+                            </div>
+                            <h6 class="mb-0 text-white-50">Total Invested</h6>
+                        </div>
+                        {% set total_invested = 0 %}
+                        {% if holdings %}
+                            {% for holding in holdings %}
+                                {% set invested = holding.holdingCost|float if holding.holdingCost else 0.0 %}
+                                {% set total_invested = total_invested + invested %}
+                            {% endfor %}
+                        {% endif %}
+                        <h3 class="mb-0 fw-bold" id="totalInvested">₹{{ "{:,.2f}".format(total_invested) }}</h3>
+                        <small class="text-white-50">{{ holdings|length }} Holdings</small>
+                    </div>
+                    <div class="text-end">
+                        <i class="fas fa-arrow-trend-up fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="col-md-3">
-            <h6 class="text-muted mb-1">Total Invested</h6>
-            {% set total_invested = 0 %}
-            {% if holdings %}
-                {% for holding in holdings %}
-                    {% set invested = holding.holdingCost|float if holding.holdingCost else 0.0 %}
-                    {% set total_invested = total_invested + invested %}
-                {% endfor %}
-            {% endif %}
-            <h5 class="mb-0 text-info" id="totalInvested">₹{{ "%.2f"|format(total_invested) }}</h5>
+    </div>
+
+    <!-- Current Value Card -->
+    <div class="col-md-4 mb-3">
+        <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #7c2d12, #ea580c);">
+            <div class="card-body text-white">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="bg-white bg-opacity-20 rounded-circle p-2 me-2">
+                                <i class="fas fa-chart-line text-white"></i>
+                            </div>
+                            <h6 class="mb-0 text-white-50">Current Value</h6>
+                        </div>
+                        {% set total_current = 0 %}
+                        {% if holdings %}
+                            {% for holding in holdings %}
+                                {% set current = holding.mktValue|float if holding.mktValue else 0.0 %}
+                                {% set total_current = total_current + current %}
+                            {% endfor %}
+                        {% endif %}
+                        <h3 class="mb-0 fw-bold" id="currentValue">₹{{ "{:,.2f}".format(total_current) }}</h3>
+                        <small class="text-white-50">Live Market Value</small>
+                    </div>
+                    <div class="text-end">
+                        <i class="fas fa-wallet fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="col-md-3">
-            <h6 class="text-muted mb-1">Current Value</h6>
-            {% set total_current = 0 %}
-            {% if holdings %}
-                {% for holding in holdings %}
-                    {% set current = holding.mktValue|float if holding.mktValue else 0.0 %}
-                    {% set total_current = total_current + current %}
-                {% endfor %}
-            {% endif %}
-            <h5 class="mb-0 text-warning" id="currentValue">₹{{ "%.2f"|format(total_current) }}</h5>
-        </div>
-        <div class="col-md-3">
-            <h6 class="text-muted mb-1">Total P&L</h6>
-            {% set total_pnl = total_current - total_invested %}
-            <h5 class="mb-0 {% if total_pnl > 0 %}text-success{% elif total_pnl < 0 %}text-danger{% else %}text-muted{% endif %}" id="totalPnl">
-                {% if total_pnl > 0 %}+{% endif %}₹{{ "%.2f"|format(total_pnl) }}
-            </h5>
+    </div>
+
+    <!-- Total P&L Card -->
+    <div class="col-md-4 mb-3">
+        {% set total_pnl = total_current - total_invested %}
+        {% set pnl_percentage = (total_pnl / total_invested * 100) if total_invested > 0 else 0 %}
+        <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, {% if total_pnl >= 0 %}#166534, #22c55e{% else %}#991b1b, #ef4444{% endif %});">
+            <div class="card-body text-white">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="bg-white bg-opacity-20 rounded-circle p-2 me-2">
+                                <i class="fas fa-{% if total_pnl >= 0 %}arrow-up{% else %}arrow-down{% endif %} text-white"></i>
+                            </div>
+                            <h6 class="mb-0 text-white-50">Total P&L</h6>
+                        </div>
+                        <h3 class="mb-0 fw-bold" id="totalPnl">
+                            {% if total_pnl > 0 %}+{% endif %}₹{{ "{:,.2f}".format(total_pnl) }}
+                        </h3>
+                        <small class="text-white-50">{% if total_pnl > 0 %}+{% endif %}{{ "{:.2f}".format(pnl_percentage) }}% Returns</small>
+                    </div>
+                    <div class="text-end">
+                        <i class="fas fa-{% if total_pnl >= 0 %}trophy{% else %}chart-line-down{% endif %} fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="card bg-secondary">
+<div class="card bg-secondary border-0 shadow-sm">
+    <div class="card-header bg-dark d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 text-white"><i class="fas fa-table me-2"></i>Holdings Details</h6>
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-light" onclick="sortTable('symbol')" id="sortSymbolBtn">
+                <i class="fas fa-sort-alpha-down me-1"></i>Sort A-Z
+            </button>
+            <button class="btn btn-sm btn-outline-light" onclick="refreshHoldings()">
+                <i class="fas fa-sync-alt me-1"></i>Refresh
+            </button>
+        </div>
+    </div>
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-dark table-hover mb-0">
-                <thead class="table-primary">
+            <table class="table table-dark table-hover mb-0" id="holdingsTable">
+                <thead class="bg-dark">
                     <tr>
-                        <th>Symbol</th>
-                        <th>Exchange</th>
-                        <th>Quantity</th>
-                        <th>Avg Price</th>
-                        <th>LTP</th>
-                        <th>Market Value</th>
-                        <th>P&L</th>
-                        <th>Day Change</th>
-                        <th>Actions</th>
+                        <th class="sortable border-0" onclick="sortTable('symbol')" style="cursor: pointer;">
+                            <i class="fas fa-sort me-1 text-muted"></i>Symbol <i class="fas fa-sort-up d-none" id="sort-symbol-asc"></i><i class="fas fa-sort-down d-none" id="sort-symbol-desc"></i>
+                        </th>
+                        <th class="sortable border-0" onclick="sortTable('exchange')" style="cursor: pointer;">
+                            <i class="fas fa-sort me-1 text-muted"></i>Exchange <i class="fas fa-sort-up d-none" id="sort-exchange-asc"></i><i class="fas fa-sort-down d-none" id="sort-exchange-desc"></i>
+                        </th>
+                        <th class="sortable border-0" onclick="sortTable('quantity')" style="cursor: pointer;">
+                            <i class="fas fa-sort me-1 text-muted"></i>Quantity <i class="fas fa-sort-up d-none" id="sort-quantity-asc"></i><i class="fas fa-sort-down d-none" id="sort-quantity-desc"></i>
+                        </th>
+                        <th class="sortable border-0" onclick="sortTable('avgPrice')" style="cursor: pointer;">
+                            <i class="fas fa-sort me-1 text-muted"></i>Avg Price <i class="fas fa-sort-up d-none" id="sort-avgPrice-asc"></i><i class="fas fa-sort-down d-none" id="sort-avgPrice-desc"></i>
+                        </th>
+                        <th class="sortable border-0" onclick="sortTable('ltp')" style="cursor: pointer;">
+                            <i class="fas fa-sort me-1 text-muted"></i>LTP <i class="fas fa-sort-up d-none" id="sort-ltp-asc"></i><i class="fas fa-sort-down d-none" id="sort-ltp-desc"></i>
+                        </th>
+                        <th class="sortable border-0" onclick="sortTable('marketValue')" style="cursor: pointer;">
+                            <i class="fas fa-sort me-1 text-muted"></i>Market Value <i class="fas fa-sort-up d-none" id="sort-marketValue-asc"></i><i class="fas fa-sort-down d-none" id="sort-marketValue-desc"></i>
+                        </th>
+                        <th class="sortable border-0" onclick="sortTable('pnl')" style="cursor: pointer;">
+                            <i class="fas fa-sort me-1 text-muted"></i>P&L <i class="fas fa-sort-up d-none" id="sort-pnl-asc"></i><i class="fas fa-sort-down d-none" id="sort-pnl-desc"></i>
+                        </th>
+                        <th class="sortable border-0" onclick="sortTable('dayChange')" style="cursor: pointer;">
+                            <i class="fas fa-sort me-1 text-muted"></i>Day Change <i class="fas fa-sort-up d-none" id="sort-dayChange-asc"></i><i class="fas fa-sort-down d-none" id="sort-dayChange-desc"></i>
+                        </th>
+                        <th class="border-0">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="holdingsTableBody">
                     {% for holding in holdings %}
-                    <tr>
-                        <td>
-                            <strong>{{ holding.displaySymbol or holding.symbol or 'N/A' }}</strong>
-                            {% if holding.instrumentName %}
-                                <br><small class="text-muted">{{ holding.instrumentName }}</small>
-                            {% endif %}
+                    {% set invested_value = holding.holdingCost|float if holding.holdingCost else 0.0 %}
+                    {% set market_value = holding.mktValue|float if holding.mktValue else 0.0 %}
+                    {% set pnl = market_value - invested_value %}
+                    {% set avg_price = holding.averagePrice|float if holding.averagePrice else 0.0 %}
+                    {% set ltp = holding.closingPrice|float if holding.closingPrice else 0.0 %}
+                    {% set day_change_pct = ((ltp - avg_price) / avg_price * 100) if avg_price > 0 else 0 %}
+                    
+                    <tr class="border-0" 
+                        data-symbol="{{ holding.displaySymbol or holding.symbol or 'N/A' }}"
+                        data-exchange="{{ holding.exchangeSegment or 'N/A' }}"
+                        data-quantity="{{ holding.quantity or 0 }}"
+                        data-avg-price="{{ avg_price }}"
+                        data-ltp="{{ ltp }}"
+                        data-market-value="{{ market_value }}"
+                        data-pnl="{{ pnl }}"
+                        data-day-change="{{ day_change_pct }}">
+                        
+                        <td class="border-0">
+                            <div class="d-flex align-items-center">
+                                <div class="me-2">
+                                    <div class="bg-primary bg-opacity-20 rounded p-2">
+                                        <i class="fas fa-chart-line text-primary"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <strong class="text-white">{{ holding.displaySymbol or holding.symbol or 'N/A' }}</strong>
+                                    {% if holding.instrumentName %}
+                                        <br><small class="text-muted">{{ holding.instrumentName[:30] }}...</small>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </td>
-                        <td>
+                        <td class="border-0">
                             <span class="badge bg-info">{{ holding.exchangeSegment or 'N/A' }}</span>
                         </td>
-                        <td class="text-info">
+                        <td class="border-0 text-info fw-semibold">
                             {{ holding.quantity or '0' }}
                         </td>
-                        <td>₹{{ "%.2f"|format(holding.averagePrice|float) if holding.averagePrice else '0.00' }}</td>
-                        <td>₹{{ "%.2f"|format(holding.closingPrice|float) if holding.closingPrice else '0.00' }}</td>
-                        <td>
-                            ₹{{ "%.2f"|format(holding.mktValue|float) if holding.mktValue else '0.00' }}
+                        <td class="border-0 text-light">₹{{ "{:,.2f}".format(avg_price) }}</td>
+                        <td class="border-0 text-warning fw-semibold">₹{{ "{:,.2f}".format(ltp) }}</td>
+                        <td class="border-0 text-info fw-semibold">
+                            ₹{{ "{:,.2f}".format(market_value) }}
                         </td>
-                        <td>
-                            {% set invested_value = holding.holdingCost|float if holding.holdingCost else 0.0 %}
-                            {% set market_value = holding.mktValue|float if holding.mktValue else 0.0 %}
-                            {% set pnl = market_value - invested_value %}
-                            <span class="{% if pnl > 0 %}text-success{% elif pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                ₹{{ "%.2f"|format(pnl) }}
+                        <td class="border-0">
+                            <span class="fw-bold {% if pnl > 0 %}text-success{% elif pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                {% if pnl > 0 %}+{% endif %}₹{{ "{:,.2f}".format(pnl) }}
                                 {% if invested_value > 0 %}
-                                    <br><small>({{ "%.2f"|format((pnl/invested_value)*100) }}%)</small>
+                                    <br><small class="{% if pnl > 0 %}text-success{% elif pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                        ({% if pnl > 0 %}+{% endif %}{{ "{:.2f}".format((pnl/invested_value)*100) }}%)
+                                    </small>
                                 {% endif %}
                             </span>
                         </td>
-                        <td>
-                            {% if holding.closingPrice and holding.averagePrice %}
-                                {% set day_change_pct = ((holding.closingPrice|float - holding.averagePrice|float) / holding.averagePrice|float * 100) %}
-                                <span class="{% if day_change_pct > 0 %}text-success{% elif day_change_pct < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                    {{ "%.2f"|format(day_change_pct) }}%
-                                </span>
-                            {% else %}
-                                <span class="text-muted">N/A</span>
-                            {% endif %}
+                        <td class="border-0">
+                            <span class="fw-semibold {% if day_change_pct > 0 %}text-success{% elif day_change_pct < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                {% if day_change_pct != 0 %}
+                                    {% if day_change_pct > 0 %}+{% endif %}{{ "{:.2f}".format(day_change_pct) }}%
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </span>
                         </td>
-                        <td>
+                        <td class="border-0">
                             <div class="btn-group btn-group-sm">
                                 <button class="btn btn-success btn-sm" onclick="buyHolding('{{ holding.displaySymbol or holding.symbol }}')">
-                                    <i class="fas fa-plus"></i> Buy
+                                    <i class="fas fa-plus"></i>
                                 </button>
                                 <button class="btn btn-danger btn-sm" onclick="sellHolding('{{ holding.displaySymbol or holding.symbol }}', '{{ holding.sellableQuantity or holding.quantity or 0 }}')">
-                                    <i class="fas fa-minus"></i> Sell
+                                    <i class="fas fa-minus"></i>
                                 </button>
-                                <button class="btn btn-info btn-sm" onclick="getQuote('{{ holding.instrumentToken }}', '{{ holding.exchangeSegment }}')">
+                                <button class="btn btn-outline-light btn-sm" onclick="getQuote('{{ holding.instrumentToken }}', '{{ holding.exchangeSegment }}')">
                                     <i class="fas fa-chart-line"></i>
                                 </button>
                             </div>

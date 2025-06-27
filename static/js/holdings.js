@@ -198,22 +198,180 @@ function updateHoldingsSummary(summary) {
     }
 }
 
-function showNotification(message, type = 'info') {
+function showNotification(message, type) {
+    if (type === undefined) type = 'info';
     // Create toast notification
     var toast = document.createElement('div');
-    toast.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    toast.className = 'alert alert-' + type + ' alert-dismissible fade show position-fixed';
     toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    toast.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
+    toast.innerHTML = message + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
     
     document.body.appendChild(toast);
     
     // Auto-remove after 3 seconds
-    setTimeout(()=>{}, function() {
+    setTimeout(function() {
         if (toast.parentNode) {
             toast.parentNode.removeChild(toast);
         }
     }, 3000);
 }
+
+// Table sorting functionality
+var sortState = {
+    column: null,
+    direction: 'asc'
+};
+
+function sortTable(column) {
+    var table = document.getElementById('holdingsTable');
+    var tbody = document.getElementById('holdingsTableBody');
+    
+    if (!tbody) return;
+    
+    var rows = Array.from(tbody.querySelectorAll('tr'));
+    
+    // Toggle sort direction
+    if (sortState.column === column) {
+        sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortState.column = column;
+        sortState.direction = 'asc';
+    }
+    
+    // Sort rows based on column
+    rows.sort(function(a, b) {
+        var aValue, bValue;
+        
+        switch (column) {
+            case 'symbol':
+                aValue = a.dataset.symbol || '';
+                bValue = b.dataset.symbol || '';
+                break;
+            case 'exchange':
+                aValue = a.dataset.exchange || '';
+                bValue = b.dataset.exchange || '';
+                break;
+            case 'quantity':
+                aValue = parseFloat(a.dataset.quantity) || 0;
+                bValue = parseFloat(b.dataset.quantity) || 0;
+                break;
+            case 'avgPrice':
+                aValue = parseFloat(a.dataset.avgPrice) || 0;
+                bValue = parseFloat(b.dataset.avgPrice) || 0;
+                break;
+            case 'ltp':
+                aValue = parseFloat(a.dataset.ltp) || 0;
+                bValue = parseFloat(b.dataset.ltp) || 0;
+                break;
+            case 'marketValue':
+                aValue = parseFloat(a.dataset.marketValue) || 0;
+                bValue = parseFloat(b.dataset.marketValue) || 0;
+                break;
+            case 'pnl':
+                aValue = parseFloat(a.dataset.pnl) || 0;
+                bValue = parseFloat(b.dataset.pnl) || 0;
+                break;
+            case 'dayChange':
+                aValue = parseFloat(a.dataset.dayChange) || 0;
+                bValue = parseFloat(b.dataset.dayChange) || 0;
+                break;
+            default:
+                return 0;
+        }
+        
+        // Compare values
+        var result;
+        if (typeof aValue === 'string') {
+            result = aValue.localeCompare(bValue);
+        } else {
+            result = aValue - bValue;
+        }
+        
+        return sortState.direction === 'asc' ? result : -result;
+    });
+    
+    // Update sort indicators
+    updateSortIndicators(column, sortState.direction);
+    
+    // Rebuild table with sorted rows
+    tbody.innerHTML = '';
+    rows.forEach(function(row) {
+        tbody.appendChild(row);
+    });
+    
+    // Update sort button text
+    var sortBtn = document.getElementById('sortSymbolBtn');
+    if (sortBtn && column === 'symbol') {
+        var icon = sortState.direction === 'asc' ? 'fa-sort-alpha-down' : 'fa-sort-alpha-up';
+        var text = sortState.direction === 'asc' ? 'Sort A-Z' : 'Sort Z-A';
+        sortBtn.innerHTML = '<i class="fas ' + icon + ' me-1"></i>' + text;
+    }
+}
+
+function updateSortIndicators(activeColumn, direction) {
+    // Hide all sort indicators
+    var indicators = document.querySelectorAll('[id^="sort-"]');
+    indicators.forEach(function(indicator) {
+        indicator.classList.add('d-none');
+    });
+    
+    // Show active indicator
+    var activeIndicator = document.getElementById('sort-' + activeColumn + '-' + direction);
+    if (activeIndicator) {
+        activeIndicator.classList.remove('d-none');
+    }
+    
+    // Update sort icons in headers
+    var sortIcons = document.querySelectorAll('.sortable .fa-sort');
+    sortIcons.forEach(function(icon) {
+        icon.classList.remove('text-primary');
+        icon.classList.add('text-muted');
+    });
+    
+    var activeHeader = document.querySelector('.sortable[onclick*="' + activeColumn + '"] .fa-sort');
+    if (activeHeader) {
+        activeHeader.classList.remove('text-muted');
+        activeHeader.classList.add('text-primary');
+    }
+}
+
+// Enhanced refresh function with card updates
+function updateHoldingsSummary(summary) {
+    var totalInvestedEl = document.getElementById('totalInvested');
+    var currentValueEl = document.getElementById('currentValue');
+    var totalPnlEl = document.getElementById('totalPnl');
+    
+    if (summary) {
+        var totalInvested = summary.total_invested || 0;
+        var currentValue = summary.current_value || 0;
+        var totalPnl = currentValue - totalInvested;
+        var pnlPercentage = totalInvested > 0 ? (totalPnl / totalInvested * 100) : 0;
+        
+        if (totalInvestedEl) {
+            totalInvestedEl.textContent = '₹' + totalInvested.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+        if (currentValueEl) {
+            currentValueEl.textContent = '₹' + currentValue.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+        if (totalPnlEl) {
+            totalPnlEl.textContent = (totalPnl >= 0 ? '+' : '') + '₹' + Math.abs(totalPnl).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            
+            // Update the P&L card gradient dynamically
+            var pnlCard = totalPnlEl.closest('.card');
+            if (pnlCard) {
+                var gradient = totalPnl >= 0 
+                    ? 'linear-gradient(135deg, #166534, #22c55e)' 
+                    : 'linear-gradient(135deg, #991b1b, #ef4444)';
+                pnlCard.style.background = gradient;
+            }
+        }
+    }
+}
+
+// Initialize default sort by symbol A-Z
+document.addEventListener('DOMContentLoaded', function() {
+    // Wait a moment for the table to load, then sort
+    setTimeout(function() {
+        sortTable('symbol');
+    }, 100);
+});
