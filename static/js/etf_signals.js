@@ -437,25 +437,39 @@ ETFSignalsManager.prototype.setupColumnSettings = function() {
 // Global functions for column management
 function selectAllColumns() {
     if (window.etfSignalsManager) {
+        // Update all columns to visible
         for (var i = 0; i < window.etfSignalsManager.availableColumns.length; i++) {
             window.etfSignalsManager.availableColumns[i].visible = true;
         }
-        window.etfSignalsManager.setupColumnSettings();
-        window.etfSignalsManager.updateTableHeaders();
-        window.etfSignalsManager.renderSignalsTable();
+        
+        // Update all checkboxes to checked
+        var checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
+        for (var i = 0; i < checkboxes.length; i++) {
+            checkboxes[i].checked = true;
+        }
+        
+        console.log('All columns selected');
     }
 }
 
 function resetDefaultColumns() {
     if (window.etfSignalsManager) {
         var defaultVisible = ['etf', 'thirty', 'dh', 'date', 'qty', 'ep', 'cmp', 'chan', 'inv', 'pl', 'ch', 'actions'];
+        
+        // Update column visibility
         for (var i = 0; i < window.etfSignalsManager.availableColumns.length; i++) {
             var column = window.etfSignalsManager.availableColumns[i];
             column.visible = defaultVisible.indexOf(column.key) !== -1;
         }
-        window.etfSignalsManager.setupColumnSettings();
-        window.etfSignalsManager.updateTableHeaders();
-        window.etfSignalsManager.renderSignalsTable();
+        
+        // Update checkboxes to match default settings
+        var checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
+        for (var i = 0; i < checkboxes.length; i++) {
+            var columnKey = checkboxes[i].getAttribute('data-column');
+            checkboxes[i].checked = defaultVisible.indexOf(columnKey) !== -1;
+        }
+        
+        console.log('Reset to default columns');
     }
 }
 
@@ -465,17 +479,22 @@ function applyColumnSettings() {
         var checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
         console.log('Found checkboxes:', checkboxes.length);
         
+        // Update column visibility based on checkbox states
         for (var i = 0; i < checkboxes.length; i++) {
             var columnKey = checkboxes[i].getAttribute('data-column');
-            var column = window.etfSignalsManager.availableColumns.find(function(col) {
-                return col.key === columnKey;
-            });
-            if (column) {
-                column.visible = checkboxes[i].checked;
-                console.log('Updated column', columnKey, 'visible:', column.visible);
+            var isChecked = checkboxes[i].checked;
+            
+            // Find and update the column in availableColumns array
+            for (var j = 0; j < window.etfSignalsManager.availableColumns.length; j++) {
+                if (window.etfSignalsManager.availableColumns[j].key === columnKey) {
+                    window.etfSignalsManager.availableColumns[j].visible = isChecked;
+                    console.log('Updated column', columnKey, 'visible:', isChecked);
+                    break;
+                }
             }
         }
         
+        // Save settings and update display
         window.etfSignalsManager.saveColumnSettings();
         window.etfSignalsManager.updateTableHeaders();
         window.etfSignalsManager.renderSignalsTable();
@@ -497,7 +516,7 @@ function applyColumnSettings() {
     } else {
         console.error('ETF Signals Manager not found');
     }
-};
+}
 
 ETFSignalsManager.prototype.updatePortfolioSummary = function(portfolio) {
     if (!portfolio) return;
