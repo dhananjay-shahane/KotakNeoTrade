@@ -61,9 +61,21 @@ def login():
             client = result['client']
             session_data = result['session_data']
             
-            # Validate that we have proper authentication tokens
+            # Strict validation that we have proper authentication tokens and valid session
             if not session_data.get('access_token') or not session_data.get('session_token'):
-                flash('Authentication failed: Invalid response from server', 'error')
+                flash('Authentication failed: Invalid session tokens received', 'error')
+                return render_template('login.html')
+            
+            # Additional validation - check token format
+            access_token = session_data.get('access_token')
+            if not access_token or len(access_token) < 50:  # Valid tokens should be much longer
+                flash('Authentication failed: Invalid access token format', 'error')
+                return render_template('login.html')
+            
+            # Verify UCC matches between request and response
+            response_ucc = session_data.get('ucc')
+            if response_ucc and response_ucc.upper() != ucc.upper():
+                flash('Authentication failed: UCC mismatch', 'error')
                 return render_template('login.html')
 
             # Store in session with expiration
@@ -151,6 +163,30 @@ def login():
 @auth_bp.route('/logout')
 def logout():
     """Logout and clear session"""
-    clear_session()
-    flash('Successfully logged out', 'success')
+    try:
+        # Clear Flask session
+        clear_session()
+        
+        # Also clear any potential cached client data
+        if 'client' in session:
+            try:
+                client = session.get('client')
+                if client and hasattr(client, 'logout'):
+                    client.logout()
+            except Exception as logout_error:
+                logging.warning(f"Error during client logout: {logout_error}")
+        
+        # Force session invalidation
+        session.clear()
+        session.permanent = False
+        
+        flash('Successfully logged out', 'success')
+        logging.info("User logged out successfully")
+        
+    except Exception as e:
+        logging.error(f"Logout error: {str(e)}")
+        # Even if there's an error, clear the session
+        session.clear()
+        flash('Logged out with warnings', 'warning')
+    
     return redirect(url_for('auth.login'))

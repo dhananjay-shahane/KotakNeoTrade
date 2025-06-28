@@ -18,6 +18,7 @@ def validate_current_session():
     try:
         # Check if user is authenticated
         if not session.get('authenticated'):
+            logging.debug("Session validation failed: Not authenticated")
             return False
             
         # Check if session has expired
@@ -34,9 +35,25 @@ def validate_current_session():
                 clear_session()
                 return False
                 
-        # Additional validation - check if tokens are not empty
-        if not session.get('access_token') or not session.get('session_token'):
+        # Additional validation - check if tokens are not empty and have valid format
+        access_token = session.get('access_token')
+        session_token = session.get('session_token')
+        
+        if not access_token or not session_token:
             logging.warning("Empty authentication tokens")
+            clear_session()
+            return False
+            
+        # Check token length (valid tokens should be substantial)
+        if len(access_token) < 50 or len(session_token) < 10:
+            logging.warning("Invalid token format - tokens too short")
+            clear_session()
+            return False
+            
+        # Validate UCC format
+        ucc = session.get('ucc')
+        if not ucc or len(ucc) < 5 or len(ucc) > 6 or not ucc.isalnum():
+            logging.warning("Invalid UCC format in session")
             clear_session()
             return False
                 
@@ -47,8 +64,28 @@ def validate_current_session():
         return False
 
 def clear_session():
-    """Clear all session data"""
-    session.clear()
+    """Clear all session data completely"""
+    try:
+        # Clear all session keys individually first
+        keys_to_clear = list(session.keys())
+        for key in keys_to_clear:
+            session.pop(key, None)
+        
+        # Clear the entire session
+        session.clear()
+        
+        # Ensure session is not permanent
+        session.permanent = False
+        
+        logging.debug("Session cleared successfully")
+        
+    except Exception as e:
+        logging.error(f"Error clearing session: {str(e)}")
+        # Force clear even if there's an error
+        try:
+            session.clear()
+        except:
+            pass
 
 def get_session_user_id():
     """Get current user's database ID from session"""
