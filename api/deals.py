@@ -51,17 +51,37 @@ def create_deal_from_signal():
         # Extract complete signal data
         signal_data = data.get('signal_data', {})
 
+        # Helper function to safely convert values
+        def safe_float(value, default=0.0):
+            try:
+                if value is None or value == '':
+                    return default
+                # Handle percentage strings like '-1.91%'
+                if isinstance(value, str) and '%' in value:
+                    return float(value.replace('%', ''))
+                return float(value)
+            except (ValueError, TypeError):
+                return default
+
+        def safe_int(value, default=0):
+            try:
+                if value is None or value == '':
+                    return default
+                return int(float(value))  # Convert to float first to handle decimal strings
+            except (ValueError, TypeError):
+                return default
+
         # Extract all signal fields exactly as they appear
         trade_signal_id = str(signal_data.get('trade_signal_id', ''))
         etf_symbol = signal_data.get('etf') or signal_data.get('symbol', 'UNKNOWN')
         symbol = signal_data.get('symbol') or signal_data.get('etf', 'UNKNOWN')
-        pos = int(signal_data.get('pos', 1))
-        qty = int(signal_data.get('qty', 1))
-        ep = float(signal_data.get('ep', 0))
-        cmp = float(signal_data.get('cmp', 0)) or ep
-        tp = float(signal_data.get('tp', 0)) if signal_data.get('tp') else None
-        inv = float(signal_data.get('inv', 0)) or (ep * qty)
-        pl = float(signal_data.get('pl', 0))
+        pos = safe_int(signal_data.get('pos', 1))
+        qty = safe_int(signal_data.get('qty', 1))
+        ep = safe_float(signal_data.get('ep', 0))
+        cmp = safe_float(signal_data.get('cmp', 0)) or ep
+        tp = safe_float(signal_data.get('tp', 0)) if signal_data.get('tp') else None
+        inv = safe_float(signal_data.get('inv', 0)) or (ep * qty)
+        pl = safe_float(signal_data.get('pl', 0))
         
         # Create new deal with complete ETF signal data
         deal = UserDeal(
@@ -93,8 +113,8 @@ def create_deal_from_signal():
             qt=str(signal_data.get('qt', '')),
             seven=str(signal_data.get('seven', '')),
             ch=str(signal_data.get('ch', '')),
-            tva=float(signal_data.get('tva', 0)) if signal_data.get('tva') else None,
-            tpr=float(signal_data.get('tpr', 0)) if signal_data.get('tpr') else None,
+            tva=safe_float(signal_data.get('tva', 0)) if signal_data.get('tva') else None,
+            tpr=safe_float(signal_data.get('tpr', 0)) if signal_data.get('tpr') else None,
             
             # Standard deal fields for compatibility
             position_type='LONG' if pos == 1 else 'SHORT',
