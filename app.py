@@ -848,14 +848,17 @@ def get_etf_signals_data():
                 count = 0
                 for row in signals:
                     count += 1
-                    # Calculate values
-                    entry_price = float(row.get('ep', 0))
-                    current_price = float(row.get('cmp', 0))
-                    quantity = int(row.get('qty', 0))
-                    investment = float(row.get('inv', 0))
-                    pnl_amount = float(row.get('pl', 0))
-                    pnl_pct = float(row.get('chan', '0').replace('%', ''))
-                    current_value = float(row.get('tva', 0))
+                    # Calculate values with proper null handling
+                    entry_price = float(row.get('ep') or 0) if row.get('ep') is not None else 0.0
+                    current_price = float(row.get('cmp') or 0) if row.get('cmp') is not None else 0.0
+                    quantity = int(row.get('qty') or 0) if row.get('qty') is not None else 0
+                    investment = float(row.get('inv') or 0) if row.get('inv') is not None else 0.0
+                    pnl_amount = float(row.get('pl') or 0) if row.get('pl') is not None else 0.0
+                    chan_value = row.get('chan') or '0'
+                    if isinstance(chan_value, str):
+                        chan_value = chan_value.replace('%', '')
+                    pnl_pct = float(chan_value) if chan_value else 0.0
+                    current_value = float(row.get('tva') or 0) if row.get('tva') is not None else 0.0
 
                     # Position type from pos column (1 = BUY, -1 = SELL)
                     pos = int(row.get('pos', 1))
@@ -868,11 +871,14 @@ def get_etf_signals_data():
                     total_investment += investment
                     total_current_value += current_value
                     total_pnl += pnl_amount
+                    # Handle target price with null safety
+                    target_price = float(row.get('tp') or 0) if row.get('tp') is not None else 0.0
+                    
                     signals_list.append({
-                        'trade_signal_id': row.get('id', count + 1),
-                        'id': row.get('id', count + 1),
-                        'etf': row.get('etf', 'N/A'),
-                        'symbol': row.get('symbol', 'N/A'),
+                        'trade_signal_id': row.get('id') or (count + 1),
+                        'id': row.get('id') or (count + 1),
+                        'etf': row.get('etf') or 'N/A',
+                        'symbol': row.get('symbol') or 'N/A',
                         'signal_type': signal_type,
                         'pos': pos,
                         'ep': entry_price,
@@ -881,29 +887,29 @@ def get_etf_signals_data():
                         'inv': investment,
                         'pl': pnl_amount,
                         'change_pct': pnl_pct,
-                        'chan': row.get('chan', f'{pnl_pct:.2f}%'),
+                        'chan': row.get('chan') or f'{pnl_pct:.2f}%',
                         'status': 'ACTIVE',
-                        'date': str(row.get('date', '')),
-                        'tp': float(row.get('tp', 0)),
+                        'date': str(row.get('date') or ''),
+                        'tp': target_price,
                         'tva': current_value,
-                        'tpr': row.get('tpr', f'{pnl_pct:.2f}%'),
-                        'pr': row.get('pr', f'{pnl_pct:.2f}%'),
-                        'signal_title': row.get('nt', f'{signal_type} Signal - {row.get("symbol", "N/A")}'),
-                        'signal_description': f'ETF trading signal for {row.get("symbol", "N/A")}',
+                        'tpr': row.get('tpr') or f'{pnl_pct:.2f}%',
+                        'pr': row.get('pr') or f'{pnl_pct:.2f}%',
+                        'signal_title': row.get('nt') or f'{signal_type} Signal - {row.get("symbol", "N/A")}',
+                        'signal_description': f'ETF trading signal for {row.get("symbol") or "N/A"}',
                         'priority': 'MEDIUM',
-                        'created_at': str(row.get('created_at', '')),
-                        'updated_at': str(row.get('created_at', '')),
-                        'ip': row.get('ip', f'{pnl_pct:.2f}%'),
-                        'nt': row.get('nt', ''),
+                        'created_at': str(row.get('created_at') or ''),
+                        'updated_at': str(row.get('created_at') or ''),
+                        'ip': row.get('ip') or f'{pnl_pct:.2f}%',
+                        'nt': row.get('nt') or '',
                         'qt': quantity,
-                        'seven': row.get('seven', f'{pnl_pct:.2f}%'),
-                        'thirty': row.get('thirty', f'{pnl_pct:.2f}%'),
-                        'dh': row.get('dh', '0'),
-                        'ed': row.get('ed', ''),
-                        'exp': row.get('exp', ''),
-                        'pp': row.get('pp', '--'),
-                        'iv': row.get('iv', investment),
-                        'ch': row.get('ch', f'{pnl_pct:.2f}%')
+                        'seven': row.get('seven') or f'{pnl_pct:.2f}%',
+                        'thirty': row.get('thirty') or f'{pnl_pct:.2f}%',
+                        'dh': row.get('dh') or '0',
+                        'ed': row.get('ed') or '',
+                        'exp': row.get('exp') or '',
+                        'pp': row.get('pp') or '--',
+                        'iv': row.get('iv') or investment,
+                        'ch': row.get('ch') or f'{pnl_pct:.2f}%'
                     })
 
                 # Calculate portfolio summary
