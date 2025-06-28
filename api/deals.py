@@ -48,28 +48,62 @@ def create_deal_from_signal():
                 user_id = user.id
         data = request.get_json()
 
-        # Extract signal data
+        # Extract complete signal data
         signal_data = data.get('signal_data', {})
 
-        # Calculate invested amount
-        quantity = int(signal_data.get('qty', 1)) if signal_data.get('qty') else 1
-        entry_price = float(signal_data.get('cmp', 0)) if signal_data.get('cmp') else float(signal_data.get('ep', 0))
-        invested_amount = quantity * entry_price
-
-        # Create new deal from signal
+        # Extract all signal fields exactly as they appear
+        trade_signal_id = str(signal_data.get('trade_signal_id', ''))
+        etf_symbol = signal_data.get('etf') or signal_data.get('symbol', 'UNKNOWN')
         symbol = signal_data.get('symbol') or signal_data.get('etf', 'UNKNOWN')
+        pos = int(signal_data.get('pos', 1))
+        qty = int(signal_data.get('qty', 1))
+        ep = float(signal_data.get('ep', 0))
+        cmp = float(signal_data.get('cmp', 0)) or ep
+        tp = float(signal_data.get('tp', 0)) if signal_data.get('tp') else None
+        inv = float(signal_data.get('inv', 0)) or (ep * qty)
+        pl = float(signal_data.get('pl', 0))
+        
+        # Create new deal with complete ETF signal data
         deal = UserDeal(
             user_id=user_id,
+            # ETF Signal specific fields
+            trade_signal_id=trade_signal_id,
+            etf_symbol=etf_symbol.upper(),
             symbol=symbol.upper(),
             trading_symbol=symbol.upper(),
             exchange='NSE',
-            position_type='LONG' if signal_data.get('pos') == 1 else 'SHORT',
-            quantity=quantity,
-            entry_price=entry_price,
-            current_price=entry_price,
-            target_price=float(signal_data.get('tp', 0)) if signal_data.get('tp') else None,
-            stop_loss=entry_price * 0.95,  # Default 5% stop loss
-            invested_amount=invested_amount,
+            pos=pos,
+            qty=qty,
+            ep=ep,
+            cmp=cmp,
+            tp=tp,
+            inv=inv,
+            pl=pl,
+            chan_percent=str(signal_data.get('change_pct', signal_data.get('chan', ''))),
+            thirty=str(signal_data.get('thirty', '')),
+            dh=int(signal_data.get('dh', 0)),
+            signal_date=str(signal_data.get('date', '')),
+            ed=str(signal_data.get('ed', '')),
+            exp=str(signal_data.get('exp', '')),
+            pr=str(signal_data.get('pr', '')),
+            pp=str(signal_data.get('pp', '')),
+            iv=str(signal_data.get('iv', '')),
+            ip=str(signal_data.get('ip', '')),
+            nt=str(signal_data.get('nt', 'Added from ETF signals')),
+            qt=str(signal_data.get('qt', '')),
+            seven=str(signal_data.get('seven', '')),
+            ch=str(signal_data.get('ch', '')),
+            tva=float(signal_data.get('tva', 0)) if signal_data.get('tva') else None,
+            tpr=float(signal_data.get('tpr', 0)) if signal_data.get('tpr') else None,
+            
+            # Standard deal fields for compatibility
+            position_type='LONG' if pos == 1 else 'SHORT',
+            quantity=qty,
+            entry_price=ep,
+            current_price=cmp,
+            target_price=tp,
+            stop_loss=ep * 0.95,  # Default 5% stop loss
+            invested_amount=inv,
             notes=f'Added from ETF signals - {signal_data.get("nt", "")}',
             tags='ETF_SIGNAL',
             deal_type='SIGNAL'

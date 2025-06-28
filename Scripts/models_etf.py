@@ -294,12 +294,39 @@ class UserDeal(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     signal_id = db.Column(db.Integer, db.ForeignKey('admin_trade_signals.id'), nullable=True)
 
-    # Deal Information
+    # ETF Signal Trade ID and Basic Info
+    trade_signal_id = db.Column(db.String(50), nullable=True)  # Original trade signal ID from ETF signals
+    etf_symbol = db.Column(db.String(50), nullable=False)  # ETF field from signals
     symbol = db.Column(db.String(50), nullable=False)
     trading_symbol = db.Column(db.String(100), nullable=False)
     exchange = db.Column(db.String(20), default='NSE')
 
-    # Trade Details
+    # Complete ETF Signal Data (All fields from signals table)
+    pos = db.Column(db.Integer, nullable=True)  # Position (1=LONG, -1=SHORT)
+    qty = db.Column(db.Integer, nullable=False)  # Quantity
+    ep = db.Column(db.Numeric(10, 2), nullable=False)  # Entry Price
+    cmp = db.Column(db.Numeric(10, 2), nullable=True)  # Current Market Price
+    tp = db.Column(db.Numeric(10, 2), nullable=True)  # Target Price
+    inv = db.Column(db.Numeric(12, 2), nullable=True)  # Investment Amount
+    pl = db.Column(db.Numeric(12, 2), nullable=True)  # Profit/Loss
+    chan_percent = db.Column(db.String(20), nullable=True)  # % Change
+    thirty = db.Column(db.String(20), nullable=True)  # 30 day performance
+    dh = db.Column(db.Integer, nullable=True)  # Days Held
+    signal_date = db.Column(db.String(20), nullable=True)  # Date from signal
+    ed = db.Column(db.String(20), nullable=True)  # Entry Date
+    exp = db.Column(db.String(50), nullable=True)  # Expiry
+    pr = db.Column(db.String(20), nullable=True)  # Price Range
+    pp = db.Column(db.String(20), nullable=True)  # Performance Points
+    iv = db.Column(db.String(20), nullable=True)  # Implied Volatility
+    ip = db.Column(db.String(20), nullable=True)  # Intraday Performance
+    nt = db.Column(db.Text, nullable=True)  # Notes/Tags
+    qt = db.Column(db.String(20), nullable=True)  # Quote Time
+    seven = db.Column(db.String(20), nullable=True)  # 7 day change
+    ch = db.Column(db.String(20), nullable=True)  # % Change (alternate)
+    tva = db.Column(db.Numeric(12, 2), nullable=True)  # Target Value Amount
+    tpr = db.Column(db.Numeric(12, 2), nullable=True)  # Target Profit Return
+
+    # Standard Deal Fields (derived from signal data)
     position_type = db.Column(db.String(10), nullable=False)  # LONG, SHORT
     quantity = db.Column(db.Integer, nullable=False)
     entry_price = db.Column(db.Numeric(10, 2), nullable=False)
@@ -371,14 +398,44 @@ class UserDeal(db.Model):
             self.current_value = float(self.invested_amount or 0)
 
     def to_dict(self):
-        """Convert to dictionary for API responses"""
+        """Convert to dictionary for API responses with all ETF signal data"""
         try:
             return {
+                # Basic deal info
                 'id': self.id,
+                'trade_signal_id': self.trade_signal_id or '',
                 'symbol': self.symbol or '',
+                'etf': self.etf_symbol or self.symbol or '',
                 'trading_symbol': self.trading_symbol or '',
                 'exchange': self.exchange or 'NSE',
                 'position_type': self.position_type or 'LONG',
+                
+                # Complete ETF signal data (all fields from signals table)
+                'pos': self.pos or 1,
+                'qty': int(self.qty) if self.qty else 0,
+                'ep': float(self.ep) if self.ep else 0.0,
+                'cmp': float(self.cmp) if self.cmp else float(self.ep) if self.ep else 0.0,
+                'tp': float(self.tp) if self.tp else None,
+                'inv': float(self.inv) if self.inv else 0.0,
+                'pl': float(self.pl) if self.pl else 0.0,
+                'chan': self.chan_percent or '',
+                'thirty': self.thirty or '',
+                'dh': self.dh or 0,
+                'date': self.signal_date or '',
+                'ed': self.ed or '',
+                'exp': self.exp or '',
+                'pr': self.pr or '',
+                'pp': self.pp or '',
+                'iv': self.iv or '',
+                'ip': self.ip or '',
+                'nt': self.nt or '',
+                'qt': self.qt or '',
+                'seven': self.seven or '',
+                'ch': self.ch or '',
+                'tva': float(self.tva) if self.tva else 0.0,
+                'tpr': float(self.tpr) if self.tpr else 0.0,
+                
+                # Standard deal fields for compatibility
                 'quantity': int(self.quantity) if self.quantity else 0,
                 'entry_price': float(self.entry_price) if self.entry_price else 0.0,
                 'current_price': float(self.current_price) if self.current_price else float(self.entry_price) if self.entry_price else 0.0,
@@ -392,7 +449,7 @@ class UserDeal(db.Model):
                 'exit_date': self.exit_date.isoformat() if self.exit_date else None,
                 'notes': self.notes or '',
                 'tags': self.tags or '',
-                'deal_type': self.deal_type or 'MANUAL',
+                'deal_type': self.deal_type or 'SIGNAL',
                 'days_held': self.days_held if self.days_held is not None else 0,
                 'created_at': self.created_at.isoformat() if self.created_at else None,
                 'updated_at': self.updated_at.isoformat() if self.updated_at else None
