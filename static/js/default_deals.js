@@ -53,11 +53,11 @@ DealsManager.prototype.getDefaultColumns = function() {
 };
 
 DealsManager.prototype.init = function() {
-    this.generateColumnCheckboxes();
     this.updateTableHeaders();
     this.loadDeals();
     this.startAutoRefresh();
     this.setupEventListeners();
+    this.setupColumnSettingsModal();
 
     var autoRefreshToggle = document.getElementById('autoRefreshToggle');
     var self = this;
@@ -69,6 +69,16 @@ DealsManager.prototype.init = function() {
             } else {
                 self.stopAutoRefresh();
             }
+        });
+    }
+};
+
+DealsManager.prototype.setupColumnSettingsModal = function() {
+    var self = this;
+    var modal = document.getElementById('columnSettingsModal');
+    if (modal) {
+        modal.addEventListener('show.bs.modal', function() {
+            self.generateColumnCheckboxes();
         });
     }
 };
@@ -819,6 +829,45 @@ function exportDeals() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+}
+
+// Global functions for column settings and filters
+function applyColumnSettings() {
+    window.dealsManager.selectedColumns = [];
+
+    var columns = Object.keys(window.dealsManager.availableColumns);
+    for (var i = 0; i < columns.length; i++) {
+        var column = columns[i];
+        var checkbox = document.getElementById('col_' + column);
+        if (checkbox && checkbox.checked) {
+            window.dealsManager.selectedColumns.push(column);
+        }
+    }
+
+    window.dealsManager.updateTableHeaders();
+    window.dealsManager.renderDealsTable();
+
+    bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal')).hide();
+}
+
+function selectAllColumns() {
+    var columns = Object.keys(window.dealsManager.availableColumns);
+    for (var i = 0; i < columns.length; i++) {
+        var column = columns[i];
+        var checkbox = document.getElementById('col_' + column);
+        if (checkbox) checkbox.checked = true;
+    }
+}
+
+function resetDefaultColumns() {
+    var columns = Object.keys(window.dealsManager.availableColumns);
+    for (var i = 0; i < columns.length; i++) {
+        var column = columns[i];
+        var checkbox = document.getElementById('col_' + column);
+        if (checkbox) {
+            checkbox.checked = window.dealsManager.availableColumns[column].default;
+        }
+    }
 }
 
 // Function to sort default deals by any column
