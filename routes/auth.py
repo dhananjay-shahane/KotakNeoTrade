@@ -1,6 +1,6 @@
 """Authentication routes"""
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 
 from utils.auth import validate_current_session, clear_session
@@ -130,7 +130,14 @@ def login():
         else:
             error_message = "Authentication failed"
             if result and result.get('message'):
-                error_message = f'TOTP login failed: {result.get("message")}'
+                # Check if it's a TOTP or MPIN specific error
+                msg = result.get("message")
+                if 'totp' in msg.lower() or 'authenticator' in msg.lower():
+                    error_message = f'TOTP Error: {msg}'
+                elif 'mpin' in msg.lower():
+                    error_message = f'MPIN Error: {msg}'
+                else:
+                    error_message = f'Authentication failed: {msg}'
             elif not result:
                 error_message = "Authentication failed: No response from server"
             flash(error_message, 'error')

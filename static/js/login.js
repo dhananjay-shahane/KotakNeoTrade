@@ -85,7 +85,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Validate TOTP
             if (!totp || totp.length !== 6 || !/^\d+$/.test(totp)) {
-                alert('Please enter a valid 6-digit TOTP');
+                alert('Please enter a valid 6-digit TOTP code from your authenticator app');
+                document.getElementById('totp').focus();
                 e.preventDefault();
                 return false;
             }

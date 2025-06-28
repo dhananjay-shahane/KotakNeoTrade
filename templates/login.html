@@ -23,7 +23,7 @@
                     <h1 class="welcome-title">Welcome back</h1>
                     <p class="welcome-subtitle">Please enter your details</p>
                 </div>
-                
+
                 <!-- Flash Messages -->
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
@@ -45,7 +45,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
                 {% endif %}
- 
+
                 <!-- TOTP Info Alert -->
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i>
@@ -117,7 +117,7 @@
                             pattern="[0-9]{6}"
                             required
                         />
-                        <div class="form-text">Enter the 6-digit code from your authenticator app</div>
+                        <div class="form-text">Enter the current 6-digit TOTP code from your authenticator app (Google Authenticator, Authy, etc.)</div>
                     </div>
 
                     <!-- Forgot Password Link -->

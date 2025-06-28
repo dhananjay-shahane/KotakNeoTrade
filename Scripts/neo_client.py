@@ -184,36 +184,70 @@ class NeoClient:
                     mobilenumber=mobile_number,
                     password=totp
                 )
-                self.logger.info("✅ TOTP login successful!")
                 
-                # Validate login response
+                # Validate login response structure and check for errors
                 if not totp_response or not isinstance(totp_response, dict):
-                    return {'success': False, 'message': 'Invalid login response from server'}
+                    return {'success': False, 'message': 'Invalid TOTP code. Please check your authenticator app.'}
+                
+                # Check for specific error responses that indicate invalid TOTP
+                if 'error' in totp_response:
+                    error_msg = totp_response.get('error', 'Invalid TOTP')
+                    if any(phrase in str(error_msg).lower() for phrase in ['invalid', 'wrong', 'incorrect', 'expired']):
+                        return {'success': False, 'message': 'Invalid TOTP code. Please check your authenticator app and try again.'}
+                
+                # Check for failed authentication status
+                if totp_response.get('status') == 'failed' or totp_response.get('success') is False:
+                    return {'success': False, 'message': 'TOTP authentication failed. Please check your authenticator app.'}
+                
+                self.logger.info("✅ TOTP login successful!")
                     
             except Exception as login_error:
+                error_str = str(login_error).lower()
                 self.logger.error(f"❌ TOTP login step failed: {str(login_error)}")
-                return {'success': False, 'message': f'TOTP authentication failed. Please check your TOTP code and try again.'}
+                
+                # Check for specific TOTP validation errors
+                if any(phrase in error_str for phrase in ['invalid', 'wrong', 'incorrect', 'expired', 'authentication failed']):
+                    return {'success': False, 'message': 'Invalid TOTP code. Please check your authenticator app and try again.'}
+                else:
+                    return {'success': False, 'message': f'TOTP authentication failed: {str(login_error)}'}
             
-            # Step 2: TOTP Validation - following notebook method
+            # Step 2: MPIN Validation - following notebook method
             try:
                 validation_response = client.session_2fa(OTP=mpin)
-                self.logger.info("✅ TOTP validation successful!")
                 
                 # Validate response structure
                 if not validation_response or not isinstance(validation_response, dict):
-                    return {'success': False, 'message': 'Invalid validation response from server'}
+                    return {'success': False, 'message': 'Invalid MPIN. Please check your 6-digit MPIN and try again.'}
+                
+                # Check for error responses
+                if 'error' in validation_response:
+                    error_msg = validation_response.get('error', 'Invalid MPIN')
+                    if any(phrase in str(error_msg).lower() for phrase in ['invalid', 'wrong', 'incorrect']):
+                        return {'success': False, 'message': 'Invalid MPIN. Please check your 6-digit MPIN and try again.'}
+                
+                # Check for failed status
+                if validation_response.get('status') == 'failed' or validation_response.get('success') is False:
+                    return {'success': False, 'message': 'MPIN validation failed. Please check your 6-digit MPIN.'}
                     
                 if 'data' not in validation_response:
-                    return {'success': False, 'message': 'Authentication failed - no session data received'}
+                    return {'success': False, 'message': 'MPIN authentication failed - invalid response from server'}
                     
                 # Check for required tokens in response
                 data = validation_response.get('data', {})
                 if not data.get('token') and not data.get('access_token'):
-                    return {'success': False, 'message': 'Authentication failed - no access token received'}
+                    return {'success': False, 'message': 'MPIN authentication failed - no access token received'}
+                
+                self.logger.info("✅ MPIN validation successful!")
                     
             except Exception as validation_error:
-                self.logger.error(f"❌ TOTP validation step failed: {str(validation_error)}")
-                return {'success': False, 'message': f'MPIN validation failed. Please check your MPIN and try again.'}
+                error_str = str(validation_error).lower()
+                self.logger.error(f"❌ MPIN validation step failed: {str(validation_error)}")
+                
+                # Check for specific MPIN validation errors
+                if any(phrase in error_str for phrase in ['invalid', 'wrong', 'incorrect', 'mpin']):
+                    return {'success': False, 'message': 'Invalid MPIN. Please check your 6-digit MPIN and try again.'}
+                else:
+                    return {'success': False, 'message': f'MPIN validation failed: {str(validation_error)}'}
             
             return {
                 'success': True,
