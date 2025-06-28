@@ -326,41 +326,43 @@ ETFSignalsManager.prototype.getGradientBackgroundColor = function(value) {
     var numValue = parseFloat(value);
     if (isNaN(numValue)) return '';
     
-    // For PL values (currency), use different scaling than percentage values
+    // Determine if this is a currency value (PL column) or percentage value (%CH column)
     var intensity;
-    if (Math.abs(numValue) > 100) {
-        // Assume this is a currency value (PL column)
-        intensity = Math.min(Math.abs(numValue) / 5000, 1); // Scale to 0-1, max at ₹5000
+    if (Math.abs(numValue) > 50) {
+        // Assume this is a currency value (PL column) - improved scaling
+        intensity = Math.min(Math.abs(numValue) / 2000, 1); // Scale to 0-1, max at ₹2000
     } else {
         // Assume this is a percentage value (%CH column)
         intensity = Math.min(Math.abs(numValue) / 5, 1); // Scale to 0-1, max at 5%
     }
     
-    var alpha = 0.3 + (intensity * 0.5); // Alpha from 0.3 to 0.8
+    // Ensure minimum intensity for visibility
+    intensity = Math.max(intensity, 0.2);
+    var alpha = 0.4 + (intensity * 0.4); // Alpha from 0.4 to 0.8 for better visibility
     
     if (numValue < 0) {
         // Red gradient for negative values
-        if (intensity <= 0.3) {
+        if (intensity <= 0.4) {
             // Light red for small negative values
             return 'background-color: rgba(255, 182, 193, ' + alpha + '); color: #000;'; // Light pink
-        } else if (intensity <= 0.6) {
+        } else if (intensity <= 0.7) {
             // Medium red
             return 'background-color: rgba(255, 99, 71, ' + alpha + '); color: #fff;'; // Tomato
         } else {
             // Dark red for large negative values
-            return 'background-color: rgba(139, 0, 0, ' + alpha + '); color: #fff;'; // Dark red
+            return 'background-color: rgba(220, 20, 60, ' + alpha + '); color: #fff;'; // Crimson
         }
     } else if (numValue > 0) {
         // Green gradient for positive values
-        if (intensity <= 0.3) {
+        if (intensity <= 0.4) {
             // Light green for small positive values
             return 'background-color: rgba(144, 238, 144, ' + alpha + '); color: #000;'; // Light green
-        } else if (intensity <= 0.6) {
+        } else if (intensity <= 0.7) {
             // Medium green
             return 'background-color: rgba(50, 205, 50, ' + alpha + '); color: #fff;'; // Lime green
         } else {
             // Dark green for large positive values
-            return 'background-color: rgba(0, 128, 0, ' + alpha + '); color: #fff;'; // Green
+            return 'background-color: rgba(34, 139, 34, ' + alpha + '); color: #fff;'; // Forest green
         }
     }
     return '';
