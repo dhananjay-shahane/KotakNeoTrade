@@ -817,16 +817,8 @@ def get_etf_signals_data():
         import logging
         logging.info("ETF Signals API: Fetching data from external PostgreSQL database")
 
-        # Database connection parameters from environment variables
-        import os
-        DB_HOST = os.getenv('SUPABASE_DB_HOST', 'aws-0-ap-south-1.pooler.supabase.com')
-        DB_PORT = os.getenv('SUPABASE_DB_PORT', '6543')
-        DB_NAME = os.getenv('SUPABASE_DB_NAME', 'postgres')
-        DB_USER = os.getenv('SUPABASE_DB_USER', 'postgres.crlxmtjhvbnlezfgqvnl')
-        DB_PASSWORD = os.getenv('SUPABASE_DB_PASSWORD', 'Kaushik@123456')
-
-        # Build connection string
-        connection_string = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+        # Use the existing external database URL that's already configured in the app
+        connection_string = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
 
         # Import necessary modules
         import psycopg2
