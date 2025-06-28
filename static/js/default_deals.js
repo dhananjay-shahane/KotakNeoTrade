@@ -10,29 +10,30 @@ function DealsManager() {
     this.sortDirection = 'asc';
 
     this.availableColumns = {
-        'symbol': { label: 'SYMBOL', default: true, width: '70px', sortable: true },
-        'thirty': { label: '30', default: false, width: '50px', sortable: true },
-        'dh': { label: 'DH', default: true, width: '50px', sortable: true },
-        'date': { label: 'DATE', default: true, width: '70px', sortable: true },
-        'pos': { label: 'POS', default: true, width: '50px', sortable: true },
-        'qty': { label: 'QTY', default: true, width: '50px', sortable: true },
+        'trade_signal_id': { label: 'ID', default: true, width: '50px', sortable: true },
+        'symbol': { label: 'ETF', default: true, width: '80px', sortable: true },
+        'thirty': { label: '30', default: true, width: '50px', sortable: true },
+        'dh': { label: 'DH', default: true, width: '40px', sortable: true },
+        'date': { label: 'DATE', default: true, width: '80px', sortable: true },
+        'qty': { label: 'QTY', default: true, width: '60px', sortable: true },
         'ep': { label: 'EP', default: true, width: '70px', sortable: true },
         'cmp': { label: 'CMP', default: true, width: '70px', sortable: true },
-        'change_pct': { label: '%CHAN', default: true, width: '60px', sortable: true },
+        'chan_percent': { label: '%CHAN', default: true, width: '60px', sortable: true },
         'inv': { label: 'INV.', default: true, width: '70px', sortable: true },
         'tp': { label: 'TP', default: true, width: '60px', sortable: true },
         'tva': { label: 'TVA', default: true, width: '70px', sortable: true },
         'tpr': { label: 'TPR', default: true, width: '70px', sortable: true },
         'pl': { label: 'PL', default: true, width: '60px', sortable: true },
-        'ed': { label: 'ED', default: false, width: '70px', sortable: true },
+        'ed': { label: 'ED', default: true, width: '70px', sortable: true },
+        'exp': { label: 'EXP', default: true, width: '70px', sortable: true },
         'pr': { label: 'PR', default: true, width: '80px', sortable: true },
         'pp': { label: 'PP', default: true, width: '50px', sortable: true },
         'iv': { label: 'IV', default: true, width: '60px', sortable: true },
         'ip': { label: 'IP', default: true, width: '60px', sortable: true },
-        'nt': { label: 'NT', default: false, width: '60px', sortable: true },
-        'qt': { label: 'QT', default: false, width: '60px', sortable: true },
-        'seven': { label: '7', default: false, width: '50px', sortable: true },
-        'change2': { label: '%CH', default: false, width: '60px', sortable: true },
+        'nt': { label: 'NT', default: true, width: '120px', sortable: true },
+        'qt': { label: 'QT', default: true, width: '60px', sortable: true },
+        'seven': { label: '7', default: true, width: '50px', sortable: true },
+        'ch': { label: '%CH', default: true, width: '60px', sortable: true },
         'actions': { label: 'ACTIONS', default: true, width: '80px', sortable: false }
     };
 
@@ -366,6 +367,9 @@ DealsManager.prototype.renderDealsTable = function() {
             var bgColor = '';
 
             switch(columnKey) {
+                case 'trade_signal_id':
+                    cellContent = '<span class="badge bg-info">' + (deal.trade_signal_id || deal.admin_signal_id || deal.id || '-') + '</span>';
+                    break;
                 case 'symbol':
                     cellContent = '<strong>' + (deal.symbol || '') + '</strong>';
                     break;
@@ -389,6 +393,19 @@ DealsManager.prototype.renderDealsTable = function() {
                     break;
                 case 'cmp':
                     cellContent = deal.cmp ? '₹' + deal.cmp.toFixed(2) : '';
+                    break;
+                case 'chan_percent':
+                    var chanValue = deal.chan_percent || deal.change_pct || '';
+                    if (typeof chanValue === 'number') {
+                        bgColor = chanValue >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                        cellContent = (chanValue >= 0 ? '+' : '') + chanValue.toFixed(2) + '%';
+                    } else if (typeof chanValue === 'string' && chanValue.includes('%')) {
+                        var numValue = parseFloat(chanValue.replace('%', ''));
+                        bgColor = numValue >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                        cellContent = chanValue;
+                    } else {
+                        cellContent = '0%';
+                    }
                     break;
                 case 'change_pct':
                     if (deal.change_pct !== undefined) {
@@ -417,6 +434,9 @@ DealsManager.prototype.renderDealsTable = function() {
                 case 'ed':
                     cellContent = deal.ed || '';
                     break;
+                case 'exp':
+                    cellContent = deal.exp || '-';
+                    break;
                 case 'pr':
                     cellContent = deal.pr || '-';
                     break;
@@ -442,6 +462,9 @@ DealsManager.prototype.renderDealsTable = function() {
                     break;
                 case 'seven':
                     cellContent = deal.seven || '-';
+                    break;
+                case 'ch':
+                    cellContent = deal.ch || deal.chan_percent || '-';
                     break;
                 case 'change2':
                     if (deal.change2 !== undefined) {
