@@ -631,6 +631,11 @@ function buyTrade(symbol, currentPrice) {
     document.getElementById('tradeType').value = 'BUY';
     document.getElementById('tradePrice').value = currentPrice.toFixed(2);
     document.getElementById('tradeQuantity').value = '1';
+    
+    // Update modal styling for buy order
+    var modal_content = document.querySelector('#tradeModal .modal-content');
+    modal_content.style.borderLeft = '4px solid #28a745';
+    
     modal.show();
 }
 
@@ -641,6 +646,11 @@ function sellTrade(symbol, currentPrice) {
     document.getElementById('tradeType').value = 'SELL';
     document.getElementById('tradePrice').value = currentPrice.toFixed(2);
     document.getElementById('tradeQuantity').value = '1';
+    
+    // Update modal styling for sell order
+    var modal_content = document.querySelector('#tradeModal .modal-content');
+    modal_content.style.borderLeft = '4px solid #dc3545';
+    
     modal.show();
 }
 
@@ -735,32 +745,97 @@ function setRefreshInterval(intervalMs, displayText) {
 function submitTrade() {
     var symbol = document.getElementById('tradeSymbol').value;
     var type = document.getElementById('tradeType').value;
-    var price = parseFloat(document.getElementById('tradePrice').value);
+    var orderType = document.getElementById('orderType').value;
+    var productType = document.getElementById('productType').value;
+    var price = parseFloat(document.getElementById('tradePrice').value) || 0;
     var quantity = parseInt(document.getElementById('tradeQuantity').value);
+    var validity = document.getElementById('validity').value;
+    var triggerPrice = parseFloat(document.getElementById('triggerPrice').value) || 0;
 
-    if (!symbol || !price || !quantity) {
-        alert('Please fill all required fields');
+    if (!symbol || !quantity) {
+        showNotification('Please fill all required fields', 'error');
         return;
     }
 
-    var tradeData = {
-        symbol: symbol,
-        type: type,
-        price: price,
-        quantity: quantity,
-        timestamp: new Date().toISOString()
+    // For market orders, price should be 0
+    if (orderType === 'MKT') {
+        price = 0;
+    } else if (price <= 0) {
+        showNotification('Please enter a valid price for limit/stop loss orders', 'error');
+        return;
+    }
+
+    // Prepare order data for client.place_order API
+    var orderData = {
+        exchange_segment: "nse_cm",
+        product: productType,
+        price: price.toString(),
+        order_type: orderType,
+        quantity: quantity.toString(),
+        validity: validity,
+        trading_symbol: symbol,
+        transaction_type: type,
+        amo: "NO",
+        disclosed_quantity: "0",
+        market_protection: "0",
+        pf: "N",
+        trigger_price: triggerPrice.toString(),
+        tag: "DEALS_PAGE"
     };
 
-    console.log('Executing trade:', tradeData);
+    console.log('Placing order:', orderData);
 
-    var modal = bootstrap.Modal.getInstance(document.getElementById('tradeModal'));
-    modal.hide();
+    // Show loading state
+    var submitBtn = document.querySelector('#tradeModal .btn-primary');
+    var originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Placing Order...';
+    submitBtn.disabled = true;
 
-    alert(type + ' order for ' + quantity + ' ' + symbol + ' at ₹' + price + ' has been placed successfully');
+    // Call the place_order API
+    fetch('/api/trading/place_order', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+    })
+    .then(response => response.json())
+    .then(function(data) {
+        // Reset button state
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
 
-    setTimeout(function() {
-        window.dealsManager.loadDeals();
-    }, 1000);
+        if (data.success) {
+            var modal = bootstrap.Modal.getInstance(document.getElementById('tradeModal'));
+            modal.hide();
+
+            // Show success notification with order details
+            var orderTypeText = orderType === 'MKT' ? 'Market' : orderType === 'L' ? 'Limit' : 'Stop Loss';
+            var priceText = orderType === 'MKT' ? 'at market price' : 'at ₹' + price;
+            
+            showNotification(
+                orderTypeText + ' ' + type.toLowerCase() + ' order for ' + quantity + ' ' + symbol + ' ' + priceText + ' placed successfully!' +
+                (data.order_id ? ' (Order ID: ' + data.order_id + ')' : ''),
+                'success'
+            );
+
+            // Refresh deals data
+            setTimeout(function() {
+                window.dealsManager.loadDeals();
+            }, 1000);
+        } else {
+            // Show error notification
+            showNotification('Order placement failed: ' + (data.message || 'Unknown error'), 'error');
+        }
+    })
+    .catch(function(error) {
+        // Reset button state
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+
+        console.error('Order placement error:', error);
+        showNotification('Order placement failed: Network error', 'error');
+    });
 }
 
 function exportDeals() {
@@ -926,6 +1001,31 @@ function sortDealsByColumn(column) {
         window.dealsManager.renderDealsTable();
         window.dealsManager.updatePagination();
     }
+}
+
+// Notification function for user feedback
+function showNotification(message, type) {
+    // Create notification element
+    var notification = document.createElement('div');
+    notification.className = 'alert alert-' + (type === 'success' ? 'success' : 'danger') + ' alert-dismissible fade show position-fixed';
+    notification.style.top = '20px';
+    notification.style.right = '20px';
+    notification.style.zIndex = '9999';
+    notification.style.minWidth = '300px';
+    
+    notification.innerHTML = 
+        '<i class="fas fa-' + (type === 'success' ? 'check-circle' : 'exclamation-triangle') + ' me-2"></i>' +
+        message +
+        '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 5 seconds
+    setTimeout(function() {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 5000);
 }
 
 // Initialize Deals Manager on page load
