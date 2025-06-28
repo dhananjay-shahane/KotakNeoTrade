@@ -130,7 +130,7 @@ def create_deal_from_signal():
         )
 
         # Set current price to entry price initially
-        deal.current_price = entry_price
+        deal.current_price = ep
 
         # Calculate initial P&L
         try:
