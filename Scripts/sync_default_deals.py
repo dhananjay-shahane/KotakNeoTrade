@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 """
 Sync Default Deals - Synchronize admin_trade_signals to default_deals table
@@ -7,7 +8,7 @@ Run this script to populate default_deals with all admin_trade_signals data
 from app import app, db
 from Scripts.models import DefaultDeal
 from Scripts.models_etf import AdminTradeSignal
-from sqlalchemy import text
+from sqlalchemy import text, event
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -19,9 +20,6 @@ def sync_admin_signals_to_default_deals():
         with app.app_context():
             logger.info("Starting sync from admin_trade_signals to default_deals...")
             
-            # Clear existing default deals to avoid duplicates
-            db.session.execute(text("DELETE FROM default_deals"))
-            
             # Get all admin trade signals
             admin_signals = AdminTradeSignal.query.all()
             logger.info(f"Found {len(admin_signals)} admin trade signals to sync")
@@ -29,36 +27,45 @@ def sync_admin_signals_to_default_deals():
             synced_count = 0
             for signal in admin_signals:
                 try:
-                    # Create new default deal from admin signal
-                    default_deal = DefaultDeal(
-                        user_target_id=str(signal.target_user_id) if signal.target_user_id else None,
-                        symbol=signal.symbol,
-                        exchange=signal.exchange or 'NSE',
-                        position_type=signal.signal_type or 'BUY',
-                        quantity=signal.quantity,
-                        entry_price=signal.entry_price,
-                        current_price=signal.current_price,
-                        price_change_percent=signal.change_percent,
-                        investment_amount=signal.investment_amount,
-                        target_price=signal.target_price,
-                        total_value=signal.current_value,
-                        target_pnl_ratio=signal.pnl_percentage,
-                        pnl=signal.pnl,
-                        entry_date=signal.signal_date,
-                        exit_date=None,
-                        profit_ratio=signal.pnl_percentage,
-                        profit_price=signal.current_price,
-                        intrinsic_value=signal.investment_amount,
-                        intrinsic_price=signal.entry_price,
-                        notes=signal.signal_description or signal.signal_title,
-                        quantity_traded=signal.quantity,
-                        seven_day_change=signal.change_percent,
-                        change_amount=signal.pnl,
-                        signal_strength=signal.status,
-                        admin_signal_id=signal.id
-                    )
+                    # Check if default deal already exists for this admin signal
+                    existing_deal = DefaultDeal.query.filter_by(admin_signal_id=signal.id).first()
                     
-                    db.session.add(default_deal)
+                    if existing_deal:
+                        # Update existing deal
+                        update_default_deal_from_admin_signal_data(existing_deal, signal)
+                        logger.info(f"Updated existing default deal for admin signal {signal.id}")
+                    else:
+                        # Create new default deal from admin signal
+                        default_deal = DefaultDeal(
+                            user_target_id=str(signal.target_user_id) if signal.target_user_id else None,
+                            symbol=signal.symbol,
+                            exchange=signal.exchange or 'NSE',
+                            position_type=signal.signal_type or 'BUY',
+                            quantity=signal.quantity,
+                            entry_price=signal.entry_price,
+                            current_price=signal.current_price,
+                            price_change_percent=signal.change_percent,
+                            investment_amount=signal.investment_amount,
+                            target_price=signal.target_price,
+                            total_value=signal.current_value,
+                            target_pnl_ratio=signal.pnl_percentage,
+                            pnl=signal.pnl,
+                            entry_date=signal.signal_date,
+                            exit_date=None,
+                            profit_ratio=signal.pnl_percentage,
+                            profit_price=signal.current_price,
+                            intrinsic_value=signal.investment_amount,
+                            intrinsic_price=signal.entry_price,
+                            notes=signal.signal_description or signal.signal_title,
+                            quantity_traded=signal.quantity,
+                            seven_day_change=signal.change_percent,
+                            change_amount=signal.pnl,
+                            signal_strength=signal.status,
+                            admin_signal_id=signal.id
+                        )
+                        db.session.add(default_deal)
+                        logger.info(f"Created new default deal for admin signal {signal.id}")
+                    
                     synced_count += 1
                     
                 except Exception as e:
@@ -73,6 +80,32 @@ def sync_admin_signals_to_default_deals():
         logger.error(f"Error syncing admin signals to default deals: {str(e)}")
         db.session.rollback()
         return 0
+
+def update_default_deal_from_admin_signal_data(default_deal, admin_signal):
+    """Update default deal with latest admin signal data"""
+    default_deal.user_target_id = str(admin_signal.target_user_id) if admin_signal.target_user_id else None
+    default_deal.symbol = admin_signal.symbol
+    default_deal.exchange = admin_signal.exchange or 'NSE'
+    default_deal.position_type = admin_signal.signal_type or 'BUY'
+    default_deal.quantity = admin_signal.quantity
+    default_deal.entry_price = admin_signal.entry_price
+    default_deal.current_price = admin_signal.current_price
+    default_deal.price_change_percent = admin_signal.change_percent
+    default_deal.investment_amount = admin_signal.investment_amount
+    default_deal.target_price = admin_signal.target_price
+    default_deal.total_value = admin_signal.current_value
+    default_deal.target_pnl_ratio = admin_signal.pnl_percentage
+    default_deal.pnl = admin_signal.pnl
+    default_deal.entry_date = admin_signal.signal_date
+    default_deal.profit_ratio = admin_signal.pnl_percentage
+    default_deal.profit_price = admin_signal.current_price
+    default_deal.intrinsic_value = admin_signal.investment_amount
+    default_deal.intrinsic_price = admin_signal.entry_price
+    default_deal.notes = admin_signal.signal_description or admin_signal.signal_title
+    default_deal.quantity_traded = admin_signal.quantity
+    default_deal.seven_day_change = admin_signal.change_percent
+    default_deal.change_amount = admin_signal.pnl
+    default_deal.signal_strength = admin_signal.status
 
 def update_default_deal_from_admin_signal(admin_signal_id):
     """Update specific default deal when admin signal is updated"""
@@ -91,38 +124,53 @@ def update_default_deal_from_admin_signal(admin_signal_id):
                 db.session.add(default_deal)
             
             # Update default deal with latest admin signal data
-            default_deal.user_target_id = str(admin_signal.target_user_id) if admin_signal.target_user_id else None
-            default_deal.symbol = admin_signal.symbol
-            default_deal.exchange = admin_signal.exchange or 'NSE'
-            default_deal.position_type = admin_signal.signal_type or 'BUY'
-            default_deal.quantity = admin_signal.quantity
-            default_deal.entry_price = admin_signal.entry_price
-            default_deal.current_price = admin_signal.current_price
-            default_deal.price_change_percent = admin_signal.change_percent
-            default_deal.investment_amount = admin_signal.investment_amount
-            default_deal.target_price = admin_signal.target_price
-            default_deal.total_value = admin_signal.current_value
-            default_deal.target_pnl_ratio = admin_signal.pnl_percentage
-            default_deal.pnl = admin_signal.pnl
-            default_deal.entry_date = admin_signal.signal_date
-            default_deal.profit_ratio = admin_signal.pnl_percentage
-            default_deal.profit_price = admin_signal.current_price
-            default_deal.intrinsic_value = admin_signal.investment_amount
-            default_deal.intrinsic_price = admin_signal.entry_price
-            default_deal.notes = admin_signal.signal_description or admin_signal.signal_title
-            default_deal.quantity_traded = admin_signal.quantity
-            default_deal.seven_day_change = admin_signal.change_percent
-            default_deal.change_amount = admin_signal.pnl
-            default_deal.signal_strength = admin_signal.status
+            update_default_deal_from_admin_signal_data(default_deal, admin_signal)
             
             db.session.commit()
-            logger.info(f"Updated default deal for admin signal {admin_signal_id}")
+            logger.info(f"Successfully updated default deal for admin signal {admin_signal_id}")
             return True
             
     except Exception as e:
-        logger.error(f"Error updating default deal: {str(e)}")
+        logger.error(f"Error updating default deal for admin signal {admin_signal_id}: {str(e)}")
         db.session.rollback()
         return False
+
+# Set up automatic sync triggers
+def setup_auto_sync_triggers():
+    """Setup automatic sync triggers for admin_trade_signals changes"""
+    
+    @event.listens_for(AdminTradeSignal, 'after_insert')
+    def auto_sync_on_insert(mapper, connection, target):
+        """Automatically sync when new admin signal is inserted"""
+        try:
+            logger.info(f"Auto-sync triggered: New admin signal {target.id} created")
+            update_default_deal_from_admin_signal(target.id)
+        except Exception as e:
+            logger.error(f"Error in auto-sync on insert: {str(e)}")
+    
+    @event.listens_for(AdminTradeSignal, 'after_update')
+    def auto_sync_on_update(mapper, connection, target):
+        """Automatically sync when admin signal is updated"""
+        try:
+            logger.info(f"Auto-sync triggered: Admin signal {target.id} updated")
+            update_default_deal_from_admin_signal(target.id)
+        except Exception as e:
+            logger.error(f"Error in auto-sync on update: {str(e)}")
+    
+    @event.listens_for(AdminTradeSignal, 'after_delete')
+    def auto_sync_on_delete(mapper, connection, target):
+        """Remove corresponding default deal when admin signal is deleted"""
+        try:
+            logger.info(f"Auto-sync triggered: Admin signal {target.id} deleted")
+            with app.app_context():
+                default_deal = DefaultDeal.query.filter_by(admin_signal_id=target.id).first()
+                if default_deal:
+                    db.session.delete(default_deal)
+                    db.session.commit()
+                    logger.info(f"Successfully removed default deal for deleted admin signal {target.id}")
+        except Exception as e:
+            logger.error(f"Error in auto-sync on delete: {str(e)}")
+            db.session.rollback()
 
 if __name__ == "__main__":
     result = sync_admin_signals_to_default_deals()

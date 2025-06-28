@@ -12,6 +12,7 @@ function DealsManager() {
     this.availableColumns = {
         'trade_signal_id': { label: 'ID', default: true, width: '50px', sortable: true },
         'symbol': { label: 'ETF', default: true, width: '80px', sortable: true },
+        'pos': { label: 'POS', default: true, width: '50px', sortable: true },
         'thirty': { label: '30', default: true, width: '50px', sortable: true },
         'dh': { label: 'DH', default: true, width: '40px', sortable: true },
         'date': { label: 'DATE', default: true, width: '80px', sortable: true },
@@ -147,14 +148,16 @@ DealsManager.prototype.updateTableHeaders = function() {
 
 DealsManager.prototype.getColumnTooltip = function(column) {
     var tooltips = {
+        'trade_signal_id': 'Trade Signal ID',
         'symbol': 'Trading Symbol',
+        'pos': 'Position (1=Long, 0=Short)',
         'thirty': '30 Day Performance',
         'dh': 'Days Held',
         'date': 'Order Date',
-        'pos': 'Position Type',
         'qty': 'Quantity',
         'ep': 'Entry Price',
         'cmp': 'Current Market Price',
+        'chan_percent': 'Percentage Change',
         'change_pct': 'Percentage Change',
         'inv': 'Investment Amount',
         'tp': 'Target Price',
@@ -169,6 +172,7 @@ DealsManager.prototype.getColumnTooltip = function(column) {
         'nt': 'Notes/Tags',
         'qt': 'Quote Time',
         'seven': '7 Day Change',
+        'ch': 'Change Percentage',
         'change2': 'Percentage Change',
         'actions': 'Actions'
     };
@@ -276,12 +280,14 @@ DealsManager.prototype.loadDeals = function() {
                             
                             return {
                                 id: deal.id,
+                                trade_signal_id: deal.admin_signal_id || deal.id,
                                 symbol: deal.symbol || '',
-                                pos: deal.position_type === 'BUY' ? 1 : -1,
+                                pos: deal.position_type === 'BUY' ? 1 : 0,
                                 qty: quantity,
                                 ep: entryPrice,
                                 cmp: currentPrice,
                                 pl: pnl,
+                                chan_percent: changePercent,
                                 change_pct: changePercent,
                                 inv: investment,
                                 tp: parseFloat(deal.target_price || 0),
@@ -296,9 +302,10 @@ DealsManager.prototype.loadDeals = function() {
                                 pp: deal.notes ? deal.notes.substring(0, 10) + '...' : '-',
                                 iv: investment.toLocaleString('en-IN'),
                                 ip: changePercent > 0 ? '+' + changePercent.toFixed(1) + '%' : changePercent.toFixed(1) + '%',
-                                nt: deal.notes || '--',
+                                nt: '--',
                                 qt: new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
                                 seven: changePercent.toFixed(2) + '%',
+                                ch: changePercent.toFixed(2) + '%',
                                 change2: changePercent,
                                 admin_signal_id: deal.admin_signal_id
                             };
@@ -383,7 +390,7 @@ DealsManager.prototype.renderDealsTable = function() {
                     cellContent = deal.date || '';
                     break;
                 case 'pos':
-                    cellContent = '<span class="badge ' + (deal.pos === 1 ? 'bg-success' : 'bg-danger') + '">' + deal.pos + '</span>';
+                    cellContent = deal.pos === 1 ? '1' : '0';
                     break;
                 case 'qty':
                     cellContent = deal.qty ? deal.qty.toLocaleString('en-IN') : '';
