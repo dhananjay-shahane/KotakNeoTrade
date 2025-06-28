@@ -544,45 +544,6 @@ DealsManager.prototype.showError = function(message) {
         '</tr>';
 };
 
-// Global functions for column settings and filters
-function applyColumnSettings() {
-    window.dealsManager.selectedColumns = [];
-
-    var columns = Object.keys(window.dealsManager.availableColumns);
-    for (var i = 0; i < columns.length; i++) {
-        var column = columns[i];
-        var checkbox = document.getElementById('col_' + column);
-        if (checkbox && checkbox.checked) {
-            window.dealsManager.selectedColumns.push(column);
-        }
-    }
-
-    window.dealsManager.updateTableHeaders();
-    window.dealsManager.renderDealsTable();
-
-    bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal')).hide();
-}
-
-function selectAllColumns() {
-    var columns = Object.keys(window.dealsManager.availableColumns);
-    for (var i = 0; i < columns.length; i++) {
-        var column = columns[i];
-        var checkbox = document.getElementById('col_' + column);
-        if (checkbox) checkbox.checked = true;
-    }
-}
-
-function resetDefaultColumns() {
-    var columns = Object.keys(window.dealsManager.availableColumns);
-    for (var i = 0; i < columns.length; i++) {
-        var column = columns[i];
-        var checkbox = document.getElementById('col_' + column);
-        if (checkbox) {
-            checkbox.checked = window.dealsManager.availableColumns[column].default;
-        }
-    }
-}
-
 function applyFilters() {
     var orderType = document.getElementById('orderTypeFilter').value;
     var status = document.getElementById('statusFilter').value;
@@ -813,6 +774,13 @@ function exportDeals() {
 
 // Global functions for column settings and filters
 function applyColumnSettings() {
+    console.log('Applying column settings...');
+    
+    if (!window.dealsManager) {
+        console.error('DealsManager not initialized');
+        return;
+    }
+
     window.dealsManager.selectedColumns = [];
 
     var columns = Object.keys(window.dealsManager.availableColumns);
@@ -824,22 +792,54 @@ function applyColumnSettings() {
         }
     }
 
+    console.log('Selected columns:', window.dealsManager.selectedColumns);
+
+    // Update table headers and re-render
     window.dealsManager.updateTableHeaders();
     window.dealsManager.renderDealsTable();
 
-    bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal')).hide();
+    // Close modal safely
+    var modal = document.getElementById('columnSettingsModal');
+    if (modal) {
+        var modalInstance = bootstrap.Modal.getInstance(modal);
+        if (modalInstance) {
+            modalInstance.hide();
+        } else {
+            // Fallback: hide modal manually
+            modal.classList.remove('show');
+            modal.style.display = 'none';
+            document.body.classList.remove('modal-open');
+            var backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) backdrop.remove();
+        }
+    }
+    
+    console.log('Column settings applied successfully');
 }
 
 function selectAllColumns() {
+    console.log('Selecting all columns...');
+    if (!window.dealsManager) {
+        console.error('DealsManager not initialized');
+        return;
+    }
+    
     var columns = Object.keys(window.dealsManager.availableColumns);
     for (var i = 0; i < columns.length; i++) {
         var column = columns[i];
         var checkbox = document.getElementById('col_' + column);
         if (checkbox) checkbox.checked = true;
     }
+    console.log('All columns selected');
 }
 
 function resetDefaultColumns() {
+    console.log('Resetting to default columns...');
+    if (!window.dealsManager) {
+        console.error('DealsManager not initialized');
+        return;
+    }
+    
     var columns = Object.keys(window.dealsManager.availableColumns);
     for (var i = 0; i < columns.length; i++) {
         var column = columns[i];
@@ -848,6 +848,7 @@ function resetDefaultColumns() {
             checkbox.checked = window.dealsManager.availableColumns[column].default;
         }
     }
+    console.log('Reset to default columns completed');
 }
 
 // Function to sort deals by any column
