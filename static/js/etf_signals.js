@@ -270,6 +270,8 @@ ETFSignalsManager.prototype.createSignalRow = function(signal) {
                 break;
             case 'pl':
                 var plClass = pnl >= 0 ? 'text-success' : 'text-danger';
+                var bgColor = this.getGradientBackgroundColor(pnl);
+                cellStyle = bgColor;
                 cellValue = '<span class="fw-bold ' + plClass + '">₹' + pnl.toFixed(2) + '</span>';
                 break;
             case 'ed':
@@ -319,12 +321,21 @@ ETFSignalsManager.prototype.createSignalRow = function(signal) {
     return row;
 };
 
-// Gradient Background Color Function for %CH column
+// Gradient Background Color Function for %CH column and PL column
 ETFSignalsManager.prototype.getGradientBackgroundColor = function(value) {
     var numValue = parseFloat(value);
     if (isNaN(numValue)) return '';
     
-    var intensity = Math.min(Math.abs(numValue) / 5, 1); // Scale to 0-1, max at 5%
+    // For PL values (currency), use different scaling than percentage values
+    var intensity;
+    if (Math.abs(numValue) > 100) {
+        // Assume this is a currency value (PL column)
+        intensity = Math.min(Math.abs(numValue) / 5000, 1); // Scale to 0-1, max at ₹5000
+    } else {
+        // Assume this is a percentage value (%CH column)
+        intensity = Math.min(Math.abs(numValue) / 5, 1); // Scale to 0-1, max at 5%
+    }
+    
     var alpha = 0.3 + (intensity * 0.5); // Alpha from 0.3 to 0.8
     
     if (numValue < 0) {
