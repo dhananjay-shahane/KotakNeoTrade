@@ -3,7 +3,10 @@ import logging
 from datetime import datetime
 
 # Create the trading blueprint
-trading_bp = Blueprint('trading', __name__)
+trading_bp = Blueprint('trading_api', __name__, url_prefix='/api/trading')
+
+# Export as trading_api for compatibility with existing imports
+trading_api = trading_bp
 
 @trading_bp.route('/place_order', methods=['POST'])
 def place_order():

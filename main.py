@@ -20,7 +20,7 @@ try:
     from routes.auth import auth_bp
     from routes.main import main_bp
     from api.dashboard import dashboard_api as dashboard_bp
-    from api.trading import trading_api as trading_bp
+    from api.trading import trading_api
     # Import etf_bp after app initialization to avoid circular imports
     from api.admin import admin_bp
     from api.deals import deals_bp
@@ -43,7 +43,7 @@ try:
     if 'dashboard_api' not in registered_blueprints:
         app.register_blueprint(dashboard_bp)
     if 'trading_api' not in registered_blueprints:
-        app.register_blueprint(trading_bp)
+        app.register_blueprint(trading_api)
     # Register ETF blueprint
     try:
         import sys
