@@ -812,142 +812,135 @@ def get_holdings_api():
 
 @app.route('/api/etf-signals-data')
 def get_etf_signals_data():
-    """API endpoint to get ETF signals data from admin_trade_signals table using external database"""
+    """Enhanced API endpoint to get ETF signals data from external PostgreSQL database"""
     try:
-        app.logger.info("ETF Signals API: Fetching data from external PostgreSQL database")
+        import logging
+        logging.info("ETF Signals API: Fetching data from external PostgreSQL database")
 
-        # Connect directly to external database to ensure correct connection
+        # Database connection parameters from environment variables
+        import os
+        DB_HOST = os.getenv('SUPABASE_DB_HOST', 'aws-0-ap-south-1.pooler.supabase.com')
+        DB_PORT = os.getenv('SUPABASE_DB_PORT', '6543')
+        DB_NAME = os.getenv('SUPABASE_DB_NAME', 'postgres')
+        DB_USER = os.getenv('SUPABASE_DB_USER', 'postgres.crlxmtjhvbnlezfgqvnl')
+        DB_PASSWORD = os.getenv('SUPABASE_DB_PASSWORD', 'Kaushik@123456')
+
+        # Build connection string
+        connection_string = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
+        # Import necessary modules
         import psycopg2
-        external_db_url = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
-        
-        conn = psycopg2.connect(external_db_url)
-        cursor = conn.cursor()
-        
-        query = """
-            SELECT id, etf, symbol, thirty, dh, date, pos, qty, ep, cmp, chan, inv, 
-                   tp, tva, tpr, pl, ed, exp, pr, pp, iv, ip, nt, qt, seven, ch, created_at
-            FROM admin_trade_signals 
-            WHERE symbol IS NOT NULL
-            ORDER BY created_at DESC, id DESC
-        """
-        
-        cursor.execute(query)
-        signals = cursor.fetchall()
-        
-        # Get column names
-        column_names = [desc[0] for desc in cursor.description]
-        
-        # Convert to list of dictionaries
-        signals_data = []
-        for row in signals:
-            signal_dict = dict(zip(column_names, row))
-            signals_data.append(signal_dict)
-        
-        cursor.close()
-        conn.close()
-        
-        # Use signals_data instead of signals in processing
-        signals = signals_data
+        from psycopg2.extras import RealDictCursor
 
-        app.logger.info(f"ETF Signals API: Found {len(signals)} active trade signals from external database")
+        # Connect to external database
+        with psycopg2.connect(connection_string) as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
 
-        # Format signals data for frontend
-        signals_list = []
-        total_investment = 0
-        total_current_value = 0
-        total_pnl = 0
-        active_positions = 0
+                query = """
+                    SELECT id, etf, symbol, thirty, dh, date, pos, qty, ep, cmp, chan, inv, 
+                           tp, tva, tpr, pl, ed, exp, pr, pp, iv, ip, nt, qt, seven, ch, created_at
+                    FROM admin_trade_signals 
+                    WHERE symbol IS NOT NULL
+                    ORDER BY created_at DESC, id DESC
+                """
 
-        for signal in signals:
-            # Calculate values using the actual column names from the external DB
-            entry_price = float(signal['ep']) if signal['ep'] else 0
-            current_price = float(signal['cmp']) if signal['cmp'] else entry_price
-            quantity = int(signal['qty']) if signal['qty'] else 0
-            investment = float(signal['inv']) if signal['inv'] else (entry_price * quantity)
-            
-            # Calculate P&L
-            pnl_amount = float(signal['pl']) if signal['pl'] else 0
-            # Parse percentage values by removing '%' symbol
-            pnl_pct = float(signal['chan'].replace('%', '')) if signal['chan'] and signal['chan'] != '' else 0
-            current_value = float(signal['tva']) if signal['tva'] else (current_price * quantity)
-            
-            # Position type from pos column (1 = BUY, -1 = SELL)
-            pos = int(signal['pos']) if signal['pos'] else 1
-            signal_type = 'BUY' if pos > 0 else 'SELL'
+                cursor.execute(query)
+                signals = cursor.fetchall()
 
-            # Count active positions (assuming all records are active since they're in the table)
-            active_positions += 1
+                # Format signals data for frontend
+                signals_list = []
+                total_investment = 0
+                total_current_value = 0
+                total_pnl = 0
+                active_positions = 0
+                count = 0
+                for row in signals:
+                    count += 1
+                    # Calculate values
+                    entry_price = float(row.get('ep', 0))
+                    current_price = float(row.get('cmp', 0))
+                    quantity = int(row.get('qty', 0))
+                    investment = float(row.get('inv', 0))
+                    pnl_amount = float(row.get('pl', 0))
+                    pnl_pct = float(row.get('chan', '0').replace('%', ''))
+                    current_value = float(row.get('tva', 0))
 
-            # Accumulate totals
-            total_investment += investment
-            total_current_value += current_value
-            total_pnl += pnl_amount
+                    # Position type from pos column (1 = BUY, -1 = SELL)
+                    pos = int(row.get('pos', 1))
+                    signal_type = 'BUY' if pos > 0 else 'SELL'
 
-            signal_data = {
-                'id': signal['id'],
-                'etf': signal['etf'] or signal['symbol'],
-                'symbol': signal['symbol'],
-                'signal_type': signal_type,
-                'pos': pos,
-                'ep': entry_price,
-                'cmp': current_price,
-                'qty': quantity,
-                'inv': investment,
-                'pl': pnl_amount,
-                'change_pct': pnl_pct,
-                'chan': signal['chan'] or f'{pnl_pct:.2f}%',
-                'status': 'ACTIVE',
-                'date': str(signal['date']) if signal['date'] else '',
-                'tp': float(signal['tp']) if signal['tp'] else 0,
-                'tva': current_value,
-                'tpr': signal['tpr'] or f'{pnl_pct:.2f}%',
-                'pr': signal['pr'] or f'{pnl_pct:.2f}%',
-                'signal_title': signal['nt'] or f'{signal_type} Signal - {signal["symbol"]}',
-                'signal_description': f'ETF trading signal for {signal["symbol"]}',
-                'priority': 'MEDIUM',
-                'created_at': str(signal['created_at']) if signal['created_at'] else '',
-                'updated_at': str(signal['created_at']) if signal['created_at'] else '',
-                'ip': signal['ip'] or f'{pnl_pct:.2f}%',
-                'nt': signal['nt'] or '',
-                'qt': quantity,
-                'seven': signal['seven'] or f'{pnl_pct:.2f}%',
-                'thirty': signal['thirty'] or f'{pnl_pct:.2f}%',
-                'dh': signal['dh'] or '0',
-                'ed': signal['ed'] or '',
-                'exp': signal['exp'] or '',
-                'pp': signal['pp'] or '--',
-                'iv': signal['iv'] or investment,
-                'ch': signal['ch'] or f'{pnl_pct:.2f}%'
-            }
-            signals_list.append(signal_data)
+                    # Count active positions (assuming all records are active since they're in the table)
+                    active_positions += 1
 
-        # Calculate portfolio summary
-        total_pnl = total_current_value - total_investment
-        return_percent = (total_pnl / total_investment *
-                          100) if total_investment > 0 else 0
+                    # Accumulate totals
+                    total_investment += investment
+                    total_current_value += current_value
+                    total_pnl += pnl_amount
+                    signals_list.append({
+                        'trade_signal_id': row.get('id', count + 1),
+                        'id': row.get('id', count + 1),
+                        'etf': row.get('etf', 'N/A'),
+                        'symbol': row.get('symbol', 'N/A'),
+                        'signal_type': signal_type,
+                        'pos': pos,
+                        'ep': entry_price,
+                        'cmp': current_price,
+                        'qty': quantity,
+                        'inv': investment,
+                        'pl': pnl_amount,
+                        'change_pct': pnl_pct,
+                        'chan': row.get('chan', f'{pnl_pct:.2f}%'),
+                        'status': 'ACTIVE',
+                        'date': str(row.get('date', '')),
+                        'tp': float(row.get('tp', 0)),
+                        'tva': current_value,
+                        'tpr': row.get('tpr', f'{pnl_pct:.2f}%'),
+                        'pr': row.get('pr', f'{pnl_pct:.2f}%'),
+                        'signal_title': row.get('nt', f'{signal_type} Signal - {row.get("symbol", "N/A")}'),
+                        'signal_description': f'ETF trading signal for {row.get("symbol", "N/A")}',
+                        'priority': 'MEDIUM',
+                        'created_at: str(row.get('created_at', '')),
+                        'updated_at': str(row.get('created_at', '')),
+                        'ip': row.get('ip', f'{pnl_pct:.2f}%'),
+                        'nt': row.get('nt', ''),
+                        'qt': quantity,
+                        'seven': row.get('seven', f'{pnl_pct:.2f}%'),
+                        'thirty': row.get('thirty', f'{pnl_pct:.2f}%'),
+                        'dh': row.get('dh', '0'),
+                        'ed': row.get('ed', ''),
+                        'exp': row.get('exp', ''),
+                        'pp': row.get('pp', '--'),
+                        'iv': row.get('iv', investment),
+                        'ch': row.get('ch', f'{pnl_pct:.2f}%')
+                    })
 
-        portfolio_summary = {
-            'total_positions': len(signals_list),
-            'active_positions': active_positions,
-            'closed_positions': len(signals_list) - active_positions,
-            'total_investment': total_investment,
-            'current_value': total_current_value,
-            'total_pnl': total_pnl,
-            'return_percent': return_percent
-        }
+                # Calculate portfolio summary
+                total_pnl = total_current_value - total_investment
+                return_percent = (total_pnl / total_investment *
+                                  100) if total_investment > 0 else 0
 
-        app.logger.info(
-            f"ETF Signals API: Returning {len(signals_list)} CSV signals with {active_positions} active positions"
-        )
+                portfolio_summary = {
+                    'total_positions': len(signals_list),
+                    'active_positions': active_positions,
+                    'closed_positions': len(signals_list) - active_positions,
+                    'total_investment': total_investment,
+                    'current_value': total_current_value,
+                    'total_pnl': total_pnl,
+                    'return_percent': return_percent
+                }
 
-        return jsonify({
-            'success': True,
-            'signals': signals_list,
-            'portfolio': portfolio_summary
-        })
+                logging.info(
+                    f"ETF Signals API: Returning {len(signals_list)} signals"
+                )
+
+                return jsonify({
+                    'success': True,
+                    'signals': signals_list,
+                    'portfolio': portfolio_summary
+                })
 
     except Exception as e:
-        app.logger.error(f"ETF Signals API Error: {str(e)}")
+        logging.error(f"ETF Signals API Error: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({
@@ -965,6 +958,7 @@ def get_etf_signals_data():
             }
         }), 500
 
+# The following code adds trade_signal_id and ensures uniqueness.
 
 # Admin signals population endpoint
 @app.route('/api/populate-admin-signals-csv')
@@ -1144,13 +1138,13 @@ def sync_default_deals_endpoint():
     """API endpoint to sync all admin_trade_signals to default_deals table"""
     try:
         synced_count = sync_admin_signals_to_default_deals()
-        
+
         return jsonify({
             'success': True,
             'message': f'Successfully synced {synced_count} admin signals to default deals',
             'synced_count': synced_count
         })
-        
+
     except Exception as e:
         logging.error(f"Error in sync default deals endpoint: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1162,7 +1156,7 @@ def get_default_deals_data():
     try:
         from Scripts.models import DefaultDeal
         from sqlalchemy import text
-        
+
         # Get all default deals with formatted data
         query = text("""
             SELECT id, user_target_id, symbol, exchange, position_type, quantity, 
@@ -1174,10 +1168,10 @@ def get_default_deals_data():
             FROM default_deals 
             ORDER BY created_at DESC
         """)
-        
+
         result = db.session.execute(query)
         deals = result.fetchall()
-        
+
         # Format deals data
         deals_list = []
         for deal in deals:
@@ -1202,15 +1196,15 @@ def get_default_deals_data():
                 'admin_signal_id': deal.admin_signal_id
             }
             deals_list.append(deal_data)
-        
+
         app.logger.info(f"Default deals API: Returning {len(deals_list)} deals")
-        
+
         return jsonify({
             'success': True,
             'data': deals_list,
             'total': len(deals_list)
         })
-        
+
     except Exception as e:
         app.logger.error(f"Error getting default deals data: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500

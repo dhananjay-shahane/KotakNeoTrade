@@ -12,6 +12,7 @@ function ETFSignalsManager() {
     
     // Column visibility settings
     this.availableColumns = [
+        { key: 'trade_signal_id', label: 'ID', visible: true },
         { key: 'etf', label: 'ETF', visible: true },
         { key: 'thirty', label: '30', visible: true },
         { key: 'dh', label: 'DH', visible: true },
@@ -224,6 +225,10 @@ ETFSignalsManager.prototype.createSignalRow = function(signal) {
         var cellStyle = '';
         
         switch (column.key) {
+            case 'trade_signal_id':
+                var tradeId = signal.trade_signal_id || signal.id || 'N/A';
+                cellValue = '<span class="badge bg-secondary">' + tradeId + '</span>';
+                break;
             case 'etf':
                 cellValue = '<span class="fw-bold text-primary">' + symbol + '</span>';
                 break;
@@ -454,7 +459,7 @@ function selectAllColumns() {
 
 function resetDefaultColumns() {
     if (window.etfSignalsManager) {
-        var defaultVisible = ['etf', 'thirty', 'dh', 'date', 'qty', 'ep', 'cmp', 'chan', 'inv', 'pl', 'ch', 'actions'];
+        var defaultVisible = ['trade_signal_id', 'etf', 'thirty', 'dh', 'date', 'qty', 'ep', 'cmp', 'chan', 'inv', 'pl', 'ch', 'actions'];
         
         // Update column visibility
         for (var i = 0; i < window.etfSignalsManager.availableColumns.length; i++) {
@@ -780,6 +785,10 @@ function sortSignalsByColumn(column) {
             var valueA, valueB;
             
             switch(column) {
+                case 'trade_signal_id':
+                    valueA = parseInt(a.trade_signal_id || a.id || 0);
+                    valueB = parseInt(b.trade_signal_id || b.id || 0);
+                    break;
                 case 'symbol':
                     valueA = (a.etf || a.symbol || '').toLowerCase();
                     valueB = (b.etf || b.symbol || '').toLowerCase();

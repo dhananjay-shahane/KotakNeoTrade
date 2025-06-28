@@ -15,7 +15,7 @@ def get_admin_signals():
     try:
         # Get ALL admin trade signals from database using direct SQL query
         result = db.session.execute(text("""
-            SELECT symbol, entry_price, current_price, quantity, investment_amount, 
+            SELECT id, symbol, entry_price, current_price, quantity, investment_amount, 
                    position_type, status, created_at, pnl, pnl_percentage, change_percent,
                    target_price, stop_loss, last_update_time
             FROM admin_trade_signals 
@@ -38,7 +38,7 @@ def get_admin_signals():
         total_current_value = 0
         
         for row in signals_data:
-            symbol, entry_price, current_price, quantity, investment_amount, position_type, status, created_at, pnl, pnl_percentage, change_percent, target_price, stop_loss, last_update_time = row
+            trade_signal_id, symbol, entry_price, current_price, quantity, investment_amount, position_type, status, created_at, pnl, pnl_percentage, change_percent, target_price, stop_loss, last_update_time = row
             
             # Convert to proper types with better error handling
             try:
@@ -68,6 +68,8 @@ def get_admin_signals():
                 pnl_percentage = ((current_price - entry_price) / entry_price) * 100 if entry_price > 0 else 0
             
             signal_data = {
+                'trade_signal_id': trade_signal_id,
+                'id': trade_signal_id,
                 'symbol': symbol or 'UNKNOWN',
                 'entry_price': round(entry_price, 2),
                 'current_price': round(current_price, 2),
