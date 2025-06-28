@@ -1324,6 +1324,164 @@ def test_auto_sync_endpoint():
         }), 500
 
 
+@app.route('/api/place-order', methods=['POST'])
+@require_auth
+def place_order():
+    """API endpoint to place buy/sell orders using Kotak Neo API"""
+    try:
+        from Scripts.trading_functions import TradingFunctions
+        
+        # Get order data from request
+        order_data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['symbol', 'quantity', 'transaction_type', 'order_type']
+        for field in required_fields:
+            if field not in order_data:
+                return jsonify({'success': False, 'message': f'Missing required field: {field}'}), 400
+        
+        # Get client from session
+        client = session.get('client')
+        if not client:
+            return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
+        
+        # Initialize trading functions
+        trading_functions = TradingFunctions()
+        
+        # Prepare order data with defaults
+        order_params = {
+            'symbol': order_data['symbol'],
+            'quantity': str(order_data['quantity']),
+            'transaction_type': order_data['transaction_type'],  # B (Buy) or S (Sell)
+            'order_type': order_data['order_type'],  # MARKET, LIMIT, STOPLOSS
+            'exchange_segment': order_data.get('exchange_segment', 'nse_cm'),
+            'product': order_data.get('product', 'CNC'),  # CNC, MIS, NRML
+            'validity': order_data.get('validity', 'DAY'),
+            'price': order_data.get('price', '0'),
+            'trigger_price': order_data.get('trigger_price', '0'),
+            'disclosed_quantity': order_data.get('disclosed_quantity', '0'),
+            'amo': order_data.get('amo', 'NO'),
+            'market_protection': order_data.get('market_protection', '0'),
+            'pf': order_data.get('pf', 'N'),
+            'tag': order_data.get('tag', None)
+        }
+        
+        # Place the order
+        result = trading_functions.place_order(client, order_params)
+        
+        if result.get('success'):
+            return jsonify({
+                'success': True,
+                'message': f'Order placed successfully for {order_data["symbol"]}',
+                'data': result.get('data')
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': result.get('message', 'Failed to place order')
+            }), 400
+            
+    except Exception as e:
+        logging.error(f"Error placing order: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/quick-buy', methods=['POST'])
+@require_auth
+def quick_buy():
+    """Quick buy order for holdings/default-deals pages"""
+    try:
+        data = request.get_json()
+        symbol = data.get('symbol')
+        quantity = data.get('quantity', '1')
+        price = data.get('price', '0')
+        order_type = data.get('order_type', 'MARKET')
+        
+        # Get client from session
+        client = session.get('client')
+        if not client:
+            return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
+        
+        from Scripts.trading_functions import TradingFunctions
+        trading_functions = TradingFunctions()
+        
+        order_params = {
+            'symbol': symbol,
+            'quantity': quantity,
+            'transaction_type': 'B',  # Buy
+            'order_type': order_type,
+            'price': price,
+            'exchange_segment': 'nse_cm',
+            'product': 'CNC',
+            'validity': 'DAY'
+        }
+        
+        result = trading_functions.place_order(client, order_params)
+        
+        if result.get('success'):
+            return jsonify({
+                'success': True,
+                'message': f'Buy order placed successfully for {symbol}',
+                'data': result.get('data')
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': result.get('message', 'Failed to place buy order')
+            }), 400
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/quick-sell', methods=['POST'])
+@require_auth
+def quick_sell():
+    """Quick sell order for holdings/default-deals pages"""
+    try:
+        data = request.get_json()
+        symbol = data.get('symbol')
+        quantity = data.get('quantity', '1')
+        price = data.get('price', '0')
+        order_type = data.get('order_type', 'MARKET')
+        
+        # Get client from session
+        client = session.get('client')
+        if not client:
+            return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
+        
+        from Scripts.trading_functions import TradingFunctions
+        trading_functions = TradingFunctions()
+        
+        order_params = {
+            'symbol': symbol,
+            'quantity': quantity,
+            'transaction_type': 'S',  # Sell
+            'order_type': order_type,
+            'price': price,
+            'exchange_segment': 'nse_cm',
+            'product': 'CNC',
+            'validity': 'DAY'
+        }
+        
+        result = trading_functions.place_order(client, order_params)
+        
+        if result.get('success'):
+            return jsonify({
+                'success': True,
+                'message': f'Sell order placed successfully for {symbol}',
+                'data': result.get('data')
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': result.get('message', 'Failed to place sell order')
+            }), 400
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
 from routes.auth import auth_bp
 from routes.main import main_bp
 from api.dashboard import dashboard_api

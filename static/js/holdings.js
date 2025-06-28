@@ -114,12 +114,22 @@ function submitHoldingAction() {
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Placing Order...';
     submitBtn.disabled = true;
     
-    fetch('/api/trading/place_order', {
+    fetch('/api/place-order', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(orderData)
+        body: JSON.stringify({
+            symbol: orderData.trading_symbol,
+            quantity: orderData.quantity,
+            transaction_type: orderData.transaction_type,
+            order_type: orderData.order_type,
+            price: orderData.price,
+            trigger_price: orderData.trigger_price,
+            exchange_segment: orderData.exchange_segment,
+            product: orderData.product,
+            validity: orderData.validity
+        })
     })
     .then(response => response.json())
     .then(function(data) {

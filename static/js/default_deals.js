@@ -625,6 +625,81 @@ function refreshDeals() {
     window.dealsManager.loadDeals();
 }
 
+// Buy/Sell Trading Functions for Default Deals
+function buyTrade(symbol, currentPrice) {
+    showTradeModal(symbol, currentPrice, 'BUY');
+}
+
+function sellTrade(symbol, currentPrice) {
+    showTradeModal(symbol, currentPrice, 'SELL');
+}
+
+function showTradeModal(symbol, currentPrice, tradeType) {
+    document.getElementById('tradeModalLabel').textContent = tradeType + ' ' + symbol;
+    document.getElementById('tradeSymbol').value = symbol;
+    document.getElementById('tradeType').value = tradeType;
+    document.getElementById('tradePrice').value = currentPrice || 0;
+    document.getElementById('tradeQuantity').value = 1;
+    
+    var modal = new bootstrap.Modal(document.getElementById('tradeModal'));
+    modal.show();
+}
+
+function submitTrade() {
+    var symbol = document.getElementById('tradeSymbol').value;
+    var tradeType = document.getElementById('tradeType').value;
+    var price = document.getElementById('tradePrice').value;
+    var quantity = document.getElementById('tradeQuantity').value;
+    
+    if (!symbol || !quantity || quantity <= 0) {
+        showNotification('Please enter valid trade details', 'error');
+        return;
+    }
+    
+    var orderData = {
+        symbol: symbol,
+        quantity: quantity,
+        transaction_type: tradeType === 'BUY' ? 'B' : 'S',
+        order_type: 'MARKET',
+        price: price || '0',
+        exchange_segment: 'nse_cm',
+        product: 'CNC',
+        validity: 'DAY'
+    };
+    
+    var submitBtn = document.querySelector('#tradeModal .btn-primary');
+    var originalText = submitBtn.textContent;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Placing Order...';
+    submitBtn.disabled = true;
+    
+    fetch('/api/place-order', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+    })
+    .then(response => response.json())
+    .then(function(data) {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+        
+        if (data.success) {
+            showNotification(tradeType + ' order placed successfully for ' + symbol, 'success');
+            bootstrap.Modal.getInstance(document.getElementById('tradeModal')).hide();
+            refreshDeals();
+        } else {
+            showNotification('Failed to place order: ' + data.message, 'error');
+        }
+    })
+    .catch(function(error) {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+        console.error('Error:', error);
+        showNotification('Error placing order: ' + error.message, 'error');
+    });
+}
+
 function previousPage() {
     if (window.dealsManager.currentPage > 1) {
         window.dealsManager.currentPage--;
