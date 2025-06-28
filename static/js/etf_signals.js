@@ -9,6 +9,34 @@ function ETFSignalsManager() {
     this.refreshInterval = null;
     this.sortField = 'id';
     this.sortDirection = 'asc';
+    
+    // Column visibility settings
+    this.availableColumns = [
+        { key: 'etf', label: 'ETF', visible: true },
+        { key: 'thirty', label: '30', visible: true },
+        { key: 'dh', label: 'DH', visible: true },
+        { key: 'date', label: 'DATE', visible: true },
+        { key: 'qty', label: 'QTY', visible: true },
+        { key: 'ep', label: 'EP', visible: true },
+        { key: 'cmp', label: 'CMP', visible: true },
+        { key: 'chan', label: '%CHAN', visible: true },
+        { key: 'inv', label: 'INV.', visible: true },
+        { key: 'tp', label: 'TP', visible: false },
+        { key: 'tva', label: 'TVA', visible: false },
+        { key: 'tpr', label: 'TPR', visible: false },
+        { key: 'pl', label: 'PL', visible: true },
+        { key: 'ed', label: 'ED', visible: false },
+        { key: 'exp', label: 'EXP', visible: false },
+        { key: 'pr', label: 'PR', visible: false },
+        { key: 'pp', label: 'PP', visible: false },
+        { key: 'iv', label: 'IV', visible: false },
+        { key: 'ip', label: 'IP', visible: false },
+        { key: 'nt', label: 'NT', visible: false },
+        { key: 'qt', label: 'QT', visible: false },
+        { key: 'seven', label: '7', visible: false },
+        { key: 'ch', label: '%CH', visible: true },
+        { key: 'actions', label: 'ACTIONS', visible: true }
+    ];
 
     // Initialize when DOM is ready
     if (document.readyState === 'loading') {
@@ -22,7 +50,9 @@ function ETFSignalsManager() {
 
 ETFSignalsManager.prototype.init = function() {
     console.log('ETF Signals Manager initialized');
+    this.loadColumnSettings();
     this.setupEventListeners();
+    this.setupColumnSettings();
     this.loadSignals();
     this.startAutoRefresh();
 };
@@ -162,6 +192,12 @@ ETFSignalsManager.prototype.createSignalRow = function(signal) {
     var status = signal.status || 'ACTIVE';
     var positionType = signal.position_type || (signal.pos === 1 ? 'LONG' : 'SHORT') || 'LONG';
 
+    // Parse percentage change from chan field (remove % symbol)
+    var chanValue = signal.chan || '';
+    if (chanValue && typeof chanValue === 'string' && chanValue.includes('%')) {
+        changePct = parseFloat(chanValue.replace('%', ''));
+    }
+
     // Calculate values if not provided
     if (!changePct && entryPrice > 0) {
         changePct = ((currentPrice - entryPrice) / entryPrice) * 100;
@@ -171,8 +207,271 @@ ETFSignalsManager.prototype.createSignalRow = function(signal) {
         pnl = (currentPrice - entryPrice) * quantity;
     }
 
-    var pnlClass = pnl >= 0 ? 'profit' : 'loss';
-    var changeClass = changePct >= 0 ? 'profit' : 'loss';
+    // Create table cells based on visible columns
+    var cells = '';
+    for (var i = 0; i < this.availableColumns.length; i++) {
+        var column = this.availableColumns[i];
+        if (!column.visible) continue;
+        
+        var cellValue = '';
+        var cellStyle = '';
+        
+        switch (column.key) {
+            case 'etf':
+                cellValue = '<span class="fw-bold text-primary">' + symbol + '</span>';
+                break;
+            case 'thirty':
+                cellValue = signal.thirty || '--';
+                break;
+            case 'dh':
+                cellValue = signal.dh || '0';
+                break;
+            case 'date':
+                cellValue = signal.date || '--';
+                break;
+            case 'qty':
+                cellValue = '<span class="badge bg-info">' + quantity + '</span>';
+                break;
+            case 'ep':
+                cellValue = '₹' + entryPrice.toFixed(2);
+                break;
+            case 'cmp':
+                cellValue = '<span class="cmp-value fw-bold" data-symbol="' + symbol + '">₹' + currentPrice.toFixed(2) + '</span>';
+                break;
+            case 'chan':
+                var chanDisplay = signal.chan || changePct.toFixed(2) + '%';
+                cellStyle = this.getGradientBackgroundColor(changePct);
+                cellValue = '<span class="fw-bold">' + chanDisplay + '</span>';
+                break;
+            case 'inv':
+                cellValue = '₹' + investment.toFixed(0);
+                break;
+            case 'tp':
+                cellValue = '₹' + targetPrice.toFixed(2);
+                break;
+            case 'tva':
+                cellValue = '₹' + (signal.tva || (currentPrice * quantity)).toFixed(2);
+                break;
+            case 'tpr':
+                cellValue = signal.tpr || '--';
+                break;
+            case 'pl':
+                var plClass = pnl >= 0 ? 'text-success' : 'text-danger';
+                cellValue = '<span class="fw-bold ' + plClass + '">₹' + pnl.toFixed(2) + '</span>';
+                break;
+            case 'ed':
+                cellValue = signal.ed || '--';
+                break;
+            case 'exp':
+                cellValue = signal.exp || '--';
+                break;
+            case 'pr':
+                cellValue = signal.pr || '--';
+                break;
+            case 'pp':
+                cellValue = signal.pp || '--';
+                break;
+            case 'iv':
+                cellValue = signal.iv || '--';
+                break;
+            case 'ip':
+                cellValue = signal.ip || '--';
+                break;
+            case 'nt':
+                cellValue = signal.nt || '--';
+                break;
+            case 'qt':
+                cellValue = signal.qt || quantity;
+                break;
+            case 'seven':
+                cellValue = signal.seven || '--';
+                break;
+            case 'ch':
+                var chValue = signal.ch || changePct.toFixed(2) + '%';
+                cellStyle = this.getGradientBackgroundColor(changePct);
+                cellValue = '<span class="fw-bold">' + chValue + '</span>';
+                break;
+            case 'actions':
+                cellValue = '<button class="btn btn-sm btn-success" onclick="addDeal(\'' + symbol + '\', ' + currentPrice + ')"><i class="fas fa-plus me-1"></i>Add Deal</button>';
+                break;
+            default:
+                cellValue = '--';
+        }
+        
+        cells += '<td style="' + cellStyle + '">' + cellValue + '</td>';
+    }
+    
+    row.innerHTML = cells;
+    return row;
+};
+
+// Gradient Background Color Function for %CH column
+ETFSignalsManager.prototype.getGradientBackgroundColor = function(value) {
+    var numValue = parseFloat(value);
+    if (isNaN(numValue)) return '';
+    
+    var intensity = Math.min(Math.abs(numValue) / 10, 1); // Scale to 0-1, max at 10%
+    var alpha = 0.2 + (intensity * 0.6); // Alpha from 0.2 to 0.8
+    
+    if (numValue < 0) {
+        // Red gradient for negative values
+        if (intensity <= 0.3) {
+            // Light red for small negative values
+            return 'background: rgba(255, 182, 193, ' + alpha + ')'; // Light pink
+        } else if (intensity <= 0.6) {
+            // Medium red
+            return 'background: rgba(255, 99, 71, ' + alpha + ')'; // Tomato
+        } else {
+            // Dark red for large negative values
+            return 'background: rgba(139, 0, 0, ' + alpha + ')'; // Dark red
+        }
+    } else if (numValue > 0) {
+        // Green gradient for positive values
+        if (intensity <= 0.3) {
+            // Light green for small positive values
+            return 'background: rgba(144, 238, 144, ' + alpha + ')'; // Light green
+        } else if (intensity <= 0.6) {
+            // Medium green
+            return 'background: rgba(50, 205, 50, ' + alpha + ')'; // Lime green
+        } else {
+            // Dark green for large positive values
+            return 'background: rgba(0, 128, 0, ' + alpha + ')'; // Green
+        }
+    }
+    return '';
+};
+
+ETFSignalsManager.prototype.updateTableHeaders = function() {
+    var headerRow = document.getElementById('tableHeaders');
+    if (!headerRow) return;
+    
+    headerRow.innerHTML = '';
+    
+    for (var i = 0; i < this.availableColumns.length; i++) {
+        var column = this.availableColumns[i];
+        if (column.visible) {
+            var th = document.createElement('th');
+            th.style.cursor = 'pointer';
+            th.title = column.label + ' - Click to sort';
+            if (column.key !== 'actions') {
+                th.setAttribute('onclick', 'sortSignalsByColumn(\'' + column.key + '\')');
+                th.innerHTML = column.label + ' <i class="fas fa-sort ms-1"></i>';
+            } else {
+                th.innerHTML = column.label;
+            }
+            headerRow.appendChild(th);
+        }
+    }
+};
+
+// Column Management Functions
+ETFSignalsManager.prototype.loadColumnSettings = function() {
+    var savedSettings = localStorage.getItem('etfSignalsColumnSettings');
+    if (savedSettings) {
+        try {
+            var settings = JSON.parse(savedSettings);
+            for (var i = 0; i < this.availableColumns.length; i++) {
+                var column = this.availableColumns[i];
+                if (settings[column.key] !== undefined) {
+                    column.visible = settings[column.key];
+                }
+            }
+        } catch (e) {
+            console.error('Error loading column settings:', e);
+        }
+    }
+};
+
+ETFSignalsManager.prototype.saveColumnSettings = function() {
+    var settings = {};
+    for (var i = 0; i < this.availableColumns.length; i++) {
+        var column = this.availableColumns[i];
+        settings[column.key] = column.visible;
+    }
+    localStorage.setItem('etfSignalsColumnSettings', JSON.stringify(settings));
+};
+
+ETFSignalsManager.prototype.setupColumnSettings = function() {
+    var self = this;
+    var container = document.getElementById('columnCheckboxes');
+    if (!container) return;
+
+    container.innerHTML = '';
+    
+    for (var i = 0; i < this.availableColumns.length; i++) {
+        var column = this.availableColumns[i];
+        var colDiv = document.createElement('div');
+        colDiv.className = 'col-md-4 mb-2';
+        
+        var checkDiv = document.createElement('div');
+        checkDiv.className = 'form-check';
+        
+        var checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'form-check-input';
+        checkbox.id = 'col_' + column.key;
+        checkbox.checked = column.visible;
+        checkbox.setAttribute('data-column', column.key);
+        
+        var label = document.createElement('label');
+        label.className = 'form-check-label text-light';
+        label.setAttribute('for', checkbox.id);
+        label.textContent = column.label;
+        
+        checkDiv.appendChild(checkbox);
+        checkDiv.appendChild(label);
+        colDiv.appendChild(checkDiv);
+        container.appendChild(colDiv);
+    }
+};
+
+// Global functions for column management
+function selectAllColumns() {
+    if (window.etfSignalsManager) {
+        for (var i = 0; i < window.etfSignalsManager.availableColumns.length; i++) {
+            window.etfSignalsManager.availableColumns[i].visible = true;
+        }
+        window.etfSignalsManager.setupColumnSettings();
+        window.etfSignalsManager.updateTableHeaders();
+        window.etfSignalsManager.renderSignalsTable();
+    }
+}
+
+function resetDefaultColumns() {
+    if (window.etfSignalsManager) {
+        var defaultVisible = ['etf', 'thirty', 'dh', 'date', 'qty', 'ep', 'cmp', 'chan', 'inv', 'pl', 'ch', 'actions'];
+        for (var i = 0; i < window.etfSignalsManager.availableColumns.length; i++) {
+            var column = window.etfSignalsManager.availableColumns[i];
+            column.visible = defaultVisible.indexOf(column.key) !== -1;
+        }
+        window.etfSignalsManager.setupColumnSettings();
+        window.etfSignalsManager.updateTableHeaders();
+        window.etfSignalsManager.renderSignalsTable();
+    }
+}
+
+function applyColumnSettings() {
+    if (window.etfSignalsManager) {
+        var checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
+        for (var i = 0; i < checkboxes.length; i++) {
+            var columnKey = checkboxes[i].getAttribute('data-column');
+            var column = window.etfSignalsManager.availableColumns.find(function(col) {
+                return col.key === columnKey;
+            });
+            if (column) {
+                column.visible = checkboxes[i].checked;
+            }
+        }
+        
+        window.etfSignalsManager.saveColumnSettings();
+        window.etfSignalsManager.updateTableHeaders();
+        window.etfSignalsManager.renderSignalsTable();
+        
+        // Close modal
+        var modal = bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal'));
+        if (modal) modal.hide();
+    }
+};
 
     // Format date
     var entryDate = '';
