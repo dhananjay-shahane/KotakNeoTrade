@@ -12,6 +12,7 @@ function DealsManager() {
     this.availableColumns = {
         'trade_signal_id': { label: 'ID', default: true, width: '50px', sortable: true },
         'symbol': { label: 'ETF', default: true, width: '80px', sortable: true },
+        'pos': { label: 'POS', default: true, width: '50px', sortable: true },
         'thirty': { label: '30', default: true, width: '50px', sortable: true },
         'dh': { label: 'DH', default: true, width: '40px', sortable: true },
         'date': { label: 'DATE', default: true, width: '80px', sortable: true },
