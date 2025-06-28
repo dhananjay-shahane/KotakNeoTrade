@@ -964,14 +964,14 @@ document.addEventListener('DOMContentLoaded', function () {
         // Don't modify the existing table headers since ETF signals manager handles this
         // Just trigger a refresh of the data
         if (window.etfSignalsManager) {
-            window.etfSignalsManager.loadPositions();
+            window.etfSignalsManager.loadSignals();
         }
     };
 
     // Function to fetch signals data - delegated to ETF Signals Manager
     function fetchSignals() {
         if (window.etfSignalsManager) {
-            window.etfSignalsManager.loadPositions();
+            window.etfSignalsManager.loadSignals();
         }
     }
 
