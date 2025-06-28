@@ -479,6 +479,7 @@ function applyColumnSettings() {
         window.etfSignalsManager.saveColumnSettings();
         window.etfSignalsManager.updateTableHeaders();
         window.etfSignalsManager.renderSignalsTable();
+        window.etfSignalsManager.updatePagination();
         
         // Close modal using Bootstrap 5 modal API
         var modalElement = document.getElementById('columnSettingsModal');
@@ -958,15 +959,7 @@ document.addEventListener('DOMContentLoaded', function () {
         applyColumnSettings(); // Re-render the table
     };
 
-    // Function to apply column settings
-    window.applyColumnSettings = function () {
-        console.log('Applying column settings...');
-        // Don't modify the existing table headers since ETF signals manager handles this
-        // Just trigger a refresh of the data
-        if (window.etfSignalsManager) {
-            window.etfSignalsManager.loadSignals();
-        }
-    };
+    
 
     // Function to fetch signals data - delegated to ETF Signals Manager
     function fetchSignals() {
