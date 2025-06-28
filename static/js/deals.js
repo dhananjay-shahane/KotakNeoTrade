@@ -5,9 +5,10 @@ function DealsManager() {
     this.pageSize = 20;
     this.autoRefresh = true;
     this.refreshInterval = null;
-    this.refreshIntervalTime = 30000;
+    this.refreshIntervalTime = 60000; // Increased to 60 seconds to reduce network load
     this.searchTimeout = null;
     this.sortDirection = 'asc';
+    this.isLoading = false;
 
     this.availableColumns = {
         'trade_signal_id': { label: 'ID', default: true, width: '50px', sortable: true },
@@ -203,18 +204,29 @@ DealsManager.prototype.setupEventListeners = function() {
 
 DealsManager.prototype.loadDeals = function() {
     var self = this;
+    
+    // Prevent multiple simultaneous requests
+    if (self.isLoading) {
+        console.log('Request already in progress, skipping...');
+        return;
+    }
+    
+    self.isLoading = true;
     console.log('Loading deals from external database...');
 
     var xhr = new XMLHttpRequest();
     xhr.open('GET', '/api/deals/user', true);
     xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.timeout = 10000; // 10 second timeout
+    
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
+            self.isLoading = false;
+            
             if (xhr.status === 200) {
                 try {
                     var response = JSON.parse(xhr.responseText);
-                    console.log('API Response:', response);
-
+                    
                     if (response.success && response.deals && Array.isArray(response.deals)) {
                         var uniqueDeals = response.deals.map(function(deal) {
                             return {
@@ -254,28 +266,51 @@ DealsManager.prototype.loadDeals = function() {
                             };
                         });
 
-                        self.deals = uniqueDeals;
-                        self.filteredDeals = self.deals.slice();
-                        self.renderDealsTable();
-                        self.updatePagination();
-                        console.log('Loaded ' + uniqueDeals.length + ' deals from database');
+                        // Only update if data has changed
+                        if (JSON.stringify(uniqueDeals) !== JSON.stringify(self.deals)) {
+                            self.deals = uniqueDeals;
+                            self.filteredDeals = self.deals.slice();
+                            self.renderDealsTable();
+                            self.updatePagination();
+                            console.log('Updated ' + uniqueDeals.length + ' deals from database');
+                        } else {
+                            console.log('No data changes detected');
+                        }
                     } else {
                         console.log('No deals found in API response');
-                        self.deals = [];
-                        self.filteredDeals = [];
-                        self.renderDealsTable();
-                        self.updatePagination();
+                        if (self.deals.length === 0) {
+                            self.deals = [];
+                            self.filteredDeals = [];
+                            self.renderDealsTable();
+                            self.updatePagination();
+                        }
                     }
                 } catch (parseError) {
                     console.error('Failed to parse deals API response:', parseError);
                     self.showError('Invalid response from server');
                 }
+            } else if (xhr.status === 0) {
+                console.error('Network error - request was aborted or connection failed');
+                self.showError('Network connection error');
             } else {
                 console.error('Deals API call failed with status:', xhr.status);
-                self.showError('Failed to load deals from server');
+                self.showError('Failed to load deals from server (Status: ' + xhr.status + ')');
             }
         }
     };
+    
+    xhr.ontimeout = function() {
+        self.isLoading = false;
+        console.error('Request timeout');
+        self.showError('Request timeout - please try again');
+    };
+    
+    xhr.onerror = function() {
+        self.isLoading = false;
+        console.error('Network error occurred');
+        self.showError('Network error occurred');
+    };
+    
     xhr.send();
 };
 
@@ -529,7 +564,10 @@ DealsManager.prototype.startAutoRefresh = function() {
     if (this.autoRefresh) {
         var self = this;
         this.refreshInterval = setInterval(function() {
-            self.loadDeals();
+            // Only refresh if page is visible and not already loading
+            if (!document.hidden && !self.isLoading) {
+                self.loadDeals();
+            }
         }, this.refreshIntervalTime);
     }
 };
@@ -791,15 +829,27 @@ function submitTrade() {
     submitBtn.textContent = 'Placing Order...';
     submitBtn.disabled = true;
 
-    // Call the place_order API
+    // Call the place_order API with timeout
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function() {
+        controller.abort();
+    }, 15000); // 15 second timeout
+
     fetch('/api/trading/place_order', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(orderData)
+        body: JSON.stringify(orderData),
+        signal: controller.signal
     })
-    .then(response => response.json())
+    .then(function(response) {
+        clearTimeout(timeoutId);
+        if (!response.ok) {
+            throw new Error('Network response was not ok: ' + response.status);
+        }
+        return response.json();
+    })
     .then(function(data) {
         // Reset button state
         submitBtn.textContent = originalText;
@@ -819,22 +869,29 @@ function submitTrade() {
                 'success'
             );
 
-            // Refresh deals data
+            // Refresh deals data after a delay
             setTimeout(function() {
-                window.dealsManager.loadDeals();
-            }, 1000);
+                if (!window.dealsManager.isLoading) {
+                    window.dealsManager.loadDeals();
+                }
+            }, 2000);
         } else {
             // Show error notification
             showNotification('Order placement failed: ' + (data.message || 'Unknown error'), 'error');
         }
     })
     .catch(function(error) {
+        clearTimeout(timeoutId);
         // Reset button state
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
 
         console.error('Order placement error:', error);
-        showNotification('Order placement failed: Network error', 'error');
+        if (error.name === 'AbortError') {
+            showNotification('Order placement timed out - please try again', 'error');
+        } else {
+            showNotification('Order placement failed: Network error', 'error');
+        }
     });
 }
 
@@ -1041,10 +1098,27 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('currentInterval').textContent = savedDisplay;
     }
 
+    // Pause auto-refresh when tab is not visible
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            console.log('Tab hidden - pausing auto-refresh');
+            window.dealsManager.stopAutoRefresh();
+        } else {
+            console.log('Tab visible - resuming auto-refresh');
+            if (window.dealsManager.autoRefresh) {
+                window.dealsManager.startAutoRefresh();
+                // Load fresh data when tab becomes visible
+                window.dealsManager.loadDeals();
+            }
+        }
+    });
+
     window.addEventListener('storage', function(e) {
         if (e.key === 'userDeals') {
             console.log('Deals updated in localStorage, refreshing...');
-            window.dealsManager.loadDeals();
+            if (!window.dealsManager.isLoading) {
+                window.dealsManager.loadDeals();
+            }
         }
     });
 
