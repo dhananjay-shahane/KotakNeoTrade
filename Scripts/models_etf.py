@@ -6,8 +6,7 @@ class AdminTradeSignal(db.Model):
     __tablename__ = 'admin_trade_signals'
 
     id = db.Column(db.Integer, primary_key=True)
-    admin_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    target_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    target_user_id = db.Column(db.Integer, nullable=True)  # Target user (can be null for broadcast)
 
     # Signal Information
     symbol = db.Column(db.String(50), nullable=False)
@@ -48,8 +47,8 @@ class AdminTradeSignal(db.Model):
     pnl_percentage = db.Column(db.Numeric(5, 2), nullable=True)
 
     # Relationships
-    admin_user = db.relationship('User', foreign_keys=[admin_user_id], backref='sent_signals')
-    target_user = db.relationship('User', foreign_keys=[target_user_id], backref='received_signals')
+    #admin_user = db.relationship('User', foreign_keys=[admin_user_id], backref='sent_signals')
+    #target_user = db.relationship('User', foreign_keys=[target_user_id], backref='received_signals')
 
     def __repr__(self):
         return f'<AdminTradeSignal {self.symbol} - {self.signal_type}>'
@@ -57,7 +56,7 @@ class AdminTradeSignal(db.Model):
     def to_dict(self):
         return {
             'id': self.id,
-            'admin_user_id': self.admin_user_id,
+            #'admin_user_id': self.admin_user_id,
             'target_user_id': self.target_user_id,
             'symbol': self.symbol,
             'trading_symbol': self.trading_symbol,
@@ -561,3 +560,4 @@ class ETFSignalTrade(db.Model):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'last_price_update': self.last_price_update.isoformat() if self.last_price_update else None
         }
+# Remove admin_user_id column from AdminTradeSignal model

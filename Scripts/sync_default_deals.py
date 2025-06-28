@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 """
 Sync Default Deals - Synchronize admin_trade_signals to default_deals table
@@ -19,17 +18,17 @@ def sync_admin_signals_to_default_deals():
     try:
         with app.app_context():
             logger.info("Starting sync from admin_trade_signals to default_deals...")
-            
+
             # Get all admin trade signals
             admin_signals = AdminTradeSignal.query.all()
             logger.info(f"Found {len(admin_signals)} admin trade signals to sync")
-            
+
             synced_count = 0
             for signal in admin_signals:
                 try:
                     # Check if default deal already exists for this admin signal
                     existing_deal = DefaultDeal.query.filter_by(admin_signal_id=signal.id).first()
-                    
+
                     if existing_deal:
                         # Update existing deal
                         update_default_deal_from_admin_signal_data(existing_deal, signal)
@@ -65,17 +64,17 @@ def sync_admin_signals_to_default_deals():
                         )
                         db.session.add(default_deal)
                         logger.info(f"Created new default deal for admin signal {signal.id}")
-                    
+
                     synced_count += 1
-                    
+
                 except Exception as e:
                     logger.error(f"Error syncing signal {signal.id}: {str(e)}")
                     continue
-            
+
             db.session.commit()
             logger.info(f"Successfully synced {synced_count} admin signals to default deals")
             return synced_count
-            
+
     except Exception as e:
         logger.error(f"Error syncing admin signals to default deals: {str(e)}")
         db.session.rollback()
@@ -115,21 +114,21 @@ def update_default_deal_from_admin_signal(admin_signal_id):
             if not admin_signal:
                 logger.warning(f"Admin signal {admin_signal_id} not found")
                 return False
-            
+
             default_deal = DefaultDeal.query.filter_by(admin_signal_id=admin_signal_id).first()
             if not default_deal:
                 # Create new default deal if doesn't exist
                 logger.info(f"Creating new default deal for admin signal {admin_signal_id}")
                 default_deal = DefaultDeal(admin_signal_id=admin_signal_id)
                 db.session.add(default_deal)
-            
+
             # Update default deal with latest admin signal data
             update_default_deal_from_admin_signal_data(default_deal, admin_signal)
-            
+
             db.session.commit()
             logger.info(f"Successfully updated default deal for admin signal {admin_signal_id}")
             return True
-            
+
     except Exception as e:
         logger.error(f"Error updating default deal for admin signal {admin_signal_id}: {str(e)}")
         db.session.rollback()
@@ -138,7 +137,7 @@ def update_default_deal_from_admin_signal(admin_signal_id):
 # Set up automatic sync triggers
 def setup_auto_sync_triggers():
     """Setup automatic sync triggers for admin_trade_signals changes"""
-    
+
     @event.listens_for(AdminTradeSignal, 'after_insert')
     def auto_sync_on_insert(mapper, connection, target):
         """Automatically sync when new admin signal is inserted"""
@@ -147,7 +146,7 @@ def setup_auto_sync_triggers():
             update_default_deal_from_admin_signal(target.id)
         except Exception as e:
             logger.error(f"Error in auto-sync on insert: {str(e)}")
-    
+
     @event.listens_for(AdminTradeSignal, 'after_update')
     def auto_sync_on_update(mapper, connection, target):
         """Automatically sync when admin signal is updated"""
@@ -156,7 +155,7 @@ def setup_auto_sync_triggers():
             update_default_deal_from_admin_signal(target.id)
         except Exception as e:
             logger.error(f"Error in auto-sync on update: {str(e)}")
-    
+
     @event.listens_for(AdminTradeSignal, 'after_delete')
     def auto_sync_on_delete(mapper, connection, target):
         """Remove corresponding default deal when admin signal is deleted"""
@@ -173,5 +172,11 @@ def setup_auto_sync_triggers():
             db.session.rollback()
 
 if __name__ == "__main__":
+    # Get current user for default assignment
+    current_user = None
+    try:
+        current_user = User.query.first()  # Get any existing user
+    except:
+        pass
     result = sync_admin_signals_to_default_deals()
     print(f"Synced {result} records from admin_trade_signals to default_deals")

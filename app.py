@@ -741,6 +741,12 @@ def etf_signals_advanced():
     return render_template('etf_signals_datatable.html')
 
 
+@app.route('/default-deals')
+def default_deals():
+    """Default Deals page"""
+    return render_template('default_deals.html')
+
+
 @app.route('/admin-signals-datatable')
 @require_auth
 def admin_signals_datatable():
@@ -1213,6 +1219,7 @@ from api.dashboard import dashboard_api
 from api.trading import trading_api
 from Scripts.sync_default_deals import sync_admin_signals_to_default_deals, update_default_deal_from_admin_signal
 from Scripts.auto_sync_triggers import initialize_auto_sync
+from Scripts.models import DefaultDeal
 # ETF signals blueprint will be registered separately
 
 # Register blueprints
