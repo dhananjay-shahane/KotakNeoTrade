@@ -6,7 +6,7 @@ class AdminTradeSignal(db.Model):
     __tablename__ = 'admin_trade_signals'
 
     id = db.Column(db.Integer, primary_key=True)
-    target_user_id = db.Column(db.Integer, nullable=True)  # Target user (can be null for broadcast)
+    # target_user_id column doesn't exist in actual database schema
 
     # Signal Information
     symbol = db.Column(db.String(50), nullable=False)
@@ -57,7 +57,7 @@ class AdminTradeSignal(db.Model):
         return {
             'id': self.id,
             #'admin_user_id': self.admin_user_id,
-            'target_user_id': self.target_user_id,
+            # 'target_user_id': self.target_user_id,  # Column doesn't exist
             'symbol': self.symbol,
             'trading_symbol': self.trading_symbol,
             'token': self.token,

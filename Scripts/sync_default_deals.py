@@ -19,8 +19,22 @@ def sync_admin_signals_to_default_deals():
         with app.app_context():
             logger.info("Starting sync from admin_trade_signals to default_deals...")
 
-            # Get all admin trade signals
-            admin_signals = AdminTradeSignal.query.all()
+            # Get all admin trade signals using raw SQL to avoid model issues
+            from sqlalchemy import text
+            
+            # Query admin_trade_signals directly without accessing missing columns
+            result = db.session.execute(text("""
+                SELECT id, symbol, trading_symbol, exchange, signal_type, 
+                       entry_price, target_price, stop_loss, quantity,
+                       signal_title, signal_description, notes, priority, status,
+                       created_at, updated_at, signal_date, expiry_date,
+                       current_price, change_percent, investment_amount,
+                       current_value, pnl, pnl_percentage
+                FROM admin_trade_signals 
+                ORDER BY created_at DESC
+            """))
+            
+            admin_signals = result.fetchall()
             logger.info(f"Found {len(admin_signals)} admin trade signals to sync")
 
             synced_count = 0
@@ -31,12 +45,33 @@ def sync_admin_signals_to_default_deals():
 
                     if existing_deal:
                         # Update existing deal
-                        update_default_deal_from_admin_signal_data(existing_deal, signal)
+                        existing_deal.symbol = signal.symbol
+                        existing_deal.exchange = signal.exchange or 'NSE'
+                        existing_deal.position_type = signal.signal_type or 'BUY'
+                        existing_deal.quantity = signal.quantity
+                        existing_deal.entry_price = signal.entry_price
+                        existing_deal.current_price = signal.current_price
+                        existing_deal.price_change_percent = signal.change_percent
+                        existing_deal.investment_amount = signal.investment_amount
+                        existing_deal.target_price = signal.target_price
+                        existing_deal.total_value = signal.current_value
+                        existing_deal.target_pnl_ratio = signal.pnl_percentage
+                        existing_deal.pnl = signal.pnl
+                        existing_deal.entry_date = signal.signal_date
+                        existing_deal.profit_ratio = signal.pnl_percentage
+                        existing_deal.profit_price = signal.current_price
+                        existing_deal.intrinsic_value = signal.investment_amount
+                        existing_deal.intrinsic_price = signal.entry_price
+                        existing_deal.notes = signal.signal_description or signal.signal_title
+                        existing_deal.quantity_traded = signal.quantity
+                        existing_deal.seven_day_change = signal.change_percent
+                        existing_deal.change_amount = signal.pnl
+                        existing_deal.signal_strength = signal.status
                         logger.info(f"Updated existing default deal for admin signal {signal.id}")
                     else:
                         # Create new default deal from admin signal
                         default_deal = DefaultDeal(
-                            user_target_id=str(signal.target_user_id) if signal.target_user_id else None,
+                            user_target_id=None,  # Set to None since target_user_id doesn't exist
                             symbol=signal.symbol,
                             exchange=signal.exchange or 'NSE',
                             position_type=signal.signal_type or 'BUY',
@@ -82,7 +117,7 @@ def sync_admin_signals_to_default_deals():
 
 def update_default_deal_from_admin_signal_data(default_deal, admin_signal):
     """Update default deal with latest admin signal data"""
-    default_deal.user_target_id = str(admin_signal.target_user_id) if admin_signal.target_user_id else None
+    default_deal.user_target_id = None  # Set to None since target_user_id doesn't exist in schema
     default_deal.symbol = admin_signal.symbol
     default_deal.exchange = admin_signal.exchange or 'NSE'
     default_deal.position_type = admin_signal.signal_type or 'BUY'
@@ -110,7 +145,21 @@ def update_default_deal_from_admin_signal(admin_signal_id):
     """Update specific default deal when admin signal is updated"""
     try:
         with app.app_context():
-            admin_signal = AdminTradeSignal.query.get(admin_signal_id)
+            # Use raw SQL to get admin signal data
+            from sqlalchemy import text
+            
+            result = db.session.execute(text("""
+                SELECT id, symbol, trading_symbol, exchange, signal_type, 
+                       entry_price, target_price, stop_loss, quantity,
+                       signal_title, signal_description, notes, priority, status,
+                       created_at, updated_at, signal_date, expiry_date,
+                       current_price, change_percent, investment_amount,
+                       current_value, pnl, pnl_percentage
+                FROM admin_trade_signals 
+                WHERE id = :signal_id
+            """), {'signal_id': admin_signal_id})
+            
+            admin_signal = result.fetchone()
             if not admin_signal:
                 logger.warning(f"Admin signal {admin_signal_id} not found")
                 return False
@@ -119,11 +168,36 @@ def update_default_deal_from_admin_signal(admin_signal_id):
             if not default_deal:
                 # Create new default deal if doesn't exist
                 logger.info(f"Creating new default deal for admin signal {admin_signal_id}")
-                default_deal = DefaultDeal(admin_signal_id=admin_signal_id)
+                default_deal = DefaultDeal(
+                    admin_signal_id=admin_signal_id,
+                    user_target_id=None,
+                    symbol=admin_signal.symbol,
+                    exchange=admin_signal.exchange or 'NSE',
+                    position_type=admin_signal.signal_type or 'BUY',
+                    quantity=admin_signal.quantity,
+                    entry_price=admin_signal.entry_price,
+                    current_price=admin_signal.current_price,
+                    price_change_percent=admin_signal.change_percent,
+                    investment_amount=admin_signal.investment_amount,
+                    target_price=admin_signal.target_price,
+                    total_value=admin_signal.current_value,
+                    target_pnl_ratio=admin_signal.pnl_percentage,
+                    pnl=admin_signal.pnl,
+                    entry_date=admin_signal.signal_date,
+                    profit_ratio=admin_signal.pnl_percentage,
+                    profit_price=admin_signal.current_price,
+                    intrinsic_value=admin_signal.investment_amount,
+                    intrinsic_price=admin_signal.entry_price,
+                    notes=admin_signal.signal_description or admin_signal.signal_title,
+                    quantity_traded=admin_signal.quantity,
+                    seven_day_change=admin_signal.change_percent,
+                    change_amount=admin_signal.pnl,
+                    signal_strength=admin_signal.status
+                )
                 db.session.add(default_deal)
-
-            # Update default deal with latest admin signal data
-            update_default_deal_from_admin_signal_data(default_deal, admin_signal)
+            else:
+                # Update existing default deal
+                update_default_deal_from_admin_signal_data(default_deal, admin_signal)
 
             db.session.commit()
             logger.info(f"Successfully updated default deal for admin signal {admin_signal_id}")
