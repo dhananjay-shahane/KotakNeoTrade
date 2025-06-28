@@ -267,6 +267,11 @@ def get_user_deals():
                 for deal in db_deals:
                     try:
                         deal_dict = deal.to_dict()
+                        # Ensure position data is properly mapped
+                        if 'pos' not in deal_dict and hasattr(deal, 'pos'):
+                            deal_dict['pos'] = deal.pos
+                        if 'position_type' not in deal_dict and hasattr(deal, 'position_type'):
+                            deal_dict['position_type'] = deal.position_type
                         deals_data.append(deal_dict)
                     except Exception as deal_error:
                         logging.error(f"Error converting deal {deal.id} to dict: {deal_error}")
