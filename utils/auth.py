@@ -28,7 +28,7 @@ def validate_current_session():
             return False
             
         # Check if required session data exists
-        required_fields = ['access_token', 'session_token', 'ucc', 'client']
+        required_fields = ['access_token', 'ucc', 'client']
         for field in required_fields:
             if not session.get(field):
                 logging.warning(f"Missing session field: {field}")
@@ -37,16 +37,30 @@ def validate_current_session():
                 
         # Additional validation - check if tokens are not empty and have valid format
         access_token = session.get('access_token')
-        session_token = session.get('session_token')
         
-        if not access_token or not session_token:
-            logging.warning("Empty authentication tokens")
+        if not access_token:
+            logging.warning("Empty access token")
             clear_session()
             return False
             
-        # Check token length (valid tokens should be substantial)
-        if len(access_token) < 50 or len(session_token) < 10:
-            logging.warning("Invalid token format - tokens too short")
+        # Check token length and format (valid Kotak Neo tokens should be substantial JWT tokens)
+        if len(access_token) < 100:  # JWT tokens are typically much longer
+            logging.warning("Invalid access token format - token too short")
+            clear_session()
+            return False
+            
+        # Validate JWT token format (should have 3 parts separated by dots)
+        if access_token.count('.') != 2:
+            logging.warning("Invalid JWT token format")
+            clear_session()
+            return False
+            
+        # Check for session_token or sid (at least one should be present)
+        session_token = session.get('session_token')
+        sid = session.get('sid')
+        
+        if not session_token and not sid:
+            logging.warning("Missing session identifiers")
             clear_session()
             return False
             

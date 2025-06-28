@@ -215,36 +215,41 @@ class NeoClient:
             try:
                 validation_response = client.session_2fa(OTP=mpin)
 
-                # Validate response structure
-                if not validation_response or not isinstance(validation_response, dict):
+                # CRITICAL: Validate MPIN response properly
+                if not validation_response:
                     return {'success': False, 'message': 'Invalid MPIN. Please check your 6-digit MPIN and try again.'}
 
-                # Check for error responses
+                # Check if response is a dictionary
+                if not isinstance(validation_response, dict):
+                    return {'success': False, 'message': 'Invalid MPIN. Please check your 6-digit MPIN and try again.'}
+
+                # Check for explicit error responses
                 if 'error' in validation_response:
-                    error_msg = validation_response.get('error', 'Invalid MPIN')
-                    if any(phrase in str(error_msg).lower() for phrase in ['invalid', 'wrong', 'incorrect']):
-                        return {'success': False, 'message': 'Invalid MPIN. Please check your 6-digit MPIN and try again.'}
+                    return {'success': False, 'message': 'Invalid MPIN. Please check your 6-digit MPIN and try again.'}
 
                 # Check for failed status
                 if validation_response.get('status') == 'failed' or validation_response.get('success') is False:
-                    return {'success': False, 'message': 'MPIN validation failed. Please check your 6-digit MPIN.'}
+                    return {'success': False, 'message': 'Invalid MPIN. Please check your 6-digit MPIN and try again.'}
 
-                if 'data' not in validation_response:
-                    return {'success': False, 'message': 'MPIN authentication failed - invalid response from server'}
+                # Check for HTTP error status codes
+                if 'Status' in validation_response and validation_response['Status'] != 'Success':
+                    return {'success': False, 'message': 'Invalid MPIN. Please check your 6-digit MPIN and try again.'}
 
-                # Check for required tokens in response
-                data = validation_response.get('data', {})
-                if not data.get('token') and not data.get('access_token'):
-                    return {'success': False, 'message': 'MPIN authentication failed - no access token received'}
+                # For successful MPIN validation, check for session tokens
+                if not validation_response.get('sId') and not validation_response.get('sessionToken'):
+                    return {'success': False, 'message': 'Invalid MPIN. Please check your 6-digit MPIN and try again.'}
 
                 self.logger.info("✅ MPIN validation successful!")
 
             except Exception as validation_error:
+                self.logger.error(f"❌ MPIN validation failed: {str(validation_error)}")
                 error_str = str(validation_error).lower()
-                self.logger.error(f"❌ MPIN validation step failed: {str(validation_error)}")
 
-                # Check for specific MPIN validation errors
-                if any(phrase in error_str for phrase in ['invalid', 'wrong', 'incorrect', 'mpin']):
+                # Handle HTTP 401/403 errors which indicate invalid MPIN
+                if '401' in error_str or '403' in error_str or 'unauthorized' in error_str or 'forbidden' in error_str:
+                    return {'success': False, 'message': 'Invalid MPIN. Please check your 6-digit MPIN and try again.'}
+
+                if any(phrase in error_str for phrase in ['invalid', 'wrong', 'incorrect', 'authentication failed']):
                     return {'success': False, 'message': 'Invalid MPIN. Please check your 6-digit MPIN and try again.'}
                 else:
                     return {'success': False, 'message': f'MPIN validation failed: {str(validation_error)}'}

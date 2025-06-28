@@ -57,6 +57,20 @@ def login():
         # Execute TOTP login with proper validation
         result = neo_client.execute_totp_login(mobile_number, ucc, totp, mpin)
 
+        # CRITICAL: Add additional validation to prevent random TOTP acceptance
+        if result and result.get('success'):
+            # Ensure we have both client and session_data
+            if not result.get('client') or not result.get('session_data'):
+                flash('Authentication failed: Invalid login response', 'error')
+                return render_template('login.html')
+                
+            session_data = result.get('session_data')
+            
+            # Validate that we have proper session tokens (indicates successful authentication)
+            if not session_data.get('access_token') and not session_data.get('sId'):
+                flash('Authentication failed: No valid session tokens received', 'error')
+                return render_template('login.html')
+                
         if result and result.get('success') and result.get('client') and result.get('session_data'):
             client = result['client']
             session_data = result['session_data']
@@ -162,9 +176,12 @@ def login():
 
 @auth_bp.route('/logout')
 def logout():
-    """Logout and clear session"""
+    """Logout and clear session completely"""
     try:
-        # Clear Flask session
+        # Get current session info for logging
+        ucc = session.get('ucc', 'Unknown')
+        
+        # Clear Flask session using utility function
         clear_session()
         
         # Also clear any potential cached client data
@@ -176,17 +193,29 @@ def logout():
             except Exception as logout_error:
                 logging.warning(f"Error during client logout: {logout_error}")
         
-        # Force session invalidation
+        # Force complete session invalidation
         session.clear()
         session.permanent = False
         
+        # Also try to clear any server-side session data if using file sessions
+        try:
+            from flask import request
+            if hasattr(request, 'session'):
+                request.session.clear()
+        except:
+            pass
+        
         flash('Successfully logged out', 'success')
-        logging.info("User logged out successfully")
+        logging.info(f"User {ucc} logged out successfully")
         
     except Exception as e:
         logging.error(f"Logout error: {str(e)}")
-        # Even if there's an error, clear the session
-        session.clear()
+        # Even if there's an error, force clear the session
+        try:
+            session.clear()
+            session.permanent = False
+        except:
+            pass
         flash('Logged out with warnings', 'warning')
     
     return redirect(url_for('auth.login'))
