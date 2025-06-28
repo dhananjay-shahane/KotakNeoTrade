@@ -306,7 +306,8 @@ ETFSignalsManager.prototype.createSignalRow = function(signal) {
                 cellValue = '<span class="fw-bold">' + chValue + '</span>';
                 break;
             case 'actions':
-                cellValue = '<button class="btn btn-sm btn-success" onclick="addDeal(\'' + symbol + '\', ' + currentPrice + ')"><i class="fas fa-plus me-1"></i>Add Deal</button>';
+                var signalId = signal.trade_signal_id || signal.id || index;
+                cellValue = '<button class="btn btn-sm btn-success" onclick="addDeal(' + signalId + ')"><i class="fas fa-plus me-1"></i>Add Deal</button>';
                 break;
             default:
                 cellValue = '--';
@@ -681,47 +682,82 @@ function exportSignals() {
     }
 }
 
-function addDeal(symbol, price) {
+function addDeal(signalId) {
+    // Find the complete signal data from the current signals array
+    var signal = null;
+    if (window.etfSignalsManager && window.etfSignalsManager.signals) {
+        signal = window.etfSignalsManager.signals.find(function(s) {
+            return s.id == signalId || s.trade_signal_id == signalId;
+        });
+    }
+    
+    if (!signal) {
+        alert('Signal data not found. Please refresh the page and try again.');
+        return;
+    }
+
+    var symbol = signal.etf || signal.symbol || 'UNKNOWN';
+    var price = signal.cmp || signal.ep || 0;
+    var quantity = signal.qty || 1;
+    var investment = signal.inv || (price * quantity);
+
     // Use SweetAlert2 for better confirmation dialog
     Swal.fire({
         title: 'Add Deal',
-        html: `
-            <div class="text-start">
-                <p><strong>Symbol:</strong> ${symbol}</p>
-                <p><strong>Entry Price:</strong> ₹${price.toFixed(2)}</p>
-                <p><strong>Quantity:</strong> 1</p>
-                <p><strong>Position:</strong> LONG</p>
-                <p><strong>Investment:</strong> ₹${price.toFixed(2)}</p>
-            </div>
-        `,
+        html: '<div class="text-start">' +
+            '<p><strong>Symbol:</strong> ' + symbol + '</p>' +
+            '<p><strong>Entry Price:</strong> ₹' + parseFloat(price).toFixed(2) + '</p>' +
+            '<p><strong>Quantity:</strong> ' + quantity + '</p>' +
+            '<p><strong>Position:</strong> ' + (signal.pos == 1 ? 'LONG' : 'SHORT') + '</p>' +
+            '<p><strong>Investment:</strong> ₹' + parseFloat(investment).toFixed(2) + '</p>' +
+            '<p><strong>Target Price:</strong> ₹' + parseFloat(signal.tp || price * 1.05).toFixed(2) + '</p>' +
+            '</div>',
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#28a745',
         cancelButtonColor: '#dc3545',
         confirmButtonText: 'Yes, Add Deal!',
         cancelButtonText: 'Cancel'
-    }).then((result) => {
+    }).then(function(result) {
         if (result.isConfirmed) {
             // Show loading
             Swal.fire({
                 title: 'Creating Deal...',
                 text: 'Please wait while we process your request',
                 allowOutsideClick: false,
-                didOpen: () => {
+                didOpen: function() {
                     Swal.showLoading();
                 }
             });
 
+            // Prepare complete signal data for the API
             var signalData = {
-                symbol: symbol,
-                pos: 1,
-                qty: 1,
-                cmp: price,
-                ep: price,
-                tp: price * 1.05,
-                inv: price * 1,
-                pl: 0,
-                change_pct: 0
+                etf: signal.etf || signal.symbol,
+                symbol: signal.etf || signal.symbol,
+                trade_signal_id: signal.trade_signal_id || signal.id,
+                pos: signal.pos || 1,
+                qty: signal.qty || 1,
+                ep: signal.ep || price,
+                cmp: signal.cmp || price,
+                tp: signal.tp || (price * 1.05),
+                inv: signal.inv || investment,
+                pl: signal.pl || 0,
+                change_pct: signal.chan || signal.change_pct || 0,
+                thirty: signal.thirty || 0,
+                dh: signal.dh || 0,
+                date: signal.date || new Date().toISOString().split('T')[0],
+                ed: signal.ed || signal.date,
+                exp: signal.exp || '',
+                pr: signal.pr || '',
+                pp: signal.pp || '',
+                iv: signal.iv || '',
+                ip: signal.ip || '',
+                nt: signal.nt || 'Added from ETF signals',
+                qt: signal.qt || new Date().toLocaleTimeString(),
+                seven: signal.seven || 0,
+                ch: signal.ch || signal.change_pct || 0,
+                tva: signal.tva || (signal.tp || price * 1.05) * quantity,
+                tpr: signal.tpr || ((signal.tp || price * 1.05) - price) * quantity
             };
 
             var xhr = new XMLHttpRequest();
@@ -739,8 +775,8 @@ function addDeal(symbol, price) {
                                     text: 'Deal created successfully for ' + symbol,
                                     icon: 'success',
                                     confirmButtonColor: '#28a745'
-                                }).then(() => {
-                                    window.location.href = '/deals?symbol=' + encodeURIComponent(symbol) + '&price=' + price.toFixed(2);
+                                }).then(function() {
+                                    window.location.href = '/deals?symbol=' + encodeURIComponent(symbol) + '&price=' + parseFloat(price).toFixed(2);
                                 });
                             } else {
                                 Swal.fire({
