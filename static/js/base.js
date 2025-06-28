@@ -1,4 +1,4 @@
- // Mobile sidebar toggle
+// Mobile sidebar toggle
         function toggleSidebar() {
             var sidebar = document.getElementById('sidebar');
             var overlay = document.getElementById('sidebarOverlay');
@@ -297,7 +297,7 @@
                 var newFontSize = fontSizeSelect.value;
                 document.documentElement.style.setProperty('--global-font-size', newFontSize + 'px');
                 localStorage.setItem('website-font-size', newFontSize);
-                
+
                 if (typeof showToaster === 'function') {
                     showToaster('Font Size Updated', 'Font size changed to ' + newFontSize + 'px', 'success');
                 }
@@ -308,13 +308,13 @@
                 var newTheme = themeSelect.value;
                 document.documentElement.setAttribute('data-theme', newTheme);
                 localStorage.setItem('theme', newTheme);
-                
+
                 // Update theme toggle if it exists
                 var themeToggle = document.getElementById('themeToggle');
                 if (themeToggle) {
                     themeToggle.checked = newTheme === 'light';
                 }
-                
+
                 if (typeof showToaster === 'function') {
                     showToaster('Theme Updated', 'Switched to ' + newTheme + ' mode', 'success');
                 }
@@ -333,10 +333,10 @@
         function initializeFontSize() {
             // Get saved font size from localStorage or default to 14px
             var savedFontSize = localStorage.getItem('website-font-size') || '14';
-            
+
             // Apply the font size immediately
             document.documentElement.style.setProperty('--global-font-size', savedFontSize + 'px');
-            
+
             // Wait for DOM to be ready before setting up select
             function setupFontSizeControl() {
                 var fontSizeSelect = document.getElementById('fontSizeSelect');
@@ -471,7 +471,7 @@
             if (userProfile && userMenu && !userProfile.contains(event.target)) {
                 userMenu.style.display = 'none';
             }
-            
+
             // Close notification inbox when clicking outside
             if (notificationContainer && notificationInbox && 
                 !notificationContainer.contains(event.target) && 
@@ -481,14 +481,14 @@
         });
 
         // Notification Inbox Management
-        
+
         var notificationInboxData = [];
         var notificationCheckInterval = null;
 
         function toggleNotificationInbox() {
             var inbox = document.getElementById('notificationInbox');
             var isVisible = inbox.style.display !== 'none';
-            
+
             if (isVisible) {
                 closeNotificationInbox();
             } else {
@@ -500,7 +500,7 @@
             var inbox = document.getElementById('notificationInbox');
             inbox.style.display = 'block';
             loadNotifications();
-            
+
             // Auto-close after 10 seconds
             setTimeout(function() {
                 closeNotificationInbox();
@@ -529,7 +529,7 @@
 
         function renderNotifications() {
             var listElement = document.getElementById('notificationList');
-            
+
             if (notificationInboxData.length === 0) {
                 listElement.innerHTML = `
                     <div class="no-notifications">
@@ -545,7 +545,7 @@
                 var notification = notificationInboxData[i];
                 var timeAgo = formatTimeAgo(new Date(notification.created_at));
                 var unreadClass = !notification.is_read ? 'unread' : '';
-                
+
                 html += `
                     <div class="notification-item ${unreadClass}" onclick="markNotificationAsRead(${notification.id})">
                         <div class="notification-title">${notification.title}</div>
@@ -557,7 +557,7 @@
                     </div>
                 `;
             }
-            
+
             listElement.innerHTML = html;
         }
 
@@ -621,14 +621,14 @@
                 created_at: new Date().toISOString(),
                 is_read: false
             };
-            
+
             notificationInboxData.unshift(newNotification);
             updateNotificationBadge(notificationInboxData.filter(function(n) { return !n.is_read; }).length);
-            
+
             if (document.getElementById('notificationInbox').style.display !== 'none') {
                 renderNotifications();
             }
-            
+
             // Show toaster as well
             showToaster(title, message, 'info');
         }
@@ -646,3 +646,69 @@
         function showNotifications() {
             openNotificationInbox();
         }
+// Initialize dashboard if we're on dashboard page
+        if (window.location.pathname === '/dashboard') {
+            initializeDashboard();
+        }
+
+        // Check session expiration every 5 minutes
+        setInterval(checkSessionExpiration, 5 * 60 * 1000);
+// Auto-refresh functions
+    function refreshAllData() {
+        console.log('🔄 Refreshing all dashboard data...');
+
+        // Refresh positions
+        if (typeof refreshPositions === 'function') {
+            refreshPositions();
+        }
+
+        // Refresh holdings  
+        if (typeof refreshHoldings === 'function') {
+            refreshHoldings();
+        }
+
+        // Refresh portfolio summary
+        if (typeof loadPortfolioSummary === 'function') {
+            loadPortfolioSummary();
+        }
+
+        console.log('✅ All data refresh initiated');
+    }
+
+    // Session expiration check
+    function checkSessionExpiration() {
+        fetch('/api/user_profile')
+            .then(response => {
+                if (response.status === 401 || response.status === 403) {
+                    // Session expired
+                    showSessionExpiredNotification();
+                    setTimeout(() => {
+                        window.location.href = '/login?expired=true';
+                    }, 3000);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (!data.success || !data.profile.authenticated) {
+                    showSessionExpiredNotification();
+                    setTimeout(() => {
+                        window.location.href = '/login?expired=true';
+                    }, 3000);
+                }
+            })
+            .catch(error => {
+                console.log('Session check failed:', error);
+            });
+    }
+
+    function showSessionExpiredNotification() {
+        const notification = document.createElement('div');
+        notification.className = 'alert alert-warning alert-dismissible fade show position-fixed';
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        notification.innerHTML = `
+            <i class="fas fa-clock me-2"></i>
+            <strong>Session Expired!</strong> You will be redirected to login page.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(notification);
+    }

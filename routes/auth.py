@@ -31,14 +31,22 @@ def login():
             flash('All fields are required', 'error')
             return render_template('login.html')
 
-        # Execute TOTP login
+        # Clear any existing session first
+        clear_session()
+        
+        # Execute TOTP login with proper validation
         result = neo_client.execute_totp_login(mobile_number, ucc, totp, mpin)
 
-        if result['success']:
+        if result and result.get('success') and result.get('client') and result.get('session_data'):
             client = result['client']
             session_data = result['session_data']
+            
+            # Validate that we have proper authentication tokens
+            if not session_data.get('access_token') or not session_data.get('session_token'):
+                flash('Authentication failed: Invalid response from server', 'error')
+                return render_template('login.html')
 
-            # Store in session
+            # Store in session with expiration
             session['authenticated'] = True
             session['access_token'] = session_data.get('access_token')
             session['session_token'] = session_data.get('session_token')
@@ -47,6 +55,8 @@ def login():
             session['client'] = client
             session['login_time'] = datetime.now().strftime('%B %d, %Y at %I:%M:%S %p')
             session['greeting_name'] = session_data.get('greetingName', ucc)
+            session['session_created_at'] = datetime.now().isoformat()
+            session['session_expires_at'] = (datetime.now() + timedelta(hours=24)).isoformat()
             session.permanent = True
 
             # Validate the client
@@ -98,7 +108,12 @@ def login():
             flash('Successfully authenticated with TOTP!', 'success')
             return redirect(url_for('main.dashboard'))
         else:
-            flash(f'TOTP login failed: {result.get("message", "Unknown error")}', 'error')
+            error_message = "Authentication failed"
+            if result and result.get('message'):
+                error_message = f'TOTP login failed: {result.get("message")}'
+            elif not result:
+                error_message = "Authentication failed: No response from server"
+            flash(error_message, 'error')
             return render_template('login.html')
 
     except Exception as e:

@@ -26,9 +26,12 @@ def index():
 def dashboard():
     """Main dashboard with portfolio overview"""
     if not validate_current_session():
-        flash('Complete the 2FA process before accessing this application', 'error')
+        if is_session_expired():
+            flash('Your session has expired. Please login again.', 'warning')
+        else:
+            flash('Complete the 2FA process before accessing this application', 'error')
         session.clear()
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('auth.login') + '?expired=true')
 
     try:
         client = session.get('client')

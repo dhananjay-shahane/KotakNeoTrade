@@ -160,6 +160,16 @@ class NeoClient:
         try:
             self.logger.info("🔐 Attempting TOTP login...")
             
+            # Validate input parameters
+            if not all([mobile_number, ucc, totp, mpin]):
+                return {'success': False, 'message': 'All authentication fields are required'}
+            
+            if len(totp) != 6 or not totp.isdigit():
+                return {'success': False, 'message': 'TOTP must be exactly 6 digits'}
+                
+            if len(mpin) != 6 or not mpin.isdigit():
+                return {'success': False, 'message': 'MPIN must be exactly 6 digits'}
+            
             # Step 1: TOTP Login - following notebook method
             try:
                 totp_response = client.login(
@@ -167,23 +177,35 @@ class NeoClient:
                     password=totp
                 )
                 self.logger.info("✅ TOTP login successful!")
-                self.logger.info(f"Login Response: {totp_response}")
+                
+                # Validate login response
+                if not totp_response or not isinstance(totp_response, dict):
+                    return {'success': False, 'message': 'Invalid login response from server'}
+                    
             except Exception as login_error:
                 self.logger.error(f"❌ TOTP login step failed: {str(login_error)}")
-                return {'success': False, 'message': f'TOTP login failed. Please check your mobile number and TOTP code: {str(login_error)}'}
+                return {'success': False, 'message': f'TOTP authentication failed. Please check your TOTP code and try again.'}
             
             # Step 2: TOTP Validation - following notebook method
             try:
                 validation_response = client.session_2fa(OTP=mpin)
                 self.logger.info("✅ TOTP validation successful!")
-                self.logger.info(f"Validation Response: {validation_response}")
+                
+                # Validate response structure
+                if not validation_response or not isinstance(validation_response, dict):
+                    return {'success': False, 'message': 'Invalid validation response from server'}
+                    
+                if 'data' not in validation_response:
+                    return {'success': False, 'message': 'Authentication failed - no session data received'}
+                    
+                # Check for required tokens in response
+                data = validation_response.get('data', {})
+                if not data.get('token') and not data.get('access_token'):
+                    return {'success': False, 'message': 'Authentication failed - no access token received'}
+                    
             except Exception as validation_error:
                 self.logger.error(f"❌ TOTP validation step failed: {str(validation_error)}")
-                return {'success': False, 'message': f'MPIN validation failed. Please check your MPIN: {str(validation_error)}'}
-            
-            # Check if validation response contains proper data
-            if not validation_response or 'data' not in validation_response:
-                return {'success': False, 'message': 'Invalid response from authentication server'}
+                return {'success': False, 'message': f'MPIN validation failed. Please check your MPIN and try again.'}
             
             return {
                 'success': True,
@@ -194,7 +216,7 @@ class NeoClient:
             
         except Exception as e:
             self.logger.error(f"❌ TOTP Login failed: {str(e)}")
-            return {'success': False, 'message': f'TOTP Login failed: {str(e)}'}
+            return {'success': False, 'message': f'Authentication failed: {str(e)}'}
 
     def execute_totp_login(self, mobile_number, ucc, totp, mpin):
         """Execute complete TOTP login process - following notebook flow"""
