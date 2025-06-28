@@ -258,20 +258,38 @@ DealsManager.prototype.loadDeals = function() {
     xhr.send();
 };
 
-// Solid Background Color Function for percentage values
+// Gradient Background Color Function for percentage values
 DealsManager.prototype.getGradientBackgroundColor = function(value) {
     var numValue = parseFloat(value);
     if (isNaN(numValue)) return '';
 
+    var intensity = Math.min(Math.abs(numValue) / 5, 1); // Scale to 0-1, max at 5%
+    var alpha = 0.3 + (intensity * 0.5); // Alpha from 0.3 to 0.8
+
     if (numValue < 0) {
-        // Solid red background for negative values
-        return 'background-color: #dc3545; color: #fff;'; // Bootstrap danger red
+        // Red gradient for negative values
+        if (intensity <= 0.3) {
+            // Light red for small negative values
+            return 'background-color: rgba(255, 182, 193, ' + alpha + '); color: #000;'; // Light pink
+        } else if (intensity <= 0.6) {
+            // Medium red
+            return 'background-color: rgba(255, 99, 71, ' + alpha + '); color: #fff;'; // Tomato
+        } else {
+            // Dark red for large negative values
+            return 'background-color: rgba(139, 0, 0, ' + alpha + '); color: #fff;'; // Dark red
+        }
     } else if (numValue > 0) {
-        // Solid green background for positive values
-        return 'background-color: #28a745; color: #fff;'; // Bootstrap success green
-    } else if (numValue === 0) {
-        // Gray background for zero values
-        return 'background-color: #6c757d; color: #fff;'; // Bootstrap secondary gray
+        // Green gradient for positive values
+        if (intensity <= 0.3) {
+            // Light green for small positive values
+            return 'background-color: rgba(144, 238, 144, ' + alpha + '); color: #000;'; // Light green
+        } else if (intensity <= 0.6) {
+            // Medium green
+            return 'background-color: rgba(50, 205, 50, ' + alpha + '); color: #fff;'; // Lime green
+        } else {
+            // Dark green for large positive values
+            return 'background-color: rgba(0, 100, 0, ' + alpha + '); color: #fff;'; // Dark green
+        }
     }
 
     return '';
