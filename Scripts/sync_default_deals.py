@@ -22,9 +22,9 @@ def sync_admin_signals_to_default_deals():
             # Get all admin trade signals using raw SQL to avoid model issues
             from sqlalchemy import text
             
-            # Query admin_trade_signals directly without accessing missing columns
+            # Query admin_trade_signals directly with existing columns only
             result = db.session.execute(text("""
-                SELECT id, symbol, trading_symbol, exchange, signal_type, 
+                SELECT id, symbol, exchange, signal_type, 
                        entry_price, target_price, stop_loss, quantity,
                        signal_title, signal_description, notes, priority, status,
                        created_at, updated_at, signal_date, expiry_date,
@@ -75,26 +75,26 @@ def sync_admin_signals_to_default_deals():
                             symbol=signal.symbol,
                             exchange=signal.exchange or 'NSE',
                             position_type=signal.signal_type or 'BUY',
-                            quantity=signal.quantity,
-                            entry_price=signal.entry_price,
-                            current_price=signal.current_price,
-                            price_change_percent=signal.change_percent,
-                            investment_amount=signal.investment_amount,
-                            target_price=signal.target_price,
-                            total_value=signal.current_value,
-                            target_pnl_ratio=signal.pnl_percentage,
-                            pnl=signal.pnl,
+                            quantity=signal.quantity or 0,
+                            entry_price=signal.entry_price or 0.0,
+                            current_price=signal.current_price or 0.0,
+                            price_change_percent=signal.change_percent or 0.0,
+                            investment_amount=signal.investment_amount or 0.0,
+                            target_price=signal.target_price or 0.0,
+                            total_value=signal.current_value or 0.0,
+                            target_pnl_ratio=signal.pnl_percentage or 0.0,
+                            pnl=signal.pnl or 0.0,
                             entry_date=signal.signal_date,
                             exit_date=None,
-                            profit_ratio=signal.pnl_percentage,
-                            profit_price=signal.current_price,
-                            intrinsic_value=signal.investment_amount,
-                            intrinsic_price=signal.entry_price,
-                            notes=signal.signal_description or signal.signal_title,
-                            quantity_traded=signal.quantity,
-                            seven_day_change=signal.change_percent,
-                            change_amount=signal.pnl,
-                            signal_strength=signal.status,
+                            profit_ratio=signal.pnl_percentage or 0.0,
+                            profit_price=signal.current_price or 0.0,
+                            intrinsic_value=signal.investment_amount or 0.0,
+                            intrinsic_price=signal.entry_price or 0.0,
+                            notes=signal.signal_description or signal.signal_title or '',
+                            quantity_traded=signal.quantity or 0,
+                            seven_day_change=signal.change_percent or 0.0,
+                            change_amount=signal.pnl or 0.0,
+                            signal_strength=signal.status or 'ACTIVE',
                             admin_signal_id=signal.id
                         )
                         db.session.add(default_deal)
@@ -121,25 +121,25 @@ def update_default_deal_from_admin_signal_data(default_deal, admin_signal):
     default_deal.symbol = admin_signal.symbol
     default_deal.exchange = admin_signal.exchange or 'NSE'
     default_deal.position_type = admin_signal.signal_type or 'BUY'
-    default_deal.quantity = admin_signal.quantity
-    default_deal.entry_price = admin_signal.entry_price
-    default_deal.current_price = admin_signal.current_price
-    default_deal.price_change_percent = admin_signal.change_percent
-    default_deal.investment_amount = admin_signal.investment_amount
-    default_deal.target_price = admin_signal.target_price
-    default_deal.total_value = admin_signal.current_value
-    default_deal.target_pnl_ratio = admin_signal.pnl_percentage
-    default_deal.pnl = admin_signal.pnl
+    default_deal.quantity = admin_signal.quantity or 0
+    default_deal.entry_price = admin_signal.entry_price or 0.0
+    default_deal.current_price = admin_signal.current_price or 0.0
+    default_deal.price_change_percent = admin_signal.change_percent or 0.0
+    default_deal.investment_amount = admin_signal.investment_amount or 0.0
+    default_deal.target_price = admin_signal.target_price or 0.0
+    default_deal.total_value = admin_signal.current_value or 0.0
+    default_deal.target_pnl_ratio = admin_signal.pnl_percentage or 0.0
+    default_deal.pnl = admin_signal.pnl or 0.0
     default_deal.entry_date = admin_signal.signal_date
-    default_deal.profit_ratio = admin_signal.pnl_percentage
-    default_deal.profit_price = admin_signal.current_price
-    default_deal.intrinsic_value = admin_signal.investment_amount
-    default_deal.intrinsic_price = admin_signal.entry_price
-    default_deal.notes = admin_signal.signal_description or admin_signal.signal_title
-    default_deal.quantity_traded = admin_signal.quantity
-    default_deal.seven_day_change = admin_signal.change_percent
-    default_deal.change_amount = admin_signal.pnl
-    default_deal.signal_strength = admin_signal.status
+    default_deal.profit_ratio = admin_signal.pnl_percentage or 0.0
+    default_deal.profit_price = admin_signal.current_price or 0.0
+    default_deal.intrinsic_value = admin_signal.investment_amount or 0.0
+    default_deal.intrinsic_price = admin_signal.entry_price or 0.0
+    default_deal.notes = admin_signal.signal_description or admin_signal.signal_title or ''
+    default_deal.quantity_traded = admin_signal.quantity or 0
+    default_deal.seven_day_change = admin_signal.change_percent or 0.0
+    default_deal.change_amount = admin_signal.pnl or 0.0
+    default_deal.signal_strength = admin_signal.status or 'ACTIVE'
 
 def update_default_deal_from_admin_signal(admin_signal_id):
     """Update specific default deal when admin signal is updated"""
@@ -149,7 +149,7 @@ def update_default_deal_from_admin_signal(admin_signal_id):
             from sqlalchemy import text
             
             result = db.session.execute(text("""
-                SELECT id, symbol, trading_symbol, exchange, signal_type, 
+                SELECT id, symbol, exchange, signal_type, 
                        entry_price, target_price, stop_loss, quantity,
                        signal_title, signal_description, notes, priority, status,
                        created_at, updated_at, signal_date, expiry_date,
@@ -174,25 +174,25 @@ def update_default_deal_from_admin_signal(admin_signal_id):
                     symbol=admin_signal.symbol,
                     exchange=admin_signal.exchange or 'NSE',
                     position_type=admin_signal.signal_type or 'BUY',
-                    quantity=admin_signal.quantity,
-                    entry_price=admin_signal.entry_price,
-                    current_price=admin_signal.current_price,
-                    price_change_percent=admin_signal.change_percent,
-                    investment_amount=admin_signal.investment_amount,
-                    target_price=admin_signal.target_price,
-                    total_value=admin_signal.current_value,
-                    target_pnl_ratio=admin_signal.pnl_percentage,
-                    pnl=admin_signal.pnl,
+                    quantity=admin_signal.quantity or 0,
+                    entry_price=admin_signal.entry_price or 0.0,
+                    current_price=admin_signal.current_price or 0.0,
+                    price_change_percent=admin_signal.change_percent or 0.0,
+                    investment_amount=admin_signal.investment_amount or 0.0,
+                    target_price=admin_signal.target_price or 0.0,
+                    total_value=admin_signal.current_value or 0.0,
+                    target_pnl_ratio=admin_signal.pnl_percentage or 0.0,
+                    pnl=admin_signal.pnl or 0.0,
                     entry_date=admin_signal.signal_date,
-                    profit_ratio=admin_signal.pnl_percentage,
-                    profit_price=admin_signal.current_price,
-                    intrinsic_value=admin_signal.investment_amount,
-                    intrinsic_price=admin_signal.entry_price,
-                    notes=admin_signal.signal_description or admin_signal.signal_title,
-                    quantity_traded=admin_signal.quantity,
-                    seven_day_change=admin_signal.change_percent,
-                    change_amount=admin_signal.pnl,
-                    signal_strength=admin_signal.status
+                    profit_ratio=admin_signal.pnl_percentage or 0.0,
+                    profit_price=admin_signal.current_price or 0.0,
+                    intrinsic_value=admin_signal.investment_amount or 0.0,
+                    intrinsic_price=admin_signal.entry_price or 0.0,
+                    notes=admin_signal.signal_description or admin_signal.signal_title or '',
+                    quantity_traded=admin_signal.quantity or 0,
+                    seven_day_change=admin_signal.change_percent or 0.0,
+                    change_amount=admin_signal.pnl or 0.0,
+                    signal_strength=admin_signal.status or 'ACTIVE'
                 )
                 db.session.add(default_deal)
             else:
