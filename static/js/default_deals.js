@@ -770,6 +770,115 @@ function submitTrade() {
     submitAdvancedTrade();
 }
 
+// Enhanced sorting functionality for default deals table
+var sortState = {
+    column: null,
+    direction: 'asc'
+};
+
+function sortTable(column) {
+    var tbody = document.getElementById('defaultDealsTableBody');
+    if (!tbody) return;
+    
+    var rows = Array.from(tbody.querySelectorAll('tr'));
+    
+    // Toggle sort direction
+    if (sortState.column === column) {
+        sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortState.column = column;
+        sortState.direction = 'asc';
+    }
+    
+    // Sort rows based on column
+    rows.sort(function(a, b) {
+        var aValue, bValue;
+        
+        switch (column) {
+            case 'symbol':
+                aValue = (a.dataset.symbol || '').toLowerCase();
+                bValue = (b.dataset.symbol || '').toLowerCase();
+                break;
+            case 'quantity':
+                aValue = parseFloat(a.dataset.quantity) || 0;
+                bValue = parseFloat(b.dataset.quantity) || 0;
+                break;
+            case 'entryPrice':
+                aValue = parseFloat(a.dataset.entryPrice) || 0;
+                bValue = parseFloat(b.dataset.entryPrice) || 0;
+                break;
+            case 'currentPrice':
+                aValue = parseFloat(a.dataset.currentPrice) || 0;
+                bValue = parseFloat(b.dataset.currentPrice) || 0;
+                break;
+            case 'pnl':
+                aValue = parseFloat(a.dataset.pnl) || 0;
+                bValue = parseFloat(b.dataset.pnl) || 0;
+                break;
+            case 'investment':
+                aValue = parseFloat(a.dataset.investment) || 0;
+                bValue = parseFloat(b.dataset.investment) || 0;
+                break;
+            case 'currentValue':
+                aValue = parseFloat(a.dataset.currentValue) || 0;
+                bValue = parseFloat(b.dataset.currentValue) || 0;
+                break;
+            case 'chanPercent':
+                aValue = parseFloat(a.dataset.chanPercent) || 0;
+                bValue = parseFloat(b.dataset.chanPercent) || 0;
+                break;
+            default:
+                return 0;
+        }
+        
+        // Compare values
+        var result;
+        if (typeof aValue === 'string') {
+            result = aValue.localeCompare(bValue);
+        } else {
+            result = aValue - bValue;
+        }
+        
+        return sortState.direction === 'asc' ? result : -result;
+    });
+    
+    // Update sort indicators
+    updateSortIndicators(column, sortState.direction);
+    
+    // Rebuild table with sorted rows
+    tbody.innerHTML = '';
+    rows.forEach(function(row) {
+        tbody.appendChild(row);
+    });
+}
+
+function updateSortIndicators(activeColumn, direction) {
+    // Hide all sort indicators
+    var indicators = document.querySelectorAll('[id^="sort-"]');
+    indicators.forEach(function(indicator) {
+        indicator.classList.add('d-none');
+    });
+    
+    // Show active indicator
+    var activeIndicator = document.getElementById('sort-' + activeColumn + '-' + direction);
+    if (activeIndicator) {
+        activeIndicator.classList.remove('d-none');
+    }
+    
+    // Update sort icons in headers
+    var sortIcons = document.querySelectorAll('.sortable .fa-sort');
+    sortIcons.forEach(function(icon) {
+        icon.classList.remove('text-primary');
+        icon.classList.add('text-muted');
+    });
+    
+    var activeHeader = document.querySelector('.sortable[onclick*="' + activeColumn + '"] .fa-sort');
+    if (activeHeader) {
+        activeHeader.classList.remove('text-muted');
+        activeHeader.classList.add('text-primary');
+    }
+}
+
 function previousPage() {
     if (window.dealsManager.currentPage > 1) {
         window.dealsManager.currentPage--;

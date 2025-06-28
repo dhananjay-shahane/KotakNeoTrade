@@ -397,6 +397,139 @@ ETFSignalsManager.prototype.loadColumnSettings = function() {
     }
 };
 
+// Enhanced sorting functionality for ETF signals table
+var sortState = {
+    column: null,
+    direction: 'asc'
+};
+
+function sortTable(column) {
+    var tbody = document.getElementById('etfSignalsTableBody');
+    if (!tbody) return;
+    
+    var rows = Array.from(tbody.querySelectorAll('tr'));
+    
+    // Toggle sort direction
+    if (sortState.column === column) {
+        sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortState.column = column;
+        sortState.direction = 'asc';
+    }
+    
+    // Sort rows based on column
+    rows.sort(function(a, b) {
+        var aValue, bValue;
+        
+        switch (column) {
+            case 'symbol':
+            case 'etf':
+                aValue = (a.dataset.symbol || a.dataset.etf || '').toLowerCase();
+                bValue = (b.dataset.symbol || b.dataset.etf || '').toLowerCase();
+                break;
+            case 'quantity':
+            case 'qty':
+                aValue = parseFloat(a.dataset.quantity || a.dataset.qty) || 0;
+                bValue = parseFloat(b.dataset.quantity || b.dataset.qty) || 0;
+                break;
+            case 'entryPrice':
+            case 'ep':
+                aValue = parseFloat(a.dataset.entryPrice || a.dataset.ep) || 0;
+                bValue = parseFloat(b.dataset.entryPrice || b.dataset.ep) || 0;
+                break;
+            case 'currentPrice':
+            case 'cmp':
+                aValue = parseFloat(a.dataset.currentPrice || a.dataset.cmp) || 0;
+                bValue = parseFloat(b.dataset.currentPrice || b.dataset.cmp) || 0;
+                break;
+            case 'pnl':
+            case 'pl':
+                aValue = parseFloat(a.dataset.pnl || a.dataset.pl) || 0;
+                bValue = parseFloat(b.dataset.pnl || b.dataset.pl) || 0;
+                break;
+            case 'investment':
+            case 'inv':
+                aValue = parseFloat(a.dataset.investment || a.dataset.inv) || 0;
+                bValue = parseFloat(b.dataset.investment || b.dataset.inv) || 0;
+                break;
+            case 'currentValue':
+            case 'tva':
+                aValue = parseFloat(a.dataset.currentValue || a.dataset.tva) || 0;
+                bValue = parseFloat(b.dataset.currentValue || b.dataset.tva) || 0;
+                break;
+            case 'chanPercent':
+            case 'ch':
+                aValue = parseFloat(a.dataset.chanPercent || a.dataset.ch) || 0;
+                bValue = parseFloat(b.dataset.chanPercent || b.dataset.ch) || 0;
+                break;
+            case 'targetPrice':
+            case 'tp':
+                aValue = parseFloat(a.dataset.targetPrice || a.dataset.tp) || 0;
+                bValue = parseFloat(b.dataset.targetPrice || b.dataset.tp) || 0;
+                break;
+            case 'date':
+                aValue = new Date(a.dataset.date || 0);
+                bValue = new Date(b.dataset.date || 0);
+                break;
+            default:
+                return 0;
+        }
+        
+        // Compare values
+        var result;
+        if (aValue instanceof Date) {
+            result = aValue.getTime() - bValue.getTime();
+        } else if (typeof aValue === 'string') {
+            result = aValue.localeCompare(bValue);
+        } else {
+            result = aValue - bValue;
+        }
+        
+        return sortState.direction === 'asc' ? result : -result;
+    });
+    
+    // Update sort indicators
+    updateSortIndicators(column, sortState.direction);
+    
+    // Rebuild table with sorted rows
+    tbody.innerHTML = '';
+    rows.forEach(function(row) {
+        tbody.appendChild(row);
+    });
+}
+
+function updateSortIndicators(activeColumn, direction) {
+    // Hide all sort indicators
+    var indicators = document.querySelectorAll('[id^="sort-"]');
+    indicators.forEach(function(indicator) {
+        indicator.classList.add('d-none');
+    });
+    
+    // Show active indicator
+    var activeIndicator = document.getElementById('sort-' + activeColumn + '-' + direction);
+    if (activeIndicator) {
+        activeIndicator.classList.remove('d-none');
+    }
+    
+    // Update sort icons in headers
+    var sortIcons = document.querySelectorAll('.sortable .fa-sort');
+    sortIcons.forEach(function(icon) {
+        icon.classList.remove('text-primary');
+        icon.classList.add('text-muted');
+    });
+    
+    var activeHeader = document.querySelector('.sortable[onclick*="' + activeColumn + '"] .fa-sort');
+    if (activeHeader) {
+        activeHeader.classList.remove('text-muted');
+        activeHeader.classList.add('text-primary');
+    }
+}
+
+// Legacy function for compatibility with existing onclick handlers
+function sortSignalsByColumn(column) {
+    sortTable(column);
+}
+
 ETFSignalsManager.prototype.saveColumnSettings = function() {
     var settings = {};
     for (var i = 0; i < this.availableColumns.length; i++) {

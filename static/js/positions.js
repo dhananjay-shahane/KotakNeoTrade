@@ -439,16 +439,116 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Function to sort positions by symbol
-function sortPositionsBySymbol() {
-    if (window.positionsManager) {
-        window.positionsManager.positions.sort(function(a, b) {
-            var symbolA = a.trdSym || a.sym || '';
-            var symbolB = b.trdSym || b.sym || '';
-            return symbolA.localeCompare(symbolB);
-        });
-        window.positionsManager.displayPositions(); // Redisplay after sorting
+// Enhanced sorting functionality for positions table
+var sortState = {
+    column: null,
+    direction: 'asc'
+};
+
+function sortTable(column) {
+    if (!window.positionsManager) return;
+    
+    // Toggle sort direction
+    if (sortState.column === column) {
+        sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortState.column = column;
+        sortState.direction = 'asc';
     }
+    
+    // Sort positions based on column
+    window.positionsManager.positions.sort(function(a, b) {
+        var aValue, bValue;
+        
+        switch (column) {
+            case 'symbol':
+                aValue = (a.trdSym || a.sym || '').toLowerCase();
+                bValue = (b.trdSym || b.sym || '').toLowerCase();
+                break;
+            case 'product':
+                aValue = (a.prod || '').toLowerCase();
+                bValue = (b.prod || '').toLowerCase();
+                break;
+            case 'exchange':
+                aValue = (a.exSeg || '').toLowerCase();
+                bValue = (b.exSeg || '').toLowerCase();
+                break;
+            case 'buyQty':
+                aValue = parseFloat(a.flBuyQty || a.cfBuyQty || 0);
+                bValue = parseFloat(b.flBuyQty || b.cfBuyQty || 0);
+                break;
+            case 'sellQty':
+                aValue = parseFloat(a.flSellQty || a.cfSellQty || 0);
+                bValue = parseFloat(b.flSellQty || b.cfSellQty || 0);
+                break;
+            case 'netQty':
+                aValue = (parseFloat(a.flBuyQty || a.cfBuyQty || 0)) - (parseFloat(a.flSellQty || a.cfSellQty || 0));
+                bValue = (parseFloat(b.flBuyQty || b.cfBuyQty || 0)) - (parseFloat(b.flSellQty || b.cfSellQty || 0));
+                break;
+            case 'buyAmt':
+                aValue = parseFloat(a.buyAmt || a.cfBuyAmt || 0);
+                bValue = parseFloat(b.buyAmt || b.cfBuyAmt || 0);
+                break;
+            case 'sellAmt':
+                aValue = parseFloat(a.sellAmt || a.cfSellAmt || 0);
+                bValue = parseFloat(b.sellAmt || b.cfSellAmt || 0);
+                break;
+            case 'pnl':
+                aValue = parseFloat(a.sellAmt || a.cfSellAmt || 0) - parseFloat(a.buyAmt || a.cfBuyAmt || 0);
+                bValue = parseFloat(b.sellAmt || b.cfSellAmt || 0) - parseFloat(b.buyAmt || b.cfBuyAmt || 0);
+                break;
+            default:
+                return 0;
+        }
+        
+        // Compare values
+        var result;
+        if (typeof aValue === 'string') {
+            result = aValue.localeCompare(bValue);
+        } else {
+            result = aValue - bValue;
+        }
+        
+        return sortState.direction === 'asc' ? result : -result;
+    });
+    
+    // Update sort indicators
+    updateSortIndicators(column, sortState.direction);
+    
+    // Redisplay positions
+    window.positionsManager.displayPositions();
+}
+
+function updateSortIndicators(activeColumn, direction) {
+    // Hide all sort indicators
+    var indicators = document.querySelectorAll('[id^="sort-"]');
+    indicators.forEach(function(indicator) {
+        indicator.classList.add('d-none');
+    });
+    
+    // Show active indicator
+    var activeIndicator = document.getElementById('sort-' + activeColumn + '-' + direction);
+    if (activeIndicator) {
+        activeIndicator.classList.remove('d-none');
+    }
+    
+    // Update sort icons in headers
+    var sortIcons = document.querySelectorAll('.sortable .fa-sort');
+    sortIcons.forEach(function(icon) {
+        icon.classList.remove('text-primary');
+        icon.classList.add('text-muted');
+    });
+    
+    var activeHeader = document.querySelector('.sortable[onclick*="' + activeColumn + '"] .fa-sort');
+    if (activeHeader) {
+        activeHeader.classList.remove('text-muted');
+        activeHeader.classList.add('text-primary');
+    }
+}
+
+// Legacy function for compatibility
+function sortPositionsBySymbol() {
+    sortTable('symbol');
 }
 
 // Function to sort positions by any column
