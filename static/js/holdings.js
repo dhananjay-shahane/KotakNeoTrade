@@ -31,73 +31,157 @@ function refreshHoldings() {
 }
 
 function buyHolding(symbol) {
-    document.getElementById('actionSymbol').value = symbol;
-    document.getElementById('actionType').value = 'BUY';
-    document.getElementById('actionQuantity').value = '';
-    document.getElementById('holdingActionTitle').textContent = 'Buy More: ' + symbol;
-    document.getElementById('maxQuantityText').textContent = '';
-    new bootstrap.Modal(document.getElementById('holdingActionModal')).show();
+    showHoldingTradeModal(symbol, null, 'BUY');
 }
 
 function sellHolding(symbol, maxQuantity) {
-    document.getElementById('actionSymbol').value = symbol;
-    document.getElementById('actionType').value = 'SELL';
-    document.getElementById('actionQuantity').value = maxQuantity;
-    document.getElementById('actionQuantity').max = maxQuantity;
-    document.getElementById('holdingActionTitle').textContent = 'Sell Holding: ' + symbol;
-    document.getElementById('maxQuantityText').textContent = 'Maximum quantity: ' + maxQuantity;
-    new bootstrap.Modal(document.getElementById('holdingActionModal')).show();
+    showHoldingTradeModal(symbol, maxQuantity, 'SELL');
 }
 
-function submitHoldingAction() {
-    var form = document.getElementById('holdingActionForm');
-    var formData = new FormData(form);
+function showHoldingTradeModal(symbol, maxQuantity, tradeType) {
+    // Update modal title and icon
+    var modalTitle = tradeType === 'BUY' ? 'Buy Holdings' : 'Sell Holdings';
+    var iconClass = tradeType === 'BUY' ? 'fas fa-plus' : 'fas fa-minus';
+    document.getElementById('holdingActionTitle').innerHTML = '<i class="' + iconClass + ' me-2"></i>' + modalTitle;
     
-    // Get form values
-    var symbol = formData.get('actionSymbol');
-    var transactionType = formData.get('actionType');
-    var quantity = formData.get('actionQuantity');
-    var price = formData.get('actionPrice') || '0';
-    var orderType = formData.get('orderType') || 'MKT';
-    var productType = formData.get('productType') || 'CNC';
+    // Set form values
+    document.getElementById('actionSymbol').value = symbol;
+    document.getElementById('actionType').value = tradeType;
+    document.getElementById('actionQuantity').value = tradeType === 'SELL' ? maxQuantity : 1;
     
-    // Validate required fields
-    if (!symbol || !quantity) {
-        showNotification('Please fill all required fields', 'error');
-        return;
+    // Set max quantity for sell orders
+    if (tradeType === 'SELL' && maxQuantity) {
+        document.getElementById('actionQuantity').max = maxQuantity;
+        document.getElementById('maxQuantityText').textContent = 'Maximum quantity: ' + maxQuantity;
+    } else {
+        document.getElementById('actionQuantity').removeAttribute('max');
+        document.getElementById('maxQuantityText').textContent = '';
     }
+    
+    // Reset form to defaults
+    document.getElementById('orderType').value = 'L'; // Default to Limit
+    document.getElementById('productType').value = 'CNC';
+    document.getElementById('validityType').value = 'DAY';
+    document.getElementById('triggerPrice').value = 0;
+    document.getElementById('actionPrice').value = '';
+    
+    // Enable/disable price fields based on order type
+    toggleHoldingPriceFields();
+    
+    var modal = new bootstrap.Modal(document.getElementById('holdingActionModal'));
+    modal.show();
+}
 
-    // Handle different order types
-    var triggerPrice = "0";
+// Toggle price fields based on order type
+function toggleHoldingPriceFields() {
+    var orderType = document.getElementById('orderType').value;
+    var priceField = document.getElementById('actionPrice');
+    var triggerField = document.getElementById('triggerPrice');
     
-    if (orderType === 'MKT' || orderType === 'SL-M') {
-        if (orderType === 'SL-M') {
-            triggerPrice = price;
-            price = "0";
-        } else {
-            price = "0";
-        }
-    } else if (orderType === 'L' && (!price || price <= 0)) {
-        showNotification('Please enter a valid limit price', 'error');
-        return;
+    if (orderType === 'MKT') {
+        // Market order - disable price and trigger
+        priceField.disabled = true;
+        priceField.value = 0;
+        triggerField.disabled = true;
+        triggerField.value = 0;
+    } else if (orderType === 'L') {
+        // Limit order - enable price, disable trigger
+        priceField.disabled = false;
+        triggerField.disabled = true;
+        triggerField.value = 0;
     } else if (orderType === 'SL') {
-        if (!price || price <= 0) {
-            showNotification('Please enter a valid limit price for stop loss order', 'error');
-            return;
-        }
-        triggerPrice = price;
+        // Stop Loss - enable both price and trigger
+        priceField.disabled = false;
+        triggerField.disabled = false;
+    } else if (orderType === 'SL-M') {
+        // Stop Loss Market - disable price, enable trigger
+        priceField.disabled = true;
+        priceField.value = 0;
+        triggerField.disabled = false;
+    }
+}
+
+function submitAdvancedHoldingAction() {
+    var symbol = document.getElementById('actionSymbol').value;
+    var tradeType = document.getElementById('actionType').value;
+    var orderType = document.getElementById('orderType').value;
+    var productType = document.getElementById('productType').value;
+    var price = document.getElementById('actionPrice').value;
+    var quantity = document.getElementById('actionQuantity').value;
+    var validity = document.getElementById('validityType').value;
+    var triggerPrice = document.getElementById('triggerPrice').value;
+    
+    if (!symbol || !quantity || quantity <= 0) {
+        showNotification('Please enter valid trade details', 'error');
+        return;
     }
     
-    // Prepare order data for client.place_order API
+    // Validate price for limit orders
+    if ((orderType === 'L' || orderType === 'SL') && (!price || price <= 0)) {
+        showNotification('Please enter a valid price for limit orders', 'error');
+        return;
+    }
+    
+    // Validate trigger price for stop loss orders
+    if ((orderType === 'SL' || orderType === 'SL-M') && (!triggerPrice || triggerPrice <= 0)) {
+        showNotification('Please enter a valid trigger price for stop loss orders', 'error');
+        return;
+    }
+    
     var orderData = {
-        exchange_segment: "nse_cm",
-        product: productType,
-        price: price,
-        order_type: orderType,
+        symbol: symbol,
         quantity: quantity,
-        validity: "DAY",
-        trading_symbol: symbol,
-        transaction_type: transactionType,
+        transaction_type: tradeType === 'BUY' ? 'B' : 'S',
+        order_type: orderType,
+        price: orderType === 'MKT' || orderType === 'SL-M' ? '0' : price,
+        trigger_price: orderType === 'SL' || orderType === 'SL-M' ? triggerPrice : '0',
+        exchange_segment: 'nse_cm',
+        product: productType,
+        validity: validity,
+        disclosed_quantity: '0',
+        amo: 'NO',
+        market_protection: '0',
+        pf: 'N'
+    };
+    
+    var submitBtn = document.querySelector('#holdingActionModal .btn-primary');
+    var originalText = submitBtn.textContent;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Placing Order...';
+    submitBtn.disabled = true;
+    
+    fetch('/api/place-order', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+    })
+    .then(response => response.json())
+    .then(function(data) {
+        submitBtn.innerHTML = '<i class="fas fa-chart-line me-2"></i>Place Trade';
+        submitBtn.disabled = false;
+        
+        if (data.success) {
+            var orderTypeText = orderType === 'MKT' ? 'Market' : orderType === 'L' ? 'Limit' : 'Stop Loss';
+            showNotification(tradeType + ' ' + orderTypeText + ' order placed successfully for ' + symbol, 'success');
+            bootstrap.Modal.getInstance(document.getElementById('holdingActionModal')).hide();
+            refreshHoldings();
+        } else {
+            showNotification('Failed to place order: ' + data.message, 'error');
+        }
+    })
+    .catch(function(error) {
+        submitBtn.innerHTML = '<i class="fas fa-chart-line me-2"></i>Place Trade';
+        submitBtn.disabled = false;
+        console.error('Error:', error);
+        showNotification('Error placing order: ' + error.message, 'error');
+    });
+}
+
+// Keep the old function for compatibility
+function submitHoldingAction() {
+    submitAdvancedHoldingAction();
+}
         amo: "NO",
         disclosed_quantity: "0",
         market_protection: "0",
