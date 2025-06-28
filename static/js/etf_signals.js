@@ -53,6 +53,7 @@ ETFSignalsManager.prototype.init = function() {
     this.loadColumnSettings();
     this.setupEventListeners();
     this.setupColumnSettings();
+    this.updateTableHeaders(); // Update headers based on column settings
     this.loadSignals();
     this.startAutoRefresh();
 };
@@ -160,8 +161,14 @@ ETFSignalsManager.prototype.renderSignalsTable = function() {
     var endIdx = startIdx + this.itemsPerPage;
     var pageSignals = this.filteredSignals.slice(startIdx, endIdx);
 
+    // Count visible columns for colspan
+    var visibleColumnCount = 0;
+    for (var i = 0; i < this.availableColumns.length; i++) {
+        if (this.availableColumns[i].visible) visibleColumnCount++;
+    }
+
     if (pageSignals.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="25" class="text-center text-muted">No ETF signals found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="' + visibleColumnCount + '" class="text-center text-muted">No ETF signals found</td></tr>';
         return;
     }
 
@@ -471,51 +478,6 @@ function applyColumnSettings() {
         var modal = bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal'));
         if (modal) modal.hide();
     }
-};
-
-    // Format date
-    var entryDate = '';
-    if (signal.date || signal.created_at) {
-        try {
-            var dateStr = signal.date || signal.created_at;
-            var date = new Date(dateStr);
-            entryDate = date.toLocaleDateString('en-GB');
-        } catch (e) {
-            entryDate = dateStr.toString();
-        }
-    }
-
-    // Build row HTML
-    row.innerHTML = 
-        '<td><strong>' + symbol + '</strong></td>' +
-        '<td>' + (signal.thirty || '-') + '</td>' +
-        '<td>' + (signal.dh || '0') + '</td>' +
-        '<td>' + entryDate + '</td>' +
-        // '<td><span class="badge ' + (status === 'ACTIVE' ? 'bg-success' : 'bg-secondary') + '">' + positionType + '</span></td>' +
-        '<td>' + quantity + '</td>' +
-        '<td>₹' + entryPrice.toFixed(2) + '</td>' +
-        '<td class="' + changeClass + '">₹' + currentPrice.toFixed(2) + '</td>' +
-        '<td class="' + changeClass + '">' + changePct.toFixed(2) + '%</td>' +
-        '<td>₹' + investment.toFixed(0) + '</td>' +
-        '<td>₹' + targetPrice.toFixed(2) + '</td>' +
-        '<td>₹' + (currentPrice * quantity).toFixed(0) + '</td>' +
-        '<td class="profit">' + (targetPrice > entryPrice ? '+' + (((targetPrice - entryPrice) / entryPrice * 100)).toFixed(2) + '%' : '-') + '</td>' +
-        '<td class="' + pnlClass + '">₹' + pnl.toFixed(0) + '</td>' +
-        '<td>' + entryDate + '</td>' +
-        '<td>' + (signal.exp || '-') + '</td>' +
-        '<td>' + (signal.pr || '-') + '</td>' +
-        '<td>' + (signal.pp || changePct.toFixed(1)) + '</td>' +
-        '<td>' + (signal.iv || investment.toFixed(0)) + '</td>' +
-        '<td class="' + changeClass + '">' + changePct.toFixed(2) + '%</td>' +
-        '<td>' + (signal.nt || '-') + '</td>' +
-        '<td>' + (signal.qt || '-') + '</td>' +
-        '<td class="' + changeClass + '">' + (signal.seven || changePct.toFixed(2) + '%') + '</td>' +
-        '<td class="' + changeClass + '">' + changePct.toFixed(2) + '%</td>' +
-        '<td>' +
-        '<button class="btn btn-sm btn-primary" onclick="addDeal(\'' + symbol + '\', ' + currentPrice + ')">Add Deal</button>' +
-        '</td>';
-
-    return row;
 };
 
 ETFSignalsManager.prototype.updatePortfolioSummary = function(portfolio) {
