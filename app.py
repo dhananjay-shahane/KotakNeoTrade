@@ -1156,52 +1156,122 @@ def sync_default_deals_endpoint():
 
 @app.route('/api/default-deals-data')
 def get_default_deals_data():
-    """API endpoint to get default deals data from admin_trade_signals"""
+    """API endpoint to get default deals data directly from admin_trade_signals with correct column mapping"""
     try:
-        # First, auto-sync any new admin signals to default deals
-        from Scripts.sync_default_deals import sync_admin_signals_to_default_deals
-        sync_admin_signals_to_default_deals()
+        import logging
+        logging.info("Default deals API: Fetching data from admin_trade_signals table")
 
-        # Get all default deals from database (which now includes synced admin signals)
-        default_deals = DefaultDeal.query.order_by(DefaultDeal.created_at.desc()).all()
+        # Connect to external database using the same connection as ETF signals
+        connection_string = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
 
-        if not default_deals:
-            logging.info("Default deals API: No deals found in database")
-            return jsonify({
-                'success': True,
-                'data': [],
-                'message': 'No deals found',
-                'total_count': 0
-            })
+        import psycopg2
+        from psycopg2.extras import RealDictCursor
 
-        deals_data = []
-        for deal in default_deals:
-            deal_dict = {
-                'id': deal.id,
-                'symbol': deal.symbol,
-                'position_type': deal.position_type,
-                'quantity': deal.quantity,
-                'entry_price': float(deal.entry_price) if deal.entry_price else 0,
-                'current_price': float(deal.current_price) if deal.current_price else 0,
-                'price_change_percent': float(deal.price_change_percent) if deal.price_change_percent else 0,
-                'investment_amount': float(deal.investment_amount) if deal.investment_amount else 0,
-                'target_price': float(deal.target_price) if deal.target_price else 0,
-                'total_value': float(deal.total_value) if deal.total_value else 0,
-                'pnl': float(deal.pnl) if deal.pnl else 0,
-                'entry_date': deal.entry_date.isoformat() if deal.entry_date else None,
-                'notes': deal.notes,
-                'admin_signal_id': deal.admin_signal_id,
-                'signal_strength': deal.signal_strength
-            }
-            deals_data.append(deal_dict)
+        # Connect to external database
+        with psycopg2.connect(connection_string) as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
 
-        logging.info(f"Default deals API: Returning {len(deals_data)} deals")
+                query = """
+                    SELECT id, etf, symbol, thirty, dh, date, pos, qty, ep, cmp, chan, inv, 
+                           tp, tva, tpr, pl, ed, exp, pr, pp, iv, ip, nt, qt, seven, ch, created_at
+                    FROM admin_trade_signals 
+                    WHERE symbol IS NOT NULL
+                    ORDER BY created_at DESC, id DESC
+                """
+
+                cursor.execute(query)
+                signals = cursor.fetchall()
+
+                # Format signals as default deals data for frontend
+                deals_data = []
+                total_investment = 0
+                total_current_value = 0
+                total_pnl = 0
+                count = 0
+                
+                for row in signals:
+                    count += 1
+                    # Calculate values with proper null handling using CSV column names
+                    entry_price = float(row.get('ep') or 0) if row.get('ep') is not None else 0.0
+                    current_price = float(row.get('cmp') or 0) if row.get('cmp') is not None else 0.0
+                    quantity = int(row.get('qty') or 0) if row.get('qty') is not None else 0
+                    investment = float(row.get('inv') or 0) if row.get('inv') is not None else 0.0
+                    pnl_amount = float(row.get('pl') or 0) if row.get('pl') is not None else 0.0
+                    target_price = float(row.get('tp') or 0) if row.get('tp') is not None else 0.0
+                    current_value = float(row.get('tva') or 0) if row.get('tva') is not None else 0.0
+
+                    # Handle percentage change
+                    chan_value = row.get('chan') or '0'
+                    if isinstance(chan_value, str):
+                        chan_value = chan_value.replace('%', '')
+                    pnl_pct = float(chan_value) if chan_value else 0.0
+
+                    # Position type from pos column (1 = BUY, -1 = SELL)
+                    pos = int(row.get('pos', 1))
+                    position_type = 'BUY' if pos > 0 else 'SELL'
+
+                    # Accumulate totals
+                    total_investment += investment
+                    total_current_value += current_value
+                    total_pnl += pnl_amount
+
+                    deal_dict = {
+                        'trade_signal_id': row.get('id') or count,
+                        'id': row.get('id') or count,
+                        'etf': row.get('etf') or 'N/A',
+                        'symbol': row.get('symbol') or 'N/A',
+                        'thirty': row.get('thirty') or '',
+                        'dh': row.get('dh') or '',
+                        'date': str(row.get('date') or ''),
+                        'pos': pos,
+                        'position_type': position_type,
+                        'qty': quantity,
+                        'ep': entry_price,
+                        'cmp': current_price,
+                        'chan': row.get('chan') or f'{pnl_pct:.2f}%',
+                        'inv': investment,
+                        'tp': target_price,
+                        'tva': current_value,
+                        'tpr': row.get('tpr') or '',
+                        'pl': pnl_amount,
+                        'ed': row.get('ed') or '',
+                        'exp': row.get('exp') or '',
+                        'pr': row.get('pr') or '',
+                        'pp': row.get('pp') or '',
+                        'iv': row.get('iv') or '',
+                        'ip': row.get('ip') or '',
+                        'nt': row.get('nt') or 0,
+                        'qt': float(row.get('qt') or 0),
+                        'seven': row.get('seven') or '',
+                        'ch': row.get('ch') or '',
+                        'created_at': str(row.get('created_at') or ''),
+                        # Standard fields for compatibility
+                        'entry_price': entry_price,
+                        'current_price': current_price,
+                        'quantity': quantity,
+                        'investment_amount': investment,
+                        'target_price': target_price,
+                        'total_value': current_value,
+                        'pnl': pnl_amount,
+                        'price_change_percent': pnl_pct,
+                        'entry_date': str(row.get('date') or ''),
+                        'admin_signal_id': row.get('id'),
+                        'status': 'ACTIVE'
+                    }
+                    deals_data.append(deal_dict)
+
+        logging.info(f"Default deals API: Returning {len(deals_data)} deals from admin_trade_signals")
 
         return jsonify({
             'success': True,
             'data': deals_data,
             'total_count': len(deals_data),
-            'timestamp': datetime.now().isoformat()
+            'portfolio': {
+                'total_investment': total_investment,
+                'total_current_value': total_current_value,
+                'total_pnl': total_pnl,
+                'total_positions': len(deals_data)
+            }
         })
 
     except Exception as e:

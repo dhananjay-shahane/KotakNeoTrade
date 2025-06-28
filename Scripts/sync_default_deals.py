@@ -5,7 +5,7 @@ Run this script to populate default_deals with all admin_trade_signals data
 """
 
 from app import app, db
-from Scripts.models import DefaultDeal
+from Scripts.models import DefaultDeal, User
 from Scripts.models_etf import AdminTradeSignal
 from sqlalchemy import text, event
 import logging
@@ -22,14 +22,10 @@ def sync_admin_signals_to_default_deals():
             # Get all admin trade signals using raw SQL to avoid model issues
             from sqlalchemy import text
             
-            # Query admin_trade_signals directly with existing columns only
+            # Query admin_trade_signals with actual column names from CSV import
             result = db.session.execute(text("""
-                SELECT id, symbol, exchange, signal_type, 
-                       entry_price, target_price, stop_loss, quantity,
-                       signal_title, signal_description, notes, priority, status,
-                       created_at, updated_at, signal_date, expiry_date,
-                       current_price, change_percent, investment_amount,
-                       current_value, pnl, pnl_percentage
+                SELECT id, etf, symbol, thirty, dh, date, pos, qty, ep, cmp, chan, 
+                       inv, tp, tva, tpr, pl, ed, exp, pr, pp, iv, ip, nt, qt, seven, ch, created_at
                 FROM admin_trade_signals 
                 ORDER BY created_at DESC
             """))
@@ -44,20 +40,30 @@ def sync_admin_signals_to_default_deals():
                     existing_deal = DefaultDeal.query.filter_by(admin_signal_id=signal.id).first()
 
                     if existing_deal:
-                        # Update existing deal
+                        # Update existing deal with CSV column mapping
                         existing_deal.symbol = signal.symbol
-                        existing_deal.exchange = signal.exchange or 'NSE'
-                        existing_deal.position_type = signal.signal_type or 'BUY'
-                        existing_deal.quantity = signal.quantity
-                        existing_deal.entry_price = signal.entry_price
-                        existing_deal.current_price = signal.current_price
-                        existing_deal.price_change_percent = signal.change_percent
-                        existing_deal.investment_amount = signal.investment_amount
-                        existing_deal.target_price = signal.target_price
-                        existing_deal.total_value = signal.current_value
-                        existing_deal.target_pnl_ratio = signal.pnl_percentage
-                        existing_deal.pnl = signal.pnl
-                        existing_deal.entry_date = signal.signal_date
+                        existing_deal.etf_name = signal.etf
+                        existing_deal.exchange = 'NSE'  # Default since not in CSV
+                        existing_deal.position_type = 'BUY' if signal.pos > 0 else 'SELL'
+                        existing_deal.quantity = signal.qty
+                        existing_deal.entry_price = signal.ep
+                        existing_deal.current_price = signal.cmp
+                        existing_deal.price_change_percent = signal.chan
+                        existing_deal.investment_amount = signal.inv
+                        existing_deal.target_price = signal.tp
+                        existing_deal.total_value = signal.tva
+                        existing_deal.target_pnl_ratio = signal.tpr
+                        existing_deal.pnl = signal.pl
+                        existing_deal.entry_date = signal.date
+                        existing_deal.expiry_date = signal.exp
+                        existing_deal.profit_ratio = signal.pr
+                        existing_deal.profit_price = signal.pp
+                        existing_deal.intrinsic_value = signal.iv
+                        existing_deal.intrinsic_price = signal.ip
+                        existing_deal.notes = signal.nt
+                        existing_deal.quantity_traded = signal.qt
+                        existing_deal.seven_day_change = signal.seven
+                        existing_deal.change_amount = signal.ch
                         existing_deal.profit_ratio = signal.pnl_percentage
                         existing_deal.profit_price = signal.current_price
                         existing_deal.intrinsic_value = signal.investment_amount
@@ -69,34 +75,31 @@ def sync_admin_signals_to_default_deals():
                         existing_deal.signal_strength = signal.status
                         logger.info(f"Updated existing default deal for admin signal {signal.id}")
                     else:
-                        # Create new default deal from admin signal
-                        default_deal = DefaultDeal(
-                            user_target_id=None,  # Set to None since target_user_id doesn't exist
-                            symbol=signal.symbol,
-                            exchange=signal.exchange or 'NSE',
-                            position_type=signal.signal_type or 'BUY',
-                            quantity=signal.quantity or 0,
-                            entry_price=signal.entry_price or 0.0,
-                            current_price=signal.current_price or 0.0,
-                            price_change_percent=signal.change_percent or 0.0,
-                            investment_amount=signal.investment_amount or 0.0,
-                            target_price=signal.target_price or 0.0,
-                            total_value=signal.current_value or 0.0,
-                            target_pnl_ratio=signal.pnl_percentage or 0.0,
-                            pnl=signal.pnl or 0.0,
-                            entry_date=signal.signal_date,
-                            exit_date=None,
-                            profit_ratio=signal.pnl_percentage or 0.0,
-                            profit_price=signal.current_price or 0.0,
-                            intrinsic_value=signal.investment_amount or 0.0,
-                            intrinsic_price=signal.entry_price or 0.0,
-                            notes=signal.signal_description or signal.signal_title or '',
-                            quantity_traded=signal.quantity or 0,
-                            seven_day_change=signal.change_percent or 0.0,
-                            change_amount=signal.pnl or 0.0,
-                            signal_strength=signal.status or 'ACTIVE',
-                            admin_signal_id=signal.id
-                        )
+                        # Create new default deal with CSV column mapping
+                        default_deal = DefaultDeal()
+                        default_deal.user_target_id = str(signal.id)  # Use signal ID as target
+                        default_deal.symbol = signal.symbol
+                        default_deal.exchange = 'NSE'  # Default since not in CSV
+                        default_deal.position_type = 'BUY' if signal.pos > 0 else 'SELL'
+                        default_deal.quantity = signal.qty
+                        default_deal.entry_price = signal.ep
+                        default_deal.current_price = signal.cmp
+                        default_deal.price_change_percent = signal.chan
+                        default_deal.investment_amount = signal.inv
+                        default_deal.target_price = signal.tp
+                        default_deal.total_value = signal.tva
+                        default_deal.target_pnl_ratio = signal.tpr
+                        default_deal.pnl = signal.pl
+                        default_deal.entry_date = signal.date
+                        default_deal.profit_ratio = signal.pr
+                        default_deal.profit_price = signal.pp
+                        default_deal.intrinsic_value = signal.iv
+                        default_deal.intrinsic_price = signal.ip
+                        default_deal.notes = signal.nt
+                        default_deal.quantity_traded = signal.qt
+                        default_deal.seven_day_change = signal.seven
+                        default_deal.change_amount = signal.ch
+                        default_deal.admin_signal_id = signal.id
                         db.session.add(default_deal)
                         logger.info(f"Created new default deal for admin signal {signal.id}")
 
