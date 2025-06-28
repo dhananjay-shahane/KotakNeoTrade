@@ -769,32 +769,80 @@ function setRefreshInterval(intervalMs, displayText) {
 function submitTrade() {
     var symbol = document.getElementById('tradeSymbol').value;
     var type = document.getElementById('tradeType').value;
-    var price = parseFloat(document.getElementById('tradePrice').value);
+    var price = parseFloat(document.getElementById('tradePrice').value) || 0;
     var quantity = parseInt(document.getElementById('tradeQuantity').value);
 
-    if (!symbol || !price || !quantity) {
-        alert('Please fill all required fields');
+    if (!symbol || !quantity || quantity <= 0) {
+        alert('Please enter a valid symbol and quantity');
         return;
     }
 
-    var tradeData = {
-        symbol: symbol,
-        type: type,
-        price: price,
-        quantity: quantity,
-        timestamp: new Date().toISOString()
+    if (price <= 0) {
+        alert('Please enter a valid price');
+        return;
+    }
+
+    // Prepare order data for client.place_order API
+    var orderData = {
+        exchange_segment: "nse_cm",
+        product: "MIS", // Intraday for default deals
+        price: price.toString(),
+        order_type: "L", // Limit order
+        quantity: quantity.toString(),
+        validity: "DAY",
+        trading_symbol: symbol,
+        transaction_type: type,
+        amo: "NO",
+        disclosed_quantity: "0",
+        market_protection: "0",
+        pf: "N",
+        trigger_price: "0",
+        tag: "DEFAULT_DEALS_PAGE"
     };
 
-    console.log('Executing trade:', tradeData);
+    console.log('Placing order from default deals page:', orderData);
 
-    var modal = bootstrap.Modal.getInstance(document.getElementById('tradeModal'));
-    modal.hide();
+    // Show loading state
+    var submitBtn = document.querySelector('#tradeModal .btn-primary');
+    var originalText = submitBtn.textContent;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Placing Order...';
+    submitBtn.disabled = true;
 
-    alert(type + ' order for ' + quantity + ' ' + symbol + ' at ₹' + price + ' has been placed successfully');
+    // Make API call to place order
+    fetch('/api/trading/place_order', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+    })
+    .then(response => response.json())
+    .then(function(data) {
+        // Reset button state
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
 
-    setTimeout(function() {
-        window.dealsManager.loadDeals();
-    }, 1000);
+        if (data.success) {
+            var modal = bootstrap.Modal.getInstance(document.getElementById('tradeModal'));
+            modal.hide();
+            alert(type + ' order for ' + quantity + ' ' + symbol + ' at ₹' + price + ' placed successfully! Order ID: ' + (data.order_id || 'N/A'));
+            
+            // Refresh deals after order placement
+            setTimeout(function() {
+                window.dealsManager.loadDeals();
+            }, 1000);
+        } else {
+            alert('Error placing order: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(function(error) {
+        // Reset button state
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+        
+        console.error('Error placing order:', error);
+        alert('Error placing order: ' + error.message);
+    });
 }
 
 function exportDeals() {

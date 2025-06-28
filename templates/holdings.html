@@ -296,11 +296,21 @@
                             <select class="form-select" id="orderType" name="orderType" onchange="togglePriceField()">
                                 <option value="MKT">Market Order</option>
                                 <option value="L">Limit Order</option>
+                                <option value="SL">Stop Loss</option>
+                                <option value="SL-M">Stop Loss Market</option>
                             </select>
                         </div>
                         <div class="mb-3" id="priceField" style="display: none;">
                             <label for="actionPrice" class="form-label">Price (₹)</label>
                             <input type="number" class="form-control" id="actionPrice" name="actionPrice" step="0.01" min="0">
+                        </div>
+                        <div class="mb-3">
+                            <label for="productType" class="form-label">Product Type</label>
+                            <select class="form-select" id="productType" name="productType">
+                                <option value="CNC">CNC (Cash & Carry)</option>
+                                <option value="MIS">MIS (Intraday)</option>
+                                <option value="NRML">NRML (Normal)</option>
+                            </select>
                         </div>
                     </form>
 

@@ -59,11 +59,39 @@ function submitHoldingAction() {
     var quantity = formData.get('actionQuantity');
     var price = formData.get('actionPrice') || '0';
     var orderType = formData.get('orderType') || 'MKT';
+    var productType = formData.get('productType') || 'CNC';
     
-    // Prepare order data for client.place_order
+    // Validate required fields
+    if (!symbol || !quantity) {
+        showNotification('Please fill all required fields', 'error');
+        return;
+    }
+
+    // Handle different order types
+    var triggerPrice = "0";
+    
+    if (orderType === 'MKT' || orderType === 'SL-M') {
+        if (orderType === 'SL-M') {
+            triggerPrice = price;
+            price = "0";
+        } else {
+            price = "0";
+        }
+    } else if (orderType === 'L' && (!price || price <= 0)) {
+        showNotification('Please enter a valid limit price', 'error');
+        return;
+    } else if (orderType === 'SL') {
+        if (!price || price <= 0) {
+            showNotification('Please enter a valid limit price for stop loss order', 'error');
+            return;
+        }
+        triggerPrice = price;
+    }
+    
+    // Prepare order data for client.place_order API
     var orderData = {
         exchange_segment: "nse_cm",
-        product: "CNC", // Cash and Carry for holdings
+        product: productType,
         price: price,
         order_type: orderType,
         quantity: quantity,
@@ -74,9 +102,17 @@ function submitHoldingAction() {
         disclosed_quantity: "0",
         market_protection: "0",
         pf: "N",
-        trigger_price: "0",
-        tag: "Holdings"
+        trigger_price: triggerPrice,
+        tag: "HOLDINGS_PAGE"
     };
+
+    console.log('Placing order from holdings page:', orderData);
+
+    // Show loading state
+    var submitBtn = document.querySelector('#holdingActionModal .btn-primary');
+    var originalText = submitBtn.textContent;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Placing Order...';
+    submitBtn.disabled = true;
     
     fetch('/api/trading/place_order', {
         method: 'POST',
@@ -87,8 +123,12 @@ function submitHoldingAction() {
     })
     .then(response => response.json())
     .then(function(data) {
+        // Reset button state
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+
         if (data.success) {
-            showNotification('Order placed successfully!', 'success');
+            showNotification('Order placed successfully! Order ID: ' + (data.order_id || 'N/A'), 'success');
             bootstrap.Modal.getInstance(document.getElementById('holdingActionModal')).hide();
             refreshHoldings();
         } else {
@@ -96,8 +136,12 @@ function submitHoldingAction() {
         }
     })
     .catch(function(error) {
+        // Reset button state
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+        
         console.error('Error:', error);
-        showNotification('Error placing order', 'error');
+        showNotification('Error placing order: ' + error.message, 'error');
     });
 }
 
@@ -136,10 +180,16 @@ function togglePriceField() {
     var orderType = document.getElementById('orderType').value;
     var priceField = document.getElementById('priceField');
     var priceInput = document.getElementById('actionPrice');
+    var priceLabel = priceField.querySelector('label');
     
     if (orderType === 'L') {
         priceField.style.display = 'block';
         priceInput.required = true;
+        priceLabel.textContent = 'Limit Price (₹)';
+    } else if (orderType === 'SL' || orderType === 'SL-M') {
+        priceField.style.display = 'block';
+        priceInput.required = true;
+        priceLabel.textContent = 'Trigger Price (₹)';
     } else {
         priceField.style.display = 'none';
         priceInput.required = false;

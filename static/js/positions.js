@@ -549,38 +549,55 @@ function openPlaceOrderModal(symbol, exchange, transactionType) {
 
 // Function to submit place order
 function submitPlaceOrder() {
-    var orderData = {
-        exchange_segment: document.getElementById('orderExchange').value,
-        product: document.getElementById('orderProduct').value,
-        price: document.getElementById('orderPrice').value || "0",
-        order_type: document.getElementById('orderType').value,
-        quantity: document.getElementById('orderQuantity').value,
-        validity: document.getElementById('orderValidity').value,
-        trading_symbol: document.getElementById('orderSymbol').value,
-        transaction_type: document.getElementById('orderTransactionType').value,
-        amo: "NO",
-        disclosed_quantity: document.getElementById('orderDisclosedQuantity').value || "0",
-        market_protection: "0",
-        pf: "N",
-        trigger_price: document.getElementById('orderTriggerPrice').value || "0",
-        tag: "positions_order"
-    };
+    var symbol = document.getElementById('orderSymbol').value;
+    var exchange = document.getElementById('orderExchange').value;
+    var product = document.getElementById('orderProduct').value;
+    var price = document.getElementById('orderPrice').value || "0";
+    var orderType = document.getElementById('orderType').value;
+    var quantity = document.getElementById('orderQuantity').value;
+    var validity = document.getElementById('orderValidity').value;
+    var transactionType = document.getElementById('orderTransactionType').value;
+    var disclosedQuantity = document.getElementById('orderDisclosedQuantity').value || "0";
+    var triggerPrice = document.getElementById('orderTriggerPrice').value || "0";
 
     // Validate required fields
-    if (!orderData.quantity || orderData.quantity <= 0) {
-        alert('Please enter a valid quantity');
+    if (!symbol || !quantity || quantity <= 0) {
+        alert('Please enter a valid symbol and quantity');
         return;
     }
 
-    if (orderData.order_type === 'L' && (!orderData.price || orderData.price <= 0)) {
+    // For market orders, price should be 0
+    if (orderType === 'MKT') {
+        price = "0";
+    } else if (orderType === 'L' && (!price || price <= 0)) {
         alert('Please enter a valid price for limit order');
         return;
     }
 
-    if ((orderData.order_type === 'SL' || orderData.order_type === 'SL-M') && (!orderData.trigger_price || orderData.trigger_price <= 0)) {
+    if ((orderType === 'SL' || orderType === 'SL-M') && (!triggerPrice || triggerPrice <= 0)) {
         alert('Please enter a valid trigger price for stop loss order');
         return;
     }
+
+    // Prepare order data for client.place_order API
+    var orderData = {
+        exchange_segment: exchange || "nse_cm",
+        product: product,
+        price: price,
+        order_type: orderType,
+        quantity: quantity,
+        validity: validity,
+        trading_symbol: symbol,
+        transaction_type: transactionType,
+        amo: "NO",
+        disclosed_quantity: disclosedQuantity,
+        market_protection: "0",
+        pf: "N",
+        trigger_price: triggerPrice,
+        tag: "POSITIONS_PAGE"
+    };
+
+    console.log('Placing order from positions page:', orderData);
 
     // Show loading state
     var submitButton = document.querySelector('#placeOrderModal .btn-primary');
