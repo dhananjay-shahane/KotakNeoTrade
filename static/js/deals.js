@@ -12,29 +12,29 @@ function DealsManager() {
     this.availableColumns = {
         'trade_signal_id': { label: 'ID', default: true, width: '50px', sortable: true },
         'symbol': { label: 'ETF', default: true, width: '80px', sortable: true },
-        'pos': { label: 'POS', default: true, width: '50px', sortable: true },
-        'thirty': { label: '30', default: true, width: '50px', sortable: true },
-        'dh': { label: 'DH', default: true, width: '40px', sortable: true },
+        'pos': { label: 'POS', default: false, width: '50px', sortable: true },
+        'thirty': { label: '30', default: false, width: '50px', sortable: true },
+        'dh': { label: 'DH', default: false, width: '40px', sortable: true },
         'date': { label: 'DATE', default: true, width: '80px', sortable: true },
         'qty': { label: 'QTY', default: true, width: '60px', sortable: true },
         'ep': { label: 'EP', default: true, width: '70px', sortable: true },
         'cmp': { label: 'CMP', default: true, width: '70px', sortable: true },
         'chan_percent': { label: '%CHAN', default: true, width: '60px', sortable: true },
-        'inv': { label: 'INV.', default: true, width: '70px', sortable: true },
-        'tp': { label: 'TP', default: true, width: '60px', sortable: true },
-        'tva': { label: 'TVA', default: true, width: '70px', sortable: true },
-        'tpr': { label: 'TPR', default: true, width: '70px', sortable: true },
+        'inv': { label: 'INV.', default: false, width: '70px', sortable: true },
+        'tp': { label: 'TP', default: false, width: '60px', sortable: true },
+        'tva': { label: 'TVA', default: false, width: '70px', sortable: true },
+        'tpr': { label: 'TPR', default: false, width: '70px', sortable: true },
         'pl': { label: 'PL', default: true, width: '60px', sortable: true },
-        'ed': { label: 'ED', default: true, width: '70px', sortable: true },
-        'exp': { label: 'EXP', default: true, width: '70px', sortable: true },
-        'pr': { label: 'PR', default: true, width: '80px', sortable: true },
-        'pp': { label: 'PP', default: true, width: '50px', sortable: true },
-        'iv': { label: 'IV', default: true, width: '60px', sortable: true },
-        'ip': { label: 'IP', default: true, width: '60px', sortable: true },
-        'nt': { label: 'NT', default: true, width: '120px', sortable: true },
-        'qt': { label: 'QT', default: true, width: '60px', sortable: true },
-        'seven': { label: '7', default: true, width: '50px', sortable: true },
-        'ch': { label: '%CH', default: true, width: '60px', sortable: true },
+        'ed': { label: 'ED', default: false, width: '70px', sortable: true },
+        'exp': { label: 'EXP', default: false, width: '70px', sortable: true },
+        'pr': { label: 'PR', default: false, width: '80px', sortable: true },
+        'pp': { label: 'PP', default: false, width: '50px', sortable: true },
+        'iv': { label: 'IV', default: false, width: '60px', sortable: true },
+        'ip': { label: 'IP', default: false, width: '60px', sortable: true },
+        'nt': { label: 'NT', default: false, width: '120px', sortable: true },
+        'qt': { label: 'QT', default: false, width: '60px', sortable: true },
+        'seven': { label: '7', default: false, width: '50px', sortable: true },
+        'ch': { label: '%CH', default: false, width: '60px', sortable: true },
         'actions': { label: 'ACTIONS', default: true, width: '80px', sortable: false }
     };
 
@@ -78,14 +78,24 @@ DealsManager.prototype.setupColumnSettingsModal = function() {
     var modal = document.getElementById('columnSettingsModal');
     if (modal) {
         modal.addEventListener('show.bs.modal', function() {
+            console.log('Column Settings modal opening...');
             self.generateColumnCheckboxes();
         });
+        
+        // Also generate checkboxes immediately to ensure they exist
+        self.generateColumnCheckboxes();
     }
 };
 
 DealsManager.prototype.generateColumnCheckboxes = function() {
     var container = document.getElementById('columnCheckboxes');
+    if (!container) {
+        console.error('Column checkboxes container not found');
+        return;
+    }
+    
     container.innerHTML = '';
+    console.log('Generating column checkboxes for', Object.keys(this.availableColumns).length, 'columns');
 
     var self = this;
     var columns = Object.keys(this.availableColumns);
@@ -114,6 +124,7 @@ DealsManager.prototype.generateColumnCheckboxes = function() {
 
         container.appendChild(colDiv);
     }
+    console.log('Generated', columns.length, 'column checkboxes');
 };
 
 DealsManager.prototype.updateTableHeaders = function() {
