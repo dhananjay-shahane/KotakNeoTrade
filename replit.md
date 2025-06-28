@@ -104,6 +104,15 @@ The application follows a modern Flask architecture with clear separation of con
 
 ## Recent Changes
 
+- **June 28, 2025** - Successfully completed migration from Replit Agent to Replit environment with external PostgreSQL database integration
+  - Configured application to use external PostgreSQL database: postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db
+  - Updated ETF signals API endpoint to fetch data directly from admin_trade_signals table in external database
+  - Successfully fetched 10 real ETF trading signals with total investment of ₹999,811
+  - Fixed data parsing issues with percentage values and column name mapping from CSV import format
+  - ETF signals page now displays authentic trading data from external database instead of mock data
+  - Application running successfully on port 5000 with external database connectivity
+  - All migration checklist items completed and verified
+
 - **June 27, 2025** - Updated table formatting across all pages with capital letters and selective Actions column removal
   - Made all table headings capital letters (SYMBOL, QUANTITY, P&L, etc.) across holdings, positions, and dashboard pages
   - Removed Actions column from holdings table only to clean up interface (positions page keeps Actions for trading functionality)

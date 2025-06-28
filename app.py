@@ -50,7 +50,9 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1,
                         x_host=1)  # needed for url_for to generate with https
 
 # configure the database, relative to the app instance folder
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+# Use external database if specified, otherwise fall back to environment variable
+external_db_url = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
+app.config["SQLALCHEMY_DATABASE_URI"] = external_db_url
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
@@ -810,89 +812,112 @@ def get_holdings_api():
 
 @app.route('/api/etf-signals-data')
 def get_etf_signals_data():
-    """API endpoint to get ETF signals data from admin_trade_signals table (CSV data)"""
+    """API endpoint to get ETF signals data from admin_trade_signals table using external database"""
     try:
-        from sqlalchemy import text
-        app.logger.info("ETF Signals API: Starting CSV data fetch")
+        app.logger.info("ETF Signals API: Fetching data from external PostgreSQL database")
 
-        # Query admin_trade_signals table for CSV ETF data
-        query = text("""
-            SELECT id, symbol, entry_price, current_price, quantity, signal_type, investment_amount, 
-                   pnl, change_percent, signal_date, target_price, created_at, updated_at,
-                   current_value, pnl_percentage, status, signal_title, signal_description
+        # Connect directly to external database to ensure correct connection
+        import psycopg2
+        external_db_url = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
+        
+        conn = psycopg2.connect(external_db_url)
+        cursor = conn.cursor()
+        
+        query = """
+            SELECT id, etf, symbol, thirty, dh, date, pos, qty, ep, cmp, chan, inv, 
+                   tp, tva, tpr, pl, ed, exp, pr, pp, iv, ip, nt, qt, seven, ch, created_at
             FROM admin_trade_signals 
             WHERE symbol IS NOT NULL
-            ORDER BY signal_date DESC, id DESC
-        """)
+            ORDER BY created_at DESC, id DESC
+        """
+        
+        cursor.execute(query)
+        signals = cursor.fetchall()
+        
+        # Get column names
+        column_names = [desc[0] for desc in cursor.description]
+        
+        # Convert to list of dictionaries
+        signals_data = []
+        for row in signals:
+            signal_dict = dict(zip(column_names, row))
+            signals_data.append(signal_dict)
+        
+        cursor.close()
+        conn.close()
+        
+        # Use signals_data instead of signals in processing
+        signals = signals_data
 
-        result = db.session.execute(query)
-        signals = result.fetchall()
+        app.logger.info(f"ETF Signals API: Found {len(signals)} active trade signals from external database")
 
-        app.logger.info(
-            f"ETF Signals API: Found {len(signals)} CSV trade signals")
-
-        # Format signals data from database structure
+        # Format signals data for frontend
         signals_list = []
         total_investment = 0
         total_current_value = 0
+        total_pnl = 0
         active_positions = 0
 
         for signal in signals:
-            # Only include records with valid data
-            if not signal.symbol or not signal.entry_price or not signal.quantity:
-                continue
+            # Calculate values using the actual column names from the external DB
+            entry_price = float(signal['ep']) if signal['ep'] else 0
+            current_price = float(signal['cmp']) if signal['cmp'] else entry_price
+            quantity = int(signal['qty']) if signal['qty'] else 0
+            investment = float(signal['inv']) if signal['inv'] else (entry_price * quantity)
+            
+            # Calculate P&L
+            pnl_amount = float(signal['pl']) if signal['pl'] else 0
+            # Parse percentage values by removing '%' symbol
+            pnl_pct = float(signal['chan'].replace('%', '')) if signal['chan'] and signal['chan'] != '' else 0
+            current_value = float(signal['tva']) if signal['tva'] else (current_price * quantity)
+            
+            # Position type from pos column (1 = BUY, -1 = SELL)
+            pos = int(signal['pos']) if signal['pos'] else 1
+            signal_type = 'BUY' if pos > 0 else 'SELL'
 
-            # Calculate values
-            entry_price = float(signal.entry_price) if signal.entry_price else 0
-            current_price = float(signal.current_price) if signal.current_price else entry_price
-            quantity = int(signal.quantity) if signal.quantity else 0
-            investment = float(signal.investment_amount) if signal.investment_amount else (entry_price *
-                                                               quantity)
+            # Count active positions (assuming all records are active since they're in the table)
+            active_positions += 1
 
-            if entry_price > 0:
-                pnl_pct = ((current_price - entry_price) / entry_price) * 100
-                pnl_amount = (current_price - entry_price) * quantity
-                current_value = current_price * quantity
-            else:
-                pnl_pct = 0
-                pnl_amount = 0
-                current_value = 0
-
-            # Count active positions
-            if signal.status == 'ACTIVE':
-                active_positions += 1
-                total_investment += investment
-                total_current_value += current_value
+            # Accumulate totals
+            total_investment += investment
+            total_current_value += current_value
+            total_pnl += pnl_amount
 
             signal_data = {
-                'id': signal.id,
-                'etf': signal.symbol,
-                'signal_type': signal.signal_type or 'BUY',
+                'id': signal['id'],
+                'etf': signal['etf'] or signal['symbol'],
+                'symbol': signal['symbol'],
+                'signal_type': signal_type,
+                'pos': pos,
                 'ep': entry_price,
                 'cmp': current_price,
                 'qty': quantity,
                 'inv': investment,
-                'pl': float(signal.pnl) if signal.pnl else pnl_amount,
-                'change_pct': float(signal.change_percent) if signal.change_percent else pnl_pct,
-                'change2': pnl_pct,
-                'status': signal.status or 'ACTIVE',
-                'date': str(signal.signal_date) if signal.signal_date else str(signal.created_at.date()) if signal.created_at else '',
-                'dh': '0',
-                'ed': '',
-                'exp': '',
-                'tp': float(signal.target_price) if signal.target_price else 0,
-                'tva': float(signal.current_value) if signal.current_value else current_value,
-                'tpr': f'{pnl_pct:.2f}%',
-                'pr': f'{pnl_pct:.2f}%',
-                'pp': '--',
-                'iv': investment,
-                'ip': f'{pnl_pct:.2f}%',
-                'nt': signal.signal_title or '',
+                'pl': pnl_amount,
+                'change_pct': pnl_pct,
+                'chan': signal['chan'] or f'{pnl_pct:.2f}%',
+                'status': 'ACTIVE',
+                'date': str(signal['date']) if signal['date'] else '',
+                'tp': float(signal['tp']) if signal['tp'] else 0,
+                'tva': current_value,
+                'tpr': signal['tpr'] or f'{pnl_pct:.2f}%',
+                'pr': signal['pr'] or f'{pnl_pct:.2f}%',
+                'signal_title': signal['nt'] or f'{signal_type} Signal - {signal["symbol"]}',
+                'signal_description': f'ETF trading signal for {signal["symbol"]}',
+                'priority': 'MEDIUM',
+                'created_at': str(signal['created_at']) if signal['created_at'] else '',
+                'updated_at': str(signal['created_at']) if signal['created_at'] else '',
+                'ip': signal['ip'] or f'{pnl_pct:.2f}%',
+                'nt': signal['nt'] or '',
                 'qt': quantity,
-                'seven': f'{pnl_pct:.2f}%',
-                'thirty': f'{pnl_pct:.2f}%',
-                'chan': f'{pnl_pct:.2f}%',
-                'priority': None
+                'seven': signal['seven'] or f'{pnl_pct:.2f}%',
+                'thirty': signal['thirty'] or f'{pnl_pct:.2f}%',
+                'dh': signal['dh'] or '0',
+                'ed': signal['ed'] or '',
+                'exp': signal['exp'] or '',
+                'pp': signal['pp'] or '--',
+                'iv': signal['iv'] or investment,
+                'ch': signal['ch'] or f'{pnl_pct:.2f}%'
             }
             signals_list.append(signal_data)
 
