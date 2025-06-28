@@ -393,6 +393,7 @@ DealsManager.prototype.renderDealsTable = function() {
 
             var cellContent = '';
             var bgColor = '';
+            var style = '';
 
             switch(columnKey) {
                 case 'trade_signal_id':
@@ -525,8 +526,8 @@ DealsManager.prototype.renderDealsTable = function() {
                     cellContent = '';
             }
 
-            if (style) {
-                cell.setAttribute('style', cell.getAttribute('style') + '; ' + style + ' font-weight: bold;');
+            if (style && style !== '') {
+                cell.setAttribute('style', (cell.getAttribute('style') || '') + '; ' + style + ' font-weight: bold;');
             } else if (bgColor) {
                 cell.style.backgroundColor = bgColor;
                 cell.style.color = 'white';
