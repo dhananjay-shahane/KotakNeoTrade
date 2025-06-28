@@ -2,8 +2,8 @@
 Notifications API endpoints
 """
 from flask import Blueprint, request, jsonify, session
-from models import db, User
-from models_etf import UserNotification, AdminTradeSignal
+from Scripts.models import db, User
+from Scripts.models_etf import UserNotification, AdminTradeSignal
 from datetime import datetime
 import logging
 

@@ -5,7 +5,7 @@ import random
 from datetime import datetime, timedelta
 
 from utils.auth import login_required
-from trading_functions import TradingFunctions
+from Scripts.trading_functions import TradingFunctions
 
 trading_api = Blueprint('trading_api', __name__)
 trading_functions = TradingFunctions()

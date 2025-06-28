@@ -1,8 +1,8 @@
 """Admin Trade Signals API for ETF Signals page integration"""
 from flask import request, jsonify, session, Blueprint
 from app import db
-from models_etf import AdminTradeSignal, KotakNeoQuote, RealtimeQuote
-from models import User
+from Scripts.models_etf import AdminTradeSignal, KotakNeoQuote, RealtimeQuote
+from Scripts.models import User
 from datetime import datetime
 import logging
 

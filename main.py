@@ -103,14 +103,14 @@ if __name__ == '__main__':
 
         # Start real-time quotes scheduler
         try:
-            from realtime_quotes_manager import realtime_quotes_manager
+            from Scripts.realtime_quotes_manager import realtime_quotes_manager
             realtime_quotes_manager.start()
             print("📊 Real-time quotes scheduler started")
         except ImportError:
             print("⚠️  Real-time quotes manager not available, skipping")
 
         # Start Yahoo Finance scheduler
-        from yahoo_scheduler import start_yahoo_scheduler
+        from Scripts.yahoo_scheduler import start_yahoo_scheduler
         start_yahoo_scheduler()
         print("📈 Yahoo Finance scheduler started")
 

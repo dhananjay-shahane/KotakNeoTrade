@@ -28,3 +28,11 @@ venv/
 
 # attachments
  attached_assets
+
+# # Temporary files
+*.tmp
+DEPLOYMENT_CHECKLIST.md
+DEPLOYMENT_STATUS.md
+local_setup_guide.md
+render_deploy_guide.md
+README.md

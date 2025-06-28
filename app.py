@@ -207,8 +207,8 @@ db.init_app(app)
 
 with app.app_context():
     # Make sure to import the models here or their tables won't be created
-    import models  # noqa: F401
-    import models_etf  # noqa: F401
+    import Scripts.models as models  # noqa: F401
+    import Scripts.models_etf as models_etf  # noqa: F401
 
     db.create_all()
 
@@ -231,13 +231,13 @@ Session(app)
 logging.basicConfig(level=logging.DEBUG)
 
 # Initialize helper classes
-from neo_client import NeoClient
-from trading_functions import TradingFunctions
-from user_manager import UserManager
-from session_helper import SessionHelper
-from websocket_handler import WebSocketHandler
+from Scripts.neo_client import NeoClient
+from Scripts.trading_functions import TradingFunctions
+from Scripts.user_manager import UserManager
+from Scripts.session_helper import SessionHelper
+from Scripts.websocket_handler import WebSocketHandler
 try:
-    from supabase_client import SupabaseClient
+    from Scripts.supabase_client import SupabaseClient
     supabase_client = SupabaseClient()
 except Exception as e:
     print(f"Supabase client initialization failed: {e}")
@@ -324,7 +324,7 @@ def require_auth(f):
 def test_csv():
     """Test CSV data integration without authentication"""
     try:
-        from trading_functions import TradingFunctions
+        from Scripts.trading_functions import TradingFunctions
         trading_func = TradingFunctions()
 
         # Get dashboard data from CSV
@@ -963,8 +963,8 @@ def populate_admin_signals_csv():
 def populate_admin_signals_endpoint():
     """API endpoint to populate admin_trade_signals table with sample ETF data"""
     try:
-        from models_etf import AdminTradeSignal
-        from models import User
+        from Scripts.models_etf import AdminTradeSignal
+        from Scripts.models import User
         from datetime import datetime, timedelta
         from decimal import Decimal
 
@@ -1135,7 +1135,7 @@ def sync_default_deals_endpoint():
 def get_default_deals_data():
     """API endpoint to get all default deals data"""
     try:
-        from models import DefaultDeal
+        from Scripts.models import DefaultDeal
         from sqlalchemy import text
         
         # Get all default deals with formatted data
@@ -1195,8 +1195,8 @@ from routes.auth import auth_bp
 from routes.main import main_bp
 from api.dashboard import dashboard_api
 from api.trading import trading_api
-from sync_default_deals import sync_admin_signals_to_default_deals, update_default_deal_from_admin_signal
-from auto_sync_triggers import initialize_auto_sync
+from Scripts.sync_default_deals import sync_admin_signals_to_default_deals, update_default_deal_from_admin_signal
+from Scripts.auto_sync_triggers import initialize_auto_sync
 # ETF signals blueprint will be registered separately
 
 # Register blueprints
@@ -1224,7 +1224,7 @@ try:
 
     # Initialize realtime quotes scheduler
     try:
-        from realtime_quotes_manager import start_quotes_scheduler
+        from Scripts.realtime_quotes_manager import start_quotes_scheduler
         start_quotes_scheduler()
         print("✓ Realtime quotes scheduler started")
     except Exception as e:
@@ -1249,7 +1249,7 @@ if __name__ == '__main__':
 
     # Start ETF data scheduler for real-time quotes
     try:
-        from etf_data_scheduler import start_etf_data_scheduler
+        from Scripts.etf_data_scheduler import start_etf_data_scheduler
         start_etf_data_scheduler()
         logging.info("✅ ETF Data Scheduler initialized")
     except Exception as e:
@@ -1259,7 +1259,7 @@ if __name__ == '__main__':
     try:
         logging.info(
             "Starting admin signals scheduler with Kotak Neo integration...")
-        from admin_signals_scheduler import start_admin_signals_scheduler
+        from Scripts.admin_signals_scheduler import start_admin_signals_scheduler
         start_admin_signals_scheduler()
         logging.info(
             "✅ Admin signals scheduler started - automatic updates every 5 minutes"

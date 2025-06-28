@@ -4,8 +4,8 @@ Real-time Quotes API endpoints
 
 from flask import Blueprint, jsonify, request, session
 from app import db
-from models_etf import RealtimeQuote, ETFSignalTrade, AdminTradeSignal
-from realtime_quotes_manager import realtime_quotes_manager, get_latest_quotes_api, force_fetch_quotes
+from Scripts.models_etf import RealtimeQuote, ETFSignalTrade, AdminTradeSignal
+from Scripts.realtime_quotes_manager import realtime_quotes_manager, get_latest_quotes_api, force_fetch_quotes
 import logging
 from datetime import datetime, timedelta
 
