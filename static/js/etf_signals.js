@@ -247,7 +247,8 @@ ETFSignalsManager.prototype.createSignalRow = function(signal) {
                 break;
             case 'chan':
                 var chanDisplay = signal.chan || changePct.toFixed(2) + '%';
-                cellStyle = this.getGradientBackgroundColor(changePct);
+                var bgColor = this.getGradientBackgroundColor(changePct);
+                cellStyle = bgColor;
                 cellValue = '<span class="fw-bold">' + chanDisplay + '</span>';
                 break;
             case 'inv':
@@ -295,7 +296,8 @@ ETFSignalsManager.prototype.createSignalRow = function(signal) {
                 break;
             case 'ch':
                 var chValue = signal.ch || changePct.toFixed(2) + '%';
-                cellStyle = this.getGradientBackgroundColor(changePct);
+                var bgColor = this.getGradientBackgroundColor(changePct);
+                cellStyle = bgColor;
                 cellValue = '<span class="fw-bold">' + chValue + '</span>';
                 break;
             case 'actions':
@@ -317,32 +319,32 @@ ETFSignalsManager.prototype.getGradientBackgroundColor = function(value) {
     var numValue = parseFloat(value);
     if (isNaN(numValue)) return '';
     
-    var intensity = Math.min(Math.abs(numValue) / 10, 1); // Scale to 0-1, max at 10%
-    var alpha = 0.2 + (intensity * 0.6); // Alpha from 0.2 to 0.8
+    var intensity = Math.min(Math.abs(numValue) / 5, 1); // Scale to 0-1, max at 5%
+    var alpha = 0.3 + (intensity * 0.5); // Alpha from 0.3 to 0.8
     
     if (numValue < 0) {
         // Red gradient for negative values
         if (intensity <= 0.3) {
             // Light red for small negative values
-            return 'background: rgba(255, 182, 193, ' + alpha + ')'; // Light pink
+            return 'background-color: rgba(255, 182, 193, ' + alpha + '); color: #000;'; // Light pink
         } else if (intensity <= 0.6) {
             // Medium red
-            return 'background: rgba(255, 99, 71, ' + alpha + ')'; // Tomato
+            return 'background-color: rgba(255, 99, 71, ' + alpha + '); color: #fff;'; // Tomato
         } else {
             // Dark red for large negative values
-            return 'background: rgba(139, 0, 0, ' + alpha + ')'; // Dark red
+            return 'background-color: rgba(139, 0, 0, ' + alpha + '); color: #fff;'; // Dark red
         }
     } else if (numValue > 0) {
         // Green gradient for positive values
         if (intensity <= 0.3) {
             // Light green for small positive values
-            return 'background: rgba(144, 238, 144, ' + alpha + ')'; // Light green
+            return 'background-color: rgba(144, 238, 144, ' + alpha + '); color: #000;'; // Light green
         } else if (intensity <= 0.6) {
             // Medium green
-            return 'background: rgba(50, 205, 50, ' + alpha + ')'; // Lime green
+            return 'background-color: rgba(50, 205, 50, ' + alpha + '); color: #fff;'; // Lime green
         } else {
             // Dark green for large positive values
-            return 'background: rgba(0, 128, 0, ' + alpha + ')'; // Green
+            return 'background-color: rgba(0, 128, 0, ' + alpha + '); color: #fff;'; // Green
         }
     }
     return '';
@@ -458,8 +460,11 @@ function resetDefaultColumns() {
 }
 
 function applyColumnSettings() {
+    console.log('Applying column settings...');
     if (window.etfSignalsManager) {
         var checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
+        console.log('Found checkboxes:', checkboxes.length);
+        
         for (var i = 0; i < checkboxes.length; i++) {
             var columnKey = checkboxes[i].getAttribute('data-column');
             var column = window.etfSignalsManager.availableColumns.find(function(col) {
@@ -467,6 +472,7 @@ function applyColumnSettings() {
             });
             if (column) {
                 column.visible = checkboxes[i].checked;
+                console.log('Updated column', columnKey, 'visible:', column.visible);
             }
         }
         
@@ -474,9 +480,21 @@ function applyColumnSettings() {
         window.etfSignalsManager.updateTableHeaders();
         window.etfSignalsManager.renderSignalsTable();
         
-        // Close modal
-        var modal = bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal'));
-        if (modal) modal.hide();
+        // Close modal using Bootstrap 5 modal API
+        var modalElement = document.getElementById('columnSettingsModal');
+        if (modalElement) {
+            var modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
+            } else {
+                // Fallback: create new modal instance and hide
+                var newModal = new bootstrap.Modal(modalElement);
+                newModal.hide();
+            }
+        }
+        console.log('Column settings applied successfully');
+    } else {
+        console.error('ETF Signals Manager not found');
     }
 };
 
