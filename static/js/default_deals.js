@@ -81,7 +81,7 @@ DealsManager.prototype.setupColumnSettingsModal = function() {
             console.log('Column Settings modal opening...');
             self.generateColumnCheckboxes();
         });
-        
+
         // Also generate checkboxes immediately to ensure they exist
         self.generateColumnCheckboxes();
     }
@@ -93,7 +93,7 @@ DealsManager.prototype.generateColumnCheckboxes = function() {
         console.error('Column checkboxes container not found');
         return;
     }
-    
+
     container.innerHTML = '';
     console.log('Generating column checkboxes for', Object.keys(this.availableColumns).length, 'columns');
 
@@ -148,7 +148,7 @@ DealsManager.prototype.updateTableHeaders = function() {
         th.style.top = '0';
         th.style.zIndex = '10';
         th.style.whiteSpace = 'nowrap';
-        
+
         if (colInfo.sortable) {
             th.style.cursor = 'pointer';
             th.onclick = function(col) {
@@ -162,7 +162,7 @@ DealsManager.prototype.updateTableHeaders = function() {
             th.textContent = colInfo.label;
             th.title = self.getColumnTooltip(column);
         }
-        
+
         headersRow.appendChild(th);
     }
 };
@@ -207,7 +207,7 @@ DealsManager.prototype.setupEventListeners = function() {
 // Global function for sync button
 function syncDefaultDeals() {
     console.log('Syncing admin_trade_signals to default_deals...');
-    
+
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/sync-default-deals', true);
     xhr.setRequestHeader('Content-Type', 'application/json');
@@ -250,7 +250,7 @@ function showSuccessMessage(message) {
         '<i class="fas fa-check-circle me-2"></i>' + message +
         '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
     document.body.appendChild(alertDiv);
-    
+
     setTimeout(function() {
         if (alertDiv.parentNode) {
             alertDiv.parentNode.removeChild(alertDiv);
@@ -268,7 +268,7 @@ function showErrorMessage(message) {
         '<i class="fas fa-exclamation-circle me-2"></i>' + message +
         '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
     document.body.appendChild(alertDiv);
-    
+
     setTimeout(function() {
         if (alertDiv.parentNode) {
             alertDiv.parentNode.removeChild(alertDiv);
@@ -298,7 +298,7 @@ DealsManager.prototype.loadDeals = function() {
                             var currentPrice = parseFloat(deal.current_price || deal.entry_price || 0);
                             var entryPrice = parseFloat(deal.entry_price || 0);
                             var quantity = parseInt(deal.quantity || 0);
-                            
+
                             return {
                                 id: deal.id,
                                 trade_signal_id: deal.admin_signal_id || deal.id,
@@ -806,7 +806,7 @@ function exportDeals() {
 // Global functions for column settings and filters
 function applyColumnSettings() {
     console.log('Applying column settings...');
-    
+
     if (!window.dealsManager) {
         console.error('DealsManager not initialized');
         return;
@@ -844,7 +844,7 @@ function applyColumnSettings() {
             if (backdrop) backdrop.remove();
         }
     }
-    
+
     console.log('Column settings applied successfully');
 }
 
@@ -854,7 +854,7 @@ function selectAllColumns() {
         console.error('DealsManager not initialized');
         return;
     }
-    
+
     var columns = Object.keys(window.dealsManager.availableColumns);
     for (var i = 0; i < columns.length; i++) {
         var column = columns[i];
@@ -870,7 +870,7 @@ function resetDefaultColumns() {
         console.error('DealsManager not initialized');
         return;
     }
-    
+
     var columns = Object.keys(window.dealsManager.availableColumns);
     for (var i = 0; i < columns.length; i++) {
         var column = columns[i];
@@ -887,10 +887,10 @@ function sortDefaultDealsByColumn(column) {
     if (window.dealsManager) {
         window.dealsManager.sortDirection = window.dealsManager.sortDirection === 'asc' ? 'desc' : 'asc';
         var direction = window.dealsManager.sortDirection;
-        
+
         window.dealsManager.filteredDeals.sort(function(a, b) {
             var valueA, valueB;
-            
+
             switch(column) {
                 case 'symbol':
                     valueA = (a.symbol || '').toLowerCase();
@@ -935,18 +935,54 @@ function sortDefaultDealsByColumn(column) {
                 default:
                     return 0;
             }
-            
+
             if (typeof valueA === 'string') {
                 return direction === 'asc' ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
             } else {
                 return direction === 'asc' ? valueA - valueB : valueB - valueA;
             }
         });
-        
+
         window.dealsManager.renderDealsTable();
         window.dealsManager.updatePagination();
     }
 }
+
+// Gradient Background Color Function for percentage values
+DealsManager.prototype.getGradientBackgroundColor = function(value) {
+    var numValue = parseFloat(value);
+    if (isNaN(numValue)) return '';
+
+    var intensity = Math.min(Math.abs(numValue) / 3, 1); // Scale to 0-1, max at 3%
+    var alpha = 0.4 + (intensity * 0.6); // Alpha from 0.4 to 1.0
+
+    if (numValue < 0) {
+        // Red gradient for negative values
+        if (intensity <= 0.3) {
+            // Light red for small negative values
+            return 'background-color: rgba(220, 53, 69, ' + (alpha * 0.6) + '); color: #fff;'; // Light red
+        } else if (intensity <= 0.6) {
+            // Medium red
+            return 'background-color: rgba(220, 53, 69, ' + (alpha * 0.8) + '); color: #fff;'; // Medium red
+        } else {
+            // Dark red for large negative values
+            return 'background-color: rgba(220, 53, 69, ' + alpha + '); color: #fff;'; // Dark red
+        }
+    } else if (numValue > 0) {
+        // Green gradient for positive values
+        if (intensity <= 0.3) {
+            // Light green for small positive values
+            return 'background-color: rgba(25, 135, 84, ' + (alpha * 0.6) + '); color: #fff;'; // Light green
+        } else if (intensity <= 0.6) {
+            // Medium green
+            return 'background-color: rgba(25, 135, 84, ' + (alpha * 0.8) + '); color: #fff;'; // Medium green
+        } else {
+            // Dark green for large positive values
+            return 'background-color: rgba(25, 135, 84, ' + alpha + '); color: #fff;'; // Dark green
+        }
+    }
+    return '';
+};
 
 // Initialize Deals Manager on page load
 document.addEventListener('DOMContentLoaded', function() {
