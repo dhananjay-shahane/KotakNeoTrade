@@ -425,11 +425,11 @@ DealsManager.prototype.renderDealsTable = function() {
                 case 'chan_percent':
                     var chanValue = deal.chan_percent || deal.change_pct || '';
                     if (typeof chanValue === 'number') {
-                        bgColor = chanValue >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                        style = self.getGradientBackgroundColor(chanValue);
                         cellContent = (chanValue >= 0 ? '+' : '') + chanValue.toFixed(2) + '%';
                     } else if (typeof chanValue === 'string' && chanValue.includes('%')) {
                         var numValue = parseFloat(chanValue.replace('%', ''));
-                        bgColor = numValue >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                        style = self.getGradientBackgroundColor(numValue);
                         cellContent = chanValue;
                     } else {
                         cellContent = '0%';
@@ -437,7 +437,7 @@ DealsManager.prototype.renderDealsTable = function() {
                     break;
                 case 'change_pct':
                     if (deal.change_pct !== undefined) {
-                        bgColor = deal.change_pct >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                        style = self.getGradientBackgroundColor(deal.change_pct);
                         cellContent = (deal.change_pct >= 0 ? '+' : '') + deal.change_pct.toFixed(2) + '%';
                     }
                     break;
@@ -455,7 +455,7 @@ DealsManager.prototype.renderDealsTable = function() {
                     break;
                 case 'pl':
                     if (deal.pl !== undefined) {
-                        bgColor = deal.pl >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                        style = self.getGradientBackgroundColor(deal.pl);
                         cellContent = '₹' + (deal.pl >= 0 ? '+' : '') + deal.pl.toFixed(0);
                     }
                     break;
@@ -492,11 +492,22 @@ DealsManager.prototype.renderDealsTable = function() {
                     cellContent = deal.seven || '-';
                     break;
                 case 'ch':
-                    cellContent = deal.ch || deal.chan_percent || '-';
+                    var chValue = deal.ch || deal.chan_percent || '';
+                    if (chValue && chValue !== '-') {
+                        var numChValue = parseFloat(chValue.toString().replace('%', ''));
+                        if (!isNaN(numChValue)) {
+                            style = self.getGradientBackgroundColor(numChValue);
+                            cellContent = chValue;
+                        } else {
+                            cellContent = chValue;
+                        }
+                    } else {
+                        cellContent = '-';
+                    }
                     break;
                 case 'change2':
                     if (deal.change2 !== undefined) {
-                        bgColor = deal.change2 >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                        style = self.getGradientBackgroundColor(deal.change2);
                         cellContent = (deal.change2 >= 0 ? '+' : '') + deal.change2.toFixed(2) + '%';
                     }
                     break;
@@ -514,7 +525,9 @@ DealsManager.prototype.renderDealsTable = function() {
                     cellContent = '';
             }
 
-            if (bgColor) {
+            if (style) {
+                cell.setAttribute('style', cell.getAttribute('style') + '; ' + style + ' font-weight: bold;');
+            } else if (bgColor) {
                 cell.style.backgroundColor = bgColor;
                 cell.style.color = 'white';
                 cell.style.fontWeight = 'bold';
