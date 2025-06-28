@@ -10,6 +10,7 @@ function DealsManager() {
     this.sortDirection = 'asc';
 
     this.availableColumns = {
+        'trade_signal_id': { label: 'TRADE ID', default: true, width: '80px', sortable: true },
         'symbol': { label: 'SYMBOL', default: true, width: '70px', sortable: true },
         'thirty': { label: '30', default: false, width: '50px', sortable: true },
         'dh': { label: 'DH', default: true, width: '50px', sortable: true },
@@ -18,21 +19,29 @@ function DealsManager() {
         'qty': { label: 'QTY', default: true, width: '50px', sortable: true },
         'ep': { label: 'EP', default: true, width: '70px', sortable: true },
         'cmp': { label: 'CMP', default: true, width: '70px', sortable: true },
-        'change_pct': { label: '%CHAN', default: true, width: '60px', sortable: true },
+        'chan_percent': { label: '%CHAN', default: true, width: '60px', sortable: true },
         'inv': { label: 'INV.', default: true, width: '70px', sortable: true },
         'tp': { label: 'TP', default: true, width: '60px', sortable: true },
         'tva': { label: 'TVA', default: true, width: '70px', sortable: true },
         'tpr': { label: 'TPR', default: true, width: '70px', sortable: true },
         'pl': { label: 'PL', default: true, width: '60px', sortable: true },
         'ed': { label: 'ED', default: false, width: '70px', sortable: true },
+        'exp': { label: 'EXP', default: false, width: '70px', sortable: true },
         'pr': { label: 'PR', default: true, width: '80px', sortable: true },
         'pp': { label: 'PP', default: true, width: '50px', sortable: true },
         'iv': { label: 'IV', default: true, width: '60px', sortable: true },
         'ip': { label: 'IP', default: true, width: '60px', sortable: true },
-        'nt': { label: 'NT', default: false, width: '60px', sortable: true },
+        'nt': { label: 'NT', default: false, width: '120px', sortable: true },
         'qt': { label: 'QT', default: false, width: '60px', sortable: true },
         'seven': { label: '7', default: false, width: '50px', sortable: true },
-        'change2': { label: '%CH', default: false, width: '60px', sortable: true },
+        'ch': { label: '%CH', default: false, width: '60px', sortable: true },
+        'entry_price': { label: 'ENTRY PRICE', default: false, width: '90px', sortable: true },
+        'current_price': { label: 'CURRENT PRICE', default: false, width: '110px', sortable: true },
+        'invested_amount': { label: 'INVESTED AMT', default: false, width: '110px', sortable: true },
+        'pnl_amount': { label: 'PNL AMT', default: false, width: '80px', sortable: true },
+        'pnl_percent': { label: 'PNL %', default: false, width: '70px', sortable: true },
+        'status': { label: 'STATUS', default: false, width: '80px', sortable: true },
+        'deal_type': { label: 'TYPE', default: false, width: '70px', sortable: true },
         'actions': { label: 'ACTIONS', default: true, width: '80px', sortable: false }
     };
 
@@ -196,30 +205,38 @@ DealsManager.prototype.loadDeals = function() {
                         var uniqueDeals = response.deals.map(function(deal) {
                             return {
                                 id: deal.id,
-                                symbol: deal.symbol || '',
-                                pos: deal.position_type === 'LONG' ? 1 : -1,
-                                qty: deal.quantity || 0,
-                                ep: parseFloat(deal.entry_price || 0),
-                                cmp: parseFloat(deal.current_price || deal.entry_price || 0),
-                                pl: parseFloat(deal.pnl_amount || 0),
-                                change_pct: parseFloat(deal.pnl_percent || 0),
-                                inv: parseFloat(deal.invested_amount || 0),
-                                tp: parseFloat(deal.target_price || 0),
-                                tva: parseFloat(deal.target_price || 0) * (deal.quantity || 0),
-                                tpr: parseFloat(deal.target_price || 0) * 0.05,
-                                date: deal.entry_date ? deal.entry_date.split('T')[0] : new Date().toISOString().split('T')[0],
+                                trade_signal_id: deal.trade_signal_id || deal.id || '',
+                                symbol: deal.symbol || deal.etf || '',
+                                pos: deal.pos || (deal.position_type === 'LONG' ? 1 : -1),
+                                qty: deal.qty || deal.quantity || 0,
+                                ep: parseFloat(deal.ep || deal.entry_price || 0),
+                                cmp: parseFloat(deal.cmp || deal.current_price || deal.entry_price || 0),
+                                pl: parseFloat(deal.pl || deal.pnl_amount || 0),
+                                chan_percent: deal.chan_percent || (deal.pnl_percent ? deal.pnl_percent.toFixed(2) + '%' : '0%'),
+                                inv: parseFloat(deal.inv || deal.invested_amount || 0),
+                                tp: parseFloat(deal.tp || deal.target_price || 0),
+                                tva: parseFloat(deal.tva || 0) || (parseFloat(deal.target_price || 0) * (deal.quantity || 0)),
+                                tpr: parseFloat(deal.tpr || 0),
+                                date: deal.signal_date || deal.date || (deal.entry_date ? deal.entry_date.split('T')[0] : ''),
                                 status: deal.status || 'ACTIVE',
-                                thirty: '0%',
-                                dh: deal.days_held || 0,
-                                ed: deal.entry_date ? deal.entry_date.split('T')[0] : new Date().toISOString().split('T')[0],
-                                pr: '0%',
-                                pp: deal.pp || '-',
-                                iv: 'Medium',
-                                ip: deal.pnl_percent ? (deal.pnl_percent > 0 ? '+' : '') + deal.pnl_percent.toFixed(1) + '%' : '0%',
-                                nt: deal.notes || '--',
-                                qt: new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
-                                seven: '0%',
-                                change2: parseFloat(deal.pnl_percent || 0)
+                                thirty: deal.thirty || '0%',
+                                dh: deal.dh || deal.days_held || 0,
+                                ed: deal.ed || (deal.entry_date ? deal.entry_date.split('T')[0] : ''),
+                                exp: deal.exp || '',
+                                pr: deal.pr || '0%',
+                                pp: deal.pp || '--',
+                                iv: deal.iv || '',
+                                ip: deal.ip || (deal.pnl_percent ? (deal.pnl_percent > 0 ? '+' : '') + deal.pnl_percent.toFixed(1) + '%' : '0%'),
+                                nt: deal.nt || deal.notes || '--',
+                                qt: deal.qt || new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
+                                seven: deal.seven || '0%',
+                                ch: deal.ch || deal.chan_percent || '0%',
+                                entry_price: parseFloat(deal.entry_price || deal.ep || 0),
+                                current_price: parseFloat(deal.current_price || deal.cmp || deal.entry_price || 0),
+                                invested_amount: parseFloat(deal.invested_amount || deal.inv || 0),
+                                pnl_amount: parseFloat(deal.pnl_amount || deal.pl || 0),
+                                pnl_percent: parseFloat(deal.pnl_percent || 0),
+                                deal_type: deal.deal_type || 'SIGNAL'
                             };
                         });
 
@@ -286,6 +303,9 @@ DealsManager.prototype.renderDealsTable = function() {
             var bgColor = '';
 
             switch(columnKey) {
+                case 'trade_signal_id':
+                    cellContent = '<span class="badge bg-info">' + (deal.trade_signal_id || deal.id || '-') + '</span>';
+                    break;
                 case 'symbol':
                     cellContent = '<strong>' + (deal.symbol || '') + '</strong>';
                     break;
@@ -309,6 +329,16 @@ DealsManager.prototype.renderDealsTable = function() {
                     break;
                 case 'cmp':
                     cellContent = deal.cmp ? '₹' + deal.cmp.toFixed(2) : '';
+                    break;
+                case 'chan_percent':
+                    var chanValue = deal.chan_percent || '';
+                    if (chanValue.includes('%')) {
+                        var numValue = parseFloat(chanValue.replace('%', ''));
+                        bgColor = numValue >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                        cellContent = chanValue;
+                    } else {
+                        cellContent = chanValue || '0%';
+                    }
                     break;
                 case 'change_pct':
                     if (deal.change_pct !== undefined) {
@@ -362,6 +392,40 @@ DealsManager.prototype.renderDealsTable = function() {
                     break;
                 case 'seven':
                     cellContent = deal.seven || '-';
+                    break;
+                case 'ch':
+                    cellContent = deal.ch || '-';
+                    break;
+                case 'exp':
+                    cellContent = deal.exp || '-';
+                    break;
+                case 'entry_price':
+                    cellContent = deal.entry_price ? '₹' + deal.entry_price.toFixed(2) : '';
+                    break;
+                case 'current_price':
+                    cellContent = deal.current_price ? '₹' + deal.current_price.toFixed(2) : '';
+                    break;
+                case 'invested_amount':
+                    cellContent = deal.invested_amount ? '₹' + deal.invested_amount.toLocaleString('en-IN') : '';
+                    break;
+                case 'pnl_amount':
+                    if (deal.pnl_amount !== undefined) {
+                        bgColor = deal.pnl_amount >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                        cellContent = '₹' + deal.pnl_amount.toLocaleString('en-IN');
+                    }
+                    break;
+                case 'pnl_percent':
+                    if (deal.pnl_percent !== undefined) {
+                        bgColor = deal.pnl_percent >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                        cellContent = (deal.pnl_percent >= 0 ? '+' : '') + deal.pnl_percent.toFixed(2) + '%';
+                    }
+                    break;
+                case 'status':
+                    var statusClass = deal.status === 'ACTIVE' ? 'bg-success' : deal.status === 'CLOSED' ? 'bg-secondary' : 'bg-warning';
+                    cellContent = '<span class="badge ' + statusClass + '">' + (deal.status || 'ACTIVE') + '</span>';
+                    break;
+                case 'deal_type':
+                    cellContent = '<span class="badge bg-primary">' + (deal.deal_type || 'SIGNAL') + '</span>';
                     break;
                 case 'change2':
                     if (deal.change2 !== undefined) {

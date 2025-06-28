@@ -104,6 +104,15 @@ The application follows a modern Flask architecture with clear separation of con
 
 ## Recent Changes
 
+- **June 28, 2025** - Successfully completed "Add Deal" functionality with complete ETF signal data storage and display
+  - Fixed external PostgreSQL database connection to use user's specified database
+  - Created comprehensive user_deals table with all ETF signal fields (trade_signal_id, etf_symbol, pos, qty, ep, cmp, tp, inv, pl, etc.)
+  - Updated deals page to display all stored ETF signal data including Trade ID column
+  - Enhanced API endpoint with safe data parsing for percentage values and complete signal data mapping
+  - Users can now click "Add Deal" on ETF signals page to store complete trading data
+  - Deals page shows authentic stored data with all original ETF signal fields
+  - Application successfully connected to external database: postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db
+
 - **June 28, 2025** - Successfully completed migration from Replit Agent to Replit environment and implemented "Add Deal" functionality
   - Enhanced ETF signals page with complete signal data integration for user_deals table
   - Updated "Add Deal" button to capture and store all signal fields (symbol, quantity, entry price, target price, P&L, etc.)
