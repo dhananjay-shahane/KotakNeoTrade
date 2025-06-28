@@ -41,3 +41,63 @@ document.addEventListener("DOMContentLoaded", function () {
             // Auto-focus first input
             document.getElementById("mobile_number").focus();
         });
+// UCC Validation
+document.addEventListener('DOMContentLoaded', function() {
+    const uccInput = document.getElementById('ucc');
+    const totpForm = document.getElementById('totpForm');
+    
+    if (uccInput) {
+        // Convert UCC to uppercase as user types
+        uccInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/[^A-Za-z0-9]/g, ''); // Remove non-alphanumeric
+            e.target.value = value.toUpperCase();
+            
+            // Validate UCC length and format
+            if (value.length < 5 || value.length > 6) {
+                e.target.setCustomValidity('UCC must be 5-6 alphanumeric characters');
+            } else {
+                e.target.setCustomValidity('');
+            }
+        });
+    }
+    
+    // Form validation before submission
+    if (totpForm) {
+        totpForm.addEventListener('submit', function(e) {
+            const ucc = document.getElementById('ucc').value;
+            const mobileNumber = document.getElementById('mobile_number').value;
+            const totp = document.getElementById('totp').value;
+            const mpin = document.getElementById('mpin').value;
+            
+            // Validate UCC
+            if (!ucc || ucc.length < 5 || ucc.length > 6 || !/^[A-Za-z0-9]+$/.test(ucc)) {
+                alert('Please enter a valid UCC (5-6 alphanumeric characters)');
+                e.preventDefault();
+                return false;
+            }
+            
+            // Validate mobile number
+            if (!mobileNumber || mobileNumber.length !== 10 || !/^\d+$/.test(mobileNumber)) {
+                alert('Please enter a valid 10-digit mobile number');
+                e.preventDefault();
+                return false;
+            }
+            
+            // Validate TOTP
+            if (!totp || totp.length !== 6 || !/^\d+$/.test(totp)) {
+                alert('Please enter a valid 6-digit TOTP');
+                e.preventDefault();
+                return false;
+            }
+            
+            // Validate MPIN
+            if (!mpin || mpin.length !== 6 || !/^\d+$/.test(mpin)) {
+                alert('Please enter a valid 6-digit MPIN');
+                e.preventDefault();
+                return false;
+            }
+            
+            return true;
+        });
+    }
+});

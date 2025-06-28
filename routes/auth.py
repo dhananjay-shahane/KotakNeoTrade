@@ -31,6 +31,26 @@ def login():
             flash('All fields are required', 'error')
             return render_template('login.html')
 
+        # Validate UCC format - should be alphanumeric and 5-6 characters
+        if not ucc.isalnum() or len(ucc) < 5 or len(ucc) > 6:
+            flash('Invalid UCC format. UCC should be 5-6 alphanumeric characters', 'error')
+            return render_template('login.html')
+
+        # Validate mobile number format
+        if len(mobile_number) != 10 or not mobile_number.isdigit():
+            flash('Mobile number must be 10 digits', 'error')
+            return render_template('login.html')
+
+        # Validate TOTP format
+        if len(totp) != 6 or not totp.isdigit():
+            flash('TOTP must be 6 digits', 'error')
+            return render_template('login.html')
+
+        # Validate MPIN format
+        if len(mpin) != 6 or not mpin.isdigit():
+            flash('MPIN must be 6 digits', 'error')
+            return render_template('login.html')
+
         # Clear any existing session first
         clear_session()
         

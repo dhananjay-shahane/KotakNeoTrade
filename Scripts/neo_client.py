@@ -164,6 +164,14 @@ class NeoClient:
             if not all([mobile_number, ucc, totp, mpin]):
                 return {'success': False, 'message': 'All authentication fields are required'}
             
+            # Validate UCC format - should be alphanumeric and 5-6 characters
+            if not ucc.isalnum() or len(ucc) < 5 or len(ucc) > 6:
+                return {'success': False, 'message': 'Invalid UCC format. UCC should be 5-6 alphanumeric characters'}
+            
+            # Validate mobile number format
+            if len(mobile_number) != 10 or not mobile_number.isdigit():
+                return {'success': False, 'message': 'Mobile number must be 10 digits'}
+            
             if len(totp) != 6 or not totp.isdigit():
                 return {'success': False, 'message': 'TOTP must be exactly 6 digits'}
                 
