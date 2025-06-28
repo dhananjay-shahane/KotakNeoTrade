@@ -1283,6 +1283,47 @@ def get_default_deals_data():
         }), 500
 
 
+@app.route('/api/initialize-auto-sync', methods=['POST'])
+def initialize_auto_sync_endpoint():
+    """API endpoint to initialize automatic synchronization system"""
+    try:
+        from Scripts.auto_sync_system import initialize_auto_sync_system
+        result = initialize_auto_sync_system()
+        
+        return jsonify({
+            'success': result['success'],
+            'message': 'Auto-sync system initialized successfully' if result['success'] else 'Failed to initialize auto-sync system',
+            'details': result
+        })
+        
+    except Exception as e:
+        logging.error(f"Error initializing auto-sync: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/test-auto-sync', methods=['POST'])
+def test_auto_sync_endpoint():
+    """API endpoint to test automatic synchronization"""
+    try:
+        from Scripts.auto_sync_system import test_auto_sync
+        test_result = test_auto_sync()
+        
+        return jsonify({
+            'success': test_result,
+            'message': 'Auto-sync test passed' if test_result else 'Auto-sync test failed'
+        })
+        
+    except Exception as e:
+        logging.error(f"Error testing auto-sync: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 from routes.auth import auth_bp
 from routes.main import main_bp
 from api.dashboard import dashboard_api

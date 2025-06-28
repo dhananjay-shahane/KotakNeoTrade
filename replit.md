@@ -104,6 +104,15 @@ The application follows a modern Flask architecture with clear separation of con
 
 ## Recent Changes
 
+- **June 28, 2025** - Successfully completed migration from Replit Agent to standard Replit environment with automatic synchronization system
+  - Implemented real-time synchronization between admin_trade_signals and default_deals tables
+  - Created database triggers and event handlers for automatic data synchronization
+  - Fixed database schema mapping between CSV columns and table structures
+  - Default deals page now displays authentic trade data directly from admin_trade_signals table
+  - Added API endpoints for initializing and testing auto-sync functionality
+  - System automatically syncs 10 ETF trading signals with total P&L of ₹35,055
+  - Migration checklist completed: packages installed, workflows restarted, functionality verified
+
 - **June 28, 2025** - Successfully completed UI consistency across all trading pages with matching table designs
   - Updated deals page to match exact ETF signals table structure with ID, ETF, 30, DH, DATE, QTY, EP, CMP, %CHAN, INV., TP, TVA, TPR, PL, ED, EXP, PR, PP, IV, IP, NT, QT, 7, %CH columns
   - Updated default-deals page to use identical table UI as ETF signals page for complete consistency

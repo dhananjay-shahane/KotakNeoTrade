@@ -48,7 +48,11 @@ def sync_admin_signals_to_default_deals():
                         existing_deal.quantity = signal.qty
                         existing_deal.entry_price = signal.ep
                         existing_deal.current_price = signal.cmp
-                        existing_deal.price_change_percent = signal.chan
+                        # Handle percentage change - remove % sign and convert to decimal
+                        chan_value = signal.chan
+                        if isinstance(chan_value, str) and '%' in chan_value:
+                            chan_value = chan_value.replace('%', '')
+                        existing_deal.price_change_percent = float(chan_value) if chan_value else 0.0
                         existing_deal.investment_amount = signal.inv
                         existing_deal.target_price = signal.tp
                         existing_deal.total_value = signal.tva
@@ -84,7 +88,11 @@ def sync_admin_signals_to_default_deals():
                         default_deal.quantity = signal.qty
                         default_deal.entry_price = signal.ep
                         default_deal.current_price = signal.cmp
-                        default_deal.price_change_percent = signal.chan
+                        # Handle percentage change - remove % sign and convert to decimal
+                        chan_value = signal.chan
+                        if isinstance(chan_value, str) and '%' in chan_value:
+                            chan_value = chan_value.replace('%', '')
+                        default_deal.price_change_percent = float(chan_value) if chan_value else 0.0
                         default_deal.investment_amount = signal.inv
                         default_deal.target_price = signal.tp
                         default_deal.total_value = signal.tva
