@@ -311,7 +311,7 @@ DealsManager.prototype.renderDealsTable = function() {
                     cellContent = deal.date || '';
                     break;
                 case 'pos':
-                    cellContent = '<span class="badge ' + (deal.pos === 1 ? 'bg-success' : 'bg-danger') + '">' + deal.pos + '</span>';
+                    cellContent = deal.pos === 1 ? '1' : '0';
                     break;
                 case 'qty':
                     cellContent = deal.qty ? deal.qty.toLocaleString('en-IN') : '';
@@ -377,7 +377,7 @@ DealsManager.prototype.renderDealsTable = function() {
                     }
                     break;
                 case 'nt':
-                    cellContent = '<small>' + (deal.nt || '-') + '</small>';
+                    cellContent = '<small>--</small>';
                     break;
                 case 'qt':
                     cellContent = '<small>' + (deal.qt || '-') + '</small>';
