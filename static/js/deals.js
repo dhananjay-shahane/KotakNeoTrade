@@ -127,7 +127,7 @@ DealsManager.prototype.updateTableHeaders = function() {
         th.style.top = '0';
         th.style.zIndex = '10';
         th.style.whiteSpace = 'nowrap';
-        
+
         if (colInfo.sortable) {
             th.style.cursor = 'pointer';
             th.onclick = function(col) {
@@ -141,7 +141,7 @@ DealsManager.prototype.updateTableHeaders = function() {
             th.textContent = colInfo.label;
             th.title = self.getColumnTooltip(column);
         }
-        
+
         headersRow.appendChild(th);
     }
 };
@@ -258,6 +258,43 @@ DealsManager.prototype.loadDeals = function() {
     xhr.send();
 };
 
+// Gradient Background Color Function for percentage values
+DealsManager.prototype.getGradientBackgroundColor = function(value) {
+    var numValue = parseFloat(value);
+    if (isNaN(numValue)) return '';
+
+    var intensity = Math.min(Math.abs(numValue) / 5, 1); // Scale to 0-1, max at 5%
+    var alpha = 0.3 + (intensity * 0.5); // Alpha from 0.3 to 0.8
+
+    if (numValue < 0) {
+        // Red gradient for negative values
+        if (intensity <= 0.3) {
+            // Light red for small negative values
+            return 'background-color: rgba(255, 182, 193, ' + alpha + '); color: #000;'; // Light pink
+        } else if (intensity <= 0.6) {
+            // Medium red
+            return 'background-color: rgba(255, 99, 71, ' + alpha + '); color: #fff;'; // Tomato
+        } else {
+            // Dark red for large negative values
+            return 'background-color: rgba(139, 0, 0, ' + alpha + '); color: #fff;'; // Dark red
+        }
+    } else if (numValue > 0) {
+        // Green gradient for positive values
+        if (intensity <= 0.3) {
+            // Light green for small positive values
+            return 'background-color: rgba(144, 238, 144, ' + alpha + '); color: #000;'; // Light green
+        } else if (intensity <= 0.6) {
+            // Medium green
+            return 'background-color: rgba(50, 205, 50, ' + alpha + '); color: #fff;'; // Lime green
+        } else {
+            // Dark green for large positive values
+            return 'background-color: rgba(0, 100, 0, ' + alpha + '); color: #fff;'; // Dark green
+        }
+    }
+
+    return '';
+};
+
 DealsManager.prototype.renderDealsTable = function() {
     var tbody = document.getElementById('dealsTableBody');
     var startIndex = (this.currentPage - 1) * this.pageSize;
@@ -294,6 +331,7 @@ DealsManager.prototype.renderDealsTable = function() {
 
             var cellContent = '';
             var bgColor = '';
+            var style = '';
 
             switch(columnKey) {
                 case 'trade_signal_id':
@@ -325,17 +363,13 @@ DealsManager.prototype.renderDealsTable = function() {
                     break;
                 case 'chan_percent':
                     var chanValue = deal.chan_percent || '';
-                    if (chanValue.includes('%')) {
-                        var numValue = parseFloat(chanValue.replace('%', ''));
-                        bgColor = numValue >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
-                        cellContent = chanValue;
-                    } else {
-                        cellContent = chanValue || '0%';
-                    }
+                    style = self.getGradientBackgroundColor(chanValue.replace('%', ''));
+                    cellContent = chanValue;
                     break;
                 case 'change_pct':
                     if (deal.change_pct !== undefined) {
-                        bgColor = deal.change_pct >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                        var changePctValue = deal.change_pct;
+                        style = self.getGradientBackgroundColor(changePctValue);
                         cellContent = (deal.change_pct >= 0 ? '+' : '') + deal.change_pct.toFixed(2) + '%';
                     }
                     break;
@@ -353,7 +387,8 @@ DealsManager.prototype.renderDealsTable = function() {
                     break;
                 case 'pl':
                     if (deal.pl !== undefined) {
-                        bgColor = deal.pl >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                        var plValue = deal.pl;
+                        style = self.getGradientBackgroundColor(plValue);
                         cellContent = '₹' + (deal.pl >= 0 ? '+' : '') + deal.pl.toFixed(0);
                     }
                     break;
@@ -403,13 +438,15 @@ DealsManager.prototype.renderDealsTable = function() {
                     break;
                 case 'pnl_amount':
                     if (deal.pnl_amount !== undefined) {
-                        bgColor = deal.pnl_amount >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                        var pnlAmountValue = deal.pnl_amount;
+                        style = self.getGradientBackgroundColor(pnlAmountValue);
                         cellContent = '₹' + deal.pnl_amount.toLocaleString('en-IN');
                     }
                     break;
                 case 'pnl_percent':
                     if (deal.pnl_percent !== undefined) {
-                        bgColor = deal.pnl_percent >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                        var pnlPercentValue = deal.pnl_percent;
+                        style = self.getGradientBackgroundColor(pnlPercentValue);
                         cellContent = (deal.pnl_percent >= 0 ? '+' : '') + deal.pnl_percent.toFixed(2) + '%';
                     }
                     break;
@@ -422,7 +459,8 @@ DealsManager.prototype.renderDealsTable = function() {
                     break;
                 case 'change2':
                     if (deal.change2 !== undefined) {
-                        bgColor = deal.change2 >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                        var change2Value = deal.change2;
+                        style = self.getGradientBackgroundColor(change2Value);
                         cellContent = (deal.change2 >= 0 ? '+' : '') + deal.change2.toFixed(2) + '%';
                     }
                     break;
@@ -440,12 +478,9 @@ DealsManager.prototype.renderDealsTable = function() {
                     cellContent = '';
             }
 
-            if (bgColor) {
-                cell.style.backgroundColor = bgColor;
-                cell.style.color = 'white';
-                cell.style.fontWeight = 'bold';
+            if (style) {
+                cell.setAttribute('style', cell.getAttribute('style') + '; ' + style);
             }
-
             cell.innerHTML = cellContent;
             row.appendChild(cell);
         }
@@ -707,9 +742,7 @@ function viewChart(symbol) {
 
 function setRefreshInterval(intervalMs, displayText) {
     window.dealsManager.refreshIntervalTime = intervalMs;
-    document.getElementById('currentInterval').textContent = displayText;
-
-    if (window.dealsManager.autoRefresh) {
+    document.getElementById('currentInterval').textContent = displayText;    if (window.dealsManager.autoRefresh) {
         window.dealsManager.startAutoRefresh();
     }
 
@@ -773,10 +806,10 @@ function sortDealsByColumn(column) {
     if (window.dealsManager) {
         window.dealsManager.sortDirection = window.dealsManager.sortDirection === 'asc' ? 'desc' : 'asc';
         var direction = window.dealsManager.sortDirection;
-        
+
         window.dealsManager.filteredDeals.sort(function(a, b) {
             var valueA, valueB;
-            
+
             switch(column) {
                 case 'symbol':
                     valueA = (a.symbol || '').toLowerCase();
@@ -821,14 +854,14 @@ function sortDealsByColumn(column) {
                 default:
                     return 0;
             }
-            
+
             if (typeof valueA === 'string') {
                 return direction === 'asc' ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
             } else {
                 return direction === 'asc' ? valueA - valueB : valueB - valueA;
             }
         });
-        
+
         window.dealsManager.renderDealsTable();
         window.dealsManager.updatePagination();
     }
