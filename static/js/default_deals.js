@@ -635,24 +635,83 @@ function sellTrade(symbol, currentPrice) {
 }
 
 function showTradeModal(symbol, currentPrice, tradeType) {
-    document.getElementById('tradeModalLabel').textContent = tradeType + ' ' + symbol;
+    // Update modal title and icon
+    var modalTitle = tradeType === 'BUY' ? 'Buy Trade' : 'Sell Trade';
+    var iconClass = tradeType === 'BUY' ? 'fas fa-plus' : 'fas fa-minus';
+    document.getElementById('tradeModalLabel').innerHTML = '<i class="' + iconClass + ' me-2"></i>' + modalTitle;
+    
+    // Set form values
     document.getElementById('tradeSymbol').value = symbol;
     document.getElementById('tradeType').value = tradeType;
     document.getElementById('tradePrice').value = currentPrice || 0;
     document.getElementById('tradeQuantity').value = 1;
     
+    // Reset form to defaults
+    document.getElementById('orderType').value = 'L'; // Default to Limit
+    document.getElementById('productType').value = 'CNC';
+    document.getElementById('validityType').value = 'DAY';
+    document.getElementById('triggerPrice').value = 0;
+    
+    // Enable/disable price fields based on order type
+    togglePriceFields();
+    
     var modal = new bootstrap.Modal(document.getElementById('tradeModal'));
     modal.show();
 }
 
-function submitTrade() {
+// Toggle price fields based on order type
+function togglePriceFields() {
+    var orderType = document.getElementById('orderType').value;
+    var priceField = document.getElementById('tradePrice');
+    var triggerField = document.getElementById('triggerPrice');
+    
+    if (orderType === 'MKT') {
+        // Market order - disable price and trigger
+        priceField.disabled = true;
+        priceField.value = 0;
+        triggerField.disabled = true;
+        triggerField.value = 0;
+    } else if (orderType === 'L') {
+        // Limit order - enable price, disable trigger
+        priceField.disabled = false;
+        triggerField.disabled = true;
+        triggerField.value = 0;
+    } else if (orderType === 'SL') {
+        // Stop Loss - enable both price and trigger
+        priceField.disabled = false;
+        triggerField.disabled = false;
+    } else if (orderType === 'SL-M') {
+        // Stop Loss Market - disable price, enable trigger
+        priceField.disabled = true;
+        priceField.value = 0;
+        triggerField.disabled = false;
+    }
+}
+
+function submitAdvancedTrade() {
     var symbol = document.getElementById('tradeSymbol').value;
     var tradeType = document.getElementById('tradeType').value;
+    var orderType = document.getElementById('orderType').value;
+    var productType = document.getElementById('productType').value;
     var price = document.getElementById('tradePrice').value;
     var quantity = document.getElementById('tradeQuantity').value;
+    var validity = document.getElementById('validityType').value;
+    var triggerPrice = document.getElementById('triggerPrice').value;
     
     if (!symbol || !quantity || quantity <= 0) {
         showNotification('Please enter valid trade details', 'error');
+        return;
+    }
+    
+    // Validate price for limit orders
+    if ((orderType === 'L' || orderType === 'SL') && (!price || price <= 0)) {
+        showNotification('Please enter a valid price for limit orders', 'error');
+        return;
+    }
+    
+    // Validate trigger price for stop loss orders
+    if ((orderType === 'SL' || orderType === 'SL-M') && (!triggerPrice || triggerPrice <= 0)) {
+        showNotification('Please enter a valid trigger price for stop loss orders', 'error');
         return;
     }
     
@@ -660,11 +719,16 @@ function submitTrade() {
         symbol: symbol,
         quantity: quantity,
         transaction_type: tradeType === 'BUY' ? 'B' : 'S',
-        order_type: 'MARKET',
-        price: price || '0',
+        order_type: orderType,
+        price: orderType === 'MKT' || orderType === 'SL-M' ? '0' : price,
+        trigger_price: orderType === 'SL' || orderType === 'SL-M' ? triggerPrice : '0',
         exchange_segment: 'nse_cm',
-        product: 'CNC',
-        validity: 'DAY'
+        product: productType,
+        validity: validity,
+        disclosed_quantity: '0',
+        amo: 'NO',
+        market_protection: '0',
+        pf: 'N'
     };
     
     var submitBtn = document.querySelector('#tradeModal .btn-primary');
@@ -681,11 +745,12 @@ function submitTrade() {
     })
     .then(response => response.json())
     .then(function(data) {
-        submitBtn.textContent = originalText;
+        submitBtn.innerHTML = '<i class="fas fa-chart-line me-2"></i>Place Trade';
         submitBtn.disabled = false;
         
         if (data.success) {
-            showNotification(tradeType + ' order placed successfully for ' + symbol, 'success');
+            var orderTypeText = orderType === 'MKT' ? 'Market' : orderType === 'L' ? 'Limit' : 'Stop Loss';
+            showNotification(tradeType + ' ' + orderTypeText + ' order placed successfully for ' + symbol, 'success');
             bootstrap.Modal.getInstance(document.getElementById('tradeModal')).hide();
             refreshDeals();
         } else {
@@ -693,11 +758,16 @@ function submitTrade() {
         }
     })
     .catch(function(error) {
-        submitBtn.textContent = originalText;
+        submitBtn.innerHTML = '<i class="fas fa-chart-line me-2"></i>Place Trade';
         submitBtn.disabled = false;
         console.error('Error:', error);
         showNotification('Error placing order: ' + error.message, 'error');
     });
+}
+
+// Keep the old function for compatibility
+function submitTrade() {
+    submitAdvancedTrade();
 }
 
 function previousPage() {
