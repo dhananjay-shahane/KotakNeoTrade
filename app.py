@@ -899,7 +899,7 @@ def get_etf_signals_data():
                         'signal_title': row.get('nt', f'{signal_type} Signal - {row.get("symbol", "N/A")}'),
                         'signal_description': f'ETF trading signal for {row.get("symbol", "N/A")}',
                         'priority': 'MEDIUM',
-                        'created_at: str(row.get('created_at', '')),
+                        'created_at': str(row.get('created_at', '')),
                         'updated_at': str(row.get('created_at', '')),
                         'ip': row.get('ip', f'{pnl_pct:.2f}%'),
                         'nt': row.get('nt', ''),
