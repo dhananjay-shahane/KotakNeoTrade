@@ -1442,23 +1442,33 @@ def test_endpoint():
 @app.route('/preview')
 def preview_test():
     """Simple preview test page"""
-    return '''
+    correct_domain = os.environ.get('REPLIT_DOMAINS', 'localhost')
+    return f'''
     <!DOCTYPE html>
     <html>
     <head>
         <title>Kotak Neo Trading Platform - Preview Test</title>
         <style>
-            body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
-            .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-            .success { color: #28a745; font-size: 18px; font-weight: bold; }
-            .info { color: #007bff; margin: 10px 0; }
+            body {{ font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }}
+            .container {{ background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
+            .success {{ color: #28a745; font-size: 18px; font-weight: bold; }}
+            .info {{ color: #007bff; margin: 10px 0; }}
+            .error {{ color: #dc3545; margin: 10px 0; }}
+            .correct-url {{ background: #e9ecef; padding: 10px; border-radius: 4px; margin: 10px 0; }}
         </style>
     </head>
     <body>
         <div class="container">
             <h1 class="success">✓ Preview Access Working!</h1>
             <p class="info">Kotak Neo Trading Platform is running successfully</p>
-            <p>Domain: ''' + os.environ.get('REPLIT_DOMAINS', 'localhost') + '''</p>
+            
+            <div class="correct-url">
+                <strong>Correct URL:</strong><br>
+                <a href="https://{correct_domain}/" target="_blank">https://{correct_domain}/</a>
+            </div>
+            
+            <p class="error">Note: If you're seeing a DNS error with .repl.co domain, use the .replit.dev domain above instead.</p>
+            
             <p>Status: Application is accessible from external domains</p>
             <a href="/">Go to Login Page</a>
         </div>
