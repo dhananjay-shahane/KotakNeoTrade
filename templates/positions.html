@@ -1,78 +1,186 @@
+
 {% extends "base.html" %}
 
 {% block title %}Positions - Kotak Neo Trading{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/positions.css') }}">
+<style>
+/* Enhanced Positions Skeleton Loader */
+.positions-skeleton {
+    padding: 20px;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.skeleton-header {
+    margin-bottom: 2rem;
+}
+
+.skeleton-title {
+    height: 32px;
+    width: 250px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.skeleton-subtitle {
+    height: 18px;
+    width: 350px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+.skeleton-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.skeleton-stats-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    backdrop-filter: blur(10px);
+}
+
+.skeleton-card-icon {
+    height: 40px;
+    width: 40px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 50%;
+    margin-bottom: 1rem;
+}
+
+.skeleton-card-title {
+    height: 16px;
+    width: 120px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.skeleton-card-value {
+    height: 28px;
+    width: 80px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+}
+
+.skeleton-table-container {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.skeleton-table-header {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.skeleton-table-title {
+    height: 24px;
+    width: 200px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+}
+
+.skeleton-table-body {
+    padding: 1rem;
+}
+
+.skeleton-table-row {
+    height: 60px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.positions-content {
+    animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+{% endblock %}
 
 {% block content %}
 <!-- Positions Skeleton Loader -->
 <div class="positions-skeleton" id="positionsSkeleton">
     <!-- Header Skeleton -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <div class="skeleton-title mb-2"></div>
-            <div class="skeleton-subtitle"></div>
-        </div>
-        <div class="skeleton-button"></div>
+    <div class="skeleton-header">
+        <div class="skeleton-title"></div>
+        <div class="skeleton-subtitle"></div>
     </div>
 
-    <!-- Summary Cards Skeleton -->
-    <div class="row mb-4">
-        <div class="col-md-4 mb-3">
-            <div class="card stats-card border-0 shadow-sm bg-success">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="skeleton-card-title mb-2"></div>
-                            <div class="skeleton-card-number mb-2"></div>
-                            <div class="skeleton-card-subtitle"></div>
-                        </div>
-                        <div class="skeleton-card-icon"></div>
-                    </div>
-                </div>
-            </div>
+    <!-- Stats Cards Skeleton -->
+    <div class="skeleton-stats-grid">
+        <div class="skeleton-stats-card">
+            <div class="skeleton-card-icon"></div>
+            <div class="skeleton-card-title"></div>
+            <div class="skeleton-card-value"></div>
         </div>
-        <div class="col-md-4 mb-3">
-            <div class="card stats-card border-0 shadow-sm bg-danger">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="skeleton-card-title mb-2"></div>
-                            <div class="skeleton-card-number mb-2"></div>
-                            <div class="skeleton-card-subtitle"></div>
-                        </div>
-                        <div class="skeleton-card-icon"></div>
-                    </div>
-                </div>
-            </div>
+        <div class="skeleton-stats-card">
+            <div class="skeleton-card-icon"></div>
+            <div class="skeleton-card-title"></div>
+            <div class="skeleton-card-value"></div>
         </div>
-        <div class="col-md-4 mb-3">
-            <div class="card stats-card border-0 shadow-sm bg-info">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="skeleton-card-title mb-2"></div>
-                            <div class="skeleton-card-number mb-2"></div>
-                            <div class="skeleton-card-subtitle"></div>
-                        </div>
-                        <div class="skeleton-card-icon"></div>
-                    </div>
-                </div>
-            </div>
+        <div class="skeleton-stats-card">
+            <div class="skeleton-card-icon"></div>
+            <div class="skeleton-card-title"></div>
+            <div class="skeleton-card-value"></div>
+        </div>
+        <div class="skeleton-stats-card">
+            <div class="skeleton-card-icon"></div>
+            <div class="skeleton-card-title"></div>
+            <div class="skeleton-card-value"></div>
         </div>
     </div>
 
-    <!-- Positions Table Skeleton -->
-    <div class="card bg-secondary">
-        <div class="card-header">
-            <div class="skeleton-table-header"></div>
+    <!-- Table Skeleton -->
+    <div class="skeleton-table-container">
+        <div class="skeleton-table-header">
+            <div class="skeleton-table-title"></div>
         </div>
-        <div class="card-body p-0">
-            <div class="skeleton-table">
-                <div class="skeleton-table-row"></div>
-                <div class="skeleton-table-row"></div>
-                <div class="skeleton-table-row"></div>
-                <div class="skeleton-table-row"></div>
-                <div class="skeleton-table-row"></div>
-            </div>
+        <div class="skeleton-table-body">
+            <div class="skeleton-table-row"></div>
+            <div class="skeleton-table-row"></div>
+            <div class="skeleton-table-row"></div>
+            <div class="skeleton-table-row"></div>
+            <div class="skeleton-table-row"></div>
+            <div class="skeleton-table-row"></div>
         </div>
     </div>
 </div>
@@ -290,121 +398,28 @@
         </div>
     </div>
 </div>
-
-<style>
-/* Positions Skeleton CSS */
-.positions-skeleton {
-    animation: fadeIn 0.3s ease-in;
-}
-
-.skeleton-title {
-    height: 28px;
-    width: 200px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 4px;
-}
-
-.skeleton-subtitle {
-    height: 16px;
-    width: 300px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 4px;
-}
-
-.skeleton-button {
-    height: 40px;
-    width: 120px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 6px;
-}
-
-.skeleton-card-title {
-    height: 14px;
-    width: 100px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.2) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 3px;
-}
-
-.skeleton-card-number {
-    height: 32px;
-    width: 80px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.25) 25%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.25) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 4px;
-}
-
-.skeleton-card-subtitle {
-    height: 12px;
-    width: 120px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 3px;
-}
-
-.skeleton-card-icon {
-    height: 60px;
-    width: 60px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 50%;
-}
-
-.skeleton-table-header {
-    height: 20px;
-    width: 120px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 4px;
-}
-
-.skeleton-table {
-    padding: 1rem;
-}
-
-.skeleton-table-row {
-    height: 50px;
-    width: 100%;
-    background: linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 6px;
-    margin-bottom: 0.5rem;
-}
-
-@keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-</style>
+{% endblock %}
 
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Positions page loaded, initializing skeleton...');
+    
     // Show skeleton initially
-    document.getElementById('positionsSkeleton').style.display = 'block';
-    document.getElementById('positionsContent').style.display = 'none';
-
-    // Hide skeleton after content loads
-    setTimeout(function() {
-        hidePositionsSkeleton();
-    }, 2000);
+    const skeleton = document.getElementById('positionsSkeleton');
+    const content = document.getElementById('positionsContent');
+    
+    if (skeleton && content) {
+        skeleton.style.display = 'block';
+        content.style.display = 'none';
+        
+        console.log('Skeleton displayed, content hidden');
+        
+        // Hide skeleton after a realistic loading time
+        setTimeout(function() {
+            hidePositionsSkeleton();
+        }, 2500);
+    }
 });
 
 function hidePositionsSkeleton() {
@@ -412,6 +427,8 @@ function hidePositionsSkeleton() {
     const content = document.getElementById('positionsContent');
 
     if (skeleton && content) {
+        console.log('Hiding skeleton, showing content...');
+        
         skeleton.style.transition = 'opacity 0.5s ease-out';
         skeleton.style.opacity = '0';
 
@@ -423,10 +440,26 @@ function hidePositionsSkeleton() {
 
             setTimeout(function() {
                 content.style.opacity = '1';
+                console.log('Content fully visible');
             }, 50);
         }, 500);
     }
 }
+
+// Manual function to show skeleton (for testing)
+function showPositionsSkeleton() {
+    const skeleton = document.getElementById('positionsSkeleton');
+    const content = document.getElementById('positionsContent');
+    
+    if (skeleton && content) {
+        content.style.display = 'none';
+        skeleton.style.display = 'block';
+        skeleton.style.opacity = '1';
+    }
+}
+
+// Make hidePositionsSkeleton globally available
+window.hidePositionsSkeleton = hidePositionsSkeleton;
 </script>
 <script src="{{ url_for('static', filename='js/positions.js') }}"></script>
 {% endblock %}

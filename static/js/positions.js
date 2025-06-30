@@ -21,6 +21,13 @@ PositionsManager.prototype.initialize = function() {
 PositionsManager.prototype.loadPositions = function() {
     console.log('Loading positions data...');
 
+    // Hide skeleton and show loading in table first
+    setTimeout(function() {
+        if (document.getElementById('positionsSkeleton')) {
+            hidePositionsSkeleton();
+        }
+    }, 1000);
+
     var xhr = new XMLHttpRequest();
     xhr.open('GET', '/api/positions', true);
     xhr.onreadystatechange = function() {
@@ -29,40 +36,56 @@ PositionsManager.prototype.loadPositions = function() {
                 try {
                     var response = JSON.parse(xhr.responseText);
                     console.log('Positions API Response:', response);
+                    console.log('Response type:', typeof response);
+                    console.log('Response keys:', Object.keys(response));
 
-                    // Handle different response formats
+                    // Handle different response formats with better logging
                     if (response.success && response.positions && Array.isArray(response.positions)) {
-                        console.log('Using wrapped API format with', response.positions.length, 'positions');
+                        console.log('✅ Using wrapped API format with', response.positions.length, 'positions');
                         this.positions = response.positions;
-                        this.displayPositions();
-                        this.updateSummaryCards();
                     } else if (response.stat === 'Ok' && response.data && Array.isArray(response.data)) {
-                        console.log('Using direct Kotak Neo API format with', response.data.length, 'positions');
+                        console.log('✅ Using direct Kotak Neo API format with', response.data.length, 'positions');
                         this.positions = response.data;
-                        this.displayPositions();
-                        this.updateSummaryCards();
                     } else if (Array.isArray(response)) {
-                        console.log('Using direct array format with', response.length, 'positions');
+                        console.log('✅ Using direct array format with', response.length, 'positions');
                         this.positions = response;
-                        this.displayPositions();
-                        this.updateSummaryCards();
                     } else if (response.success === false && response.message) {
-                        console.error('API returned error:', response.message);
+                        console.error('❌ API returned error:', response.message);
                         this.showError(response.message);
+                        return;
                     } else {
-                        console.error('Invalid positions response format:', response);
-                        this.showError('Unable to load positions data');
+                        console.error('❌ Invalid positions response format:', response);
+                        console.log('Available keys:', Object.keys(response));
+                        this.showError('Invalid data format received from server');
+                        return;
                     }
+
+                    // Display positions and update UI
+                    console.log('📊 Processing', this.positions.length, 'positions...');
+                    this.displayPositions();
+                    this.updateSummaryCards();
+                    
+                    // Log success
+                    console.log('✅ Positions loaded and displayed successfully!');
+                    
                 } catch (e) {
-                    console.error('Failed to parse positions response:', e);
-                    this.showError('Failed to parse positions data');
+                    console.error('❌ Failed to parse positions response:', e);
+                    console.log('Raw response:', xhr.responseText);
+                    this.showError('Failed to parse server response');
                 }
             } else {
-                console.error('Positions API request failed:', xhr.status);
-                this.showError('Failed to load positions data');
+                console.error('❌ Positions API request failed with status:', xhr.status);
+                console.log('Response text:', xhr.responseText);
+                this.showError('Failed to load positions data (Status: ' + xhr.status + ')');
             }
         }
     }.bind(this);
+    
+    xhr.onerror = function() {
+        console.error('❌ Network error while loading positions');
+        this.showError('Network error - please check your connection');
+    }.bind(this);
+    
     xhr.send();
 };
 
@@ -408,7 +431,13 @@ function filterPositionsByType(type) {
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    window.positionsManager = new PositionsManager();
+    console.log('🚀 Initializing Positions Manager...');
+    
+    // Wait a bit for skeleton to show, then initialize
+    setTimeout(function() {
+        window.positionsManager = new PositionsManager();
+        console.log('✅ Positions Manager initialized');
+    }, 1500);
 
     // Add click event listeners to position filter cards
     var totalPositionsCard = document.querySelector('.total-positions-card');
