@@ -287,16 +287,17 @@ class TradingFunctions:
             return []
 
     def place_order(self, client, order_data):
-        """Place a new order based on Jupyter notebook implementation"""
+        """Place a new order using official Kotak Neo API parameters"""
         try:
-            order_type = order_data.get('order_type', 'MARKET').upper()
-            transaction_type = order_data.get('transaction_type', 'BUY').upper()
-            trading_symbol = order_data.get('trading_symbol', '')
+            # Extract and validate required parameters
+            order_type = order_data.get('order_type', 'MKT').upper()
+            transaction_type = order_data.get('transaction_type', 'B').upper()
+            trading_symbol = order_data.get('trading_symbol', order_data.get('symbol', ''))
             quantity = str(order_data.get('quantity', 1))
             product = order_data.get('product', 'CNC')
             exchange_segment = order_data.get('exchange_segment', 'nse_cm')
 
-            # Convert transaction type to API format (B/S instead of BUY/SELL)
+            # Convert transaction type to API format (B for Buy, S for Sell)
             if transaction_type in ['BUY', 'B']:
                 api_transaction_type = 'B'
             elif transaction_type in ['SELL', 'S']:
@@ -304,78 +305,76 @@ class TradingFunctions:
             else:
                 api_transaction_type = 'B'  # Default to Buy
 
-            self.logger.info(f"📋 Placing {transaction_type} {order_type} order for {quantity} shares of {trading_symbol}")
-
-            # Market Order
+            # Convert order type to API format
             if order_type in ['MARKET', 'MKT']:
-                response = client.place_order(
-                    exchange_segment=exchange_segment,
-                    product=product,
-                    price="0",  # Market order - price is 0
-                    order_type="MKT",
-                    quantity=quantity,
-                    validity=order_data.get('validity', 'DAY'),
-                    trading_symbol=trading_symbol,
-                    transaction_type=api_transaction_type,
-                    amo=order_data.get('amo', 'NO'),
-                    disclosed_quantity=order_data.get('disclosed_quantity', '0'),
-                    market_protection=order_data.get('market_protection', '0'),
-                    pf=order_data.get('pf', 'N'),
-                    trigger_price="0",
-                    tag=order_data.get('tag', f"API_ORDER_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
-                )
-
-            # Limit Order
+                api_order_type = 'MKT'
+                price = "0"  # Market orders have price as 0
             elif order_type in ['LIMIT', 'L']:
+                api_order_type = 'L'
                 price = str(order_data.get('price', 0))
-                response = client.place_order(
-                    exchange_segment=exchange_segment,
-                    product=product,
-                    price=price,
-                    order_type="L",
-                    quantity=quantity,
-                    validity=order_data.get('validity', 'DAY'),
-                    trading_symbol=trading_symbol,
-                    transaction_type=api_transaction_type,
-                    amo=order_data.get('amo', 'NO'),
-                    disclosed_quantity=order_data.get('disclosed_quantity', '0'),
-                    market_protection=order_data.get('market_protection', '0'),
-                    pf=order_data.get('pf', 'N'),
-                    trigger_price="0",
-                    tag=order_data.get('tag', f"API_ORDER_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
-                )
-
-            # Stop Loss Order
-            elif order_type in ['STOPLOSS', 'SL']:
+            elif order_type in ['SL', 'STOPLOSS']:
+                api_order_type = 'SL'
                 price = str(order_data.get('price', 0))
-                trigger_price = str(order_data.get('trigger_price', 0))
-                response = client.place_order(
-                    exchange_segment=exchange_segment,
-                    product=product,
-                    price=price,
-                    order_type="SL",
-                    quantity=quantity,
-                    validity=order_data.get('validity', 'DAY'),
-                    trading_symbol=trading_symbol,
-                    transaction_type=api_transaction_type,
-                    amo=order_data.get('amo', 'NO'),
-                    disclosed_quantity=order_data.get('disclosed_quantity', '0'),
-                    market_protection=order_data.get('market_protection', '0'),
-                    pf=order_data.get('pf', 'N'),
-                    trigger_price=trigger_price,
-                    tag=order_data.get('tag', f"API_ORDER_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
-                )
-
+            elif order_type in ['SL-M', 'STOPLOSS_MARKET']:
+                api_order_type = 'SL-M'
+                price = "0"  # Stop loss market orders have price as 0
             else:
                 return {'success': False, 'message': f'Unsupported order type: {order_type}'}
 
-            if response and 'data' in response:
-                self.logger.info("✅ Order placed successfully!")
-                self.logger.info(f"Order Response: {response}")
-                return {'success': True, 'data': response['data']}
+            self.logger.info(f"📋 Placing {api_transaction_type} {api_order_type} order for {quantity} shares of {trading_symbol}")
+
+            # Prepare order parameters according to official API documentation
+            order_params = {
+                'amo': order_data.get('amo', 'NO'),
+                'disclosed_quantity': str(order_data.get('disclosed_quantity', '0')),
+                'exchange_segment': exchange_segment,
+                'market_protection': str(order_data.get('market_protection', '0')),
+                'product': product,
+                'pf': order_data.get('pf', 'N'),
+                'price': price,
+                'order_type': api_order_type,
+                'quantity': quantity,
+                'validity': order_data.get('validity', 'DAY'),
+                'trigger_price': str(order_data.get('trigger_price', '0')),
+                'trading_symbol': trading_symbol,
+                'transaction_type': api_transaction_type,
+                'tag': order_data.get('tag', f"API_ORDER_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+            }
+
+            # Log the order parameters for debugging
+            self.logger.info(f"Order parameters: {order_params}")
+
+            # Place the order using the client
+            response = client.place_order(**order_params)
+
+            # Handle response
+            if response:
+                self.logger.info(f"Raw API response: {response}")
+                
+                # Check for successful response
+                if isinstance(response, dict):
+                    if 'data' in response and response.get('stat') == 'Ok':
+                        self.logger.info("✅ Order placed successfully!")
+                        return {'success': True, 'data': response['data']}
+                    elif 'data' in response:
+                        # Some APIs might not have 'stat' field but still be successful
+                        self.logger.info("✅ Order placed successfully!")
+                        return {'success': True, 'data': response['data']}
+                    elif 'error' in response or response.get('stat') == 'Not_Ok':
+                        error_msg = response.get('emsg', response.get('error', 'Order placement failed'))
+                        self.logger.error(f"❌ Order placement failed: {error_msg}")
+                        return {'success': False, 'message': error_msg, 'response': response}
+                    else:
+                        # Assume success if we get a response without explicit error
+                        self.logger.info("✅ Order placed successfully!")
+                        return {'success': True, 'data': response}
+                else:
+                    # Non-dict response
+                    self.logger.info("✅ Order placed successfully!")
+                    return {'success': True, 'data': response}
             else:
-                self.logger.error(f"❌ Order placement failed: {response}")
-                return {'success': False, 'message': 'Order placement failed', 'response': response}
+                self.logger.error("❌ No response from API")
+                return {'success': False, 'message': 'No response from API', 'response': response}
 
         except Exception as e:
             self.logger.error(f"❌ Error placing order: {str(e)}")
