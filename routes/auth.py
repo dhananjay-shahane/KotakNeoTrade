@@ -55,19 +55,27 @@ def login():
         clear_session()
         
         # Execute TOTP login with proper validation
+        logging.info(f"Attempting login for UCC: {ucc}, Mobile: {mobile_number}")
         result = neo_client.execute_totp_login(mobile_number, ucc, totp, mpin)
+        
+        logging.info(f"Login result: {result}")
 
         # CRITICAL: Add additional validation to prevent random TOTP acceptance
         if result and result.get('success'):
+            logging.info("Login successful, validating session data...")
+            
             # Ensure we have both client and session_data
             if not result.get('client') or not result.get('session_data'):
+                logging.error("Missing client or session data in login result")
                 flash('Authentication failed: Invalid login response', 'error')
                 return render_template('login.html')
                 
             session_data = result.get('session_data')
+            logging.info(f"Session data received: {session_data}")
             
             # Validate that we have proper session tokens (indicates successful authentication)
-            if not session_data.get('access_token') and not session_data.get('sId'):
+            if not session_data.get('access_token') and not session_data.get('token') and not session_data.get('sId') and not session_data.get('sid'):
+                logging.error("No valid session tokens found in session data")
                 flash('Authentication failed: No valid session tokens received', 'error')
                 return render_template('login.html')
                 
@@ -158,14 +166,22 @@ def login():
             if result and result.get('message'):
                 # Check if it's a TOTP or MPIN specific error
                 msg = result.get("message")
+                logging.error(f"Authentication failed with message: {msg}")
+                
                 if 'totp' in msg.lower() or 'authenticator' in msg.lower():
                     error_message = f'TOTP Error: {msg}'
                 elif 'mpin' in msg.lower():
                     error_message = f'MPIN Error: {msg}'
+                elif 'invalid credentials' in msg.lower():
+                    error_message = 'Invalid credentials. Please check your TOTP and MPIN.'
                 else:
                     error_message = f'Authentication failed: {msg}'
             elif not result:
                 error_message = "Authentication failed: No response from server"
+                logging.error("No result returned from authentication")
+            else:
+                logging.error(f"Authentication failed with result: {result}")
+                
             flash(error_message, 'error')
             return render_template('login.html')
 
