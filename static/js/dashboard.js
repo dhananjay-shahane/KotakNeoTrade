@@ -125,6 +125,11 @@ TradingDashboard.prototype.updateDashboard = function(data) {
     try {
         console.log('Updating dashboard with data:', data);
         
+        // Hide skeleton loader when data is loaded
+        if (typeof window.hideDashboardSkeleton === 'function') {
+            window.hideDashboardSkeleton();
+        }
+        
         // Update summary cards with actual data structure
         this.updateSummaryCards(data);
         
@@ -136,6 +141,10 @@ TradingDashboard.prototype.updateDashboard = function(data) {
         }
     } catch (error) {
         console.warn('Error updating dashboard:', error);
+        // Hide skeleton even on error
+        if (typeof window.hideDashboardSkeleton === 'function') {
+            window.hideDashboardSkeleton();
+        }
     }
 };
 
