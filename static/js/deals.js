@@ -523,9 +523,9 @@ DealsManager.prototype.renderDealsTable = function() {
                 case 'actions':
                     cellContent = 
                         '<div class="btn-group btn-group-sm">' +
-                            '<button class="btn btn-success btn-sm" onclick="buyTrade(\'' + deal.symbol + '\', ' + deal.cmp + ')">'+
+                            '<button class="btn btn-success btn-sm" onclick="buyTrade(\'' + (deal.symbol || '') + '\', ' + (deal.cmp || 0) + ')">'+
                                 '<i class="fas fa-plus"></i> Buy </button>' +
-                            '<button class="btn btn-danger btn-sm" onclick="sellTrade(\'' + deal.symbol + '\', ' + deal.cmp + ')"">'+
+                            '<button class="btn btn-danger btn-sm" onclick="sellTrade(\'' + (deal.symbol || '') + '\', ' + (deal.cmp || 0) + ')">'+
                                 '<i class="fas fa-minus"></i> Sell' +
                             '</button>' +
                         '</div>';
@@ -663,9 +663,23 @@ function cancelOrder(dealId) {
 }
 
 function buyTrade(symbol, currentPrice) {
+    // Validate parameters before opening modal
+    if (!symbol || symbol.trim() === '' || symbol === 'undefined') {
+        showNotification('Invalid symbol provided. Cannot open buy trade modal.', 'error');
+        console.error('buyTrade called with invalid symbol:', symbol);
+        return;
+    }
+    
+    if (!currentPrice || isNaN(currentPrice) || currentPrice <= 0) {
+        currentPrice = 100; // Default fallback price
+        console.warn('Invalid price provided, using fallback:', currentPrice);
+    }
+    
+    console.log('Opening buy trade modal for:', symbol, 'at price:', currentPrice);
+    
     var modal = new bootstrap.Modal(document.getElementById('tradeModal'));
     document.getElementById('tradeModalLabel').innerHTML = '<i class="fas fa-arrow-up text-success me-2"></i>Buy Trade';
-    document.getElementById('tradeSymbol').value = symbol;
+    document.getElementById('tradeSymbol').value = symbol.trim().toUpperCase();
     document.getElementById('tradeType').value = 'BUY';
     document.getElementById('tradePrice').value = currentPrice.toFixed(2);
     document.getElementById('tradeQuantity').value = '1';
@@ -678,9 +692,23 @@ function buyTrade(symbol, currentPrice) {
 }
 
 function sellTrade(symbol, currentPrice) {
+    // Validate parameters before opening modal
+    if (!symbol || symbol.trim() === '' || symbol === 'undefined') {
+        showNotification('Invalid symbol provided. Cannot open sell trade modal.', 'error');
+        console.error('sellTrade called with invalid symbol:', symbol);
+        return;
+    }
+    
+    if (!currentPrice || isNaN(currentPrice) || currentPrice <= 0) {
+        currentPrice = 100; // Default fallback price
+        console.warn('Invalid price provided, using fallback:', currentPrice);
+    }
+    
+    console.log('Opening sell trade modal for:', symbol, 'at price:', currentPrice);
+    
     var modal = new bootstrap.Modal(document.getElementById('tradeModal'));
     document.getElementById('tradeModalLabel').innerHTML = '<i class="fas fa-arrow-down text-danger me-2"></i>Sell Trade';
-    document.getElementById('tradeSymbol').value = symbol;
+    document.getElementById('tradeSymbol').value = symbol.trim().toUpperCase();
     document.getElementById('tradeType').value = 'SELL';
     document.getElementById('tradePrice').value = currentPrice.toFixed(2);
     document.getElementById('tradeQuantity').value = '1';
@@ -790,13 +818,22 @@ function submitTrade() {
     var validity = document.getElementById('validity').value;
     var triggerPrice = parseFloat(document.getElementById('triggerPrice').value) || 0;
 
-    // Enhanced validation
-    if (!symbol || symbol.trim() === '') {
-        showNotification('Symbol is required and cannot be empty', 'error');
+    // Enhanced validation with detailed logging
+    console.log('Submit Trade - Symbol:', symbol, 'Type:', type, 'Quantity:', quantity);
+    
+    if (!symbol || symbol.trim() === '' || symbol === 'undefined' || symbol === 'null') {
+        console.error('Invalid symbol detected:', symbol);
+        showNotification('Symbol is required and cannot be empty. Please try selecting the trade again.', 'error');
         return;
     }
     
-    if (!quantity || quantity <= 0) {
+    if (!type || (type !== 'BUY' && type !== 'SELL')) {
+        console.error('Invalid transaction type:', type);
+        showNotification('Invalid transaction type. Please try again.', 'error');
+        return;
+    }
+    
+    if (!quantity || quantity <= 0 || isNaN(quantity)) {
         showNotification('Please enter a valid quantity greater than 0', 'error');
         return;
     }
