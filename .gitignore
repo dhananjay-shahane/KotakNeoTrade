@@ -25,7 +25,6 @@ venv/
 # # VS Code settings (optional)
 .vscode/
 
-
 # attachments
  attached_assets
 
@@ -33,5 +32,20 @@ venv/
 *.tmp
 *.md
 *.txt
+
 # # Backup files
 *.bak
+
+# # Python cache files
+*.pyc
+*.pyo
+
+# # Jupyter Notebook checkpoints
+*.ipynb
+
+# # Flask session files 
+flask_session
+
+# # Pytest cache
+.__pycache__
+/routes/__pycache__

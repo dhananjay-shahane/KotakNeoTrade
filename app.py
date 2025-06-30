@@ -51,8 +51,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1,
 
 # configure the database, relative to the app instance folder
 # Use external database if specified, otherwise fall back to environment variable
-external_db_url = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
-app.config["SQLALCHEMY_DATABASE_URI"] = external_db_url
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL") 
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
@@ -121,89 +120,6 @@ from flask import render_template, request, redirect, url_for, session, jsonify,
 
 # Root route - ultra-simple webview
 # @app.route('/')  
-@app.route('/webview')
-def simple_webview():
-    html_content = '''<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Webview Test - Kotak Neo Trading</title>
-    <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            padding: 30px; 
-            background: linear-gradient(135deg, #4CAF50, #45a049); 
-            color: white; 
-            margin: 0;
-            min-height: 100vh;
-            box-sizing: border-box;
-        }
-        .container {
-            background: rgba(255,255,255,0.1);
-            padding: 30px;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-            text-align: center;
-        }
-        h1 { 
-            font-size: 3em; 
-            margin-bottom: 20px; 
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-        .status {
-            background: rgba(255,255,255,0.2);
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-        }
-        a { 
-            color: #FFD700; 
-            text-decoration: none; 
-            font-weight: bold; 
-            padding: 10px 20px;
-            background: rgba(255,215,0,0.2);
-            border-radius: 5px;
-            display: inline-block;
-            margin: 10px;
-        }
-        a:hover { 
-            background: rgba(255,215,0,0.4); 
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>🎯 WEBVIEW WORKING!</h1>
-        <div class="status">
-            <p><strong>Status:</strong> Preview Successfully Loaded</p>
-            <p><strong>Application:</strong> Kotak Neo Trading Platform</p>
-            <p><strong>Framework:</strong> Flask + Bootstrap</p>
-            <p><strong>Time:</strong> <span id="time"></span></p>
-        </div>
-        <div>
-            <a href="/health">📊 Health Check</a>
-            <a href="/auth/login">🔐 Login Portal</a>
-            <a href="/etf/signals">📈 ETF Signals</a>
-        </div>
-    </div>
-    <script>
-        document.getElementById('time').textContent = new Date().toLocaleString();
-        console.log('Webview loaded successfully at ' + new Date());
-    </script>
-</body>
-</html>'''
-
-    response = make_response(html_content)
-    response.headers['Content-Type'] = 'text/html; charset=utf-8'
-
-    # Ensure no frame-blocking headers
-    for header in ['X-Frame-Options', 'Content-Security-Policy']:
-        response.headers.pop(header, None)
-
-    return response
-
-
 # initialize the app with the extension, flask-sqlalchemy >= 3.0.x
 db.init_app(app)
 
