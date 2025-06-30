@@ -49,3 +49,44 @@ flask_session
 # # Pytest cache
 .__pycache__
 /routes/__pycache__
+
+# Python virtual environment
+venv/
+.env
+
+# Bytecode and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# VSCode settings
+.vscode/
+
+# IDEs
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Docker-specific
+.dockerignore
+
+# Replit specific
+.replit
+
+# Python dependency/build tools
+*.egg-info/
+dist/
+build/
+
+# Runtime/Session/Temp
+user_sessions.json
+cookies.txt
+
+# Lock / dependency management
+uv.lock
+
+# Render / Deployment / Local setup artifacts
+local_setup.sh
