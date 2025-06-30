@@ -109,6 +109,11 @@ def after_request(response):
 
 
 # Handle preflight requests and ensure proper routing
+@app.errorhandler(404)
+def page_not_found(error):
+    """Custom 404 error page"""
+    return render_template('404.html'), 404
+
 @app.before_request
 def handle_preflight():
     # Log request for debugging
