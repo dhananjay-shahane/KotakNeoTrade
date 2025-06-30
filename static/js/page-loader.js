@@ -6,8 +6,8 @@
     window.PageLoader = {
         // Show loader with custom message
         show: function(message, subtitle) {
-            message = message || 'Loading Neo Trading';
-            subtitle = subtitle || 'Preparing your trading dashboard';
+            message = message || 'Loading';
+            subtitle = subtitle || 'Please wait';
             
             var loader = document.getElementById('pageLoader');
             if (!loader) return;
