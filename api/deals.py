@@ -241,6 +241,9 @@ def get_user_deals():
                 'message': 'No authenticated user found'
             })
 
+        # Get optional symbol filter from query parameters
+        symbol_filter = request.args.get('symbol')
+        
         deals_data = []
 
         # Get deals from database only - no CSV fallback
@@ -261,7 +264,14 @@ def get_user_deals():
 
             if current_user:
                 logging.info(f"Found user: {current_user.id} with UCC: {current_user.ucc}")
-                db_deals = UserDeal.query.filter_by(user_id=current_user.id).order_by(UserDeal.created_at.desc()).all()
+                
+                # Build query with optional symbol filter
+                query = UserDeal.query.filter_by(user_id=current_user.id)
+                if symbol_filter:
+                    query = query.filter(UserDeal.symbol == symbol_filter.upper())
+                    logging.info(f"Filtering deals by symbol: {symbol_filter}")
+                
+                db_deals = query.order_by(UserDeal.created_at.desc()).all()
 
                 # Convert database deals to response format
                 for deal in db_deals:
