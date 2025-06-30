@@ -727,7 +727,7 @@ function viewChart(symbol) {
     var chartContainer = document.getElementById('chartContainer');
     chartContainer.innerHTML = '<canvas id="priceChart" width="400" height="200"></canvas>';
 
-    var ctx = document.getElementById('priceChart').getContext('2d`.
+    var ctx = document.getElementById('priceChart').getContext('2d');
     var labels = [];
     var data = [];
     var basePrice = Math.random() * 1000 + 500;
