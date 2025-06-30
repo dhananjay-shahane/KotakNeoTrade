@@ -894,6 +894,7 @@ function checkExistingDeal(symbol, price, callback) {
     // Check for existing deals via API
     var xhr = new XMLHttpRequest();
     xhr.open('GET', '/api/deals/user?symbol=' + encodeURIComponent(symbol), true);
+    xhr.withCredentials = true; // Include cookies for authentication
     
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
@@ -902,21 +903,24 @@ function checkExistingDeal(symbol, price, callback) {
                     var response = JSON.parse(xhr.responseText);
                     var deals = response.deals || [];
                     
-                    // Check if any deal has same symbol and similar price (within 1%)
-                    var duplicate = deals.some(function(deal) {
-                        var dealPrice = parseFloat(deal.ep || deal.entry_price || 0);
-                        var priceMatch = Math.abs(dealPrice - price) / price < 0.01; // Within 1%
-                        return deal.symbol === symbol && priceMatch;
+                    console.log('Duplicate check - Symbol:', symbol, 'Found deals:', deals.length);
+                    
+                    // Simply check if any deal has the same symbol
+                    var duplicate = deals.length > 0 && deals.some(function(deal) {
+                        var dealSymbol = deal.symbol || deal.etf || '';
+                        return dealSymbol.toUpperCase() === symbol.toUpperCase();
                     });
                     
+                    console.log('Duplicate detected:', duplicate);
                     callback(duplicate);
                 } catch (parseError) {
                     console.error('Failed to parse deals response:', parseError);
-                    callback(false); // If error, assume no duplicate
+                    callback(false);
                 }
             } else {
-                console.error('Failed to check existing deals:', xhr.status);
-                callback(false); // If error, assume no duplicate
+                console.error('Failed to check existing deals - Status:', xhr.status);
+                // For authentication issues, assume no duplicate to avoid blocking
+                callback(false);
             }
         }
     };
