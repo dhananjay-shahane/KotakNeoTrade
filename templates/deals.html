@@ -1,4 +1,3 @@
-html
 {% extends "base.html" %}
 
 {% block title %}Deals - Kotak Neo Trading{% endblock %}
@@ -185,25 +184,54 @@ html
             </div>
             <div class="modal-body">
                 <form id="tradeForm">
+                    <div class="mb-3">
+                        <label class="form-label text-light">Symbol</label>
+                        <input type="text" class="form-control bg-secondary text-light" id="tradeSymbol" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-light">Transaction Type</label>
+                        <input type="text" class="form-control bg-secondary text-light" id="tradeType" readonly>
+                    </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label text-light">Symbol</label>
-                            <input type="text" class="form-control bg-secondary text-light" id="tradeSymbol" readonly>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label text-light">Type</label>
-                            <select class="form-select bg-secondary text-light" id="tradeType">
-                                <option value="BUY">BUY</option>
-                                <option value="SELL">SELL</option>
+                            <label class="form-label text-light">Order Type</label>
+                            <select class="form-select bg-secondary text-light" id="orderType">
+                                <option value="L">Limit</option>
+                                <option value="MKT">Market</option>
+                                <option value="SL">Stop Loss</option>
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
+                            <label class="form-label text-light">Product</label>
+                            <select class="form-select bg-secondary text-light" id="productType">
+                                <option value="CNC">CNC (Cash & Carry)</option>
+                                <option value="MIS">MIS (Margin Intraday)</option>
+                                <option value="NRML">NRML (Normal)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
                             <label class="form-label text-light">Price</label>
-                            <input type="number" class="form-control bg-secondary text-light" id="tradePrice" step="0.01" required>
+                            <input type="number" class="form-control bg-secondary text-light" id="tradePrice" step="0.01" min="0">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label text-light">Quantity</label>
-                            <input type="number" class="form-control bg-secondary text-light" id="tradeQuantity" min="1" required>
+                            <input type="number" class="form-control bg-secondary text-light" id="tradeQuantity" min="1">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light">Validity</label>
+                            <select class="form-select bg-secondary text-light" id="validity">
+                                <option value="DAY">DAY</option>
+                                <option value="IOC">IOC</option>
+                                <option value="GTT">GTT</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light">Trigger Price</label>
+                            <input type="number" class="form-control bg-secondary text-light" id="triggerPrice" step="0.01" min="0" value="0">
                         </div>
                     </div>
                 </form>

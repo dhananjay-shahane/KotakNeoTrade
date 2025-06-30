@@ -108,18 +108,18 @@
             <table class="table table-dark table-hover mb-0" id="positionsTable">
                 <thead class="table-primary">
                     <tr>
-                        <th style="cursor: pointer;" title="Click to sort A-Z" onclick="sortPositionsByColumn('symbol')">SYMBOL <i class="fas fa-sort ms-1"></i></th>
-                        <th style="cursor: pointer;" title="Click to sort" onclick="sortPositionsByColumn('product')">PRODUCT <i class="fas fa-sort ms-1"></i></th>
-                        <th style="cursor: pointer;" title="Click to sort" onclick="sortPositionsByColumn('exchange')">EXCHANGE <i class="fas fa-sort ms-1"></i></th>
-                        <th style="cursor: pointer;" title="Click to sort" onclick="sortPositionsByColumn('buyQty')">BUY QTY <i class="fas fa-sort ms-1"></i></th>
-                        <th style="cursor: pointer;" title="Click to sort" onclick="sortPositionsByColumn('sellQty')">SELL QTY <i class="fas fa-sort ms-1"></i></th>
-                        <th style="cursor: pointer;" title="Click to sort" onclick="sortPositionsByColumn('netQty')">NET QTY <i class="fas fa-sort ms-1"></i></th>
-                        <th style="cursor: pointer;" title="Click to sort" onclick="sortPositionsByColumn('buyAmt')">BUY AMOUNT <i class="fas fa-sort ms-1"></i></th>
-                        <th style="cursor: pointer;" title="Click to sort" onclick="sortPositionsByColumn('sellAmt')">SELL AMOUNT <i class="fas fa-sort ms-1"></i></th>
-                        <th style="cursor: pointer;" title="Click to sort" onclick="sortPositionsByColumn('pnl')">P&L <i class="fas fa-sort ms-1"></i></th>
-                        <th style="cursor: pointer;" title="Click to sort" onclick="sortPositionsByColumn('position')">POSITION <i class="fas fa-sort ms-1"></i></th>
-                        <th style="cursor: pointer;" title="Click to sort" onclick="sortPositionsByColumn('expiry')">EXPIRY <i class="fas fa-sort ms-1"></i></th>
-                        <th style="cursor: pointer;" title="Click to sort" onclick="sortPositionsByColumn('lastUpdated')">LAST UPDATED <i class="fas fa-sort ms-1"></i></th>
+                        <th class="sortable" style="cursor: pointer;" title="Click to sort A-Z" onclick="sortTable('symbol')">SYMBOL <i class="fas fa-sort ms-1 text-muted"></i></th>
+                        <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('product')">PRODUCT <i class="fas fa-sort ms-1 text-muted"></i></th>
+                        <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('exchange')">EXCHANGE <i class="fas fa-sort ms-1 text-muted"></i></th>
+                        <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('buyQty')">BUY QTY <i class="fas fa-sort ms-1 text-muted"></i></th>
+                        <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('sellQty')">SELL QTY <i class="fas fa-sort ms-1 text-muted"></i></th>
+                        <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('netQty')">NET QTY <i class="fas fa-sort ms-1 text-muted"></i></th>
+                        <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('buyAmt')">BUY AMOUNT <i class="fas fa-sort ms-1 text-muted"></i></th>
+                        <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('sellAmt')">SELL AMOUNT <i class="fas fa-sort ms-1 text-muted"></i></th>
+                        <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('pnl')">P&L <i class="fas fa-sort ms-1 text-muted"></i></th>
+                        <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('position')">POSITION <i class="fas fa-sort ms-1 text-muted"></i></th>
+                        <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('expiry')">EXPIRY <i class="fas fa-sort ms-1 text-muted"></i></th>
+                        <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('lastUpdated')">LAST UPDATED <i class="fas fa-sort ms-1 text-muted"></i></th>
                         <th>ACTIONS</th>
                     </tr>
                 </thead>

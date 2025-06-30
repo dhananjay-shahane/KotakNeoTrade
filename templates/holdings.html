@@ -273,42 +273,95 @@
 </div>
 {% endif %}
 
-<!-- Holding Action Modal -->
+<!-- Advanced Holdings Trade Modal -->
 <div class="modal fade" id="holdingActionModal" tabindex="-1">
     <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="holdingActionTitle">Trade Holding</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header bg-primary border-0">
+                <h5 class="modal-title text-white fw-bold" id="holdingActionTitle">
+                    <i class="fas fa-chart-line me-2"></i>Buy Holdings
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                
-<form id="holdingActionForm">
-                        <input type="hidden" id="actionSymbol" name="actionSymbol">
-                        <input type="hidden" id="actionType" name="actionType">
-                        <div class="mb-3">
-                            <label for="actionQuantity" class="form-label">Quantity</label>
-                            <input type="number" class="form-control" id="actionQuantity" name="actionQuantity" required min="1">
-                            <div class="form-text" id="maxQuantityText"></div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="orderType" class="form-label">Order Type</label>
-                            <select class="form-select" id="orderType" name="orderType" onchange="togglePriceField()">
-                                <option value="MKT">Market Order</option>
-                                <option value="L">Limit Order</option>
+            <div class="modal-body bg-dark p-4">
+                <form id="advancedHoldingForm">
+                    <!-- Symbol -->
+                    <div class="mb-3">
+                        <label class="form-label text-light fw-semibold">Symbol</label>
+                        <input type="text" class="form-control bg-secondary text-light border-0 py-2" 
+                               id="actionSymbol" readonly style="font-size: 1rem;">
+                    </div>
+
+                    <!-- Transaction Type -->
+                    <div class="mb-3">
+                        <label class="form-label text-light fw-semibold">Transaction Type</label>
+                        <input type="text" class="form-control bg-secondary text-light border-0 py-2" 
+                               id="actionType" readonly style="font-size: 1rem;">
+                    </div>
+
+                    <!-- Order Type and Product -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-semibold">Order Type</label>
+                            <select class="form-select bg-secondary text-light border-0 py-2" 
+                                    id="orderType" onchange="toggleHoldingPriceFields()" style="font-size: 1rem;">
+                                <option value="MKT">Market</option>
+                                <option value="L">Limit</option>
+                                <option value="SL">Stop Loss</option>
+                                <option value="SL-M">Stop Loss Market</option>
                             </select>
                         </div>
-                        <div class="mb-3" id="priceField" style="display: none;">
-                            <label for="actionPrice" class="form-label">Price (₹)</label>
-                            <input type="number" class="form-control" id="actionPrice" name="actionPrice" step="0.01" min="0">
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-semibold">Product</label>
+                            <select class="form-select bg-secondary text-light border-0 py-2" 
+                                    id="productType" style="font-size: 1rem;">
+                                <option value="CNC">CNC (Cash & Carry)</option>
+                                <option value="MIS">MIS (Intraday)</option>
+                                <option value="NRML">NRML (Normal)</option>
+                                <option value="CO">CO (Cover Order)</option>
+                            </select>
                         </div>
-                    </form>
+                    </div>
 
+                    <!-- Price and Quantity -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-semibold">Price</label>
+                            <input type="number" class="form-control bg-secondary text-light border-0 py-2" 
+                                   id="actionPrice" step="0.01" style="font-size: 1rem;">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-semibold">Quantity</label>
+                            <input type="number" class="form-control bg-secondary text-light border-0 py-2" 
+                                   id="actionQuantity" min="1" value="1" style="font-size: 1rem;">
+                            <small class="text-muted" id="maxQuantityText"></small>
+                        </div>
+                    </div>
+
+                    <!-- Validity and Trigger Price -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-semibold">Validity</label>
+                            <select class="form-select bg-secondary text-light border-0 py-2" 
+                                    id="validityType" style="font-size: 1rem;">
+                                <option value="DAY">DAY</option>
+                                <option value="IOC">IOC (Immediate or Cancel)</option>
+                                <option value="GTC">GTC (Good Till Cancel)</option>
+                                <option value="EOS">EOS (End of Session)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-semibold">Trigger Price</label>
+                            <input type="number" class="form-control bg-secondary text-light border-0 py-2" 
+                                   id="triggerPrice" step="0.01" value="0" style="font-size: 1rem;" disabled>
+                        </div>
+                    </div>
+                </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="submitHoldingAction()">
-                    <i class="fas fa-check me-1"></i>Execute
+            <div class="modal-footer bg-dark border-0 pt-0">
+                <button type="button" class="btn btn-secondary px-4 py-2" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary px-4 py-2 fw-semibold" onclick="submitAdvancedHoldingAction()">
+                    <i class="fas fa-chart-line me-2"></i>Place Trade
                 </button>
             </div>
         </div>

@@ -23,20 +23,29 @@
                     <h1 class="welcome-title">Welcome back</h1>
                     <p class="welcome-subtitle">Please enter your details</p>
                 </div>
-                
+
                 <!-- Flash Messages -->
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
                         {% for category, message in messages %}
-                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                    <i class="fas fa-exclamation-circle me-2"></i>
+                <div class="alert alert-{{ 'danger' if category == 'error' else 'warning' if category == 'warning' else category }} alert-dismissible fade show" role="alert">
+                    <i class="fas fa-{{ 'exclamation-triangle' if category == 'warning' else 'exclamation-circle' }} me-2"></i>
                     {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
                         {% endfor %}
                     {% endif %}
                 {% endwith %}
- 
+
+                <!-- Session Expired Alert -->
+                {% if request.args.get('expired') == 'true' %}
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="fas fa-clock me-2"></i>
+                    <strong>Session Expired:</strong> Your session has expired for security reasons. Please login again.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endif %}
+
                 <!-- TOTP Info Alert -->
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i>
@@ -70,8 +79,13 @@
                             id="ucc"
                             name="ucc"
                             placeholder="Enter your UCC"
+                            pattern="[A-Za-z0-9]{5,6}"
+                            maxlength="6"
+                            minlength="5"
+                            title="UCC should be 5-6 alphanumeric characters"
                             required
                         />
+                        <div class="form-text">Enter your 5-6 character alphanumeric UCC from Kotak Neo</div>
                     </div>
 
                     <!-- MPIN -->
@@ -103,7 +117,7 @@
                             pattern="[0-9]{6}"
                             required
                         />
-                        <div class="form-text">Enter the 6-digit code from your authenticator app</div>
+                        <div class="form-text">Enter the current 6-digit TOTP code from your authenticator app (Google Authenticator, Authy, etc.)</div>
                     </div>
 
                     <!-- Forgot Password Link -->

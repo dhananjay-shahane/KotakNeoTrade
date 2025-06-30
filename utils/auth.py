@@ -14,27 +14,92 @@ def login_required(f):
     return decorated_function
 
 def validate_current_session():
-    """Validate current session without auto-login bypass"""
+    """Validate current session with expiration check"""
     try:
         # Check if user is authenticated
         if not session.get('authenticated'):
+            logging.debug("Session validation failed: Not authenticated")
+            return False
+            
+        # Check if session has expired
+        if is_session_expired():
+            logging.info("Session has expired")
+            clear_session()
             return False
             
         # Check if required session data exists
-        required_fields = ['access_token', 'session_token', 'ucc']
+        required_fields = ['access_token', 'ucc', 'client']
         for field in required_fields:
             if not session.get(field):
                 logging.warning(f"Missing session field: {field}")
+                clear_session()
                 return False
+                
+        # Additional validation - check if tokens are not empty and have valid format
+        access_token = session.get('access_token')
+        
+        if not access_token:
+            logging.warning("Empty access token")
+            clear_session()
+            return False
+            
+        # Check token length and format (valid Kotak Neo tokens should be substantial JWT tokens)
+        if len(access_token) < 100:  # JWT tokens are typically much longer
+            logging.warning("Invalid access token format - token too short")
+            clear_session()
+            return False
+            
+        # Validate JWT token format (should have 3 parts separated by dots)
+        if access_token.count('.') != 2:
+            logging.warning("Invalid JWT token format")
+            clear_session()
+            return False
+            
+        # Check for session_token or sid (at least one should be present)
+        session_token = session.get('session_token')
+        sid = session.get('sid')
+        
+        if not session_token and not sid:
+            logging.warning("Missing session identifiers")
+            clear_session()
+            return False
+            
+        # Validate UCC format
+        ucc = session.get('ucc')
+        if not ucc or len(ucc) < 5 or len(ucc) > 6 or not ucc.isalnum():
+            logging.warning("Invalid UCC format in session")
+            clear_session()
+            return False
                 
         return True
     except Exception as e:
         logging.error(f"Session validation error: {str(e)}")
+        clear_session()
         return False
 
 def clear_session():
-    """Clear all session data"""
-    session.clear()
+    """Clear all session data completely"""
+    try:
+        # Clear all session keys individually first
+        keys_to_clear = list(session.keys())
+        for key in keys_to_clear:
+            session.pop(key, None)
+        
+        # Clear the entire session
+        session.clear()
+        
+        # Ensure session is not permanent
+        session.permanent = False
+        
+        logging.debug("Session cleared successfully")
+        
+    except Exception as e:
+        logging.error(f"Error clearing session: {str(e)}")
+        # Force clear even if there's an error
+        try:
+            session.clear()
+        except:
+            pass
 
 def get_session_user_id():
     """Get current user's database ID from session"""
@@ -48,12 +113,14 @@ def is_session_expired():
     """Check if current session is expired"""
     expires_at = session.get('session_expires_at')
     if not expires_at:
-        return False
+        # If no expiration time set, consider it expired
+        return True
     
     from datetime import datetime
     try:
         if isinstance(expires_at, str):
             expires_at = datetime.fromisoformat(expires_at)
-        return datetime.utcnow() > expires_at
+        return datetime.now() > expires_at
     except Exception:
+        logging.error("Error checking session expiration")
         return True

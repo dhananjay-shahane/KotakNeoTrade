@@ -741,6 +741,12 @@ def etf_signals_advanced():
     return render_template('etf_signals_datatable.html')
 
 
+@app.route('/default-deals')
+def default_deals():
+    """Default Deals page"""
+    return render_template('default_deals.html')
+
+
 @app.route('/admin-signals-datatable')
 @require_auth
 def admin_signals_datatable():
@@ -873,7 +879,7 @@ def get_etf_signals_data():
                     total_pnl += pnl_amount
                     # Handle target price with null safety
                     target_price = float(row.get('tp') or 0) if row.get('tp') is not None else 0.0
-                    
+
                     signals_list.append({
                         'trade_signal_id': row.get('id') or (count + 1),
                         'id': row.get('id') or (count + 1),
@@ -893,7 +899,7 @@ def get_etf_signals_data():
                         'tp': target_price,
                         'tva': current_value,
                         'tpr': row.get('tpr') or f'{pnl_pct:.2f}%',
-                        'pr': row.get('pr') or f'{pnl_pct:.2f}%',
+'pr': row.get('pr') or f'{pnl_pct:.2f}%',
                         'signal_title': row.get('nt') or f'{signal_type} Signal - {row.get("symbol", "N/A")}',
                         'signal_description': f'ETF trading signal for {row.get("symbol") or "N/A"}',
                         'priority': 'MEDIUM',
@@ -1150,62 +1156,330 @@ def sync_default_deals_endpoint():
 
 @app.route('/api/default-deals-data')
 def get_default_deals_data():
-    """API endpoint to get all default deals data"""
+    """API endpoint to get default deals data directly from admin_trade_signals with correct column mapping"""
     try:
-        from Scripts.models import DefaultDeal
-        from sqlalchemy import text
+        import logging
+        logging.info("Default deals API: Fetching data from admin_trade_signals table")
 
-        # Get all default deals with formatted data
-        query = text("""
-            SELECT id, user_target_id, symbol, exchange, position_type, quantity, 
-                   entry_price, current_price, price_change_percent, investment_amount,
-                   target_price, total_value, target_pnl_ratio, pnl, entry_date,
-                   profit_ratio, profit_price, intrinsic_value, intrinsic_price,
-                   notes, quantity_traded, seven_day_change, change_amount,
-                   signal_strength, created_at, updated_at, admin_signal_id
-            FROM default_deals 
-            ORDER BY created_at DESC
-        """)
+        # Connect to external database using the same connection as ETF signals
+        connection_string = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
 
-        result = db.session.execute(query)
-        deals = result.fetchall()
+        import psycopg2
+        from psycopg2.extras import RealDictCursor
 
-        # Format deals data
-        deals_list = []
-        for deal in deals:
-            deal_data = {
-                'id': deal.id,
-                'user_target_id': deal.user_target_id,
-                'symbol': deal.symbol,
-                'exchange': deal.exchange,
-                'position_type': deal.position_type,
-                'quantity': deal.quantity,
-                'entry_price': float(deal.entry_price) if deal.entry_price else 0,
-                'current_price': float(deal.current_price) if deal.current_price else 0,
-                'price_change_percent': float(deal.price_change_percent) if deal.price_change_percent else 0,
-                'investment_amount': float(deal.investment_amount) if deal.investment_amount else 0,
-                'target_price': float(deal.target_price) if deal.target_price else 0,
-                'total_value': float(deal.total_value) if deal.total_value else 0,
-                'pnl': float(deal.pnl) if deal.pnl else 0,
-                'entry_date': str(deal.entry_date) if deal.entry_date else '',
-                'profit_ratio': float(deal.profit_ratio) if deal.profit_ratio else 0,
-                'notes': deal.notes or '',
-                'signal_strength': deal.signal_strength or 'ACTIVE',
-                'admin_signal_id': deal.admin_signal_id
-            }
-            deals_list.append(deal_data)
+        # Connect to external database
+        with psycopg2.connect(connection_string) as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
 
-        app.logger.info(f"Default deals API: Returning {len(deals_list)} deals")
+                query = """
+                    SELECT id, etf, symbol, thirty, dh, date, pos, qty, ep, cmp, chan, inv, 
+                           tp, tva, tpr, pl, ed, exp, pr, pp, iv, ip, nt, qt, seven, ch, created_at
+                    FROM admin_trade_signals 
+                    WHERE symbol IS NOT NULL
+                    ORDER BY created_at DESC, id DESC
+                """
+
+                cursor.execute(query)
+                signals = cursor.fetchall()
+
+                # Format signals as default deals data for frontend
+                deals_data = []
+                total_investment = 0
+                total_current_value = 0
+                total_pnl = 0
+                count = 0
+                
+                for row in signals:
+                    count += 1
+                    # Calculate values with proper null handling using CSV column names
+                    entry_price = float(row.get('ep') or 0) if row.get('ep') is not None else 0.0
+                    current_price = float(row.get('cmp') or 0) if row.get('cmp') is not None else 0.0
+                    quantity = int(row.get('qty') or 0) if row.get('qty') is not None else 0
+                    investment = float(row.get('inv') or 0) if row.get('inv') is not None else 0.0
+                    pnl_amount = float(row.get('pl') or 0) if row.get('pl') is not None else 0.0
+                    target_price = float(row.get('tp') or 0) if row.get('tp') is not None else 0.0
+                    current_value = float(row.get('tva') or 0) if row.get('tva') is not None else 0.0
+
+                    # Handle percentage change
+                    chan_value = row.get('chan') or '0'
+                    if isinstance(chan_value, str):
+                        chan_value = chan_value.replace('%', '')
+                    pnl_pct = float(chan_value) if chan_value else 0.0
+
+                    # Position type from pos column (1 = BUY, -1 = SELL)
+                    pos = int(row.get('pos', 1))
+                    position_type = 'BUY' if pos > 0 else 'SELL'
+
+                    # Accumulate totals
+                    total_investment += investment
+                    total_current_value += current_value
+                    total_pnl += pnl_amount
+
+                    deal_dict = {
+                        'trade_signal_id': row.get('id') or count,
+                        'id': row.get('id') or count,
+                        'etf': row.get('etf') or 'N/A',
+                        'symbol': row.get('symbol') or 'N/A',
+                        'thirty': row.get('thirty') or '',
+                        'dh': row.get('dh') or '',
+                        'date': str(row.get('date') or ''),
+                        'pos': pos,
+                        'position_type': position_type,
+                        'qty': quantity,
+                        'ep': entry_price,
+                        'cmp': current_price,
+                        'chan': row.get('chan') or f'{pnl_pct:.2f}%',
+                        'inv': investment,
+                        'tp': target_price,
+                        'tva': current_value,
+                        'tpr': row.get('tpr') or '',
+                        'pl': pnl_amount,
+                        'ed': row.get('ed') or '',
+                        'exp': row.get('exp') or '',
+                        'pr': row.get('pr') or '',
+                        'pp': row.get('pp') or '',
+                        'iv': row.get('iv') or '',
+                        'ip': row.get('ip') or '',
+                        'nt': row.get('nt') or 0,
+                        'qt': float(row.get('qt') or 0),
+                        'seven': row.get('seven') or '',
+                        'ch': row.get('ch') or '',
+                        'created_at': str(row.get('created_at') or ''),
+                        # Standard fields for compatibility
+                        'entry_price': entry_price,
+                        'current_price': current_price,
+                        'quantity': quantity,
+                        'investment_amount': investment,
+                        'target_price': target_price,
+                        'total_value': current_value,
+                        'pnl': pnl_amount,
+                        'price_change_percent': pnl_pct,
+                        'entry_date': str(row.get('date') or ''),
+                        'admin_signal_id': row.get('id'),
+                        'status': 'ACTIVE'
+                    }
+                    deals_data.append(deal_dict)
+
+        logging.info(f"Default deals API: Returning {len(deals_data)} deals from admin_trade_signals")
 
         return jsonify({
             'success': True,
-            'data': deals_list,
-            'total': len(deals_list)
+            'data': deals_data,
+            'total_count': len(deals_data),
+            'portfolio': {
+                'total_investment': total_investment,
+                'total_current_value': total_current_value,
+                'total_pnl': total_pnl,
+                'total_positions': len(deals_data)
+            }
         })
 
     except Exception as e:
-        app.logger.error(f"Error getting default deals data: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+        logging.error(f"Error fetching default deals data: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'data': []
+        }), 500
+
+
+@app.route('/api/initialize-auto-sync', methods=['POST'])
+def initialize_auto_sync_endpoint():
+    """API endpoint to initialize automatic synchronization system"""
+    try:
+        from Scripts.auto_sync_system import initialize_auto_sync_system
+        result = initialize_auto_sync_system()
+        
+        return jsonify({
+            'success': result['success'],
+            'message': 'Auto-sync system initialized successfully' if result['success'] else 'Failed to initialize auto-sync system',
+            'details': result
+        })
+        
+    except Exception as e:
+        logging.error(f"Error initializing auto-sync: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/test-auto-sync', methods=['POST'])
+def test_auto_sync_endpoint():
+    """API endpoint to test automatic synchronization"""
+    try:
+        from Scripts.auto_sync_system import test_auto_sync
+        test_result = test_auto_sync()
+        
+        return jsonify({
+            'success': test_result,
+            'message': 'Auto-sync test passed' if test_result else 'Auto-sync test failed'
+        })
+        
+    except Exception as e:
+        logging.error(f"Error testing auto-sync: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/place-order', methods=['POST'])
+@require_auth
+def place_order():
+    """API endpoint to place buy/sell orders using Kotak Neo API"""
+    try:
+        from Scripts.trading_functions import TradingFunctions
+        
+        # Get order data from request
+        order_data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['symbol', 'quantity', 'transaction_type', 'order_type']
+        for field in required_fields:
+            if field not in order_data:
+                return jsonify({'success': False, 'message': f'Missing required field: {field}'}), 400
+        
+        # Get client from session
+        client = session.get('client')
+        if not client:
+            return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
+        
+        # Initialize trading functions
+        trading_functions = TradingFunctions()
+        
+        # Prepare order data with defaults
+        order_params = {
+            'symbol': order_data['symbol'],
+            'quantity': str(order_data['quantity']),
+            'transaction_type': order_data['transaction_type'],  # B (Buy) or S (Sell)
+            'order_type': order_data['order_type'],  # MARKET, LIMIT, STOPLOSS
+            'exchange_segment': order_data.get('exchange_segment', 'nse_cm'),
+            'product': order_data.get('product', 'CNC'),  # CNC, MIS, NRML
+            'validity': order_data.get('validity', 'DAY'),
+            'price': order_data.get('price', '0'),
+            'trigger_price': order_data.get('trigger_price', '0'),
+            'disclosed_quantity': order_data.get('disclosed_quantity', '0'),
+            'amo': order_data.get('amo', 'NO'),
+            'market_protection': order_data.get('market_protection', '0'),
+            'pf': order_data.get('pf', 'N'),
+            'tag': order_data.get('tag', None)
+        }
+        
+        # Place the order
+        result = trading_functions.place_order(client, order_params)
+        
+        if result.get('success'):
+            return jsonify({
+                'success': True,
+                'message': f'Order placed successfully for {order_data["symbol"]}',
+                'data': result.get('data')
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': result.get('message', 'Failed to place order')
+            }), 400
+            
+    except Exception as e:
+        logging.error(f"Error placing order: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/quick-buy', methods=['POST'])
+@require_auth
+def quick_buy():
+    """Quick buy order for holdings/default-deals pages"""
+    try:
+        data = request.get_json()
+        symbol = data.get('symbol')
+        quantity = data.get('quantity', '1')
+        price = data.get('price', '0')
+        order_type = data.get('order_type', 'MARKET')
+        
+        # Get client from session
+        client = session.get('client')
+        if not client:
+            return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
+        
+        from Scripts.trading_functions import TradingFunctions
+        trading_functions = TradingFunctions()
+        
+        order_params = {
+            'symbol': symbol,
+            'quantity': quantity,
+            'transaction_type': 'B',  # Buy
+            'order_type': order_type,
+            'price': price,
+            'exchange_segment': 'nse_cm',
+            'product': 'CNC',
+            'validity': 'DAY'
+        }
+        
+        result = trading_functions.place_order(client, order_params)
+        
+        if result.get('success'):
+            return jsonify({
+                'success': True,
+                'message': f'Buy order placed successfully for {symbol}',
+                'data': result.get('data')
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': result.get('message', 'Failed to place buy order')
+            }), 400
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/quick-sell', methods=['POST'])
+@require_auth
+def quick_sell():
+    """Quick sell order for holdings/default-deals pages"""
+    try:
+        data = request.get_json()
+        symbol = data.get('symbol')
+        quantity = data.get('quantity', '1')
+        price = data.get('price', '0')
+        order_type = data.get('order_type', 'MARKET')
+        
+        # Get client from session
+        client = session.get('client')
+        if not client:
+            return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
+        
+        from Scripts.trading_functions import TradingFunctions
+        trading_functions = TradingFunctions()
+        
+        order_params = {
+            'symbol': symbol,
+            'quantity': quantity,
+            'transaction_type': 'S',  # Sell
+            'order_type': order_type,
+            'price': price,
+            'exchange_segment': 'nse_cm',
+            'product': 'CNC',
+            'validity': 'DAY'
+        }
+        
+        result = trading_functions.place_order(client, order_params)
+        
+        if result.get('success'):
+            return jsonify({
+                'success': True,
+                'message': f'Sell order placed successfully for {symbol}',
+                'data': result.get('data')
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': result.get('message', 'Failed to place sell order')
+            }), 400
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 
 from routes.auth import auth_bp
@@ -1214,6 +1488,7 @@ from api.dashboard import dashboard_api
 from api.trading import trading_api
 from Scripts.sync_default_deals import sync_admin_signals_to_default_deals, update_default_deal_from_admin_signal
 from Scripts.auto_sync_triggers import initialize_auto_sync
+from Scripts.models import DefaultDeal
 # ETF signals blueprint will be registered separately
 
 # Register blueprints
@@ -1284,4 +1559,9 @@ if __name__ == '__main__':
     except Exception as e:
         logging.error(f"❌ Failed to start admin signals scheduler: {e}")
 
+# Initialize auto-sync triggers
+from Scripts.sync_default_deals import setup_auto_sync_triggers
+setup_auto_sync_triggers()
+
+if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

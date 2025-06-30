@@ -6,8 +6,7 @@ class AdminTradeSignal(db.Model):
     __tablename__ = 'admin_trade_signals'
 
     id = db.Column(db.Integer, primary_key=True)
-    admin_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    target_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    # target_user_id column doesn't exist in actual database schema
 
     # Signal Information
     symbol = db.Column(db.String(50), nullable=False)
@@ -48,8 +47,8 @@ class AdminTradeSignal(db.Model):
     pnl_percentage = db.Column(db.Numeric(5, 2), nullable=True)
 
     # Relationships
-    admin_user = db.relationship('User', foreign_keys=[admin_user_id], backref='sent_signals')
-    target_user = db.relationship('User', foreign_keys=[target_user_id], backref='received_signals')
+    #admin_user = db.relationship('User', foreign_keys=[admin_user_id], backref='sent_signals')
+    #target_user = db.relationship('User', foreign_keys=[target_user_id], backref='received_signals')
 
     def __repr__(self):
         return f'<AdminTradeSignal {self.symbol} - {self.signal_type}>'
@@ -57,8 +56,8 @@ class AdminTradeSignal(db.Model):
     def to_dict(self):
         return {
             'id': self.id,
-            'admin_user_id': self.admin_user_id,
-            'target_user_id': self.target_user_id,
+            #'admin_user_id': self.admin_user_id,
+            # 'target_user_id': self.target_user_id,  # Column doesn't exist
             'symbol': self.symbol,
             'trading_symbol': self.trading_symbol,
             'token': self.token,
@@ -294,12 +293,39 @@ class UserDeal(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     signal_id = db.Column(db.Integer, db.ForeignKey('admin_trade_signals.id'), nullable=True)
 
-    # Deal Information
+    # ETF Signal Trade ID and Basic Info
+    trade_signal_id = db.Column(db.String(50), nullable=True)  # Original trade signal ID from ETF signals
+    etf_symbol = db.Column(db.String(50), nullable=False)  # ETF field from signals
     symbol = db.Column(db.String(50), nullable=False)
     trading_symbol = db.Column(db.String(100), nullable=False)
     exchange = db.Column(db.String(20), default='NSE')
 
-    # Trade Details
+    # Complete ETF Signal Data (All fields from signals table)
+    pos = db.Column(db.Integer, nullable=True)  # Position (1=LONG, -1=SHORT)
+    qty = db.Column(db.Integer, nullable=False)  # Quantity
+    ep = db.Column(db.Numeric(10, 2), nullable=False)  # Entry Price
+    cmp = db.Column(db.Numeric(10, 2), nullable=True)  # Current Market Price
+    tp = db.Column(db.Numeric(10, 2), nullable=True)  # Target Price
+    inv = db.Column(db.Numeric(12, 2), nullable=True)  # Investment Amount
+    pl = db.Column(db.Numeric(12, 2), nullable=True)  # Profit/Loss
+    chan_percent = db.Column(db.String(20), nullable=True)  # % Change
+    thirty = db.Column(db.String(20), nullable=True)  # 30 day performance
+    dh = db.Column(db.Integer, nullable=True)  # Days Held
+    signal_date = db.Column(db.String(20), nullable=True)  # Date from signal
+    ed = db.Column(db.String(20), nullable=True)  # Entry Date
+    exp = db.Column(db.String(50), nullable=True)  # Expiry
+    pr = db.Column(db.String(20), nullable=True)  # Price Range
+    pp = db.Column(db.String(20), nullable=True)  # Performance Points
+    iv = db.Column(db.String(20), nullable=True)  # Implied Volatility
+    ip = db.Column(db.String(20), nullable=True)  # Intraday Performance
+    nt = db.Column(db.Text, nullable=True)  # Notes/Tags
+    qt = db.Column(db.String(20), nullable=True)  # Quote Time
+    seven = db.Column(db.String(20), nullable=True)  # 7 day change
+    ch = db.Column(db.String(20), nullable=True)  # % Change (alternate)
+    tva = db.Column(db.Numeric(12, 2), nullable=True)  # Target Value Amount
+    tpr = db.Column(db.Numeric(12, 2), nullable=True)  # Target Profit Return
+
+    # Standard Deal Fields (derived from signal data)
     position_type = db.Column(db.String(10), nullable=False)  # LONG, SHORT
     quantity = db.Column(db.Integer, nullable=False)
     entry_price = db.Column(db.Numeric(10, 2), nullable=False)
@@ -371,47 +397,62 @@ class UserDeal(db.Model):
             self.current_value = float(self.invested_amount or 0)
 
     def to_dict(self):
-        """Convert to dictionary for API responses"""
-        try:
-            return {
-                'id': self.id,
-                'symbol': self.symbol or '',
-                'trading_symbol': self.trading_symbol or '',
-                'exchange': self.exchange or 'NSE',
-                'position_type': self.position_type or 'LONG',
-                'quantity': int(self.quantity) if self.quantity else 0,
-                'entry_price': float(self.entry_price) if self.entry_price else 0.0,
-                'current_price': float(self.current_price) if self.current_price else float(self.entry_price) if self.entry_price else 0.0,
-                'target_price': float(self.target_price) if self.target_price else None,
-                'stop_loss': float(self.stop_loss) if self.stop_loss else None,
-                'invested_amount': float(self.invested_amount) if self.invested_amount else 0.0,
-                'pnl_amount': float(self.pnl_amount) if self.pnl_amount else 0.0,
-                'pnl_percent': float(self.pnl_percent) if self.pnl_percent else 0.0,
-                'status': self.status or 'ACTIVE',
-                'entry_date': self.entry_date.isoformat() if self.entry_date else None,
-                'exit_date': self.exit_date.isoformat() if self.exit_date else None,
-                'notes': self.notes or '',
-                'tags': self.tags or '',
-                'deal_type': self.deal_type or 'MANUAL',
-                'days_held': self.days_held if self.days_held is not None else 0,
-                'created_at': self.created_at.isoformat() if self.created_at else None,
-                'updated_at': self.updated_at.isoformat() if self.updated_at else None
-            }
-        except Exception as e:
-            logging.error(f"Error converting UserDeal {self.id} to dict: {e}")
-            # Return minimal safe dictionary
-            return {
-                'id': getattr(self, 'id', 0),
-                'symbol': getattr(self, 'symbol', 'UNKNOWN'),
-                'position_type': getattr(self, 'position_type', 'LONG'),
-                'quantity': 0,
-                'entry_price': 0.0,
-                'current_price': 0.0,
-                'pnl_amount': 0.0,
-                'pnl_percent': 0.0,
-                'status': 'ACTIVE',
-                'invested_amount': 0.0
-            }
+        """Convert deal to dictionary for API responses"""
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'signal_id': self.signal_id,
+            'trade_signal_id': self.trade_signal_id,
+            'etf_symbol': self.etf_symbol,
+            'symbol': self.symbol,
+            'trading_symbol': self.trading_symbol,
+            'exchange': self.exchange,
+            'position_type': self.position_type,
+            'quantity': self.quantity,
+            'entry_price': float(self.entry_price) if self.entry_price else 0.0,
+            'current_price': float(self.current_price) if self.current_price else 0.0,
+            'target_price': float(self.target_price) if self.target_price else None,
+            'stop_loss': float(self.stop_loss) if self.stop_loss else None,
+            'invested_amount': float(self.invested_amount) if self.invested_amount else 0.0,
+            'pnl_amount': float(self.pnl_amount) if self.pnl_amount else 0.0,
+            'pnl_percent': float(self.pnl_percent) if self.pnl_percent else 0.0,
+            'status': self.status,
+            'notes': self.notes,
+            'tags': self.tags,
+            'deal_type': self.deal_type,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'exit_date': self.exit_date.isoformat() if self.exit_date else None,
+
+            # Position data - ensure both formats are available
+            'pos': self.pos if hasattr(self, 'pos') and self.pos is not None else (1 if self.position_type == 'LONG' else 0),
+            'position': self.pos if hasattr(self, 'pos') and self.pos is not None else (1 if self.position_type == 'LONG' else 0),
+
+            # ETF Signal specific fields
+            'qty': self.qty,
+            'ep': float(self.ep) if self.ep else 0.0,
+            'cmp': float(self.cmp) if self.cmp else 0.0,
+            'tp': float(self.tp) if self.tp else None,
+            'inv': float(self.inv) if self.inv else 0.0,
+            'pl': float(self.pl) if self.pl else 0.0,
+            'chan_percent': self.chan_percent,
+            'thirty': self.thirty,
+            'dh': self.dh,
+            'date': self.signal_date,
+            'signal_date': self.signal_date,
+            'ed': self.ed,
+            'exp': self.exp,
+            'pr': self.pr,
+            'pp': self.pp,
+            'iv': self.iv,
+            'ip': self.ip,
+            'nt': self.nt,
+            'qt': self.qt,
+            'seven': self.seven,
+            'ch': self.ch,
+            'tva': float(self.tva) if self.tva else None,
+            'tpr': float(self.tpr) if self.tpr else None
+        }
 
     def __repr__(self):
         return f'<UserDeal {self.id}: {self.symbol} {self.position_type}>'
@@ -519,3 +560,4 @@ class ETFSignalTrade(db.Model):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'last_price_update': self.last_price_update.isoformat() if self.last_price_update else None
         }
+# Remove admin_user_id column from AdminTradeSignal model

@@ -5,34 +5,37 @@ function DealsManager() {
     this.pageSize = 20;
     this.autoRefresh = true;
     this.refreshInterval = null;
-    this.refreshIntervalTime = 30000;
+    this.refreshIntervalTime = 60000; // Increased to 60 seconds to reduce network load
     this.searchTimeout = null;
     this.sortDirection = 'asc';
+    this.isLoading = false;
 
     this.availableColumns = {
-        'symbol': { label: 'SYMBOL', default: true, width: '70px', sortable: true },
+        'trade_signal_id': { label: 'ID', default: true, width: '50px', sortable: true },
+        'symbol': { label: 'ETF', default: true, width: '80px', sortable: true },
+        'pos': { label: 'POS', default: false, width: '50px', sortable: true },
         'thirty': { label: '30', default: false, width: '50px', sortable: true },
-        'dh': { label: 'DH', default: true, width: '50px', sortable: true },
-        'date': { label: 'DATE', default: true, width: '70px', sortable: true },
-        'pos': { label: 'POS', default: true, width: '50px', sortable: true },
-        'qty': { label: 'QTY', default: true, width: '50px', sortable: true },
+        'dh': { label: 'DH', default: false, width: '40px', sortable: true },
+        'date': { label: 'DATE', default: true, width: '80px', sortable: true },
+        'qty': { label: 'QTY', default: true, width: '60px', sortable: true },
         'ep': { label: 'EP', default: true, width: '70px', sortable: true },
         'cmp': { label: 'CMP', default: true, width: '70px', sortable: true },
-        'change_pct': { label: '%CHAN', default: true, width: '60px', sortable: true },
-        'inv': { label: 'INV.', default: true, width: '70px', sortable: true },
-        'tp': { label: 'TP', default: true, width: '60px', sortable: true },
-        'tva': { label: 'TVA', default: true, width: '70px', sortable: true },
-        'tpr': { label: 'TPR', default: true, width: '70px', sortable: true },
+        'chan_percent': { label: '%CHAN', default: true, width: '60px', sortable: true },
+        'inv': { label: 'INV.', default: false, width: '70px', sortable: true },
+        'tp': { label: 'TP', default: false, width: '60px', sortable: true },
+        'tva': { label: 'TVA', default: false, width: '70px', sortable: true },
+        'tpr': { label: 'TPR', default: false, width: '70px', sortable: true },
         'pl': { label: 'PL', default: true, width: '60px', sortable: true },
         'ed': { label: 'ED', default: false, width: '70px', sortable: true },
-        'pr': { label: 'PR', default: true, width: '80px', sortable: true },
-        'pp': { label: 'PP', default: true, width: '50px', sortable: true },
-        'iv': { label: 'IV', default: true, width: '60px', sortable: true },
-        'ip': { label: 'IP', default: true, width: '60px', sortable: true },
-        'nt': { label: 'NT', default: false, width: '60px', sortable: true },
+        'exp': { label: 'EXP', default: false, width: '70px', sortable: true },
+        'pr': { label: 'PR', default: false, width: '80px', sortable: true },
+        'pp': { label: 'PP', default: false, width: '50px', sortable: true },
+        'iv': { label: 'IV', default: false, width: '60px', sortable: true },
+        'ip': { label: 'IP', default: false, width: '60px', sortable: true },
+        'nt': { label: 'NT', default: false, width: '120px', sortable: true },
         'qt': { label: 'QT', default: false, width: '60px', sortable: true },
         'seven': { label: '7', default: false, width: '50px', sortable: true },
-        'change2': { label: '%CH', default: false, width: '60px', sortable: true },
+        'ch': { label: '%CH', default: false, width: '60px', sortable: true },
         'actions': { label: 'ACTIONS', default: true, width: '80px', sortable: false }
     };
 
@@ -51,11 +54,11 @@ DealsManager.prototype.getDefaultColumns = function() {
 };
 
 DealsManager.prototype.init = function() {
-    this.generateColumnCheckboxes();
     this.updateTableHeaders();
     this.loadDeals();
     this.startAutoRefresh();
     this.setupEventListeners();
+    this.setupColumnSettingsModal();
 
     var autoRefreshToggle = document.getElementById('autoRefreshToggle');
     var self = this;
@@ -71,9 +74,29 @@ DealsManager.prototype.init = function() {
     }
 };
 
+DealsManager.prototype.setupColumnSettingsModal = function() {
+    var self = this;
+    var modal = document.getElementById('columnSettingsModal');
+    if (modal) {
+        modal.addEventListener('show.bs.modal', function() {
+            console.log('Column Settings modal opening...');
+            self.generateColumnCheckboxes();
+        });
+        
+        // Also generate checkboxes immediately to ensure they exist
+        self.generateColumnCheckboxes();
+    }
+};
+
 DealsManager.prototype.generateColumnCheckboxes = function() {
     var container = document.getElementById('columnCheckboxes');
+    if (!container) {
+        console.error('Column checkboxes container not found');
+        return;
+    }
+    
     container.innerHTML = '';
+    console.log('Generating column checkboxes for', Object.keys(this.availableColumns).length, 'columns');
 
     var self = this;
     var columns = Object.keys(this.availableColumns);
@@ -102,6 +125,7 @@ DealsManager.prototype.generateColumnCheckboxes = function() {
 
         container.appendChild(colDiv);
     }
+    console.log('Generated', columns.length, 'column checkboxes');
 };
 
 DealsManager.prototype.updateTableHeaders = function() {
@@ -125,7 +149,7 @@ DealsManager.prototype.updateTableHeaders = function() {
         th.style.top = '0';
         th.style.zIndex = '10';
         th.style.whiteSpace = 'nowrap';
-        
+
         if (colInfo.sortable) {
             th.style.cursor = 'pointer';
             th.onclick = function(col) {
@@ -139,7 +163,7 @@ DealsManager.prototype.updateTableHeaders = function() {
             th.textContent = colInfo.label;
             th.title = self.getColumnTooltip(column);
         }
-        
+
         headersRow.appendChild(th);
     }
 };
@@ -180,72 +204,151 @@ DealsManager.prototype.setupEventListeners = function() {
 
 DealsManager.prototype.loadDeals = function() {
     var self = this;
+    
+    // Prevent multiple simultaneous requests
+    if (self.isLoading) {
+        console.log('Request already in progress, skipping...');
+        return;
+    }
+    
+    self.isLoading = true;
     console.log('Loading deals from external database...');
 
     var xhr = new XMLHttpRequest();
     xhr.open('GET', '/api/deals/user', true);
     xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.timeout = 10000; // 10 second timeout
+    
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
+            self.isLoading = false;
+            
             if (xhr.status === 200) {
                 try {
                     var response = JSON.parse(xhr.responseText);
-                    console.log('API Response:', response);
-
+                    
                     if (response.success && response.deals && Array.isArray(response.deals)) {
                         var uniqueDeals = response.deals.map(function(deal) {
                             return {
                                 id: deal.id,
-                                symbol: deal.symbol || '',
-                                pos: deal.position_type === 'LONG' ? 1 : -1,
-                                qty: deal.quantity || 0,
-                                ep: parseFloat(deal.entry_price || 0),
-                                cmp: parseFloat(deal.current_price || deal.entry_price || 0),
-                                pl: parseFloat(deal.pnl_amount || 0),
-                                change_pct: parseFloat(deal.pnl_percent || 0),
-                                inv: parseFloat(deal.invested_amount || 0),
-                                tp: parseFloat(deal.target_price || 0),
-                                tva: parseFloat(deal.target_price || 0) * (deal.quantity || 0),
-                                tpr: parseFloat(deal.target_price || 0) * 0.05,
-                                date: deal.entry_date ? deal.entry_date.split('T')[0] : new Date().toISOString().split('T')[0],
+                                trade_signal_id: deal.trade_signal_id || deal.id || '',
+                                symbol: deal.symbol || deal.etf || '',
+                                pos: deal.pos || (deal.position_type === 'LONG' ? 1 : -1),
+                                qty: deal.qty || deal.quantity || 0,
+                                ep: parseFloat(deal.ep || deal.entry_price || 0),
+                                cmp: parseFloat(deal.cmp || deal.current_price || deal.entry_price || 0),
+                                pl: parseFloat(deal.pl || deal.pnl_amount || 0),
+                                chan_percent: deal.chan_percent || (deal.pnl_percent ? deal.pnl_percent.toFixed(2) + '%' : '0%'),
+                                inv: parseFloat(deal.inv || deal.invested_amount || 0),
+                                tp: parseFloat(deal.tp || deal.target_price || 0),
+                                tva: parseFloat(deal.tva || 0) || (parseFloat(deal.target_price || 0) * (deal.quantity || 0)),
+                                tpr: parseFloat(deal.tpr || 0),
+                                date: deal.signal_date || deal.date || (deal.entry_date ? deal.entry_date.split('T')[0] : ''),
                                 status: deal.status || 'ACTIVE',
-                                thirty: '0%',
-                                dh: deal.days_held || 0,
-                                ed: deal.entry_date ? deal.entry_date.split('T')[0] : new Date().toISOString().split('T')[0],
-                                pr: '0%',
-                                pp: deal.pp || '-',
-                                iv: 'Medium',
-                                ip: deal.pnl_percent ? (deal.pnl_percent > 0 ? '+' : '') + deal.pnl_percent.toFixed(1) + '%' : '0%',
-                                nt: deal.notes || '--',
-                                qt: new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
-                                seven: '0%',
-                                change2: parseFloat(deal.pnl_percent || 0)
+                                thirty: deal.thirty || '0%',
+                                dh: deal.dh || deal.days_held || 0,
+                                ed: deal.ed || (deal.entry_date ? deal.entry_date.split('T')[0] : ''),
+                                exp: deal.exp || '',
+                                pr: deal.pr || '0%',
+                                pp: deal.pp || '--',
+                                iv: deal.iv || '',
+                                ip: deal.ip || (deal.pnl_percent ? (deal.pnl_percent > 0 ? '+' : '') + deal.pnl_percent.toFixed(1) + '%' : '0%'),
+                                nt: deal.nt || deal.notes || '--',
+                                qt: deal.qt || new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'}),
+                                seven: deal.seven || '0%',
+                                ch: deal.ch || deal.chan_percent || '0%',
+                                entry_price: parseFloat(deal.entry_price || deal.ep || 0),
+                                current_price: parseFloat(deal.current_price || deal.cmp || deal.entry_price || 0),
+                                invested_amount: parseFloat(deal.invested_amount || deal.inv || 0),
+                                pnl_amount: parseFloat(deal.pnl_amount || deal.pl || 0),
+                                pnl_percent: parseFloat(deal.pnl_percent || 0),
+                                deal_type: deal.deal_type || 'SIGNAL'
                             };
                         });
 
-                        self.deals = uniqueDeals;
-                        self.filteredDeals = self.deals.slice();
-                        self.renderDealsTable();
-                        self.updatePagination();
-                        console.log('Loaded ' + uniqueDeals.length + ' deals from database');
+                        // Only update if data has changed
+                        if (JSON.stringify(uniqueDeals) !== JSON.stringify(self.deals)) {
+                            self.deals = uniqueDeals;
+                            self.filteredDeals = self.deals.slice();
+                            self.renderDealsTable();
+                            self.updatePagination();
+                            console.log('Updated ' + uniqueDeals.length + ' deals from database');
+                        } else {
+                            console.log('No data changes detected');
+                        }
                     } else {
                         console.log('No deals found in API response');
-                        self.deals = [];
-                        self.filteredDeals = [];
-                        self.renderDealsTable();
-                        self.updatePagination();
+                        if (self.deals.length === 0) {
+                            self.deals = [];
+                            self.filteredDeals = [];
+                            self.renderDealsTable();
+                            self.updatePagination();
+                        }
                     }
                 } catch (parseError) {
                     console.error('Failed to parse deals API response:', parseError);
                     self.showError('Invalid response from server');
                 }
+            } else if (xhr.status === 0) {
+                console.error('Network error - request was aborted or connection failed');
+                self.showError('Network connection error');
             } else {
                 console.error('Deals API call failed with status:', xhr.status);
-                self.showError('Failed to load deals from server');
+                self.showError('Failed to load deals from server (Status: ' + xhr.status + ')');
             }
         }
     };
+    
+    xhr.ontimeout = function() {
+        self.isLoading = false;
+        console.error('Request timeout');
+        self.showError('Request timeout - please try again');
+    };
+    
+    xhr.onerror = function() {
+        self.isLoading = false;
+        console.error('Network error occurred');
+        self.showError('Network error occurred');
+    };
+    
     xhr.send();
+};
+
+// Gradient Background Color Function for percentage values
+DealsManager.prototype.getGradientBackgroundColor = function(value) {
+    var numValue = parseFloat(value);
+    if (isNaN(numValue)) return '';
+
+    var intensity = Math.min(Math.abs(numValue) / 5, 1); // Scale to 0-1, max at 5%
+    var alpha = 0.3 + (intensity * 0.5); // Alpha from 0.3 to 0.8
+
+    if (numValue < 0) {
+        // Red gradient for negative values
+        if (intensity <= 0.3) {
+            // Light red for small negative values
+            return 'background-color: rgba(255, 182, 193, ' + alpha + '); color: #000;'; // Light pink
+        } else if (intensity <= 0.6) {
+            // Medium red
+            return 'background-color: rgba(255, 99, 71, ' + alpha + '); color: #fff;'; // Tomato
+        } else {
+            // Dark red for large negative values
+            return 'background-color: rgba(139, 0, 0, ' + alpha + '); color: #fff;'; // Dark red
+        }
+    } else if (numValue > 0) {
+        // Green gradient for positive values
+        if (intensity <= 0.3) {
+            // Light green for small positive values
+            return 'background-color: rgba(144, 238, 144, ' + alpha + '); color: #000;'; // Light green
+        } else if (intensity <= 0.6) {
+            // Medium green
+            return 'background-color: rgba(50, 205, 50, ' + alpha + '); color: #fff;'; // Lime green
+        } else {
+            // Dark green for large positive values
+            return 'background-color: rgba(0, 100, 0, ' + alpha + '); color: #fff;'; // Dark green
+        }
+    }
+
+    return '';
 };
 
 DealsManager.prototype.renderDealsTable = function() {
@@ -284,8 +387,12 @@ DealsManager.prototype.renderDealsTable = function() {
 
             var cellContent = '';
             var bgColor = '';
+            var style = '';
 
             switch(columnKey) {
+                case 'trade_signal_id':
+                    cellContent = '<span class="badge bg-info">' + (deal.trade_signal_id || deal.id || '-') + '</span>';
+                    break;
                 case 'symbol':
                     cellContent = '<strong>' + (deal.symbol || '') + '</strong>';
                     break;
@@ -299,7 +406,7 @@ DealsManager.prototype.renderDealsTable = function() {
                     cellContent = deal.date || '';
                     break;
                 case 'pos':
-                    cellContent = '<span class="badge ' + (deal.pos === 1 ? 'bg-success' : 'bg-danger') + '">' + deal.pos + '</span>';
+                    cellContent = deal.pos === 1 ? '1' : '0';
                     break;
                 case 'qty':
                     cellContent = deal.qty ? deal.qty.toLocaleString('en-IN') : '';
@@ -310,9 +417,15 @@ DealsManager.prototype.renderDealsTable = function() {
                 case 'cmp':
                     cellContent = deal.cmp ? '₹' + deal.cmp.toFixed(2) : '';
                     break;
+                case 'chan_percent':
+                    var chanValue = deal.chan_percent || '';
+                    style = self.getGradientBackgroundColor(chanValue.replace('%', ''));
+                    cellContent = chanValue;
+                    break;
                 case 'change_pct':
                     if (deal.change_pct !== undefined) {
-                        bgColor = deal.change_pct >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                        var changePctValue = deal.change_pct;
+                        style = self.getGradientBackgroundColor(changePctValue);
                         cellContent = (deal.change_pct >= 0 ? '+' : '') + deal.change_pct.toFixed(2) + '%';
                     }
                     break;
@@ -330,7 +443,8 @@ DealsManager.prototype.renderDealsTable = function() {
                     break;
                 case 'pl':
                     if (deal.pl !== undefined) {
-                        bgColor = deal.pl >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                        var plValue = deal.pl;
+                        style = self.getGradientBackgroundColor(plValue);
                         cellContent = '₹' + (deal.pl >= 0 ? '+' : '') + deal.pl.toFixed(0);
                     }
                     break;
@@ -355,7 +469,7 @@ DealsManager.prototype.renderDealsTable = function() {
                     }
                     break;
                 case 'nt':
-                    cellContent = '<small>' + (deal.nt || '-') + '</small>';
+                    cellContent = '<small>--</small>';
                     break;
                 case 'qt':
                     cellContent = '<small>' + (deal.qt || '-') + '</small>';
@@ -363,9 +477,46 @@ DealsManager.prototype.renderDealsTable = function() {
                 case 'seven':
                     cellContent = deal.seven || '-';
                     break;
+                case 'ch':
+                    cellContent = deal.ch || '-';
+                    break;
+                case 'exp':
+                    cellContent = deal.exp || '-';
+                    break;
+                case 'entry_price':
+                    cellContent = deal.entry_price ? '₹' + deal.entry_price.toFixed(2) : '';
+                    break;
+                case 'current_price':
+                    cellContent = deal.current_price ? '₹' + deal.current_price.toFixed(2) : '';
+                    break;
+                case 'invested_amount':
+                    cellContent = deal.invested_amount ? '₹' + deal.invested_amount.toLocaleString('en-IN') : '';
+                    break;
+                case 'pnl_amount':
+                    if (deal.pnl_amount !== undefined) {
+                        var pnlAmountValue = deal.pnl_amount;
+                        style = self.getGradientBackgroundColor(pnlAmountValue);
+                        cellContent = '₹' + deal.pnl_amount.toLocaleString('en-IN');
+                    }
+                    break;
+                case 'pnl_percent':
+                    if (deal.pnl_percent !== undefined) {
+                        var pnlPercentValue = deal.pnl_percent;
+                        style = self.getGradientBackgroundColor(pnlPercentValue);
+                        cellContent = (deal.pnl_percent >= 0 ? '+' : '') + deal.pnl_percent.toFixed(2) + '%';
+                    }
+                    break;
+                case 'status':
+                    var statusClass = deal.status === 'ACTIVE' ? 'bg-success' : deal.status === 'CLOSED' ? 'bg-secondary' : 'bg-warning';
+                    cellContent = '<span class="badge ' + statusClass + '">' + (deal.status || 'ACTIVE') + '</span>';
+                    break;
+                case 'deal_type':
+                    cellContent = '<span class="badge bg-primary">' + (deal.deal_type || 'SIGNAL') + '</span>';
+                    break;
                 case 'change2':
                     if (deal.change2 !== undefined) {
-                        bgColor = deal.change2 >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                        var change2Value = deal.change2;
+                        style = self.getGradientBackgroundColor(change2Value);
                         cellContent = (deal.change2 >= 0 ? '+' : '') + deal.change2.toFixed(2) + '%';
                     }
                     break;
@@ -383,12 +534,9 @@ DealsManager.prototype.renderDealsTable = function() {
                     cellContent = '';
             }
 
-            if (bgColor) {
-                cell.style.backgroundColor = bgColor;
-                cell.style.color = 'white';
-                cell.style.fontWeight = 'bold';
+            if (style) {
+                cell.setAttribute('style', cell.getAttribute('style') + '; ' + style);
             }
-
             cell.innerHTML = cellContent;
             row.appendChild(cell);
         }
@@ -416,7 +564,10 @@ DealsManager.prototype.startAutoRefresh = function() {
     if (this.autoRefresh) {
         var self = this;
         this.refreshInterval = setInterval(function() {
-            self.loadDeals();
+            // Only refresh if page is visible and not already loading
+            if (!document.hidden && !self.isLoading) {
+                self.loadDeals();
+            }
         }, this.refreshIntervalTime);
     }
 };
@@ -441,45 +592,6 @@ DealsManager.prototype.showError = function(message) {
             '</td>' +
         '</tr>';
 };
-
-// Global functions for column settings and filters
-function applyColumnSettings() {
-    window.dealsManager.selectedColumns = [];
-
-    var columns = Object.keys(window.dealsManager.availableColumns);
-    for (var i = 0; i < columns.length; i++) {
-        var column = columns[i];
-        var checkbox = document.getElementById('col_' + column);
-        if (checkbox && checkbox.checked) {
-            window.dealsManager.selectedColumns.push(column);
-        }
-    }
-
-    window.dealsManager.updateTableHeaders();
-    window.dealsManager.renderDealsTable();
-
-    bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal')).hide();
-}
-
-function selectAllColumns() {
-    var columns = Object.keys(window.dealsManager.availableColumns);
-    for (var i = 0; i < columns.length; i++) {
-        var column = columns[i];
-        var checkbox = document.getElementById('col_' + column);
-        if (checkbox) checkbox.checked = true;
-    }
-}
-
-function resetDefaultColumns() {
-    var columns = Object.keys(window.dealsManager.availableColumns);
-    for (var i = 0; i < columns.length; i++) {
-        var column = columns[i];
-        var checkbox = document.getElementById('col_' + column);
-        if (checkbox) {
-            checkbox.checked = window.dealsManager.availableColumns[column].default;
-        }
-    }
-}
 
 function applyFilters() {
     var orderType = document.getElementById('orderTypeFilter').value;
@@ -557,6 +669,11 @@ function buyTrade(symbol, currentPrice) {
     document.getElementById('tradeType').value = 'BUY';
     document.getElementById('tradePrice').value = currentPrice.toFixed(2);
     document.getElementById('tradeQuantity').value = '1';
+    
+    // Update modal styling for buy order
+    var modal_content = document.querySelector('#tradeModal .modal-content');
+    modal_content.style.borderLeft = '4px solid #28a745';
+    
     modal.show();
 }
 
@@ -567,6 +684,11 @@ function sellTrade(symbol, currentPrice) {
     document.getElementById('tradeType').value = 'SELL';
     document.getElementById('tradePrice').value = currentPrice.toFixed(2);
     document.getElementById('tradeQuantity').value = '1';
+    
+    // Update modal styling for sell order
+    var modal_content = document.querySelector('#tradeModal .modal-content');
+    modal_content.style.borderLeft = '4px solid #dc3545';
+    
     modal.show();
 }
 
@@ -650,9 +772,7 @@ function viewChart(symbol) {
 
 function setRefreshInterval(intervalMs, displayText) {
     window.dealsManager.refreshIntervalTime = intervalMs;
-    document.getElementById('currentInterval').textContent = displayText;
-
-    if (window.dealsManager.autoRefresh) {
+    document.getElementById('currentInterval').textContent = displayText;    if (window.dealsManager.autoRefresh) {
         window.dealsManager.startAutoRefresh();
     }
 
@@ -663,32 +783,231 @@ function setRefreshInterval(intervalMs, displayText) {
 function submitTrade() {
     var symbol = document.getElementById('tradeSymbol').value;
     var type = document.getElementById('tradeType').value;
-    var price = parseFloat(document.getElementById('tradePrice').value);
+    var orderType = document.getElementById('orderType').value;
+    var productType = document.getElementById('productType').value;
+    var price = parseFloat(document.getElementById('tradePrice').value) || 0;
     var quantity = parseInt(document.getElementById('tradeQuantity').value);
+    var validity = document.getElementById('validity').value;
+    var triggerPrice = parseFloat(document.getElementById('triggerPrice').value) || 0;
 
-    if (!symbol || !price || !quantity) {
-        alert('Please fill all required fields');
+    if (!symbol || !quantity) {
+        showNotification('Please fill all required fields', 'error');
         return;
     }
 
-    var tradeData = {
-        symbol: symbol,
-        type: type,
-        price: price,
-        quantity: quantity,
-        timestamp: new Date().toISOString()
+    // For market orders, price should be 0
+    if (orderType === 'MKT') {
+        price = 0;
+    } else if (price <= 0) {
+        showNotification('Please enter a valid price for limit/stop loss orders', 'error');
+        return;
+    }
+
+    // Prepare order data for client.place_order API
+    var orderData = {
+        exchange_segment: "nse_cm",
+        product: productType,
+        price: price.toString(),
+        order_type: orderType,
+        quantity: quantity.toString(),
+        validity: validity,
+        trading_symbol: symbol,
+        transaction_type: type,
+        amo: "NO",
+        disclosed_quantity: "0",
+        market_protection: "0",
+        pf: "N",
+        trigger_price: triggerPrice.toString(),
+        tag: "DEALS_PAGE"
     };
 
-    console.log('Executing trade:', tradeData);
+    console.log('Placing order:', orderData);
 
-    var modal = bootstrap.Modal.getInstance(document.getElementById('tradeModal'));
-    modal.hide();
+    // Show loading state
+    var submitBtn = document.querySelector('#tradeModal .btn-primary');
+    var originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Placing Order...';
+    submitBtn.disabled = true;
 
-    alert(type + ' order for ' + quantity + ' ' + symbol + ' at ₹' + price + ' has been placed successfully');
+    // Call the place_order API with timeout
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function() {
+        controller.abort();
+    }, 15000); // 15 second timeout
 
-    setTimeout(function() {
-        window.dealsManager.loadDeals();
-    }, 1000);
+    fetch('/api/trading/place_order', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+        signal: controller.signal
+    })
+    .then(function(response) {
+        clearTimeout(timeoutId);
+        if (!response.ok) {
+            throw new Error('Network response was not ok: ' + response.status);
+        }
+        return response.json();
+    })
+    .then(function(data) {
+        // Reset button state
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+
+        if (data.success) {
+            var modal = bootstrap.Modal.getInstance(document.getElementById('tradeModal'));
+            modal.hide();
+
+            // Show success notification with order details
+            var orderTypeText = orderType === 'MKT' ? 'Market' : orderType === 'L' ? 'Limit' : 'Stop Loss';
+            var priceText = orderType === 'MKT' ? 'at market price' : 'at ₹' + price;
+            
+            showNotification(
+                orderTypeText + ' ' + type.toLowerCase() + ' order for ' + quantity + ' ' + symbol + ' ' + priceText + ' placed successfully!' +
+                (data.order_id ? ' (Order ID: ' + data.order_id + ')' : ''),
+                'success'
+            );
+
+            // Refresh deals data after a delay
+            setTimeout(function() {
+                if (!window.dealsManager.isLoading) {
+                    window.dealsManager.loadDeals();
+                }
+            }, 2000);
+        } else {
+            // Show error notification
+            showNotification('Order placement failed: ' + (data.message || 'Unknown error'), 'error');
+        }
+    })
+    .catch(function(error) {
+        clearTimeout(timeoutId);
+        // Reset button state
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+
+        console.error('Order placement error:', error);
+        if (error.name === 'AbortError') {
+            showNotification('Order placement timed out - please try again', 'error');
+        } else {
+            showNotification('Order placement failed: Network error', 'error');
+        }
+    });
+}
+
+// Enhanced sorting functionality for deals table
+var sortState = {
+    column: null,
+    direction: 'asc'
+};
+
+function sortTable(column) {
+    var tbody = document.getElementById('dealsTableBody');
+    if (!tbody) return;
+    
+    var rows = Array.from(tbody.querySelectorAll('tr'));
+    
+    // Toggle sort direction
+    if (sortState.column === column) {
+        sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortState.column = column;
+        sortState.direction = 'asc';
+    }
+    
+    // Sort rows based on column
+    rows.sort(function(a, b) {
+        var aValue, bValue;
+        
+        switch (column) {
+            case 'symbol':
+                aValue = (a.dataset.symbol || '').toLowerCase();
+                bValue = (b.dataset.symbol || '').toLowerCase();
+                break;
+            case 'quantity':
+                aValue = parseFloat(a.dataset.quantity) || 0;
+                bValue = parseFloat(b.dataset.quantity) || 0;
+                break;
+            case 'entryPrice':
+                aValue = parseFloat(a.dataset.entryPrice) || 0;
+                bValue = parseFloat(b.dataset.entryPrice) || 0;
+                break;
+            case 'currentPrice':
+                aValue = parseFloat(a.dataset.currentPrice) || 0;
+                bValue = parseFloat(b.dataset.currentPrice) || 0;
+                break;
+            case 'pnl':
+                aValue = parseFloat(a.dataset.pnl) || 0;
+                bValue = parseFloat(b.dataset.pnl) || 0;
+                break;
+            case 'investment':
+                aValue = parseFloat(a.dataset.investment) || 0;
+                bValue = parseFloat(b.dataset.investment) || 0;
+                break;
+            case 'currentValue':
+                aValue = parseFloat(a.dataset.currentValue) || 0;
+                bValue = parseFloat(b.dataset.currentValue) || 0;
+                break;
+            case 'chanPercent':
+                aValue = parseFloat(a.dataset.chanPercent) || 0;
+                bValue = parseFloat(b.dataset.chanPercent) || 0;
+                break;
+            case 'date':
+                aValue = new Date(a.dataset.date || 0);
+                bValue = new Date(b.dataset.date || 0);
+                break;
+            default:
+                return 0;
+        }
+        
+        // Compare values
+        var result;
+        if (aValue instanceof Date) {
+            result = aValue.getTime() - bValue.getTime();
+        } else if (typeof aValue === 'string') {
+            result = aValue.localeCompare(bValue);
+        } else {
+            result = aValue - bValue;
+        }
+        
+        return sortState.direction === 'asc' ? result : -result;
+    });
+    
+    // Update sort indicators
+    updateSortIndicators(column, sortState.direction);
+    
+    // Rebuild table with sorted rows
+    tbody.innerHTML = '';
+    rows.forEach(function(row) {
+        tbody.appendChild(row);
+    });
+}
+
+function updateSortIndicators(activeColumn, direction) {
+    // Hide all sort indicators
+    var indicators = document.querySelectorAll('[id^="sort-"]');
+    indicators.forEach(function(indicator) {
+        indicator.classList.add('d-none');
+    });
+    
+    // Show active indicator
+    var activeIndicator = document.getElementById('sort-' + activeColumn + '-' + direction);
+    if (activeIndicator) {
+        activeIndicator.classList.remove('d-none');
+    }
+    
+    // Update sort icons in headers
+    var sortIcons = document.querySelectorAll('.sortable .fa-sort');
+    sortIcons.forEach(function(icon) {
+        icon.classList.remove('text-primary');
+        icon.classList.add('text-muted');
+    });
+    
+    var activeHeader = document.querySelector('.sortable[onclick*="' + activeColumn + '"] .fa-sort');
+    if (activeHeader) {
+        activeHeader.classList.remove('text-muted');
+        activeHeader.classList.add('text-primary');
+    }
 }
 
 function exportDeals() {
@@ -711,15 +1030,94 @@ function exportDeals() {
     document.body.removeChild(link);
 }
 
+// Global functions for column settings and filters
+function applyColumnSettings() {
+    console.log('Applying column settings...');
+    
+    if (!window.dealsManager) {
+        console.error('DealsManager not initialized');
+        return;
+    }
+
+    window.dealsManager.selectedColumns = [];
+
+    var columns = Object.keys(window.dealsManager.availableColumns);
+    for (var i = 0; i < columns.length; i++) {
+        var column = columns[i];
+        var checkbox = document.getElementById('col_' + column);
+        if (checkbox && checkbox.checked) {
+            window.dealsManager.selectedColumns.push(column);
+        }
+    }
+
+    console.log('Selected columns:', window.dealsManager.selectedColumns);
+
+    // Update table headers and re-render
+    window.dealsManager.updateTableHeaders();
+    window.dealsManager.renderDealsTable();
+
+    // Close modal safely
+    var modal = document.getElementById('columnSettingsModal');
+    if (modal) {
+        var modalInstance = bootstrap.Modal.getInstance(modal);
+        if (modalInstance) {
+            modalInstance.hide();
+        } else {
+            // Fallback: hide modal manually
+            modal.classList.remove('show');
+            modal.style.display = 'none';
+            document.body.classList.remove('modal-open');
+            var backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) backdrop.remove();
+        }
+    }
+    
+    console.log('Column settings applied successfully');
+}
+
+function selectAllColumns() {
+    console.log('Selecting all columns...');
+    if (!window.dealsManager) {
+        console.error('DealsManager not initialized');
+        return;
+    }
+    
+    var columns = Object.keys(window.dealsManager.availableColumns);
+    for (var i = 0; i < columns.length; i++) {
+        var column = columns[i];
+        var checkbox = document.getElementById('col_' + column);
+        if (checkbox) checkbox.checked = true;
+    }
+    console.log('All columns selected');
+}
+
+function resetDefaultColumns() {
+    console.log('Resetting to default columns...');
+    if (!window.dealsManager) {
+        console.error('DealsManager not initialized');
+        return;
+    }
+    
+    var columns = Object.keys(window.dealsManager.availableColumns);
+    for (var i = 0; i < columns.length; i++) {
+        var column = columns[i];
+        var checkbox = document.getElementById('col_' + column);
+        if (checkbox) {
+            checkbox.checked = window.dealsManager.availableColumns[column].default;
+        }
+    }
+    console.log('Reset to default columns completed');
+}
+
 // Function to sort deals by any column
 function sortDealsByColumn(column) {
     if (window.dealsManager) {
         window.dealsManager.sortDirection = window.dealsManager.sortDirection === 'asc' ? 'desc' : 'asc';
         var direction = window.dealsManager.sortDirection;
-        
+
         window.dealsManager.filteredDeals.sort(function(a, b) {
             var valueA, valueB;
-            
+
             switch(column) {
                 case 'symbol':
                     valueA = (a.symbol || '').toLowerCase();
@@ -764,17 +1162,42 @@ function sortDealsByColumn(column) {
                 default:
                     return 0;
             }
-            
+
             if (typeof valueA === 'string') {
                 return direction === 'asc' ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
             } else {
                 return direction === 'asc' ? valueA - valueB : valueB - valueA;
             }
         });
-        
+
         window.dealsManager.renderDealsTable();
         window.dealsManager.updatePagination();
     }
+}
+
+// Notification function for user feedback
+function showNotification(message, type) {
+    // Create notification element
+    var notification = document.createElement('div');
+    notification.className = 'alert alert-' + (type === 'success' ? 'success' : 'danger') + ' alert-dismissible fade show position-fixed';
+    notification.style.top = '20px';
+    notification.style.right = '20px';
+    notification.style.zIndex = '9999';
+    notification.style.minWidth = '300px';
+    
+    notification.innerHTML = 
+        '<i class="fas fa-' + (type === 'success' ? 'check-circle' : 'exclamation-triangle') + ' me-2"></i>' +
+        message +
+        '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 5 seconds
+    setTimeout(function() {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 5000);
 }
 
 // Initialize Deals Manager on page load
@@ -790,10 +1213,27 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('currentInterval').textContent = savedDisplay;
     }
 
+    // Pause auto-refresh when tab is not visible
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            console.log('Tab hidden - pausing auto-refresh');
+            window.dealsManager.stopAutoRefresh();
+        } else {
+            console.log('Tab visible - resuming auto-refresh');
+            if (window.dealsManager.autoRefresh) {
+                window.dealsManager.startAutoRefresh();
+                // Load fresh data when tab becomes visible
+                window.dealsManager.loadDeals();
+            }
+        }
+    });
+
     window.addEventListener('storage', function(e) {
         if (e.key === 'userDeals') {
             console.log('Deals updated in localStorage, refreshing...');
-            window.dealsManager.loadDeals();
+            if (!window.dealsManager.isLoading) {
+                window.dealsManager.loadDeals();
+            }
         }
     });
 

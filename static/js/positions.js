@@ -439,16 +439,116 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Function to sort positions by symbol
-function sortPositionsBySymbol() {
-    if (window.positionsManager) {
-        window.positionsManager.positions.sort(function(a, b) {
-            var symbolA = a.trdSym || a.sym || '';
-            var symbolB = b.trdSym || b.sym || '';
-            return symbolA.localeCompare(symbolB);
-        });
-        window.positionsManager.displayPositions(); // Redisplay after sorting
+// Enhanced sorting functionality for positions table
+var sortState = {
+    column: null,
+    direction: 'asc'
+};
+
+function sortTable(column) {
+    if (!window.positionsManager) return;
+    
+    // Toggle sort direction
+    if (sortState.column === column) {
+        sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortState.column = column;
+        sortState.direction = 'asc';
     }
+    
+    // Sort positions based on column
+    window.positionsManager.positions.sort(function(a, b) {
+        var aValue, bValue;
+        
+        switch (column) {
+            case 'symbol':
+                aValue = (a.trdSym || a.sym || '').toLowerCase();
+                bValue = (b.trdSym || b.sym || '').toLowerCase();
+                break;
+            case 'product':
+                aValue = (a.prod || '').toLowerCase();
+                bValue = (b.prod || '').toLowerCase();
+                break;
+            case 'exchange':
+                aValue = (a.exSeg || '').toLowerCase();
+                bValue = (b.exSeg || '').toLowerCase();
+                break;
+            case 'buyQty':
+                aValue = parseFloat(a.flBuyQty || a.cfBuyQty || 0);
+                bValue = parseFloat(b.flBuyQty || b.cfBuyQty || 0);
+                break;
+            case 'sellQty':
+                aValue = parseFloat(a.flSellQty || a.cfSellQty || 0);
+                bValue = parseFloat(b.flSellQty || b.cfSellQty || 0);
+                break;
+            case 'netQty':
+                aValue = (parseFloat(a.flBuyQty || a.cfBuyQty || 0)) - (parseFloat(a.flSellQty || a.cfSellQty || 0));
+                bValue = (parseFloat(b.flBuyQty || b.cfBuyQty || 0)) - (parseFloat(b.flSellQty || b.cfSellQty || 0));
+                break;
+            case 'buyAmt':
+                aValue = parseFloat(a.buyAmt || a.cfBuyAmt || 0);
+                bValue = parseFloat(b.buyAmt || b.cfBuyAmt || 0);
+                break;
+            case 'sellAmt':
+                aValue = parseFloat(a.sellAmt || a.cfSellAmt || 0);
+                bValue = parseFloat(b.sellAmt || b.cfSellAmt || 0);
+                break;
+            case 'pnl':
+                aValue = parseFloat(a.sellAmt || a.cfSellAmt || 0) - parseFloat(a.buyAmt || a.cfBuyAmt || 0);
+                bValue = parseFloat(b.sellAmt || b.cfSellAmt || 0) - parseFloat(b.buyAmt || b.cfBuyAmt || 0);
+                break;
+            default:
+                return 0;
+        }
+        
+        // Compare values
+        var result;
+        if (typeof aValue === 'string') {
+            result = aValue.localeCompare(bValue);
+        } else {
+            result = aValue - bValue;
+        }
+        
+        return sortState.direction === 'asc' ? result : -result;
+    });
+    
+    // Update sort indicators
+    updateSortIndicators(column, sortState.direction);
+    
+    // Redisplay positions
+    window.positionsManager.displayPositions();
+}
+
+function updateSortIndicators(activeColumn, direction) {
+    // Hide all sort indicators
+    var indicators = document.querySelectorAll('[id^="sort-"]');
+    indicators.forEach(function(indicator) {
+        indicator.classList.add('d-none');
+    });
+    
+    // Show active indicator
+    var activeIndicator = document.getElementById('sort-' + activeColumn + '-' + direction);
+    if (activeIndicator) {
+        activeIndicator.classList.remove('d-none');
+    }
+    
+    // Update sort icons in headers
+    var sortIcons = document.querySelectorAll('.sortable .fa-sort');
+    sortIcons.forEach(function(icon) {
+        icon.classList.remove('text-primary');
+        icon.classList.add('text-muted');
+    });
+    
+    var activeHeader = document.querySelector('.sortable[onclick*="' + activeColumn + '"] .fa-sort');
+    if (activeHeader) {
+        activeHeader.classList.remove('text-muted');
+        activeHeader.classList.add('text-primary');
+    }
+}
+
+// Legacy function for compatibility
+function sortPositionsBySymbol() {
+    sortTable('symbol');
 }
 
 // Function to sort positions by any column
@@ -549,38 +649,55 @@ function openPlaceOrderModal(symbol, exchange, transactionType) {
 
 // Function to submit place order
 function submitPlaceOrder() {
-    var orderData = {
-        exchange_segment: document.getElementById('orderExchange').value,
-        product: document.getElementById('orderProduct').value,
-        price: document.getElementById('orderPrice').value || "0",
-        order_type: document.getElementById('orderType').value,
-        quantity: document.getElementById('orderQuantity').value,
-        validity: document.getElementById('orderValidity').value,
-        trading_symbol: document.getElementById('orderSymbol').value,
-        transaction_type: document.getElementById('orderTransactionType').value,
-        amo: "NO",
-        disclosed_quantity: document.getElementById('orderDisclosedQuantity').value || "0",
-        market_protection: "0",
-        pf: "N",
-        trigger_price: document.getElementById('orderTriggerPrice').value || "0",
-        tag: "positions_order"
-    };
+    var symbol = document.getElementById('orderSymbol').value;
+    var exchange = document.getElementById('orderExchange').value;
+    var product = document.getElementById('orderProduct').value;
+    var price = document.getElementById('orderPrice').value || "0";
+    var orderType = document.getElementById('orderType').value;
+    var quantity = document.getElementById('orderQuantity').value;
+    var validity = document.getElementById('orderValidity').value;
+    var transactionType = document.getElementById('orderTransactionType').value;
+    var disclosedQuantity = document.getElementById('orderDisclosedQuantity').value || "0";
+    var triggerPrice = document.getElementById('orderTriggerPrice').value || "0";
 
     // Validate required fields
-    if (!orderData.quantity || orderData.quantity <= 0) {
-        alert('Please enter a valid quantity');
+    if (!symbol || !quantity || quantity <= 0) {
+        alert('Please enter a valid symbol and quantity');
         return;
     }
 
-    if (orderData.order_type === 'L' && (!orderData.price || orderData.price <= 0)) {
+    // For market orders, price should be 0
+    if (orderType === 'MKT') {
+        price = "0";
+    } else if (orderType === 'L' && (!price || price <= 0)) {
         alert('Please enter a valid price for limit order');
         return;
     }
 
-    if ((orderData.order_type === 'SL' || orderData.order_type === 'SL-M') && (!orderData.trigger_price || orderData.trigger_price <= 0)) {
+    if ((orderType === 'SL' || orderType === 'SL-M') && (!triggerPrice || triggerPrice <= 0)) {
         alert('Please enter a valid trigger price for stop loss order');
         return;
     }
+
+    // Prepare order data for client.place_order API
+    var orderData = {
+        exchange_segment: exchange || "nse_cm",
+        product: product,
+        price: price,
+        order_type: orderType,
+        quantity: quantity,
+        validity: validity,
+        trading_symbol: symbol,
+        transaction_type: transactionType,
+        amo: "NO",
+        disclosed_quantity: disclosedQuantity,
+        market_protection: "0",
+        pf: "N",
+        trigger_price: triggerPrice,
+        tag: "POSITIONS_PAGE"
+    };
+
+    console.log('Placing order from positions page:', orderData);
 
     // Show loading state
     var submitButton = document.querySelector('#placeOrderModal .btn-primary');
