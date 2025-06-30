@@ -29,8 +29,14 @@ def place_order():
             logging.error("No JSON data provided in request")
             return jsonify({'success': False, 'message': 'No order data provided'}), 400
 
-        # Validate required fields with better error messages
-        required_fields = ['trading_symbol', 'quantity', 'transaction_type']
+        # Validate required fields with better error messages - handle both symbol formats
+        symbol_value = data.get('trading_symbol') or data.get('symbol')
+        if not symbol_value or (isinstance(symbol_value, str) and symbol_value.strip() == ''):
+            logging.error(f"Missing or empty symbol field. trading_symbol: {data.get('trading_symbol')}, symbol: {data.get('symbol')}")
+            return jsonify({'success': False, 'message': 'Missing required field: symbol'}), 400
+        
+        # Validate other required fields
+        required_fields = ['quantity', 'transaction_type']
         for field in required_fields:
             value = data.get(field)
             if not value or (isinstance(value, str) and value.strip() == ''):
@@ -44,7 +50,7 @@ def place_order():
         order_type = data.get('order_type', 'MKT')
         quantity = data.get('quantity', '1')
         validity = data.get('validity', 'DAY')
-        trading_symbol = data.get('trading_symbol', '').upper()
+        trading_symbol = (data.get('trading_symbol') or data.get('symbol', '')).upper()
         transaction_type = data.get('transaction_type', 'BUY').upper()
         amo = data.get('amo', 'NO')
         disclosed_quantity = data.get('disclosed_quantity', '0')

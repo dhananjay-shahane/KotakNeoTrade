@@ -855,6 +855,7 @@ function submitTrade() {
         quantity: quantity.toString(),
         validity: validity || "DAY",
         trading_symbol: symbol.toUpperCase(),
+        symbol: symbol.toUpperCase(), // Add this for compatibility
         transaction_type: type || "BUY",
         amo: "NO",
         disclosed_quantity: "0",
