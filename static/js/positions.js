@@ -643,14 +643,34 @@ function openPlaceOrderModal(symbol, exchange, transactionType) {
     document.getElementById('orderExchange').value = exchange || 'NSE';
     document.getElementById('orderTransactionType').value = transactionType || 'BUY';
     
+    // Find current market price from positions data
+    var currentPrice = '';
+    if (window.positionsManager && window.positionsManager.positions) {
+        var position = window.positionsManager.positions.find(function(pos) {
+            return (pos.trdSym === cleanSymbol || pos.sym === cleanSymbol);
+        });
+        
+        if (position) {
+            // Try different price fields available in Kotak Neo API response
+            var marketPrice = parseFloat(position.stkPrc || position.upldPrc || position.prcNum || 0);
+            if (marketPrice > 0) {
+                currentPrice = marketPrice.toFixed(2);
+                console.log('Found market price for', cleanSymbol, ':', currentPrice);
+            }
+        }
+    }
+    
     // Set default values
     document.getElementById('orderProduct').value = 'CNC';
     document.getElementById('orderType').value = 'MKT';
     document.getElementById('orderQuantity').value = '1';
-    document.getElementById('orderPrice').value = '';
-    document.getElementById('orderTriggerPrice').value = '';
+    document.getElementById('orderPrice').value = currentPrice; // Set current market price
+    document.getElementById('orderTriggerPrice').value = currentPrice; // Set for stop loss orders
     document.getElementById('orderValidity').value = 'DAY';
     document.getElementById('orderDisclosedQuantity').value = '0';
+    
+    // Enable/disable price fields based on order type
+    handleOrderTypeChange();
     
     // Update modal title based on transaction type
     var modalTitle = document.getElementById('placeOrderModalLabel');
@@ -662,6 +682,36 @@ function openPlaceOrderModal(symbol, exchange, transactionType) {
     
     var modal = new bootstrap.Modal(document.getElementById('placeOrderModal'));
     modal.show();
+}
+
+// Function to handle changes in order type
+function handleOrderTypeChange() {
+    var orderType = document.getElementById('orderType').value;
+    var priceField = document.getElementById('orderPrice');
+    var triggerPriceField = document.getElementById('orderTriggerPrice');
+    
+    // Enable/disable fields based on order type
+    if (orderType === 'MKT') {
+        // Market order - disable price field
+        priceField.disabled = true;
+        priceField.value = '';
+        triggerPriceField.disabled = true;
+        triggerPriceField.value = '';
+    } else if (orderType === 'L') {
+        // Limit order - enable price field, disable trigger price
+        priceField.disabled = false;
+        triggerPriceField.disabled = true;
+        triggerPriceField.value = '';
+    } else if (orderType === 'SL') {
+        // Stop Loss - enable both price and trigger price
+        priceField.disabled = false;
+        triggerPriceField.disabled = false;
+    } else if (orderType === 'SL-M') {
+        // Stop Loss Market - disable price, enable trigger price
+        priceField.disabled = true;
+        priceField.value = '';
+        triggerPriceField.disabled = false;
+    }
 }
 
 // Function to submit place order
@@ -697,11 +747,12 @@ function submitPlaceOrder() {
         return;
     }
 
-    // For market orders, price should be 0
-    if (orderType === 'MKT') {
+    // Handle price based on order type
+    if (orderType === 'MKT' || orderType === 'SL-M') {
+        // Market orders and Stop Loss Market orders don't need price
         price = "0";
-    } else if (orderType === 'L' && (!price || price <= 0)) {
-        alert('Please enter a valid price for limit order');
+    } else if ((orderType === 'L' || orderType === 'SL') && (!price || price <= 0)) {
+        alert('Please enter a valid price for ' + (orderType === 'L' ? 'limit' : 'stop loss') + ' order');
         return;
     }
 

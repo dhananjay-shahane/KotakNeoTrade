@@ -104,6 +104,15 @@ The application follows a modern Flask architecture with clear separation of con
 
 ## Recent Changes
 
+- **June 30, 2025** - Successfully completed migration from Replit Agent to standard Replit environment and fixed place order functionality
+  - Fixed place order price data issue where payload was showing price: "0" instead of actual market prices
+  - Enhanced openPlaceOrderModal function to auto-populate current market price from positions data (stkPrc, upldPrc fields)
+  - Added dynamic order type handling with proper field enabling/disabling (Market, Limit, Stop Loss, Stop Loss Market)
+  - Implemented handleOrderTypeChange function for real-time UI updates based on order type selection
+  - Fixed price validation logic to handle different order types appropriately
+  - Place order functionality now sends proper price data to /api/place-order endpoint instead of "0"
+  - Migration completed: PostgreSQL database created, session secret generated, all packages installed, application running on port 5000
+
 - **June 30, 2025** - Successfully implemented duplicate trade detection and fixed place order API endpoint issues
   - Enhanced ETF signals page with intelligent duplicate detection when clicking "Add Deal" button
   - System now checks existing deals and shows warning dialog: "Trade Already Added! Do you want to add this trade again?"
