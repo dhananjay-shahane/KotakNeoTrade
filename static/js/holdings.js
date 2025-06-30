@@ -225,7 +225,21 @@ function submitAdvancedHoldingAction() {
             bootstrap.Modal.getInstance(document.getElementById('holdingActionModal')).hide();
             refreshHoldings();
         } else {
-            showNotification('Failed to place order: ' + data.message, 'error');
+            var errorMessage = data.message || 'Failed to place order';
+            
+            // Check for authentication-related errors
+            if (errorMessage.includes('session') || errorMessage.includes('expired') || errorMessage.includes('access type')) {
+                showNotification('Trading session expired. Please logout and login again to place orders.', 'error');
+                
+                // Optionally redirect to login after a delay
+                setTimeout(function() {
+                    if (confirm('Your trading session has expired. Would you like to go to the login page?')) {
+                        window.location.href = '/logout';
+                    }
+                }, 3000);
+            } else {
+                showNotification('Failed to place order: ' + errorMessage, 'error');
+            }
         }
     })
     .catch(function(error) {

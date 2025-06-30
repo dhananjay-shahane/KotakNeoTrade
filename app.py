@@ -1208,6 +1208,20 @@ def place_order():
         if not client:
             return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
         
+        # Validate session before placing order
+        try:
+            # Quick session validation by checking if we can fetch basic data
+            from Scripts.neo_client import NeoClient
+            neo_client = NeoClient()
+            if not neo_client.validate_session(client):
+                return jsonify({
+                    'success': False, 
+                    'message': 'Trading session has expired. Please logout and login again to enable trading operations.'
+                }), 401
+        except Exception as e:
+            logging.warning(f"Session validation failed: {e}")
+            # Continue with order placement attempt
+        
         # Initialize trading functions
         trading_functions = TradingFunctions()
         
