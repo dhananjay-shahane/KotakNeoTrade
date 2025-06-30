@@ -82,7 +82,7 @@ DealsManager.prototype.setupColumnSettingsModal = function() {
             console.log('Column Settings modal opening...');
             self.generateColumnCheckboxes();
         });
-        
+
         // Also generate checkboxes immediately to ensure they exist
         self.generateColumnCheckboxes();
     }
@@ -94,7 +94,7 @@ DealsManager.prototype.generateColumnCheckboxes = function() {
         console.error('Column checkboxes container not found');
         return;
     }
-    
+
     container.innerHTML = '';
     console.log('Generating column checkboxes for', Object.keys(this.availableColumns).length, 'columns');
 
@@ -204,13 +204,13 @@ DealsManager.prototype.setupEventListeners = function() {
 
 DealsManager.prototype.loadDeals = function() {
     var self = this;
-    
+
     // Prevent multiple simultaneous requests
     if (self.isLoading) {
         console.log('Request already in progress, skipping...');
         return;
     }
-    
+
     self.isLoading = true;
     console.log('Loading deals from external database...');
 
@@ -218,15 +218,15 @@ DealsManager.prototype.loadDeals = function() {
     xhr.open('GET', '/api/deals/user', true);
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.timeout = 10000; // 10 second timeout
-    
+
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
             self.isLoading = false;
-            
+
             if (xhr.status === 200) {
                 try {
                     var response = JSON.parse(xhr.responseText);
-                    
+
                     if (response.success && response.deals && Array.isArray(response.deals)) {
                         var uniqueDeals = response.deals.map(function(deal) {
                             return {
@@ -298,19 +298,19 @@ DealsManager.prototype.loadDeals = function() {
             }
         }
     };
-    
+
     xhr.ontimeout = function() {
         self.isLoading = false;
         console.error('Request timeout');
         self.showError('Request timeout - please try again');
     };
-    
+
     xhr.onerror = function() {
         self.isLoading = false;
         console.error('Network error occurred');
         self.showError('Network error occurred');
     };
-    
+
     xhr.send();
 };
 
@@ -669,25 +669,25 @@ function buyTrade(symbol, currentPrice) {
         console.error('buyTrade called with invalid symbol:', symbol);
         return;
     }
-    
+
     if (!currentPrice || isNaN(currentPrice) || currentPrice <= 0) {
         currentPrice = 100; // Default fallback price
         console.warn('Invalid price provided, using fallback:', currentPrice);
     }
-    
+
     console.log('Opening buy trade modal for:', symbol, 'at price:', currentPrice);
-    
+
     var modal = new bootstrap.Modal(document.getElementById('tradeModal'));
     document.getElementById('tradeModalLabel').innerHTML = '<i class="fas fa-arrow-up text-success me-2"></i>Buy Trade';
     document.getElementById('tradeSymbol').value = symbol.trim().toUpperCase();
     document.getElementById('tradeType').value = 'BUY';
     document.getElementById('tradePrice').value = currentPrice.toFixed(2);
     document.getElementById('tradeQuantity').value = '1';
-    
+
     // Update modal styling for buy order
     var modal_content = document.querySelector('#tradeModal .modal-content');
     modal_content.style.borderLeft = '4px solid #28a745';
-    
+
     modal.show();
 }
 
@@ -698,25 +698,25 @@ function sellTrade(symbol, currentPrice) {
         console.error('sellTrade called with invalid symbol:', symbol);
         return;
     }
-    
+
     if (!currentPrice || isNaN(currentPrice) || currentPrice <= 0) {
         currentPrice = 100; // Default fallback price
         console.warn('Invalid price provided, using fallback:', currentPrice);
     }
-    
+
     console.log('Opening sell trade modal for:', symbol, 'at price:', currentPrice);
-    
+
     var modal = new bootstrap.Modal(document.getElementById('tradeModal'));
     document.getElementById('tradeModalLabel').innerHTML = '<i class="fas fa-arrow-down text-danger me-2"></i>Sell Trade';
     document.getElementById('tradeSymbol').value = symbol.trim().toUpperCase();
     document.getElementById('tradeType').value = 'SELL';
     document.getElementById('tradePrice').value = currentPrice.toFixed(2);
     document.getElementById('tradeQuantity').value = '1';
-    
+
     // Update modal styling for sell order
     var modal_content = document.querySelector('#tradeModal .modal-content');
     modal_content.style.borderLeft = '4px solid #dc3545';
-    
+
     modal.show();
 }
 
@@ -727,7 +727,7 @@ function viewChart(symbol) {
     var chartContainer = document.getElementById('chartContainer');
     chartContainer.innerHTML = '<canvas id="priceChart" width="400" height="200"></canvas>';
 
-    var ctx = document.getElementById('priceChart').getContext('2d');
+    var ctx = document.getElementById('priceChart').getContext('2d`.
     var labels = [];
     var data = [];
     var basePrice = Math.random() * 1000 + 500;
@@ -820,19 +820,19 @@ function submitTrade() {
 
     // Enhanced validation with detailed logging
     console.log('Submit Trade - Symbol:', symbol, 'Type:', type, 'Quantity:', quantity);
-    
+
     if (!symbol || symbol.trim() === '' || symbol === 'undefined' || symbol === 'null') {
         console.error('Invalid symbol detected:', symbol);
         showNotification('Symbol is required and cannot be empty. Please try selecting the trade again.', 'error');
         return;
     }
-    
+
     if (!type || (type !== 'BUY' && type !== 'SELL')) {
         console.error('Invalid transaction type:', type);
         showNotification('Invalid transaction type. Please try again.', 'error');
         return;
     }
-    
+
     if (!quantity || quantity <= 0 || isNaN(quantity)) {
         showNotification('Please enter a valid quantity greater than 0', 'error');
         return;
@@ -856,7 +856,7 @@ function submitTrade() {
         validity: validity || "DAY",
         trading_symbol: symbol.toUpperCase(),
         symbol: symbol.toUpperCase(), // Add this for compatibility
-        transaction_type: type || "BUY",
+        transaction_type: type === 'BUY' ? 'B' : 'S',
         amo: "NO",
         disclosed_quantity: "0",
         market_protection: "0",
@@ -873,7 +873,7 @@ function submitTrade() {
         showNotification('Submit button not found', 'error');
         return;
     }
-    
+
     var originalText = submitBtn.textContent;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Placing Order...';
     submitBtn.disabled = true;
@@ -894,7 +894,7 @@ function submitTrade() {
     })
     .then(function(response) {
         clearTimeout(timeoutId);
-        
+
         // Try to get response text first
         return response.text().then(function(text) {
             if (!response.ok) {
@@ -908,7 +908,7 @@ function submitTrade() {
                 }
                 throw new Error(errorMsg);
             }
-            
+
             try {
                 return JSON.parse(text);
             } catch (e) {
@@ -930,7 +930,7 @@ function submitTrade() {
             // Show success notification with order details
             var orderTypeText = orderType === 'MKT' ? 'Market' : orderType === 'L' ? 'Limit' : 'Stop Loss';
             var priceText = orderType === 'MKT' ? 'at market price' : 'at ₹' + price;
-            
+
             showNotification(
                 orderTypeText + ' ' + type.toLowerCase() + ' order for ' + quantity + ' ' + symbol + ' ' + priceText + ' placed successfully!' +
                 (data.order_id ? ' (Order ID: ' + data.order_id + ')' : ''),
@@ -972,9 +972,9 @@ var sortState = {
 function sortTable(column) {
     var tbody = document.getElementById('dealsTableBody');
     if (!tbody) return;
-    
+
     var rows = Array.from(tbody.querySelectorAll('tr'));
-    
+
     // Toggle sort direction
     if (sortState.column === column) {
         sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
@@ -982,11 +982,11 @@ function sortTable(column) {
         sortState.column = column;
         sortState.direction = 'asc';
     }
-    
+
     // Sort rows based on column
     rows.sort(function(a, b) {
         var aValue, bValue;
-        
+
         switch (column) {
             case 'symbol':
                 aValue = (a.dataset.symbol || '').toLowerCase();
@@ -1027,7 +1027,7 @@ function sortTable(column) {
             default:
                 return 0;
         }
-        
+
         // Compare values
         var result;
         if (aValue instanceof Date) {
@@ -1037,13 +1037,13 @@ function sortTable(column) {
         } else {
             result = aValue - bValue;
         }
-        
+
         return sortState.direction === 'asc' ? result : -result;
     });
-    
+
     // Update sort indicators
     updateSortIndicators(column, sortState.direction);
-    
+
     // Rebuild table with sorted rows
     tbody.innerHTML = '';
     rows.forEach(function(row) {
@@ -1057,20 +1057,20 @@ function updateSortIndicators(activeColumn, direction) {
     indicators.forEach(function(indicator) {
         indicator.classList.add('d-none');
     });
-    
+
     // Show active indicator
     var activeIndicator = document.getElementById('sort-' + activeColumn + '-' + direction);
     if (activeIndicator) {
         activeIndicator.classList.remove('d-none');
     }
-    
+
     // Update sort icons in headers
     var sortIcons = document.querySelectorAll('.sortable .fa-sort');
     sortIcons.forEach(function(icon) {
         icon.classList.remove('text-primary');
         icon.classList.add('text-muted');
     });
-    
+
     var activeHeader = document.querySelector('.sortable[onclick*="' + activeColumn + '"] .fa-sort');
     if (activeHeader) {
         activeHeader.classList.remove('text-muted');
@@ -1101,7 +1101,7 @@ function exportDeals() {
 // Global functions for column settings and filters
 function applyColumnSettings() {
     console.log('Applying column settings...');
-    
+
     if (!window.dealsManager) {
         console.error('DealsManager not initialized');
         return;
@@ -1139,7 +1139,7 @@ function applyColumnSettings() {
             if (backdrop) backdrop.remove();
         }
     }
-    
+
     console.log('Column settings applied successfully');
 }
 
@@ -1149,7 +1149,7 @@ function selectAllColumns() {
         console.error('DealsManager not initialized');
         return;
     }
-    
+
     var columns = Object.keys(window.dealsManager.availableColumns);
     for (var i = 0; i < columns.length; i++) {
         var column = columns[i];
@@ -1165,7 +1165,7 @@ function resetDefaultColumns() {
         console.error('DealsManager not initialized');
         return;
     }
-    
+
     var columns = Object.keys(window.dealsManager.availableColumns);
     for (var i = 0; i < columns.length; i++) {
         var column = columns[i];
@@ -1252,14 +1252,14 @@ function showNotification(message, type) {
     notification.style.right = '20px';
     notification.style.zIndex = '9999';
     notification.style.minWidth = '300px';
-    
+
     notification.innerHTML = 
         '<i class="fas fa-' + (type === 'success' ? 'check-circle' : 'exclamation-triangle') + ' me-2"></i>' +
         message +
         '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
-    
+
     document.body.appendChild(notification);
-    
+
     // Auto remove after 5 seconds
     setTimeout(function() {
         if (notification.parentNode) {

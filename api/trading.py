@@ -53,8 +53,13 @@ def place_order():
         trading_symbol = (data.get('trading_symbol') or data.get('symbol', '')).upper()
         transaction_type = data.get('transaction_type', 'BUY').upper()
 
-        # Convert transaction type for API compatibility
-        api_transaction_type = 'B' if transaction_type == 'BUY' else 'S' if transaction_type == 'SELL' else transaction_type
+        # Convert transaction type for API compatibility - ensure we only send B or S
+        if transaction_type.upper() in ['BUY', 'B']:
+            api_transaction_type = 'B'
+        elif transaction_type.upper() in ['SELL', 'S']:
+            api_transaction_type = 'S'
+        else:
+            api_transaction_type = 'B'  # Default to Buy
 
         amo = data.get('amo', 'NO')
         disclosed_quantity = data.get('disclosed_quantity', '0')
