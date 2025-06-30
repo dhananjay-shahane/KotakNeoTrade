@@ -104,14 +104,16 @@ The application follows a modern Flask architecture with clear separation of con
 
 ## Recent Changes
 
-- **June 30, 2025** - Successfully completed migration from Replit Agent to standard Replit environment and fixed place order functionality
-  - Fixed place order price data issue where payload was showing price: "0" instead of actual market prices
-  - Enhanced openPlaceOrderModal function to auto-populate current market price from positions data (stkPrc, upldPrc fields)
-  - Added dynamic order type handling with proper field enabling/disabling (Market, Limit, Stop Loss, Stop Loss Market)
-  - Implemented handleOrderTypeChange function for real-time UI updates based on order type selection
-  - Fixed price validation logic to handle different order types appropriately
-  - Place order functionality now sends proper price data to /api/place-order endpoint instead of "0"
+- **June 30, 2025** - Successfully completed migration and fixed place order functionality across all trading pages
+  - POSITIONS PAGE: Fixed place order price data issue, now auto-populates current market price from positions data
+  - HOLDINGS PAGE: Fixed place order functionality with enhanced price lookup from holdings data (closingPrice, mktValue/quantity)
+  - Enhanced both pages with dynamic order type handling (Market, Limit, Stop Loss, Stop Loss Market orders)
+  - Implemented proper price validation and field enabling/disabling based on order type selection
+  - Fixed API payload structure to match correct Kotak Neo API format with proper field mapping
+  - Both trading modals now send accurate price data instead of "0" to /api/place-order endpoint
+  - Added comprehensive debugging and fallback price lookup mechanisms for robust price population
   - Migration completed: PostgreSQL database created, session secret generated, all packages installed, application running on port 5000
+  - Known Issue: API authentication "invalid access type" error - requires session token refresh (separate from price fix)
 
 - **June 30, 2025** - Successfully implemented duplicate trade detection and fixed place order API endpoint issues
   - Enhanced ETF signals page with intelligent duplicate detection when clicking "Add Deal" button

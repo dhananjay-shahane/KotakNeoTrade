@@ -11,8 +11,13 @@ function refreshHoldings() {
             if (data.success) {
                 // Store holdings data globally for price lookup
                 window.holdingsData = data;
-                updateHoldingsTable(data.holdings);
-                updateHoldingsSummary(data.summary);
+                console.log('Holdings data stored globally:', data);
+                if (typeof updateHoldingsTable === 'function') {
+                    updateHoldingsTable(data.holdings);
+                }
+                if (typeof updateHoldingsSummary === 'function') {
+                    updateHoldingsSummary(data.summary);
+                }
                 setTimeout(calculateAndUpdateCards, 100);
                 showNotification('Holdings refreshed successfully', 'success');
             } else {
@@ -64,20 +69,64 @@ function showHoldingTradeModal(symbol, maxQuantity, tradeType) {
         });
         
         if (holding) {
-            // Use closingPrice (current market price) or mktValue/quantity as fallback
-            var marketPrice = parseFloat(holding.closingPrice || (holding.mktValue / holding.quantity) || holding.averagePrice || 0);
+            console.log('Found holding data for', symbol, ':', holding);
+            // Use multiple fallback options for current market price
+            var marketPrice = parseFloat(
+                holding.closingPrice || 
+                holding.mktValue / holding.quantity || 
+                holding.averagePrice || 
+                0
+            );
             if (marketPrice > 0) {
                 currentPrice = marketPrice.toFixed(2);
-                console.log('Found market price for', symbol, ':', currentPrice);
+                console.log('Market price for', symbol, ':', currentPrice, 'from:', holding.closingPrice ? 'closingPrice' : holding.mktValue ? 'mktValue/quantity' : 'averagePrice');
+            } else {
+                console.log('No valid market price found for', symbol, 'closingPrice:', holding.closingPrice, 'mktValue:', holding.mktValue, 'quantity:', holding.quantity, 'averagePrice:', holding.averagePrice);
             }
+        } else {
+            console.log('No holding found for symbol:', symbol);
+            console.log('Available holdings:', window.holdingsData.holdings.map(function(h) { return h.displaySymbol || h.symbol; }));
         }
+    } else {
+        console.log('No holdings data available. window.holdingsData:', window.holdingsData);
     }
     
     document.getElementById('orderType').value = 'L';
     document.getElementById('productType').value = 'CNC';
     document.getElementById('validityType').value = 'DAY';
-    document.getElementById('triggerPrice').value = currentPrice; // Set trigger price too
-    document.getElementById('actionPrice').value = currentPrice; // Set current market price
+    // Set price fields with fallback for empty values
+    if (currentPrice && currentPrice !== '') {
+        document.getElementById('actionPrice').value = currentPrice;
+        document.getElementById('triggerPrice').value = currentPrice;
+        console.log('Price fields populated with:', currentPrice);
+    } else {
+        // If no market price found, try to fetch it from closingPrice on the page
+        var priceElements = document.querySelectorAll('td');
+        for (var i = 0; i < priceElements.length; i++) {
+            if (priceElements[i].textContent.includes(symbol)) {
+                var row = priceElements[i].closest('tr');
+                if (row) {
+                    var priceCells = row.querySelectorAll('td');
+                    if (priceCells.length > 3) {
+                        var priceText = priceCells[3].textContent.replace(/[₹,]/g, '').trim();
+                        if (priceText && !isNaN(priceText)) {
+                            currentPrice = parseFloat(priceText).toFixed(2);
+                            document.getElementById('actionPrice').value = currentPrice;
+                            document.getElementById('triggerPrice').value = currentPrice;
+                            console.log('Price found from table for', symbol, ':', currentPrice);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (!currentPrice || currentPrice === '') {
+            document.getElementById('actionPrice').value = '';
+            document.getElementById('triggerPrice').value = '';
+            console.log('No price found for', symbol, 'fields left empty');
+        }
+    }
     
     toggleHoldingPriceFields();
     
