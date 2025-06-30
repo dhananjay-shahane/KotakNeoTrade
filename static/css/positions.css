@@ -35,15 +35,6 @@
     font-size: 0.9rem;
 }
 
-#positionsTable th {
-    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
-    border: none;
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.8rem;
-    letter-spacing: 0.5px;
-    padding: 1rem 0.75rem;
-}
 
 #positionsTable td {
     padding: 0.875rem 0.75rem;
@@ -51,9 +42,6 @@
     vertical-align: middle;
 }
 
-#positionsTable tbody tr:hover {
-    background-color: rgba(0, 123, 255, 0.1);
-}
 
 /* Badge Styles */
 .badge {
@@ -217,17 +205,6 @@
     cursor: pointer;
 }
 
-.position-filter-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(0, 123, 255, 0.3) !important;
-    border-color: rgba(0, 123, 255, 0.5) !important;
-}
-
-.position-filter-card.border-primary {
-    border-color: #007bff !important;
-    box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4) !important;
-}
-
 .position-filter-card.bg-primary-subtle {
     background-color: rgba(0, 123, 255, 0.15) !important;
 }
@@ -250,10 +227,54 @@
     user-select: none;
 }
 
-#positionsTable th[style*="cursor"]:hover {
-    background: linear-gradient(135deg, #0b5ed7 0%, #0a58ca 100%);
-}
 
 #positionsTable th[style*="cursor"]:active {
     transform: scale(0.98);
+}
+
+.table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.4rem;
+    font-size: 0.75rem;
+}
+
+/* Filter cards */
+.filter-card {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.filter-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.filter-card.active {
+    border-color: #fff;
+    box-shadow: 0 0 15px rgba(255,255,255,0.3);
+}
+
+/* Table header sorting */
+#ordersTable th[style*="cursor"] {
+    user-select: none;
+}
+
+#ordersTable th[style*="cursor"]:hover {
+    background: linear-gradient(135deg, #0b5ed7 0%, #0a58ca 100%);
+}
+
+#ordersTable th[style*="cursor"]:active {
+    transform: scale(0.98);
+}
+
+.fa-sort {
+    opacity: 0.5;
+}
+
+.fa-sort-up, .fa-sort-down {
+    opacity: 1;
+    color: #fff;
 }
