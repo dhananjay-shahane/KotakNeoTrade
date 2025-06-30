@@ -369,6 +369,142 @@
 </div>
 {% endblock %}
 
+<style>
+/* Holdings Skeleton CSS */
+.holdings-skeleton {
+    animation: fadeIn 0.3s ease-in;
+}
+
+.skeleton-title {
+    height: 28px;
+    width: 200px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+.skeleton-subtitle {
+    height: 16px;
+    width: 300px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+.skeleton-button {
+    height: 40px;
+    width: 120px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+}
+
+.skeleton-card-title {
+    height: 14px;
+    width: 100px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 3px;
+}
+
+.skeleton-card-number {
+    height: 32px;
+    width: 80px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.25) 25%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.25) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+.skeleton-card-subtitle {
+    height: 12px;
+    width: 120px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 3px;
+}
+
+.skeleton-card-icon {
+    height: 60px;
+    width: 60px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 50%;
+}
+
+.skeleton-table-header {
+    height: 20px;
+    width: 120px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+.skeleton-table {
+    padding: 1rem;
+}
+
+.skeleton-table-row {
+    height: 50px;
+    width: 100%;
+    background: linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+</style>
+
 {% block scripts %}
 <script src="{{url_for('static', filename="js/holdings.js")}}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Show skeleton initially
+    document.getElementById('holdingsSkeleton').style.display = 'block';
+    document.getElementById('holdingsContent').style.display = 'none';
+
+    // Hide skeleton after content loads
+    setTimeout(function() {
+        hideHoldingsSkeleton();
+    }, 2000);
+});
+
+function hideHoldingsSkeleton() {
+    const skeleton = document.getElementById('holdingsSkeleton');
+    const content = document.getElementById('holdingsContent');
+
+    if (skeleton && content) {
+        skeleton.style.transition = 'opacity 0.5s ease-out';
+        skeleton.style.opacity = '0';
+
+        setTimeout(function() {
+            skeleton.style.display = 'none';
+            content.style.display = 'block';
+            content.style.opacity = '0';
+            content.style.transition = 'opacity 0.5s ease-in';
+
+            setTimeout(function() {
+                content.style.opacity = '1';
+            }, 50);
+        }, 500);
+    }
+}
+</script>
 {% endblock %}

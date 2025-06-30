@@ -1,221 +1,271 @@
-
 {% extends "base.html" %}
 
 {% block title %}Orders - Kotak Neo Trading{% endblock %}
-{% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/orders.css') }}">
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col">
-        <h2>
-            <i class="fas fa-list-alt me-2"></i>Order Book
-        </h2>
-        <p class="text-muted">Manage and track your trading orders</p>
+<!-- Orders Skeleton Loader -->
+<div class="orders-skeleton" id="ordersSkeleton">
+    <!-- Header Skeleton -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <div class="skeleton-title mb-2"></div>
+            <div class="skeleton-subtitle"></div>
+        </div>
+        <div class="skeleton-button"></div>
     </div>
-    <div class="col-auto">
-        <button class="btn btn-primary" onclick="refreshOrdersTable()">
-            <i class="fas fa-sync me-1"></i>Refresh
-        </button>
+
+    <!-- Filter Section Skeleton -->
+    <div class="card bg-secondary mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <div class="skeleton-filter-label mb-2"></div>
+                    <div class="skeleton-filter-select"></div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="skeleton-filter-label mb-2"></div>
+                    <div class="skeleton-filter-select"></div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="skeleton-filter-label mb-2"></div>
+                    <div class="skeleton-filter-input"></div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="skeleton-filter-btn"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Orders Table Skeleton -->
+    <div class="card bg-secondary">
+        <div class="card-header">
+            <div class="skeleton-table-header"></div>
+        </div>
+        <div class="card-body p-0">
+            <div class="skeleton-table">
+                <div class="skeleton-table-row"></div>
+                <div class="skeleton-table-row"></div>
+                <div class="skeleton-table-row"></div>
+                <div class="skeleton-table-row"></div>
+                <div class="skeleton-table-row"></div>
+                <div class="skeleton-table-row"></div>
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- Available Margin Card -->
-<div class="row mb-4">
-    <div class="col-md-12">
-        <div class="card bg-gradient-primary text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-            <div class="card-body text-center p-4">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-title mb-1 text-uppercase">AVAILABLE MARGIN</h6>
-                        <h3 class="mb-0 fw-bold" id="availableMarginAmount">₹0.00</h3>
-                        <small class="text-white-50">
-                            <i class="fas fa-coins me-1"></i>
-                            Ready for trading
-                        </small>
-                    </div>
-                    <div class="stats-icon">
-                        <div class="bg-white bg-opacity-20 rounded-circle p-3">
-                            <i class="fas fa-wallet fa-2x text-warning"></i>
+<!-- Actual Orders Content -->
+<div class="orders-content" id="ordersContent" style="display: none;">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>
+                <i class="fas fa-list-alt me-2"></i>Order Book
+            </h2>
+            <p class="text-muted">Manage and track your trading orders</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" onclick="refreshOrdersTable()">
+                <i class="fas fa-sync me-1"></i>Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Available Margin Card -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card bg-gradient-primary text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body text-center p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1 text-uppercase">AVAILABLE MARGIN</h6>
+                            <h3 class="mb-0 fw-bold" id="availableMarginAmount">₹0.00</h3>
+                            <small class="text-white-50">
+                                <i class="fas fa-coins me-1"></i>
+                                Ready for trading
+                            </small>
+                        </div>
+                        <div class="stats-icon">
+                            <div class="bg-white bg-opacity-20 rounded-circle p-3">
+                                <i class="fas fa-wallet fa-2x text-warning"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Summary Cards -->
-<div class="row mb-4" id="ordersSummary">
-    <div class="col-md-2 mb-3">
-        <div class="card bg-primary text-white filter-card" data-filter="all" style="cursor: pointer;">
-            <div class="card-body text-center p-3">
-                <h6 class="card-title mb-1">TOTAL ORDERS</h6>
-                <h4 class="mb-0" id="totalOrdersCount">0</h4>
+    <!-- Summary Cards -->
+    <div class="row mb-4" id="ordersSummary">
+        <div class="col-md-2 mb-3">
+            <div class="card bg-primary text-white filter-card" data-filter="all" style="cursor: pointer;">
+                <div class="card-body text-center p-3">
+                    <h6 class="card-title mb-1">TOTAL ORDERS</h6>
+                    <h4 class="mb-0" id="totalOrdersCount">0</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card bg-success text-white filter-card" data-filter="completed" style="cursor: pointer;">
+                <div class="card-body text-center p-3">
+                    <h6 class="card-title mb-1">COMPLETED</h6>
+                    <h4 class="mb-0" id="completedOrdersCount">0</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card bg-warning text-white filter-card" data-filter="pending" style="cursor: pointer;">
+                <div class="card-body text-center p-3">
+                    <h6 class="card-title mb-1">PENDING</h6>
+                    <h4 class="mb-0" id="pendingOrdersCount">0</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card bg-danger text-white filter-card" data-filter="rejected" style="cursor: pointer;">
+                <div class="card-body text-center p-3">
+                    <h6 class="card-title mb-1">REJECTED</h6>
+                    <h4 class="mb-0" id="rejectedOrdersCount">0</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card bg-secondary text-white filter-card" data-filter="cancelled" style="cursor: pointer;">
+                <div class="card-body text-center p-3">
+                    <h6 class="card-title mb-1">CANCELLED</h6>
+                    <h4 class="mb-0" id="cancelledOrdersCount">0</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card bg-info text-white filter-card" data-filter="buy" style="cursor: pointer;">
+                <div class="card-body text-center p-3">
+                    <h6 class="card-title mb-1">BUY ORDERS</h6>
+                    <h4 class="mb-0" id="buyOrdersCount">0</h4>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-2 mb-3">
-        <div class="card bg-success text-white filter-card" data-filter="completed" style="cursor: pointer;">
-            <div class="card-body text-center p-3">
-                <h6 class="card-title mb-1">COMPLETED</h6>
-                <h4 class="mb-0" id="completedOrdersCount">0</h4>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-2 mb-3">
-        <div class="card bg-warning text-white filter-card" data-filter="pending" style="cursor: pointer;">
-            <div class="card-body text-center p-3">
-                <h6 class="card-title mb-1">PENDING</h6>
-                <h4 class="mb-0" id="pendingOrdersCount">0</h4>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-2 mb-3">
-        <div class="card bg-danger text-white filter-card" data-filter="rejected" style="cursor: pointer;">
-            <div class="card-body text-center p-3">
-                <h6 class="card-title mb-1">REJECTED</h6>
-                <h4 class="mb-0" id="rejectedOrdersCount">0</h4>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-2 mb-3">
-        <div class="card bg-secondary text-white filter-card" data-filter="cancelled" style="cursor: pointer;">
-            <div class="card-body text-center p-3">
-                <h6 class="card-title mb-1">CANCELLED</h6>
-                <h4 class="mb-0" id="cancelledOrdersCount">0</h4>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-2 mb-3">
-        <div class="card bg-info text-white filter-card" data-filter="buy" style="cursor: pointer;">
-            <div class="card-body text-center p-3">
-                <h6 class="card-title mb-1">BUY ORDERS</h6>
-                <h4 class="mb-0" id="buyOrdersCount">0</h4>
-            </div>
-        </div>
-    </div>
-</div>
-
 
 
-<div class="card bg-secondary">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-dark table-hover mb-0" id="ordersTable">
-                <thead class="table-primary">
-                    <tr>
-                        <th style="cursor: pointer;" onclick="sortTable('time')">
-                            TIME <i class="fas fa-sort ms-1" id="sort-time"></i>
-                        </th>
-                        <th style="cursor: pointer;" onclick="sortTable('orderid')">
-                            ORDER ID <i class="fas fa-sort ms-1" id="sort-orderid"></i>
-                        </th>
-                        <th style="cursor: pointer;" onclick="sortTable('symbol')">
-                            SYMBOL <i class="fas fa-sort ms-1" id="sort-symbol"></i>
-                        </th>
-                        <th style="cursor: pointer;" onclick="sortTable('type')">
-                            TYPE <i class="fas fa-sort ms-1" id="sort-type"></i>
-                        </th>
-                        <th style="cursor: pointer;" onclick="sortTable('quantity')">
-                            QUANTITY <i class="fas fa-sort ms-1" id="sort-quantity"></i>
-                        </th>
-                        <th style="cursor: pointer;" onclick="sortTable('price')">
-                            PRICE <i class="fas fa-sort ms-1" id="sort-price"></i>
-                        </th>
-                        <th style="cursor: pointer;" onclick="sortTable('status')">
-                            STATUS <i class="fas fa-sort ms-1" id="sort-status"></i>
-                        </th>
-                        <th style="cursor: pointer;" onclick="sortTable('product')">
-                            PRODUCT <i class="fas fa-sort ms-1" id="sort-product"></i>
-                        </th>
-                        <th style="cursor: pointer;" onclick="sortTable('exchange')">
-                            EXCHANGE <i class="fas fa-sort ms-1" id="sort-exchange"></i>
-                        </th>
-                        <th>ACTIONS</th>
-                    </tr>
-                </thead>
-                <tbody id="ordersTableBody">
-                    <tr>
-                        <td colspan="10" class="text-center py-4">
+
+    <div class="card bg-secondary">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0" id="ordersTable">
+                    <thead class="table-primary">
+                        <tr>
+                            <th style="cursor: pointer;" onclick="sortTable('time')">
+                                TIME <i class="fas fa-sort ms-1" id="sort-time"></i>
+                            </th>
+                            <th style="cursor: pointer;" onclick="sortTable('orderid')">
+                                ORDER ID <i class="fas fa-sort ms-1" id="sort-orderid"></i>
+                            </th>
+                            <th style="cursor: pointer;" onclick="sortTable('symbol')">
+                                SYMBOL <i class="fas fa-sort ms-1" id="sort-symbol"></i>
+                            </th>
+                            <th style="cursor: pointer;" onclick="sortTable('type')">
+                                TYPE <i class="fas fa-sort ms-1" id="sort-type"></i>
+                            </th>
+                            <th style="cursor: pointer;" onclick="sortTable('quantity')">
+                                QUANTITY <i class="fas fa-sort ms-1" id="sort-quantity"></i>
+                            </th>
+                            <th style="cursor: pointer;" onclick="sortTable('price')">
+                                PRICE <i class="fas fa-sort ms-1" id="sort-price"></i>
+                            </th>
+                            <th style="cursor: pointer;" onclick="sortTable('status')">
+                                STATUS <i class="fas fa-sort ms-1" id="sort-status"></i>
+                            </th>
+                            <th style="cursor: pointer;" onclick="sortTable('product')">
+                                PRODUCT <i class="fas fa-sort ms-1" id="sort-product"></i>
+                            </th>
+                            <th style="cursor: pointer;" onclick="sortTable('exchange')">
+                                EXCHANGE <i class="fas fa-sort ms-1" id="sort-exchange"></i>
+                            </th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ordersTableBody">
+                        <tr>
+                            <td colspan="10" class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading orders...</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modify Order Modal -->
+    <div class="modal fade" id="modifyOrderModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content bg-secondary">
+                <div class="modal-header">
+                    <h5 class="modal-title text-muted">
+                        <i class="fas fa-edit me-2"></i>Modify Order
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="modifyOrderForm">
+                        <input type="hidden" name="order_id" id="modifyOrderId">
+
+                        <div class="mb-3">
+                            <label class="form-label">Quantity</label>
+                            <input type="number" class="form-control bg-secondary text-light" name="quantity" min="1" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Price</label>
+                            <input type="number" class="form-control bg-secondary text-light" name="price" step="0.01" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Trigger Price (for SL orders)</label>
+                            <input type="number" class="form-control bg-secondary text-light" name="trigger_price" step="0.01">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Validity</label>
+                            <select class="form-select bg-secondary text-light" name="validity" required>
+                                <option value="DAY">DAY</option>
+                                <option value="IOC">IOC</option>
+                                <option value="GTD">GTD</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-warning" onclick="submitModifyOrder()">
+                        <i class="fas fa-check me-1"></i>Modify Order
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div class="modal fade" id="orderDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-muted">
+                        <i class="fas fa-info me-2"></i>Order Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="orderDetailsContent">
+                        <div class="text-center py-3">
                             <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Loading orders...</span>
+                                <span class="visually-hidden">Loading...</span>
                             </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-    
-</div>
-
-<!-- Modify Order Modal -->
-<div class="modal fade" id="modifyOrderModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content bg-secondary">
-            <div class="modal-header">
-                <h5 class="modal-title text-muted">
-                    <i class="fas fa-edit me-2"></i>Modify Order
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="modifyOrderForm">
-                    <input type="hidden" name="order_id" id="modifyOrderId">
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Quantity</label>
-                        <input type="number" class="form-control bg-secondary text-light" name="quantity" min="1" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Price</label>
-                        <input type="number" class="form-control bg-secondary text-light" name="price" step="0.01" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Trigger Price (for SL orders)</label>
-                        <input type="number" class="form-control bg-secondary text-light" name="trigger_price" step="0.01">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Validity</label>
-                        <select class="form-select bg-secondary text-light" name="validity" required>
-                            <option value="DAY">DAY</option>
-                            <option value="IOC">IOC</option>
-                            <option value="GTD">GTD</option>
-                        </select>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-warning" onclick="submitModifyOrder()">
-                    <i class="fas fa-check me-1"></i>Modify Order
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Order Details Modal -->
-<div class="modal fade" id="orderDetailsModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title text-muted">
-                    <i class="fas fa-info me-2"></i>Order Details
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div id="orderDetailsContent">
-                    <div class="text-center py-3">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
                         </div>
                     </div>
                 </div>
@@ -224,7 +274,94 @@
     </div>
 </div>
 {% endblock %}
+
+<style>
+/* Orders Skeleton CSS */
+.orders-skeleton {
+    animation: fadeIn 0.3s ease-in;
+}
+
+.skeleton-filter-label {
+    height: 16px;
+    width: 80px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 3px;
+}
+
+.skeleton-filter-select, .skeleton-filter-input {
+    height: 38px;
+    width: 100%;
+    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+}
+
+.skeleton-filter-btn {
+    height: 38px;
+    width: 100px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+    margin-top: 25px;
+}
+
+.skeleton-table-header {
+    height: 20px;
+    width: 120px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+</style>
 
 {% block scripts %}
 <script src="{{url_for('static',filename="js/orders.js")}}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Show skeleton initially
+    document.getElementById('ordersSkeleton').style.display = 'block';
+    document.getElementById('ordersContent').style.display = 'none';
+
+    // Hide skeleton after content loads
+    setTimeout(function() {
+        hideOrdersSkeleton();
+    }, 2000);
+});
+
+function hideOrdersSkeleton() {
+    const skeleton = document.getElementById('ordersSkeleton');
+    const content = document.getElementById('ordersContent');
+
+    if (skeleton && content) {
+        skeleton.style.transition = 'opacity 0.5s ease-out';
+        skeleton.style.opacity = '0';
+
+        setTimeout(function() {
+            skeleton.style.display = 'none';
+            content.style.display = 'block';
+            content.style.opacity = '0';
+            content.style.transition = 'opacity 0.5s ease-in';
+
+            setTimeout(function() {
+                content.style.opacity = '1';
+            }, 50);
+        }, 500);
+    }
+}
+</script>
 {% endblock %}

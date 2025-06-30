@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Default Deals - Kotak Neo Trading{% endblock %}
@@ -11,278 +10,367 @@
 {% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
-    <div>
-        <h1 class="h3 mb-1">Default Deals</h1>
-        <p class="text-muted mb-0">All trading deals and positions</p>
+<!-- Default Deals Skeleton Loader -->
+<div class="default-deals-skeleton" id="defaultDealsSkeleton">
+    <!-- Header Skeleton -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <div class="skeleton-title mb-2"></div>
+            <div class="skeleton-subtitle"></div>
+        </div>
+        <div class="d-flex gap-2">
+            <div class="skeleton-button"></div>
+            <div class="skeleton-button"></div>
+        </div>
     </div>
-    <div class="d-flex gap-2">
-        <button class="btn btn-outline-success" onclick="syncDefaultDeals()">
-            <i class="fas fa-database me-1"></i>Sync from Admin Signals
-        </button>
-        <button class="btn btn-outline-secondary text-muted" onclick="refreshDeals()">
-            <i class="fas fa-sync-alt me-1"></i>Refresh
-        </button>
-        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#columnSettingsModal">
-            <i class="fas fa-cog me-1"></i>Columns
-        </button>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#dealFiltersModal">
-            <i class="fas fa-filter me-1"></i>Filters
-        </button>
+
+    <!-- Filter Section Skeleton -->
+    <div class="card bg-secondary mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <div class="skeleton-filter-label mb-2"></div>
+                    <div class="skeleton-filter-select"></div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="skeleton-filter-label mb-2"></div>
+                    <div class="skeleton-filter-select"></div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="skeleton-filter-label mb-2"></div>
+                    <div class="skeleton-filter-input"></div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="skeleton-filter-btn"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Row Skeleton -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card stats-card border-0 shadow-sm bg-primary">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="skeleton-card-title mb-2"></div>
+                            <div class="skeleton-card-number mb-2"></div>
+                            <div class="skeleton-card-subtitle"></div>
+                        </div>
+                        <div class="skeleton-card-icon"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card stats-card border-0 shadow-sm bg-success">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="skeleton-card-title mb-2"></div>
+                            <div class="skeleton-card-number mb-2"></div>
+                            <div class="skeleton-card-subtitle"></div>
+                        </div>
+                        <div class="skeleton-card-icon"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Default Deals Table Skeleton -->
+    <div class="card bg-secondary">
+        <div class="card-header">
+            <div class="skeleton-table-header"></div>
+        </div>
+        <div class="card-body p-0">
+            <div class="skeleton-table">
+                <div class="skeleton-table-row"></div>
+                <div class="skeleton-table-row"></div>
+                <div class="skeleton-table-row"></div>
+                <div class="skeleton-table-row"></div>
+                <div class="skeleton-table-row"></div>
+            </div>
+        </div>
     </div>
 </div>
-<!-- Deals Table -->
-<div class="card bg-secondary border-0 shadow-lg">
-    <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
-        <h5 class="mb-0 text-light">
-            <i class="fas fa-list me-2 text-primary"></i>All Trading Deals
-            <span class="badge bg-primary ms-2" id="visibleDealsCount">0</span>
-        </h5>
-        <div class="d-flex gap-2 align-items-center">
-            <div class="dropdown">
-                <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" id="refreshIntervalDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fas fa-clock me-1"></i><span id="currentInterval">30s</span>
+
+<!-- Actual Default Deals Content -->
+<div class="default-deals-content" id="defaultDealsContent" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+        <div>
+            <h1 class="h3 mb-1">Default Deals</h1>
+            <p class="text-muted mb-0">All trading deals and positions</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-success" onclick="syncDefaultDeals()">
+                <i class="fas fa-database me-1"></i>Sync from Admin Signals
+            </button>
+            <button class="btn btn-outline-secondary text-muted" onclick="refreshDeals()">
+                <i class="fas fa-sync-alt me-1"></i>Refresh
+            </button>
+            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#columnSettingsModal">
+                <i class="fas fa-cog me-1"></i>Columns
+            </button>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#dealFiltersModal">
+                <i class="fas fa-filter me-1"></i>Filters
+            </button>
+        </div>
+    </div>
+    <!-- Deals Table -->
+    <div class="card bg-secondary border-0 shadow-lg">
+        <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-light">
+                <i class="fas fa-list me-2 text-primary"></i>All Trading Deals
+                <span class="badge bg-primary ms-2" id="visibleDealsCount">0</span>
+            </h5>
+            <div class="d-flex gap-2 align-items-center">
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" id="refreshIntervalDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-clock me-1"></i><span id="currentInterval">30s</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-dark">
+                        <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(5000, '5s')">5 seconds</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(10000, '10s')">10 seconds</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(30000, '30s')">30 seconds</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(60000, '1m')">1 minute</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(300000, '5m')">5 minutes</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(600000, '10m')">10 minutes</a></li>
+                    </ul>
+                </div>
+                <button class="btn btn-sm btn-outline-light" onclick="exportDeals()">
+                    <i class="fas fa-download me-1"></i>Export
                 </button>
-                <ul class="dropdown-menu dropdown-menu-dark">
-                    <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(5000, '5s')">5 seconds</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(10000, '10s')">10 seconds</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(30000, '30s')">30 seconds</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(60000, '1m')">1 minute</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(300000, '5m')">5 minutes</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(600000, '10m')">10 minutes</a></li>
-                </ul>
-            </div>
-            <button class="btn btn-sm btn-outline-light" onclick="exportDeals()">
-                <i class="fas fa-download me-1"></i>Export
-            </button>
-        </div>
-    </div>
-
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-dark table-hover mb-0 signals-table" id="dealsTable">
-                <thead>
-                    <tr id="tableHeaders">
-                        <!-- Dynamic headers will be generated here -->
-                    </tr>
-                </thead>
-                <tbody id="dealsTableBody">
-                    <!-- Dynamic content will be loaded here -->
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="card-footer bg-dark border-0 d-flex justify-content-between align-items-center text-light">
-        <div class="d-flex align-items-center gap-3">
-            <small>Showing <span id="showingCount">0</span> of <span id="totalCount">0</span> deals</small>
-        </div>
-        <div class="btn-group" role="group">
-            <button type="button" class="btn btn-sm btn-outline-light" onclick="previousPage()" id="prevBtn" disabled>
-                <i class="fas fa-chevron-left"></i> Previous
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-light" disabled>
-                Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-light" onclick="nextPage()" id="nextBtn" disabled>
-                Next <i class="fas fa-chevron-right"></i>
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- Column Settings Modal -->
-<div class="modal fade" id="columnSettingsModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header border-bottom border-secondary">
-                <h5 class="modal-title text-muted">
-                    <i class="fas fa-cog me-2"></i>Column Settings
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-muted">Select which columns to display in the deals table:</p>
-                <div class="row" id="columnCheckboxes">
-                    <!-- Column checkboxes will be populated here -->
-                </div>
-                <hr class="border-secondary">
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAllColumns()">Select All</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetDefaultColumns()">Reset to Default</button>
-                </div>
-            </div>
-            <div class="modal-footer border-top border-secondary">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="applyColumnSettings()">Apply Changes</button>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- Deal Filters Modal -->
-<div class="modal fade" id="dealFiltersModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content bg-dark">
-            <div class="modal-header border-bottom border-secondary">
-                <h5 class="modal-title text-light">
-                    <i class="fas fa-filter me-2"></i>Deal Filters
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label text-light">Order Type</label>
-                    <select class="form-select bg-secondary text-light" id="orderTypeFilter">
-                        <option value="">All Orders</option>
-                        <option value="BUY">Buy Orders</option>
-                        <option value="SELL">Sell Orders</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label text-light">Status</label>
-                    <select class="form-select bg-secondary text-light" id="statusFilter">
-                        <option value="">All Status</option>
-                        <option value="EXECUTED">Executed</option>
-                        <option value="PENDING">Pending</option>
-                        <option value="CANCELLED">Cancelled</option>
-                        <option value="REJECTED">Rejected</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label text-light">Symbol</label>
-                    <input type="text" class="form-control bg-secondary text-light" id="symbolFilter" placeholder="Enter symbol...">
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <label class="form-label text-light">Min P&L</label>
-                        <input type="number" class="form-control bg-secondary text-light" id="minPnlFilter" placeholder="-10000">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label text-light">Max P&L</label>
-                        <input type="number" class="form-control bg-secondary text-light" id="maxPnlFilter" placeholder="10000">
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer border-top border-secondary">
-                <button type="button" class="btn btn-secondary" onclick="clearFilters()">Clear Filters</button>
-                <button type="button" class="btn btn-primary" onclick="applyFilters()" data-bs-dismiss="modal">Apply Filters</button>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0 signals-table" id="dealsTable">
+                    <thead>
+                        <tr id="tableHeaders">
+                            <!-- Dynamic headers will be generated here -->
+                        </tr>
+                    </thead>
+                    <tbody id="dealsTableBody">
+                        <!-- Dynamic content will be loaded here -->
+                    </tbody>
+                </table>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- Advanced Trade Modal -->
-<div class="modal fade" id="tradeModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content bg-dark text-light">
-            <div class="modal-header bg-primary border-0">
-                <h5 class="modal-title text-white fw-bold" id="tradeModalLabel">
-                    <i class="fas fa-chart-line me-2"></i>Buy Trade
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <div class="card-footer bg-dark border-0 d-flex justify-content-between align-items-center text-light">
+            <div class="d-flex align-items-center gap-3">
+                <small>Showing <span id="showingCount">0</span> of <span id="totalCount">0</span> deals</small>
             </div>
-            <div class="modal-body bg-dark p-4">
-                <form id="advancedTradeForm">
-                    <!-- Symbol -->
-                    <div class="mb-3">
-                        <label class="form-label text-light fw-semibold">Symbol</label>
-                        <input type="text" class="form-control bg-secondary text-light border-0 py-2" 
-                               id="tradeSymbol" readonly style="font-size: 1rem;">
-                    </div>
-
-                    <!-- Transaction Type -->
-                    <div class="mb-3">
-                        <label class="form-label text-light fw-semibold">Transaction Type</label>
-                        <input type="text" class="form-control bg-secondary text-light border-0 py-2" 
-                               id="tradeType" readonly style="font-size: 1rem;">
-                    </div>
-
-                    <!-- Order Type and Product -->
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label text-light fw-semibold">Order Type</label>
-                            <select class="form-select bg-secondary text-light border-0 py-2" 
-                                    id="orderType" onchange="togglePriceFields()" style="font-size: 1rem;">
-                                <option value="MKT">Market</option>
-                                <option value="L">Limit</option>
-                                <option value="SL">Stop Loss</option>
-                                <option value="SL-M">Stop Loss Market</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-light fw-semibold">Product</label>
-                            <select class="form-select bg-secondary text-light border-0 py-2" 
-                                    id="productType" style="font-size: 1rem;">
-                                <option value="CNC">CNC (Cash & Carry)</option>
-                                <option value="MIS">MIS (Intraday)</option>
-                                <option value="NRML">NRML (Normal)</option>
-                                <option value="CO">CO (Cover Order)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Price and Quantity -->
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label text-light fw-semibold">Price</label>
-                            <input type="number" class="form-control bg-secondary text-light border-0 py-2" 
-                                   id="tradePrice" step="0.01" style="font-size: 1rem;">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-light fw-semibold">Quantity</label>
-                            <input type="number" class="form-control bg-secondary text-light border-0 py-2" 
-                                   id="tradeQuantity" min="1" value="1" style="font-size: 1rem;">
-                        </div>
-                    </div>
-
-                    <!-- Validity and Trigger Price -->
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label text-light fw-semibold">Validity</label>
-                            <select class="form-select bg-secondary text-light border-0 py-2" 
-                                    id="validityType" style="font-size: 1rem;">
-                                <option value="DAY">DAY</option>
-                                <option value="IOC">IOC (Immediate or Cancel)</option>
-                                <option value="GTC">GTC (Good Till Cancel)</option>
-                                <option value="EOS">EOS (End of Session)</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-light fw-semibold">Trigger Price</label>
-                            <input type="number" class="form-control bg-secondary text-light border-0 py-2" 
-                                   id="triggerPrice" step="0.01" value="0" style="font-size: 1rem;" disabled>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer bg-dark border-0 pt-0">
-                <button type="button" class="btn btn-secondary px-4 py-2" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary px-4 py-2 fw-semibold" onclick="submitAdvancedTrade()">
-                    <i class="fas fa-chart-line me-2"></i>Place Trade
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-sm btn-outline-light" onclick="previousPage()" id="prevBtn" disabled>
+                    <i class="fas fa-chevron-left"></i> Previous
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-light" disabled>
+                    Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-light" onclick="nextPage()" id="nextBtn" disabled>
+                    Next <i class="fas fa-chevron-right"></i>
                 </button>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Chart Modal -->
-<div class="modal fade" id="chartModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content bg-dark">
-            <div class="modal-header border-bottom border-secondary">
-                <h5 class="modal-title text-light" id="chartModalLabel">
-                    <i class="fas fa-chart-line me-2"></i>Price Chart
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div id="chartContainer">
-                    <canvas id="priceChart" width="400" height="200"></canvas>
+    <!-- Column Settings Modal -->
+    <div class="modal fade" id="columnSettingsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header border-bottom border-secondary">
+                    <h5 class="modal-title text-muted">
+                        <i class="fas fa-cog me-2"></i>Column Settings
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted">Select which columns to display in the deals table:</p>
+                    <div class="row" id="columnCheckboxes">
+                        <!-- Column checkboxes will be populated here -->
+                    </div>
+                    <hr class="border-secondary">
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAllColumns()">Select All</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetDefaultColumns()">Reset to Default</button>
+                    </div>
+                </div>
+                <div class="modal-footer border-top border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="applyColumnSettings()">Apply Changes</button>
                 </div>
             </div>
-            <div class="modal-footer border-top border-secondary">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+    </div>
+
+    <!-- Deal Filters Modal -->
+    <div class="modal fade" id="dealFiltersModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark">
+                <div class="modal-header border-bottom border-secondary">
+                    <h5 class="modal-title text-light">
+                        <i class="fas fa-filter me-2"></i>Deal Filters
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label text-light">Order Type</label>
+                        <select class="form-select bg-secondary text-light" id="orderTypeFilter">
+                            <option value="">All Orders</option>
+                            <option value="BUY">Buy Orders</option>
+                            <option value="SELL">Sell Orders</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-light">Status</label>
+                        <select class="form-select bg-secondary text-light" id="statusFilter">
+                            <option value="">All Status</option>
+                            <option value="EXECUTED">Executed</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="CANCELLED">Cancelled</option>
+                            <option value="REJECTED">Rejected</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-light">Symbol</label>
+                        <input type="text" class="form-control bg-secondary text-light" id="symbolFilter" placeholder="Enter symbol...">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label text-light">Min P&L</label>
+                            <input type="number" class="form-control bg-secondary text-light" id="minPnlFilter" placeholder="-10000">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-light">Max P&L</label>
+                            <input type="number" class="form-control bg-secondary text-light" id="maxPnlFilter" placeholder="10000">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top border-secondary">
+                    <button type="button" class="btn btn-secondary" onclick="clearFilters()">Clear Filters</button>
+                    <button type="button" class="btn btn-primary" onclick="applyFilters()" data-bs-dismiss="modal">Apply Filters</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Trade Modal -->
+    <div class="modal fade" id="tradeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header bg-primary border-0">
+                    <h5 class="modal-title text-white fw-bold" id="tradeModalLabel">
+                        <i class="fas fa-chart-line me-2"></i>Buy Trade
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body bg-dark p-4">
+                    <form id="advancedTradeForm">
+                        <!-- Symbol -->
+                        <div class="mb-3">
+                            <label class="form-label text-light fw-semibold">Symbol</label>
+                            <input type="text" class="form-control bg-secondary text-light border-0 py-2" 
+                                   id="tradeSymbol" readonly style="font-size: 1rem;">
+                        </div>
+
+                        <!-- Transaction Type -->
+                        <div class="mb-3">
+                            <label class="form-label text-light fw-semibold">Transaction Type</label>
+                            <input type="text" class="form-control bg-secondary text-light border-0 py-2" 
+                                   id="tradeType" readonly style="font-size: 1rem;">
+                        </div>
+
+                        <!-- Order Type and Product -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-light fw-semibold">Order Type</label>
+                                <select class="form-select bg-secondary text-light border-0 py-2" 
+                                        id="orderType" onchange="togglePriceFields()" style="font-size: 1rem;">
+                                    <option value="MKT">Market</option>
+                                    <option value="L">Limit</option>
+                                    <option value="SL">Stop Loss</option>
+                                    <option value="SL-M">Stop Loss Market</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-light fw-semibold">Product</label>
+                                <select class="form-select bg-secondary text-light border-0 py-2" 
+                                        id="productType" style="font-size: 1rem;">
+                                    <option value="CNC">CNC (Cash & Carry)</option>
+                                    <option value="MIS">MIS (Intraday)</option>
+                                    <option value="NRML">NRML (Normal)</option>
+                                    <option value="CO">CO (Cover Order)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Price and Quantity -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-light fw-semibold">Price</label>
+                                <input type="number" class="form-control bg-secondary text-light border-0 py-2" 
+                                       id="tradePrice" step="0.01" style="font-size: 1rem;">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-light fw-semibold">Quantity</label>
+                                <input type="number" class="form-control bg-secondary text-light border-0 py-2" 
+                                       id="tradeQuantity" min="1" value="1" style="font-size: 1rem;">
+                            </div>
+                        </div>
+
+                        <!-- Validity and Trigger Price -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-light fw-semibold">Validity</label>
+                                <select class="form-select bg-secondary text-light border-0 py-2" 
+                                        id="validityType" style="font-size: 1rem;">
+                                    <option value="DAY">DAY</option>
+                                    <option value="IOC">IOC (Immediate or Cancel)</option>
+                                    <option value="GTC">GTC (Good Till Cancel)</option>
+                                    <option value="EOS">EOS (End of Session)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-light fw-semibold">Trigger Price</label>
+                                <input type="number" class="form-control bg-secondary text-light border-0 py-2" 
+                                       id="triggerPrice" step="0.01" value="0" style="font-size: 1rem;" disabled>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer bg-dark border-0 pt-0">
+                    <button type="button" class="btn btn-secondary px-4 py-2" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary px-4 py-2 fw-semibold" onclick="submitAdvancedTrade()">
+                        <i class="fas fa-chart-line me-2"></i>Place Trade
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Modal -->
+    <div class="modal fade" id="chartModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark">
+                <div class="modal-header border-bottom border-secondary">
+                    <h5 class="modal-title text-light" id="chartModalLabel">
+                        <i class="fas fa-chart-line me-2"></i>Price Chart
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="chartContainer">
+                        <canvas id="priceChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+                <div class="modal-footer border-top border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
             </div>
         </div>
     </div>
@@ -290,7 +378,171 @@
 
 {% endblock %}
 
+<style>
+/* Default Deals Skeleton CSS */
+.default-deals-skeleton {
+    animation: fadeIn 0.3s ease-in;
+}
+
+.skeleton-title {
+    height: 28px;
+    width: 200px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+.skeleton-subtitle {
+    height: 16px;
+    width: 320px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+.skeleton-button {
+    height: 40px;
+    width: 120px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+}
+
+.skeleton-filter-label {
+    height: 16px;
+    width: 80px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 3px;
+}
+
+.skeleton-filter-select, .skeleton-filter-input {
+    height: 38px;
+    width: 100%;
+    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+}
+
+.skeleton-filter-btn {
+    height: 38px;
+    width: 100px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+    margin-top: 25px;
+}
+
+.skeleton-card-title {
+    height: 14px;
+    width: 100px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 3px;
+}
+
+.skeleton-card-number {
+    height: 32px;
+    width: 80px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.25) 25%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.25) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+.skeleton-card-subtitle {
+    height: 12px;
+    width: 120px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 3px;
+}
+
+.skeleton-card-icon {
+    height: 60px;
+    width: 60px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 50%;
+}
+
+.skeleton-table-header {
+    height: 20px;
+    width: 160px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+.skeleton-table {
+    padding: 1rem;
+}
+
+.skeleton-table-row {
+    height: 50px;
+    width: 100%;
+    background: linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+</style>
+
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ url_for('static', filename='js/default_deals.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Show skeleton initially
+    document.getElementById('defaultDealsSkeleton').style.display = 'block';
+    document.getElementById('defaultDealsContent').style.display = 'none';
+
+    // Hide skeleton after content loads
+    setTimeout(function() {
+        hideDefaultDealsSkeleton();
+    }, 2000);
+});
+
+function hideDefaultDealsSkeleton() {
+    const skeleton = document.getElementById('defaultDealsSkeleton');
+    const content = document.getElementById('defaultDealsContent');
+
+    if (skeleton && content) {
+        skeleton.style.transition = 'opacity 0.5s ease-out';
+        skeleton.style.opacity = '0';
+
+        setTimeout(function() {
+            skeleton.style.display = 'none';
+            content.style.display = 'block';
+            content.style.opacity = '0';
+            content.style.transition = 'opacity 0.5s ease-in';
+
+            setTimeout(function() {
+                content.style.opacity = '1';
+            }, 50);
+        }, 500);
+    }
+}
+</script>
 {% endblock %}

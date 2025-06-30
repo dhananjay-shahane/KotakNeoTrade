@@ -2,221 +2,431 @@
 
 {% block title %}Positions - Kotak Neo Trading{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/positions.css') }}">
-{% endblock %}
-
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h3 mb-1">Live Positions</h1>
-        <p class="text-muted mb-0">Real-time position tracking with comprehensive P&L analysis</p>
-    </div>
-    <div class="d-flex gap-2">
-        <button class="btn btn-outline-secondary" onclick="refreshPositions()">
-            <i class="fas fa-sync-alt me-1"></i>Refresh
-        </button>
-        <div class="dropdown">
-            <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                <i class="fas fa-clock me-1"></i>Auto Refresh: <span id="refreshInterval">30s</span>
-            </button>
-            <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#" onclick="setAutoRefresh(10)">10 seconds</a></li>
-                <li><a class="dropdown-item" href="#" onclick="setAutoRefresh(30)">30 seconds</a></li>
-                <li><a class="dropdown-item" href="#" onclick="setAutoRefresh(60)">1 minute</a></li>
-                <li><a class="dropdown-item" href="#" onclick="setAutoRefresh(0)">Disable</a></li>
-            </ul>
+<!-- Positions Skeleton Loader -->
+<div class="positions-skeleton" id="positionsSkeleton">
+    <!-- Header Skeleton -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <div class="skeleton-title mb-2"></div>
+            <div class="skeleton-subtitle"></div>
         </div>
+        <div class="skeleton-button"></div>
     </div>
-</div>
 
-<!-- P&L Summary Cards -->
-<div class="row mb-4" id="pnlSummary">
-    <div class="col-md-3">
-        <div class="card bg-dark border-0 shadow position-filter-card total-positions-card">
-            <div class="card-body text-center">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <i class="fas fa-chart-pie text-primary fs-4"></i>
-                    <span class="badge bg-secondary" id="totalPositionsCount">0</span>
-                </div>
-                <h4 class="text-light mb-1">Total Positions</h4>
-                <p class="text-muted mb-0 small">Active trading positions</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-dark border-0 shadow position-filter-card long-positions-card">
-            <div class="card-body text-center">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <i class="fas fa-chart-line text-success fs-4"></i>
-                    <span class="badge bg-success" id="longPositionsCount">0</span>
-                </div>
-                <h4 class="text-success mb-1" id="longPositionsValue">₹0.00</h4>
-                <p class="text-muted mb-0 small">Long Positions</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-dark border-0 shadow position-filter-card short-positions-card">
-            <div class="card-body text-center">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <i class="fas fa-chart-line-down text-danger fs-4"></i>
-                    <span class="badge bg-danger" id="shortPositionsCount">0</span>
-                </div>
-                <h4 class="text-danger mb-1" id="shortPositionsValue">₹0.00</h4>
-                <p class="text-muted mb-0 small">Short Positions</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-dark border-0 shadow">
-            <div class="card-body text-center">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <i class="fas fa-calculator text-warning fs-4"></i>
-                    <span class="badge" id="pnlBadge">0%</span>
-                </div>
-                <h4 class="mb-1" id="totalPnlValue">₹0.00</h4>
-                <p class="text-muted mb-0 small">Total P&L</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Live Positions Table -->
-<div class="card bg-secondary border-0 shadow-lg">
-    <div class="card-header bg-dark border-0">
-        <div class="d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 text-light">
-                <i class="fas fa-table me-2 text-primary"></i>Live Trading Positions
-                <span class="badge bg-primary ms-2" id="positionsTableCount">0</span>
-            </h5>
-            <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-outline-primary" onclick="filterPositionsByType('ALL')" title="Show All Positions">
-                    <i class="fas fa-list me-1"></i>All
-                </button>
-                <button class="btn btn-sm btn-outline-success" onclick="filterPositionsByType('LONG')" title="Show Long Positions">
-                    <i class="fas fa-arrow-up me-1"></i>Long
-                </button>
-                <button class="btn btn-sm btn-outline-danger" onclick="filterPositionsByType('SHORT')" title="Show Short Positions">
-                    <i class="fas fa-arrow-down me-1"></i>Short
-                </button>
-            </div>
-        </div>
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-dark table-hover mb-0" id="positionsTable">
-                <thead class="table-primary">
-                    <tr>
-                        <th class="sortable" style="cursor: pointer;" title="Click to sort A-Z" onclick="sortTable('symbol')">SYMBOL <i class="fas fa-sort ms-1 text-muted"></i></th>
-                        <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('product')">PRODUCT <i class="fas fa-sort ms-1 text-muted"></i></th>
-                        <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('exchange')">EXCHANGE <i class="fas fa-sort ms-1 text-muted"></i></th>
-                        <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('buyQty')">BUY QTY <i class="fas fa-sort ms-1 text-muted"></i></th>
-                        <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('sellQty')">SELL QTY <i class="fas fa-sort ms-1 text-muted"></i></th>
-                        <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('netQty')">NET QTY <i class="fas fa-sort ms-1 text-muted"></i></th>
-                        <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('buyAmt')">BUY AMOUNT <i class="fas fa-sort ms-1 text-muted"></i></th>
-                        <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('sellAmt')">SELL AMOUNT <i class="fas fa-sort ms-1 text-muted"></i></th>
-                        <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('pnl')">P&L <i class="fas fa-sort ms-1 text-muted"></i></th>
-                        <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('position')">POSITION <i class="fas fa-sort ms-1 text-muted"></i></th>
-                        <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('expiry')">EXPIRY <i class="fas fa-sort ms-1 text-muted"></i></th>
-                        <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('lastUpdated')">LAST UPDATED <i class="fas fa-sort ms-1 text-muted"></i></th>
-                        <th>ACTIONS</th>
-                    </tr>
-                </thead>
-                <tbody id="positionsTableBody">
-                    <tr>
-                        <td colspan="13" class="text-center py-4">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Loading positions...</span>
-                            </div>
-                            <p class="mt-2 mb-0 text-muted">Loading live positions data...</p>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<!-- Place Order Modal -->
-<div class="modal fade" id="placeOrderModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content bg-dark">
-            <div class="modal-header border-bottom border-secondary">
-                <h5 class="modal-title text-light" id="placeOrderModalLabel">
-                    <i class="fas fa-shopping-cart me-2"></i>Place Order
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="placeOrderForm">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label text-light">Symbol</label>
-                            <input type="text" class="form-control bg-secondary text-light" id="orderSymbol" readonly>
+    <!-- Summary Cards Skeleton -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card stats-card border-0 shadow-sm bg-success">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="skeleton-card-title mb-2"></div>
+                            <div class="skeleton-card-number mb-2"></div>
+                            <div class="skeleton-card-subtitle"></div>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label text-light">Transaction Type</label>
-                            <select class="form-select bg-secondary text-light" id="orderTransactionType">
-                                <option value="BUY">BUY</option>
-                                <option value="SELL">SELL</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label text-light">Exchange</label>
-                            <input type="text" class="form-control bg-secondary text-light" id="orderExchange" readonly>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label text-light">Product</label>
-                            <select class="form-select bg-secondary text-light" id="orderProduct">
-                                <option value="CNC">CNC</option>
-                                <option value="MIS">MIS</option>
-                                <option value="NRML">NRML</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label text-light">Order Type</label>
-                            <select class="form-select bg-secondary text-light" id="orderType" onchange="handleOrderTypeChange()">
-                                <option value="MKT">Market</option>
-                                <option value="L">Limit</option>
-                                <option value="SL">Stop Loss</option>
-                                <option value="SL-M">Stop Loss Market</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label text-light">Quantity</label>
-                            <input type="number" class="form-control bg-secondary text-light" id="orderQuantity" min="1" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label text-light">Price</label>
-                            <input type="number" class="form-control bg-secondary text-light" id="orderPrice" step="0.01">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label text-light">Trigger Price</label>
-                            <input type="number" class="form-control bg-secondary text-light" id="orderTriggerPrice" step="0.01">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label text-light">Validity</label>
-                            <select class="form-select bg-secondary text-light" id="orderValidity">
-                                <option value="DAY">DAY</option>
-                                <option value="IOC">IOC</option>
-                                <option value="GTT">GTT</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label text-light">Disclosed Quantity</label>
-                            <input type="number" class="form-control bg-secondary text-light" id="orderDisclosedQuantity" min="0" value="0">
-                        </div>
+                        <div class="skeleton-card-icon"></div>
                     </div>
-                </form>
+                </div>
             </div>
-            <div class="modal-footer border-top border-secondary">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="submitPlaceOrder()">Place Order</button>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card stats-card border-0 shadow-sm bg-danger">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="skeleton-card-title mb-2"></div>
+                            <div class="skeleton-card-number mb-2"></div>
+                            <div class="skeleton-card-subtitle"></div>
+                        </div>
+                        <div class="skeleton-card-icon"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card stats-card border-0 shadow-sm bg-info">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="skeleton-card-title mb-2"></div>
+                            <div class="skeleton-card-number mb-2"></div>
+                            <div class="skeleton-card-subtitle"></div>
+                        </div>
+                        <div class="skeleton-card-icon"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Positions Table Skeleton -->
+    <div class="card bg-secondary">
+        <div class="card-header">
+            <div class="skeleton-table-header"></div>
+        </div>
+        <div class="card-body p-0">
+            <div class="skeleton-table">
+                <div class="skeleton-table-row"></div>
+                <div class="skeleton-table-row"></div>
+                <div class="skeleton-table-row"></div>
+                <div class="skeleton-table-row"></div>
+                <div class="skeleton-table-row"></div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Actual Positions Content -->
+<div class="positions-content" id="positionsContent" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">Live Positions</h1>
+            <p class="text-muted mb-0">Real-time position tracking with comprehensive P&L analysis</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary" onclick="refreshPositions()">
+                <i class="fas fa-sync-alt me-1"></i>Refresh
+            </button>
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-clock me-1"></i>Auto Refresh: <span id="refreshInterval">30s</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="setAutoRefresh(10)">10 seconds</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setAutoRefresh(30)">30 seconds</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setAutoRefresh(60)">1 minute</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setAutoRefresh(0)">Disable</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- P&L Summary Cards -->
+    <div class="row mb-4" id="pnlSummary">
+        <div class="col-md-3">
+            <div class="card bg-dark border-0 shadow position-filter-card total-positions-card">
+                <div class="card-body text-center">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <i class="fas fa-chart-pie text-primary fs-4"></i>
+                        <span class="badge bg-secondary" id="totalPositionsCount">0</span>
+                    </div>
+                    <h4 class="text-light mb-1">Total Positions</h4>
+                    <p class="text-muted mb-0 small">Active trading positions</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-0 shadow position-filter-card long-positions-card">
+                <div class="card-body text-center">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <i class="fas fa-chart-line text-success fs-4"></i>
+                        <span class="badge bg-success" id="longPositionsCount">0</span>
+                    </div>
+                    <h4 class="text-success mb-1" id="longPositionsValue">₹0.00</h4>
+                    <p class="text-muted mb-0 small">Long Positions</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-0 shadow position-filter-card short-positions-card">
+                <div class="card-body text-center">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <i class="fas fa-chart-line-down text-danger fs-4"></i>
+                        <span class="badge bg-danger" id="shortPositionsCount">0</span>
+                    </div>
+                    <h4 class="text-danger mb-1" id="shortPositionsValue">₹0.00</h4>
+                    <p class="text-muted mb-0 small">Short Positions</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-0 shadow">
+                <div class="card-body text-center">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <i class="fas fa-calculator text-warning fs-4"></i>
+                        <span class="badge" id="pnlBadge">0%</span>
+                    </div>
+                    <h4 class="mb-1" id="totalPnlValue">₹0.00</h4>
+                    <p class="text-muted mb-0 small">Total P&L</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Positions Table -->
+    <div class="card bg-secondary border-0 shadow-lg">
+        <div class="card-header bg-dark border-0">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-light">
+                    <i class="fas fa-table me-2 text-primary"></i>Live Trading Positions
+                    <span class="badge bg-primary ms-2" id="positionsTableCount">0</span>
+                </h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-primary" onclick="filterPositionsByType('ALL')" title="Show All Positions">
+                        <i class="fas fa-list me-1"></i>All
+                    </button>
+                    <button class="btn btn-sm btn-outline-success" onclick="filterPositionsByType('LONG')" title="Show Long Positions">
+                        <i class="fas fa-arrow-up me-1"></i>Long
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="filterPositionsByType('SHORT')" title="Show Short Positions">
+                        <i class="fas fa-arrow-down me-1"></i>Short
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0" id="positionsTable">
+                    <thead class="table-primary">
+                        <tr>
+                            <th class="sortable" style="cursor: pointer;" title="Click to sort A-Z" onclick="sortTable('symbol')">SYMBOL <i class="fas fa-sort ms-1 text-muted"></i></th>
+                            <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('product')">PRODUCT <i class="fas fa-sort ms-1 text-muted"></i></th>
+                            <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('exchange')">EXCHANGE <i class="fas fa-sort ms-1 text-muted"></i></th>
+                            <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('buyQty')">BUY QTY <i class="fas fa-sort ms-1 text-muted"></i></th>
+                            <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('sellQty')">SELL QTY <i class="fas fa-sort ms-1 text-muted"></i></th>
+                            <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('netQty')">NET QTY <i class="fas fa-sort ms-1 text-muted"></i></th>
+                            <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('buyAmt')">BUY AMOUNT <i class="fas fa-sort ms-1 text-muted"></i></th>
+                            <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('sellAmt')">SELL AMOUNT <i class="fas fa-sort ms-1 text-muted"></i></th>
+                            <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('pnl')">P&L <i class="fas fa-sort ms-1 text-muted"></i></th>
+                            <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('position')">POSITION <i class="fas fa-sort ms-1 text-muted"></i></th>
+                            <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('expiry')">EXPIRY <i class="fas fa-sort ms-1 text-muted"></i></th>
+                            <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('lastUpdated')">LAST UPDATED <i class="fas fa-sort ms-1 text-muted"></i></th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="positionsTableBody">
+                        <tr>
+                            <td colspan="13" class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading positions...</span>
+                                </div>
+                                <p class="mt-2 mb-0 text-muted">Loading live positions data...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Place Order Modal -->
+    <div class="modal fade" id="placeOrderModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark">
+                <div class="modal-header border-bottom border-secondary">
+                    <h5 class="modal-title text-light" id="placeOrderModalLabel">
+                        <i class="fas fa-shopping-cart me-2"></i>Place Order
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="placeOrderForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-light">Symbol</label>
+                                <input type="text" class="form-control bg-secondary text-light" id="orderSymbol" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-light">Transaction Type</label>
+                                <select class="form-select bg-secondary text-light" id="orderTransactionType">
+                                    <option value="BUY">BUY</option>
+                                    <option value="SELL">SELL</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-light">Exchange</label>
+                                <input type="text" class="form-control bg-secondary text-light" id="orderExchange" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-light">Product</label>
+                                <select class="form-select bg-secondary text-light" id="orderProduct">
+                                    <option value="CNC">CNC</option>
+                                    <option value="MIS">MIS</option>
+                                    <option value="NRML">NRML</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-light">Order Type</label>
+                                <select class="form-select bg-secondary text-light" id="orderType" onchange="handleOrderTypeChange()">
+                                    <option value="MKT">Market</option>
+                                    <option value="L">Limit</option>
+                                    <option value="SL">Stop Loss</option>
+                                    <option value="SL-M">Stop Loss Market</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-light">Quantity</label>
+                                <input type="number" class="form-control bg-secondary text-light" id="orderQuantity" min="1" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-light">Price</label>
+                                <input type="number" class="form-control bg-secondary text-light" id="orderPrice" step="0.01">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-light">Trigger Price</label>
+                                <input type="number" class="form-control bg-secondary text-light" id="orderTriggerPrice" step="0.01">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-light">Validity</label>
+                                <select class="form-select bg-secondary text-light" id="orderValidity">
+                                    <option value="DAY">DAY</option>
+                                    <option value="IOC">IOC</option>
+                                    <option value="GTT">GTT</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-light">Disclosed Quantity</label>
+                                <input type="number" class="form-control bg-secondary text-light" id="orderDisclosedQuantity" min="0" value="0">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer border-top border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="submitPlaceOrder()">Place Order</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Positions Skeleton CSS */
+.positions-skeleton {
+    animation: fadeIn 0.3s ease-in;
+}
+
+.skeleton-title {
+    height: 28px;
+    width: 200px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+.skeleton-subtitle {
+    height: 16px;
+    width: 300px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+.skeleton-button {
+    height: 40px;
+    width: 120px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+}
+
+.skeleton-card-title {
+    height: 14px;
+    width: 100px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 3px;
+}
+
+.skeleton-card-number {
+    height: 32px;
+    width: 80px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.25) 25%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.25) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+.skeleton-card-subtitle {
+    height: 12px;
+    width: 120px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 3px;
+}
+
+.skeleton-card-icon {
+    height: 60px;
+    width: 60px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 50%;
+}
+
+.skeleton-table-header {
+    height: 20px;
+    width: 120px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+.skeleton-table {
+    padding: 1rem;
+}
+
+.skeleton-table-row {
+    height: 50px;
+    width: 100%;
+    background: linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+</style>
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Show skeleton initially
+    document.getElementById('positionsSkeleton').style.display = 'block';
+    document.getElementById('positionsContent').style.display = 'none';
+
+    // Hide skeleton after content loads
+    setTimeout(function() {
+        hidePositionsSkeleton();
+    }, 2000);
+});
+
+function hidePositionsSkeleton() {
+    const skeleton = document.getElementById('positionsSkeleton');
+    const content = document.getElementById('positionsContent');
+
+    if (skeleton && content) {
+        skeleton.style.transition = 'opacity 0.5s ease-out';
+        skeleton.style.opacity = '0';
+
+        setTimeout(function() {
+            skeleton.style.display = 'none';
+            content.style.display = 'block';
+            content.style.opacity = '0';
+            content.style.transition = 'opacity 0.5s ease-in';
+
+            setTimeout(function() {
+                content.style.opacity = '1';
+            }, 50);
+        }, 500);
+    }
+}
+</script>
 <script src="{{ url_for('static', filename='js/positions.js') }}"></script>
 {% endblock %}
