@@ -6,8 +6,8 @@ Run this once to populate the database with ETF trades
 """
 
 from app import app, db
-from Scripts.models import User
-from Scripts.models_etf import ETFSignalTrade
+from scripts.models import User
+from scripts.models_etf import ETFSignalTrade
 from datetime import datetime
 import logging
 

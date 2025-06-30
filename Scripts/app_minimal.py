@@ -31,8 +31,8 @@ db.init_app(app)
 
 with app.app_context():
     # Make sure to import the models here or their tables won't be created
-    import Scripts.models as models  # noqa: F401
-    import Scripts.models_etf as models_etf  # noqa: F401
+    import scripts.models as models  # noqa: F401
+    import scripts.models_etf as models_etf  # noqa: F401
 
     db.create_all()
 

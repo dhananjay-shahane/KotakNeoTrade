@@ -6,8 +6,8 @@ Use this script to get fresh tokens when 2FA is required
 """
 
 import logging
-from Scripts.neo_client import NeoClient
-from Scripts.session_manager import SessionManager
+from scripts.neo_client import NeoClient
+from scripts.session_manager import SessionManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

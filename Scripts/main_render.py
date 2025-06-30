@@ -58,8 +58,8 @@ def init_database():
             from app import db
             
             # Import all models to ensure they're registered
-            import Scripts.models as models
-            import Scripts.models_etf as models_etf
+            import scripts.models as models
+            import scripts.models_etf as models_etf
             
             # Create all tables
             db.create_all()

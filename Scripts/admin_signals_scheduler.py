@@ -8,8 +8,8 @@ import threading
 import logging
 from datetime import datetime
 from app import app, db
-from Scripts.models_etf import AdminTradeSignal, KotakNeoQuote
-from Scripts.trading_functions import TradingFunctions
+from scripts.models_etf import AdminTradeSignal, KotakNeoQuote
+from scripts.trading_functions import TradingFunctions
 
 logger = logging.getLogger(__name__)
 

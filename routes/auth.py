@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 import logging
 
 from utils.auth import validate_current_session, clear_session
-from Scripts.neo_client import NeoClient
-from Scripts.user_manager import UserManager
+from scripts.neo_client import NeoClient
+from scripts.user_manager import UserManager
 
 auth_bp = Blueprint('auth', __name__)
 

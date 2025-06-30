@@ -8,8 +8,8 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from app import app, db
-from Scripts.models_etf import KotakNeoQuote, AdminTradeSignal
-from Scripts.trading_functions import TradingFunctions
+from scripts.models_etf import KotakNeoQuote, AdminTradeSignal
+from scripts.trading_functions import TradingFunctions
 from datetime import datetime
 import logging
 import random

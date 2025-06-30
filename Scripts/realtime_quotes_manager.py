@@ -9,7 +9,7 @@ import time
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 from app import db
-from Scripts.models_etf import RealtimeQuote, AdminTradeSignal
+from scripts.models_etf import RealtimeQuote, AdminTradeSignal
 
 logger = logging.getLogger(__name__)
 

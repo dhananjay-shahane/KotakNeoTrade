@@ -89,8 +89,8 @@ class ProductionSetup:
             print("✅ Flask app imports successful")
             
             # Test models
-            import Scripts.models as models
-            import Scripts.models_etf as models_etf
+            import scripts.models as models
+            import scripts.models_etf as models_etf
             print("✅ Model imports successful")
             
             return True

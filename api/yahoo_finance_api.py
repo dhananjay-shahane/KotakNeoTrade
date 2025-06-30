@@ -2,8 +2,8 @@
 from flask import Blueprint, request, jsonify
 import logging
 from datetime import datetime
-from Scripts.yahoo_finance_service import yahoo_service
-from Scripts.yahoo_scheduler import force_yahoo_update
+from scripts.yahoo_finance_service import yahoo_service
+from scripts.yahoo_scheduler import force_yahoo_update
 
 yahoo_bp = Blueprint('yahoo', __name__, url_prefix='/api/yahoo')
 logger = logging.getLogger(__name__)
@@ -93,7 +93,7 @@ def get_status():
     """Get Yahoo Finance service status"""
     try:
         # Get last update times from database
-        from Scripts.models_etf import AdminTradeSignal
+        from scripts.models_etf import AdminTradeSignal
         
         latest_signal = AdminTradeSignal.query.filter(
             AdminTradeSignal.last_update_time.isnot(None)

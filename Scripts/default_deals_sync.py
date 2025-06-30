@@ -4,8 +4,8 @@ Automatically syncs data from admin_trade_signals to default_deals table
 """
 
 from app import app, db
-from Scripts.models import DefaultDeal
-from Scripts.models_etf import AdminTradeSignal
+from scripts.models import DefaultDeal
+from scripts.models_etf import AdminTradeSignal
 import logging
 
 logger = logging.getLogger(__name__)

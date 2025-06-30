@@ -5,10 +5,10 @@ import threading
 import logging
 from datetime import datetime
 from app import app, db
-from Scripts.models_etf import ETFSignalTrade
-from Scripts.trading_functions import TradingFunctions
-from Scripts.session_manager import SessionManager
-from Scripts.neo_client import NeoClient
+from scripts.models_etf import ETFSignalTrade
+from scripts.trading_functions import TradingFunctions
+from scripts.session_manager import SessionManager
+from scripts.neo_client import NeoClient
 import json
 
 logging.basicConfig(level=logging.INFO)

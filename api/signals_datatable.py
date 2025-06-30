@@ -3,8 +3,8 @@ Analysis: The code modifies the get_admin_signals_datatable function to format t
 """
 from flask import Blueprint, jsonify, request, session
 from app import db
-from Scripts.models_etf import ETFSignalTrade, AdminTradeSignal, RealtimeQuote
-from Scripts.models import User
+from scripts.models_etf import ETFSignalTrade, AdminTradeSignal, RealtimeQuote
+from scripts.models import User
 from sqlalchemy import and_, or_, desc, asc, text
 from sqlalchemy.orm import joinedload
 from datetime import datetime, timedelta

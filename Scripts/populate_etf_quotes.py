@@ -1,7 +1,7 @@
 """This script populates ETF quotes and signals based on CSV data."""
 from app import app, db
-from Scripts.models_etf import AdminTradeSignal
-from Scripts.trading_functions import TradingFunctions
+from scripts.models_etf import AdminTradeSignal
+from scripts.trading_functions import TradingFunctions
 import logging
 from datetime import datetime, timedelta
 import json
@@ -67,9 +67,9 @@ def populate_etf_signals_with_csv_data():
     """Create ETF trading signals based on CSV data format"""
     with app.app_context():
         try:
-            from Scripts.models import User
-            from Scripts.models_etf import AdminTradeSignal
-            from Scripts.models_etf import RealtimeQuote  # Import RealtimeQuote model
+            from scripts.models import User
+            from scripts.models_etf import AdminTradeSignal
+            from scripts.models_etf import RealtimeQuote  # Import RealtimeQuote model
 
             # ETF data matching your CSV format - focus on CMP calculation
             etf_data = [
@@ -183,7 +183,7 @@ def populate_etf_signals_with_csv_data():
             current_time = datetime.utcnow()
 
             # Clear existing quotes for these symbols
-            from Scripts.models_etf import RealtimeQuote
+            from scripts.models_etf import RealtimeQuote
             for etf in csv_etf_data:
                 RealtimeQuote.query.filter_by(symbol=etf['symbol']).delete()
 

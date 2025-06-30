@@ -209,8 +209,8 @@ db.init_app(app)
 
 with app.app_context():
     # Make sure to import the models here or their tables won't be created
-    import Scripts.models as models  # noqa: F401
-    import Scripts.models_etf as models_etf  # noqa: F401
+    import scripts.models as models  # noqa: F401
+    import scripts.models_etf as models_etf  # noqa: F401
 
     db.create_all()
 
@@ -233,13 +233,13 @@ Session(app)
 logging.basicConfig(level=logging.DEBUG)
 
 # Initialize helper classes
-from Scripts.neo_client import NeoClient
-from Scripts.trading_functions import TradingFunctions
-from Scripts.user_manager import UserManager
-from Scripts.session_helper import SessionHelper
-from Scripts.websocket_handler import WebSocketHandler
+from scripts.neo_client import NeoClient
+from scripts.trading_functions import TradingFunctions
+from scripts.user_manager import UserManager
+from scripts.session_helper import SessionHelper
+from scripts.websocket_handler import WebSocketHandler
 try:
-    from Scripts.supabase_client import SupabaseClient
+    from scripts.supabase_client import SupabaseClient
     supabase_client = SupabaseClient()
 except Exception as e:
     print(f"Supabase client initialization failed: {e}")
@@ -320,66 +320,6 @@ def require_auth(f):
 
 
 # @app.route('/')
-
-
-@app.route('/test-csv')
-def test_csv():
-    """Test CSV data integration without authentication"""
-    try:
-        from Scripts.trading_functions import TradingFunctions
-        trading_func = TradingFunctions()
-
-        # Get dashboard data from CSV
-        dashboard_data = trading_func.get_dashboard_data(None)
-
-        # Format for display
-        positions = dashboard_data.get('positions', [])
-        summary = dashboard_data.get('summary', {})
-
-        html = f"""
-        <html>
-        <head><title>CSV Data Test</title></head>
-        <body>
-            <h1>ETF Trading Data from CSV</h1>
-            <h2>Portfolio Summary</h2>
-            <p>Total Positions: {summary.get('total_positions', 0)}</p>
-            <p>Total Investment: ₹{summary.get('total_investment', 0):,.2f}</p>
-            <p>Total P&L: ₹{summary.get('total_pnl', 0):,.2f}</p>
-
-            <h2>Current Positions</h2>
-            <table border="1">
-                <tr>
-                    <th>Symbol</th>
-                    <th>Quantity</th>
-                    <th>Entry Price</th>
-                    <th>Current Price</th>
-                    <th>Investment</th>
-                    <th>P&L</th>
-                </tr>
-        """
-
-        for pos in positions:
-            html += f"""
-                <tr>
-                    <td>{pos.get('symbol', '')}</td>
-                    <td>{pos.get('quantity', 0)}</td>
-                    <td>₹{pos.get('avg_price', 0):,.2f}</td>
-                    <td>₹{pos.get('ltp', 0):,.2f}</td>
-                    <td>₹{pos.get('value', 0):,.2f}</td>
-                    <td>₹{pos.get('pnl', 0):,.2f}</td>
-                </tr>
-            """
-
-        html += """
-            </table>
-        </body>
-        </html>
-        """
-
-        return html
-
-    except Exception as e:
-        return f"<html><body><h1>Error testing CSV data</h1><p>{str(e)}</p></body></html>"
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -986,8 +926,8 @@ def populate_admin_signals_csv():
 def populate_admin_signals_endpoint():
     """API endpoint to populate admin_trade_signals table with sample ETF data"""
     try:
-        from Scripts.models_etf import AdminTradeSignal
-        from Scripts.models import User
+        from scripts.models_etf import AdminTradeSignal
+        from scripts.models import User
         from datetime import datetime, timedelta
         from decimal import Decimal
 
@@ -1287,7 +1227,7 @@ def get_default_deals_data():
 def initialize_auto_sync_endpoint():
     """API endpoint to initialize automatic synchronization system"""
     try:
-        from Scripts.auto_sync_system import initialize_auto_sync_system
+        from scripts.auto_sync_system import initialize_auto_sync_system
         result = initialize_auto_sync_system()
         
         return jsonify({
@@ -1308,7 +1248,7 @@ def initialize_auto_sync_endpoint():
 def test_auto_sync_endpoint():
     """API endpoint to test automatic synchronization"""
     try:
-        from Scripts.auto_sync_system import test_auto_sync
+        from scripts.auto_sync_system import test_auto_sync
         test_result = test_auto_sync()
         
         return jsonify({
@@ -1329,7 +1269,7 @@ def test_auto_sync_endpoint():
 def place_order():
     """API endpoint to place buy/sell orders using Kotak Neo API"""
     try:
-        from Scripts.trading_functions import TradingFunctions
+        from scripts.trading_functions import TradingFunctions
         
         # Get order data from request
         order_data = request.get_json()
@@ -1402,7 +1342,7 @@ def quick_buy():
         if not client:
             return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
         
-        from Scripts.trading_functions import TradingFunctions
+        from scripts.trading_functions import TradingFunctions
         trading_functions = TradingFunctions()
         
         order_params = {
@@ -1450,7 +1390,7 @@ def quick_sell():
         if not client:
             return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
         
-        from Scripts.trading_functions import TradingFunctions
+        from scripts.trading_functions import TradingFunctions
         trading_functions = TradingFunctions()
         
         order_params = {
@@ -1486,9 +1426,9 @@ from routes.auth import auth_bp
 from routes.main import main_bp
 from api.dashboard import dashboard_api
 from api.trading import trading_api
-from Scripts.sync_default_deals import sync_admin_signals_to_default_deals, update_default_deal_from_admin_signal
-from Scripts.auto_sync_triggers import initialize_auto_sync
-from Scripts.models import DefaultDeal
+from scripts.sync_default_deals import sync_admin_signals_to_default_deals, update_default_deal_from_admin_signal
+from scripts.auto_sync_triggers import initialize_auto_sync
+from scripts.models import DefaultDeal
 # ETF signals blueprint will be registered separately
 
 # Register blueprints
@@ -1516,7 +1456,7 @@ try:
 
     # Initialize realtime quotes scheduler
     try:
-        from Scripts.realtime_quotes_manager import start_quotes_scheduler
+        from scripts.realtime_quotes_manager import start_quotes_scheduler
         start_quotes_scheduler()
         print("✓ Realtime quotes scheduler started")
     except Exception as e:
@@ -1541,7 +1481,7 @@ if __name__ == '__main__':
 
     # Start ETF data scheduler for real-time quotes
     try:
-        from Scripts.etf_data_scheduler import start_etf_data_scheduler
+        from scripts.etf_data_scheduler import start_etf_data_scheduler
         start_etf_data_scheduler()
         logging.info("✅ ETF Data Scheduler initialized")
     except Exception as e:
@@ -1551,7 +1491,7 @@ if __name__ == '__main__':
     try:
         logging.info(
             "Starting admin signals scheduler with Kotak Neo integration...")
-        from Scripts.admin_signals_scheduler import start_admin_signals_scheduler
+        from scripts.admin_signals_scheduler import start_admin_signals_scheduler
         start_admin_signals_scheduler()
         logging.info(
             "✅ Admin signals scheduler started - automatic updates every 5 minutes"
@@ -1560,7 +1500,7 @@ if __name__ == '__main__':
         logging.error(f"❌ Failed to start admin signals scheduler: {e}")
 
 # Initialize auto-sync triggers
-from Scripts.sync_default_deals import setup_auto_sync_triggers
+from scripts.sync_default_deals import setup_auto_sync_triggers
 setup_auto_sync_triggers()
 
 if __name__ == '__main__':

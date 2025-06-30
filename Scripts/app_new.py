@@ -30,7 +30,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1, x_prefix=1, x_for=1, 
 Session(app)
 
 # Initialize database
-from Scripts.models import db, User, UserSession, UserPreferences
+from scripts.models import db, User, UserSession, UserPreferences
 db.init_app(app)
 
 # Create tables

@@ -1,7 +1,7 @@
 """Fix calculate_pnl method calls in deals API and handle potential calculation errors."""
 from flask import Blueprint, request, jsonify, session
-from Scripts.models import db, User
-from Scripts.models_etf import AdminTradeSignal, UserDeal, UserNotification
+from scripts.models import db, User
+from scripts.models_etf import AdminTradeSignal, UserDeal, UserNotification
 import json
 from datetime import datetime
 import logging
@@ -30,7 +30,7 @@ def create_deal_from_signal():
 
         # If ucc is used, try to find or create user record
         if user_id == session.get('ucc'):
-            from Scripts.models import User
+            from scripts.models import User
             user = User.query.filter_by(ucc=user_id).first()
             if user:
                 user_id = user.id
@@ -245,8 +245,8 @@ def get_user_deals():
 
         # Get deals from database only - no CSV fallback
         try:
-            from Scripts.models import User
-            from Scripts.models_etf import UserDeal
+            from scripts.models import User
+            from scripts.models_etf import UserDeal
 
             current_user = None
 

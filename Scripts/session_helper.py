@@ -3,7 +3,7 @@ class SessionHelper:
     """Helper class to easily access stored session data"""
     
     def __init__(self):
-        from Scripts.session_manager import SessionManager
+        from scripts.session_manager import SessionManager
         self.session_manager = SessionManager()
     
     def get_current_user_data(self):

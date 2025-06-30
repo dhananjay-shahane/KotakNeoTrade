@@ -4,7 +4,7 @@ import time
 import threading
 import logging
 from datetime import datetime
-from Scripts.yahoo_finance_service import yahoo_service
+from scripts.yahoo_finance_service import yahoo_service
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

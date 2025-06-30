@@ -8,8 +8,8 @@ This script can be run independently to verify authentication
 import sys
 import os
 import logging
-from Scripts.session_manager import SessionManager
-from Scripts.neo_client import NeoClient
+from scripts.session_manager import SessionManager
+from scripts.neo_client import NeoClient
 
 # Add current directory to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -17,50 +17,50 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def test_stored_session():
-    """Test if stored session is valid"""
-    try:
-        session_manager = SessionManager()
-        neo_client = NeoClient()
+# def test_stored_session():
+#     """Test if stored session is valid"""
+#     try:
+#         session_manager = SessionManager()
+#         neo_client = NeoClient()
         
-        # Get stored session
-        stored_session = session_manager.get_valid_session()
-        if not stored_session:
-            logger.error("❌ No valid stored session found")
-            return False
+#         # Get stored session
+#         stored_session = session_manager.get_valid_session()
+#         if not stored_session:
+#             logger.error("❌ No valid stored session found")
+#             return False
         
-        logger.info("📱 Found stored session, testing authentication...")
+#         logger.info("📱 Found stored session, testing authentication...")
         
-        # Initialize client with stored tokens
-        client = neo_client.initialize_client_with_tokens(
-            stored_session['access_token'],
-            stored_session['session_token'],
-            stored_session['sid']
-        )
+#         # Initialize client with stored tokens
+#         client = neo_client.initialize_client_with_tokens(
+#             stored_session['access_token'],
+#             stored_session['session_token'],
+#             stored_session['sid']
+#         )
         
-        if client:
-            logger.info("✅ Authentication successful with stored session!")
+#         if client:
+#             logger.info("✅ Authentication successful with stored session!")
             
-            # Test API call
-            try:
-                # Try a simple API call to verify session
-                limits = client.limits()
-                if limits:
-                    logger.info("✅ API call successful - session is active")
-                    return True
-                else:
-                    logger.warning("⚠️ API call returned empty - session may be expired")
-            except Exception as e:
-                logger.error(f"❌ API call failed: {e}")
-                # Remove invalid session
-                session_manager.remove_session('default_user')
-        else:
-            logger.error("❌ Failed to initialize client with stored tokens")
-            return False
+#             # Test API call
+#             try:
+#                 # Try a simple API call to verify session
+#                 limits = client.limits()
+#                 if limits:
+#                     logger.info("✅ API call successful - session is active")
+#                     return True
+#                 else:
+#                     logger.warning("⚠️ API call returned empty - session may be expired")
+#             except Exception as e:
+#                 logger.error(f"❌ API call failed: {e}")
+#                 # Remove invalid session
+#                 session_manager.remove_session('default_user')
+#         else:
+#             logger.error("❌ Failed to initialize client with stored tokens")
+#             return False
             
-    except Exception as e:
-        logger.error(f"❌ Error testing stored session: {e}")
-        return False
+#     except Exception as e:
+#         logger.error(f"❌ Error testing stored session: {e}")
+#         return False
 
 def store_new_session():
     """Store new session interactively"""
@@ -100,10 +100,10 @@ if __name__ == "__main__":
     print("🚀 Kotak Neo Auto-Login Manager")
     print("=" * 40)
     
-    if len(sys.argv) > 1 and sys.argv[1] == "store":
-        # Store new session
-        store_new_session()
-    else:
-        # Test existing session
-        if not test_stored_session():
-            print("\n💡 Run 'python auto_login.py store' to store new tokens")
+    # if len(sys.argv) > 1 and sys.argv[1] == "store":
+    #     # Store new session
+    #     store_new_session()
+    # else:
+    #     # Test existing session
+    #     if not test_stored_session():
+    #         print("\n💡 Run 'python auto_login.py store' to store new tokens")

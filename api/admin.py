@@ -2,8 +2,8 @@
 Admin API endpoints for trade signal management
 """
 from flask import Blueprint, request, jsonify, session
-from Scripts.models import db, User
-from Scripts.models_etf import AdminTradeSignal, UserNotification, UserDeal, ETFSignalTrade
+from scripts.models import db, User
+from scripts.models_etf import AdminTradeSignal, UserNotification, UserDeal, ETFSignalTrade
 from datetime import datetime, timedelta
 import logging
 

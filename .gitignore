@@ -32,3 +32,6 @@ venv/
 # # Temporary files
 *.tmp
 *.md
+*.txt
+# # Backup files
+*.bak

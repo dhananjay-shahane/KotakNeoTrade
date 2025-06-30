@@ -1,7 +1,7 @@
 from app import db
-from Scripts.models_etf import RealtimeQuote
-from Scripts.neo_client import NeoClient
-from Scripts.session_helper import SessionHelper
+from scripts.models_etf import RealtimeQuote
+from scripts.neo_client import NeoClient
+from scripts.session_helper import SessionHelper
 from datetime import datetime, timedelta
 import logging
 import json
@@ -343,7 +343,7 @@ class ETFTradingSignals:
             for instrument in instruments:
                 try:
                     # Use the trading functions to get quotes since they work with the current API
-                    from Scripts.trading_functions import TradingFunctions
+                    from scripts.trading_functions import TradingFunctions
                     trading_funcs = TradingFunctions()
 
                     # Generate realistic sample quote data based on instrument
@@ -391,7 +391,7 @@ class ETFTradingSignals:
                     raise ValueError(f"Missing required field: {field}")
 
             # Create new position
-            from Scripts.models_etf import ETFPosition
+            from scripts.models_etf import ETFPosition
             position = ETFPosition()
             position.user_id = user_id
             position.etf_symbol = position_data['etf_symbol']

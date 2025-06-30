@@ -127,8 +127,8 @@ def create_database_trigger():
 
 def setup_application_event_handlers():
     """Setup SQLAlchemy event handlers for admin_trade_signals changes"""
-    from Scripts.models_etf import AdminTradeSignal
-    from Scripts.models import DefaultDeal
+    from scripts.models_etf import AdminTradeSignal
+    from scripts.models import DefaultDeal
     
     @event.listens_for(AdminTradeSignal, 'after_insert', propagate=True)
     def auto_sync_on_insert(mapper, connection, target):
@@ -176,7 +176,7 @@ def initialize_auto_sync_system():
         setup_application_event_handlers()
         
         # Step 3: Perform initial sync of existing data
-        from Scripts.sync_default_deals import sync_admin_signals_to_default_deals
+        from scripts.sync_default_deals import sync_admin_signals_to_default_deals
         initial_sync_count = sync_admin_signals_to_default_deals()
         
         logger.info(f"✓ Auto-sync system initialized successfully")
