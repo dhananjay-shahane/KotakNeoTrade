@@ -58,15 +58,21 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_pre_ping": True,
 }
 
-# Configure Flask for Replit deployment
+# Configure Flask for Replit deployment and external access
 app.config['APPLICATION_ROOT'] = '/'
 app.config['PREFERRED_URL_SCHEME'] = 'https'
 app.config['SERVER_NAME'] = None
 # Webview compatibility
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+
 # Force HTTPS for external access
 if os.environ.get('REPLIT_DOMAINS'):
     app.config['PREFERRED_URL_SCHEME'] = 'https'
+    
+# Allow all origins for external access
+app.config['SESSION_COOKIE_SECURE'] = False  # Allow HTTP for development
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 # Session configuration for webview compatibility
 app.config['SESSION_COOKIE_SECURE'] = False
@@ -1431,6 +1437,34 @@ def health_check():
 def test_endpoint():
     """Test endpoint for DNS verification"""
     return {'message': 'DNS test successful', 'domain': os.environ.get('REPLIT_DOMAINS', 'localhost')}, 200
+
+# Simple HTML page for testing external access
+@app.route('/preview')
+def preview_test():
+    """Simple preview test page"""
+    return '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Kotak Neo Trading Platform - Preview Test</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+            .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+            .success { color: #28a745; font-size: 18px; font-weight: bold; }
+            .info { color: #007bff; margin: 10px 0; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1 class="success">✓ Preview Access Working!</h1>
+            <p class="info">Kotak Neo Trading Platform is running successfully</p>
+            <p>Domain: ''' + os.environ.get('REPLIT_DOMAINS', 'localhost') + '''</p>
+            <p>Status: Application is accessible from external domains</p>
+            <a href="/">Go to Login Page</a>
+        </div>
+    </body>
+    </html>
+    '''
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
