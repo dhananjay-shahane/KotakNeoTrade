@@ -161,10 +161,18 @@ PositionsManager.prototype.displayPositions = function() {
         html += '<td><small>' + expiryDisplay + '</small></td>';
         html += '<td><small class="text-muted">' + lastUpdated + '</small></td>';
         html += '<td>';
-        html += '<button class="btn btn-sm btn-success me-1" onclick="openPlaceOrderModal(\'' + (position.trdSym || position.sym || 'N/A') + '\', \'' + (position.exSeg || 'NSE') + '\', \'BUY\')" title="Buy">';
-        html += '<i class="fas fa-plus"></i> Buy</button>';
-        html += '<button class="btn btn-sm btn-danger" onclick="openPlaceOrderModal(\'' + (position.trdSym || position.sym || 'N/A') + '\', \'' + (position.exSeg || 'NSE') + '\', \'SELL\')" title="Sell">';
-        html += '<i class="fas fa-minus"></i> Sell</button>';
+        var positionSymbol = position.trdSym || position.sym || '';
+        var positionExchange = position.exSeg || 'NSE';
+        
+        // Only show buttons if we have a valid symbol
+        if (positionSymbol && positionSymbol !== 'N/A' && positionSymbol.trim() !== '') {
+            html += '<button class="btn btn-sm btn-success me-1" onclick="openPlaceOrderModal(\'' + positionSymbol.replace(/'/g, "\\'") + '\', \'' + positionExchange + '\', \'BUY\')" title="Buy">';
+            html += '<i class="fas fa-plus"></i> Buy</button>';
+            html += '<button class="btn btn-sm btn-danger" onclick="openPlaceOrderModal(\'' + positionSymbol.replace(/'/g, "\\'") + '\', \'' + positionExchange + '\', \'SELL\')" title="Sell">';
+            html += '<i class="fas fa-minus"></i> Sell</button>';
+        } else {
+            html += '<span class="text-muted small">No Symbol</span>';
+        }
         html += '</td>';
         html += '</tr>';
     }
@@ -622,9 +630,18 @@ function sortPositionsByColumn(column) {
 
 // Function to open place order modal
 function openPlaceOrderModal(symbol, exchange, transactionType) {
-    document.getElementById('orderSymbol').value = symbol;
-    document.getElementById('orderExchange').value = exchange;
-    document.getElementById('orderTransactionType').value = transactionType;
+    // Validate and clean symbol parameter
+    if (!symbol || symbol === 'undefined' || symbol === 'null' || symbol.trim() === '') {
+        console.error('Invalid symbol provided to openPlaceOrderModal:', symbol);
+        alert('Invalid symbol. Please try again.');
+        return;
+    }
+    
+    var cleanSymbol = symbol.toString().trim().toUpperCase();
+    
+    document.getElementById('orderSymbol').value = cleanSymbol;
+    document.getElementById('orderExchange').value = exchange || 'NSE';
+    document.getElementById('orderTransactionType').value = transactionType || 'BUY';
     
     // Set default values
     document.getElementById('orderProduct').value = 'CNC';
@@ -660,9 +677,23 @@ function submitPlaceOrder() {
     var disclosedQuantity = document.getElementById('orderDisclosedQuantity').value || "0";
     var triggerPrice = document.getElementById('orderTriggerPrice').value || "0";
 
-    // Validate required fields
-    if (!symbol || !quantity || quantity <= 0) {
-        alert('Please enter a valid symbol and quantity');
+    // Enhanced validation with detailed logging
+    console.log('Submit Place Order - Symbol:', symbol, 'Type:', transactionType, 'Quantity:', quantity);
+
+    if (!symbol || symbol.trim() === '' || symbol === 'undefined' || symbol === 'null') {
+        console.error('Invalid symbol detected:', symbol);
+        alert('Symbol is required and cannot be empty. Please try selecting the order again.');
+        return;
+    }
+
+    if (!transactionType || (transactionType !== 'BUY' && transactionType !== 'SELL')) {
+        console.error('Invalid transaction type:', transactionType);
+        alert('Invalid transaction type. Please try again.');
+        return;
+    }
+
+    if (!quantity || quantity <= 0 || isNaN(quantity)) {
+        alert('Please enter a valid quantity greater than 0');
         return;
     }
 
@@ -679,21 +710,35 @@ function submitPlaceOrder() {
         return;
     }
 
+    // Clean and prepare symbol
+    var cleanSymbol = symbol.toString().trim().toUpperCase();
+    
+    // Convert transaction type for API compatibility - ensure we only send B or S
+    var apiTransactionType;
+    if (transactionType.toUpperCase() === 'BUY' || transactionType.toUpperCase() === 'B') {
+        apiTransactionType = 'B';
+    } else if (transactionType.toUpperCase() === 'SELL' || transactionType.toUpperCase() === 'S') {
+        apiTransactionType = 'S';
+    } else {
+        apiTransactionType = 'B'; // Default to Buy
+    }
+
     // Prepare order data for client.place_order API
     var orderData = {
         exchange_segment: exchange || "nse_cm",
-        product: product,
-        price: price,
-        order_type: orderType,
-        quantity: quantity,
-        validity: validity,
-        trading_symbol: symbol,
-        transaction_type: transactionType,
+        product: product || "CNC",
+        price: price.toString(),
+        order_type: orderType || "MKT",
+        quantity: quantity.toString(),
+        validity: validity || "DAY",
+        trading_symbol: cleanSymbol,
+        symbol: cleanSymbol, // Add this for compatibility
+        transaction_type: apiTransactionType,
         amo: "NO",
-        disclosed_quantity: disclosedQuantity,
+        disclosed_quantity: disclosedQuantity.toString(),
         market_protection: "0",
         pf: "N",
-        trigger_price: triggerPrice,
+        trigger_price: triggerPrice.toString(),
         tag: "POSITIONS_PAGE"
     };
 

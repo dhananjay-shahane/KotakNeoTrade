@@ -31,9 +31,9 @@ def place_order():
 
         # Validate required fields with better error messages - handle both symbol formats
         symbol_value = data.get('trading_symbol') or data.get('symbol')
-        if not symbol_value or (isinstance(symbol_value, str) and symbol_value.strip() == ''):
-            logging.error(f"Missing or empty symbol field. trading_symbol: {data.get('trading_symbol')}, symbol: {data.get('symbol')}")
-            return jsonify({'success': False, 'message': 'Missing required field: symbol'}), 400
+        if not symbol_value or (isinstance(symbol_value, str) and symbol_value.strip() == '') or symbol_value in ['undefined', 'null', 'N/A']:
+            logging.error(f"Missing or invalid symbol field. trading_symbol: {data.get('trading_symbol')}, symbol: {data.get('symbol')}")
+            return jsonify({'success': False, 'message': 'Missing or invalid symbol. Please provide a valid trading symbol.'}), 400
 
         # Validate other required fields
         required_fields = ['quantity', 'transaction_type']
