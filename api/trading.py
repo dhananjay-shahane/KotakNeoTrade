@@ -29,10 +29,12 @@ def place_order():
             logging.error("No JSON data provided in request")
             return jsonify({'success': False, 'message': 'No order data provided'}), 400
 
-        # Validate required fields
+        # Validate required fields with better error messages
         required_fields = ['trading_symbol', 'quantity', 'transaction_type']
         for field in required_fields:
-            if not data.get(field):
+            value = data.get(field)
+            if not value or (isinstance(value, str) and value.strip() == ''):
+                logging.error(f"Missing or empty required field: {field}, received: {value}")
                 return jsonify({'success': False, 'message': f'Missing required field: {field}'}), 400
 
         # Extract order parameters exactly as specified in client.place_order

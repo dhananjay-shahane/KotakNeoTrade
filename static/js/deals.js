@@ -790,8 +790,14 @@ function submitTrade() {
     var validity = document.getElementById('validity').value;
     var triggerPrice = parseFloat(document.getElementById('triggerPrice').value) || 0;
 
-    if (!symbol || !quantity || quantity <= 0) {
-        showNotification('Please fill all required fields with valid values', 'error');
+    // Enhanced validation
+    if (!symbol || symbol.trim() === '') {
+        showNotification('Symbol is required and cannot be empty', 'error');
+        return;
+    }
+    
+    if (!quantity || quantity <= 0) {
+        showNotification('Please enter a valid quantity greater than 0', 'error');
         return;
     }
 
