@@ -296,6 +296,14 @@ class TradingFunctions:
             product = order_data.get('product', 'CNC')
             exchange_segment = order_data.get('exchange_segment', 'nse_cm')
 
+            # Convert transaction type to API format (B/S instead of BUY/SELL)
+            if transaction_type in ['BUY', 'B']:
+                api_transaction_type = 'B'
+            elif transaction_type in ['SELL', 'S']:
+                api_transaction_type = 'S'
+            else:
+                api_transaction_type = 'B'  # Default to Buy
+
             self.logger.info(f"📋 Placing {transaction_type} {order_type} order for {quantity} shares of {trading_symbol}")
 
             # Market Order
@@ -308,7 +316,7 @@ class TradingFunctions:
                     quantity=quantity,
                     validity=order_data.get('validity', 'DAY'),
                     trading_symbol=trading_symbol,
-                    transaction_type=transaction_type,
+                    transaction_type=api_transaction_type,
                     amo=order_data.get('amo', 'NO'),
                     disclosed_quantity=order_data.get('disclosed_quantity', '0'),
                     market_protection=order_data.get('market_protection', '0'),
@@ -328,7 +336,7 @@ class TradingFunctions:
                     quantity=quantity,
                     validity=order_data.get('validity', 'DAY'),
                     trading_symbol=trading_symbol,
-                    transaction_type=transaction_type,
+                    transaction_type=api_transaction_type,
                     amo=order_data.get('amo', 'NO'),
                     disclosed_quantity=order_data.get('disclosed_quantity', '0'),
                     market_protection=order_data.get('market_protection', '0'),
@@ -349,7 +357,7 @@ class TradingFunctions:
                     quantity=quantity,
                     validity=order_data.get('validity', 'DAY'),
                     trading_symbol=trading_symbol,
-                    transaction_type=transaction_type,
+                    transaction_type=api_transaction_type,
                     amo=order_data.get('amo', 'NO'),
                     disclosed_quantity=order_data.get('disclosed_quantity', '0'),
                     market_protection=order_data.get('market_protection', '0'),
