@@ -1467,7 +1467,13 @@ def preview_test():
                 <a href="https://{correct_domain}/" target="_blank">https://{correct_domain}/</a>
             </div>
             
-            <p class="error">Note: If you're seeing a DNS error with .repl.co domain, use the .replit.dev domain above instead.</p>
+            <p class="error">⚠️ DNS Issues? Try these solutions:</p>
+            <ol>
+                <li>Use Replit's built-in webview (click the preview/webview button in Replit)</li>
+                <li>Wait 2-3 minutes for domain propagation</li>
+                <li>Clear your browser cache and try again</li>
+                <li>Try accessing from an incognito/private browser window</li>
+            </ol>
             
             <p>Status: Application is accessible from external domains</p>
             <a href="/">Go to Login Page</a>
