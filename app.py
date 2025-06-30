@@ -1236,12 +1236,21 @@ def place_order():
             return jsonify({
                 'success': True,
                 'message': f'Order placed successfully for {order_data["symbol"]}',
-                'data': result.get('data')
+                'data': result.get('data'),
+                'order_id': result.get('order_id')
             })
         else:
+            error_message = result.get('message', 'Failed to place order')
+            
+            # Check for specific API authentication errors
+            if 'invalid access type' in error_message.lower() or 'not_ok' in str(result).lower():
+                error_message = 'Trading session has expired. Please logout and login again to place orders.'
+            elif 'session' in error_message.lower():
+                error_message = 'Session expired. Please refresh the page and try again.'
+            
             return jsonify({
                 'success': False,
-                'message': result.get('message', 'Failed to place order')
+                'message': error_message
             }), 400
             
     except Exception as e:
