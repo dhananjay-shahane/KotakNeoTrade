@@ -9,6 +9,8 @@ function refreshHoldings() {
         .then(response => response.json())
         .then(function(data) {
             if (data.success) {
+                // Store holdings data globally for price lookup
+                window.holdingsData = data;
                 updateHoldingsTable(data.holdings);
                 updateHoldingsSummary(data.summary);
                 setTimeout(calculateAndUpdateCards, 100);
@@ -54,11 +56,28 @@ function showHoldingTradeModal(symbol, maxQuantity, tradeType) {
         document.getElementById('maxQuantityText').textContent = '';
     }
     
+    // Find current market price from holdings data
+    var currentPrice = '';
+    if (window.holdingsData && window.holdingsData.holdings) {
+        var holding = window.holdingsData.holdings.find(function(h) {
+            return h.displaySymbol === symbol || h.symbol === symbol;
+        });
+        
+        if (holding) {
+            // Use closingPrice (current market price) or mktValue/quantity as fallback
+            var marketPrice = parseFloat(holding.closingPrice || (holding.mktValue / holding.quantity) || holding.averagePrice || 0);
+            if (marketPrice > 0) {
+                currentPrice = marketPrice.toFixed(2);
+                console.log('Found market price for', symbol, ':', currentPrice);
+            }
+        }
+    }
+    
     document.getElementById('orderType').value = 'L';
     document.getElementById('productType').value = 'CNC';
     document.getElementById('validityType').value = 'DAY';
-    document.getElementById('triggerPrice').value = 0;
-    document.getElementById('actionPrice').value = '';
+    document.getElementById('triggerPrice').value = currentPrice; // Set trigger price too
+    document.getElementById('actionPrice').value = currentPrice; // Set current market price
     
     toggleHoldingPriceFields();
     
@@ -115,20 +134,23 @@ function submitAdvancedHoldingAction() {
         return;
     }
     
+    // Prepare order data matching the working format from positions page
     var orderData = {
-        symbol: symbol,
-        quantity: quantity,
-        transaction_type: tradeType === 'BUY' ? 'B' : 'S',
-        order_type: orderType,
-        price: orderType === 'MKT' || orderType === 'SL-M' ? '0' : price,
-        trigger_price: orderType === 'SL' || orderType === 'SL-M' ? triggerPrice : '0',
         exchange_segment: 'nse_cm',
         product: productType,
+        price: (orderType === 'MKT' || orderType === 'SL-M') ? '0' : price.toString(),
+        order_type: orderType,
+        quantity: quantity.toString(),
         validity: validity,
-        disclosed_quantity: '0',
+        trading_symbol: symbol,
+        symbol: symbol, // Add both for compatibility
+        transaction_type: tradeType === 'BUY' ? 'B' : 'S',
         amo: 'NO',
+        disclosed_quantity: '0',
         market_protection: '0',
-        pf: 'N'
+        pf: 'N',
+        trigger_price: (orderType === 'SL' || orderType === 'SL-M') ? triggerPrice.toString() : '0',
+        tag: 'HOLDINGS_PAGE'
     };
     
     var submitBtn = document.querySelector('#holdingActionModal .btn-primary');
@@ -412,6 +434,9 @@ function calculateAndUpdateCards() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Load holdings data immediately when page loads
+    refreshHoldings();
+    
     setTimeout(function() {
         sortTable('symbol');
         calculateAndUpdateCards();
