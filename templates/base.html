@@ -26,6 +26,9 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     
+    <!-- Page Loader CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/loader.css') }}">
+    
     {% block head %}{% endblock %}
 </head>
 <body>
@@ -374,6 +377,9 @@
 
     <!-- Chart.js for data visualization -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Page Loader JavaScript -->
+    <script src="{{ url_for('static', filename='js/loader.js') }}"></script>
 
     <!-- Custom JavaScript -->
     {% if session.authenticated %}

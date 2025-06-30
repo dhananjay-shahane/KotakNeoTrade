@@ -1505,5 +1505,18 @@ def preview_test():
     </html>
     '''
 
+
+@app.errorhandler(404)
+def page_not_found(error):
+    """Custom 404 error page"""
+    return render_template('404.html'), 404
+
+
+@app.errorhandler(500)
+def internal_server_error(error):
+    """Custom 500 error page"""
+    return render_template('404.html'), 500
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
