@@ -298,9 +298,9 @@ class TradingFunctions:
             exchange_segment = order_data.get('exchange_segment', 'nse_cm')
 
             # Convert transaction type to API format (B for Buy, S for Sell)
-            if transaction_type in ['BUY', 'B']:
+            if transaction_type.upper() in ['BUY', 'B']:
                 api_transaction_type = 'B'
-            elif transaction_type in ['SELL', 'S']:
+            elif transaction_type.upper() in ['SELL', 'S']:
                 api_transaction_type = 'S'
             else:
                 api_transaction_type = 'B'  # Default to Buy

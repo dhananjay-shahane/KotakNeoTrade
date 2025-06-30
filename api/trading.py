@@ -34,7 +34,7 @@ def place_order():
         if not symbol_value or (isinstance(symbol_value, str) and symbol_value.strip() == ''):
             logging.error(f"Missing or empty symbol field. trading_symbol: {data.get('trading_symbol')}, symbol: {data.get('symbol')}")
             return jsonify({'success': False, 'message': 'Missing required field: symbol'}), 400
-        
+
         # Validate other required fields
         required_fields = ['quantity', 'transaction_type']
         for field in required_fields:
@@ -52,6 +52,10 @@ def place_order():
         validity = data.get('validity', 'DAY')
         trading_symbol = (data.get('trading_symbol') or data.get('symbol', '')).upper()
         transaction_type = data.get('transaction_type', 'BUY').upper()
+
+        # Convert transaction type for API compatibility
+        api_transaction_type = 'B' if transaction_type == 'BUY' else 'S' if transaction_type == 'SELL' else transaction_type
+
         amo = data.get('amo', 'NO')
         disclosed_quantity = data.get('disclosed_quantity', '0')
         market_protection = data.get('market_protection', '0')
@@ -79,69 +83,74 @@ def place_order():
         # Log the order attempt
         logging.info(f"Place order request: {transaction_type} {quantity} {trading_symbol} at {price} ({order_type}) from {tag}")
 
-        # Place order using the exact client.place_order API structure
-        order_response = client.place_order(
-            exchange_segment=exchange_segment,
-            product=product,
-            price=price,
-            order_type=order_type,
-            quantity=quantity,
-            validity=validity,
-            trading_symbol=trading_symbol,
-            transaction_type=transaction_type,
-            amo=amo,
-            disclosed_quantity=disclosed_quantity,
-            market_protection=market_protection,
-            pf=pf,
-            trigger_price=trigger_price,
-            tag=tag
-        )
+        # Call trading functions to place the order
+        try:
+            order_response = client.place_order(
+                exchange_segment=exchange_segment,
+                product=product,
+                price=price,
+                order_type=order_type,
+                quantity=quantity,
+                validity=validity,
+                trading_symbol=trading_symbol,
+                transaction_type=api_transaction_type,  # Use converted transaction type
+                amo=amo,
+                disclosed_quantity=disclosed_quantity,
+                market_protection=market_protection,
+                pf=pf,
+                trigger_price=trigger_price,
+                tag=tag
+            )
 
         # Process the response from the trading client
-        if order_response and 'stat' in order_response:
-            if order_response['stat'] == 'Ok':
-                order_id = order_response.get('nOrdNo', f"ORD_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+            if order_response and 'stat' in order_response:
+                if order_response['stat'] == 'Ok':
+                    order_id = order_response.get('nOrdNo', f"ORD_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
 
-                response_data = {
-                    'success': True,
-                    'message': f'{transaction_type} order for {quantity} {trading_symbol} placed successfully',
-                    'order_id': order_id,
-                    'order_details': {
-                        'symbol': trading_symbol,
-                        'quantity': int(quantity),
-                        'price': float(price) if price != '0' else 'Market Price',
-                        'order_type': order_type,
-                        'transaction_type': transaction_type,
-                        'product': product,
-                        'validity': validity,
-                        'exchange': exchange_segment,
-                        'timestamp': datetime.now().isoformat(),
-                        'tag': tag
-                    },
-                    'raw_response': order_response
-                }
+                    response_data = {
+                        'success': True,
+                        'message': f'{transaction_type} order for {quantity} {trading_symbol} placed successfully',
+                        'order_id': order_id,
+                        'order_details': {
+                            'symbol': trading_symbol,
+                            'quantity': int(quantity),
+                            'price': float(price) if price != '0' else 'Market Price',
+                            'order_type': order_type,
+                            'transaction_type': transaction_type,
+                            'product': product,
+                            'validity': validity,
+                            'exchange': exchange_segment,
+                            'timestamp': datetime.now().isoformat(),
+                            'tag': tag
+                        },
+                        'raw_response': order_response
+                    }
 
-                logging.info(f"Order placed successfully: {order_id}")
-                return jsonify(response_data)
+                    logging.info(f"Order placed successfully: {order_id}")
+                    return jsonify(response_data)
+                else:
+                    error_msg = order_response.get('emsg', 'Unknown error from trading client')
+                    logging.error(f"Order placement failed: {error_msg}")
+                    return jsonify({
+                        'success': False, 
+                        'message': f'Order placement failed: {error_msg}',
+                        'raw_response': order_response
+                    }), 400
             else:
-                error_msg = order_response.get('emsg', 'Unknown error from trading client')
-                logging.error(f"Order placement failed: {error_msg}")
+                logging.error(f"Invalid response from trading client: {order_response}")
                 return jsonify({
                     'success': False, 
-                    'message': f'Order placement failed: {error_msg}',
+                    'message': 'Invalid response from trading client',
                     'raw_response': order_response
-                }), 400
-        else:
-            logging.error(f"Invalid response from trading client: {order_response}")
-            return jsonify({
-                'success': False, 
-                'message': 'Invalid response from trading client',
-                'raw_response': order_response
-            }), 500
+                }), 500
+
+        except Exception as e:
+            logging.error(f"Error placing order: {str(e)}")
+            return jsonify({'success': False, 'message': f'Error placing order: {str(e)}'}), 500
 
     except Exception as e:
-        logging.error(f"Error placing order: {str(e)}")
-        return jsonify({'success': False, 'message': f'Error placing order: {str(e)}'}), 500
+        logging.error(f"Error processing order: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error processing order: {str(e)}'}), 500
 
 @trading_bp.route('/get_positions', methods=['GET'])
 def get_positions():
