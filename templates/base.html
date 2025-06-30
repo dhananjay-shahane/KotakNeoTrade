@@ -25,10 +25,32 @@
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/loader.css') }}">
     
     {% block head %}{% endblock %}
 </head>
 <body>
+    <!-- Page Loader -->
+    <div class="page-loader" id="pageLoader">
+        <div class="loader-content">
+            <div class="loader-logo">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="loader-spinner"></div>
+            <div class="loader-text">
+                Loading Neo Trading
+                <div class="loading-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+            <div class="loader-subtitle">Preparing your trading dashboard</div>
+            <div class="loader-progress">
+                <div class="loader-progress-bar"></div>
+            </div>
+        </div>
+    </div>
     {% if session.authenticated %}
     <!-- Fixed Header -->
     <header class="main-header">
@@ -375,6 +397,9 @@
     <!-- Chart.js for data visualization -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <!-- Page Loader Utility -->
+    <script src="{{ url_for('static', filename='js/page-loader.js') }}"></script>
+    
     <!-- Custom JavaScript -->
     {% if session.authenticated %}
     <script src="{{ url_for('static', filename='js/base.js') }}"></script>

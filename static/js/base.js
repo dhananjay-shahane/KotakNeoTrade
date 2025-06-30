@@ -368,6 +368,59 @@
         // Initialize theme immediately (before DOM loads)
         initializeTheme();
 
+        // Page Loader Functions
+        function showPageLoader(message = 'Loading Neo Trading', subtitle = 'Preparing your trading dashboard') {
+            var loader = document.getElementById('pageLoader');
+            var loaderText = loader.querySelector('.loader-text');
+            var loaderSubtitle = loader.querySelector('.loader-subtitle');
+            
+            if (loaderText) {
+                loaderText.innerHTML = message + '<div class="loading-dots"><span></span><span></span><span></span></div>';
+            }
+            if (loaderSubtitle) {
+                loaderSubtitle.textContent = subtitle;
+            }
+            
+            loader.classList.remove('hide');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hidePageLoader() {
+            var loader = document.getElementById('pageLoader');
+            if (loader) {
+                loader.classList.add('hide');
+                document.body.style.overflow = '';
+                
+                // Add fade-in effect to main content
+                var mainContent = document.querySelector('.main-content');
+                if (mainContent) {
+                    mainContent.classList.add('content-fade-in');
+                }
+            }
+        }
+
+        function updateLoaderMessage(message, subtitle = '') {
+            var loader = document.getElementById('pageLoader');
+            if (loader) {
+                var loaderText = loader.querySelector('.loader-text');
+                var loaderSubtitle = loader.querySelector('.loader-subtitle');
+                
+                if (loaderText) {
+                    loaderText.innerHTML = message + '<div class="loading-dots"><span></span><span></span><span></span></div>';
+                }
+                if (loaderSubtitle && subtitle) {
+                    loaderSubtitle.textContent = subtitle;
+                }
+            }
+        }
+
+        // Hide page loader when page is fully loaded
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                hidePageLoader();
+            }, 800); // Small delay for smooth transition
+        });
+
         // Initialize everything when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
             // Debug theme setup
