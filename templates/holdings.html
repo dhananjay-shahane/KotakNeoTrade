@@ -3,103 +3,6 @@
 {% block title %}Holdings - Kotak Neo Trading{% endblock %}
 
 {% block content %}
-<!-- Holdings Skeleton Loader -->
-<div id="holdingsSkeleton" class="holdings-skeleton" style="display: none;">
-    <!-- Header Skeleton -->
-    <div class="row mb-4">
-        <div class="col">
-            <div class="skeleton-title mb-2"></div>
-            <div class="skeleton-subtitle"></div>
-        </div>
-        <div class="col-auto">
-            <div class="skeleton-button"></div>
-        </div>
-    </div>
-
-    <!-- Summary Cards Skeleton -->
-    <div class="row mb-4">
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #4338ca, #6366f1);">
-                <div class="card-body text-white p-3">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <div class="skeleton-card-title mb-2"></div>
-                            <div class="skeleton-card-number mb-1"></div>
-                            <div class="skeleton-card-subtitle"></div>
-                        </div>
-                        <div class="skeleton-card-icon"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #1e3a8a, #3b82f6);">
-                <div class="card-body text-white p-3">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <div class="skeleton-card-title mb-2"></div>
-                            <div class="skeleton-card-number mb-1"></div>
-                            <div class="skeleton-card-subtitle"></div>
-                        </div>
-                        <div class="skeleton-card-icon"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #7c2d12, #ea580c);">
-                <div class="card-body text-white p-3">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <div class="skeleton-card-title mb-2"></div>
-                            <div class="skeleton-card-number mb-1"></div>
-                            <div class="skeleton-card-subtitle"></div>
-                        </div>
-                        <div class="skeleton-card-icon"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #166534, #22c55e);">
-                <div class="card-body text-white p-3">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <div class="skeleton-card-title mb-2"></div>
-                            <div class="skeleton-card-number mb-1"></div>
-                            <div class="skeleton-card-subtitle"></div>
-                        </div>
-                        <div class="skeleton-card-icon"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Table Skeleton -->
-    <div class="card bg-secondary border-0 shadow-sm">
-        <div class="card-header bg-dark d-flex justify-content-between align-items-center">
-            <div class="skeleton-table-header"></div>
-            <div class="d-flex gap-2">
-                <div class="skeleton-button" style="width: 100px; height: 32px;"></div>
-                <div class="skeleton-button" style="width: 100px; height: 32px;"></div>
-            </div>
-        </div>
-        <div class="card-body p-0">
-            <div class="skeleton-table">
-                <div class="skeleton-table-row"></div>
-                <div class="skeleton-table-row"></div>
-                <div class="skeleton-table-row"></div>
-                <div class="skeleton-table-row"></div>
-                <div class="skeleton-table-row"></div>
-                <div class="skeleton-table-row"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Holdings Content -->
-<div id="holdingsContent">
 <div class="row mb-4">
     <div class="col">
         <h2>
@@ -467,245 +370,105 @@
 {% endblock %}
 
 <style>
-/* Enhanced Holdings Skeleton with Shimmer Effects */
+/* Holdings Skeleton CSS */
 .holdings-skeleton {
-    animation: fadeIn 0.5s ease-in-out;
-    padding: 20px;
+    animation: fadeIn 0.3s ease-in;
 }
 
 .skeleton-title {
-    height: 32px;
-    width: 280px;
-    background: linear-gradient(90deg, 
-        rgba(255,255,255,0.08) 0%, 
-        rgba(255,255,255,0.12) 25%, 
-        rgba(255,255,255,0.25) 50%, 
-        rgba(255,255,255,0.12) 75%, 
-        rgba(255,255,255,0.08) 100%
-    );
+    height: 28px;
+    width: 200px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
     background-size: 200% 100%;
-    animation: shimmer 2s infinite ease-in-out;
-    border-radius: 8px;
-    position: relative;
-    overflow: hidden;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
 }
 
 .skeleton-subtitle {
-    height: 18px;
-    width: 350px;
-    background: linear-gradient(90deg, 
-        rgba(255,255,255,0.05) 0%, 
-        rgba(255,255,255,0.08) 25%, 
-        rgba(255,255,255,0.18) 50%, 
-        rgba(255,255,255,0.08) 75%, 
-        rgba(255,255,255,0.05) 100%
-    );
+    height: 16px;
+    width: 300px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 75%);
     background-size: 200% 100%;
-    animation: shimmer 2.2s infinite ease-in-out;
-    border-radius: 6px;
-    position: relative;
-    overflow: hidden;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
 }
 
 .skeleton-button {
-    height: 42px;
-    width: 130px;
-    background: linear-gradient(90deg, 
-        rgba(255,255,255,0.1) 0%, 
-        rgba(255,255,255,0.15) 25%, 
-        rgba(255,255,255,0.28) 50%, 
-        rgba(255,255,255,0.15) 75%, 
-        rgba(255,255,255,0.1) 100%
-    );
+    height: 40px;
+    width: 120px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
     background-size: 200% 100%;
-    animation: shimmer 1.8s infinite ease-in-out;
-    border-radius: 8px;
-    position: relative;
-    overflow: hidden;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
 }
 
 .skeleton-card-title {
-    height: 16px;
-    width: 110px;
-    background: linear-gradient(90deg, 
-        rgba(255,255,255,0.18) 0%, 
-        rgba(255,255,255,0.25) 25%, 
-        rgba(255,255,255,0.38) 50%, 
-        rgba(255,255,255,0.25) 75%, 
-        rgba(255,255,255,0.18) 100%
-    );
+    height: 14px;
+    width: 100px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.2) 75%);
     background-size: 200% 100%;
-    animation: shimmer 1.6s infinite ease-in-out;
-    border-radius: 4px;
-    position: relative;
-    overflow: hidden;
+    animation: shimmer 1.5s infinite;
+    border-radius: 3px;
 }
 
 .skeleton-card-number {
-    height: 36px;
-    width: 90px;
-    background: linear-gradient(90deg, 
-        rgba(255,255,255,0.22) 0%, 
-        rgba(255,255,255,0.3) 25%, 
-        rgba(255,255,255,0.45) 50%, 
-        rgba(255,255,255,0.3) 75%, 
-        rgba(255,255,255,0.22) 100%
-    );
+    height: 32px;
+    width: 80px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.25) 25%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.25) 75%);
     background-size: 200% 100%;
-    animation: shimmer 1.4s infinite ease-in-out;
-    border-radius: 6px;
-    position: relative;
-    overflow: hidden;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
 }
 
 .skeleton-card-subtitle {
-    height: 14px;
-    width: 130px;
-    background: linear-gradient(90deg, 
-        rgba(255,255,255,0.12) 0%, 
-        rgba(255,255,255,0.18) 25%, 
-        rgba(255,255,255,0.32) 50%, 
-        rgba(255,255,255,0.18) 75%, 
-        rgba(255,255,255,0.12) 100%
-    );
+    height: 12px;
+    width: 120px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
     background-size: 200% 100%;
-    animation: shimmer 2.4s infinite ease-in-out;
-    border-radius: 4px;
-    position: relative;
-    overflow: hidden;
+    animation: shimmer 1.5s infinite;
+    border-radius: 3px;
 }
 
 .skeleton-card-icon {
-    height: 65px;
-    width: 65px;
-    background: linear-gradient(45deg, 
-        rgba(255,255,255,0.15) 0%, 
-        rgba(255,255,255,0.22) 25%, 
-        rgba(255,255,255,0.35) 50%, 
-        rgba(255,255,255,0.22) 75%, 
-        rgba(255,255,255,0.15) 100%
-    );
-    background-size: 200% 200%;
-    animation: shimmerRotate 2s infinite ease-in-out;
+    height: 60px;
+    width: 60px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
     border-radius: 50%;
-    position: relative;
-    overflow: hidden;
 }
 
 .skeleton-table-header {
-    height: 22px;
-    width: 140px;
-    background: linear-gradient(90deg, 
-        rgba(255,255,255,0.12) 0%, 
-        rgba(255,255,255,0.18) 25%, 
-        rgba(255,255,255,0.3) 50%, 
-        rgba(255,255,255,0.18) 75%, 
-        rgba(255,255,255,0.12) 100%
-    );
+    height: 20px;
+    width: 120px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
     background-size: 200% 100%;
-    animation: shimmer 1.7s infinite ease-in-out;
-    border-radius: 5px;
-    position: relative;
-    overflow: hidden;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
 }
 
 .skeleton-table {
-    padding: 1.5rem;
+    padding: 1rem;
 }
 
 .skeleton-table-row {
-    height: 60px;
+    height: 50px;
     width: 100%;
-    background: linear-gradient(90deg, 
-        rgba(255,255,255,0.06) 0%, 
-        rgba(255,255,255,0.1) 25%, 
-        rgba(255,255,255,0.2) 50%, 
-        rgba(255,255,255,0.1) 75%, 
-        rgba(255,255,255,0.06) 100%
-    );
+    background: linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 75%);
     background-size: 200% 100%;
-    animation: shimmer 2.1s infinite ease-in-out;
-    border-radius: 8px;
-    margin-bottom: 0.8rem;
-    position: relative;
-    overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.05);
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
 }
 
-/* Enhanced shimmer animations */
 @keyframes shimmer {
-    0% { 
-        background-position: -200% 0;
-        transform: translateX(-5px);
-    }
-    50% {
-        transform: translateX(0px);
-    }
-    100% { 
-        background-position: 200% 0;
-        transform: translateX(5px);
-    }
-}
-
-@keyframes shimmerRotate {
-    0% { 
-        background-position: -200% -200%;
-        transform: rotate(0deg);
-    }
-    50% {
-        transform: rotate(2deg);
-    }
-    100% { 
-        background-position: 200% 200%;
-        transform: rotate(0deg);
-    }
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
 }
 
 @keyframes fadeIn {
-    from { 
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to { 
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Add subtle pulse effect to skeleton elements */
-.skeleton-title,
-.skeleton-subtitle,
-.skeleton-button,
-.skeleton-card-title,
-.skeleton-card-number,
-.skeleton-card-subtitle,
-.skeleton-card-icon,
-.skeleton-table-header,
-.skeleton-table-row {
-    animation-delay: calc(-0.5s * var(--delay, 0));
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-/* Staggered animation delays */
-.skeleton-table-row:nth-child(1) { --delay: 1; }
-.skeleton-table-row:nth-child(2) { --delay: 2; }
-.skeleton-table-row:nth-child(3) { --delay: 3; }
-.skeleton-table-row:nth-child(4) { --delay: 4; }
-.skeleton-table-row:nth-child(5) { --delay: 5; }
-.skeleton-table-row:nth-child(6) { --delay: 6; }
-
-/* Smooth transitions */
-.holdings-skeleton * {
-    transition: all 0.3s ease-in-out;
-}
-
-/* Hide skeleton when content loads */
-.holdings-content-loaded #holdingsSkeleton {
-    display: none !important;
-}
-
-.holdings-content-loaded #holdingsContent {
-    display: block !important;
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 </style>
 
@@ -713,23 +476,14 @@
 <script src="{{url_for('static', filename="js/holdings.js")}}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Holdings page loaded, initializing enhanced skeleton...');
-    
-    // Show skeleton initially with enhanced timing
-    const skeleton = document.getElementById('holdingsSkeleton');
-    const content = document.getElementById('holdingsContent');
-    
-    if (skeleton && content) {
-        skeleton.style.display = 'block';
-        content.style.display = 'none';
-        
-        console.log('Enhanced skeleton displayed with shimmer effects');
-        
-        // Hide skeleton after realistic loading time with enhanced transition
-        setTimeout(function() {
-            hideHoldingsSkeleton();
-        }, 2800); // Slightly longer to show off the shimmer effects
-    }
+    // Show skeleton initially
+    document.getElementById('holdingsSkeleton').style.display = 'block';
+    document.getElementById('holdingsContent').style.display = 'none';
+
+    // Hide skeleton after content loads
+    setTimeout(function() {
+        hideHoldingsSkeleton();
+    }, 2000);
 });
 
 function hideHoldingsSkeleton() {
@@ -737,50 +491,20 @@ function hideHoldingsSkeleton() {
     const content = document.getElementById('holdingsContent');
 
     if (skeleton && content) {
-        console.log('Hiding enhanced skeleton, showing content...');
-        
-        // Enhanced fade out with scale effect
-        skeleton.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+        skeleton.style.transition = 'opacity 0.5s ease-out';
         skeleton.style.opacity = '0';
-        skeleton.style.transform = 'translateY(-10px)';
 
         setTimeout(function() {
             skeleton.style.display = 'none';
             content.style.display = 'block';
             content.style.opacity = '0';
-            content.style.transform = 'translateY(10px)';
-            content.style.transition = 'opacity 0.6s ease-in, transform 0.6s ease-in';
+            content.style.transition = 'opacity 0.5s ease-in';
 
             setTimeout(function() {
                 content.style.opacity = '1';
-                content.style.transform = 'translateY(0)';
-                
-                // Add loaded class for additional styling if needed
-                document.body.classList.add('holdings-content-loaded');
-                console.log('Holdings content fully visible with enhanced effects');
             }, 50);
-        }, 600);
+        }, 500);
     }
 }
-
-// Enhanced function to show skeleton (for testing or refresh)
-function showHoldingsSkeletonEnhanced() {
-    const skeleton = document.getElementById('holdingsSkeleton');
-    const content = document.getElementById('holdingsContent');
-    
-    if (skeleton && content) {
-        document.body.classList.remove('holdings-content-loaded');
-        content.style.display = 'none';
-        skeleton.style.display = 'block';
-        skeleton.style.opacity = '1';
-        skeleton.style.transform = 'translateY(0)';
-        
-        console.log('Enhanced skeleton re-displayed');
-    }
-}
-
-// Make functions globally available
-window.hideHoldingsSkeleton = hideHoldingsSkeleton;
-window.showHoldingsSkeletonEnhanced = showHoldingsSkeletonEnhanced;
 </script>
 {% endblock %}
