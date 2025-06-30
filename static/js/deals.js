@@ -790,29 +790,29 @@ function submitTrade() {
     var validity = document.getElementById('validity').value;
     var triggerPrice = parseFloat(document.getElementById('triggerPrice').value) || 0;
 
-    if (!symbol || !quantity) {
-        showNotification('Please fill all required fields', 'error');
+    if (!symbol || !quantity || quantity <= 0) {
+        showNotification('Please fill all required fields with valid values', 'error');
         return;
     }
 
     // For market orders, price should be 0
     if (orderType === 'MKT') {
         price = 0;
-    } else if (price <= 0) {
+    } else if (orderType !== 'MKT' && price <= 0) {
         showNotification('Please enter a valid price for limit/stop loss orders', 'error');
         return;
     }
 
-    // Prepare order data for client.place_order API
+    // Prepare order data for API
     var orderData = {
         exchange_segment: "nse_cm",
-        product: productType,
+        product: productType || "CNC",
         price: price.toString(),
-        order_type: orderType,
+        order_type: orderType || "MKT",
         quantity: quantity.toString(),
-        validity: validity,
-        trading_symbol: symbol,
-        transaction_type: type,
+        validity: validity || "DAY",
+        trading_symbol: symbol.toUpperCase(),
+        transaction_type: type || "BUY",
         amo: "NO",
         disclosed_quantity: "0",
         market_protection: "0",
@@ -825,8 +825,13 @@ function submitTrade() {
 
     // Show loading state
     var submitBtn = document.querySelector('#tradeModal .btn-primary');
+    if (!submitBtn) {
+        showNotification('Submit button not found', 'error');
+        return;
+    }
+    
     var originalText = submitBtn.textContent;
-    submitBtn.textContent = 'Placing Order...';
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Placing Order...';
     submitBtn.disabled = true;
 
     // Call the place_order API with timeout
@@ -845,19 +850,38 @@ function submitTrade() {
     })
     .then(function(response) {
         clearTimeout(timeoutId);
-        if (!response.ok) {
-            throw new Error('Network response was not ok: ' + response.status);
-        }
-        return response.json();
+        
+        // Try to get response text first
+        return response.text().then(function(text) {
+            if (!response.ok) {
+                console.error('API Error Response:', text);
+                var errorMsg = 'Server error';
+                try {
+                    var errorData = JSON.parse(text);
+                    errorMsg = errorData.message || errorData.error || 'Request failed';
+                } catch (e) {
+                    errorMsg = 'Request failed with status ' + response.status;
+                }
+                throw new Error(errorMsg);
+            }
+            
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                throw new Error('Invalid response format');
+            }
+        });
     })
     .then(function(data) {
         // Reset button state
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
 
-        if (data.success) {
+        if (data && data.success) {
             var modal = bootstrap.Modal.getInstance(document.getElementById('tradeModal'));
-            modal.hide();
+            if (modal) {
+                modal.hide();
+            }
 
             // Show success notification with order details
             var orderTypeText = orderType === 'MKT' ? 'Market' : orderType === 'L' ? 'Limit' : 'Stop Loss';
@@ -871,13 +895,13 @@ function submitTrade() {
 
             // Refresh deals data after a delay
             setTimeout(function() {
-                if (!window.dealsManager.isLoading) {
+                if (window.dealsManager && !window.dealsManager.isLoading) {
                     window.dealsManager.loadDeals();
                 }
             }, 2000);
         } else {
             // Show error notification
-            showNotification('Order placement failed: ' + (data.message || 'Unknown error'), 'error');
+            showNotification('Order placement failed: ' + (data && data.message ? data.message : 'Unknown error'), 'error');
         }
     })
     .catch(function(error) {
@@ -890,7 +914,7 @@ function submitTrade() {
         if (error.name === 'AbortError') {
             showNotification('Order placement timed out - please try again', 'error');
         } else {
-            showNotification('Order placement failed: Network error', 'error');
+            showNotification('Order placement failed: ' + (error.message || 'Network error'), 'error');
         }
     });
 }
