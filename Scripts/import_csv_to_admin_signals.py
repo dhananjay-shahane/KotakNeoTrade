@@ -6,7 +6,7 @@ import csv
 import sys
 from datetime import datetime
 from app import app, db
-from scripts.models_etf import AdminTradeSignal
+from Scripts.models_etf import AdminTradeSignal
 
 def parse_csv_and_import(csv_file_path):
     """Parse CSV file and import data to admin_trade_signals table"""

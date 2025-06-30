@@ -5,8 +5,8 @@ Integrates with Kotak Neo API to populate kotak_neo_quotes table
 import logging
 from datetime import datetime, timedelta
 from app import app, db
-from scripts.models_etf import KotakNeoQuote, AdminTradeSignal
-from scripts.trading_functions import TradingFunctions
+from Scripts.models_etf import KotakNeoQuote, AdminTradeSignal
+from Scripts.trading_functions import TradingFunctions
 import json
 
 logger = logging.getLogger(__name__)

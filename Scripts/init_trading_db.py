@@ -2,8 +2,8 @@
 Initialize trading database with new tables
 """
 from app import app, db
-from scripts.models import User
-from scripts.models_etf import AdminTradeSignal, UserNotification, UserDeal, ETFPosition
+from Scripts.models import User
+from Scripts.models_etf import AdminTradeSignal, UserNotification, UserDeal, ETFPosition
 import logging
 
 logging.basicConfig(level=logging.INFO)

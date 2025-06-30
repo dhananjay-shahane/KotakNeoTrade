@@ -7,8 +7,8 @@ Run this to initialize the system with real-time data tracking
 
 import logging
 from app import app, db
-from scripts.create_initial_etf_trades import create_initial_etf_trades
-from scripts.etf_data_scheduler import start_etf_data_scheduler
+from Scripts.create_initial_etf_trades import create_initial_etf_trades
+from Scripts.etf_data_scheduler import start_etf_data_scheduler
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

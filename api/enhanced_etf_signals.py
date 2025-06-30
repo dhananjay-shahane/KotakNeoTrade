@@ -1,9 +1,9 @@
 """Enhanced ETF Signals API with comprehensive Kotak Neo quotes integration"""
 from flask import request, jsonify, session, Blueprint
 from app import db
-from scripts.models_etf import KotakNeoQuote, AdminTradeSignal, RealtimeQuote
-from scripts.models import User
-from scripts.trading_functions import TradingFunctions
+from Scripts.models_etf import KotakNeoQuote, AdminTradeSignal, RealtimeQuote
+from Scripts.models import User
+from Scripts.trading_functions import TradingFunctions
 from datetime import datetime
 import logging
 

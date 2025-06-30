@@ -1,4 +1,4 @@
-from scripts.models import db, User, UserSession, UserPreferences
+from Scripts.models import db, User, UserSession, UserPreferences
 from datetime import datetime, timedelta
 import json
 import uuid

@@ -6,8 +6,8 @@ Sets up database triggers and event handlers for automatic synchronization
 
 from app import app, db
 from sqlalchemy import event, text
-from scripts.models_etf import AdminTradeSignal
-from scripts.sync_default_deals import update_default_deal_from_admin_signal
+from Scripts.models_etf import AdminTradeSignal
+from Scripts.sync_default_deals import update_default_deal_from_admin_signal
 import logging
 
 logger = logging.getLogger(__name__)
@@ -52,7 +52,7 @@ def setup_auto_sync_triggers():
             logger.info(f"Auto-sync triggered: Admin signal {target.id} deleted")
             # Remove corresponding default deal
             with app.app_context():
-                from scripts.models import DefaultDeal
+                from Scripts.models import DefaultDeal
                 default_deal = DefaultDeal.query.filter_by(admin_signal_id=target.id).first()
                 if default_deal:
                     db.session.delete(default_deal)

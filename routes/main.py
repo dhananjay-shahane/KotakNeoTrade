@@ -5,8 +5,8 @@ import time
 from datetime import datetime
 
 from utils.auth import login_required, validate_current_session
-from scripts.trading_functions import TradingFunctions
-from scripts.neo_client import NeoClient
+from Scripts.trading_functions import TradingFunctions
+from Scripts.neo_client import NeoClient
 
 main_bp = Blueprint('main', __name__)
 
@@ -388,7 +388,7 @@ def api_live_quotes():
 def etf_signals():
     """ETF Signals page - show admin_trade_signals data in table"""
     try:
-        from scripts.models_etf import AdminTradeSignal
+        from Scripts.models_etf import AdminTradeSignal
         
         # Get all active admin trade signals for the table
         signals = AdminTradeSignal.query.filter_by(status='ACTIVE').order_by(
@@ -412,13 +412,13 @@ def api_etf_positions():
             return jsonify({'success': False, 'message': 'Not authenticated'}), 401
 
         # Get current user from database
-        from scripts.models import User
+        from Scripts.models import User
         current_user = User.query.get(session['user_id'])
         if not current_user:
             return jsonify({'success': False, 'message': 'User not found'}), 404
 
         # Get ETF signal trades for current user
-        from scripts.models_etf import ETFSignalTrade
+        from Scripts.models_etf import ETFSignalTrade
         trades = ETFSignalTrade.query.filter_by(user_id=current_user.id).order_by(ETFSignalTrade.created_at.desc()).all()
 
         # Calculate portfolio summary

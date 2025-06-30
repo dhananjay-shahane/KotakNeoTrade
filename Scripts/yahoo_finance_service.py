@@ -3,7 +3,7 @@ import yfinance as yf
 import logging
 from datetime import datetime
 from app import db
-from scripts.models_etf import AdminTradeSignal, RealtimeQuote
+from Scripts.models_etf import AdminTradeSignal, RealtimeQuote
 import time
 
 logger = logging.getLogger(__name__)

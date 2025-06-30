@@ -5,8 +5,8 @@ Run this script to populate default_deals with all admin_trade_signals data
 """
 
 from app import app, db
-from scripts.models import DefaultDeal, User
-from scripts.models_etf import AdminTradeSignal
+from Scripts.models import DefaultDeal, User
+from Scripts.models_etf import AdminTradeSignal
 from sqlalchemy import text, event
 import logging
 

@@ -3,7 +3,7 @@ from flask import Blueprint, jsonify, session
 import logging
 
 from utils.auth import login_required
-from scripts.trading_functions import TradingFunctions
+from Scripts.trading_functions import TradingFunctions
 
 dashboard_api = Blueprint('dashboard_api', __name__, url_prefix='/api')
 

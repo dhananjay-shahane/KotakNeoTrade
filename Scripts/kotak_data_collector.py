@@ -18,9 +18,9 @@ from sqlalchemy.orm import sessionmaker
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from app import db, app
-from scripts.models_etf import AdminTradeSignal, RealtimeQuote
-from scripts.models import User
-from scripts.trading_functions import TradingFunctions
+from Scripts.models_etf import AdminTradeSignal, RealtimeQuote
+from Scripts.models import User
+from Scripts.trading_functions import TradingFunctions
 
 class KotakDataCollector:
     """Collects and stores Kotak Neo quotes data incrementally"""

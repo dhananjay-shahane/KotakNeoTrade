@@ -2,7 +2,7 @@
 import os
 import json
 from datetime import datetime
-from scripts.models import db, User, UserSession, UserPreferences
+from Scripts.models import db, User, UserSession, UserPreferences
 
 class BackupManager:
     """Manage database backups and data export"""

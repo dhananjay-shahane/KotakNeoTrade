@@ -2,7 +2,7 @@
 import logging
 # pandas will be imported lazily when needed
 from datetime import datetime
-from scripts.csv_data_fetcher import CSVDataFetcher
+from Scripts.csv_data_fetcher import CSVDataFetcher
 
 class TradingFunctions:
     """Trading functions for Kotak Neo API with CSV data integration"""

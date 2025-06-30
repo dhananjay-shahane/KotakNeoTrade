@@ -8,8 +8,8 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from app import app, db
-from scripts.models import User
-from scripts.models_etf import AdminTradeSignal
+from Scripts.models import User
+from Scripts.models_etf import AdminTradeSignal
 from datetime import datetime, timedelta
 import logging
 

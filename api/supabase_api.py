@@ -1,7 +1,7 @@
 
 from flask import Blueprint, request, jsonify, session
 import logging
-from scripts.supabase_client import supabase_client
+from Scripts.supabase_client import supabase_client
 from datetime import datetime
 
 supabase_bp = Blueprint('supabase_api', __name__)
@@ -31,7 +31,7 @@ def sync_users():
         supabase_users = supabase_client.get_users()
         
         # Get local users
-        from scripts.models import User
+        from Scripts.models import User
         local_users = User.query.all()
         
         sync_stats = {
@@ -92,7 +92,7 @@ def sync_signals():
         supabase_signals = supabase_client.get_etf_signals(limit=100)
         
         # Get local signals
-        from scripts.models_etf import AdminTradeSignal
+        from Scripts.models_etf import AdminTradeSignal
         local_signals = AdminTradeSignal.query.limit(100).all()
         
         sync_stats = {
@@ -147,7 +147,7 @@ def sync_quotes():
             return jsonify({'success': False, 'error': 'Supabase not connected'}), 400
         
         # Get local quotes
-        from scripts.models_etf import RealtimeQuote
+        from Scripts.models_etf import RealtimeQuote
         local_quotes = RealtimeQuote.query.limit(50).all()
         
         quotes_data = []

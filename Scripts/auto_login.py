@@ -8,8 +8,8 @@ This script can be run independently to verify authentication
 import sys
 import os
 import logging
-from scripts.session_manager import SessionManager
-from scripts.neo_client import NeoClient
+from Scripts.session_manager import SessionManager
+from Scripts.neo_client import NeoClient
 
 # Add current directory to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))

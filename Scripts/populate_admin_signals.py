@@ -12,8 +12,8 @@ from decimal import Decimal
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from app import app, db
-from scripts.models_etf import AdminTradeSignal
-from scripts.models import User
+from Scripts.models_etf import AdminTradeSignal
+from Scripts.models import User
 
 def create_admin_user():
     """Create admin user if not exists"""

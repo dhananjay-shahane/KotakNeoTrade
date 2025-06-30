@@ -3,9 +3,9 @@
 Script to populate real user deals from CSV data
 """
 from app import app, db
-from scripts.models import User
-from scripts.models_etf import UserDeal
-from scripts.csv_data_fetcher import CSVDataFetcher
+from Scripts.models import User
+from Scripts.models_etf import UserDeal
+from Scripts.csv_data_fetcher import CSVDataFetcher
 from datetime import datetime, timedelta
 import logging
 import random
