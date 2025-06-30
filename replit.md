@@ -104,6 +104,15 @@ The application follows a modern Flask architecture with clear separation of con
 
 ## Recent Changes
 
+- **June 30, 2025** - Successfully implemented duplicate trade detection and fixed place order API endpoint issues
+  - Enhanced ETF signals page with intelligent duplicate detection when clicking "Add Deal" button
+  - System now checks existing deals and shows warning dialog: "Trade Already Added! Do you want to add this trade again?"
+  - Added two-button confirmation with "Yes, Add Again" and "Cancel" options using SweetAlert2
+  - Fixed 404 error on place order API by correcting endpoint URLs from `/api/trading/place_order` to `/api/place-order`
+  - Updated all JavaScript files (deals.js, default_deals.js, positions.js) with correct API endpoint
+  - Added comprehensive logging and debugging for duplicate detection functionality
+  - Place order functionality now working correctly across all trading pages (deals, default-deals, positions)
+
 - **June 30, 2025** - Successfully completed migration from Replit Agent to standard Replit environment  
   - Fixed all import path issues by updating lowercase 'scripts' to uppercase 'Scripts' throughout codebase
   - Created PostgreSQL database and configured environment variables properly

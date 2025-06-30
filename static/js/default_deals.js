@@ -1063,7 +1063,7 @@ function submitTrade() {
     submitBtn.disabled = true;
 
     // Make API call to place order
-    fetch('/api/trading/place_order', {
+    fetch('/api/place-order', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

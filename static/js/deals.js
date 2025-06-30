@@ -835,7 +835,7 @@ function submitTrade() {
         controller.abort();
     }, 15000); // 15 second timeout
 
-    fetch('/api/trading/place_order', {
+    fetch('/api/place-order', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

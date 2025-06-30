@@ -707,7 +707,7 @@ function submitPlaceOrder() {
 
     // Make API call to place order
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/trading/place_order', true);
+    xhr.open('POST', '/api/place-order', true);
     xhr.setRequestHeader('Content-Type', 'application/json');
     
     xhr.onreadystatechange = function() {
