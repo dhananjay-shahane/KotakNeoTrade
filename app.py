@@ -1420,5 +1420,17 @@ if __name__ == '__main__':
 from Scripts.sync_default_deals import setup_auto_sync_triggers
 setup_auto_sync_triggers()
 
+# Health check endpoint for domain verification
+@app.route('/health')
+def health_check():
+    """Health check endpoint for domain verification"""
+    return {'status': 'ok', 'message': 'Kotak Neo Trading Platform is running', 'port': 5000}, 200
+
+# Test endpoint for DNS verification
+@app.route('/test')
+def test_endpoint():
+    """Test endpoint for DNS verification"""
+    return {'message': 'DNS test successful', 'domain': os.environ.get('REPLIT_DOMAINS', 'localhost')}, 200
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
