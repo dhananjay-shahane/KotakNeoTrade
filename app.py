@@ -691,10 +691,10 @@ def get_holdings_api():
 
 @app.route('/api/etf-signals-data')
 def get_etf_signals_data():
-    """Enhanced API endpoint to get ETF signals data from external PostgreSQL database"""
+    """Enhanced API endpoint to get ETF signals data with live CMP from Kotak Neo API"""
     try:
         import logging
-        logging.info("ETF Signals API: Fetching data from external PostgreSQL database")
+        logging.info("ETF Signals API: Fetching data with live CMP updates")
 
         # Use the existing external database URL that's already configured in the app
         connection_string = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
@@ -702,6 +702,16 @@ def get_etf_signals_data():
         # Import necessary modules
         import psycopg2
         from psycopg2.extras import RealDictCursor
+
+        # Initialize live CMP service
+        try:
+            from Scripts.live_cmp_service import LiveCMPService
+            cmp_service = LiveCMPService()
+            live_cmp_available = cmp_service.initialize_client()
+        except Exception as e:
+            logging.warning(f"Live CMP service not available: {str(e)}")
+            live_cmp_available = False
+            cmp_service = None
 
         # Connect to external database
         with psycopg2.connect(connection_string) as conn:
@@ -718,6 +728,24 @@ def get_etf_signals_data():
                 cursor.execute(query)
                 signals = cursor.fetchall()
 
+                # Get unique symbols for live CMP fetching
+                symbols_to_update = set()
+                for row in signals:
+                    if row.get('symbol'):
+                        symbols_to_update.add(row['symbol'])
+                    if row.get('etf'):
+                        symbols_to_update.add(row['etf'])
+
+                # Fetch live CMP data if service is available
+                live_cmp_data = {}
+                if live_cmp_available and cmp_service and symbols_to_update:
+                    try:
+                        logging.info(f"Fetching live CMP for {len(symbols_to_update)} symbols")
+                        live_cmp_data = cmp_service.get_bulk_quotes(list(symbols_to_update))
+                        logging.info(f"Received live data for {len(live_cmp_data)} symbols")
+                    except Exception as e:
+                        logging.warning(f"Failed to fetch live CMP: {str(e)}")
+
                 # Format signals data for frontend
                 signals_list = []
                 total_investment = 0
@@ -729,7 +757,22 @@ def get_etf_signals_data():
                     count += 1
                     # Calculate values with proper null handling
                     entry_price = float(row.get('ep') or 0) if row.get('ep') is not None else 0.0
+                    
+                    # Get current price with priority: Live CMP > Database CMP > Last Traded Price
                     current_price = float(row.get('cmp') or 0) if row.get('cmp') is not None else 0.0
+                    symbol = row.get('symbol') or row.get('etf')
+                    
+                    # Override with live data if available
+                    if symbol and symbol in live_cmp_data:
+                        live_quote = live_cmp_data[symbol]
+                        live_cmp = live_quote.get('cmp') or live_quote.get('last_traded_price')
+                        if live_cmp and live_cmp > 0:
+                            current_price = float(live_cmp)
+                            logging.info(f"✓ Using live CMP for {symbol}: {current_price}")
+                        else:
+                            logging.info(f"⚠️ Live CMP not available for {symbol}, using database value: {current_price}")
+                    elif symbol:
+                        logging.info(f"⚠️ No live data for {symbol}, using database CMP: {current_price}")
                     quantity = int(row.get('qty') or 0) if row.get('qty') is not None else 0
                     investment = float(row.get('inv') or 0) if row.get('inv') is not None else 0.0
                     pnl_amount = float(row.get('pl') or 0) if row.get('pl') is not None else 0.0
@@ -1458,6 +1501,30 @@ if __name__ == '__main__':
 # Initialize auto-sync triggers
 from Scripts.sync_default_deals import setup_auto_sync_triggers
 setup_auto_sync_triggers()
+
+# Live CMP update endpoint
+@app.route('/api/update-live-cmp')
+def update_live_cmp_endpoint():
+    """API endpoint to update live CMP data for admin trade signals"""
+    try:
+        from Scripts.live_cmp_service import update_live_cmp
+        
+        updated_count = update_live_cmp()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Successfully updated {updated_count} records with live CMP data',
+            'updated_count': updated_count
+        })
+        
+    except Exception as e:
+        import logging
+        logging.error(f"Error updating live CMP: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to update live CMP data'
+        }), 500
 
 # Health check endpoint for domain verification
 @app.route('/health')
