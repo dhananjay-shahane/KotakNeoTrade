@@ -1502,28 +1502,72 @@ if __name__ == '__main__':
 from Scripts.sync_default_deals import setup_auto_sync_triggers
 setup_auto_sync_triggers()
 
-# Live CMP update endpoint
+# Live CMP update endpoint using Google Finance
 @app.route('/api/update-live-cmp')
 def update_live_cmp_endpoint():
-    """API endpoint to update live CMP data for admin trade signals"""
+    """API endpoint to update live CMP data using Google Finance via yfinance"""
     try:
-        from Scripts.live_cmp_service import update_live_cmp
+        from Scripts.google_finance_cmp_updater import update_all_cmp_data
         
-        updated_count = update_live_cmp()
+        result = update_all_cmp_data()
         
         return jsonify({
-            'success': True,
-            'message': f'Successfully updated {updated_count} records with live CMP data',
-            'updated_count': updated_count
+            'success': result['success'],
+            'message': result['message'],
+            'updated_count': result['updated_count'],
+            'total_symbols': result.get('total_symbols', 0),
+            'successful_symbols': result.get('successful_symbols', 0),
+            'error_count': result['error_count'],
+            'duration': result.get('duration', 0),
+            'results': result.get('results', {})
         })
         
     except Exception as e:
         import logging
-        logging.error(f"Error updating live CMP: {str(e)}")
+        logging.error(f"Error updating live CMP via Google Finance: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e),
-            'message': 'Failed to update live CMP data'
+            'message': 'Failed to update live CMP data via Google Finance'
+        }), 500
+
+# Update specific symbols CMP endpoint
+@app.route('/api/update-cmp-symbols', methods=['POST'])
+def update_specific_symbols_cmp():
+    """API endpoint to update CMP for specific symbols"""
+    try:
+        from Scripts.google_finance_cmp_updater import update_specific_cmp_data
+        from flask import request
+        
+        data = request.get_json()
+        symbols = data.get('symbols', []) if data else []
+        
+        if not symbols:
+            return jsonify({
+                'success': False,
+                'message': 'No symbols provided'
+            }), 400
+        
+        result = update_specific_cmp_data(symbols)
+        
+        return jsonify({
+            'success': result['success'],
+            'message': result['message'],
+            'updated_count': result['updated_count'],
+            'symbols_processed': result.get('symbols_processed', 0),
+            'successful_symbols': result.get('successful_symbols', 0),
+            'error_count': result['error_count'],
+            'duration': result.get('duration', 0),
+            'results': result.get('results', {})
+        })
+        
+    except Exception as e:
+        import logging
+        logging.error(f"Error updating specific symbols CMP: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to update specific symbols CMP'
         }), 500
 
 # Health check endpoint for domain verification
