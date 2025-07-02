@@ -1090,8 +1090,49 @@ function sortSignalsByColumn(column) {
     }
 }
 
+// Data source switching functions
+function switchDataSource(newSource) {
+    var oldSource = localStorage.getItem('data-source') || 'google';
+    localStorage.setItem('data-source', newSource);
+    
+    var sourceName = newSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
+    
+    // Update UI indicator
+    var currentDataSourceSpan = document.getElementById('currentDataSource');
+    if (currentDataSourceSpan) {
+        currentDataSourceSpan.textContent = sourceName;
+    }
+    
+    // Show notification
+    if (typeof showToaster === 'function') {
+        showToaster('Data Source Changed', 'Switched to ' + sourceName, 'info');
+    }
+    
+    // Auto-update CMP if source changed
+    if (newSource !== oldSource) {
+        setTimeout(function() {
+            updateAllCMPValues();
+        }, 500);
+    }
+}
+
+function updateCurrentDataSourceIndicator() {
+    var dataSource = localStorage.getItem('data-source') || 'google';
+    var sourceName = dataSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
+    
+    var currentDataSourceSpan = document.getElementById('currentDataSource');
+    if (currentDataSourceSpan) {
+        currentDataSourceSpan.textContent = sourceName;
+    }
+}
+
 // Initialize the ETF Signals Manager
 window.etfSignalsManager = new ETFSignalsManager();
+
+// Update data source indicator when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    updateCurrentDataSourceIndicator();
+});
 
 
 // Expose global functions for HTML event handlers
@@ -1123,9 +1164,19 @@ function updateAllCMPValues() {
     }
     
     // Get unique symbols from current signals
-    const symbols = [...new Set(window.etfSignalsManager.signals.map(signal => 
-        signal.etf || signal.symbol
-    ).filter(symbol => symbol))];
+    var symbolsArray = window.etfSignalsManager.signals.map(function(signal) {
+        return signal.etf || signal.symbol;
+    }).filter(function(symbol) {
+        return symbol;
+    });
+    
+    // Remove duplicates using a simple approach
+    var symbols = [];
+    for (var i = 0; i < symbolsArray.length; i++) {
+        if (symbols.indexOf(symbolsArray[i]) === -1) {
+            symbols.push(symbolsArray[i]);
+        }
+    }
     
     if (symbols.length === 0) {
         console.log('No symbols found for CMP update');
@@ -1146,8 +1197,10 @@ function updateAllCMPValues() {
             'Content-Type': 'application/json'
         }
     })
-    .then(response => response.json())
-    .then(data => {
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(data) {
         if (data.success) {
             console.log('CMP update response from ' + sourceName + ':', data);
             
@@ -1158,13 +1211,13 @@ function updateAllCMPValues() {
             
             // Show success message
             var updatedCount = data.updated_count || data.signals_updated || 0;
-            showUpdateMessage(`Updated CMP for ${updatedCount} records from ${sourceName}`, 'success');
+            showUpdateMessage('Updated CMP for ' + updatedCount + ' records from ' + sourceName, 'success');
         } else {
             console.error('CMP update failed:', data.error);
             showUpdateMessage('Failed to update CMP from ' + sourceName + ': ' + data.error, 'error');
         }
     })
-    .catch(error => {
+    .catch(function(error) {
         console.error('Error updating CMP:', error);
         showUpdateMessage('Error updating CMP from ' + sourceName + ': ' + error.message, 'error');
     });

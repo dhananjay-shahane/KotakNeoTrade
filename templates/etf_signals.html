@@ -53,6 +53,19 @@
                                 <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(0, 'Off')">Disable</a></li>
                             </ul>
                         </div>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-info dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-database me-1"></i><span id="currentDataSource">Google Finance</span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="switchDataSource('google')">
+                                    <i class="fas fa-search me-2"></i>Google Finance
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="switchDataSource('yahoo')">
+                                    <i class="fas fa-chart-line me-2"></i>Yahoo Finance
+                                </a></li>
+                            </ul>
+                        </div>
                         <button class="btn btn-sm btn-outline-light" onclick="exportSignals()">
                             <i class="fas fa-download me-1"></i>Export
                         </button>

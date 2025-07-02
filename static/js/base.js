@@ -328,13 +328,7 @@
 
             // Apply data source
             if (dataSourceSelect) {
-                var newDataSource = dataSourceSelect.value;
-                localStorage.setItem('data-source', newDataSource);
-
-                if (typeof showToaster === 'function') {
-                    var sourceName = newDataSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
-                    showToaster('Data Source Updated', 'CMP updates will use ' + sourceName, 'success');
-                }
+                handleDataSourceChange();
             }
 
             // Close modal
@@ -439,6 +433,31 @@
         // Data Source Management Functions
         function getDataSource() {
             return localStorage.getItem('data-source') || 'google';
+        }
+
+        function handleDataSourceChange() {
+            var dataSourceSelect = document.getElementById('dataSourceSelect');
+            if (!dataSourceSelect) return;
+
+            var newDataSource = dataSourceSelect.value;
+            var oldDataSource = localStorage.getItem('data-source') || 'google';
+
+            // Save the new data source
+            localStorage.setItem('data-source', newDataSource);
+
+            var sourceName = newDataSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
+
+            if (typeof showToaster === 'function') {
+                showToaster('Data Source Changed', 'Switched to ' + sourceName, 'info');
+            }
+
+            // Automatically update CMP with new data source if it changed
+            if (newDataSource !== oldDataSource) {
+                // Small delay to allow settings modal to close
+                setTimeout(function() {
+                    updateLiveCMP();
+                }, 500);
+            }
         }
 
         function updateLiveCMP() {
