@@ -22,19 +22,23 @@ class YahooFinanceService:
         }
     
     def get_stock_price(self, symbol):
-        """Fetch current price for a single symbol from Yahoo Finance"""
-        try:
-            # Add .NS suffix for NSE stocks if not already present
-            yahoo_symbol = symbol
-            if not yahoo_symbol.endswith('.NS') and not yahoo_symbol.endswith('.BO'):
-                yahoo_symbol = f"{symbol}.NS"
-            
-            logger.info(f"Fetching price for {symbol} -> {yahoo_symbol}")
-            
-            ticker = yf.Ticker(yahoo_symbol)
-            
-            # Try multiple methods to get price data
-            price_data = None
+        """Fetch current price for a single symbol from Yahoo Finance with retry logic"""
+        max_retries = 3
+        retry_delay = 1
+        
+        for attempt in range(max_retries):
+            try:
+                # Add .NS suffix for NSE stocks if not already present
+                yahoo_symbol = symbol
+                if not yahoo_symbol.endswith('.NS') and not yahoo_symbol.endswith('.BO'):
+                    yahoo_symbol = f"{symbol}.NS"
+                
+                logger.info(f"Fetching price for {symbol} -> {yahoo_symbol} (Attempt {attempt + 1}/{max_retries})")
+                
+                ticker = yf.Ticker(yahoo_symbol)
+                
+                # Try multiple methods to get price data
+                price_data = None
             
             # Method 1: Try recent history (most reliable)
             try:
@@ -102,12 +106,30 @@ class YahooFinanceService:
             except Exception as e:
                 logger.warning(f"Info method failed for {symbol}: {e}")
             
-            logger.warning(f"⚠️ No price data found for {symbol}")
-            return None
+            logger.warning(f"⚠️ No price data found for {symbol} on attempt {attempt + 1}")
                 
-        except Exception as e:
-            logger.error(f"❌ Error fetching price for {symbol}: {str(e)}")
-            return None
+                if attempt < max_retries - 1:
+                    logger.info(f"Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                    continue
+                else:
+                    logger.error(f"❌ Failed to get price for {symbol} after {max_retries} attempts")
+                    return None
+                    
+            except Exception as e:
+                logger.error(f"❌ Error fetching price for {symbol} (attempt {attempt + 1}): {str(e)}")
+                
+                if attempt < max_retries - 1:
+                    logger.info(f"Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2
+                    continue
+                else:
+                    logger.error(f"❌ Failed to get price for {symbol} after {max_retries} attempts")
+                    return None
+        
+        return None
     
     def get_multiple_prices(self, symbols):
         """Fetch prices for multiple symbols with rate limiting"""

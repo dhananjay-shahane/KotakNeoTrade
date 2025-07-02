@@ -1,4 +1,3 @@
-# Apply the changes to prioritize Google Finance CMP updates in the ETF signals page.
 #!/usr/bin/env python3
 """
 Google Finance CMP Updater - External script for updating admin_trade_signals table
@@ -93,7 +92,7 @@ class GoogleFinanceCMPUpdater:
 
         # Default: add .NS for NSE symbols
         return f"{clean_symbol}.NS"
-    
+
     def fetch_google_finance_price(self, symbol: str) -> Optional[float]:
         """Fetch live price from Google Finance (simulated)"""
         # Simulate fetching price from Google Finance
@@ -352,7 +351,7 @@ class GoogleFinanceCMPUpdater:
 
         duration = time.time() - start_time
 
-        logging.info(f"✅ CMP update completed!")
+        logging.info("✅ CMP update completed!")
         logging.info(f"   • Total symbols processed: {len(symbols)}")
         logging.info(f"   • Successful updates: {success_count}")
         logging.info(f"   • Database rows updated: {self.updated_count}")
@@ -420,7 +419,7 @@ class GoogleFinanceCMPUpdater:
 
         duration = time.time() - start_time
 
-        logging.info(f"✅ Specific symbols update completed!")
+        logging.info("✅ Specific symbols update completed!")
         logging.info(f"   • Symbols processed: {len(symbols)}")
         logging.info(f"   • Successful updates: {success_count}")
         logging.info(f"   • Database rows updated: {self.updated_count}")
@@ -488,4 +487,3 @@ def get_live_price_for_symbol(symbol: str) -> Optional[float]:
 
 if __name__ == "__main__":
     main()
-`

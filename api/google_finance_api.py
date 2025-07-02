@@ -16,14 +16,25 @@ logger = logging.getLogger(__name__)
 DATABASE_URL = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
 
 def get_google_finance_price(symbol: str) -> Optional[float]:
-    """Fetch live price from Google Finance"""
+    """Fetch live price from Google Finance with enhanced error handling"""
     try:
         url = f"https://www.google.com/finance/quote/{symbol.upper()}:NSE"
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Accept-Encoding": "gzip, deflate, br",
+            "DNT": "1",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1"
         }
         
-        response = requests.get(url, headers=headers, timeout=10)
+        # Add session for better connection handling
+        session = requests.Session()
+        session.headers.update(headers)
+        
+        response = session.get(url, timeout=15)
+        
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
             
@@ -32,23 +43,36 @@ def get_google_finance_price(symbol: str) -> Optional[float]:
                 "div[class*='YMlKec fxKbKc']",
                 "div[class*='YMlKec']", 
                 "div[data-source='SPYlIb']",
-                "span[class*='IsqQVc NprOob XcVN5d']"
+                "span[class*='IsqQVc NprOob XcVN5d']",
+                "div[jsname='ip75Cb']",
+                "c-wiz[data-node-index] div[class*='kf1m0']"
             ]
             
             for selector in price_selectors:
                 price_element = soup.select_one(selector)
                 if price_element:
                     price_text = price_element.get_text().strip()
-                    price_text = price_text.replace("₹", "").replace(",", "").replace("$", "")
+                    # Clean the price text more thoroughly
+                    price_text = price_text.replace("₹", "").replace(",", "").replace("$", "").replace(" ", "")
                     try:
-                        return float(price_text)
-                    except ValueError:
+                        price = float(price_text)
+                        if price > 0:  # Ensure price is valid
+                            logger.info(f"✅ Google Finance price for {symbol}: ₹{price}")
+                            return price
+                    except (ValueError, TypeError):
                         continue
         
+        logger.warning(f"⚠️ Google Finance: No valid price found for {symbol} (Status: {response.status_code})")
         return None
         
+    except requests.exceptions.Timeout:
+        logger.error(f"❌ Google Finance timeout for {symbol}")
+        return None
+    except requests.exceptions.ConnectionError:
+        logger.error(f"❌ Google Finance connection error for {symbol}")
+        return None
     except Exception as e:
-        logger.error(f"Error fetching Google Finance price for {symbol}: {e}")
+        logger.error(f"❌ Google Finance error for {symbol}: {e}")
         return None
 
 @google_finance_bp.route('/live-price/<symbol>', methods=['GET'])
