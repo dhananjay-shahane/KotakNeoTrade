@@ -47,53 +47,39 @@ def update_prices():
         def get_yahoo_price(symbol):
             """Get live price from Yahoo Finance with enhanced error handling"""
             try:
+                # Check for rate limiting and skip Yahoo if detected
+                import random
+                
                 # Method 1: Try .NS suffix first (NSE - National Stock Exchange)
                 try:
                     yf_symbol_ns = symbol + ".NS"
                     ticker_ns = yf.Ticker(yf_symbol_ns)
-                    hist = ticker_ns.history(period="1d", timeout=8)
+                    hist = ticker_ns.history(period="1d", timeout=5)
                     if not hist.empty:
                         price = hist['Close'].iloc[-1]
                         logger.info(f"✅ Got real price from .NS: {symbol} = ₹{price}")
                         return float(round(price, 2))
                 except Exception as e:
+                    # Check if it's a rate limiting error
+                    if "429" in str(e) or "Too Many Requests" in str(e):
+                        logger.warning(f"Rate limited for {symbol}, using fallback")
+                        break  # Skip to fallback immediately
                     logger.warning(f".NS method failed for {symbol}: {e}")
                 
                 # Method 2: Try .BO suffix (Bombay Stock Exchange)
                 try:
                     yf_symbol_bo = symbol + ".BO"
                     ticker_bo = yf.Ticker(yf_symbol_bo)
-                    hist = ticker_bo.history(period="1d", timeout=8)
+                    hist = ticker_bo.history(period="1d", timeout=5)
                     if not hist.empty:
                         price = hist['Close'].iloc[-1]
                         logger.info(f"✅ Got real price from .BO: {symbol} = ₹{price}")
                         return float(round(price, 2))
                 except Exception as e:
+                    if "429" in str(e) or "Too Many Requests" in str(e):
+                        logger.warning(f"Rate limited for {symbol}, using fallback")
+                        break  # Skip to fallback immediately
                     logger.warning(f".BO method failed for {symbol}: {e}")
-                
-                # Method 3: Try 5-day history with .NS
-                try:
-                    yf_symbol_ns = symbol + ".NS"
-                    ticker_ns = yf.Ticker(yf_symbol_ns)
-                    hist = ticker_ns.history(period="5d", timeout=10)
-                    if not hist.empty:
-                        price = hist['Close'].iloc[-1]
-                        logger.info(f"✅ Got real price from 5d .NS history: {symbol} = ₹{price}")
-                        return float(round(price, 2))
-                except Exception as e:
-                    logger.warning(f"5d .NS history failed for {symbol}: {e}")
-                
-                # Method 4: Try info method with .NS
-                try:
-                    yf_symbol_ns = symbol + ".NS"
-                    ticker_ns = yf.Ticker(yf_symbol_ns)
-                    info = ticker_ns.info
-                    current_price = info.get('currentPrice') or info.get('regularMarketPrice') or info.get('previousClose')
-                    if current_price and current_price > 0:
-                        logger.info(f"✅ Got real price from .NS info: {symbol} = ₹{current_price}")
-                        return float(round(current_price, 2))
-                except Exception as e:
-                    logger.warning(f".NS info method failed for {symbol}: {e}")
                 
                 # Generate realistic fallback price based on existing data
                 try:
@@ -108,7 +94,6 @@ def update_prices():
                     if result:
                         base_price = float(result['cmp'])
                         # Add small random variation (±0.5%)
-                        import random
                         variation = random.uniform(-0.005, 0.005)
                         fallback_price = round(base_price * (1 + variation), 2)
                         logger.info(f"Using fallback price based on existing data for {symbol}: ₹{fallback_price}")
@@ -145,8 +130,12 @@ def update_prices():
         results = {}
         total_records_updated = 0
         
-        with psycopg2.connect(**external_db_config) as conn:
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+        # Add timeout protection (max 25 seconds to prevent worker timeout)
+        max_duration = 25.0
+        
+        try:
+            conn = psycopg2.connect(**external_db_config)
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
                 # Get all unique symbols from admin_trade_signals
                 if symbols_to_update:
                     # Update only specified symbols
@@ -181,6 +170,12 @@ def update_prices():
                 
                 for i, symbol in enumerate(symbols, 1):
                     try:
+                        # Check if we're approaching timeout
+                        current_duration = time.time() - start_time
+                        if current_duration > max_duration:
+                            logger.warning(f"⏰ Timeout approaching, stopping at symbol {i}/{len(symbols)}")
+                            break
+                            
                         logger.info(f"🔄 Processing {i}/{len(symbols)}: {symbol} via Yahoo Finance...")
                         
                         # Fetch live price
@@ -216,8 +211,8 @@ def update_prices():
                             errors.append(f"Failed to fetch price for {symbol}")
                             logger.warning(f"⚠️ Could not fetch price for {symbol}")
                         
-                        # Rate limiting - small delay to avoid overwhelming Yahoo Finance API
-                        time.sleep(2.0)
+                        # Reduced delay to prevent worker timeout
+                        time.sleep(0.5)
                         
                     except Exception as e:
                         error_msg = f"Error updating {symbol}: {str(e)}"
@@ -230,7 +225,19 @@ def update_prices():
                         }
                 
                 conn.commit()
-                duration = time.time() - start_time
+            duration = time.time() - start_time
+        except Exception as db_error:
+            logger.error(f"Database connection error: {db_error}")
+            return jsonify({
+                'success': False,
+                'error': f'Database connection failed: {str(db_error)}',
+                'message': 'Failed to connect to database'
+            }), 500
+        finally:
+            if 'cursor' in locals():
+                cursor.close()
+            if 'conn' in locals():
+                conn.close()
                 
         logger.info(f"✅ Yahoo Finance CMP update completed!")
         logger.info(f"   • Total symbols processed: {len(symbols)}")
