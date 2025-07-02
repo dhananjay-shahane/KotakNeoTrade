@@ -755,10 +755,9 @@ ETFSignalsManager.prototype.startAutoRefresh = function() {
     this.stopAutoRefresh();
     this.refreshInterval = setInterval(function() {
         self.loadSignals();
-        // Also update CMP values every 2 minutes
-        if (Math.random() < 0.25) { // 25% chance each refresh cycle
-            updateAllCMPValues();
-        }
+        // Update CMP values with selected data source every refresh
+        var dataSource = localStorage.getItem('data-source') || 'google';
+        updateCMPDirectlyFromSource(dataSource);
     }, 300000); // 5 minutes
 };
 
@@ -777,6 +776,12 @@ function refreshSignals() {
 }
 
 function setRefreshInterval(interval, text) {
+    // Only allow 5 minute intervals
+    if (interval !== 300000) {
+        interval = 300000;
+        text = '5 Min';
+    }
+    
     if (window.etfSignalsManager) {
         window.etfSignalsManager.stopAutoRefresh();
         if (interval > 0) {

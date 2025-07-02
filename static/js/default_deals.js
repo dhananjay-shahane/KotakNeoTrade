@@ -5,7 +5,7 @@ function DealsManager() {
     this.pageSize = 20;
     this.autoRefresh = true;
     this.refreshInterval = null;
-    this.refreshIntervalTime = 30000;
+    this.refreshIntervalTime = 300000; // 5 minutes
     this.searchTimeout = null;
     this.sortDirection = 'asc';
 
@@ -562,6 +562,9 @@ DealsManager.prototype.startAutoRefresh = function() {
         var self = this;
         this.refreshInterval = setInterval(function() {
             self.loadDeals();
+            // Update CMP using selected data source every refresh
+            var dataSource = localStorage.getItem('data-source') || 'google';
+            updateDefaultDealsCMP();
         }, this.refreshIntervalTime);
     }
 };
@@ -1009,6 +1012,12 @@ function viewChart(symbol) {
 }
 
 function setRefreshInterval(intervalMs, displayText) {
+    // Only allow 5 minute intervals
+    if (intervalMs !== 300000) {
+        intervalMs = 300000;
+        displayText = '5 Min';
+    }
+    
     window.dealsManager.refreshIntervalTime = intervalMs;
     document.getElementById('currentInterval').textContent = displayText;
 
@@ -1337,17 +1346,66 @@ function updateDefaultDealsCMP() {
     });
 }
 
+// Data source switching functions
+function switchDataSource(newSource) {
+    var oldSource = localStorage.getItem('data-source') || 'google';
+    localStorage.setItem('data-source', newSource);
+
+    var sourceName = newSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
+
+    // Update UI indicator
+    var currentDataSourceSpan = document.getElementById('currentDataSource');
+    if (currentDataSourceSpan) {
+        currentDataSourceSpan.textContent = sourceName;
+    }
+
+    // Show immediate notification
+    if (typeof showSuccessMessage === 'function') {
+        showSuccessMessage('Data Source Changed to ' + sourceName + ' - Updating CMP...');
+    }
+
+    // Immediately update CMP when source changes
+    if (newSource !== oldSource) {
+        updateDefaultDealsCMP();
+    }
+}
+
+function updateCurrentDataSourceIndicator() {
+    var dataSource = localStorage.getItem('data-source') || 'google';
+    var sourceName = dataSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
+
+    var currentDataSourceSpan = document.getElementById('currentDataSource');
+    if (currentDataSourceSpan) {
+        currentDataSourceSpan.textContent = sourceName;
+    }
+}
+
 // Initialize Deals Manager on page load
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Initializing Deals Manager...');
     window.dealsManager = new DealsManager();
 
+    // Set default data source to Google Finance if not already set
+    if (!localStorage.getItem('data-source')) {
+        localStorage.setItem('data-source', 'google');
+    }
+    
+    // Ensure Google Finance is selected by default
+    switchDataSource('google');
+    updateCurrentDataSourceIndicator();
+
     var savedInterval = localStorage.getItem('dealsRefreshInterval');
     var savedDisplay = localStorage.getItem('dealsRefreshIntervalDisplay');
 
-    if (savedInterval && savedDisplay) {
+    if (savedInterval && savedDisplay && parseInt(savedInterval) === 300000) {
         window.dealsManager.refreshIntervalTime = parseInt(savedInterval);
         document.getElementById('currentInterval').textContent = savedDisplay;
+    } else {
+        // Force 5 minute interval
+        window.dealsManager.refreshIntervalTime = 300000;
+        if (document.getElementById('currentInterval')) {
+            document.getElementById('currentInterval').textContent = '5 Min';
+        }
     }
 
     window.addEventListener('storage', function(e) {
