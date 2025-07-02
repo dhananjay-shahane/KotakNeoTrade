@@ -247,54 +247,77 @@ def update_prices():
 
 @google_finance_bp.route('/update-etf-cmp', methods=['POST'])
 def update_etf_cmp():
-    """Direct CMP update endpoint for admin_trade_signals table"""
+    """Direct CMP update endpoint for admin_trade_signals table using external database"""
     try:
         request_data = request.get_json() or {}
-        direct_update = request_data.get('direct_update', False)
+        symbols_to_update = request_data.get('symbols', [])
         
-        logger.info("Starting Google Finance direct CMP update for admin_trade_signals table")
+        logger.info("🚀 Starting Google Finance CMP update for admin_trade_signals table")
         
         updated_count = 0
         errors = []
         start_time = time.time()
+        results = {}
+        total_records_updated = 0
         
-        with psycopg2.connect(DATABASE_URL) as conn:
+        # External database connection
+        external_db_config = {
+            'host': "dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com",
+            'database': "kotak_trading_db",
+            'user': "kotak_trading_db_user",
+            'password': "JRUlk8RutdgVcErSiUXqljDUdK8sBsYO",
+            'port': 5432
+        }
+        
+        with psycopg2.connect(**external_db_config) as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
                 # Get all unique symbols from admin_trade_signals
-                cursor.execute("""
-                    SELECT DISTINCT 
-                        COALESCE(symbol, etf) as etf_symbol,
-                        COUNT(*) as record_count
-                    FROM admin_trade_signals 
-                    WHERE COALESCE(symbol, etf) IS NOT NULL AND COALESCE(symbol, etf) != ''
-                    GROUP BY COALESCE(symbol, etf)
-                """)
+                if symbols_to_update:
+                    # Update only specified symbols
+                    placeholders = ','.join(['%s'] * len(symbols_to_update))
+                    cursor.execute(f"""
+                        SELECT DISTINCT 
+                            COALESCE(symbol, etf) as etf_symbol,
+                            COUNT(*) as record_count
+                        FROM admin_trade_signals 
+                        WHERE COALESCE(symbol, etf) IN ({placeholders})
+                        AND COALESCE(symbol, etf) IS NOT NULL AND COALESCE(symbol, etf) != ''
+                        GROUP BY COALESCE(symbol, etf)
+                    """, symbols_to_update)
+                else:
+                    # Update all symbols
+                    cursor.execute("""
+                        SELECT DISTINCT 
+                            COALESCE(symbol, etf) as etf_symbol,
+                            COUNT(*) as record_count
+                        FROM admin_trade_signals 
+                        WHERE COALESCE(symbol, etf) IS NOT NULL AND COALESCE(symbol, etf) != ''
+                        GROUP BY COALESCE(symbol, etf)
+                    """)
                 
                 symbol_data = cursor.fetchall()
                 symbols = [row['etf_symbol'] for row in symbol_data]
                 
-                logger.info(f"Found {len(symbols)} unique symbols to update: {symbols}")
-                
-                results = {}
-                total_records_updated = 0
+                logger.info(f"📊 Found {len(symbols)} unique symbols to update: {symbols}")
                 
                 for symbol in symbols:
                     try:
-                        logger.info(f"Processing {symbol}...")
+                        logger.info(f"📈 Processing {symbol} via Google Finance...")
                         price = get_google_finance_price(symbol)
                         
                         if price and price > 0:
-                            # Update all records with this symbol
+                            # Update all records with this symbol in external database
                             cursor.execute("""
                                 UPDATE admin_trade_signals 
                                 SET cmp = %s
                                 WHERE (symbol = %s OR etf = %s)
-                                AND (cmp IS NULL OR cmp != %s)
-                            """, (price, symbol, symbol, price))
+                            """, (price, symbol, symbol))
                             
                             rows_updated = cursor.rowcount
                             total_records_updated += rows_updated
                             updated_count += 1
+                            
+                            logger.info(f"✅ Updated {rows_updated} records for {symbol}: ₹{price}")
                             
                             results[symbol] = {
                                 'success': True,

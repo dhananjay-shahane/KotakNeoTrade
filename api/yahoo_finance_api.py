@@ -11,19 +11,25 @@ logger = logging.getLogger(__name__)
 
 @yahoo_bp.route('/update-prices', methods=['POST'])
 def update_prices():
-    """Direct CMP update from Yahoo Finance for admin_trade_signals table"""
+    """Direct CMP update from Yahoo Finance for admin_trade_signals table using external database"""
     try:
         import psycopg2
         from psycopg2.extras import RealDictCursor
         import yfinance as yf
         
         request_data = request.get_json() or {}
-        direct_update = request_data.get('direct_update', False)
+        symbols_to_update = request_data.get('symbols', [])
         
-        logger.info("Starting Yahoo Finance direct CMP update for admin_trade_signals table")
+        logger.info("🚀 Starting Yahoo Finance CMP update for admin_trade_signals table")
         
-        # Database connection
-        DATABASE_URL = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
+        # External database connection
+        external_db_config = {
+            'host': "dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com",
+            'database': "kotak_trading_db",
+            'user': "kotak_trading_db_user",
+            'password': "JRUlk8RutdgVcErSiUXqljDUdK8sBsYO",
+            'port': 5432
+        }
         
         def get_yahoo_price(symbol):
             """Get live price from Yahoo Finance with enhanced error handling"""
@@ -74,19 +80,35 @@ def update_prices():
         
         updated_count = 0
         errors = []
-        start_time = datetime.utcnow()
+        start_time = time.time()
+        results = {}
+        total_records_updated = 0
         
-        with psycopg2.connect(DATABASE_URL) as conn:
+        with psycopg2.connect(**external_db_config) as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
                 # Get all unique symbols from admin_trade_signals
-                cursor.execute("""
-                    SELECT DISTINCT 
-                        COALESCE(symbol, etf) as etf_symbol,
-                        COUNT(*) as record_count
-                    FROM admin_trade_signals 
-                    WHERE COALESCE(symbol, etf) IS NOT NULL AND COALESCE(symbol, etf) != ''
-                    GROUP BY COALESCE(symbol, etf)
-                """)
+                if symbols_to_update:
+                    # Update only specified symbols
+                    placeholders = ','.join(['%s'] * len(symbols_to_update))
+                    cursor.execute(f"""
+                        SELECT DISTINCT 
+                            COALESCE(symbol, etf) as etf_symbol,
+                            COUNT(*) as record_count
+                        FROM admin_trade_signals 
+                        WHERE COALESCE(symbol, etf) IN ({placeholders})
+                        AND COALESCE(symbol, etf) IS NOT NULL AND COALESCE(symbol, etf) != ''
+                        GROUP BY COALESCE(symbol, etf)
+                    """, symbols_to_update)
+                else:
+                    # Update all symbols
+                    cursor.execute("""
+                        SELECT DISTINCT 
+                            COALESCE(symbol, etf) as etf_symbol,
+                            COUNT(*) as record_count
+                        FROM admin_trade_signals 
+                        WHERE COALESCE(symbol, etf) IS NOT NULL AND COALESCE(symbol, etf) != ''
+                        GROUP BY COALESCE(symbol, etf)
+                    """)
                 
                 symbol_data = cursor.fetchall()
                 symbols = [row['etf_symbol'] for row in symbol_data]
@@ -120,17 +142,18 @@ def update_prices():
                                 logger.info(f"Using fallback price for {symbol}: ₹{price}")
                         
                         if price and price > 0:
-                            # Update all records with this symbol
+                            # Update all records with this symbol in external database
                             cursor.execute("""
                                 UPDATE admin_trade_signals 
                                 SET cmp = %s
                                 WHERE (symbol = %s OR etf = %s)
-                                AND (cmp IS NULL OR cmp != %s)
-                            """, (price, symbol, symbol, price))
+                            """, (price, symbol, symbol))
                             
                             rows_updated = cursor.rowcount
                             total_records_updated += rows_updated
                             updated_count += 1
+                            
+                            logger.info(f"✅ Updated {rows_updated} records for {symbol}: ₹{price}")
                             
                             results[symbol] = {
                                 'success': True,
@@ -160,7 +183,7 @@ def update_prices():
                         }
                 
                 conn.commit()
-                duration = (datetime.utcnow() - start_time).total_seconds()
+                duration = time.time() - start_time
                 
         logger.info(f"✅ Yahoo Finance CMP update completed!")
         logger.info(f"   • Total symbols processed: {len(symbols)}")
@@ -179,7 +202,7 @@ def update_prices():
             'errors': errors,
             'results': results,
             'duration': duration,
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now().isoformat(),
             'data_source': 'Yahoo Finance',
             'direct_update': True
         })
