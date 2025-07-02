@@ -31,6 +31,7 @@ try:
     from api.enhanced_etf_signals import enhanced_etf_bp
     from api.google_finance_api import google_finance_bp
     from api.yahoo_finance_api import yahoo_bp
+    from api.datatable_updates import datatable_updates_bp
 
     # Import realtime quotes after creating the manager
     from api.realtime_quotes import quotes_bp as realtime_bp
@@ -98,6 +99,9 @@ try:
 
     # Register Yahoo Finance API blueprint
     app.register_blueprint(yahoo_bp)
+    
+    # Register Datatable Updates API blueprint
+    app.register_blueprint(datatable_updates_bp)
 
     print("✓ Additional blueprints registered successfully")
 except Exception as e:

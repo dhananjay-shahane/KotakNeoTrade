@@ -1,0 +1,458 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Trade Signals - Real-time Datatable{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
+<style>
+    .price-source-selector {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        color: white;
+    }
+    
+    .price-source-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 6px;
+        margin: 0 5px;
+        transition: all 0.3s ease;
+    }
+    
+    .price-source-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.5);
+        transform: translateY(-2px);
+    }
+    
+    .price-source-btn.active {
+        background: #28a745;
+        border-color: #28a745;
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    }
+    
+    .update-status {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 10px;
+        margin-top: 10px;
+        font-size: 0.9em;
+    }
+    
+    .datatable-container {
+        background: #2c3e50;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+    
+    .table-dark {
+        --bs-table-bg: #34495e;
+    }
+    
+    .positive-pnl {
+        color: #28a745 !important;
+        font-weight: bold;
+    }
+    
+    .negative-pnl {
+        color: #dc3545 !important;
+        font-weight: bold;
+    }
+    
+    .neutral-pnl {
+        color: #6c757d !important;
+    }
+    
+    .symbol-badge {
+        background: #17a2b8;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        font-weight: bold;
+    }
+    
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        font-weight: bold;
+    }
+    
+    .status-active {
+        background: #28a745;
+        color: white;
+    }
+    
+    .status-inactive {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        display: none;
+    }
+    
+    .loading-spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">Admin Trade Signals</h1>
+            <p class="text-muted mb-0">Real-time price updates from external database</p>
+        </div>
+        <div>
+            <button class="btn btn-outline-primary me-2" onclick="refreshDataTable()">
+                <i class="fas fa-sync-alt me-1"></i>Refresh Data
+            </button>
+            <button class="btn btn-primary" onclick="exportData()">
+                <i class="fas fa-download me-1"></i>Export
+            </button>
+        </div>
+    </div>
+
+    <!-- Price Source Selector -->
+    <div class="price-source-selector">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h5 class="mb-2">📊 Real-time Price Updates</h5>
+                <p class="mb-3">Select your preferred data source for immediate datatable updates</p>
+                <div class="d-flex flex-wrap">
+                    <button class="price-source-btn" id="yahooBtn" onclick="selectPriceSource('yahoo')">
+                        <i class="fas fa-chart-line me-2"></i>Yahoo Finance
+                    </button>
+                    <button class="price-source-btn" id="googleBtn" onclick="selectPriceSource('google')">
+                        <i class="fas fa-search me-2"></i>Google Finance
+                    </button>
+                    <button class="price-source-btn" onclick="updateAllPrices()">
+                        <i class="fas fa-refresh me-2"></i>Update All
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="update-status" id="updateStatus">
+                    <small><i class="fas fa-info-circle me-1"></i>Select a data source to update prices</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="datatable-container">
+        <div class="table-responsive">
+            <table id="adminSignalsTable" class="table table-dark table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Symbol</th>
+                        <th>Type</th>
+                        <th>Entry Price</th>
+                        <th>Current Price</th>
+                        <th>Quantity</th>
+                        <th>Investment</th>
+                        <th>Current Value</th>
+                        <th>P&L Amount</th>
+                        <th>P&L %</th>
+                        <th>Status</th>
+                        <th>Last Updated</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data will be loaded via AJAX -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="text-center text-white">
+        <div class="loading-spinner"></div>
+        <p class="mt-3">Updating prices...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+
+<script>
+let dataTable;
+let currentPriceSource = null;
+
+$(document).ready(function() {
+    initializeDataTable();
+});
+
+function initializeDataTable() {
+    dataTable = $('#adminSignalsTable').DataTable({
+        processing: true,
+        serverSide: false,
+        ajax: {
+            url: '/api/datatable/refresh-data',
+            type: 'POST',
+            dataSrc: 'data'
+        },
+        columns: [
+            { data: 'id' },
+            { 
+                data: 'symbol',
+                render: function(data, type, row) {
+                    return `<span class="symbol-badge">${data}</span>`;
+                }
+            },
+            { data: 'signal_type' },
+            { 
+                data: 'formatted.entry_price',
+                className: 'text-end'
+            },
+            { 
+                data: 'formatted.current_price',
+                className: 'text-end'
+            },
+            { 
+                data: 'quantity',
+                className: 'text-end'
+            },
+            { 
+                data: 'formatted.investment',
+                className: 'text-end'
+            },
+            { 
+                data: 'formatted.current_value',
+                className: 'text-end'
+            },
+            { 
+                data: 'formatted.pnl_amount',
+                className: 'text-end',
+                render: function(data, type, row) {
+                    const pnlClass = row.pnl_amount > 0 ? 'positive-pnl' : row.pnl_amount < 0 ? 'negative-pnl' : 'neutral-pnl';
+                    return `<span class="${pnlClass}">${data}</span>`;
+                }
+            },
+            { 
+                data: 'formatted.pnl_percent',
+                className: 'text-end',
+                render: function(data, type, row) {
+                    const pnlClass = row.pnl_percent > 0 ? 'positive-pnl' : row.pnl_percent < 0 ? 'negative-pnl' : 'neutral-pnl';
+                    return `<span class="${pnlClass}">${data}</span>`;
+                }
+            },
+            { 
+                data: 'status',
+                render: function(data, type, row) {
+                    const statusClass = data === 'ACTIVE' ? 'status-active' : 'status-inactive';
+                    return `<span class="status-badge ${statusClass}">${data}</span>`;
+                }
+            },
+            { 
+                data: 'last_updated',
+                render: function(data, type, row) {
+                    if (!data) return 'Never';
+                    const date = new Date(data);
+                    return date.toLocaleString('en-IN', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                }
+            },
+            {
+                data: null,
+                orderable: false,
+                render: function(data, type, row) {
+                    return `
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-info" onclick="updateSingleSymbol('${row.symbol}')" title="Update Price">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button class="btn btn-outline-warning" onclick="editSignal(${row.id})" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+        ],
+        order: [[0, 'desc']],
+        pageLength: 25,
+        responsive: true,
+        dom: 'Bfrtip',
+        buttons: [
+            'copy', 'csv', 'excel', 'pdf'
+        ],
+        language: {
+            processing: "Loading trade signals...",
+            emptyTable: "No trade signals found"
+        }
+    });
+}
+
+function selectPriceSource(source) {
+    currentPriceSource = source;
+    
+    // Update button states
+    $('.price-source-btn').removeClass('active');
+    $(`#${source}Btn`).addClass('active');
+    
+    // Update status
+    const sourceName = source === 'yahoo' ? 'Yahoo Finance' : 'Google Finance';
+    $('#updateStatus').html(`<small><i class="fas fa-check-circle me-1"></i>Selected: ${sourceName}</small>`);
+}
+
+function updateAllPrices() {
+    if (!currentPriceSource) {
+        showNotification('Please select a price source first', 'warning');
+        return;
+    }
+    
+    showLoading();
+    
+    $.ajax({
+        url: `/api/datatable/update-prices/${currentPriceSource}`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({}),
+        success: function(response) {
+            hideLoading();
+            
+            if (response.success) {
+                showNotification(
+                    `Successfully updated ${response.successful_updates} symbols via ${response.data_source}`,
+                    'success'
+                );
+                
+                // Update status
+                $('#updateStatus').html(`
+                    <small>
+                        <i class="fas fa-check-circle me-1"></i>
+                        Last update: ${new Date().toLocaleTimeString()} via ${response.data_source}
+                        <br>Updated: ${response.successful_updates}/${response.total_symbols} symbols
+                    </small>
+                `);
+                
+                // Refresh datatable
+                dataTable.ajax.reload(null, false);
+            } else {
+                showNotification(`Update failed: ${response.error}`, 'error');
+            }
+        },
+        error: function(xhr, status, error) {
+            hideLoading();
+            showNotification(`Update failed: ${error}`, 'error');
+        }
+    });
+}
+
+function updateSingleSymbol(symbol) {
+    if (!currentPriceSource) {
+        showNotification('Please select a price source first', 'warning');
+        return;
+    }
+    
+    showLoading();
+    
+    $.ajax({
+        url: `/api/datatable/update-prices/${currentPriceSource}`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ symbols: [symbol] }),
+        success: function(response) {
+            hideLoading();
+            
+            if (response.success) {
+                showNotification(`Successfully updated ${symbol} via ${response.data_source}`, 'success');
+                dataTable.ajax.reload(null, false);
+            } else {
+                showNotification(`Update failed for ${symbol}: ${response.error}`, 'error');
+            }
+        },
+        error: function(xhr, status, error) {
+            hideLoading();
+            showNotification(`Update failed: ${error}`, 'error');
+        }
+    });
+}
+
+function refreshDataTable() {
+    dataTable.ajax.reload(null, false);
+    showNotification('Data refreshed', 'info');
+}
+
+function exportData() {
+    $('.buttons-excel').trigger('click');
+}
+
+function editSignal(id) {
+    showNotification('Edit functionality coming soon', 'info');
+}
+
+function showLoading() {
+    $('#loadingOverlay').show();
+}
+
+function hideLoading() {
+    $('#loadingOverlay').hide();
+}
+
+function showNotification(message, type) {
+    const alertClass = type === 'success' ? 'alert-success' : 
+                      type === 'error' ? 'alert-danger' : 
+                      type === 'warning' ? 'alert-warning' : 'alert-info';
+    
+    const notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show position-fixed" style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    $('body').append(notification);
+    
+    setTimeout(() => {
+        notification.alert('close');
+    }, 5000);
+}
+</script>
+{% endblock %}
