@@ -183,8 +183,7 @@ def update_etf_cmp():
                             # Update all records with this symbol
                             cursor.execute("""
                                 UPDATE admin_trade_signals 
-                                SET cmp = %s, 
-                                    last_update_time = CURRENT_TIMESTAMP
+                                SET cmp = %s
                                 WHERE (symbol = %s OR etf = %s)
                                 AND (cmp IS NULL OR cmp != %s)
                             """, (price, symbol, symbol, price))
@@ -282,7 +281,7 @@ def update_etf_cmp_legacy():
                             # Update database
                             cursor.execute("""
                                 UPDATE admin_trade_signals 
-                                SET cmp = %s, last_update_time = CURRENT_TIMESTAMP
+                                SET cmp = %s
                                 WHERE (symbol = %s OR etf = %s)
                             """, (price, symbol, symbol))
                             
