@@ -154,17 +154,39 @@ class YahooFinanceService:
             except Exception as e:
                 logger.warning(f"Info method failed for {symbol}: {e}")
             
+            # Method 3: Alternative approach - try different period
+            try:
+                hist = ticker.history(period="1d")
+                if not hist.empty:
+                    price = hist['Close'].iloc[-1]
+                    if price and price > 0:
+                        logger.info(f"✅ 1d History price for {symbol}: ₹{price}")
+                        return {
+                            'symbol': symbol,
+                            'current_price': float(price),
+                            'open_price': None,
+                            'high_price': None,
+                            'low_price': None,
+                            'volume': None,
+                            'change_amount': 0,
+                            'change_percent': 0,
+                            'previous_close': float(price),
+                            'timestamp': datetime.utcnow()
+                        }
+            except Exception as e:
+                logger.warning(f"1d History method failed for {symbol}: {e}")
+
             logger.warning(f"⚠️ No price data found for {symbol} on attempt {attempt + 1}")
                 
-                if attempt < max_retries - 1:
-                    logger.info(f"Retrying in {retry_delay} seconds...")
-                    time.sleep(retry_delay)
-                    retry_delay *= 2  # Exponential backoff
-                    continue
-                else:
-                    # Generate fallback price if all methods fail
-                    logger.warning(f"⚠️ Generating fallback price for {symbol}")
-                    return self.generate_fallback_price(symbol)
+            if attempt < max_retries - 1:
+                logger.info(f"Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+                continue
+            else:
+                # Generate fallback price if all methods fail
+                logger.warning(f"⚠️ Generating fallback price for {symbol}")
+                return self.generate_fallback_price(symbol)
                     
             except Exception as e:
                 logger.error(f"❌ Error fetching price for {symbol} (attempt {attempt + 1}): {str(e)}")
