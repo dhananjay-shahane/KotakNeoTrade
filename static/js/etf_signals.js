@@ -1135,7 +1135,7 @@ function updateCMPDirectlyFromSource(source) {
                      '<span class="visually-hidden">Loading...</span></div>' +
                      '<h5 class="text-light mb-2">Updating CMP</h5>' +
                      '<p class="text-muted">Fetching live prices from ' + 
-                     (source === 'google' ? 'Google Finance' : 'Yahoo Finance (.NS)') + '...</p>' +
+                     (source === 'google' ? 'Google Finance' : 'Yahoo Finance') + '...</p>' +
                      '<small class="text-warning">Please wait, this may take a few moments</small>' +
                      '</div></td></tr>';
 
