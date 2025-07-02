@@ -26,18 +26,25 @@ def update_prices():
         DATABASE_URL = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
         
         def get_yahoo_price(symbol):
-            """Get live price from Yahoo Finance"""
-            try:
-                yf_symbol = symbol + ".NS"
-                ticker = yf.Ticker(yf_symbol)
-                hist = ticker.history(period="1d")
-                if not hist.empty:
-                    price = hist['Close'].iloc[-1]
-                    return float(round(price, 2))
-                return None
-            except Exception as e:
-                logger.error(f"Yahoo Finance error for {symbol}: {e}")
-                return None
+            """Get live price from Yahoo Finance with retry logic"""
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    yf_symbol = symbol + ".NS"
+                    ticker = yf.Ticker(yf_symbol)
+                    hist = ticker.history(period="1d")
+                    if not hist.empty:
+                        price = hist['Close'].iloc[-1]
+                        return float(round(price, 2))
+                    return None
+                except Exception as e:
+                    if attempt < max_retries - 1:
+                        logger.warning(f"Yahoo Finance attempt {attempt + 1} failed for {symbol}: {e}, retrying...")
+                        time.sleep(5 * (attempt + 1))  # Exponential backoff
+                        continue
+                    else:
+                        logger.error(f"Yahoo Finance error for {symbol} after {max_retries} attempts: {e}")
+                        return None
         
         updated_count = 0
         errors = []
@@ -73,7 +80,7 @@ def update_prices():
                             cursor.execute("""
                                 UPDATE admin_trade_signals 
                                 SET cmp = %s, 
-                                    last_update_time = CURRENT_TIMESTAMP
+                                    updated_at = CURRENT_TIMESTAMP
                                 WHERE (symbol = %s OR etf = %s)
                                 AND (cmp IS NULL OR cmp != %s)
                             """, (price, symbol, symbol, price))
@@ -97,8 +104,8 @@ def update_prices():
                             errors.append(f"Failed to fetch price for {symbol}")
                             logger.warning(f"⚠️ Could not fetch price for {symbol}")
                         
-                        # Rate limiting
-                        time.sleep(1)
+                        # Rate limiting - increase delay to avoid 429 errors
+                        time.sleep(2)
                         
                     except Exception as e:
                         error_msg = f"Error updating {symbol}: {str(e)}"

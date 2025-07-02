@@ -184,7 +184,7 @@ def update_etf_cmp():
                             cursor.execute("""
                                 UPDATE admin_trade_signals 
                                 SET cmp = %s, 
-                                    last_update_time = CURRENT_TIMESTAMP
+                                    updated_at = CURRENT_TIMESTAMP
                                 WHERE (symbol = %s OR etf = %s)
                                 AND (cmp IS NULL OR cmp != %s)
                             """, (price, symbol, symbol, price))
