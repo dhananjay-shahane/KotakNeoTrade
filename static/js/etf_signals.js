@@ -785,8 +785,12 @@ function setRefreshInterval(interval, text) {
             }, interval);
         }
         var currentIntervalSpan = document.getElementById('currentInterval');
+        var refreshIntervalDropdown = document.getElementById('refreshIntervalDropdown');
         if (currentIntervalSpan) {
             currentIntervalSpan.textContent = text;
+        }
+        if (refreshIntervalDropdown) {
+            refreshIntervalDropdown.textContent = text;
         }
         console.log('Refresh interval set to:', interval + 'ms (' + text + ')');
     }
@@ -1250,6 +1254,16 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.setItem('data-source', 'google');
     }
     updateCurrentDataSourceIndicator();
+    
+    // Set default refresh interval to 5 minutes
+    var currentIntervalSpan = document.getElementById('currentInterval');
+    var refreshIntervalDropdown = document.getElementById('refreshIntervalDropdown');
+    if (currentIntervalSpan) {
+        currentIntervalSpan.textContent = '5 Min';
+    }
+    if (refreshIntervalDropdown) {
+        refreshIntervalDropdown.textContent = '5 Min';
+    }
 });
 
 
