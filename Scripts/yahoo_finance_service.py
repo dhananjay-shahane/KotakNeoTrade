@@ -88,63 +88,60 @@ class YahooFinanceService:
         return prices
 
     def update_all_symbols(self):
-        """Update CMP for all symbols in the database"""
-        if not self.engine:
-            return {
-                'status': 'error',
-                'error': 'Database connection not available'
-            }
-        
+        """Update CMP for all symbols in the database using Flask app context"""
         try:
-            with self.engine.connect() as connection:
-                # Get all unique symbols from admin_trade_signals
-                result = connection.execute(text("SELECT DISTINCT symbol FROM admin_trade_signals WHERE symbol IS NOT NULL"))
-                symbols = [row.symbol for row in result]
-                
-                logger.info(f"Found {len(symbols)} unique symbols to update")
-                
-                updates = []
-                for symbol in symbols:
-                    try:
-                        price_data = self.get_stock_price(symbol)
-                        if price_data:
-                            # Update CMP in database
-                            connection.execute(text("""
-                                UPDATE admin_trade_signals 
-                                SET cmp = :cmp, last_updated = :last_updated 
-                                WHERE symbol = :symbol
-                            """), {
-                                'cmp': price_data['current_price'],
-                                'last_updated': datetime.utcnow(),
-                                'symbol': symbol
-                            })
-                            
-                            updates.append({
-                                'symbol': symbol,
-                                'new_cmp': price_data['current_price'],
-                                'status': 'success'
-                            })
-                            
-                            # Add small delay to prevent overwhelming the system
-                            time.sleep(0.1)
-                            
-                    except Exception as e:
-                        logger.error(f"Error updating {symbol}: {e}")
+            # Import Flask app and models in the method to avoid circular imports
+            from app import db
+            from Scripts.models_etf import AdminTradeSignal
+            
+            # Get all unique symbols from admin_trade_signals
+            symbols = db.session.query(AdminTradeSignal.symbol).distinct().filter(
+                AdminTradeSignal.symbol.isnot(None)
+            ).all()
+            symbols = [s[0] for s in symbols]
+            
+            logger.info(f"Found {len(symbols)} unique symbols to update")
+            
+            updates = []
+            for symbol in symbols:
+                try:
+                    price_data = self.get_stock_price(symbol)
+                    if price_data:
+                        # Update CMP in database using Flask ORM
+                        updated_count = db.session.query(AdminTradeSignal).filter(
+                            AdminTradeSignal.symbol == symbol
+                        ).update({
+                            'current_price': price_data['current_price'],
+                            'last_update_time': datetime.utcnow()
+                        })
+                        
+                        db.session.commit()
+                        
                         updates.append({
                             'symbol': symbol,
-                            'error': str(e),
-                            'status': 'error'
+                            'new_cmp': price_data['current_price'],
+                            'updated_records': updated_count,
+                            'status': 'success'
                         })
-                
-                connection.commit()
-                
-                return {
-                    'status': 'success',
-                    'total_symbols': len(symbols),
-                    'successful_updates': len([u for u in updates if u.get('status') == 'success']),
-                    'failed_updates': len([u for u in updates if u.get('status') == 'error']),
-                    'updates': updates
-                }
+                        
+                        # Add small delay to prevent overwhelming the system
+                        time.sleep(0.1)
+                        
+                except Exception as e:
+                    logger.error(f"Error updating {symbol}: {e}")
+                    updates.append({
+                        'symbol': symbol,
+                        'error': str(e),
+                        'status': 'error'
+                    })
+            
+            return {
+                'status': 'success',
+                'total_symbols': len(symbols),
+                'successful_updates': len([u for u in updates if u.get('status') == 'success']),
+                'failed_updates': len([u for u in updates if u.get('status') == 'error']),
+                'updates': updates
+            }
                 
         except Exception as e:
             logger.error(f"Database error in update_all_symbols: {e}")
