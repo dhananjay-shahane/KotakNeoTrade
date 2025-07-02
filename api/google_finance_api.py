@@ -100,9 +100,55 @@ def get_live_price(symbol):
             'error': str(e)
         }), 500
 
+@google_finance_bp.route('/update-prices', methods=['POST'])
+def update_prices():
+    """Update CMP for all ETF symbols in admin_trade_signals table"""
+    try:
+        # Import the Google Finance CMP updater
+        from Scripts.google_finance_cmp_updater import GoogleFinanceCMPUpdater
+        
+        logger.info("Starting Google Finance CMP update via API")
+        
+        # Create updater instance
+        updater = GoogleFinanceCMPUpdater()
+        
+        # Update all symbols
+        result = updater.update_all_symbols()
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'message': result['message'],
+                'updated_count': result['updated_count'],
+                'total_symbols': result.get('total_symbols', 0),
+                'successful_symbols': result.get('successful_symbols', 0),
+                'error_count': result['error_count'],
+                'duration': result.get('duration', 0),
+                'data_source': 'Google Finance'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result.get('message', 'Update failed'),
+                'data_source': 'Google Finance'
+            }), 500
+            
+    except Exception as e:
+        logger.error(f"Error in Google Finance update: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to update prices from Google Finance'
+        }), 500
+
 @google_finance_bp.route('/update-etf-cmp', methods=['POST'])
 def update_etf_cmp():
-    """Update CMP for all ETF symbols in admin_trade_signals table"""
+    """Legacy endpoint - redirect to update-prices"""
+    return update_prices()
+
+@google_finance_bp.route('/update-etf-cmp-legacy', methods=['POST'])
+def update_etf_cmp_legacy():
+    """Update CMP for all ETF symbols in admin_trade_signals table (legacy method)"""
     try:
         updated_count = 0
         errors = []
