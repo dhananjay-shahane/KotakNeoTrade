@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 class YahooFinanceService:
     def __init__(self):
         self.session = None
-        # Use PostgreSQL environment variables
-        self.database_url = os.environ.get("DATABASE_URL")
+        # Use external database URL for admin_trade_signals (same as ETF signals page uses)
+        self.database_url = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
         if self.database_url:
             self.engine = create_engine(self.database_url)
             Session = sessionmaker(bind=self.engine)
@@ -224,60 +224,67 @@ class YahooFinanceService:
         return prices
 
     def update_all_symbols(self):
-        """Update CMP for all symbols in the database using Flask app context"""
+        """Update CMP for all symbols in the external database"""
+        if not self.engine:
+            return {
+                'status': 'error',
+                'error': 'Database connection not available'
+            }
+        
         try:
-            # Import Flask app and models in the method to avoid circular imports
-            from app import db
-            from Scripts.models_etf import AdminTradeSignal
-            
-            # Get all unique symbols from admin_trade_signals
-            symbols = db.session.query(AdminTradeSignal.symbol).distinct().filter(
-                AdminTradeSignal.symbol.isnot(None)
-            ).all()
-            symbols = [s[0] for s in symbols]
-            
-            logger.info(f"Found {len(symbols)} unique symbols to update")
-            
-            updates = []
-            for symbol in symbols:
-                try:
-                    price_data = self.get_stock_price(symbol)
-                    if price_data:
-                        # Update CMP in database using Flask ORM
-                        updated_count = db.session.query(AdminTradeSignal).filter(
-                            AdminTradeSignal.symbol == symbol
-                        ).update({
-                            'current_price': price_data['current_price'],
-                            'last_update_time': datetime.utcnow()
-                        })
-                        
-                        db.session.commit()
-                        
+            with self.engine.connect() as connection:
+                # Get all unique symbols from admin_trade_signals
+                result = connection.execute(text("SELECT DISTINCT symbol FROM admin_trade_signals WHERE symbol IS NOT NULL"))
+                symbols = [row[0] for row in result.fetchall()]
+                
+                logger.info(f"Found {len(symbols)} unique symbols to update")
+                
+                updates = []
+                for symbol in symbols:
+                    try:
+                        price_data = self.get_stock_price(symbol)
+                        if price_data:
+                            # Update CMP in external database
+                            update_result = connection.execute(text("""
+                                UPDATE admin_trade_signals 
+                                SET cmp = :cmp 
+                                WHERE symbol = :symbol
+                            """), {
+                                'cmp': price_data['current_price'],
+                                'symbol': symbol
+                            })
+                            
+                            updated_count = update_result.rowcount
+                            
+                            updates.append({
+                                'symbol': symbol,
+                                'new_cmp': price_data['current_price'],
+                                'updated_records': updated_count,
+                                'status': 'success'
+                            })
+                            
+                            logger.info(f"✅ Updated {symbol}: ₹{price_data['current_price']} ({updated_count} records)")
+                            
+                            # Add small delay to prevent overwhelming the system
+                            time.sleep(0.1)
+                            
+                    except Exception as e:
+                        logger.error(f"Error updating {symbol}: {e}")
                         updates.append({
                             'symbol': symbol,
-                            'new_cmp': price_data['current_price'],
-                            'updated_records': updated_count,
-                            'status': 'success'
+                            'error': str(e),
+                            'status': 'error'
                         })
-                        
-                        # Add small delay to prevent overwhelming the system
-                        time.sleep(0.1)
-                        
-                except Exception as e:
-                    logger.error(f"Error updating {symbol}: {e}")
-                    updates.append({
-                        'symbol': symbol,
-                        'error': str(e),
-                        'status': 'error'
-                    })
-            
-            return {
-                'status': 'success',
-                'total_symbols': len(symbols),
-                'successful_updates': len([u for u in updates if u.get('status') == 'success']),
-                'failed_updates': len([u for u in updates if u.get('status') == 'error']),
-                'updates': updates
-            }
+                
+                connection.commit()
+                
+                return {
+                    'status': 'success',
+                    'total_symbols': len(symbols),
+                    'successful_updates': len([u for u in updates if u.get('status') == 'success']),
+                    'failed_updates': len([u for u in updates if u.get('status') == 'error']),
+                    'updates': updates
+                }
                 
         except Exception as e:
             logger.error(f"Database error in update_all_symbols: {e}")
@@ -303,11 +310,10 @@ class YahooFinanceService:
                         if price_data:
                             connection.execute(text("""
                                 UPDATE admin_trade_signals 
-                                SET current_price = :current_price, last_update_time = :last_update_time 
+                                SET cmp = :cmp 
                                 WHERE symbol = :symbol
                             """), {
-                                'current_price': price_data['current_price'],
-                                'last_update_time': datetime.utcnow(),
+                                'cmp': price_data['current_price'],
                                 'symbol': symbol
                             })
                             
