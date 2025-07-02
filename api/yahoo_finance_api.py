@@ -1,3 +1,4 @@
+# Updated Yahoo Finance API code to dynamically determine the symbol suffix.
 from flask import Blueprint, request, jsonify
 import logging
 import time
@@ -9,10 +10,25 @@ import yfinance as yf
 yahoo_bp = Blueprint('yahoo', __name__, url_prefix='/api/yahoo')
 logger = logging.getLogger(__name__)
 
+def get_yahoo_symbol_suffix(symbol):
+    """Determine the appropriate Yahoo Finance symbol suffix."""
+    # This is a placeholder; replace with your actual logic to determine
+    # the suffix based on the symbol and/or exchange.
+    # For example, you might check a database or use a naming convention.
+    # For now, it defaults to ".NS"
+
+    # Example logic (replace this with your actual implementation):
+    if symbol.startswith("SBIN"):
+        return "SBIN.NS"
+    elif symbol.startswith("INFY"):
+        return "INFY.NS"
+    else:
+        return symbol + ".NS" # Default to NSE
+
 def get_live_price(symbol):
-    """Get live CMP using Yahoo Finance with .NS suffix"""
+    """Get live CMP using Yahoo Finance with dynamic suffix"""
     try:
-        yf_symbol = symbol + ".NS"  # Append NSE suffix for Yahoo
+        yf_symbol = get_yahoo_symbol_suffix(symbol)
         logger.info(f"🔄 Fetching price for {symbol} -> {yf_symbol}")
 
         ticker = yf.Ticker(yf_symbol)
@@ -98,14 +114,14 @@ def update_prices():
                             'price': float(price),
                             'rows_updated': rows_updated,
                             'timestamp': datetime.now().isoformat(),
-                            'yahoo_url': f"https://finance.yahoo.com/quote/{symbol}.NS/"
+                            'yahoo_url': f"https://finance.yahoo.com/quote/{get_yahoo_symbol_suffix(symbol)}/"
                         }
                     else:
                         results[symbol] = {
                             'success': False,
                             'error': 'Could not fetch price from Yahoo Finance',
                             'timestamp': datetime.now().isoformat(),
-                            'yahoo_url': f"https://finance.yahoo.com/quote/{symbol}.NS/"
+                            'yahoo_url': f"https://finance.yahoo.com/quote/{get_yahoo_symbol_suffix(symbol)}/"
                         }
                         errors.append(f"Failed to fetch price for {symbol}")
                         logger.warning(f"⚠️ Could not fetch price for {symbol}")
@@ -121,7 +137,7 @@ def update_prices():
                         'success': False,
                         'error': str(e),
                         'timestamp': datetime.now().isoformat(),
-                        'yahoo_url': f"https://finance.yahoo.com/quote/{symbol}.NS/"
+                        'yahoo_url': f"https://finance.yahoo.com/quote/{get_yahoo_symbol_suffix(symbol)}/"
                     }
 
             conn.commit()
@@ -183,14 +199,14 @@ def get_symbol_price(symbol):
                     'symbol': symbol,
                     'price': price,
                     'timestamp': datetime.now().isoformat(),
-                    'yahoo_url': f"https://finance.yahoo.com/quote/{symbol}.NS/"
+                    'yahoo_url': f"https://finance.yahoo.com/quote/{get_yahoo_symbol_suffix(symbol)}/"
                 }
             })
         else:
             return jsonify({
                 'success': False,
                 'message': f'No price data found for {symbol}',
-                'yahoo_url': f"https://finance.yahoo.com/quote/{symbol}.NS/"
+                'yahoo_url': f"https://finance.yahoo.com/quote/{get_yahoo_symbol_suffix(symbol)}/"
             }), 404
 
     except Exception as e:
@@ -214,7 +230,7 @@ def test_symbol_price(symbol):
             'symbol': symbol,
             'price': price,
             'yahoo_symbol': f"{symbol}.NS",
-            'yahoo_url': f"https://finance.yahoo.com/quote/{symbol}.NS/",
+            'yahoo_url': f"https://finance.yahoo.com/quote/{get_yahoo_symbol_suffix(symbol)}/",
             'timestamp': datetime.now().isoformat(),
             'message': f'Successfully fetched price: ₹{price}' if price else 'Failed to fetch price'
         })
@@ -225,7 +241,7 @@ def test_symbol_price(symbol):
             'success': False,
             'error': str(e),
             'symbol': symbol,
-            'yahoo_url': f"https://finance.yahoo.com/quote/{symbol}.NS/"
+            'yahoo_url': f"https://finance.yahoo.com/quote/{get_yahoo_symbol_suffix(symbol)}/"
         }), 500
 
 @yahoo_bp.route('/status', methods=['GET'])
@@ -247,3 +263,4 @@ def get_status():
             'success': False,
             'error': str(e)
         }), 500
+`

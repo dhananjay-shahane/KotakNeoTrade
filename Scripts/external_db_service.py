@@ -165,6 +165,41 @@ def get_etf_signals_from_external_db() -> List[Dict]:
     finally:
         db_service.disconnect()
 
+def get_yahoo_symbol_suffix(symbol):
+    """Determine the appropriate Yahoo Finance suffix based on symbol"""
+    symbol = symbol.upper().strip()
+    
+    # ETF symbols - typically use .NS for NSE-listed ETFs
+    etf_symbols = [
+        'NIFTYBEES', 'JUNIORBEES', 'GOLDBEES', 'SILVERBEES', 'BANKBEES',
+        'CONSUMBEES', 'PHARMABEES', 'AUTOIETF', 'FMCGIETF', 'FINIETF',
+        'INFRABEES', 'TNIDETF', 'MOM30IETF', 'HDFCPVTBAN', 'ITBEES',
+        'MID150BEES', 'LIQUIDBEES', 'PSUBNKBEES', 'PVTBNKBEES'
+    ]
+    
+    # Large cap stocks - use .NS for NSE
+    large_cap_stocks = [
+        'RELIANCE', 'TCS', 'INFY', 'HINDUNILVR', 'ICICIBANK', 'HDFCBANK',
+        'ITC', 'SBIN', 'BHARTIARTL', 'LT', 'WIPRO', 'MARUTI', 'ASIANPAINT',
+        'KOTAKBANK', 'HCLTECH', 'AXISBANK', 'ULTRACEMCO', 'BAJFINANCE',
+        'SUNPHARMA', 'TITAN', 'NESTLEIND', 'POWERGRID', 'NTPC', 'ONGC',
+        'TATAMOTORS', 'TATASTEEL', 'COALINDIA', 'BAJAJFINSV', 'M&M'
+    ]
+    
+    # BSE-specific symbols (use .BO)
+    bse_symbols = [
+        'SENSEX', 'BSE500', 'BSESMCAP', 'BSEMIDCAP'
+    ]
+    
+    # Special cases for different exchanges
+    if symbol in bse_symbols:
+        return f"{symbol}.BO"
+    elif symbol in etf_symbols or symbol in large_cap_stocks:
+        return f"{symbol}.NS"
+    else:
+        # Default to NSE for Indian symbols
+        return f"{symbol}.NS"
+
 def get_etf_signals_data_json():
     """Get ETF signals data in JSON format for API response"""
     try:
