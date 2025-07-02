@@ -293,9 +293,9 @@ ETFSignalsManager.prototype.createSignalRow = function(signal) {
             case 'nt':
                 cellValue = signal.nt || '--';
                 break;
-            case 'qt':
-                cellValue = signal.qt || quantity;
-                break;
+            // case 'qt':
+            //     cellValue = signal.qt || quantity;
+            //     break;
             case 'seven':
                 cellValue = signal.seven || '--';
                 break;
