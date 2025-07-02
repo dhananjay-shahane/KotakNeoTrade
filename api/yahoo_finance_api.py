@@ -63,23 +63,28 @@ def update_prices():
                     # Check if it's a rate limiting error
                     if "429" in str(e) or "Too Many Requests" in str(e):
                         logger.warning(f"Rate limited for {symbol}, using fallback")
-                        break  # Skip to fallback immediately
-                    logger.warning(f".NS method failed for {symbol}: {e}")
+                        # Skip to fallback immediately
+                        pass
+                    else:
+                        logger.warning(f".NS method failed for {symbol}: {e}")
                 
                 # Method 2: Try .BO suffix (Bombay Stock Exchange)
-                try:
-                    yf_symbol_bo = symbol + ".BO"
-                    ticker_bo = yf.Ticker(yf_symbol_bo)
-                    hist = ticker_bo.history(period="1d", timeout=5)
-                    if not hist.empty:
-                        price = hist['Close'].iloc[-1]
-                        logger.info(f"✅ Got real price from .BO: {symbol} = ₹{price}")
-                        return float(round(price, 2))
-                except Exception as e:
-                    if "429" in str(e) or "Too Many Requests" in str(e):
-                        logger.warning(f"Rate limited for {symbol}, using fallback")
-                        break  # Skip to fallback immediately
-                    logger.warning(f".BO method failed for {symbol}: {e}")
+                if not ("429" in str(e) or "Too Many Requests" in str(e)):
+                    try:
+                        yf_symbol_bo = symbol + ".BO"
+                        ticker_bo = yf.Ticker(yf_symbol_bo)
+                        hist = ticker_bo.history(period="1d", timeout=5)
+                        if not hist.empty:
+                            price = hist['Close'].iloc[-1]
+                            logger.info(f"✅ Got real price from .BO: {symbol} = ₹{price}")
+                            return float(round(price, 2))
+                    except Exception as e:
+                        if "429" in str(e) or "Too Many Requests" in str(e):
+                            logger.warning(f"Rate limited for {symbol}, using fallback")
+                            # Skip to fallback immediately
+                            pass
+                        else:
+                            logger.warning(f".BO method failed for {symbol}: {e}")
                 
                 # Generate realistic fallback price based on existing data
                 try:
