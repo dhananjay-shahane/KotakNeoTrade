@@ -181,49 +181,49 @@ def update_prices_optimized():
             total_records_updated = 0
             
             for symbol in symbols:
-                    try:
-                        logger.info(f"Processing {symbol} via Google Finance...")
-                        price = get_google_price(symbol)
+                try:
+                    logger.info(f"Processing {symbol} via Google Finance...")
+                    price = get_google_price(symbol)
+                    
+                    if price and price > 0:
+                        cursor.execute("""
+                            UPDATE admin_trade_signals 
+                            SET cmp = %s
+                            WHERE (symbol = %s OR etf = %s)
+                            AND (cmp IS NULL OR ABS(cmp - %s) > 0.01)
+                        """, (price, symbol, symbol, price))
                         
-                        if price and price > 0:
-                            cursor.execute("""
-                                UPDATE admin_trade_signals 
-                                SET cmp = %s
-                                WHERE (symbol = %s OR etf = %s)
-                                AND (cmp IS NULL OR ABS(cmp - %s) > 0.01)
-                            """, (price, symbol, symbol, price))
-                            
-                            rows_updated = cursor.rowcount
-                            total_records_updated += rows_updated
-                            updated_count += 1
-                            
-                            results[symbol] = {
-                                'success': True,
-                                'price': price,
-                                'rows_updated': rows_updated
-                            }
-                            
-                            logger.info(f"✓ Updated {rows_updated} records for {symbol}: ₹{price}")
-                        else:
-                            results[symbol] = {
-                                'success': False,
-                                'error': 'Could not fetch price'
-                            }
-                            logger.warning(f"⚠️ Could not fetch price for {symbol}")
+                        rows_updated = cursor.rowcount
+                        total_records_updated += rows_updated
+                        updated_count += 1
                         
-                        # Short delay
-                        time.sleep(0.3)
+                        results[symbol] = {
+                            'success': True,
+                            'price': price,
+                            'rows_updated': rows_updated
+                        }
                         
-                    except Exception as e:
-                        error_msg = f"Error updating {symbol}: {str(e)}"
-                        errors.append(error_msg)
-                        logger.error(error_msg)
+                        logger.info(f"✓ Updated {rows_updated} records for {symbol}: ₹{price}")
+                    else:
                         results[symbol] = {
                             'success': False,
-                            'error': str(e)
+                            'error': 'Could not fetch price'
                         }
-                
-                conn.commit()
+                        logger.warning(f"⚠️ Could not fetch price for {symbol}")
+                    
+                    # Short delay
+                    time.sleep(0.3)
+                    
+                except Exception as e:
+                    error_msg = f"Error updating {symbol}: {str(e)}"
+                    errors.append(error_msg)
+                    logger.error(error_msg)
+                    results[symbol] = {
+                        'success': False,
+                        'error': str(e)
+                    }
+            
+            conn.commit()
                 duration = (datetime.utcnow() - start_time).total_seconds()
                 
         logger.info(f"✅ Google Finance CMP update completed!")
