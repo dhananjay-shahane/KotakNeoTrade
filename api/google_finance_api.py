@@ -1,0 +1,194 @@
+
+"""Google Finance API for live CMP updates"""
+from flask import Blueprint, request, jsonify
+import logging
+import requests
+from bs4 import BeautifulSoup
+import time
+from typing import Dict, List, Optional
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
+google_finance_bp = Blueprint('google_finance', __name__, url_prefix='/api/google-finance')
+logger = logging.getLogger(__name__)
+
+# Database connection string
+DATABASE_URL = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
+
+def get_google_finance_price(symbol: str) -> Optional[float]:
+    """Fetch live price from Google Finance"""
+    try:
+        url = f"https://www.google.com/finance/quote/{symbol.upper()}:NSE"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        }
+        
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # Try multiple selectors for Google Finance price
+            price_selectors = [
+                "div[class*='YMlKec fxKbKc']",
+                "div[class*='YMlKec']", 
+                "div[data-source='SPYlIb']",
+                "span[class*='IsqQVc NprOob XcVN5d']"
+            ]
+            
+            for selector in price_selectors:
+                price_element = soup.select_one(selector)
+                if price_element:
+                    price_text = price_element.get_text().strip()
+                    price_text = price_text.replace("₹", "").replace(",", "").replace("$", "")
+                    try:
+                        return float(price_text)
+                    except ValueError:
+                        continue
+        
+        return None
+        
+    except Exception as e:
+        logger.error(f"Error fetching Google Finance price for {symbol}: {e}")
+        return None
+
+@google_finance_bp.route('/live-price/<symbol>', methods=['GET'])
+def get_live_price(symbol):
+    """Get live price for a single symbol from Google Finance"""
+    try:
+        price = get_google_finance_price(symbol)
+        if price:
+            return jsonify({
+                'success': True,
+                'symbol': symbol,
+                'price': price,
+                'source': 'Google Finance'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'symbol': symbol,
+                'error': 'Could not fetch price'
+            }), 404
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@google_finance_bp.route('/update-etf-cmp', methods=['POST'])
+def update_etf_cmp():
+    """Update CMP for all ETF symbols in admin_trade_signals table"""
+    try:
+        updated_count = 0
+        errors = []
+        
+        with psycopg2.connect(DATABASE_URL) as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                # Get all unique symbols
+                cursor.execute("""
+                    SELECT DISTINCT symbol as etf_symbol FROM admin_trade_signals 
+                    WHERE symbol IS NOT NULL AND symbol != ''
+                    UNION
+                    SELECT DISTINCT etf as etf_symbol FROM admin_trade_signals 
+                    WHERE etf IS NOT NULL AND etf != ''
+                """)
+                
+                symbols = [row['etf_symbol'] for row in cursor.fetchall()]
+                logger.info(f"Updating CMP for {len(symbols)} symbols: {symbols}")
+                
+                results = {}
+                
+                for symbol in symbols:
+                    try:
+                        price = get_google_finance_price(symbol)
+                        
+                        if price and price > 0:
+                            # Update database
+                            cursor.execute("""
+                                UPDATE admin_trade_signals 
+                                SET cmp = %s, updated_at = CURRENT_TIMESTAMP
+                                WHERE (symbol = %s OR etf = %s)
+                            """, (price, symbol, symbol))
+                            
+                            rows_updated = cursor.rowcount
+                            updated_count += rows_updated
+                            
+                            results[symbol] = {
+                                'success': True,
+                                'price': price,
+                                'rows_updated': rows_updated
+                            }
+                            
+                            logger.info(f"✓ Updated {rows_updated} records for {symbol}: ₹{price}")
+                        else:
+                            results[symbol] = {
+                                'success': False,
+                                'error': 'Could not fetch price'
+                            }
+                            errors.append(f"Failed to fetch price for {symbol}")
+                        
+                        # Small delay to avoid rate limiting
+                        time.sleep(1)
+                        
+                    except Exception as e:
+                        error_msg = f"Error updating {symbol}: {str(e)}"
+                        errors.append(error_msg)
+                        logger.error(error_msg)
+                        results[symbol] = {
+                            'success': False,
+                            'error': str(e)
+                        }
+                
+                conn.commit()
+                
+        return jsonify({
+            'success': True,
+            'message': f'Updated CMP for {updated_count} records',
+            'symbols_processed': len(symbols),
+            'updated_count': updated_count,
+            'errors': errors,
+            'results': results
+        })
+        
+    except Exception as e:
+        logger.error(f"Error updating ETF CMP: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@google_finance_bp.route('/bulk-prices', methods=['POST'])
+def get_bulk_prices():
+    """Get live prices for multiple symbols"""
+    try:
+        data = request.get_json()
+        symbols = data.get('symbols', [])
+        
+        if not symbols:
+            return jsonify({
+                'success': False,
+                'error': 'No symbols provided'
+            }), 400
+        
+        results = {}
+        
+        for symbol in symbols:
+            price = get_google_finance_price(symbol)
+            results[symbol] = {
+                'price': price,
+                'success': price is not None
+            }
+            time.sleep(0.5)  # Rate limiting
+        
+        return jsonify({
+            'success': True,
+            'results': results,
+            'source': 'Google Finance'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500

@@ -748,6 +748,10 @@ ETFSignalsManager.prototype.startAutoRefresh = function() {
     this.stopAutoRefresh();
     this.refreshInterval = setInterval(function() {
         self.loadSignals();
+        // Also update CMP values every 2 minutes
+        if (Math.random() < 0.25) { // 25% chance each refresh cycle
+            updateAllCMPValues();
+        }
     }, 30000); // 30 seconds
 };
 
@@ -1094,13 +1098,122 @@ window.etfSignalsManager = new ETFSignalsManager();
 
 
 // Function to update the CMP value in the table
-    function updateCMPValue(symbol, cmp) {
-        // Find the cell with the matching symbol
-        const cmpCells = document.querySelectorAll(`.cmp-value[data-symbol="${symbol}"]`);
-        cmpCells.forEach(cell => {
-            cell.textContent = `₹${cmp.toFixed(2)}`;  // Update the CMP value
-        });
+function updateCMPValue(symbol, cmp) {
+    // Find the cell with the matching symbol
+    const cmpCells = document.querySelectorAll(`.cmp-value[data-symbol="${symbol}"]`);
+    cmpCells.forEach(cell => {
+        const oldPrice = parseFloat(cell.textContent.replace('₹', '').replace(',', ''));
+        cell.textContent = `₹${cmp.toFixed(2)}`;
+        
+        // Add visual feedback for price changes
+        if (oldPrice && oldPrice !== cmp) {
+            cell.classList.add(cmp > oldPrice ? 'price-up' : 'price-down');
+            setTimeout(() => {
+                cell.classList.remove('price-up', 'price-down');
+            }, 2000);
+        }
+    });
+}
+
+// Function to update all CMP values using Google Finance
+function updateAllCMPValues() {
+    if (!window.etfSignalsManager || !window.etfSignalsManager.signals) {
+        console.log('No signals data available for CMP update');
+        return;
     }
+    
+    // Get unique symbols from current signals
+    const symbols = [...new Set(window.etfSignalsManager.signals.map(signal => 
+        signal.etf || signal.symbol
+    ).filter(symbol => symbol))];
+    
+    if (symbols.length === 0) {
+        console.log('No symbols found for CMP update');
+        return;
+    }
+    
+    console.log('Updating CMP for symbols:', symbols);
+    
+    // Call Google Finance API to update all symbols
+    fetch('/api/google-finance/update-etf-cmp', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('CMP update response:', data);
+            
+            // Refresh the signals table to show updated prices
+            if (window.etfSignalsManager) {
+                window.etfSignalsManager.loadSignals();
+            }
+            
+            // Show success message
+            showUpdateMessage(`Updated CMP for ${data.updated_count} records`, 'success');
+        } else {
+            console.error('CMP update failed:', data.error);
+            showUpdateMessage('Failed to update CMP: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating CMP:', error);
+        showUpdateMessage('Error updating CMP: ' + error.message, 'error');
+    });
+}
+
+// Function to show update messages
+function showUpdateMessage(message, type = 'info') {
+    // Create or update a message element
+    let messageEl = document.getElementById('cmp-update-message');
+    if (!messageEl) {
+        messageEl = document.createElement('div');
+        messageEl.id = 'cmp-update-message';
+        messageEl.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            transition: opacity 0.3s;
+        `;
+        document.body.appendChild(messageEl);
+    }
+    
+    // Set message and style based on type
+    messageEl.textContent = message;
+    messageEl.style.backgroundColor = type === 'success' ? '#28a745' : 
+                                     type === 'error' ? '#dc3545' : '#17a2b8';
+    messageEl.style.opacity = '1';
+    
+    // Hide message after 3 seconds
+    setTimeout(() => {
+        messageEl.style.opacity = '0';
+        setTimeout(() => {
+            if (messageEl.parentNode) {
+                messageEl.parentNode.removeChild(messageEl);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Function to get live price for a single symbol
+function getLivePrice(symbol) {
+    return fetch(`/api/google-finance/live-price/${symbol}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                return data.price;
+            } else {
+                throw new Error(data.error || 'Failed to fetch price');
+            }
+        });
+}
 
     // Example usage (assuming you have a way to get live CMP data)
     // setInterval(() => {

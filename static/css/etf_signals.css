@@ -1,4 +1,4 @@
-    .signals-table {
+.signals-table {
         font-size: 0.75rem;
         background: var(--card-bg);
     }
@@ -67,3 +67,67 @@
         50% { opacity: 0.5; }
         100% { opacity: 1; }
     }
+
+/* ETF Signals Specific Styles */
+.etf-signals-container {
+    padding: 20px;
+}
+
+.signals-header {
+    margin-bottom: 20px;
+}
+
+/* Price change animations */
+.cmp-value {
+    transition: all 0.3s ease;
+}
+
+.cmp-value.price-up {
+    background-color: rgba(40, 167, 69, 0.3);
+    color: #28a745;
+    font-weight: bold;
+}
+
+.cmp-value.price-down {
+    background-color: rgba(220, 53, 69, 0.3);
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* CMP update button styles */
+.cmp-update-btn {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.cmp-update-btn:hover {
+    background: linear-gradient(45deg, #218838, #1ba085);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.cmp-update-btn:active {
+    transform: translateY(0);
+}
+
+/* Live update indicator */
+.live-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #28a745;
+    border-radius: 50%;
+    margin-right: 5px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
