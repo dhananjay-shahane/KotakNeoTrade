@@ -176,62 +176,62 @@ def update_prices():
             total_records_updated = 0
             
             for i, symbol in enumerate(symbols, 1):
-                    try:
-                        # Check if we're approaching timeout
-                        current_duration = time.time() - start_time
-                        if current_duration > max_duration:
-                            logger.warning(f"⏰ Timeout approaching, stopping at symbol {i}/{len(symbols)}")
-                            break
-                            
-                        logger.info(f"🔄 Processing {i}/{len(symbols)}: {symbol} via Yahoo Finance...")
+                try:
+                    # Check if we're approaching timeout
+                    current_duration = time.time() - start_time
+                    if current_duration > max_duration:
+                        logger.warning(f"⏰ Timeout approaching, stopping at symbol {i}/{len(symbols)}")
+                        break
                         
-                        # Fetch live price
-                        price = get_yahoo_price(symbol)
+                    logger.info(f"🔄 Processing {i}/{len(symbols)}: {symbol} via Yahoo Finance...")
+                    
+                    # Fetch live price
+                    price = get_yahoo_price(symbol)
+                    
+                    if price and price > 0:
+                        # Update all records with this symbol in external database
+                        update_query = """
+                            UPDATE admin_trade_signals 
+                            SET cmp = %s
+                            WHERE (symbol = %s OR etf = %s)
+                        """
+                        cursor.execute(update_query, (float(price), symbol, symbol))
                         
-                        if price and price > 0:
-                            # Update all records with this symbol in external database
-                            update_query = """
-                                UPDATE admin_trade_signals 
-                                SET cmp = %s
-                                WHERE (symbol = %s OR etf = %s)
-                            """
-                            cursor.execute(update_query, (float(price), symbol, symbol))
-                            
-                            rows_updated = cursor.rowcount
-                            total_records_updated += rows_updated
-                            updated_count += 1
-                            
-                            logger.info(f"✅ Updated {rows_updated} records for {symbol}: ₹{price}")
-                            
-                            results[symbol] = {
-                                'success': True,
-                                'price': float(price),
-                                'rows_updated': rows_updated,
-                                'timestamp': datetime.now().isoformat()
-                            }
-                        else:
-                            results[symbol] = {
-                                'success': False,
-                                'error': 'Could not fetch price from Yahoo Finance',
-                                'timestamp': datetime.now().isoformat()
-                            }
-                            errors.append(f"Failed to fetch price for {symbol}")
-                            logger.warning(f"⚠️ Could not fetch price for {symbol}")
+                        rows_updated = cursor.rowcount
+                        total_records_updated += rows_updated
+                        updated_count += 1
                         
-                        # Reduced delay to prevent worker timeout
-                        time.sleep(0.5)
+                        logger.info(f"✅ Updated {rows_updated} records for {symbol}: ₹{price}")
                         
-                    except Exception as e:
-                        error_msg = f"Error updating {symbol}: {str(e)}"
-                        errors.append(error_msg)
-                        logger.error(error_msg)
                         results[symbol] = {
-                            'success': False,
-                            'error': str(e),
+                            'success': True,
+                            'price': float(price),
+                            'rows_updated': rows_updated,
                             'timestamp': datetime.now().isoformat()
                         }
-                
-                conn.commit()
+                    else:
+                        results[symbol] = {
+                            'success': False,
+                            'error': 'Could not fetch price from Yahoo Finance',
+                            'timestamp': datetime.now().isoformat()
+                        }
+                        errors.append(f"Failed to fetch price for {symbol}")
+                        logger.warning(f"⚠️ Could not fetch price for {symbol}")
+                    
+                    # Reduced delay to prevent worker timeout
+                    time.sleep(0.5)
+                    
+                except Exception as e:
+                    error_msg = f"Error updating {symbol}: {str(e)}"
+                    errors.append(error_msg)
+                    logger.error(error_msg)
+                    results[symbol] = {
+                        'success': False,
+                        'error': str(e),
+                        'timestamp': datetime.now().isoformat()
+                    }
+            
+            conn.commit()
             duration = time.time() - start_time
         except Exception as db_error:
             logger.error(f"Database connection error: {db_error}")
