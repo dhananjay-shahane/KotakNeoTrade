@@ -1450,6 +1450,7 @@ try:
     from api.supabase_api import supabase_bp
     from api.deals import deals_bp  # Added deals blueprint import
     from api.google_finance_api import google_finance_bp
+    from api.yahoo_finance_api import yahoo_bp #Import yahoo blueprint
 
     # Blueprint registration moved to main.py to avoid conflicts
     print("✓ Blueprint imports available")
@@ -1474,6 +1475,12 @@ try:
     print("✓ Deals blueprint registered")
 except Exception as e:
     print(f"Warning: Could not register deals blueprint: {e}")
+
+# Register Google Finance API blueprint
+    app.register_blueprint(google_finance_bp)
+
+    # Register Yahoo Finance API blueprint  
+    app.register_blueprint(yahoo_bp)
 
 if __name__ == '__main__':
     with app.app_context():
