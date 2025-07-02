@@ -40,19 +40,17 @@
             </h5>
             <div class="d-flex gap-2 align-items-center">
                         <div class="form-check form-switch">
-                            <label for="page-refresh">Table Refresh : <span id="currentInterval">5 Min</span></label>
+                            <label for="page-refresh">Table Refresh : <span id="currentInterval">30s</span></label>
                         </div>
                         <div class="dropdown">
                             <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-clock me-1"></i><span id="refreshIntervalDropdown">5 Min</span>
+                                <i class="fas fa-clock me-1"></i><span id="refreshIntervalDropdown">30s</span>
                             </button>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(0, 'Off')">
-                                    <i class="fas fa-stop me-2"></i>Off
-                                </a>
-                                <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(300000, '5 Min')">
-                                    <i class="fas fa-clock me-2"></i>5 Minutes
-                                </a>
+                                <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(30000, '30s')">30 seconds</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(60000, '1m')">1 minute</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(300000, '5m')">5 minutes</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(0, 'Off')">Disable</a></li>
                             </ul>
                         </div>
                         <div class="dropdown">

@@ -20,7 +20,6 @@ def update_prices():
         # Handle both GET and POST requests
         if request.method == 'GET':
             symbols_to_update = []
-            data_source = 'yahoo'
         else:
             # For POST requests, handle JSON data safely
             try:
@@ -33,9 +32,8 @@ def update_prices():
                 request_data = {}
             
             symbols_to_update = request_data.get('symbols', [])
-            data_source = request_data.get('data_source', 'yahoo')
         
-        logger.info(f"🚀 Starting Yahoo Finance CMP update for admin_trade_signals table (source: {data_source})")
+        logger.info("🚀 Starting Yahoo Finance CMP update for admin_trade_signals table")
         
         # External database connection
         external_db_config = {

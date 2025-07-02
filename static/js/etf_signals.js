@@ -755,9 +755,11 @@ ETFSignalsManager.prototype.startAutoRefresh = function() {
     this.stopAutoRefresh();
     this.refreshInterval = setInterval(function() {
         self.loadSignals();
-        // Update CMP values using selected data source
-        updateAllCMPValues();
-    }, 300000); // 5 minutes (300 seconds)
+        // Also update CMP values every 2 minutes
+        if (Math.random() < 0.25) { // 25% chance each refresh cycle
+            updateAllCMPValues();
+        }
+    }, 30000); // 30 seconds
 };
 
 ETFSignalsManager.prototype.stopAutoRefresh = function() {
@@ -780,17 +782,11 @@ function setRefreshInterval(interval, text) {
         if (interval > 0) {
             window.etfSignalsManager.refreshInterval = setInterval(function() {
                 window.etfSignalsManager.loadSignals();
-                // Update CMP values using selected data source
-                updateAllCMPValues();
             }, interval);
         }
         var currentIntervalSpan = document.getElementById('currentInterval');
-        var refreshIntervalDropdown = document.getElementById('refreshIntervalDropdown');
         if (currentIntervalSpan) {
             currentIntervalSpan.textContent = text;
-        }
-        if (refreshIntervalDropdown) {
-            refreshIntervalDropdown.textContent = text;
         }
         console.log('Refresh interval set to:', interval + 'ms (' + text + ')');
     }
@@ -1249,21 +1245,7 @@ window.etfSignalsManager = new ETFSignalsManager();
 
 // Update data source indicator when page loads
 document.addEventListener('DOMContentLoaded', function() {
-    // Set Google Finance as default if not already set
-    if (!localStorage.getItem('data-source')) {
-        localStorage.setItem('data-source', 'google');
-    }
     updateCurrentDataSourceIndicator();
-    
-    // Set default refresh interval to 5 minutes
-    var currentIntervalSpan = document.getElementById('currentInterval');
-    var refreshIntervalDropdown = document.getElementById('refreshIntervalDropdown');
-    if (currentIntervalSpan) {
-        currentIntervalSpan.textContent = '5 Min';
-    }
-    if (refreshIntervalDropdown) {
-        refreshIntervalDropdown.textContent = '5 Min';
-    }
 });
 
 
@@ -1315,7 +1297,7 @@ function updateAllCMPValues() {
         return;
     }
 
-    // Get selected data source from localStorage (default to Google)
+    // Get selected data source from localStorage
     var dataSource = localStorage.getItem('data-source') || 'google';
     var apiEndpoint = dataSource === 'google' ? '/api/google-finance/update-etf-cmp' : '/api/yahoo/update-prices';
     var sourceName = dataSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
@@ -1328,11 +1310,7 @@ function updateAllCMPValues() {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-            symbols: symbols,
-            data_source: dataSource,
-            direct_update: true
-        })
+                timeout: 30000  // 30 second timeout
     })
     .then(function(response) {
         return response.json();
@@ -1347,7 +1325,7 @@ function updateAllCMPValues() {
             }
 
             // Show success message
-            var updatedCount = data.updated_count || data.successful_updates || 0;
+            var updatedCount = data.updated_count || data.signals_updated || 0;
             showUpdateMessage('Updated CMP for ' + updatedCount + ' records from ' + sourceName, 'success');
         } else {
             console.error('CMP update failed:', data.error);
