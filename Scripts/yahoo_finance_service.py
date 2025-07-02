@@ -73,7 +73,7 @@ class YahooFinanceService:
         """Convert Indian symbol to Yahoo Finance format with dynamic suffix detection"""
         clean_symbol = symbol.strip().upper()
         
-        # Common NSE symbols that should use .NS
+        # Common NSE symbols that should try .NS first
         nse_symbols = {
             'RELIANCE', 'TCS', 'HDFCBANK', 'ICICIBANK', 'HINDUNILVR', 'INFY', 'ITC', 'SBIN', 'BHARTIARTL', 'KOTAKBANK',
             'LT', 'ASIANPAINT', 'AXISBANK', 'MARUTI', 'BAJFINANCE', 'HCLTECH', 'NESTLEIND', 'WIPRO', 'TITAN', 'ULTRACEMCO',
@@ -82,40 +82,57 @@ class YahooFinanceService:
             'BPCL', 'APOLLOHOSP', 'DIVISLAB', 'ADANIPORTS', 'UPL', 'TATACONSUM', 'BAJAJ-AUTO', 'SBILIFE', 'HDFCLIFE'
         }
         
-        # ETF symbols typically use .NS
+        # ETF symbols - these often work better with .BO suffix
         etf_symbols = {
             'NIFTYBEES', 'JUNIORBEES', 'GOLDBEES', 'SILVERBEES', 'BANKBEES', 'CONSUMBEES', 'PHARMABEES', 
             'AUTOIETF', 'FMCGIETF', 'FINIETF', 'INFRABEES', 'TNIDETF', 'MOM30IETF', 'HDFCPVTBAN',
             'ITETF', 'MID150BEES', 'LIQUID', 'CPSE', 'PSU'
         }
         
-        # First try .NS for NSE symbols and ETFs
-        if clean_symbol in nse_symbols or clean_symbol in etf_symbols or clean_symbol.endswith('BEES') or clean_symbol.endswith('ETF'):
+        # For ETFs and symbols ending with BEES/ETF, prefer .BO suffix
+        if clean_symbol in etf_symbols or clean_symbol.endswith('BEES') or clean_symbol.endswith('ETF'):
+            return f"{clean_symbol}.BO"
+        
+        # For known NSE large-cap stocks, use .NS
+        if clean_symbol in nse_symbols:
             return f"{clean_symbol}.NS"
         
-        # Default to .NS for most Indian symbols (NSE is primary exchange)
-        return f"{clean_symbol}.NS"
+        # Default to .BO for better compatibility with Indian markets
+        return f"{clean_symbol}.BO"
     
     def get_stock_price(self, symbol):
         """Fetch current price for a single symbol from Yahoo Finance with dynamic suffix"""
         try:
-            # Get the appropriate Yahoo Finance symbol
-            yf_symbol = self.get_yahoo_symbol(symbol)
+            # Get the primary Yahoo Finance symbol
+            primary_symbol = self.get_yahoo_symbol(symbol)
             
-            logger.info(f"Fetching real Yahoo Finance data for {symbol} -> {yf_symbol}")
+            logger.info(f"Fetching real Yahoo Finance data for {symbol} -> {primary_symbol}")
             
-            # Try with primary suffix (.NS)
-            ticker = yf.Ticker(yf_symbol)
-            price_data = self._try_fetch_price_data(ticker, symbol, yf_symbol)
+            # Try with primary suffix first
+            ticker = yf.Ticker(primary_symbol)
+            price_data = self._try_fetch_price_data(ticker, symbol, primary_symbol)
             if price_data:
                 return price_data
             
-            # If .NS fails, try .BO as fallback
-            if yf_symbol.endswith('.NS'):
-                fallback_symbol = symbol.strip().upper() + '.BO'
-                logger.info(f"Trying fallback suffix for {symbol} -> {fallback_symbol}")
-                fallback_ticker = yf.Ticker(fallback_symbol)
-                price_data = self._try_fetch_price_data(fallback_ticker, symbol, fallback_symbol)
+            # Try alternate suffix (.NS if primary was .BO, or .BO if primary was .NS)
+            clean_symbol = symbol.strip().upper()
+            if primary_symbol.endswith('.BO'):
+                fallback_symbol = f"{clean_symbol}.NS"
+            else:
+                fallback_symbol = f"{clean_symbol}.BO"
+                
+            logger.info(f"Trying fallback suffix for {symbol} -> {fallback_symbol}")
+            fallback_ticker = yf.Ticker(fallback_symbol)
+            price_data = self._try_fetch_price_data(fallback_ticker, symbol, fallback_symbol)
+            if price_data:
+                return price_data
+            
+            # If both suffixes fail, try without suffix (for international symbols)
+            if '.' in symbol:
+                base_symbol = symbol.strip().upper()
+                logger.info(f"Trying base symbol for {symbol} -> {base_symbol}")
+                base_ticker = yf.Ticker(base_symbol)
+                price_data = self._try_fetch_price_data(base_ticker, symbol, base_symbol)
                 if price_data:
                     return price_data
             
@@ -128,70 +145,162 @@ class YahooFinanceService:
             return self.generate_fallback_price(symbol)
 
     def _try_fetch_price_data(self, ticker, symbol, yf_symbol):
-        """Try to fetch price data using different methods with better error handling"""
+        """Try to fetch price data using web scraping first, then API fallback"""
         try:
             import requests
             from bs4 import BeautifulSoup
+            import json
+            import re
             
-            # Method 1: Try direct Yahoo Finance web scraping (more reliable than API)
+            # Method 1: Direct Yahoo Finance web scraping (most reliable)
             try:
-                clean_symbol = yf_symbol.replace('.NS', ':NSE').replace('.BO', ':BOM')
                 url = f"https://finance.yahoo.com/quote/{yf_symbol}"
                 
                 headers = {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
                     'Accept-Language': 'en-US,en;q=0.5',
-                    'Accept-Encoding': 'gzip, deflate',
+                    'Accept-Encoding': 'gzip, deflate, br',
                     'DNT': '1',
                     'Connection': 'keep-alive',
-                    'Upgrade-Insecure-Requests': '1'
+                    'Upgrade-Insecure-Requests': '1',
+                    'Sec-Fetch-Dest': 'document',
+                    'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Site': 'none',
+                    'Cache-Control': 'max-age=0'
                 }
                 
-                response = requests.get(url, headers=headers, timeout=10)
+                session = requests.Session()
+                response = session.get(url, headers=headers, timeout=15)
+                
                 if response.status_code == 200:
                     soup = BeautifulSoup(response.text, 'html.parser')
                     
-                    # Try multiple selectors for price
+                    # Method 1a: Try to find price in script tags with JSON data
+                    script_tags = soup.find_all('script')
+                    for script in script_tags:
+                        if script.string and 'QuoteSummaryStore' in script.string:
+                            try:
+                                # Extract JSON data from script
+                                json_str = script.string
+                                start = json_str.find('"QuoteSummaryStore"')
+                                if start != -1:
+                                    # Find the JSON object
+                                    brace_count = 0
+                                    json_start = json_str.find('{', start)
+                                    json_end = json_start
+                                    
+                                    for i, char in enumerate(json_str[json_start:], json_start):
+                                        if char == '{':
+                                            brace_count += 1
+                                        elif char == '}':
+                                            brace_count -= 1
+                                            if brace_count == 0:
+                                                json_end = i + 1
+                                                break
+                                    
+                                    if json_end > json_start:
+                                        json_data = json.loads(json_str[json_start:json_end])
+                                        
+                                        # Extract price data from JSON
+                                        price_data = json_data.get('price', {})
+                                        if price_data:
+                                            current_price = price_data.get('regularMarketPrice', {}).get('raw')
+                                            if current_price:
+                                                open_price = price_data.get('regularMarketOpen', {}).get('raw', current_price)
+                                                high_price = price_data.get('regularMarketDayHigh', {}).get('raw', current_price)
+                                                low_price = price_data.get('regularMarketDayLow', {}).get('raw', current_price)
+                                                volume = price_data.get('regularMarketVolume', {}).get('raw', 0)
+                                                prev_close = price_data.get('regularMarketPreviousClose', {}).get('raw', current_price)
+                                                change = price_data.get('regularMarketChange', {}).get('raw', 0)
+                                                change_percent = price_data.get('regularMarketChangePercent', {}).get('raw', 0)
+                                                
+                                                result_data = {
+                                                    'symbol': symbol,
+                                                    'current_price': round(float(current_price), 2),
+                                                    'open_price': round(float(open_price), 2),
+                                                    'high_price': round(float(high_price), 2),
+                                                    'low_price': round(float(low_price), 2),
+                                                    'volume': int(volume),
+                                                    'previous_close': round(float(prev_close), 2),
+                                                    'change_amount': round(float(change), 2),
+                                                    'change_percent': round(float(change_percent) * 100, 2),
+                                                    'timestamp': datetime.utcnow()
+                                                }
+                                                
+                                                logger.info(f"✅ Got REAL Yahoo Finance price for {symbol} via JSON scraping: ₹{current_price}")
+                                                return result_data
+                            except Exception as json_error:
+                                logger.warning(f"JSON parsing failed for {yf_symbol}: {json_error}")
+                    
+                    # Method 1b: Try CSS selectors for price elements
                     price_selectors = [
-                        'fin-streamer[data-symbol="' + yf_symbol + '"]',
-                        'span[data-reactid*="regularMarketPrice"]',
-                        'span[class*="Trsdu(0.3s)"]',
-                        'div[data-field="regularMarketPrice"]'
+                        f'fin-streamer[data-symbol="{yf_symbol}"][data-field="regularMarketPrice"]',
+                        f'fin-streamer[data-testid="qsp-price"]',
+                        f'span[data-reactid*="regularMarketPrice"]',
+                        f'div[data-field="regularMarketPrice"] span',
+                        f'span.Trsdu\\(0\\.3s\\)',
+                        f'div.D\\(ib\\).Mend\\(20px\\) span',
                     ]
                     
                     for selector in price_selectors:
-                        price_elements = soup.select(selector)
-                        for element in price_elements:
-                            price_text = element.get_text().strip()
-                            # Clean price text
-                            price_text = price_text.replace(',', '').replace('₹', '').replace('$', '')
-                            try:
-                                current_price = float(price_text)
-                                if current_price > 0:
-                                    price_data = {
-                                        'symbol': symbol,
-                                        'current_price': round(current_price, 2),
-                                        'open_price': current_price,
-                                        'high_price': current_price,
-                                        'low_price': current_price,
-                                        'volume': 0,
-                                        'previous_close': current_price,
-                                        'change_amount': 0,
-                                        'change_percent': 0,
-                                        'timestamp': datetime.utcnow()
-                                    }
-                                    logger.info(f"✅ Got REAL Yahoo Finance price for {symbol} via web scraping: ₹{current_price}")
-                                    return price_data
-                            except (ValueError, TypeError):
-                                continue
+                        try:
+                            price_elements = soup.select(selector)
+                            for element in price_elements:
+                                price_text = element.get_text().strip()
+                                # Clean price text
+                                price_text = re.sub(r'[^\d.-]', '', price_text)
+                                if price_text:
+                                    current_price = float(price_text)
+                                    if current_price > 0:
+                                        # Try to get additional data
+                                        open_elem = soup.select_one(f'td[data-test="OPEN-value"]')
+                                        high_elem = soup.select_one(f'td[data-test="DAYS_RANGE-value"]')
+                                        
+                                        open_price = current_price
+                                        high_price = current_price
+                                        low_price = current_price
+                                        
+                                        if open_elem:
+                                            try:
+                                                open_price = float(re.sub(r'[^\d.-]', '', open_elem.get_text().strip()))
+                                            except:
+                                                pass
+                                        
+                                        if high_elem:
+                                            try:
+                                                range_text = high_elem.get_text().strip()
+                                                if ' - ' in range_text:
+                                                    low_str, high_str = range_text.split(' - ')
+                                                    low_price = float(re.sub(r'[^\d.-]', '', low_str))
+                                                    high_price = float(re.sub(r'[^\d.-]', '', high_str))
+                                            except:
+                                                pass
+                                        
+                                        result_data = {
+                                            'symbol': symbol,
+                                            'current_price': round(current_price, 2),
+                                            'open_price': round(open_price, 2),
+                                            'high_price': round(high_price, 2),
+                                            'low_price': round(low_price, 2),
+                                            'volume': 0,
+                                            'previous_close': round(current_price, 2),
+                                            'change_amount': 0,
+                                            'change_percent': 0,
+                                            'timestamp': datetime.utcnow()
+                                        }
+                                        
+                                        logger.info(f"✅ Got REAL Yahoo Finance price for {symbol} via CSS scraping: ₹{current_price}")
+                                        return result_data
+                        except Exception as selector_error:
+                            continue
                 
             except Exception as e:
                 logger.warning(f"Web scraping failed for {yf_symbol}: {e}")
             
-            # Method 2: Try yfinance API (fallback)
+            # Method 2: Try yfinance API as fallback (with longer timeout)
             try:
-                hist = ticker.history(period="1d", timeout=5)
+                hist = ticker.history(period="2d", timeout=10)
                 if not hist.empty:
                     current_price = float(hist['Close'].iloc[-1])
                     
@@ -212,57 +321,6 @@ class YahooFinanceService:
                     return price_data
             except Exception as e:
                 logger.warning(f"API method failed for {yf_symbol}: {e}")
-            
-            # Method 2: Try info dict as fallback
-            try:
-                info = ticker.info
-                if info:
-                    current_price = (info.get('currentPrice') or 
-                                   info.get('regularMarketPrice') or 
-                                   info.get('previousClose'))
-                    
-                    if current_price and current_price > 0:
-                        price_data = {
-                            'symbol': symbol,
-                            'current_price': round(float(current_price), 2),
-                            'open_price': float(info.get('regularMarketOpen', current_price)),
-                            'high_price': float(info.get('dayHigh', current_price)),
-                            'low_price': float(info.get('dayLow', current_price)),
-                            'volume': int(info.get('volume', 0)),
-                            'previous_close': float(info.get('previousClose', current_price)),
-                            'change_amount': round(float(info.get('regularMarketChange', 0)), 2),
-                            'change_percent': round(float(info.get('regularMarketChangePercent', 0)), 2),
-                            'timestamp': datetime.utcnow()
-                        }
-                        
-                        logger.info(f"✅ Got Yahoo Finance price from info for {symbol} using {yf_symbol}: ₹{current_price}")
-                        return price_data
-            except Exception as e:
-                logger.warning(f"Info method failed for {yf_symbol}: {e}")
-            
-            # Method 3: Try 1-day history as last resort
-            try:
-                hist = ticker.history(period="1d", timeout=5)
-                if not hist.empty:
-                    current_price = float(hist['Close'].iloc[-1])
-                    
-                    price_data = {
-                        'symbol': symbol,
-                        'current_price': round(current_price, 2),
-                        'open_price': float(hist['Open'].iloc[-1]),
-                        'high_price': float(hist['High'].iloc[-1]),
-                        'low_price': float(hist['Low'].iloc[-1]),
-                        'volume': int(hist['Volume'].iloc[-1]),
-                        'previous_close': current_price,
-                        'change_amount': 0,
-                        'change_percent': 0,
-                        'timestamp': datetime.utcnow()
-                    }
-                    
-                    logger.info(f"✅ Got Yahoo Finance price from 1d history for {symbol} using {yf_symbol}: ₹{current_price}")
-                    return price_data
-            except Exception as e:
-                logger.warning(f"1d history method failed for {yf_symbol}: {e}")
             
             return None
             
