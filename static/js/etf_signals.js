@@ -127,16 +127,17 @@ ETFSignalsManager.prototype.loadSignals = function() {
                     var data = JSON.parse(xhr.responseText);
                     console.log('Parsed API data:', data);
 
-                    if (data.success) {
-                        self.signals = data.signals || [];
+                    if (data.data && Array.isArray(data.data)) {
+                        self.signals = data.data || [];
                         self.filteredSignals = self.signals.slice();
                         self.renderSignalsTable();
                         self.updatePagination();
-                        self.updatePortfolioSummary(data.portfolio);
                         self.showSuccessMessage('Loaded ' + self.signals.length + ' signals');
                         console.log('Successfully loaded', self.signals.length, 'signals');
+                    } else if (data.error) {
+                        throw new Error(data.error);
                     } else {
-                        throw new Error(data.error || 'Failed to load signals');
+                        throw new Error('Invalid response format');
                     }
                 } catch (parseError) {
                     console.error('Error parsing response:', parseError);
@@ -1309,7 +1310,7 @@ function updateAllCMPValues() {
         headers: {
             'Content-Type': 'application/json'
         },
-		timeout: 30000  // 30 second timeout
+                timeout: 30000  // 30 second timeout
     })
     .then(function(response) {
         return response.json();
