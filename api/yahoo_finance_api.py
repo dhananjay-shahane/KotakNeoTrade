@@ -168,14 +168,14 @@ def update_prices():
                 """)
                 
                 symbol_data = cursor.fetchall()
-                symbols = [row['etf_symbol'] for row in symbol_data]
-                
-                logger.info(f"Found {len(symbols)} unique symbols to update: {symbols}")
-                
-                results = {}
-                total_records_updated = 0
-                
-                for i, symbol in enumerate(symbols, 1):
+            symbols = [row['etf_symbol'] for row in symbol_data]
+            
+            logger.info(f"Found {len(symbols)} unique symbols to update: {symbols}")
+            
+            results = {}
+            total_records_updated = 0
+            
+            for i, symbol in enumerate(symbols, 1):
                     try:
                         # Check if we're approaching timeout
                         current_duration = time.time() - start_time

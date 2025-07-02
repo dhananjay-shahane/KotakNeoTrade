@@ -5,6 +5,7 @@ import logging
 import requests
 from bs4 import BeautifulSoup
 import time
+from datetime import datetime
 from typing import Dict, List, Optional
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -172,12 +173,12 @@ def update_prices_optimized():
                 """)
                 
                 symbol_data = cursor.fetchall()
-                symbols = [row['etf_symbol'] for row in symbol_data]
-                
-                logger.info(f"Found {len(symbols)} symbols to update: {symbols}")
-                
-                results = {}
-                total_records_updated = 0
+            symbols = [row['etf_symbol'] for row in symbol_data]
+            
+            logger.info(f"Found {len(symbols)} symbols to update: {symbols}")
+            
+            results = {}
+            total_records_updated = 0
                 
                 for symbol in symbols:
                     try:

@@ -759,7 +759,7 @@ ETFSignalsManager.prototype.startAutoRefresh = function() {
         if (Math.random() < 0.25) { // 25% chance each refresh cycle
             updateAllCMPValues();
         }
-    }, 30000); // 30 seconds
+    }, 300000); // 5 minutes
 };
 
 ETFSignalsManager.prototype.stopAutoRefresh = function() {
@@ -782,11 +782,18 @@ function setRefreshInterval(interval, text) {
         if (interval > 0) {
             window.etfSignalsManager.refreshInterval = setInterval(function() {
                 window.etfSignalsManager.loadSignals();
+                // Update CMP using selected data source
+                var dataSource = localStorage.getItem('data-source') || 'google';
+                updateCMPDirectlyFromSource(dataSource);
             }, interval);
         }
         var currentIntervalSpan = document.getElementById('currentInterval');
+        var refreshIntervalDropdown = document.getElementById('refreshIntervalDropdown');
         if (currentIntervalSpan) {
             currentIntervalSpan.textContent = text;
+        }
+        if (refreshIntervalDropdown) {
+            refreshIntervalDropdown.textContent = text;
         }
         console.log('Refresh interval set to:', interval + 'ms (' + text + ')');
     }
@@ -1246,6 +1253,24 @@ window.etfSignalsManager = new ETFSignalsManager();
 // Update data source indicator when page loads
 document.addEventListener('DOMContentLoaded', function() {
     updateCurrentDataSourceIndicator();
+
+    // Set default refresh interval to 5 minutes
+    var currentIntervalSpan = document.getElementById('currentInterval');
+    var refreshIntervalDropdown = document.getElementById('refreshIntervalDropdown');
+    if (currentIntervalSpan) {
+        currentIntervalSpan.textContent = '5 Min';
+    }
+    if (refreshIntervalDropdown) {
+        refreshIntervalDropdown.textContent = '5 Min';
+    }
+
+    // Set default data source to Google Finance if not already set
+    if (!localStorage.getItem('data-source')) {
+        localStorage.setItem('data-source', 'google');
+    }
+
+    // Ensure Google Finance is selected by default
+    switchDataSource('google');
 });
 
 
