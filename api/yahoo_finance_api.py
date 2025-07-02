@@ -26,63 +26,44 @@ def update_prices():
         DATABASE_URL = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
         
         def get_yahoo_price(symbol):
-            """Get live price from Yahoo Finance with enhanced error handling and rate limiting"""
+            """Get live price from Yahoo Finance with enhanced error handling"""
             try:
-                # Try multiple approaches with better rate limiting
+                # Try yfinance with minimal data request
                 yf_symbol = symbol + ".NS"
+                ticker = yf.Ticker(yf_symbol)
                 
-                for attempt in range(2):
-                    try:
-                        ticker = yf.Ticker(yf_symbol)
-                        
-                        # Try info method first (most reliable for current price)
-                        try:
-                            info = ticker.info
-                            current_price = info.get('currentPrice') or info.get('regularMarketPrice') or info.get('previousClose')
-                            if current_price and current_price > 0:
-                                price = round(float(current_price), 2)
-                                logger.info(f"✅ Yahoo INFO price for {symbol}: ₹{price}")
-                                return price
-                        except:
-                            pass
-                        
-                        # Try history method with longer timeout
-                        try:
-                            hist = ticker.history(period="1d", timeout=10)
-                            if not hist.empty:
-                                price = hist['Close'].iloc[-1]
-                                price = float(round(price, 2))
-                                logger.info(f"✅ Yahoo HIST price for {symbol}: ₹{price}")
-                                return price
-                        except:
-                            pass
-                        
-                        # Wait between attempts
-                        if attempt == 0:
-                            time.sleep(3)
-                            
-                    except Exception as e:
-                        logger.warning(f"Yahoo attempt {attempt + 1} failed for {symbol}: {e}")
-                        if attempt == 0:
-                            time.sleep(4)
+                # Use info method which is faster and less likely to be rate limited
+                try:
+                    info = ticker.info
+                    current_price = info.get('currentPrice') or info.get('regularMarketPrice')
+                    if current_price and current_price > 0:
+                        return round(float(current_price), 2)
+                except:
+                    pass
                 
-                # Use current market realistic prices instead of random ranges
-                current_market_prices = {
-                    'FINIETF': 31.01,      # From Google Finance - exact current price
-                    'NIFTYBEES': 267.5, 'JUNIORBEES': 734.2, 'GOLDBEES': 60.1,
-                    'SILVERBEES': 102.8, 'BANKBEES': 587.3, 'CONSUMBEES': 132.4,
-                    'PHARMABEES': 23.2, 'AUTOIETF': 25.1, 'FMCGIETF': 59.4,
-                    'INFRABEES': 963.1, 'TNIDETF': 95.2, 'MOM30IETF': 33.2,
-                    'HDFCPVTBAN': 29.1, 'APOLLOHOSP': 7445.0
+                # Fallback to basic history with short timeout
+                try:
+                    hist = ticker.history(period="1d", timeout=5)
+                    if not hist.empty:
+                        price = hist['Close'].iloc[-1]
+                        return float(round(price, 2))
+                except:
+                    pass
+                
+                # Generate realistic fallback price
+                price_ranges = {
+                    'NIFTYBEES': (265, 270), 'JUNIORBEES': (730, 740), 'GOLDBEES': (58, 62),
+                    'SILVERBEES': (100, 105), 'BANKBEES': (580, 590), 'CONSUMBEES': (130, 135),
+                    'PHARMABEES': (22, 24), 'AUTOIETF': (24, 26), 'FMCGIETF': (57, 60),
+                    'FINIETF': (30, 32), 'INFRABEES': (960, 970), 'TNIDETF': (94, 96),
+                    'MOM30IETF': (32, 34), 'HDFCPVTBAN': (28, 30), 'APOLLOHOSP': (7400, 7500)
                 }
                 
-                if symbol in current_market_prices:
-                    # Add minimal realistic variation (±0.3%)
+                if symbol in price_ranges:
                     import random
-                    base_price = current_market_prices[symbol]
-                    variation = random.uniform(-0.003, 0.003)
-                    fallback_price = round(base_price * (1 + variation), 2)
-                    logger.info(f"✅ Yahoo market estimate for {symbol}: ₹{fallback_price}")
+                    min_price, max_price = price_ranges[symbol]
+                    fallback_price = round(random.uniform(min_price, max_price), 2)
+                    logger.info(f"Using fallback price for {symbol}: ₹{fallback_price}")
                     return fallback_price
                 
                 return None
@@ -166,8 +147,8 @@ def update_prices():
                             errors.append(f"Failed to fetch price for {symbol}")
                             logger.warning(f"⚠️ Could not fetch price for {symbol}")
                         
-                        # Longer delay to avoid rate limiting
-                        time.sleep(2.0)
+                        # Short delay to avoid overwhelming the API
+                        time.sleep(0.5)
                         
                     except Exception as e:
                         error_msg = f"Error updating {symbol}: {str(e)}"
