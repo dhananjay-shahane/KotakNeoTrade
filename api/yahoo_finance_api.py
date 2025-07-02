@@ -22,7 +22,7 @@ def update_prices():
         
         return jsonify({
             'success': True,
-            'message': 'Prices updated successfully',
+            'message': f'Successfully updated {signals_updated} signals and {quotes_updated} quotes',
             'signals_updated': signals_updated,
             'quotes_updated': quotes_updated,
             'timestamp': datetime.utcnow().isoformat(),
@@ -33,7 +33,8 @@ def update_prices():
         logger.error(f"Error in manual price update: {str(e)}")
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': str(e),
+            'message': 'Failed to update prices from Yahoo Finance'
         }), 500
 
 @yahoo_bp.route('/price/<symbol>', methods=['GET'])
