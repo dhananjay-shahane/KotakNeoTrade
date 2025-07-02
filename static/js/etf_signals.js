@@ -9,7 +9,7 @@ function ETFSignalsManager() {
     this.refreshInterval = null;
     this.sortField = 'id';
     this.sortDirection = 'asc';
-    
+
     // Column visibility settings
     this.availableColumns = [
         { key: 'trade_signal_id', label: 'ID', visible: true },
@@ -220,10 +220,10 @@ ETFSignalsManager.prototype.createSignalRow = function(signal) {
     for (var i = 0; i < this.availableColumns.length; i++) {
         var column = this.availableColumns[i];
         if (!column.visible) continue;
-        
+
         var cellValue = '';
         var cellStyle = '';
-        
+
         switch (column.key) {
             case 'trade_signal_id':
                 var tradeId = signal.trade_signal_id || signal.id || 'N/A';
@@ -312,10 +312,10 @@ ETFSignalsManager.prototype.createSignalRow = function(signal) {
             default:
                 cellValue = '--';
         }
-        
+
         cells += '<td style="' + cellStyle + '">' + cellValue + '</td>';
     }
-    
+
     row.innerHTML = cells;
     return row;
 };
@@ -324,10 +324,10 @@ ETFSignalsManager.prototype.createSignalRow = function(signal) {
 ETFSignalsManager.prototype.getGradientBackgroundColor = function(value) {
     var numValue = parseFloat(value);
     if (isNaN(numValue)) return '';
-    
+
     var intensity = Math.min(Math.abs(numValue) / 5, 1); // Scale to 0-1, max at 5%
     var alpha = 0.3 + (intensity * 0.5); // Alpha from 0.3 to 0.8
-    
+
     if (numValue < 0) {
         // Red gradient for negative values
         if (intensity <= 0.3) {
@@ -359,9 +359,9 @@ ETFSignalsManager.prototype.getGradientBackgroundColor = function(value) {
 ETFSignalsManager.prototype.updateTableHeaders = function() {
     var headerRow = document.getElementById('tableHeaders');
     if (!headerRow) return;
-    
+
     headerRow.innerHTML = '';
-    
+
     for (var i = 0; i < this.availableColumns.length; i++) {
         var column = this.availableColumns[i];
         if (column.visible) {
@@ -406,9 +406,9 @@ var sortState = {
 function sortTable(column) {
     var tbody = document.getElementById('etfSignalsTableBody');
     if (!tbody) return;
-    
+
     var rows = Array.from(tbody.querySelectorAll('tr'));
-    
+
     // Toggle sort direction
     if (sortState.column === column) {
         sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
@@ -416,11 +416,11 @@ function sortTable(column) {
         sortState.column = column;
         sortState.direction = 'asc';
     }
-    
+
     // Sort rows based on column
     rows.sort(function(a, b) {
         var aValue, bValue;
-        
+
         switch (column) {
             case 'symbol':
             case 'etf':
@@ -474,7 +474,7 @@ function sortTable(column) {
             default:
                 return 0;
         }
-        
+
         // Compare values
         var result;
         if (aValue instanceof Date) {
@@ -484,13 +484,13 @@ function sortTable(column) {
         } else {
             result = aValue - bValue;
         }
-        
+
         return sortState.direction === 'asc' ? result : -result;
     });
-    
+
     // Update sort indicators
     updateSortIndicators(column, sortState.direction);
-    
+
     // Rebuild table with sorted rows
     tbody.innerHTML = '';
     rows.forEach(function(row) {
@@ -504,20 +504,20 @@ function updateSortIndicators(activeColumn, direction) {
     indicators.forEach(function(indicator) {
         indicator.classList.add('d-none');
     });
-    
+
     // Show active indicator
     var activeIndicator = document.getElementById('sort-' + activeColumn + '-' + direction);
     if (activeIndicator) {
         activeIndicator.classList.remove('d-none');
     }
-    
+
     // Update sort icons in headers
     var sortIcons = document.querySelectorAll('.sortable .fa-sort');
     sortIcons.forEach(function(icon) {
         icon.classList.remove('text-primary');
         icon.classList.add('text-muted');
     });
-    
+
     var activeHeader = document.querySelector('.sortable[onclick*="' + activeColumn + '"] .fa-sort');
     if (activeHeader) {
         activeHeader.classList.remove('text-muted');
@@ -545,27 +545,27 @@ ETFSignalsManager.prototype.setupColumnSettings = function() {
     if (!container) return;
 
     container.innerHTML = '';
-    
+
     for (var i = 0; i < this.availableColumns.length; i++) {
         var column = this.availableColumns[i];
         var colDiv = document.createElement('div');
         colDiv.className = 'col-md-4 mb-2';
-        
+
         var checkDiv = document.createElement('div');
         checkDiv.className = 'form-check';
-        
+
         var checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.className = 'form-check-input';
         checkbox.id = 'col_' + column.key;
         checkbox.checked = column.visible;
         checkbox.setAttribute('data-column', column.key);
-        
+
         var label = document.createElement('label');
         label.className = 'form-check-label text-light';
         label.setAttribute('for', checkbox.id);
         label.textContent = column.label;
-        
+
         checkDiv.appendChild(checkbox);
         checkDiv.appendChild(label);
         colDiv.appendChild(checkDiv);
@@ -580,13 +580,13 @@ function selectAllColumns() {
         for (var i = 0; i < window.etfSignalsManager.availableColumns.length; i++) {
             window.etfSignalsManager.availableColumns[i].visible = true;
         }
-        
+
         // Update all checkboxes to checked
         var checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
         for (var i = 0; i < checkboxes.length; i++) {
             checkboxes[i].checked = true;
         }
-        
+
         console.log('All columns selected');
     }
 }
@@ -594,20 +594,20 @@ function selectAllColumns() {
 function resetDefaultColumns() {
     if (window.etfSignalsManager) {
         var defaultVisible = ['trade_signal_id', 'etf', 'thirty', 'dh', 'date', 'qty', 'ep', 'cmp', 'chan', 'inv', 'pl', 'ch', 'actions'];
-        
+
         // Update column visibility
         for (var i = 0; i < window.etfSignalsManager.availableColumns.length; i++) {
             var column = window.etfSignalsManager.availableColumns[i];
             column.visible = defaultVisible.indexOf(column.key) !== -1;
         }
-        
+
         // Update checkboxes to match default settings
         var checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
         for (var i = 0; i < checkboxes.length; i++) {
             var columnKey = checkboxes[i].getAttribute('data-column');
             checkboxes[i].checked = defaultVisible.indexOf(columnKey) !== -1;
         }
-        
+
         console.log('Reset to default columns');
     }
 }
@@ -617,12 +617,12 @@ function applyColumnSettings() {
     if (window.etfSignalsManager) {
         var checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
         console.log('Found checkboxes:', checkboxes.length);
-        
+
         // Update column visibility based on checkbox states
         for (var i = 0; i < checkboxes.length; i++) {
             var columnKey = checkboxes[i].getAttribute('data-column');
             var isChecked = checkboxes[i].checked;
-            
+
             // Find and update the column in availableColumns array
             for (var j = 0; j < window.etfSignalsManager.availableColumns.length; j++) {
                 if (window.etfSignalsManager.availableColumns[j].key === columnKey) {
@@ -632,13 +632,13 @@ function applyColumnSettings() {
                 }
             }
         }
-        
+
         // Save settings and update display
         window.etfSignalsManager.saveColumnSettings();
         window.etfSignalsManager.updateTableHeaders();
         window.etfSignalsManager.renderSignalsTable();
         window.etfSignalsManager.updatePagination();
-        
+
         // Close modal
         var modalElement = document.getElementById('columnSettingsModal');
         if (modalElement && window.bootstrap) {
@@ -827,7 +827,7 @@ function addDeal(signalId) {
             return s.id == signalId || s.trade_signal_id == signalId;
         });
     }
-    
+
     if (!signal) {
         alert('Signal data not found. Please refresh the page and try again.');
         return;
@@ -899,22 +899,22 @@ function checkExistingDeal(symbol, price, callback) {
     var xhr = new XMLHttpRequest();
     xhr.open('GET', '/api/deals/user?symbol=' + encodeURIComponent(symbol), true);
     xhr.withCredentials = true; // Include cookies for authentication
-    
+
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
             if (xhr.status === 200) {
                 try {
                     var response = JSON.parse(xhr.responseText);
                     var deals = response.deals || [];
-                    
+
                     console.log('Duplicate check - Symbol:', symbol, 'Found deals:', deals.length);
-                    
+
                     // Simply check if any deal has the same symbol
                     var duplicate = deals.length > 0 && deals.some(function(deal) {
                         var dealSymbol = deal.symbol || deal.etf || '';
                         return dealSymbol.toUpperCase() === symbol.toUpperCase();
                     });
-                    
+
                     console.log('Duplicate detected:', duplicate);
                     callback(duplicate);
                 } catch (parseError) {
@@ -928,7 +928,7 @@ function checkExistingDeal(symbol, price, callback) {
             }
         }
     };
-    
+
     xhr.send();
 }
 
@@ -1029,10 +1029,10 @@ function sortSignalsByColumn(column) {
     if (window.etfSignalsManager) {
         window.etfSignalsManager.sortDirection = window.etfSignalsManager.sortDirection === 'asc' ? 'desc' : 'asc';
         var direction = window.etfSignalsManager.sortDirection;
-        
+
         window.etfSignalsManager.filteredSignals.sort(function(a, b) {
             var valueA, valueB;
-            
+
             switch(column) {
                 case 'trade_signal_id':
                     valueA = parseInt(a.trade_signal_id || a.id || 0);
@@ -1077,14 +1077,14 @@ function sortSignalsByColumn(column) {
                 default:
                     return 0;
             }
-            
+
             if (typeof valueA === 'string') {
                 return direction === 'asc' ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
             } else {
                 return direction === 'asc' ? valueA - valueB : valueB - valueA;
             }
         });
-        
+
         window.etfSignalsManager.renderSignalsTable();
         window.etfSignalsManager.updatePagination();
     }
@@ -1094,20 +1094,20 @@ function sortSignalsByColumn(column) {
 function switchDataSource(newSource) {
     var oldSource = localStorage.getItem('data-source') || 'google';
     localStorage.setItem('data-source', newSource);
-    
+
     var sourceName = newSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
-    
+
     // Update UI indicator
     var currentDataSourceSpan = document.getElementById('currentDataSource');
     if (currentDataSourceSpan) {
         currentDataSourceSpan.textContent = sourceName;
     }
-    
+
     // Show immediate notification
     if (typeof showToaster === 'function') {
         showToaster('Data Source Changed', 'Switched to ' + sourceName + ' - Updating CMP...', 'info');
     }
-    
+
     // Immediately update CMP when source changes
     if (newSource !== oldSource) {
         updateCMPDirectlyFromSource(newSource);
@@ -1120,21 +1120,21 @@ function updateCMPDirectlyFromSource(source) {
     if (statusIcon) {
         statusIcon.style.display = 'inline';
     }
-    
+
     // Show loading indicator in table
     var loadingHtml = '<div class="d-flex justify-content-center align-items-center py-4">' +
                      '<div class="spinner-border text-primary me-3" role="status"></div>' +
                      '<span class="text-light">Updating CMP directly from ' + 
                      (source === 'google' ? 'Google Finance' : 'Yahoo Finance') + '...</span></div>';
-    
+
     var tableBody = document.getElementById('signalsTableBody');
     if (tableBody) {
         tableBody.innerHTML = loadingHtml;
     }
-    
+
     // Use the appropriate API endpoint based on source
     var apiEndpoint = source === 'google' ? '/api/google-finance/update-etf-cmp' : '/api/yahoo/update-prices';
-    
+
     fetch(apiEndpoint, {
         method: 'POST',
         headers: {
@@ -1154,12 +1154,12 @@ function updateCMPDirectlyFromSource(source) {
         if (statusIcon) {
             statusIcon.style.display = 'none';
         }
-        
+
         if (data.success) {
             // Show success notification with detailed info
             var updatedCount = data.updated_count || data.successful_updates || 0;
             var sourceName = source === 'google' ? 'Google Finance' : 'Yahoo Finance';
-            
+
             if (typeof showToaster === 'function') {
                 showToaster(
                     'CMP Updated Successfully', 
@@ -1167,7 +1167,7 @@ function updateCMPDirectlyFromSource(source) {
                     'success'
                 );
             }
-            
+
             // Immediately refresh the signals table
             if (window.etfSignalsManager) {
                 window.etfSignalsManager.loadSignals();
@@ -1181,7 +1181,7 @@ function updateCMPDirectlyFromSource(source) {
                     'error'
                 );
             }
-            
+
             // Still try to refresh the table
             if (window.etfSignalsManager) {
                 window.etfSignalsManager.loadSignals();
@@ -1190,13 +1190,13 @@ function updateCMPDirectlyFromSource(source) {
     })
     .catch(function(error) {
         console.error('Error updating CMP directly:', error);
-        
+
         // Hide update status icon
         var statusIcon = document.getElementById('updateStatusIcon');
         if (statusIcon) {
             statusIcon.style.display = 'none';
         }
-        
+
         // Show error notification
         if (typeof showToaster === 'function') {
             showToaster(
@@ -1205,7 +1205,7 @@ function updateCMPDirectlyFromSource(source) {
                 'error'
             );
         }
-        
+
         // Still try to refresh the table
         if (window.etfSignalsManager) {
             window.etfSignalsManager.loadSignals();
@@ -1221,7 +1221,7 @@ function updatePricesFromDataSource(source) {
 function updateCurrentDataSourceIndicator() {
     var dataSource = localStorage.getItem('data-source') || 'google';
     var sourceName = dataSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
-    
+
     var currentDataSourceSpan = document.getElementById('currentDataSource');
     if (currentDataSourceSpan) {
         currentDataSourceSpan.textContent = sourceName;
@@ -1247,7 +1247,7 @@ function updateCMPValue(symbol, cmp) {
     cmpCells.forEach(cell => {
         const oldPrice = parseFloat(cell.textContent.replace('₹', '').replace(',', ''));
         cell.textContent = `₹${cmp.toFixed(2)}`;
-        
+
         // Add visual feedback for price changes
         if (oldPrice && oldPrice !== cmp) {
             cell.classList.add(cmp > oldPrice ? 'price-up' : 'price-down');
@@ -1264,14 +1264,14 @@ function updateAllCMPValues() {
         console.log('No signals data available for CMP update');
         return;
     }
-    
+
     // Get unique symbols from current signals
     var symbolsArray = window.etfSignalsManager.signals.map(function(signal) {
         return signal.etf || signal.symbol;
     }).filter(function(symbol) {
         return symbol;
     });
-    
+
     // Remove duplicates using a simple approach
     var symbols = [];
     for (var i = 0; i < symbolsArray.length; i++) {
@@ -1279,25 +1279,26 @@ function updateAllCMPValues() {
             symbols.push(symbolsArray[i]);
         }
     }
-    
+
     if (symbols.length === 0) {
         console.log('No symbols found for CMP update');
         return;
     }
-    
+
     // Get selected data source from localStorage
     var dataSource = localStorage.getItem('data-source') || 'google';
     var apiEndpoint = dataSource === 'google' ? '/api/google-finance/update-etf-cmp' : '/api/yahoo/update-prices';
     var sourceName = dataSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
-    
+
     console.log('Updating CMP for symbols using ' + sourceName + ':', symbols);
-    
+
     // Call selected API to update all symbols
     fetch(apiEndpoint, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
-        }
+        },
+		timeout: 30000  // 30 second timeout
     })
     .then(function(response) {
         return response.json();
@@ -1305,12 +1306,12 @@ function updateAllCMPValues() {
     .then(function(data) {
         if (data.success) {
             console.log('CMP update response from ' + sourceName + ':', data);
-            
+
             // Refresh the signals table to show updated prices
             if (window.etfSignalsManager) {
                 window.etfSignalsManager.loadSignals();
             }
-            
+
             // Show success message
             var updatedCount = data.updated_count || data.signals_updated || 0;
             showUpdateMessage('Updated CMP for ' + updatedCount + ' records from ' + sourceName, 'success');
@@ -1345,13 +1346,13 @@ function showUpdateMessage(message, type = 'info') {
         `;
         document.body.appendChild(messageEl);
     }
-    
+
     // Set message and style based on type
     messageEl.textContent = message;
     messageEl.style.backgroundColor = type === 'success' ? '#28a745' : 
                                      type === 'error' ? '#dc3545' : '#17a2b8';
     messageEl.style.opacity = '1';
-    
+
     // Hide message after 3 seconds
     setTimeout(() => {
         messageEl.style.opacity = '0';

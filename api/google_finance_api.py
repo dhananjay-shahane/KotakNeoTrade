@@ -101,6 +101,130 @@ def get_live_price(symbol):
         }), 500
 
 @google_finance_bp.route('/update-prices', methods=['POST'])
+def update_prices_optimized():
+    """Optimized CMP update from Google Finance for admin_trade_signals table"""
+    try:
+        import psycopg2
+        from psycopg2.extras import RealDictCursor
+        import yfinance as yf
+        
+        logger.info("Starting optimized Google Finance CMP update for admin_trade_signals table")
+        
+        # Database connection
+        DATABASE_URL = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
+        
+        def get_google_price(symbol):
+            """Get live price with optimized retry logic"""
+            try:
+                yf_symbol = symbol + ".NS"
+                ticker = yf.Ticker(yf_symbol)
+                hist = ticker.history(period="1d", timeout=8)
+                if not hist.empty:
+                    price = hist['Close'].iloc[-1]
+                    return float(round(price, 2))
+                return None
+            except Exception as e:
+                logger.warning(f"Google Finance error for {symbol}: {e}")
+                return None
+        
+        updated_count = 0
+        errors = []
+        start_time = datetime.utcnow()
+        
+        with psycopg2.connect(DATABASE_URL) as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                # Get symbols in smaller batches
+                cursor.execute("""
+                    SELECT DISTINCT 
+                        COALESCE(symbol, etf) as etf_symbol
+                    FROM admin_trade_signals 
+                    WHERE COALESCE(symbol, etf) IS NOT NULL AND COALESCE(symbol, etf) != ''
+                    LIMIT 10
+                """)
+                
+                symbol_data = cursor.fetchall()
+                symbols = [row['etf_symbol'] for row in symbol_data]
+                
+                logger.info(f"Found {len(symbols)} symbols to update: {symbols}")
+                
+                results = {}
+                total_records_updated = 0
+                
+                for symbol in symbols:
+                    try:
+                        logger.info(f"Processing {symbol} via Google Finance...")
+                        price = get_google_price(symbol)
+                        
+                        if price and price > 0:
+                            cursor.execute("""
+                                UPDATE admin_trade_signals 
+                                SET cmp = %s
+                                WHERE (symbol = %s OR etf = %s)
+                                AND (cmp IS NULL OR ABS(cmp - %s) > 0.01)
+                            """, (price, symbol, symbol, price))
+                            
+                            rows_updated = cursor.rowcount
+                            total_records_updated += rows_updated
+                            updated_count += 1
+                            
+                            results[symbol] = {
+                                'success': True,
+                                'price': price,
+                                'rows_updated': rows_updated
+                            }
+                            
+                            logger.info(f"✓ Updated {rows_updated} records for {symbol}: ₹{price}")
+                        else:
+                            results[symbol] = {
+                                'success': False,
+                                'error': 'Could not fetch price'
+                            }
+                            logger.warning(f"⚠️ Could not fetch price for {symbol}")
+                        
+                        # Short delay
+                        time.sleep(0.3)
+                        
+                    except Exception as e:
+                        error_msg = f"Error updating {symbol}: {str(e)}"
+                        errors.append(error_msg)
+                        logger.error(error_msg)
+                        results[symbol] = {
+                            'success': False,
+                            'error': str(e)
+                        }
+                
+                conn.commit()
+                duration = (datetime.utcnow() - start_time).total_seconds()
+                
+        logger.info(f"✅ Google Finance CMP update completed!")
+        logger.info(f"   • Successful updates: {updated_count}")
+        logger.info(f"   • Database rows updated: {total_records_updated}")
+        logger.info(f"   • Duration: {duration:.2f} seconds")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Successfully updated CMP for {updated_count}/{len(symbols)} symbols',
+            'total_symbols': len(symbols),
+            'successful_updates': updated_count,
+            'updated_count': total_records_updated,
+            'failed_updates': len(errors),
+            'errors': errors,
+            'results': results,
+            'duration': duration,
+            'timestamp': datetime.utcnow().isoformat(),
+            'data_source': 'Google Finance',
+            'direct_update': True
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in Google Finance CMP update: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to update CMP from Google Finance'
+        }), 500
+
+@google_finance_bp.route('/update-prices-legacy', methods=['POST'])
 def update_prices():
     """Update CMP for all ETF symbols in admin_trade_signals table"""
     try:
