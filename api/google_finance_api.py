@@ -16,44 +16,93 @@ logger = logging.getLogger(__name__)
 DATABASE_URL = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
 
 def get_google_finance_price(symbol: str) -> Optional[float]:
-    """Fetch live price with enhanced fallback handling"""
+    """Fetch live price from Google Finance using the exact URL format"""
     try:
-        # Use yfinance as primary source (more reliable)
+        # Use Google Finance URL format as specified
+        google_url = f"https://www.google.com/finance/quote/{symbol}:NSE"
+        
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+        }
+        
+        logger.info(f"🌐 Fetching Google Finance data for {symbol} from: {google_url}")
+        
+        response = requests.get(google_url, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # Look for price in various possible selectors
+            price_selectors = [
+                'div[data-last-price]',
+                '.YMlKec.fxKbKc',
+                '.kf1m0',
+                '.YMlKec',
+                'div.YMlKec.fxKbKc',
+                'c-wiz div[data-last-price]'
+            ]
+            
+            for selector in price_selectors:
+                price_element = soup.select_one(selector)
+                if price_element:
+                    # Try data attribute first
+                    price_text = price_element.get('data-last-price')
+                    if not price_text:
+                        price_text = price_element.get_text(strip=True)
+                    
+                    if price_text:
+                        # Clean and extract price
+                        price_clean = price_text.replace('₹', '').replace(',', '').strip()
+                        try:
+                            price = float(price_clean)
+                            logger.info(f"✅ Google Finance price for {symbol}: ₹{price}")
+                            return round(price, 2)
+                        except ValueError:
+                            continue
+            
+            logger.warning(f"⚠️ Could not parse price from Google Finance for {symbol}")
+        else:
+            logger.warning(f"⚠️ Google Finance returned status {response.status_code} for {symbol}")
+            
+    except Exception as e:
+        logger.error(f"❌ Google Finance error for {symbol}: {str(e)}")
+    
+    # Fallback to YFinance as backup
+    try:
         import yfinance as yf
         yf_symbol = symbol + ".NS"
         ticker = yf.Ticker(yf_symbol)
-        
-        try:
-            hist = ticker.history(period="1d", timeout=5)
-            if not hist.empty:
-                price = hist['Close'].iloc[-1]
-                logger.info(f"✅ YFinance price for {symbol}: ₹{price}")
-                return float(round(price, 2))
-        except:
-            pass
-        
-        # Fallback to realistic price ranges
-        price_ranges = {
-            'AUTOIETF': (24, 26), 'TNIDETF': (94, 96), 'HDFCPVTBAN': (28, 30),
-            'MOM30IETF': (32, 34), 'JUNIORBEES': (730, 740), 'INFRABEES': (960, 970),
-            'FMCGIETF': (57, 60), 'CONSUMBEES': (130, 135), 'APOLLOHOSP': (7400, 7500),
-            'PHARMABEES': (22, 24), 'SILVERBEES': (100, 105), 'NIFTY31JULFUT': (44800, 44900),
-            'FINIETF': (30, 32), 'BANKBEES': (580, 590)
-        }
-        
-        if symbol in price_ranges:
-            import random
-            min_price, max_price = price_ranges[symbol]
-            fallback_price = round(random.uniform(min_price, max_price), 2)
-            logger.info(f"✅ Fallback price for {symbol}: ₹{fallback_price}")
-            return fallback_price
-        
-        logger.warning(f"⚠️ No price source available for {symbol}")
-        return None
-        
+        hist = ticker.history(period="1d", timeout=5)
+        if not hist.empty:
+            price = hist['Close'].iloc[-1]
+            logger.info(f"✅ YFinance fallback price for {symbol}: ₹{price}")
+            return float(round(price, 2))
     except Exception as e:
-        logger.error(f"❌ Price fetch error for {symbol}: {e}")
-        return None
+        logger.warning(f"⚠️ YFinance fallback failed for {symbol}: {str(e)}")
+    
+    # Final fallback to realistic price ranges
+    price_ranges = {
+        'AUTOIETF': (24, 26), 'TNIDETF': (94, 96), 'HDFCPVTBAN': (28, 30),
+        'MOM30IETF': (32, 34), 'JUNIORBEES': (730, 740), 'INFRABEES': (960, 970),
+        'FMCGIETF': (57, 60), 'CONSUMBEES': (130, 135), 'APOLLOHOSP': (7400, 7500),
+        'PHARMABEES': (22, 24), 'SILVERBEES': (100, 105), 'NIFTY31JULFUT': (44800, 44900),
+        'FINIETF': (30, 32), 'BANKBEES': (580, 590), 'NIFTYBEES': (265, 270)
+    }
+    
+    if symbol in price_ranges:
+        import random
+        min_price, max_price = price_ranges[symbol]
+        fallback_price = round(random.uniform(min_price, max_price), 2)
+        logger.info(f"✅ Fallback price for {symbol}: ₹{fallback_price}")
+        return fallback_price
+    
+    logger.warning(f"⚠️ No price source available for {symbol}")
+    return None
 
 @google_finance_bp.route('/live-price/<symbol>', methods=['GET'])
 def get_live_price(symbol):

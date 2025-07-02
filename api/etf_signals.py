@@ -13,10 +13,10 @@ logger = logging.getLogger(__name__)
 def get_admin_signals():
     """Get ETF signals data from admin_trade_signals table with real-time prices from Yahoo Finance"""
     try:
-        # Get ALL admin trade signals from database using direct SQL query
+        # Get ALL admin trade signals from database using correct column names
         result = db.session.execute(text("""
             SELECT id, symbol, entry_price, current_price, quantity, investment_amount, 
-                   position_type, status, created_at, pnl, pnl_percentage, change_percent,
+                   signal_type, status, created_at, pnl, pnl_percentage, change_percent,
                    target_price, stop_loss, last_update_time
             FROM admin_trade_signals 
             ORDER BY created_at DESC
@@ -38,7 +38,7 @@ def get_admin_signals():
         total_current_value = 0
         
         for row in signals_data:
-            trade_signal_id, symbol, entry_price, current_price, quantity, investment_amount, position_type, status, created_at, pnl, pnl_percentage, change_percent, target_price, stop_loss, last_update_time = row
+            trade_signal_id, symbol, entry_price, current_price, quantity, investment_amount, signal_type, status, created_at, pnl, pnl_percentage, change_percent, target_price, stop_loss, last_update_time = row
             
             # Convert to proper types with better error handling
             try:
@@ -76,7 +76,7 @@ def get_admin_signals():
                 'quantity': quantity,
                 'investment_amount': round(investment_amount, 2),
                 'current_value': round(current_value, 2),
-                'position_type': position_type or 'LONG',
+                'position_type': signal_type or 'BUY',
                 'status': status or 'ACTIVE',
                 'created_at': created_at.isoformat() if created_at else None,
                 'pnl': round(pnl, 2) if pnl else round((current_price - entry_price) * quantity, 2),

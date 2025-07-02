@@ -52,7 +52,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1,
 
 # configure the database, relative to the app instance folder
 # Use external database if specified, otherwise fall back to environment variable
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL") 
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
@@ -119,6 +119,7 @@ def page_not_found(error):
 
     return render_template('404.html'), 404
 
+
 @app.before_request
 def handle_preflight():
     # Log request for debugging
@@ -132,11 +133,12 @@ def handle_preflight():
         response.headers.add('Access-Control-Allow-Methods', "*")
         return response
 
+
 # Import Flask components
 from flask import render_template, request, redirect, url_for, session, jsonify, flash, make_response
 
 # Root route - ultra-simple webview
-# @app.route('/')  
+# @app.route('/')
 # initialize the app with the extension, flask-sqlalchemy >= 3.0.x
 db.init_app(app)
 
@@ -668,9 +670,6 @@ def get_dashboard_data_api():
         return jsonify({'error': str(e)}), 500
 
 
-
-
-
 @app.route('/api/holdings')
 def get_holdings_api():
     """API endpoint to get holdings"""
@@ -700,161 +699,6 @@ def get_etf_signals_data():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/populate-admin-signals')
-def populate_admin_signals_endpoint():
-    """API endpoint to populate admin_trade_signals table with sample ETF data"""
-    try:
-        from Scripts.models_etf import AdminTradeSignal
-        from Scripts.models import User
-        from datetime import datetime, timedelta
-        from decimal import Decimal
-
-        # Create admin user if not exists
-        admin_user = User.query.filter_by(ucc='admin').first()
-        if not admin_user:
-            admin_user = User(ucc='admin',
-                              mobile_number='9999999999',
-                              greeting_name='Admin User',
-                              user_id='admin',
-                              is_active=True)
-            db.session.add(admin_user)
-            db.session.commit()
-
-        # Create target user if not exists
-        target_user = User.query.filter_by(ucc='zhz3j').first()
-        if not target_user:
-            target_user = User(ucc='zhz3j',
-                               mobile_number='9876543210',
-                               greeting_name='ETF Trader',
-                               user_id='zhz3j',
-                               is_active=True)
-            db.session.add(target_user)
-            db.session.commit()
-
-        # Clear existing signals
-        AdminTradeSignal.query.delete()
-        db.session.commit()
-
-        # Sample ETF signals data (admin sends this data to the table)
-        etf_signals = [{
-            'symbol': 'NIFTYBEES',
-            'signal_type': 'BUY',
-            'entry_price': Decimal('245.50'),
-            'target_price': Decimal('260.00'),
-            'stop_loss': Decimal('235.00'),
-            'quantity': 100,
-            'signal_title': 'NIFTY ETF - Bullish Breakout',
-            'signal_description':
-            'Strong momentum with volume surge. Target 260.',
-            'priority': 'HIGH'
-        }, {
-            'symbol': 'BANKBEES',
-            'signal_type': 'BUY',
-            'entry_price': Decimal('520.75'),
-            'target_price': Decimal('545.00'),
-            'stop_loss': Decimal('505.00'),
-            'quantity': 50,
-            'signal_title': 'Bank ETF - Sector Rotation',
-            'signal_description':
-            'Banking sector showing strength. Good risk-reward.',
-            'priority': 'MEDIUM'
-        }, {
-            'symbol': 'GOLDSHARE',
-            'signal_type': 'SELL',
-            'entry_price': Decimal('4850.00'),
-            'target_price': Decimal('4720.00'),
-            'stop_loss': Decimal('4920.00'),
-            'quantity': 10,
-            'signal_title': 'Gold ETF - Correction Expected',
-            'signal_description':
-            'Overbought levels, expect pullback to 4720.',
-            'priority': 'MEDIUM'
-        }, {
-            'symbol': 'ITBEES',
-            'signal_type': 'BUY',
-            'entry_price': Decimal('425.30'),
-            'target_price': Decimal('445.00'),
-            'stop_loss': Decimal('415.00'),
-            'quantity': 75,
-            'signal_title': 'IT ETF - Tech Recovery',
-            'signal_description':
-            'IT sector bouncing from support. Good entry.',
-            'priority': 'HIGH'
-        }, {
-            'symbol': 'LIQUIDBEES',
-            'signal_type': 'BUY',
-            'entry_price': Decimal('1000.00'),
-            'target_price': Decimal('1002.00'),
-            'stop_loss': Decimal('999.50'),
-            'quantity': 200,
-            'signal_title': 'Liquid ETF - Safe Haven',
-            'signal_description': 'Market volatility hedge, low risk trade.',
-            'priority': 'LOW'
-        }]
-
-        # Create signals in admin_trade_signals table
-        for signal_data in etf_signals:
-            signal = AdminTradeSignal(
-                admin_user_id=admin_user.id,
-                target_user_id=target_user.id,
-                symbol=signal_data['symbol'],
-                trading_symbol=f"{signal_data['symbol']}-EQ",
-                signal_type=signal_data['signal_type'],
-                entry_price=signal_data['entry_price'],
-                target_price=signal_data['target_price'],
-                stop_loss=signal_data['stop_loss'],
-                quantity=signal_data['quantity'],
-                signal_title=signal_data['signal_title'],
-                signal_description=signal_data['signal_description'],
-                priority=signal_data['priority'],
-                status='ACTIVE',
-                created_at=datetime.now() - timedelta(days=1),
-                signal_date=datetime.now().date(),
-                expiry_date=(datetime.now() + timedelta(days=30)).date(),
-                investment_amount=signal_data['entry_price'] *
-                signal_data['quantity'],
-                current_price=signal_data['entry_price'],
-                current_value=signal_data['entry_price'] *
-                signal_data['quantity'],
-                pnl=Decimal('0.00'),
-                pnl_percentage=Decimal('0.00'))
-            db.session.add(signal)
-
-        db.session.commit()
-
-        total_signals = AdminTradeSignal.query.count()
-        active_signals = AdminTradeSignal.query.filter_by(
-            status='ACTIVE').count()
-
-        logging.info(
-            f"Successfully populated {len(etf_signals)} ETF signals in admin_trade_signals table"
-        )
-
-        return jsonify({
-            'success':
-            True,
-            'message':
-            'Successfully populated admin trade signals table',
-            'total_signals':
-            total_signals,
-            'active_signals':
-            active_signals,
-            'created_signals':
-            len(etf_signals),
-            'admin_user_id':
-            admin_user.id,
-            'target_user_id':
-            target_user.id,
-            'note':
-            'ETF signals page will now fetch data from admin_trade_signals table and show real-time CMP from Kotak Neo quotes'
-        })
-
-    except Exception as e:
-        db.session.rollback()
-        logging.error(f"Error populating admin signals: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
 @app.route('/api/sync-default-deals', methods=['POST'])
 def sync_default_deals_endpoint():
     """API endpoint to sync all admin_trade_signals to default_deals table"""
@@ -863,7 +707,8 @@ def sync_default_deals_endpoint():
 
         return jsonify({
             'success': True,
-            'message': f'Successfully synced {synced_count} admin signals to default deals',
+            'message':
+            f'Successfully synced {synced_count} admin signals to default deals',
             'synced_count': synced_count
         })
 
@@ -877,7 +722,8 @@ def get_default_deals_data():
     """API endpoint to get default deals data directly from admin_trade_signals with correct column mapping"""
     try:
         import logging
-        logging.info("Default deals API: Fetching data from admin_trade_signals table")
+        logging.info(
+            "Default deals API: Fetching data from admin_trade_signals table")
 
         # Connect to external database using the same connection as ETF signals
         connection_string = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
@@ -910,13 +756,25 @@ def get_default_deals_data():
                 for row in signals:
                     count += 1
                     # Calculate values with proper null handling using CSV column names
-                    entry_price = float(row.get('ep') or 0) if row.get('ep') is not None else 0.0
-                    current_price = float(row.get('cmp') or 0) if row.get('cmp') is not None else 0.0
-                    quantity = int(row.get('qty') or 0) if row.get('qty') is not None else 0
-                    investment = float(row.get('inv') or 0) if row.get('inv') is not None else 0.0
-                    pnl_amount = float(row.get('pl') or 0) if row.get('pl') is not None else 0.0
-                    target_price = float(row.get('tp') or 0) if row.get('tp') is not None else 0.0
-                    current_value = float(row.get('tva') or 0) if row.get('tva') is not None else 0.0
+                    entry_price = float(
+                        row.get('ep')
+                        or 0) if row.get('ep') is not None else 0.0
+                    current_price = float(
+                        row.get('cmp')
+                        or 0) if row.get('cmp') is not None else 0.0
+                    quantity = int(row.get('qty')
+                                   or 0) if row.get('qty') is not None else 0
+                    investment = float(
+                        row.get('inv')
+                        or 0) if row.get('inv') is not None else 0.0
+                    pnl_amount = float(row.get('pl') or
+                                       0) if row.get('pl') is not None else 0.0
+                    target_price = float(
+                        row.get('tp')
+                        or 0) if row.get('tp') is not None else 0.0
+                    current_value = float(
+                        row.get('tva')
+                        or 0) if row.get('tva') is not None else 0.0
 
                     # Handle percentage change
                     chan_value = row.get('chan') or '0'
@@ -978,7 +836,9 @@ def get_default_deals_data():
                     }
                     deals_data.append(deal_dict)
 
-        logging.info(f"Default deals API: Returning {len(deals_data)} deals from admin_trade_signals")
+        logging.info(
+            f"Default deals API: Returning {len(deals_data)} deals from admin_trade_signals"
+        )
 
         return jsonify({
             'success': True,
@@ -994,11 +854,7 @@ def get_default_deals_data():
 
     except Exception as e:
         logging.error(f"Error fetching default deals data: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'data': []
-        }), 500
+        return jsonify({'success': False, 'error': str(e), 'data': []}), 500
 
 
 @app.route('/api/initialize-auto-sync', methods=['POST'])
@@ -1009,17 +865,18 @@ def initialize_auto_sync_endpoint():
         result = initialize_auto_sync_system()
 
         return jsonify({
-            'success': result['success'],
-            'message': 'Auto-sync system initialized successfully' if result['success'] else 'Failed to initialize auto-sync system',
-            'details': result
+            'success':
+            result['success'],
+            'message':
+            'Auto-sync system initialized successfully'
+            if result['success'] else 'Failed to initialize auto-sync system',
+            'details':
+            result
         })
 
     except Exception as e:
         logging.error(f"Error initializing auto-sync: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/api/test-auto-sync', methods=['POST'])
@@ -1030,16 +887,15 @@ def test_auto_sync_endpoint():
         test_result = test_auto_sync()
 
         return jsonify({
-            'success': test_result,
-            'message': 'Auto-sync test passed' if test_result else 'Auto-sync test failed'
+            'success':
+            test_result,
+            'message':
+            'Auto-sync test passed' if test_result else 'Auto-sync test failed'
         })
 
     except Exception as e:
         logging.error(f"Error testing auto-sync: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/api/place-order', methods=['POST'])
@@ -1053,15 +909,23 @@ def place_order():
         order_data = request.get_json()
 
         # Validate required fields
-        required_fields = ['symbol', 'quantity', 'transaction_type', 'order_type']
+        required_fields = [
+            'symbol', 'quantity', 'transaction_type', 'order_type'
+        ]
         for field in required_fields:
             if field not in order_data:
-                return jsonify({'success': False, 'message': f'Missing required field: {field}'}), 400
+                return jsonify({
+                    'success': False,
+                    'message': f'Missing required field: {field}'
+                }), 400
 
         # Get client from session
         client = session.get('client')
         if not client:
-            return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
+            return jsonify({
+                'success': False,
+                'message': 'Session expired. Please login again.'
+            }), 401
 
         # Validate session before placing order
         try:
@@ -1070,8 +934,10 @@ def place_order():
             neo_client = NeoClient()
             if not neo_client.validate_session(client):
                 return jsonify({
-                    'success': False, 
-                    'message': 'Trading session has expired. Please logout and login again to enable trading operations.'
+                    'success':
+                    False,
+                    'message':
+                    'Trading session has expired. Please logout and login again to enable trading operations.'
                 }), 401
         except Exception as e:
             logging.warning(f"Session validation failed: {e}")
@@ -1084,7 +950,8 @@ def place_order():
         order_params = {
             'symbol': order_data['symbol'],
             'quantity': str(order_data['quantity']),
-            'transaction_type': order_data['transaction_type'],  # B (Buy) or S (Sell)
+            'transaction_type':
+            order_data['transaction_type'],  # B (Buy) or S (Sell)
             'order_type': order_data['order_type'],  # MARKET, LIMIT, STOPLOSS
             'exchange_segment': order_data.get('exchange_segment', 'nse_cm'),
             'product': order_data.get('product', 'CNC'),  # CNC, MIS, NRML
@@ -1104,7 +971,8 @@ def place_order():
         if result.get('success'):
             return jsonify({
                 'success': True,
-                'message': f'Order placed successfully for {order_data["symbol"]}',
+                'message':
+                f'Order placed successfully for {order_data["symbol"]}',
                 'data': result.get('data'),
                 'order_id': result.get('order_id')
             })
@@ -1112,15 +980,13 @@ def place_order():
             error_message = result.get('message', 'Failed to place order')
 
             # Check for specific API authentication errors
-            if 'invalid access type' in error_message.lower() or 'not_ok' in str(result).lower():
+            if 'invalid access type' in error_message.lower(
+            ) or 'not_ok' in str(result).lower():
                 error_message = 'Trading session has expired. Please logout and login again to place orders.'
             elif 'session' in error_message.lower():
                 error_message = 'Session expired. Please refresh the page and try again.'
 
-            return jsonify({
-                'success': False,
-                'message': error_message
-            }), 400
+            return jsonify({'success': False, 'message': error_message}), 400
 
     except Exception as e:
         logging.error(f"Error placing order: {str(e)}")
@@ -1141,7 +1007,10 @@ def quick_buy():
         # Get client from session
         client = session.get('client')
         if not client:
-            return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
+            return jsonify({
+                'success': False,
+                'message': 'Session expired. Please login again.'
+            }), 401
 
         from Scripts.trading_functions import TradingFunctions
         trading_functions = TradingFunctions()
@@ -1167,8 +1036,10 @@ def quick_buy():
             })
         else:
             return jsonify({
-                'success': False,
-                'message': result.get('message', 'Failed to place buy order')
+                'success':
+                False,
+                'message':
+                result.get('message', 'Failed to place buy order')
             }), 400
 
     except Exception as e:
@@ -1189,7 +1060,10 @@ def quick_sell():
         # Get client from session
         client = session.get('client')
         if not client:
-            return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
+            return jsonify({
+                'success': False,
+                'message': 'Session expired. Please login again.'
+            }), 401
 
         from Scripts.trading_functions import TradingFunctions
         trading_functions = TradingFunctions()
@@ -1215,8 +1089,10 @@ def quick_sell():
             })
         else:
             return jsonify({
-                'success': False,
-                'message': result.get('message', 'Failed to place sell order')
+                'success':
+                False,
+                'message':
+                result.get('message', 'Failed to place sell order')
             }), 400
 
     except Exception as e:
@@ -1252,7 +1128,7 @@ try:
     from api.supabase_api import supabase_bp
     from api.deals import deals_bp  # Added deals blueprint import
     from api.google_finance_api import google_finance_bp
-    from api.yahoo_finance_api import yahoo_bp #Import yahoo blueprint
+    from api.yahoo_finance_api import yahoo_bp  #Import yahoo blueprint
 
     # Blueprint registration moved to main.py to avoid conflicts
     print("✓ Blueprint imports available")
@@ -1278,10 +1154,10 @@ try:
 except Exception as e:
     print(f"Warning: Could not register deals blueprint: {e}")
 
-# Register Google Finance API blueprint
+    # Register Google Finance API blueprint
     app.register_blueprint(google_finance_bp)
 
-    # Register Yahoo Finance API blueprint  
+    # Register Yahoo Finance API blueprint
     app.register_blueprint(yahoo_bp)
 
 if __name__ == '__main__':
@@ -1310,7 +1186,9 @@ if __name__ == '__main__':
 
 # Initialize auto-sync triggers
 from Scripts.sync_default_deals import setup_auto_sync_triggers
+
 setup_auto_sync_triggers()
+
 
 # Live CMP update endpoint using Google Finance
 @app.route('/api/update-live-cmp')
@@ -1322,24 +1200,36 @@ def update_live_cmp_endpoint():
         result = update_all_cmp_data()
 
         return jsonify({
-            'success': result['success'],
-            'message': result['message'],
-            'updated_count': result['updated_count'],
-            'total_symbols': result.get('total_symbols', 0),
-            'successful_symbols': result.get('successful_symbols', 0),
-            'error_count': result['error_count'],
-            'duration': result.get('duration', 0),
-            'results': result.get('results', {})
+            'success':
+            result['success'],
+            'message':
+            result['message'],
+            'updated_count':
+            result['updated_count'],
+            'total_symbols':
+            result.get('total_symbols', 0),
+            'successful_symbols':
+            result.get('successful_symbols', 0),
+            'error_count':
+            result['error_count'],
+            'duration':
+            result.get('duration', 0),
+            'results':
+            result.get('results', {})
         })
 
     except Exception as e:
         import logging
         logging.error(f"Error updating live CMP via Google Finance: {str(e)}")
         return jsonify({
-            'success': False,
-            'error': str(e),
-            'message': 'Failed to update live CMP data via Google Finance'
+            'success':
+            False,
+            'error':
+            str(e),
+            'message':
+            'Failed to update live CMP data via Google Finance'
         }), 500
+
 
 # Update specific symbols CMP endpoint
 @app.route('/api/update-cmp-symbols', methods=['POST'])
@@ -1361,14 +1251,22 @@ def update_specific_symbols_cmp():
         result = update_specific_cmp_data(symbols)
 
         return jsonify({
-            'success': result['success'],
-            'message': result['message'],
-            'updated_count': result['updated_count'],
-            'symbols_processed': result.get('symbols_processed', 0),
-            'successful_symbols': result.get('successful_symbols', 0),
-            'error_count': result['error_count'],
-            'duration': result.get('duration', 0),
-            'results': result.get('results', {})
+            'success':
+            result['success'],
+            'message':
+            result['message'],
+            'updated_count':
+            result['updated_count'],
+            'symbols_processed':
+            result.get('symbols_processed', 0),
+            'successful_symbols':
+            result.get('successful_symbols', 0),
+            'error_count':
+            result['error_count'],
+            'duration':
+            result.get('duration', 0),
+            'results':
+            result.get('results', {})
         })
 
     except Exception as e:
@@ -1380,17 +1278,27 @@ def update_specific_symbols_cmp():
             'message': 'Failed to update specific symbols CMP'
         }), 500
 
+
 # Health check endpoint for domain verification
 @app.route('/health')
 def health_check():
     """Health check endpoint for domain verification"""
-    return {'status': 'ok', 'message': 'Kotak Neo Trading Platform is running', 'port': 5000}, 200
+    return {
+        'status': 'ok',
+        'message': 'Kotak Neo Trading Platform is running',
+        'port': 5000
+    }, 200
+
 
 # Test endpoint for DNS verification
 @app.route('/test')
 def test_endpoint():
     """Test endpoint for DNS verification"""
-    return {'message': 'DNS test successful', 'domain': os.environ.get('REPLIT_DOMAINS', 'localhost')}, 200
+    return {
+        'message': 'DNS test successful',
+        'domain': os.environ.get('REPLIT_DOMAINS', 'localhost')
+    }, 200
+
 
 # Simple HTML page for testing external access
 @app.route('/preview')
@@ -1435,6 +1343,7 @@ def preview_test():
     </body>
     </html>
     '''
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

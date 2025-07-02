@@ -9,7 +9,7 @@ from Scripts.yahoo_scheduler import force_yahoo_update
 yahoo_bp = Blueprint('yahoo', __name__, url_prefix='/api/yahoo')
 logger = logging.getLogger(__name__)
 
-@yahoo_bp.route('/update-prices', methods=['POST'])
+@yahoo_bp.route('/update-prices', methods=['POST', 'GET'])
 def update_prices():
     """Direct CMP update from Yahoo Finance for admin_trade_signals table using external database"""
     try:
@@ -17,8 +17,21 @@ def update_prices():
         from psycopg2.extras import RealDictCursor
         import yfinance as yf
         
-        request_data = request.get_json() or {}
-        symbols_to_update = request_data.get('symbols', [])
+        # Handle both GET and POST requests
+        if request.method == 'GET':
+            symbols_to_update = []
+        else:
+            # For POST requests, handle JSON data safely
+            try:
+                if request.is_json:
+                    request_data = request.get_json() or {}
+                else:
+                    request_data = {}
+            except Exception as json_error:
+                logger.warning(f"JSON parsing error: {json_error}")
+                request_data = {}
+            
+            symbols_to_update = request_data.get('symbols', [])
         
         logger.info("🚀 Starting Yahoo Finance CMP update for admin_trade_signals table")
         
