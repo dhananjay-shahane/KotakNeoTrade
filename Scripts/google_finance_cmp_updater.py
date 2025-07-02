@@ -90,15 +90,34 @@ class GoogleFinanceCMPUpdater:
         self.error_count = 0
 
     def get_yahoo_symbol(self, symbol: str) -> str:
-        """Convert Indian symbol to Yahoo Finance format"""
-        # Remove any exchanges or prefixes
+        """Convert Indian symbol to Yahoo Finance format with dynamic suffix detection"""
         clean_symbol = symbol.strip().upper()
 
         # Check if already mapped
         if clean_symbol in self.symbol_mapping:
             return self.symbol_mapping[clean_symbol]
 
-        # Default: add .NS for NSE symbols
+        # Common NSE symbols that should use .NS
+        nse_symbols = {
+            'RELIANCE', 'TCS', 'HDFCBANK', 'ICICIBANK', 'HINDUNILVR', 'INFY', 'ITC', 'SBIN', 'BHARTIARTL', 'KOTAKBANK',
+            'LT', 'ASIANPAINT', 'AXISBANK', 'MARUTI', 'BAJFINANCE', 'HCLTECH', 'NESTLEIND', 'WIPRO', 'TITAN', 'ULTRACEMCO',
+            'ONGC', 'SUNPHARMA', 'TATAMOTORS', 'POWERGRID', 'NTPC', 'TECHM', 'M&M', 'JSWSTEEL', 'INDUSINDBK', 'BAJAJFINSV',
+            'GRASIM', 'HINDALCO', 'TATASTEEL', 'ADANIENT', 'COALINDIA', 'DRREDDY', 'CIPLA', 'HEROMOTOCO', 'BRITANNIA', 'EICHERMOT',
+            'BPCL', 'APOLLOHOSP', 'DIVISLAB', 'ADANIPORTS', 'UPL', 'TATACONSUM', 'BAJAJ-AUTO', 'SBILIFE', 'HDFCLIFE'
+        }
+        
+        # ETF symbols typically use .NS
+        etf_symbols = {
+            'NIFTYBEES', 'JUNIORBEES', 'GOLDBEES', 'SILVERBEES', 'BANKBEES', 'CONSUMBEES', 'PHARMABEES', 
+            'AUTOIETF', 'FMCGIETF', 'FINIETF', 'INFRABEES', 'TNIDETF', 'MOM30IETF', 'HDFCPVTBAN',
+            'ITETF', 'MID150BEES', 'LIQUID', 'CPSE', 'PSU'
+        }
+        
+        # First try .NS for NSE symbols and ETFs
+        if clean_symbol in nse_symbols or clean_symbol in etf_symbols or clean_symbol.endswith('BEES') or clean_symbol.endswith('ETF'):
+            return f"{clean_symbol}.NS"
+
+        # Default: add .NS for NSE symbols (NSE is primary exchange)
         return f"{clean_symbol}.NS"
 
     def fetch_google_finance_price(self, symbol: str) -> Optional[float]:
@@ -107,48 +126,55 @@ class GoogleFinanceCMPUpdater:
             import requests
             from bs4 import BeautifulSoup
             
-            # Try to fetch from actual Google Finance
-            url = f"https://www.google.com/finance/quote/{symbol.upper()}:NSE"
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                "Accept-Language": "en-US,en;q=0.5",
-                "Accept-Encoding": "gzip, deflate",
-                "DNT": "1",
-                "Connection": "keep-alive",
-                "Upgrade-Insecure-Requests": "1"
-            }
+            clean_symbol = symbol.strip().upper()
             
-            try:
-                response = requests.get(url, headers=headers, timeout=10)
-                if response.status_code == 200:
-                    soup = BeautifulSoup(response.text, 'html.parser')
-                    
-                    # Try multiple selectors for price
-                    price_selectors = [
-                        "div[class*='YMlKec fxKbKc']",
-                        "div[class*='YMlKec']",
-                        "span[class*='IsqQVc NprOob XcVN5d']",
-                        "div[jsname='ip75Cb']"
-                    ]
-                    
-                    for selector in price_selectors:
-                        price_element = soup.select_one(selector)
-                        if price_element:
-                            price_text = price_element.get_text().strip()
-                            price_text = price_text.replace("₹", "").replace(",", "").replace("$", "").strip()
-                            try:
-                                price = float(price_text)
-                                if price > 0:
-                                    logging.info(f"✓ Google Finance live price for {symbol}: ₹{price}")
-                                    return price
-                            except (ValueError, TypeError):
-                                continue
+            # Try different exchange suffixes for Google Finance
+            exchanges = ['NSE', 'BSE']  # Try NSE first, then BSE
+            
+            for exchange in exchanges:
+                url = f"https://www.google.com/finance/quote/{clean_symbol}:{exchange}"
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                    "Accept-Language": "en-US,en;q=0.5",
+                    "Accept-Encoding": "gzip, deflate",
+                    "DNT": "1",
+                    "Connection": "keep-alive",
+                    "Upgrade-Insecure-Requests": "1"
+                }
                 
-                logging.warning(f"⚠️ Google Finance: Could not parse price for {symbol}")
-                
-            except (requests.exceptions.RequestException, requests.exceptions.Timeout) as e:
-                logging.warning(f"⚠️ Google Finance network error for {symbol}: {e}")
+                try:
+                    logging.info(f"Trying Google Finance: {url}")
+                    response = requests.get(url, headers=headers, timeout=10)
+                    if response.status_code == 200:
+                        soup = BeautifulSoup(response.text, 'html.parser')
+                        
+                        # Try multiple selectors for price
+                        price_selectors = [
+                            "div[class*='YMlKec fxKbKc']",
+                            "div[class*='YMlKec']",
+                            "span[class*='IsqQVc NprOob XcVN5d']",
+                            "div[jsname='ip75Cb']"
+                        ]
+                        
+                        for selector in price_selectors:
+                            price_element = soup.select_one(selector)
+                            if price_element:
+                                price_text = price_element.get_text().strip()
+                                price_text = price_text.replace("₹", "").replace(",", "").replace("$", "").strip()
+                                try:
+                                    price = float(price_text)
+                                    if price > 0:
+                                        logging.info(f"✓ Google Finance live price for {symbol} from {exchange}: ₹{price}")
+                                        return price
+                                except (ValueError, TypeError):
+                                    continue
+                    
+                    logging.warning(f"⚠️ Google Finance: Could not parse price for {symbol} on {exchange}")
+                    
+                except (requests.exceptions.RequestException, requests.exceptions.Timeout) as e:
+                    logging.warning(f"⚠️ Google Finance network error for {symbol} on {exchange}: {e}")
+                    continue
             
             # Fallback to realistic simulated prices with slight variation
             import random
@@ -315,21 +341,36 @@ class GoogleFinanceCMPUpdater:
                     """)
                     has_updated_at = cursor.fetchone() is not None
 
-                    if has_updated_at:
+                    # Check if last_update_time column exists
+                    cursor.execute("""
+                        SELECT column_name FROM information_schema.columns 
+                        WHERE table_name = 'admin_trade_signals' AND column_name = 'last_update_time'
+                    """)
+                    has_last_update_time = cursor.fetchone() is not None
+
+                    if has_last_update_time:
                         cursor.execute("""
                             UPDATE admin_trade_signals 
-                            SET cmp = %s, 
+                            SET current_price = %s, 
+                                last_update_time = CURRENT_TIMESTAMP
+                            WHERE symbol = %s
+                            AND (current_price IS NULL OR current_price != %s)
+                        """, (new_cmp, symbol, new_cmp))
+                    elif has_updated_at:
+                        cursor.execute("""
+                            UPDATE admin_trade_signals 
+                            SET current_price = %s, 
                                 updated_at = CURRENT_TIMESTAMP
-                            WHERE (symbol = %s OR etf = %s)
-                            AND (cmp IS NULL OR cmp != %s)
-                        """, (new_cmp, symbol, symbol, new_cmp))
+                            WHERE symbol = %s
+                            AND (current_price IS NULL OR current_price != %s)
+                        """, (new_cmp, symbol, new_cmp))
                     else:
                         cursor.execute("""
                             UPDATE admin_trade_signals 
-                            SET cmp = %s 
-                            WHERE (symbol = %s OR etf = %s)
-                            AND (cmp IS NULL OR cmp != %s)
-                        """, (new_cmp, symbol, symbol, new_cmp))
+                            SET current_price = %s 
+                            WHERE symbol = %s
+                            AND (current_price IS NULL OR current_price != %s)
+                        """, (new_cmp, symbol, new_cmp))
 
                     updated_rows = cursor.rowcount
                     conn.commit()

@@ -69,18 +69,68 @@ class YahooFinanceService:
         logger.info(f"✅ Generated fallback price for {symbol}: ₹{current_price}")
         return price_data
 
+    def get_yahoo_symbol(self, symbol):
+        """Convert Indian symbol to Yahoo Finance format with dynamic suffix detection"""
+        clean_symbol = symbol.strip().upper()
+        
+        # Common NSE symbols that should use .NS
+        nse_symbols = {
+            'RELIANCE', 'TCS', 'HDFCBANK', 'ICICIBANK', 'HINDUNILVR', 'INFY', 'ITC', 'SBIN', 'BHARTIARTL', 'KOTAKBANK',
+            'LT', 'ASIANPAINT', 'AXISBANK', 'MARUTI', 'BAJFINANCE', 'HCLTECH', 'NESTLEIND', 'WIPRO', 'TITAN', 'ULTRACEMCO',
+            'ONGC', 'SUNPHARMA', 'TATAMOTORS', 'POWERGRID', 'NTPC', 'TECHM', 'M&M', 'JSWSTEEL', 'INDUSINDBK', 'BAJAJFINSV',
+            'GRASIM', 'HINDALCO', 'TATASTEEL', 'ADANIENT', 'COALINDIA', 'DRREDDY', 'CIPLA', 'HEROMOTOCO', 'BRITANNIA', 'EICHERMOT',
+            'BPCL', 'APOLLOHOSP', 'DIVISLAB', 'ADANIPORTS', 'UPL', 'TATACONSUM', 'BAJAJ-AUTO', 'SBILIFE', 'HDFCLIFE'
+        }
+        
+        # ETF symbols typically use .NS
+        etf_symbols = {
+            'NIFTYBEES', 'JUNIORBEES', 'GOLDBEES', 'SILVERBEES', 'BANKBEES', 'CONSUMBEES', 'PHARMABEES', 
+            'AUTOIETF', 'FMCGIETF', 'FINIETF', 'INFRABEES', 'TNIDETF', 'MOM30IETF', 'HDFCPVTBAN',
+            'ITETF', 'MID150BEES', 'LIQUID', 'CPSE', 'PSU'
+        }
+        
+        # First try .NS for NSE symbols and ETFs
+        if clean_symbol in nse_symbols or clean_symbol in etf_symbols or clean_symbol.endswith('BEES') or clean_symbol.endswith('ETF'):
+            return f"{clean_symbol}.NS"
+        
+        # Default to .NS for most Indian symbols (NSE is primary exchange)
+        return f"{clean_symbol}.NS"
+    
     def get_stock_price(self, symbol):
-        """Fetch current price for a single symbol from Yahoo Finance using .BO suffix"""
+        """Fetch current price for a single symbol from Yahoo Finance with dynamic suffix"""
         try:
-            # Clean symbol and add .BO suffix for Bombay Stock Exchange
-            clean_symbol = symbol.strip().upper()
-            yf_symbol = f"{clean_symbol}.BO"
+            # Get the appropriate Yahoo Finance symbol
+            yf_symbol = self.get_yahoo_symbol(symbol)
             
             logger.info(f"Fetching real Yahoo Finance data for {symbol} -> {yf_symbol}")
             
+            # Try with primary suffix (.NS)
             ticker = yf.Ticker(yf_symbol)
+            price_data = self._try_fetch_price_data(ticker, symbol, yf_symbol)
+            if price_data:
+                return price_data
             
-            # Method 1: Try recent history (most reliable for .BO symbols)
+            # If .NS fails, try .BO as fallback
+            if yf_symbol.endswith('.NS'):
+                fallback_symbol = symbol.strip().upper() + '.BO'
+                logger.info(f"Trying fallback suffix for {symbol} -> {fallback_symbol}")
+                fallback_ticker = yf.Ticker(fallback_symbol)
+                price_data = self._try_fetch_price_data(fallback_ticker, symbol, fallback_symbol)
+                if price_data:
+                    return price_data
+            
+            # If all methods fail, use fallback
+            logger.warning(f"All Yahoo Finance methods failed for {symbol}, using fallback")
+            return self.generate_fallback_price(symbol)
+            
+        except Exception as e:
+            logger.error(f"Error fetching Yahoo Finance data for {symbol}: {e}")
+            return self.generate_fallback_price(symbol)
+
+    def _try_fetch_price_data(self, ticker, symbol, yf_symbol):
+        """Try to fetch price data using different methods"""
+        try:
+            # Method 1: Try recent history (most reliable)
             try:
                 hist = ticker.history(period="5d", timeout=10)
                 if not hist.empty:
@@ -99,10 +149,10 @@ class YahooFinanceService:
                         'timestamp': datetime.utcnow()
                     }
                     
-                    logger.info(f"✅ Got real Yahoo Finance price for {symbol}: ₹{current_price}")
+                    logger.info(f"✅ Got real Yahoo Finance price for {symbol} using {yf_symbol}: ₹{current_price}")
                     return price_data
             except Exception as e:
-                logger.warning(f"History method failed for {symbol}: {e}")
+                logger.warning(f"History method failed for {yf_symbol}: {e}")
             
             # Method 2: Try info dict as fallback
             try:
@@ -126,10 +176,10 @@ class YahooFinanceService:
                             'timestamp': datetime.utcnow()
                         }
                         
-                        logger.info(f"✅ Got Yahoo Finance price from info for {symbol}: ₹{current_price}")
+                        logger.info(f"✅ Got Yahoo Finance price from info for {symbol} using {yf_symbol}: ₹{current_price}")
                         return price_data
             except Exception as e:
-                logger.warning(f"Info method failed for {symbol}: {e}")
+                logger.warning(f"Info method failed for {yf_symbol}: {e}")
             
             # Method 3: Try 1-day history as last resort
             try:
@@ -150,18 +200,16 @@ class YahooFinanceService:
                         'timestamp': datetime.utcnow()
                     }
                     
-                    logger.info(f"✅ Got Yahoo Finance price from 1d history for {symbol}: ₹{current_price}")
+                    logger.info(f"✅ Got Yahoo Finance price from 1d history for {symbol} using {yf_symbol}: ₹{current_price}")
                     return price_data
             except Exception as e:
-                logger.warning(f"1d history method failed for {symbol}: {e}")
+                logger.warning(f"1d history method failed for {yf_symbol}: {e}")
             
-            # If all methods fail, use fallback
-            logger.warning(f"All Yahoo Finance methods failed for {symbol}, using fallback")
-            return self.generate_fallback_price(symbol)
+            return None
             
         except Exception as e:
-            logger.error(f"Error fetching Yahoo Finance data for {symbol}: {e}")
-            return self.generate_fallback_price(symbol)
+            logger.warning(f"Error with {yf_symbol}: {e}")
+            return None
 
     def get_multiple_prices(self, symbols):
         """Get prices for multiple symbols"""
@@ -255,11 +303,11 @@ class YahooFinanceService:
                         if price_data:
                             connection.execute(text("""
                                 UPDATE admin_trade_signals 
-                                SET cmp = :cmp, last_updated = :last_updated 
+                                SET current_price = :current_price, last_update_time = :last_update_time 
                                 WHERE symbol = :symbol
                             """), {
-                                'cmp': price_data['current_price'],
-                                'last_updated': datetime.utcnow(),
+                                'current_price': price_data['current_price'],
+                                'last_update_time': datetime.utcnow(),
                                 'symbol': symbol
                             })
                             
