@@ -723,7 +723,13 @@ ETFSignalsManager.prototype.updatePagination = function() {
 ETFSignalsManager.prototype.showLoadingState = function() {
     var tbody = document.getElementById('signalsTableBody');
     if (tbody) {
-        tbody.innerHTML = '<tr><td colspan="25" class="text-center">Loading ETF signals...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="25" class="text-center py-5">' +
+                         '<div class="d-flex flex-column justify-content-center align-items-center">' +
+                         '<div class="spinner-border text-primary mb-3" role="status" style="width: 2.5rem; height: 2.5rem;">' +
+                         '<span class="visually-hidden">Loading...</span></div>' +
+                         '<h6 class="text-light mb-2">Loading ETF Signals</h6>' +
+                         '<small class="text-muted">Fetching data from database...</small>' +
+                         '</div></td></tr>';
     }
 };
 
@@ -1121,11 +1127,16 @@ function updateCMPDirectlyFromSource(source) {
         statusIcon.style.display = 'inline';
     }
 
-    // Show loading indicator in table
-    var loadingHtml = '<div class="d-flex justify-content-center align-items-center py-4">' +
-                     '<div class="spinner-border text-primary me-3" role="status"></div>' +
-                     '<span class="text-light">Updating CMP directly from ' + 
-                     (source === 'google' ? 'Google Finance' : 'Yahoo Finance') + '...</span></div>';
+    // Show enhanced loading indicator in table with better styling
+    var loadingHtml = '<tr><td colspan="25" class="text-center py-5">' +
+                     '<div class="d-flex flex-column justify-content-center align-items-center">' +
+                     '<div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">' +
+                     '<span class="visually-hidden">Loading...</span></div>' +
+                     '<h5 class="text-light mb-2">Updating CMP</h5>' +
+                     '<p class="text-muted">Fetching live prices from ' + 
+                     (source === 'google' ? 'Google Finance' : 'Yahoo Finance') + '...</p>' +
+                     '<small class="text-warning">Please wait, this may take a few moments</small>' +
+                     '</div></td></tr>';
 
     var tableBody = document.getElementById('signalsTableBody');
     if (tableBody) {

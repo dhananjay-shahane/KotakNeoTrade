@@ -26,21 +26,40 @@ def update_prices():
         DATABASE_URL = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
         
         def get_yahoo_price(symbol):
-            """Get live price from Yahoo Finance with optimized retry logic"""
-            max_retries = 2
+            """Get live price from Yahoo Finance with improved rate limiting"""
+            max_retries = 3
+            base_delay = 2  # Start with 2 second delay
+            
             for attempt in range(max_retries):
                 try:
                     yf_symbol = symbol + ".NS"
                     ticker = yf.Ticker(yf_symbol)
-                    hist = ticker.history(period="1d", timeout=10)
+                    
+                    # Use different data methods to avoid rate limiting
+                    try:
+                        # Try fast_info first (less data, faster)
+                        info = ticker.fast_info
+                        if hasattr(info, 'last_price') and info.last_price:
+                            price = float(info.last_price)
+                            if price > 0:
+                                return round(price, 2)
+                    except:
+                        pass
+                    
+                    # Fallback to history data with longer timeout
+                    hist = ticker.history(period="1d", timeout=15)
                     if not hist.empty:
                         price = hist['Close'].iloc[-1]
                         return float(round(price, 2))
+                    
                     return None
+                    
                 except Exception as e:
                     if attempt < max_retries - 1:
-                        logger.warning(f"Yahoo Finance attempt {attempt + 1} failed for {symbol}: {e}, retrying...")
-                        time.sleep(1)  # Short delay to avoid timeout
+                        # Exponential backoff to avoid rate limiting
+                        delay = base_delay * (2 ** attempt)
+                        logger.warning(f"Yahoo Finance attempt {attempt + 1} failed for {symbol}: {e}, retrying in {delay}s...")
+                        time.sleep(delay)
                         continue
                     else:
                         logger.error(f"Yahoo Finance error for {symbol} after {max_retries} attempts: {e}")
@@ -121,8 +140,8 @@ def update_prices():
                             errors.append(f"Failed to fetch price for {symbol}")
                             logger.warning(f"⚠️ Could not fetch price for {symbol}")
                         
-                        # Short delay to avoid rate limiting
-                        time.sleep(0.5)
+                        # Longer delay to avoid Yahoo Finance rate limiting
+                        time.sleep(2)
                         
                     except Exception as e:
                         error_msg = f"Error updating {symbol}: {str(e)}"
