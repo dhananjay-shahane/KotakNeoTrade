@@ -190,7 +190,7 @@ def update_prices():
                             # Update all records with this symbol in external database
                             update_query = """
                                 UPDATE admin_trade_signals 
-                                SET cmp = %s, updated_at = CURRENT_TIMESTAMP
+                                SET cmp = %s
                                 WHERE (symbol = %s OR etf = %s)
                             """
                             cursor.execute(update_query, (float(price), symbol, symbol))
