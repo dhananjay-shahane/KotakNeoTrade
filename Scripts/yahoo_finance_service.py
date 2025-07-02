@@ -145,21 +145,31 @@ class YahooFinanceService:
             return self.generate_fallback_price(symbol)
 
     def _try_fetch_price_data(self, ticker, symbol, yf_symbol):
-        """Try to fetch price data using web scraping first, then API fallback"""
+        """Try to fetch price data using multiple methods with enhanced web scraping"""
         try:
             import requests
             from bs4 import BeautifulSoup
             import json
             import re
+            import time
             
-            # Method 1: Direct Yahoo Finance web scraping (most reliable)
+            # Method 1: Enhanced Direct Yahoo Finance web scraping
             try:
                 url = f"https://finance.yahoo.com/quote/{yf_symbol}"
                 
+                # Rotate between different user agents to avoid detection
+                user_agents = [
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0'
+                ]
+                
+                import random
                 headers = {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                    'Accept-Language': 'en-US,en;q=0.5',
+                    'User-Agent': random.choice(user_agents),
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.9',
                     'Accept-Encoding': 'gzip, deflate, br',
                     'DNT': '1',
                     'Connection': 'keep-alive',
@@ -167,53 +177,97 @@ class YahooFinanceService:
                     'Sec-Fetch-Dest': 'document',
                     'Sec-Fetch-Mode': 'navigate',
                     'Sec-Fetch-Site': 'none',
-                    'Cache-Control': 'max-age=0'
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
                 }
                 
                 session = requests.Session()
-                response = session.get(url, headers=headers, timeout=15)
+                # Add small delay to avoid rate limiting
+                time.sleep(0.2)
+                response = session.get(url, headers=headers, timeout=20, allow_redirects=True)
+                
+                logger.info(f"Yahoo Finance response status for {yf_symbol}: {response.status_code}")
                 
                 if response.status_code == 200:
                     soup = BeautifulSoup(response.text, 'html.parser')
                     
-                    # Method 1a: Try to find price in script tags with JSON data
+                    # Method 1a: Enhanced JSON extraction from script tags
                     script_tags = soup.find_all('script')
                     for script in script_tags:
-                        if script.string and 'QuoteSummaryStore' in script.string:
+                        if script.string and ('QuoteSummaryStore' in script.string or 'root.App.main' in script.string):
                             try:
-                                # Extract JSON data from script
-                                json_str = script.string
-                                start = json_str.find('"QuoteSummaryStore"')
-                                if start != -1:
-                                    # Find the JSON object
-                                    brace_count = 0
-                                    json_start = json_str.find('{', start)
-                                    json_end = json_start
-                                    
-                                    for i, char in enumerate(json_str[json_start:], json_start):
-                                        if char == '{':
-                                            brace_count += 1
-                                        elif char == '}':
-                                            brace_count -= 1
-                                            if brace_count == 0:
-                                                json_end = i + 1
-                                                break
-                                    
-                                    if json_end > json_start:
-                                        json_data = json.loads(json_str[json_start:json_end])
-                                        
-                                        # Extract price data from JSON
-                                        price_data = json_data.get('price', {})
-                                        if price_data:
-                                            current_price = price_data.get('regularMarketPrice', {}).get('raw')
-                                            if current_price:
-                                                open_price = price_data.get('regularMarketOpen', {}).get('raw', current_price)
-                                                high_price = price_data.get('regularMarketDayHigh', {}).get('raw', current_price)
-                                                low_price = price_data.get('regularMarketDayLow', {}).get('raw', current_price)
-                                                volume = price_data.get('regularMarketVolume', {}).get('raw', 0)
-                                                prev_close = price_data.get('regularMarketPreviousClose', {}).get('raw', current_price)
-                                                change = price_data.get('regularMarketChange', {}).get('raw', 0)
-                                                change_percent = price_data.get('regularMarketChangePercent', {}).get('raw', 0)
+                                script_content = script.string
+                                
+                                # Look for different JSON patterns
+                                json_patterns = [
+                                    r'"QuoteSummaryStore":\s*({.+?})\s*(?:,|\})',
+                                    r'root\.App\.main\s*=\s*({.+?});',
+                                    r'"price":\s*({[^}]+})',
+                                    r'"regularMarketPrice":\s*({[^}]+})'
+                                ]
+                                
+                                for pattern in json_patterns:
+                                    matches = re.search(pattern, script_content, re.DOTALL)
+                                    if matches:
+                                        try:
+                                            json_str = matches.group(1)
+                                            json_data = json.loads(json_str)
+                                            
+                                            # Extract price from different possible structures
+                                            current_price = None
+                                            
+                                            # Try different paths to find the price
+                                            price_paths = [
+                                                ['price', 'regularMarketPrice', 'raw'],
+                                                ['price', 'regularMarketPrice', 'fmt'],
+                                                ['regularMarketPrice', 'raw'],
+                                                ['regularMarketPrice', 'fmt'],
+                                                ['regularMarketPrice'],
+                                                ['price'],
+                                                ['currentPrice']
+                                            ]
+                                            
+                                            for path in price_paths:
+                                                try:
+                                                    temp_data = json_data
+                                                    for key in path:
+                                                        temp_data = temp_data[key]
+                                                    
+                                                    if isinstance(temp_data, (int, float)):
+                                                        current_price = float(temp_data)
+                                                        break
+                                                    elif isinstance(temp_data, str):
+                                                        # Try to extract number from formatted string
+                                                        price_match = re.search(r'[\d,]+\.?\d*', temp_data.replace(',', ''))
+                                                        if price_match:
+                                                            current_price = float(price_match.group().replace(',', ''))
+                                                            break
+                                                except (KeyError, TypeError, ValueError):
+                                                    continue
+                                            
+                                            if current_price and current_price > 0:
+                                                # Try to extract additional data
+                                                open_price = current_price
+                                                high_price = current_price
+                                                low_price = current_price
+                                                prev_close = current_price
+                                                volume = 0
+                                                change = 0
+                                                change_percent = 0
+                                                
+                                                # Extract additional fields if available
+                                                try:
+                                                    if 'price' in json_data:
+                                                        price_data = json_data['price']
+                                                        open_price = price_data.get('regularMarketOpen', {}).get('raw', current_price)
+                                                        high_price = price_data.get('regularMarketDayHigh', {}).get('raw', current_price)
+                                                        low_price = price_data.get('regularMarketDayLow', {}).get('raw', current_price)
+                                                        volume = price_data.get('regularMarketVolume', {}).get('raw', 0)
+                                                        prev_close = price_data.get('regularMarketPreviousClose', {}).get('raw', current_price)
+                                                        change = price_data.get('regularMarketChange', {}).get('raw', 0)
+                                                        change_percent = price_data.get('regularMarketChangePercent', {}).get('raw', 0)
+                                                except:
+                                                    pass
                                                 
                                                 result_data = {
                                                     'symbol': symbol,
@@ -221,26 +275,38 @@ class YahooFinanceService:
                                                     'open_price': round(float(open_price), 2),
                                                     'high_price': round(float(high_price), 2),
                                                     'low_price': round(float(low_price), 2),
-                                                    'volume': int(volume),
+                                                    'volume': int(volume) if volume else 0,
                                                     'previous_close': round(float(prev_close), 2),
                                                     'change_amount': round(float(change), 2),
-                                                    'change_percent': round(float(change_percent) * 100, 2),
+                                                    'change_percent': round(float(change_percent) * 100, 2) if change_percent else 0,
                                                     'timestamp': datetime.utcnow()
                                                 }
                                                 
-                                                logger.info(f"✅ Got REAL Yahoo Finance price for {symbol} via JSON scraping: ₹{current_price}")
+                                                logger.info(f"✅ Got REAL Yahoo Finance price for {symbol} via enhanced JSON scraping: ₹{current_price}")
                                                 return result_data
-                            except Exception as json_error:
-                                logger.warning(f"JSON parsing failed for {yf_symbol}: {json_error}")
+                                        except json.JSONDecodeError:
+                                            continue
+                                        except Exception as parse_error:
+                                            logger.warning(f"JSON parsing error for {yf_symbol}: {parse_error}")
+                                            continue
+                            except Exception as script_error:
+                                continue
                     
-                    # Method 1b: Try CSS selectors for price elements
+                    # Method 1b: Enhanced CSS selectors with multiple attempts
                     price_selectors = [
                         f'fin-streamer[data-symbol="{yf_symbol}"][data-field="regularMarketPrice"]',
                         f'fin-streamer[data-testid="qsp-price"]',
+                        f'fin-streamer[data-testid="qsp-price"] span',
                         f'span[data-reactid*="regularMarketPrice"]',
                         f'div[data-field="regularMarketPrice"] span',
                         f'span.Trsdu\\(0\\.3s\\)',
                         f'div.D\\(ib\\).Mend\\(20px\\) span',
+                        f'div[data-testid="quote-header"] fin-streamer',
+                        f'section[data-testid="quote-header"] fin-streamer[data-field="regularMarketPrice"]',
+                        'fin-streamer[data-field="regularMarketPrice"]',
+                        '[data-testid="qsp-price"]',
+                        '.Fw\\(b\\).Fz\\(36px\\)',
+                        '.Trsdu\\(0\\.3s\\).Fw\\(b\\).Fz\\(36px\\)'
                     ]
                     
                     for selector in price_selectors:
@@ -248,79 +314,63 @@ class YahooFinanceService:
                             price_elements = soup.select(selector)
                             for element in price_elements:
                                 price_text = element.get_text().strip()
-                                # Clean price text
-                                price_text = re.sub(r'[^\d.-]', '', price_text)
                                 if price_text:
-                                    current_price = float(price_text)
-                                    if current_price > 0:
-                                        # Try to get additional data
-                                        open_elem = soup.select_one(f'td[data-test="OPEN-value"]')
-                                        high_elem = soup.select_one(f'td[data-test="DAYS_RANGE-value"]')
-                                        
-                                        open_price = current_price
-                                        high_price = current_price
-                                        low_price = current_price
-                                        
-                                        if open_elem:
-                                            try:
-                                                open_price = float(re.sub(r'[^\d.-]', '', open_elem.get_text().strip()))
-                                            except:
-                                                pass
-                                        
-                                        if high_elem:
-                                            try:
-                                                range_text = high_elem.get_text().strip()
-                                                if ' - ' in range_text:
-                                                    low_str, high_str = range_text.split(' - ')
-                                                    low_price = float(re.sub(r'[^\d.-]', '', low_str))
-                                                    high_price = float(re.sub(r'[^\d.-]', '', high_str))
-                                            except:
-                                                pass
-                                        
-                                        result_data = {
-                                            'symbol': symbol,
-                                            'current_price': round(current_price, 2),
-                                            'open_price': round(open_price, 2),
-                                            'high_price': round(high_price, 2),
-                                            'low_price': round(low_price, 2),
-                                            'volume': 0,
-                                            'previous_close': round(current_price, 2),
-                                            'change_amount': 0,
-                                            'change_percent': 0,
-                                            'timestamp': datetime.utcnow()
-                                        }
-                                        
-                                        logger.info(f"✅ Got REAL Yahoo Finance price for {symbol} via CSS scraping: ₹{current_price}")
-                                        return result_data
+                                    # Clean price text more thoroughly
+                                    price_clean = re.sub(r'[^\d.-]', '', price_text.replace(',', ''))
+                                    if price_clean and '.' in price_clean:
+                                        try:
+                                            current_price = float(price_clean)
+                                            if current_price > 0:
+                                                result_data = {
+                                                    'symbol': symbol,
+                                                    'current_price': round(current_price, 2),
+                                                    'open_price': round(current_price, 2),
+                                                    'high_price': round(current_price, 2),
+                                                    'low_price': round(current_price, 2),
+                                                    'volume': 0,
+                                                    'previous_close': round(current_price, 2),
+                                                    'change_amount': 0,
+                                                    'change_percent': 0,
+                                                    'timestamp': datetime.utcnow()
+                                                }
+                                                
+                                                logger.info(f"✅ Got REAL Yahoo Finance price for {symbol} via enhanced CSS scraping: ₹{current_price}")
+                                                return result_data
+                                        except ValueError:
+                                            continue
                         except Exception as selector_error:
                             continue
                 
             except Exception as e:
-                logger.warning(f"Web scraping failed for {yf_symbol}: {e}")
+                logger.warning(f"Enhanced web scraping failed for {yf_symbol}: {e}")
             
-            # Method 2: Try yfinance API as fallback (with longer timeout)
-            try:
-                hist = ticker.history(period="2d", timeout=10)
-                if not hist.empty:
-                    current_price = float(hist['Close'].iloc[-1])
-                    
-                    price_data = {
-                        'symbol': symbol,
-                        'current_price': round(current_price, 2),
-                        'open_price': float(hist['Open'].iloc[-1]) if not hist.empty else current_price,
-                        'high_price': float(hist['High'].iloc[-1]) if not hist.empty else current_price,
-                        'low_price': float(hist['Low'].iloc[-1]) if not hist.empty else current_price,
-                        'volume': int(hist['Volume'].iloc[-1]) if not hist.empty else 0,
-                        'previous_close': float(hist['Close'].iloc[-2]) if len(hist) > 1 else current_price,
-                        'change_amount': round(current_price - (float(hist['Close'].iloc[-2]) if len(hist) > 1 else current_price), 2),
-                        'change_percent': round(((current_price - (float(hist['Close'].iloc[-2]) if len(hist) > 1 else current_price)) / (float(hist['Close'].iloc[-2]) if len(hist) > 1 else current_price)) * 100, 2) if len(hist) > 1 else 0,
-                        'timestamp': datetime.utcnow()
-                    }
-                    
-                    logger.info(f"✅ Got Yahoo Finance API price for {symbol} using {yf_symbol}: ₹{current_price}")
-                    return price_data
-            except Exception as e:
-                logger.warning(f"API method failed for {yf_symbol}: {e}")
+            # Method 2: Try yfinance API with retry logic
+            for attempt in range(2):
+                try:
+                    time.sleep(0.5 * attempt)  # Progressive delay
+                    hist = ticker.history(period="2d", timeout=15)
+                    if not hist.empty:
+                        current_price = float(hist['Close'].iloc[-1])
+                        
+                        price_data = {
+                            'symbol': symbol,
+                            'current_price': round(current_price, 2),
+                            'open_price': float(hist['Open'].iloc[-1]) if not hist.empty else current_price,
+                            'high_price': float(hist['High'].iloc[-1]) if not hist.empty else current_price,
+                            'low_price': float(hist['Low'].iloc[-1]) if not hist.empty else current_price,
+                            'volume': int(hist['Volume'].iloc[-1]) if not hist.empty else 0,
+                            'previous_close': float(hist['Close'].iloc[-2]) if len(hist) > 1 else current_price,
+                            'change_amount': round(current_price - (float(hist['Close'].iloc[-2]) if len(hist) > 1 else current_price), 2),
+                            'change_percent': round(((current_price - (float(hist['Close'].iloc[-2]) if len(hist) > 1 else current_price)) / (float(hist['Close'].iloc[-2]) if len(hist) > 1 else current_price)) * 100, 2) if len(hist) > 1 else 0,
+                            'timestamp': datetime.utcnow()
+                        }
+                        
+                        logger.info(f"✅ Got Yahoo Finance API price for {symbol} using {yf_symbol}: ₹{current_price}")
+                        return price_data
+                except Exception as e:
+                    logger.warning(f"API method attempt {attempt + 1} failed for {yf_symbol}: {e}")
+                    if attempt == 1:  # Last attempt
+                        continue
             
             return None
             
