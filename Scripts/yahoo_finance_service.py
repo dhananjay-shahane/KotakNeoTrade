@@ -84,110 +84,107 @@ class YahooFinanceService:
                 
                 ticker = yf.Ticker(yahoo_symbol)
                 
-                # Try multiple methods to get price data
-                price_data = None
-            
-            # Method 1: Try recent history (most reliable)
-            try:
-                hist = ticker.history(period="5d", timeout=15)
-                if not hist.empty and len(hist) > 0:
-                    current_price = float(hist['Close'].iloc[-1])
-                    if current_price > 0:  # Validate price
-                        open_price = float(hist['Open'].iloc[-1]) if not hist['Open'].empty else None
-                        high_price = float(hist['High'].iloc[-1]) if not hist['High'].empty else None
-                        low_price = float(hist['Low'].iloc[-1]) if not hist['Low'].empty else None
-                        volume = int(hist['Volume'].iloc[-1]) if not hist['Volume'].empty else None
-                        
-                        price_data = {
-                            'symbol': symbol,
-                            'current_price': current_price,
-                            'open_price': open_price,
-                            'high_price': high_price,
-                            'low_price': low_price,
-                            'volume': volume,
-                            'previous_close': current_price,  # Use current as previous for now
-                            'change_amount': 0,
-                            'change_percent': 0,
-                            'timestamp': datetime.utcnow()
-                        }
-                        logger.info(f"✅ Got price from history for {symbol}: ₹{current_price}")
-                        return price_data
-            except Exception as e:
-                logger.warning(f"History method failed for {symbol}: {e}")
-            
-            # Method 2: Try info dict
-            try:
-                info = ticker.info
-                if info:
-                    current_price = (info.get('currentPrice') or 
-                                   info.get('regularMarketPrice') or 
-                                   info.get('previousClose'))
-                    
-                    if current_price:
-                        open_price = info.get('regularMarketOpen') or info.get('open')
-                        high_price = info.get('regularMarketDayHigh') or info.get('dayHigh')
-                        low_price = info.get('regularMarketDayLow') or info.get('dayLow')
-                        volume = info.get('regularMarketVolume') or info.get('volume')
-                        previous_close = info.get('regularMarketPreviousClose') or info.get('previousClose')
-                        
-                        # Calculate change
-                        change_amount = 0
-                        change_percent = 0
-                        if previous_close and current_price:
-                            change_amount = float(current_price) - float(previous_close)
-                            change_percent = (change_amount / float(previous_close)) * 100
-                        
-                        price_data = {
-                            'symbol': symbol,
-                            'current_price': float(current_price),
-                            'open_price': float(open_price) if open_price else None,
-                            'high_price': float(high_price) if high_price else None,
-                            'low_price': float(low_price) if low_price else None,
-                            'volume': int(volume) if volume else None,
-                            'change_amount': change_amount,
-                            'change_percent': change_percent,
-                            'previous_close': float(previous_close) if previous_close else None,
-                            'timestamp': datetime.utcnow()
-                        }
-                        logger.info(f"✅ Got price from info for {symbol}: ₹{current_price}")
-                        return price_data
-            except Exception as e:
-                logger.warning(f"Info method failed for {symbol}: {e}")
-            
-            # Method 3: Alternative approach - try different period
-            try:
-                hist = ticker.history(period="1d")
-                if not hist.empty:
-                    price = hist['Close'].iloc[-1]
-                    if price and price > 0:
-                        logger.info(f"✅ 1d History price for {symbol}: ₹{price}")
-                        return {
-                            'symbol': symbol,
-                            'current_price': float(price),
-                            'open_price': None,
-                            'high_price': None,
-                            'low_price': None,
-                            'volume': None,
-                            'change_amount': 0,
-                            'change_percent': 0,
-                            'previous_close': float(price),
-                            'timestamp': datetime.utcnow()
-                        }
-            except Exception as e:
-                logger.warning(f"1d History method failed for {symbol}: {e}")
-
-            logger.warning(f"⚠️ No price data found for {symbol} on attempt {attempt + 1}")
+                # Method 1: Try recent history (most reliable)
+                try:
+                    hist = ticker.history(period="5d", timeout=15)
+                    if not hist.empty and len(hist) > 0:
+                        current_price = float(hist['Close'].iloc[-1])
+                        if current_price > 0:  # Validate price
+                            open_price = float(hist['Open'].iloc[-1]) if not hist['Open'].empty else None
+                            high_price = float(hist['High'].iloc[-1]) if not hist['High'].empty else None
+                            low_price = float(hist['Low'].iloc[-1]) if not hist['Low'].empty else None
+                            volume = int(hist['Volume'].iloc[-1]) if not hist['Volume'].empty else None
+                            
+                            price_data = {
+                                'symbol': symbol,
+                                'current_price': current_price,
+                                'open_price': open_price,
+                                'high_price': high_price,
+                                'low_price': low_price,
+                                'volume': volume,
+                                'previous_close': current_price,  # Use current as previous for now
+                                'change_amount': 0,
+                                'change_percent': 0,
+                                'timestamp': datetime.utcnow()
+                            }
+                            logger.info(f"✅ Got price from history for {symbol}: ₹{current_price}")
+                            return price_data
+                except Exception as e:
+                    logger.warning(f"History method failed for {symbol}: {e}")
                 
-            if attempt < max_retries - 1:
-                logger.info(f"Retrying in {retry_delay} seconds...")
-                time.sleep(retry_delay)
-                retry_delay *= 2  # Exponential backoff
-                continue
-            else:
-                # Generate fallback price if all methods fail
-                logger.warning(f"⚠️ Generating fallback price for {symbol}")
-                return self.generate_fallback_price(symbol)
+                # Method 2: Try info dict
+                try:
+                    info = ticker.info
+                    if info:
+                        current_price = (info.get('currentPrice') or 
+                                       info.get('regularMarketPrice') or 
+                                       info.get('previousClose'))
+                        
+                        if current_price:
+                            open_price = info.get('regularMarketOpen') or info.get('open')
+                            high_price = info.get('regularMarketDayHigh') or info.get('dayHigh')
+                            low_price = info.get('regularMarketDayLow') or info.get('dayLow')
+                            volume = info.get('regularMarketVolume') or info.get('volume')
+                            previous_close = info.get('regularMarketPreviousClose') or info.get('previousClose')
+                            
+                            # Calculate change
+                            change_amount = 0
+                            change_percent = 0
+                            if previous_close and current_price:
+                                change_amount = float(current_price) - float(previous_close)
+                                change_percent = (change_amount / float(previous_close)) * 100
+                            
+                            price_data = {
+                                'symbol': symbol,
+                                'current_price': float(current_price),
+                                'open_price': float(open_price) if open_price else None,
+                                'high_price': float(high_price) if high_price else None,
+                                'low_price': float(low_price) if low_price else None,
+                                'volume': int(volume) if volume else None,
+                                'change_amount': change_amount,
+                                'change_percent': change_percent,
+                                'previous_close': float(previous_close) if previous_close else None,
+                                'timestamp': datetime.utcnow()
+                            }
+                            logger.info(f"✅ Got price from info for {symbol}: ₹{current_price}")
+                            return price_data
+                except Exception as e:
+                    logger.warning(f"Info method failed for {symbol}: {e}")
+                
+                # Method 3: Alternative approach - try different period
+                try:
+                    hist = ticker.history(period="1d")
+                    if not hist.empty:
+                        price = hist['Close'].iloc[-1]
+                        if price and price > 0:
+                            logger.info(f"✅ 1d History price for {symbol}: ₹{price}")
+                            return {
+                                'symbol': symbol,
+                                'current_price': float(price),
+                                'open_price': None,
+                                'high_price': None,
+                                'low_price': None,
+                                'volume': None,
+                                'change_amount': 0,
+                                'change_percent': 0,
+                                'previous_close': float(price),
+                                'timestamp': datetime.utcnow()
+                            }
+                except Exception as e:
+                    logger.warning(f"1d History method failed for {symbol}: {e}")
+
+                logger.warning(f"⚠️ No price data found for {symbol} on attempt {attempt + 1}")
                     
+                if attempt < max_retries - 1:
+                    logger.info(f"Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                    continue
+                else:
+                    # Generate fallback price if all methods fail
+                    logger.warning(f"⚠️ Generating fallback price for {symbol}")
+                    return self.generate_fallback_price(symbol)
+                        
             except Exception as e:
                 logger.error(f"❌ Error fetching price for {symbol} (attempt {attempt + 1}): {str(e)}")
                 
@@ -198,7 +195,7 @@ class YahooFinanceService:
                     continue
                 else:
                     logger.error(f"❌ Failed to get price for {symbol} after {max_retries} attempts")
-                    return None
+                    return self.generate_fallback_price(symbol)
         
         return None
     
