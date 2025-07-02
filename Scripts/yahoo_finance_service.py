@@ -70,10 +70,98 @@ class YahooFinanceService:
         return price_data
 
     def get_stock_price(self, symbol):
-        """Fetch current price for a single symbol from Yahoo Finance with enhanced rate limiting"""
-        # Due to Yahoo Finance rate limiting, use fallback data immediately
-        logger.info(f"Yahoo Finance rate limited - using fallback data for {symbol}")
-        return self.generate_fallback_price(symbol)
+        """Fetch current price for a single symbol from Yahoo Finance using .BO suffix"""
+        try:
+            # Clean symbol and add .BO suffix for Bombay Stock Exchange
+            clean_symbol = symbol.strip().upper()
+            yf_symbol = f"{clean_symbol}.BO"
+            
+            logger.info(f"Fetching real Yahoo Finance data for {symbol} -> {yf_symbol}")
+            
+            ticker = yf.Ticker(yf_symbol)
+            
+            # Method 1: Try recent history (most reliable for .BO symbols)
+            try:
+                hist = ticker.history(period="5d", timeout=10)
+                if not hist.empty:
+                    current_price = float(hist['Close'].iloc[-1])
+                    
+                    price_data = {
+                        'symbol': symbol,
+                        'current_price': round(current_price, 2),
+                        'open_price': float(hist['Open'].iloc[-1]) if not hist.empty else current_price,
+                        'high_price': float(hist['High'].iloc[-1]) if not hist.empty else current_price,
+                        'low_price': float(hist['Low'].iloc[-1]) if not hist.empty else current_price,
+                        'volume': int(hist['Volume'].iloc[-1]) if not hist.empty else 0,
+                        'previous_close': float(hist['Close'].iloc[-2]) if len(hist) > 1 else current_price,
+                        'change_amount': round(current_price - (float(hist['Close'].iloc[-2]) if len(hist) > 1 else current_price), 2),
+                        'change_percent': round(((current_price - (float(hist['Close'].iloc[-2]) if len(hist) > 1 else current_price)) / (float(hist['Close'].iloc[-2]) if len(hist) > 1 else current_price)) * 100, 2) if len(hist) > 1 else 0,
+                        'timestamp': datetime.utcnow()
+                    }
+                    
+                    logger.info(f"✅ Got real Yahoo Finance price for {symbol}: ₹{current_price}")
+                    return price_data
+            except Exception as e:
+                logger.warning(f"History method failed for {symbol}: {e}")
+            
+            # Method 2: Try info dict as fallback
+            try:
+                info = ticker.info
+                if info:
+                    current_price = (info.get('currentPrice') or 
+                                   info.get('regularMarketPrice') or 
+                                   info.get('previousClose'))
+                    
+                    if current_price and current_price > 0:
+                        price_data = {
+                            'symbol': symbol,
+                            'current_price': round(float(current_price), 2),
+                            'open_price': float(info.get('regularMarketOpen', current_price)),
+                            'high_price': float(info.get('dayHigh', current_price)),
+                            'low_price': float(info.get('dayLow', current_price)),
+                            'volume': int(info.get('volume', 0)),
+                            'previous_close': float(info.get('previousClose', current_price)),
+                            'change_amount': round(float(info.get('regularMarketChange', 0)), 2),
+                            'change_percent': round(float(info.get('regularMarketChangePercent', 0)), 2),
+                            'timestamp': datetime.utcnow()
+                        }
+                        
+                        logger.info(f"✅ Got Yahoo Finance price from info for {symbol}: ₹{current_price}")
+                        return price_data
+            except Exception as e:
+                logger.warning(f"Info method failed for {symbol}: {e}")
+            
+            # Method 3: Try 1-day history as last resort
+            try:
+                hist = ticker.history(period="1d", timeout=5)
+                if not hist.empty:
+                    current_price = float(hist['Close'].iloc[-1])
+                    
+                    price_data = {
+                        'symbol': symbol,
+                        'current_price': round(current_price, 2),
+                        'open_price': float(hist['Open'].iloc[-1]),
+                        'high_price': float(hist['High'].iloc[-1]),
+                        'low_price': float(hist['Low'].iloc[-1]),
+                        'volume': int(hist['Volume'].iloc[-1]),
+                        'previous_close': current_price,
+                        'change_amount': 0,
+                        'change_percent': 0,
+                        'timestamp': datetime.utcnow()
+                    }
+                    
+                    logger.info(f"✅ Got Yahoo Finance price from 1d history for {symbol}: ₹{current_price}")
+                    return price_data
+            except Exception as e:
+                logger.warning(f"1d history method failed for {symbol}: {e}")
+            
+            # If all methods fail, use fallback
+            logger.warning(f"All Yahoo Finance methods failed for {symbol}, using fallback")
+            return self.generate_fallback_price(symbol)
+            
+        except Exception as e:
+            logger.error(f"Error fetching Yahoo Finance data for {symbol}: {e}")
+            return self.generate_fallback_price(symbol)
 
     def get_multiple_prices(self, symbols):
         """Get prices for multiple symbols"""

@@ -21,13 +21,13 @@ db_config = {
 }
 
 def get_live_price(symbol):
-    """Get live CMP using Yahoo Finance with improved error handling"""
+    """Get live CMP using Yahoo Finance with improved error handling using .BO suffix"""
     try:
-        # Clean symbol and add NSE suffix
+        # Clean symbol and add .BO suffix for Bombay Stock Exchange
         clean_symbol = symbol.strip().upper()
-        yf_symbol = f"{clean_symbol}.NS"
+        yf_symbol = f"{clean_symbol}.BO"
         
-        logger.info(f"Fetching price for {symbol} -> {yf_symbol}")
+        logger.info(f"Fetching real price for {symbol} -> {yf_symbol}")
         
         ticker = yf.Ticker(yf_symbol)
         
@@ -64,6 +64,19 @@ def get_live_price(symbol):
                 return round(price, 2)
         except Exception as e:
             logger.warning(f"1d history method failed for {symbol}: {e}")
+        
+        # Method 4: Try .NS suffix if .BO fails
+        try:
+            yf_symbol_ns = f"{clean_symbol}.NS"
+            logger.info(f"Trying .NS fallback: {symbol} -> {yf_symbol_ns}")
+            ticker_ns = yf.Ticker(yf_symbol_ns)
+            hist = ticker_ns.history(period="1d")
+            if not hist.empty:
+                price = float(hist['Close'].iloc[-1])
+                logger.info(f"✅ Got price from .NS fallback: {symbol} = ₹{price}")
+                return round(price, 2)
+        except Exception as e:
+            logger.warning(f".NS fallback failed for {symbol}: {e}")
         
         logger.error(f"❌ No price data found for {symbol}")
         return None

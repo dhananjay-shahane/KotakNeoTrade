@@ -45,29 +45,55 @@ def update_prices():
         }
         
         def get_yahoo_price(symbol):
-            """Get live price from Yahoo Finance with enhanced error handling"""
+            """Get live price from Yahoo Finance with enhanced error handling using .BO suffix"""
             try:
-                # Try yfinance with minimal data request
-                yf_symbol = symbol + ".NS"
+                # Use .BO suffix for Bombay Stock Exchange (Indian stocks)
+                yf_symbol = symbol + ".BO"
                 ticker = yf.Ticker(yf_symbol)
                 
-                # Use info method which is faster and less likely to be rate limited
+                logger.info(f"Fetching real data for {symbol} -> {yf_symbol}")
+                
+                # Method 1: Try recent history (most reliable for Indian stocks)
+                try:
+                    hist = ticker.history(period="5d", timeout=10)
+                    if not hist.empty:
+                        price = hist['Close'].iloc[-1]
+                        logger.info(f"✅ Got real price from history: {symbol} = ₹{price}")
+                        return float(round(price, 2))
+                except Exception as e:
+                    logger.warning(f"History method failed for {symbol}: {e}")
+                
+                # Method 2: Try info method
                 try:
                     info = ticker.info
-                    current_price = info.get('currentPrice') or info.get('regularMarketPrice')
+                    current_price = info.get('currentPrice') or info.get('regularMarketPrice') or info.get('previousClose')
                     if current_price and current_price > 0:
+                        logger.info(f"✅ Got real price from info: {symbol} = ₹{current_price}")
                         return round(float(current_price), 2)
-                except:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Info method failed for {symbol}: {e}")
                 
-                # Fallback to basic history with short timeout
+                # Method 3: Try 1-day history as fallback
                 try:
                     hist = ticker.history(period="1d", timeout=5)
                     if not hist.empty:
                         price = hist['Close'].iloc[-1]
+                        logger.info(f"✅ Got real price from 1d history: {symbol} = ₹{price}")
                         return float(round(price, 2))
-                except:
-                    pass
+                except Exception as e:
+                    logger.warning(f"1d history failed for {symbol}: {e}")
+                
+                # If .BO fails, try .NS as fallback
+                try:
+                    yf_symbol_ns = symbol + ".NS"
+                    ticker_ns = yf.Ticker(yf_symbol_ns)
+                    hist = ticker_ns.history(period="1d", timeout=5)
+                    if not hist.empty:
+                        price = hist['Close'].iloc[-1]
+                        logger.info(f"✅ Got real price from .NS fallback: {symbol} = ₹{price}")
+                        return float(round(price, 2))
+                except Exception as e:
+                    logger.warning(f".NS fallback failed for {symbol}: {e}")
                 
                 # Generate realistic fallback price
                 price_ranges = {
