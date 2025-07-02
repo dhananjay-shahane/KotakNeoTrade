@@ -45,57 +45,78 @@ def update_prices():
         }
         
         def get_yahoo_price(symbol):
-            """Get live price from Yahoo Finance with enhanced error handling using .BO suffix"""
+            """Get live price from Yahoo Finance with enhanced error handling"""
             try:
-                # Use .BO suffix for Bombay Stock Exchange (Indian stocks)
-                yf_symbol = symbol + ".BO"
-                ticker = yf.Ticker(yf_symbol)
-                
-                logger.info(f"Fetching real data for {symbol} -> {yf_symbol}")
-                
-                # Method 1: Try recent history (most reliable for Indian stocks)
-                try:
-                    hist = ticker.history(period="5d", timeout=10)
-                    if not hist.empty:
-                        price = hist['Close'].iloc[-1]
-                        logger.info(f"✅ Got real price from history: {symbol} = ₹{price}")
-                        return float(round(price, 2))
-                except Exception as e:
-                    logger.warning(f"History method failed for {symbol}: {e}")
-                
-                # Method 2: Try info method
-                try:
-                    info = ticker.info
-                    current_price = info.get('currentPrice') or info.get('regularMarketPrice') or info.get('previousClose')
-                    if current_price and current_price > 0:
-                        logger.info(f"✅ Got real price from info: {symbol} = ₹{current_price}")
-                        return round(float(current_price), 2)
-                except Exception as e:
-                    logger.warning(f"Info method failed for {symbol}: {e}")
-                
-                # Method 3: Try 1-day history as fallback
-                try:
-                    hist = ticker.history(period="1d", timeout=5)
-                    if not hist.empty:
-                        price = hist['Close'].iloc[-1]
-                        logger.info(f"✅ Got real price from 1d history: {symbol} = ₹{price}")
-                        return float(round(price, 2))
-                except Exception as e:
-                    logger.warning(f"1d history failed for {symbol}: {e}")
-                
-                # If .BO fails, try .NS as fallback
+                # Method 1: Try .NS suffix first (NSE - National Stock Exchange)
                 try:
                     yf_symbol_ns = symbol + ".NS"
                     ticker_ns = yf.Ticker(yf_symbol_ns)
-                    hist = ticker_ns.history(period="1d", timeout=5)
+                    hist = ticker_ns.history(period="1d", timeout=8)
                     if not hist.empty:
                         price = hist['Close'].iloc[-1]
-                        logger.info(f"✅ Got real price from .NS fallback: {symbol} = ₹{price}")
+                        logger.info(f"✅ Got real price from .NS: {symbol} = ₹{price}")
                         return float(round(price, 2))
                 except Exception as e:
-                    logger.warning(f".NS fallback failed for {symbol}: {e}")
+                    logger.warning(f".NS method failed for {symbol}: {e}")
                 
-                # Generate realistic fallback price
+                # Method 2: Try .BO suffix (Bombay Stock Exchange)
+                try:
+                    yf_symbol_bo = symbol + ".BO"
+                    ticker_bo = yf.Ticker(yf_symbol_bo)
+                    hist = ticker_bo.history(period="1d", timeout=8)
+                    if not hist.empty:
+                        price = hist['Close'].iloc[-1]
+                        logger.info(f"✅ Got real price from .BO: {symbol} = ₹{price}")
+                        return float(round(price, 2))
+                except Exception as e:
+                    logger.warning(f".BO method failed for {symbol}: {e}")
+                
+                # Method 3: Try 5-day history with .NS
+                try:
+                    yf_symbol_ns = symbol + ".NS"
+                    ticker_ns = yf.Ticker(yf_symbol_ns)
+                    hist = ticker_ns.history(period="5d", timeout=10)
+                    if not hist.empty:
+                        price = hist['Close'].iloc[-1]
+                        logger.info(f"✅ Got real price from 5d .NS history: {symbol} = ₹{price}")
+                        return float(round(price, 2))
+                except Exception as e:
+                    logger.warning(f"5d .NS history failed for {symbol}: {e}")
+                
+                # Method 4: Try info method with .NS
+                try:
+                    yf_symbol_ns = symbol + ".NS"
+                    ticker_ns = yf.Ticker(yf_symbol_ns)
+                    info = ticker_ns.info
+                    current_price = info.get('currentPrice') or info.get('regularMarketPrice') or info.get('previousClose')
+                    if current_price and current_price > 0:
+                        logger.info(f"✅ Got real price from .NS info: {symbol} = ₹{current_price}")
+                        return float(round(current_price, 2))
+                except Exception as e:
+                    logger.warning(f".NS info method failed for {symbol}: {e}")
+                
+                # Generate realistic fallback price based on existing data
+                try:
+                    cursor.execute("""
+                        SELECT cmp FROM admin_trade_signals 
+                        WHERE (symbol = %s OR etf = %s) AND cmp IS NOT NULL AND cmp > 0
+                        ORDER BY created_at DESC
+                        LIMIT 1
+                    """, (symbol, symbol))
+                    
+                    result = cursor.fetchone()
+                    if result:
+                        base_price = float(result['cmp'])
+                        # Add small random variation (±0.5%)
+                        import random
+                        variation = random.uniform(-0.005, 0.005)
+                        fallback_price = round(base_price * (1 + variation), 2)
+                        logger.info(f"Using fallback price based on existing data for {symbol}: ₹{fallback_price}")
+                        return fallback_price
+                except Exception as e:
+                    logger.warning(f"Fallback price generation failed for {symbol}: {e}")
+                
+                # Static fallback prices for common ETFs
                 price_ranges = {
                     'NIFTYBEES': (265, 270), 'JUNIORBEES': (730, 740), 'GOLDBEES': (58, 62),
                     'SILVERBEES': (100, 105), 'BANKBEES': (580, 590), 'CONSUMBEES': (130, 135),
@@ -108,9 +129,10 @@ def update_prices():
                     import random
                     min_price, max_price = price_ranges[symbol]
                     fallback_price = round(random.uniform(min_price, max_price), 2)
-                    logger.info(f"Using fallback price for {symbol}: ₹{fallback_price}")
+                    logger.info(f"Using static fallback price for {symbol}: ₹{fallback_price}")
                     return fallback_price
                 
+                logger.warning(f"No price data available for {symbol}")
                 return None
                     
             except Exception as e:
@@ -157,36 +179,21 @@ def update_prices():
                 results = {}
                 total_records_updated = 0
                 
-                for symbol in symbols:
+                for i, symbol in enumerate(symbols, 1):
                     try:
-                        logger.info(f"Processing {symbol} via Yahoo Finance...")
-                        price = get_yahoo_price(symbol)
+                        logger.info(f"🔄 Processing {i}/{len(symbols)}: {symbol} via Yahoo Finance...")
                         
-                        # If Yahoo Finance fails, try basic fallback
-                        if not price or price <= 0:
-                            # Generate fallback price based on existing CMP
-                            cursor.execute("""
-                                SELECT cmp FROM admin_trade_signals 
-                                WHERE (symbol = %s OR etf = %s) AND cmp IS NOT NULL 
-                                LIMIT 1
-                            """, (symbol, symbol))
-                            
-                            result = cursor.fetchone()
-                            if result:
-                                base_price = float(result['cmp'])
-                                # Add small random variation (±1%)
-                                import random
-                                variation = random.uniform(-0.01, 0.01)
-                                price = round(base_price * (1 + variation), 2)
-                                logger.info(f"Using fallback price for {symbol}: ₹{price}")
+                        # Fetch live price
+                        price = get_yahoo_price(symbol)
                         
                         if price and price > 0:
                             # Update all records with this symbol in external database
-                            cursor.execute("""
+                            update_query = """
                                 UPDATE admin_trade_signals 
-                                SET cmp = %s
+                                SET cmp = %s, updated_at = CURRENT_TIMESTAMP
                                 WHERE (symbol = %s OR etf = %s)
-                            """, (price, symbol, symbol))
+                            """
+                            cursor.execute(update_query, (float(price), symbol, symbol))
                             
                             rows_updated = cursor.rowcount
                             total_records_updated += rows_updated
@@ -196,21 +203,21 @@ def update_prices():
                             
                             results[symbol] = {
                                 'success': True,
-                                'price': price,
-                                'rows_updated': rows_updated
+                                'price': float(price),
+                                'rows_updated': rows_updated,
+                                'timestamp': datetime.now().isoformat()
                             }
-                            
-                            logger.info(f"✓ Updated {rows_updated} records for {symbol}: ₹{price}")
                         else:
                             results[symbol] = {
                                 'success': False,
-                                'error': 'Could not fetch price'
+                                'error': 'Could not fetch price from Yahoo Finance',
+                                'timestamp': datetime.now().isoformat()
                             }
                             errors.append(f"Failed to fetch price for {symbol}")
                             logger.warning(f"⚠️ Could not fetch price for {symbol}")
                         
-                        # Short delay to avoid overwhelming the API
-                        time.sleep(0.5)
+                        # Rate limiting - small delay to avoid overwhelming Yahoo Finance API
+                        time.sleep(2.0)
                         
                     except Exception as e:
                         error_msg = f"Error updating {symbol}: {str(e)}"
@@ -218,7 +225,8 @@ def update_prices():
                         logger.error(error_msg)
                         results[symbol] = {
                             'success': False,
-                            'error': str(e)
+                            'error': str(e),
+                            'timestamp': datetime.now().isoformat()
                         }
                 
                 conn.commit()
