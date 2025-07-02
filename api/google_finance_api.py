@@ -179,8 +179,8 @@ def update_prices_optimized():
             
             results = {}
             total_records_updated = 0
-                
-                for symbol in symbols:
+            
+            for symbol in symbols:
                     try:
                         logger.info(f"Processing {symbol} via Google Finance...")
                         price = get_google_price(symbol)
