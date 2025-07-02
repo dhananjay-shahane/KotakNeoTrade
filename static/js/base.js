@@ -860,13 +860,14 @@ function updateCMPWithDataSource(dataSource) {
         console.log(`🔄 Updating CMP with data source: ${dataSource}`);
 
         // Show loading notification
-        showToaster('Updating CMP', `Fetching latest prices from ${dataSource}...`, 'info');
+        const sourceName = dataSource === 'google' ? 'Google Finance' : 'Yahoo Finance (.NS)';
+        showToaster('Updating CMP', `Fetching latest prices from ${sourceName}...`, 'info');
 
         const apiEndpoint = dataSource === 'google' ? '/api/google-finance/update-etf-cmp' : '/api/yahoo/update-prices';
 
         // Set longer timeout for price updates
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout for Yahoo
 
         fetch(apiEndpoint, {
             method: 'POST',
@@ -885,7 +886,7 @@ function updateCMPWithDataSource(dataSource) {
         .then(data => {
             if (data.success) {
                 showToaster('CMP Updated Successfully', 
-                    `Updated ${data.updated_count || data.signals_updated || 0} records from ${dataSource}`, 
+                    `Updated ${data.updated_count || data.successful_updates || 0} records from ${sourceName}`, 
                     'success');
 
                 // Refresh the current page data
