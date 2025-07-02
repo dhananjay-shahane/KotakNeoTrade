@@ -128,11 +128,70 @@ class YahooFinanceService:
             return self.generate_fallback_price(symbol)
 
     def _try_fetch_price_data(self, ticker, symbol, yf_symbol):
-        """Try to fetch price data using different methods"""
+        """Try to fetch price data using different methods with better error handling"""
         try:
-            # Method 1: Try recent history (most reliable)
+            import requests
+            from bs4 import BeautifulSoup
+            
+            # Method 1: Try direct Yahoo Finance web scraping (more reliable than API)
             try:
-                hist = ticker.history(period="5d", timeout=10)
+                clean_symbol = yf_symbol.replace('.NS', ':NSE').replace('.BO', ':BOM')
+                url = f"https://finance.yahoo.com/quote/{yf_symbol}"
+                
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.5',
+                    'Accept-Encoding': 'gzip, deflate',
+                    'DNT': '1',
+                    'Connection': 'keep-alive',
+                    'Upgrade-Insecure-Requests': '1'
+                }
+                
+                response = requests.get(url, headers=headers, timeout=10)
+                if response.status_code == 200:
+                    soup = BeautifulSoup(response.text, 'html.parser')
+                    
+                    # Try multiple selectors for price
+                    price_selectors = [
+                        'fin-streamer[data-symbol="' + yf_symbol + '"]',
+                        'span[data-reactid*="regularMarketPrice"]',
+                        'span[class*="Trsdu(0.3s)"]',
+                        'div[data-field="regularMarketPrice"]'
+                    ]
+                    
+                    for selector in price_selectors:
+                        price_elements = soup.select(selector)
+                        for element in price_elements:
+                            price_text = element.get_text().strip()
+                            # Clean price text
+                            price_text = price_text.replace(',', '').replace('₹', '').replace('$', '')
+                            try:
+                                current_price = float(price_text)
+                                if current_price > 0:
+                                    price_data = {
+                                        'symbol': symbol,
+                                        'current_price': round(current_price, 2),
+                                        'open_price': current_price,
+                                        'high_price': current_price,
+                                        'low_price': current_price,
+                                        'volume': 0,
+                                        'previous_close': current_price,
+                                        'change_amount': 0,
+                                        'change_percent': 0,
+                                        'timestamp': datetime.utcnow()
+                                    }
+                                    logger.info(f"✅ Got REAL Yahoo Finance price for {symbol} via web scraping: ₹{current_price}")
+                                    return price_data
+                            except (ValueError, TypeError):
+                                continue
+                
+            except Exception as e:
+                logger.warning(f"Web scraping failed for {yf_symbol}: {e}")
+            
+            # Method 2: Try yfinance API (fallback)
+            try:
+                hist = ticker.history(period="1d", timeout=5)
                 if not hist.empty:
                     current_price = float(hist['Close'].iloc[-1])
                     
@@ -149,10 +208,10 @@ class YahooFinanceService:
                         'timestamp': datetime.utcnow()
                     }
                     
-                    logger.info(f"✅ Got real Yahoo Finance price for {symbol} using {yf_symbol}: ₹{current_price}")
+                    logger.info(f"✅ Got Yahoo Finance API price for {symbol} using {yf_symbol}: ₹{current_price}")
                     return price_data
             except Exception as e:
-                logger.warning(f"History method failed for {yf_symbol}: {e}")
+                logger.warning(f"API method failed for {yf_symbol}: {e}")
             
             # Method 2: Try info dict as fallback
             try:
