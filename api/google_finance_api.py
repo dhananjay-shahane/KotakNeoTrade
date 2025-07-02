@@ -224,7 +224,7 @@ def update_prices_optimized():
                     }
             
             conn.commit()
-                duration = (datetime.utcnow() - start_time).total_seconds()
+            duration = (datetime.utcnow() - start_time).total_seconds()
                 
         logger.info(f"✅ Google Finance CMP update completed!")
         logger.info(f"   • Successful updates: {updated_count}")
