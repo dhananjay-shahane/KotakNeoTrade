@@ -136,8 +136,9 @@ def update_prices():
         try:
             conn = psycopg2.connect(**external_db_config)
             cursor = conn.cursor(cursor_factory=RealDictCursor)
-                # Get all unique symbols from admin_trade_signals
-                if symbols_to_update:
+            
+            # Get all unique symbols from admin_trade_signals
+            if symbols_to_update:
                     # Update only specified symbols
                     placeholders = ','.join(['%s'] * len(symbols_to_update))
                     cursor.execute(f"""
