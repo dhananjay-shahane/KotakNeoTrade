@@ -1115,7 +1115,7 @@ function updateCMPValue(symbol, cmp) {
     });
 }
 
-// Function to update all CMP values using Google Finance
+// Function to update all CMP values using selected data source
 function updateAllCMPValues() {
     if (!window.etfSignalsManager || !window.etfSignalsManager.signals) {
         console.log('No signals data available for CMP update');
@@ -1132,10 +1132,15 @@ function updateAllCMPValues() {
         return;
     }
     
-    console.log('Updating CMP for symbols:', symbols);
+    // Get selected data source from localStorage
+    var dataSource = localStorage.getItem('data-source') || 'google';
+    var apiEndpoint = dataSource === 'google' ? '/api/google-finance/update-etf-cmp' : '/api/yahoo/update-prices';
+    var sourceName = dataSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
     
-    // Call Google Finance API to update all symbols
-    fetch('/api/google-finance/update-etf-cmp', {
+    console.log('Updating CMP for symbols using ' + sourceName + ':', symbols);
+    
+    // Call selected API to update all symbols
+    fetch(apiEndpoint, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -1144,7 +1149,7 @@ function updateAllCMPValues() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            console.log('CMP update response:', data);
+            console.log('CMP update response from ' + sourceName + ':', data);
             
             // Refresh the signals table to show updated prices
             if (window.etfSignalsManager) {
@@ -1152,15 +1157,16 @@ function updateAllCMPValues() {
             }
             
             // Show success message
-            showUpdateMessage(`Updated CMP for ${data.updated_count} records`, 'success');
+            var updatedCount = data.updated_count || data.signals_updated || 0;
+            showUpdateMessage(`Updated CMP for ${updatedCount} records from ${sourceName}`, 'success');
         } else {
             console.error('CMP update failed:', data.error);
-            showUpdateMessage('Failed to update CMP: ' + data.error, 'error');
+            showUpdateMessage('Failed to update CMP from ' + sourceName + ': ' + data.error, 'error');
         }
     })
     .catch(error => {
         console.error('Error updating CMP:', error);
-        showUpdateMessage('Error updating CMP: ' + error.message, 'error');
+        showUpdateMessage('Error updating CMP from ' + sourceName + ': ' + error.message, 'error');
     });
 }
 

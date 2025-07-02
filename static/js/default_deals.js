@@ -1300,6 +1300,43 @@ DealsManager.prototype.getGradientBackgroundColor = function(value) {
     return '';
 };
 
+// Function to update CMP values for default deals page
+function updateDefaultDealsCMP() {
+    var dataSource = localStorage.getItem('data-source') || 'google';
+    var apiEndpoint = dataSource === 'google' ? '/api/google-finance/update-etf-cmp' : '/api/yahoo/update-prices';
+    var sourceName = dataSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
+    
+    console.log('Updating default deals CMP using ' + sourceName);
+    
+    fetch(apiEndpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Default deals CMP update response from ' + sourceName + ':', data);
+            
+            // Refresh the deals table
+            if (window.dealsManager) {
+                window.dealsManager.loadDeals();
+            }
+            
+            var updatedCount = data.updated_count || data.signals_updated || 0;
+            showSuccessMessage('Updated CMP for ' + updatedCount + ' records from ' + sourceName);
+        } else {
+            console.error('Default deals CMP update failed:', data.error);
+            showErrorMessage('Failed to update CMP from ' + sourceName + ': ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error updating default deals CMP:', error);
+        showErrorMessage('Error updating CMP from ' + sourceName + ': ' + error.message);
+    });
+}
+
 // Initialize Deals Manager on page load
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Initializing Deals Manager...');
