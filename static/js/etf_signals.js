@@ -1103,20 +1103,18 @@ function switchDataSource(newSource) {
         currentDataSourceSpan.textContent = sourceName;
     }
     
-    // Show notification
+    // Show immediate notification
     if (typeof showToaster === 'function') {
-        showToaster('Data Source Changed', 'Switched to ' + sourceName, 'info');
+        showToaster('Data Source Changed', 'Switched to ' + sourceName + ' - Updating CMP...', 'info');
     }
     
-    // Auto-update CMP if source changed
+    // Immediately update CMP when source changes
     if (newSource !== oldSource) {
-        setTimeout(function() {
-            updatePricesFromDataSource(newSource);
-        }, 500);
+        updateCMPDirectlyFromSource(newSource);
     }
 }
 
-function updatePricesFromDataSource(source) {
+function updateCMPDirectlyFromSource(source) {
     // Show update status icon
     var statusIcon = document.getElementById('updateStatusIcon');
     if (statusIcon) {
@@ -1126,7 +1124,7 @@ function updatePricesFromDataSource(source) {
     // Show loading indicator in table
     var loadingHtml = '<div class="d-flex justify-content-center align-items-center py-4">' +
                      '<div class="spinner-border text-primary me-3" role="status"></div>' +
-                     '<span class="text-light">Updating prices from ' + 
+                     '<span class="text-light">Updating CMP directly from ' + 
                      (source === 'google' ? 'Google Finance' : 'Yahoo Finance') + '...</span></div>';
     
     var tableBody = document.getElementById('signalsTableBody');
@@ -1134,13 +1132,18 @@ function updatePricesFromDataSource(source) {
         tableBody.innerHTML = loadingHtml;
     }
     
-    // Call the datatable update API
-    fetch('/api/datatable/update-prices/' + source, {
+    // Use the appropriate API endpoint based on source
+    var apiEndpoint = source === 'google' ? '/api/google-finance/update-etf-cmp' : '/api/yahoo/update-prices';
+    
+    fetch(apiEndpoint, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({})
+        body: JSON.stringify({
+            direct_update: true,
+            source: source
+        })
     })
     .then(function(response) {
         return response.json();
@@ -1153,37 +1156,40 @@ function updatePricesFromDataSource(source) {
         }
         
         if (data.success) {
-            // Show success notification
+            // Show success notification with detailed info
+            var updatedCount = data.updated_count || data.successful_updates || 0;
+            var sourceName = source === 'google' ? 'Google Finance' : 'Yahoo Finance';
+            
             if (typeof showToaster === 'function') {
                 showToaster(
-                    'Prices Updated', 
-                    'Successfully updated ' + data.successful_updates + ' symbols via ' + data.data_source,
+                    'CMP Updated Successfully', 
+                    'Updated ' + updatedCount + ' records directly from ' + sourceName + ' in ' + (data.duration || 0).toFixed(1) + 's',
                     'success'
                 );
             }
             
-            // Refresh the signals table with updated data
-            setTimeout(function() {
-                loadSignalsData();
-            }, 1000);
+            // Immediately refresh the signals table
+            if (window.etfSignalsManager) {
+                window.etfSignalsManager.loadSignals();
+            }
         } else {
             // Show error notification
             if (typeof showToaster === 'function') {
                 showToaster(
-                    'Update Failed', 
-                    'Failed to update prices: ' + (data.error || 'Unknown error'),
+                    'CMP Update Failed', 
+                    'Failed to update CMP: ' + (data.error || 'Unknown error'),
                     'error'
                 );
             }
             
-            // Still refresh the table in case some updates succeeded
-            setTimeout(function() {
-                loadSignalsData();
-            }, 1000);
+            // Still try to refresh the table
+            if (window.etfSignalsManager) {
+                window.etfSignalsManager.loadSignals();
+            }
         }
     })
     .catch(function(error) {
-        console.error('Error updating prices:', error);
+        console.error('Error updating CMP directly:', error);
         
         // Hide update status icon
         var statusIcon = document.getElementById('updateStatusIcon');
@@ -1195,16 +1201,21 @@ function updatePricesFromDataSource(source) {
         if (typeof showToaster === 'function') {
             showToaster(
                 'Network Error', 
-                'Failed to connect to price update service',
+                'Failed to connect to ' + (source === 'google' ? 'Google Finance' : 'Yahoo Finance') + ' service',
                 'error'
             );
         }
         
-        // Refresh the table anyway
-        setTimeout(function() {
-            loadSignalsData();
-        }, 1000);
+        // Still try to refresh the table
+        if (window.etfSignalsManager) {
+            window.etfSignalsManager.loadSignals();
+        }
     });
+}
+
+function updatePricesFromDataSource(source) {
+    // Redirect to the new direct update function
+    updateCMPDirectlyFromSource(source);
 }
 
 function updateCurrentDataSourceIndicator() {

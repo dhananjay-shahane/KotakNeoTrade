@@ -62,12 +62,17 @@
                             </button>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="#" onclick="switchDataSource('google')">
-                                    <i class="fas fa-search me-2"></i>Google Finance
-                                    <small class="text-muted d-block">Real-time price updates</small>
+                                    <i class="fas fa-search me-2 text-success"></i>Google Finance
+                                    <small class="text-muted d-block">Direct CMP update from Google</small>
                                 </a></li>
                                 <li><a class="dropdown-item" href="#" onclick="switchDataSource('yahoo')">
-                                    <i class="fas fa-chart-line me-2"></i>Yahoo Finance
-                                    <small class="text-muted d-block">Fallback pricing system</small>
+                                    <i class="fas fa-chart-line me-2 text-info"></i>Yahoo Finance
+                                    <small class="text-muted d-block">Direct CMP update from Yahoo</small>
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-warning" href="#" onclick="updateCMPDirectlyFromSource(localStorage.getItem('data-source') || 'google')">
+                                    <i class="fas fa-sync-alt me-2"></i>Force Update CMP
+                                    <small class="text-muted d-block">Update all prices now</small>
                                 </a></li>
                             </ul>
                         </div>

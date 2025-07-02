@@ -10,37 +10,135 @@ logger = logging.getLogger(__name__)
 
 @yahoo_bp.route('/update-prices', methods=['POST'])
 def update_prices():
-    """Force update prices from Yahoo Finance"""
+    """Direct CMP update from Yahoo Finance for admin_trade_signals table"""
     try:
-        logger.info("Manual price update requested via API")
+        import psycopg2
+        from psycopg2.extras import RealDictCursor
+        import yfinance as yf
         
-        # Update all symbols with new prices
-        result = yahoo_service.update_all_symbols()
+        request_data = request.get_json() or {}
+        direct_update = request_data.get('direct_update', False)
         
-        if result['status'] == 'success':
-            return jsonify({
-                'success': True,
-                'message': f'Successfully updated {result["successful_updates"]} symbols',
-                'total_symbols': result['total_symbols'],
-                'successful_updates': result['successful_updates'],
-                'failed_updates': result['failed_updates'],
-                'timestamp': datetime.utcnow().isoformat(),
-                'data_source': 'Yahoo Finance (Fallback)',
-                'updates': result['updates']
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': result.get('error', 'Unknown error'),
-                'message': 'Failed to update prices from Yahoo Finance'
-            }), 500
+        logger.info("Starting Yahoo Finance direct CMP update for admin_trade_signals table")
+        
+        # Database connection
+        DATABASE_URL = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
+        
+        def get_yahoo_price(symbol):
+            """Get live price from Yahoo Finance"""
+            try:
+                yf_symbol = symbol + ".NS"
+                ticker = yf.Ticker(yf_symbol)
+                hist = ticker.history(period="1d")
+                if not hist.empty:
+                    price = hist['Close'].iloc[-1]
+                    return float(round(price, 2))
+                return None
+            except Exception as e:
+                logger.error(f"Yahoo Finance error for {symbol}: {e}")
+                return None
+        
+        updated_count = 0
+        errors = []
+        start_time = datetime.utcnow()
+        
+        with psycopg2.connect(DATABASE_URL) as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                # Get all unique symbols from admin_trade_signals
+                cursor.execute("""
+                    SELECT DISTINCT 
+                        COALESCE(symbol, etf) as etf_symbol,
+                        COUNT(*) as record_count
+                    FROM admin_trade_signals 
+                    WHERE COALESCE(symbol, etf) IS NOT NULL AND COALESCE(symbol, etf) != ''
+                    GROUP BY COALESCE(symbol, etf)
+                """)
+                
+                symbol_data = cursor.fetchall()
+                symbols = [row['etf_symbol'] for row in symbol_data]
+                
+                logger.info(f"Found {len(symbols)} unique symbols to update: {symbols}")
+                
+                results = {}
+                total_records_updated = 0
+                
+                for symbol in symbols:
+                    try:
+                        logger.info(f"Processing {symbol} via Yahoo Finance...")
+                        price = get_yahoo_price(symbol)
+                        
+                        if price and price > 0:
+                            # Update all records with this symbol
+                            cursor.execute("""
+                                UPDATE admin_trade_signals 
+                                SET cmp = %s, 
+                                    last_update_time = CURRENT_TIMESTAMP
+                                WHERE (symbol = %s OR etf = %s)
+                                AND (cmp IS NULL OR cmp != %s)
+                            """, (price, symbol, symbol, price))
+                            
+                            rows_updated = cursor.rowcount
+                            total_records_updated += rows_updated
+                            updated_count += 1
+                            
+                            results[symbol] = {
+                                'success': True,
+                                'price': price,
+                                'rows_updated': rows_updated
+                            }
+                            
+                            logger.info(f"✓ Updated {rows_updated} records for {symbol}: ₹{price}")
+                        else:
+                            results[symbol] = {
+                                'success': False,
+                                'error': 'Could not fetch price'
+                            }
+                            errors.append(f"Failed to fetch price for {symbol}")
+                            logger.warning(f"⚠️ Could not fetch price for {symbol}")
+                        
+                        # Rate limiting
+                        time.sleep(1)
+                        
+                    except Exception as e:
+                        error_msg = f"Error updating {symbol}: {str(e)}"
+                        errors.append(error_msg)
+                        logger.error(error_msg)
+                        results[symbol] = {
+                            'success': False,
+                            'error': str(e)
+                        }
+                
+                conn.commit()
+                duration = (datetime.utcnow() - start_time).total_seconds()
+                
+        logger.info(f"✅ Yahoo Finance CMP update completed!")
+        logger.info(f"   • Total symbols processed: {len(symbols)}")
+        logger.info(f"   • Successful updates: {updated_count}")
+        logger.info(f"   • Database rows updated: {total_records_updated}")
+        logger.info(f"   • Errors: {len(errors)}")
+        logger.info(f"   • Duration: {duration:.2f} seconds")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Successfully updated CMP for {updated_count}/{len(symbols)} symbols',
+            'total_symbols': len(symbols),
+            'successful_updates': updated_count,
+            'updated_count': total_records_updated,
+            'failed_updates': len(errors),
+            'errors': errors,
+            'results': results,
+            'duration': duration,
+            'timestamp': datetime.utcnow().isoformat(),
+            'data_source': 'Yahoo Finance',
+            'direct_update': True
+        })
         
     except Exception as e:
-        logger.error(f"Error in manual price update: {str(e)}")
+        logger.error(f"Error in Yahoo Finance direct CMP update: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e),
-            'message': 'Failed to update prices from Yahoo Finance'
+            'message': 'Failed to update CMP from Yahoo Finance'
         }), 500
 
 @yahoo_bp.route('/price/<symbol>', methods=['GET'])
