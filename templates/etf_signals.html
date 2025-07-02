@@ -54,15 +54,20 @@
                             </ul>
                         </div>
                         <div class="dropdown">
-                            <button class="btn btn-sm btn-outline-info dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <button class="btn btn-sm btn-outline-info dropdown-toggle" type="button" data-bs-toggle="dropdown" id="dataSourceBtn">
                                 <i class="fas fa-database me-1"></i><span id="currentDataSource">Google Finance</span>
+                                <span id="updateStatusIcon" class="ms-1" style="display: none;">
+                                    <i class="fas fa-spinner fa-spin text-warning"></i>
+                                </span>
                             </button>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="#" onclick="switchDataSource('google')">
                                     <i class="fas fa-search me-2"></i>Google Finance
+                                    <small class="text-muted d-block">Real-time price updates</small>
                                 </a></li>
                                 <li><a class="dropdown-item" href="#" onclick="switchDataSource('yahoo')">
                                     <i class="fas fa-chart-line me-2"></i>Yahoo Finance
+                                    <small class="text-muted d-block">Fallback pricing system</small>
                                 </a></li>
                             </ul>
                         </div>

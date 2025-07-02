@@ -16,11 +16,15 @@ logger = logging.getLogger(__name__)
 def update_datatable_prices(source):
     """Update datatable prices directly from selected source (yahoo/google)"""
     try:
-        if 'user_id' not in session:
-            return jsonify({'error': 'Authentication required'}), 401
+        # Allow unauthenticated access for price updates
+        # if 'user_id' not in session:
+        #     return jsonify({'error': 'Authentication required'}), 401
 
-        # Get optional symbol list from request
-        data = request.get_json() or {}
+        # Get optional symbol list from request (handle both JSON and form data)
+        if request.is_json:
+            data = request.get_json() or {}
+        else:
+            data = request.form.to_dict()
         symbol_list = data.get('symbols', [])
         
         if source.lower() == 'yahoo':

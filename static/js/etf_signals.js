@@ -1111,9 +1111,100 @@ function switchDataSource(newSource) {
     // Auto-update CMP if source changed
     if (newSource !== oldSource) {
         setTimeout(function() {
-            updateAllCMPValues();
+            updatePricesFromDataSource(newSource);
         }, 500);
     }
+}
+
+function updatePricesFromDataSource(source) {
+    // Show update status icon
+    var statusIcon = document.getElementById('updateStatusIcon');
+    if (statusIcon) {
+        statusIcon.style.display = 'inline';
+    }
+    
+    // Show loading indicator in table
+    var loadingHtml = '<div class="d-flex justify-content-center align-items-center py-4">' +
+                     '<div class="spinner-border text-primary me-3" role="status"></div>' +
+                     '<span class="text-light">Updating prices from ' + 
+                     (source === 'google' ? 'Google Finance' : 'Yahoo Finance') + '...</span></div>';
+    
+    var tableBody = document.getElementById('signalsTableBody');
+    if (tableBody) {
+        tableBody.innerHTML = loadingHtml;
+    }
+    
+    // Call the datatable update API
+    fetch('/api/datatable/update-prices/' + source, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({})
+    })
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(data) {
+        // Hide update status icon
+        var statusIcon = document.getElementById('updateStatusIcon');
+        if (statusIcon) {
+            statusIcon.style.display = 'none';
+        }
+        
+        if (data.success) {
+            // Show success notification
+            if (typeof showToaster === 'function') {
+                showToaster(
+                    'Prices Updated', 
+                    'Successfully updated ' + data.successful_updates + ' symbols via ' + data.data_source,
+                    'success'
+                );
+            }
+            
+            // Refresh the signals table with updated data
+            setTimeout(function() {
+                loadSignalsData();
+            }, 1000);
+        } else {
+            // Show error notification
+            if (typeof showToaster === 'function') {
+                showToaster(
+                    'Update Failed', 
+                    'Failed to update prices: ' + (data.error || 'Unknown error'),
+                    'error'
+                );
+            }
+            
+            // Still refresh the table in case some updates succeeded
+            setTimeout(function() {
+                loadSignalsData();
+            }, 1000);
+        }
+    })
+    .catch(function(error) {
+        console.error('Error updating prices:', error);
+        
+        // Hide update status icon
+        var statusIcon = document.getElementById('updateStatusIcon');
+        if (statusIcon) {
+            statusIcon.style.display = 'none';
+        }
+        
+        // Show error notification
+        if (typeof showToaster === 'function') {
+            showToaster(
+                'Network Error', 
+                'Failed to connect to price update service',
+                'error'
+            );
+        }
+        
+        // Refresh the table anyway
+        setTimeout(function() {
+            loadSignalsData();
+        }, 1000);
+    });
 }
 
 function updateCurrentDataSourceIndicator() {
