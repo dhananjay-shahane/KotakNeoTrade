@@ -691,11 +691,12 @@ def get_holdings_api():
 
 @app.route('/api/etf-signals-data')
 def get_etf_signals_data():
-    """API endpoint to get ETF signals data"""
+    """API endpoint to get ETF signals data from external admin_trade_signals table"""
     try:
-        from Scripts.default_deals_sync import get_default_deals_data
-        return get_default_deals_data()
+        from Scripts.external_db_service import get_etf_signals_data_json
+        return jsonify(get_etf_signals_data_json())
     except Exception as e:
+        logging.error(f"ETF signals API error: {e}")
         return jsonify({'error': str(e)}), 500
 
 
