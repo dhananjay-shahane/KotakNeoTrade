@@ -1268,6 +1268,43 @@ function showNotification(message, type) {
     }, 5000);
 }
 
+// Function to update CMP values for deals page
+function updateDealsCMP() {
+    var dataSource = localStorage.getItem('data-source') || 'google';
+    var apiEndpoint = dataSource === 'google' ? '/api/google-finance/update-etf-cmp' : '/api/yahoo/update-prices';
+    var sourceName = dataSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
+    
+    console.log('Updating deals CMP using ' + sourceName);
+    
+    fetch(apiEndpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Deals CMP update response from ' + sourceName + ':', data);
+            
+            // Refresh the deals table
+            if (window.dealsManager) {
+                window.dealsManager.loadDeals();
+            }
+            
+            var updatedCount = data.updated_count || data.signals_updated || 0;
+            showNotification('Updated CMP for ' + updatedCount + ' records from ' + sourceName, 'success');
+        } else {
+            console.error('Deals CMP update failed:', data.error);
+            showNotification('Failed to update CMP from ' + sourceName + ': ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating deals CMP:', error);
+        showNotification('Error updating CMP from ' + sourceName + ': ' + error.message, 'error');
+    });
+}
+
 // Initialize Deals Manager on page load
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Initializing Deals Manager...');

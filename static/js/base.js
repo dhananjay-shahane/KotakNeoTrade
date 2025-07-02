@@ -278,7 +278,12 @@
                 themeSelect.value = savedTheme;
             }
 
-
+            // Load data source
+            var savedDataSource = localStorage.getItem('data-source') || 'google';
+            var dataSourceSelect = document.getElementById('dataSourceSelect');
+            if (dataSourceSelect) {
+                dataSourceSelect.value = savedDataSource;
+            }
         }
 
         function updateFontPreview(fontSize) {
@@ -291,6 +296,7 @@
         function applySettings() {
             var fontSizeSelect = document.getElementById('fontSizeSelect');
             var themeSelect = document.getElementById('themeSelect');
+            var dataSourceSelect = document.getElementById('dataSourceSelect');
 
             // Apply font size
             if (fontSizeSelect) {
@@ -320,7 +326,10 @@
                 }
             }
 
-
+            // Apply data source
+            if (dataSourceSelect) {
+                handleDataSourceChange();
+            }
 
             // Close modal
             var modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
@@ -373,14 +382,14 @@
             var loader = document.getElementById('pageLoader');
             var loaderText = loader.querySelector('.loader-text');
             var loaderSubtitle = loader.querySelector('.loader-subtitle');
-            
+
             if (loaderText) {
                 loaderText.innerHTML = message + '<div class="loading-dots"><span></span><span></span><span></span></div>';
             }
             if (loaderSubtitle) {
                 loaderSubtitle.textContent = subtitle;
             }
-            
+
             loader.classList.remove('hide');
             document.body.style.overflow = 'hidden';
         }
@@ -390,7 +399,7 @@
             if (loader) {
                 loader.classList.add('hide');
                 document.body.style.overflow = '';
-                
+
                 // Add fade-in effect to main content
                 var mainContent = document.querySelector('.main-content');
                 if (mainContent) {
@@ -404,7 +413,7 @@
             if (loader) {
                 var loaderText = loader.querySelector('.loader-text');
                 var loaderSubtitle = loader.querySelector('.loader-subtitle');
-                
+
                 if (loaderText) {
                     loaderText.innerHTML = message + '<div class="loading-dots"><span></span><span></span><span></span></div>';
                 }
@@ -420,6 +429,88 @@
                 hidePageLoader();
             }, 800); // Small delay for smooth transition
         });
+
+        // Data Source Management Functions
+        function getDataSource() {
+            return localStorage.getItem('data-source') || 'google';
+        }
+
+        function handleDataSourceChange() {
+            var dataSourceSelect = document.getElementById('dataSourceSelect');
+            if (!dataSourceSelect) return;
+
+            var newDataSource = dataSourceSelect.value;
+            var oldDataSource = localStorage.getItem('data-source') || 'google';
+
+            // Save the new data source
+            localStorage.setItem('data-source', newDataSource);
+
+            var sourceName = newDataSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
+
+            if (typeof showToaster === 'function') {
+                showToaster('Data Source Changed', 'Switched to ' + sourceName, 'info');
+            }
+
+            // Automatically update CMP with new data source if it changed
+            if (newDataSource !== oldDataSource) {
+                // Small delay to allow settings modal to close
+                setTimeout(function() {
+                    updateLiveCMP();
+                }, 500);
+            }
+        }
+
+        function updateLiveCMP() {
+            var dataSource = getDataSource();
+            var sourceName = dataSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
+
+            if (typeof showToaster === 'function') {
+                showToaster('Updating CMP', 'Fetching latest prices from ' + sourceName + '...', 'info');
+            }
+
+            var apiEndpoint = dataSource === 'google' ? '/api/google-finance/update-etf-cmp' : '/api/yahoo/update-prices';
+
+            fetch(apiEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                if (data.success) {
+                    var updatedCount = data.updated_count || data.signals_updated || 0;
+                    if (typeof showToaster === 'function') {
+                        showToaster('CMP Updated Successfully', 
+                            'Updated ' + updatedCount + ' records from ' + sourceName, 'success');
+                    }
+
+                    // Refresh current page data if on specific pages
+                    var currentPath = window.location.pathname;
+                    if (currentPath === '/etf-signals' && window.etfSignalsManager) {
+                        window.etfSignalsManager.loadSignals();
+                    } else if (currentPath === '/deals' && window.dealsManager) {
+                        window.dealsManager.loadDeals();
+                    } else if (currentPath === '/default-deals' && window.dealsManager) {
+                        window.dealsManager.loadDeals();
+                    }
+                } else {
+                    if (typeof showToaster === 'function') {
+                        showToaster('CMP Update Failed', 
+                            data.error || 'Failed to update CMP from ' + sourceName, 'error');
+                    }
+                }
+            })
+            .catch(function(error) {
+                console.error('Error updating CMP:', error);
+                if (typeof showToaster === 'function') {
+                    showToaster('CMP Update Error', 
+                        'Network error while updating from ' + sourceName, 'error');
+                }
+            });
+        }
 
         // Initialize everything when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
@@ -764,4 +855,65 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
         document.body.appendChild(notification);
+    }
+function updateCMPWithDataSource(dataSource) {
+        console.log(`🔄 Updating CMP with data source: ${dataSource}`);
+
+        // Show loading notification
+        showToaster('Updating CMP', `Fetching latest prices from ${dataSource}...`, 'info');
+
+        const apiEndpoint = dataSource === 'google' ? '/api/google-finance/update-etf-cmp' : '/api/yahoo/update-prices';
+
+        // Set longer timeout for price updates
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+        fetch(apiEndpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            signal: controller.signal
+        })
+        .then(response => {
+            clearTimeout(timeoutId);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                showToaster('CMP Updated Successfully', 
+                    `Updated ${data.updated_count || data.signals_updated || 0} records from ${dataSource}`, 
+                    'success');
+
+                // Refresh the current page data
+                if (typeof refreshPageData === 'function') {
+                    refreshPageData();
+                } else if (typeof loadETFSignalsData === 'function') {
+                    loadETFSignalsData();
+                } else {
+                    // Fallback: reload the page after a short delay
+                    setTimeout(() => location.reload(), 2000);
+                }
+            } else {
+                const errorMsg = data.error || data.message || `Failed to update from ${dataSource}`;
+                showToaster('CMP Update Error', errorMsg, 'error');
+                console.error('CMP Update Error Details:', data);
+            }
+        })
+        .catch(error => {
+            clearTimeout(timeoutId);
+            console.error('CMP Update Error:', error);
+
+            let errorMessage = `Network error while updating from ${dataSource}`;
+            if (error.name === 'AbortError') {
+                errorMessage = `Timeout: ${dataSource} update took too long`;
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
+            showToaster('CMP Update Error', errorMessage, 'error');
+        });
     }

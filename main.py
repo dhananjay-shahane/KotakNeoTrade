@@ -29,6 +29,9 @@ try:
     from api.admin_signals_api import admin_signals_bp
     from api.signals_datatable import datatable_bp as signals_datatable_bp
     from api.enhanced_etf_signals import enhanced_etf_bp
+    from api.google_finance_api import google_finance_bp
+    from api.yahoo_finance_api import yahoo_bp
+    from api.datatable_updates import datatable_updates_bp
 
     # Import realtime quotes after creating the manager
     from api.realtime_quotes import quotes_bp as realtime_bp
@@ -90,6 +93,15 @@ try:
         app.register_blueprint(signals_datatable_bp)
     if 'enhanced_etf' not in registered_blueprints:
         app.register_blueprint(enhanced_etf_bp)
+
+    # Register Google Finance API blueprint
+    app.register_blueprint(google_finance_bp)
+
+    # Register Yahoo Finance API blueprint
+    app.register_blueprint(yahoo_bp)
+    
+    # Register Datatable Updates API blueprint
+    app.register_blueprint(datatable_updates_bp)
 
     print("✓ Additional blueprints registered successfully")
 except Exception as e:

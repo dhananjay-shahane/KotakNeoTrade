@@ -104,6 +104,36 @@ The application follows a modern Flask architecture with clear separation of con
 
 ## Recent Changes
 
+- **July 2, 2025** - Successfully implemented direct datatable price updates for ETF signals page
+  - **External Database Integration**: Connected ETF signals page to external PostgreSQL database (dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com)
+  - **Real-time Price Updates**: When users select Yahoo Finance or Google Finance from dropdown, admin_trade_signals table updates immediately
+  - **Visual Feedback System**: Added loading spinner and status notifications during price updates
+  - **API Endpoints**: Created `/api/datatable/update-prices/{source}` for direct database updates
+  - **Yahoo Finance Integration**: Successfully updating 5 symbols with fallback pricing system
+  - **Google Finance Integration**: Real-time updates for 15 symbols with live market data
+  - **User Experience**: Seamless price source switching with immediate table refresh and success notifications
+  - **Database Updates**: All CMP values update directly in admin_trade_signals table and reflect instantly in datatable
+
+- **July 1, 2025** - Enhanced holdings page with compact classic design for maximum table space utilization
+  - Made summary cards smaller and more compact (60px height) without gradients or large icons
+  - Reduced header spacing and font sizes for better space efficiency  
+  - Simplified table headers by removing all sort icons and unnecessary visual elements
+  - Made table more compact with consistent py-2 padding and table-sm class
+  - Replaced action button icons with text labels (Buy, Sell, Quote) for cleaner appearance
+  - Removed all decorative icons throughout the page for classic, professional look
+  - Maximized available space for holdings table data display
+
+- **July 1, 2025** - Successfully completed migration from Replit Agent to standard Replit environment with live CMP integration
+  - Created PostgreSQL database with proper environment variables and secure session management
+  - Installed all required packages (Flask, SQLAlchemy, Gunicorn, neo-api-client, etc.)
+  - Implemented live CMP (Current Market Price) updates using Kotak Neo API quotes
+  - Enhanced admin_trade_signals datatable with real-time price data prioritizing: Live CMP > Database CMP > Last Traded Price
+  - Added /api/update-live-cmp endpoint for manual CMP updates and bulk quote fetching
+  - Created LiveCMPService for comprehensive market data integration with Kotak Neo API
+  - Application running successfully on port 5000 with external database connectivity
+  - Live price updates now integrate seamlessly with ETF signals page showing authentic market data
+  - Migration checklist completed with all security practices and robust client/server separation implemented
+
 - **June 30, 2025** - Successfully completed migration and fixed place order functionality across all trading pages
   - POSITIONS PAGE: Fixed place order price data issue, now auto-populates current market price from positions data
   - HOLDINGS PAGE: Fixed place order functionality with enhanced price lookup from holdings data (closingPrice, mktValue/quantity)

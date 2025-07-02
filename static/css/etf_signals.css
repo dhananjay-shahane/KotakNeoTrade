@@ -1,4 +1,4 @@
-    .signals-table {
+.signals-table {
         font-size: 0.75rem;
         background: var(--card-bg);
     }
@@ -67,3 +67,157 @@
         50% { opacity: 0.5; }
         100% { opacity: 1; }
     }
+
+/* ETF Signals Specific Styles */
+.etf-signals-container {
+    padding: 20px;
+}
+
+.signals-header {
+    margin-bottom: 20px;
+}
+
+/* Price change animations */
+.cmp-value {
+    transition: all 0.3s ease;
+}
+
+.cmp-value.price-up {
+    background-color: rgba(40, 167, 69, 0.3);
+    color: #28a745;
+    font-weight: bold;
+}
+
+.cmp-value.price-down {
+    background-color: rgba(220, 53, 69, 0.3);
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* CMP update button styles */
+.cmp-update-btn {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.cmp-update-btn:hover {
+    background: linear-gradient(45deg, #218838, #1ba085);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.cmp-update-btn:active {
+    transform: translateY(0);
+}
+
+/* Live update indicator */
+.live-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #28a745;
+    border-radius: 50%;
+    margin-right: 5px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* ETF Signals Table Styles */
+.etf-signals-table {
+    background: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Enhanced Loading Styles */
+.loading-container {
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 2rem;
+}
+
+.loading-spinner-large {
+    width: 3rem !important;
+    height: 3rem !important;
+    border-width: 4px;
+}
+
+.loading-spinner-medium {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    border-width: 3px;
+}
+
+/* Pulse animation for loading text */
+.loading-text {
+    animation: loadingPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes loadingPulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* Center alignment utilities */
+.center-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+/* Improved table loading state */
+.table-loading {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%);
+    border: 1px solid rgba(37, 99, 235, 0.1);
+    border-radius: 8px;
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    backdrop-filter: blur(2px);
+}
+
+.loading-message {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 25px 35px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    text-align: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    max-width: 350px;
+    min-width: 280px;
+    transform: scale(1);
+    animation: pulse 2s ease-in-out infinite;
+}

@@ -53,6 +53,29 @@
                                 <li><a class="dropdown-item" href="#" onclick="setRefreshInterval(0, 'Off')">Disable</a></li>
                             </ul>
                         </div>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-info dropdown-toggle" type="button" data-bs-toggle="dropdown" id="dataSourceBtn">
+                                <i class="fas fa-database me-1"></i><span id="currentDataSource">Google Finance</span>
+                                <span id="updateStatusIcon" class="ms-1" style="display: none;">
+                                    <i class="fas fa-spinner fa-spin text-warning"></i>
+                                </span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="switchDataSource('google')">
+                                    <i class="fas fa-search me-2 text-success"></i>Google Finance
+                                    <small class="text-muted d-block">Direct CMP update from Google</small>
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="switchDataSource('yahoo')">
+                                    <i class="fas fa-chart-line me-2 text-info"></i>Yahoo Finance
+                                    <small class="text-muted d-block">Direct CMP update from Yahoo</small>
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-warning" href="#" onclick="updateCMPDirectlyFromSource(localStorage.getItem('data-source') || 'google')">
+                                    <i class="fas fa-sync-alt me-2"></i>Force Update CMP
+                                    <small class="text-muted d-block">Update all prices now</small>
+                                </a></li>
+                            </ul>
+                        </div>
                         <button class="btn btn-sm btn-outline-light" onclick="exportSignals()">
                             <i class="fas fa-download me-1"></i>Export
                         </button>

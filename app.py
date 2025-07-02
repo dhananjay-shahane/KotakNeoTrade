@@ -68,7 +68,7 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 # Force HTTPS for external access
 if os.environ.get('REPLIT_DOMAINS'):
     app.config['PREFERRED_URL_SCHEME'] = 'https'
-    
+
 # Allow all origins for external access
 app.config['SESSION_COOKIE_SECURE'] = False  # Allow HTTP for development
 app.config['SESSION_COOKIE_HTTPONLY'] = True
@@ -116,7 +116,7 @@ def page_not_found(error):
     if not validate_current_session():
         flash('Please login to access this application', 'error')
         return redirect(url_for('login'))
-    
+
     return render_template('404.html'), 404
 
 @app.before_request
@@ -691,10 +691,10 @@ def get_holdings_api():
 
 @app.route('/api/etf-signals-data')
 def get_etf_signals_data():
-    """Enhanced API endpoint to get ETF signals data from external PostgreSQL database"""
+    """Enhanced API endpoint to get ETF signals data with live CMP from Kotak Neo API"""
     try:
         import logging
-        logging.info("ETF Signals API: Fetching data from external PostgreSQL database")
+        logging.info("ETF Signals API: Fetching data with live CMP updates")
 
         # Use the existing external database URL that's already configured in the app
         connection_string = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
@@ -702,6 +702,16 @@ def get_etf_signals_data():
         # Import necessary modules
         import psycopg2
         from psycopg2.extras import RealDictCursor
+
+        # Initialize live CMP service
+        try:
+            from Scripts.live_cmp_service import LiveCMPService
+            cmp_service = LiveCMPService()
+            live_cmp_available = cmp_service.initialize_client()
+        except Exception as e:
+            logging.warning(f"Live CMP service not available: {str(e)}")
+            live_cmp_available = False
+            cmp_service = None
 
         # Connect to external database
         with psycopg2.connect(connection_string) as conn:
@@ -718,6 +728,24 @@ def get_etf_signals_data():
                 cursor.execute(query)
                 signals = cursor.fetchall()
 
+                # Get unique symbols for live CMP fetching
+                symbols_to_update = set()
+                for row in signals:
+                    if row.get('symbol'):
+                        symbols_to_update.add(row['symbol'])
+                    if row.get('etf'):
+                        symbols_to_update.add(row['etf'])
+
+                # Fetch live CMP data if service is available
+                live_cmp_data = {}
+                if live_cmp_available and cmp_service and symbols_to_update:
+                    try:
+                        logging.info(f"Fetching live CMP for {len(symbols_to_update)} symbols")
+                        live_cmp_data = cmp_service.get_bulk_quotes(list(symbols_to_update))
+                        logging.info(f"Received live data for {len(live_cmp_data)} symbols")
+                    except Exception as e:
+                        logging.warning(f"Failed to fetch live CMP: {str(e)}")
+
                 # Format signals data for frontend
                 signals_list = []
                 total_investment = 0
@@ -729,7 +757,22 @@ def get_etf_signals_data():
                     count += 1
                     # Calculate values with proper null handling
                     entry_price = float(row.get('ep') or 0) if row.get('ep') is not None else 0.0
+
+                    # Get current price with priority: Live CMP > Database CMP > Last Traded Price
                     current_price = float(row.get('cmp') or 0) if row.get('cmp') is not None else 0.0
+                    symbol = row.get('symbol') or row.get('etf')
+
+                    # Override with live data if available
+                    if symbol and symbol in live_cmp_data:
+                        live_quote = live_cmp_data[symbol]
+                        live_cmp = live_quote.get('cmp') or live_quote.get('last_traded_price')
+                        if live_cmp and live_cmp > 0:
+                            current_price = float(live_cmp)
+                            logging.info(f"✓ Using live CMP for {symbol}: {current_price}")
+                        else:
+                            logging.info(f"⚠️ Live CMP not available for {symbol}, using database value: {current_price}")
+                    elif symbol:
+                        logging.info(f"⚠️ No live data for {symbol}, using database CMP: {current_price}")
                     quantity = int(row.get('qty') or 0) if row.get('qty') is not None else 0
                     investment = float(row.get('inv') or 0) if row.get('inv') is not None else 0.0
                     pnl_amount = float(row.get('pl') or 0) if row.get('pl') is not None else 0.0
@@ -1061,7 +1104,7 @@ def get_default_deals_data():
                 total_current_value = 0
                 total_pnl = 0
                 count = 0
-                
+
                 for row in signals:
                     count += 1
                     # Calculate values with proper null handling using CSV column names
@@ -1162,13 +1205,13 @@ def initialize_auto_sync_endpoint():
     try:
         from Scripts.auto_sync_system import initialize_auto_sync_system
         result = initialize_auto_sync_system()
-        
+
         return jsonify({
             'success': result['success'],
             'message': 'Auto-sync system initialized successfully' if result['success'] else 'Failed to initialize auto-sync system',
             'details': result
         })
-        
+
     except Exception as e:
         logging.error(f"Error initializing auto-sync: {str(e)}")
         return jsonify({
@@ -1183,12 +1226,12 @@ def test_auto_sync_endpoint():
     try:
         from Scripts.auto_sync_system import test_auto_sync
         test_result = test_auto_sync()
-        
+
         return jsonify({
             'success': test_result,
             'message': 'Auto-sync test passed' if test_result else 'Auto-sync test failed'
         })
-        
+
     except Exception as e:
         logging.error(f"Error testing auto-sync: {str(e)}")
         return jsonify({
@@ -1203,21 +1246,21 @@ def place_order():
     """API endpoint to place buy/sell orders using Kotak Neo API"""
     try:
         from Scripts.trading_functions import TradingFunctions
-        
+
         # Get order data from request
         order_data = request.get_json()
-        
+
         # Validate required fields
         required_fields = ['symbol', 'quantity', 'transaction_type', 'order_type']
         for field in required_fields:
             if field not in order_data:
                 return jsonify({'success': False, 'message': f'Missing required field: {field}'}), 400
-        
+
         # Get client from session
         client = session.get('client')
         if not client:
             return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
-        
+
         # Validate session before placing order
         try:
             # Quick session validation by checking if we can fetch basic data
@@ -1231,10 +1274,10 @@ def place_order():
         except Exception as e:
             logging.warning(f"Session validation failed: {e}")
             # Continue with order placement attempt
-        
+
         # Initialize trading functions
         trading_functions = TradingFunctions()
-        
+
         # Prepare order data with defaults
         order_params = {
             'symbol': order_data['symbol'],
@@ -1252,10 +1295,10 @@ def place_order():
             'pf': order_data.get('pf', 'N'),
             'tag': order_data.get('tag', None)
         }
-        
+
         # Place the order
         result = trading_functions.place_order(client, order_params)
-        
+
         if result.get('success'):
             return jsonify({
                 'success': True,
@@ -1265,18 +1308,18 @@ def place_order():
             })
         else:
             error_message = result.get('message', 'Failed to place order')
-            
+
             # Check for specific API authentication errors
             if 'invalid access type' in error_message.lower() or 'not_ok' in str(result).lower():
                 error_message = 'Trading session has expired. Please logout and login again to place orders.'
             elif 'session' in error_message.lower():
                 error_message = 'Session expired. Please refresh the page and try again.'
-            
+
             return jsonify({
                 'success': False,
                 'message': error_message
             }), 400
-            
+
     except Exception as e:
         logging.error(f"Error placing order: {str(e)}")
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -1292,15 +1335,15 @@ def quick_buy():
         quantity = data.get('quantity', '1')
         price = data.get('price', '0')
         order_type = data.get('order_type', 'MARKET')
-        
+
         # Get client from session
         client = session.get('client')
         if not client:
             return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
-        
+
         from Scripts.trading_functions import TradingFunctions
         trading_functions = TradingFunctions()
-        
+
         order_params = {
             'symbol': symbol,
             'quantity': quantity,
@@ -1311,9 +1354,9 @@ def quick_buy():
             'product': 'CNC',
             'validity': 'DAY'
         }
-        
+
         result = trading_functions.place_order(client, order_params)
-        
+
         if result.get('success'):
             return jsonify({
                 'success': True,
@@ -1325,7 +1368,7 @@ def quick_buy():
                 'success': False,
                 'message': result.get('message', 'Failed to place buy order')
             }), 400
-        
+
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
@@ -1340,15 +1383,15 @@ def quick_sell():
         quantity = data.get('quantity', '1')
         price = data.get('price', '0')
         order_type = data.get('order_type', 'MARKET')
-        
+
         # Get client from session
         client = session.get('client')
         if not client:
             return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
-        
+
         from Scripts.trading_functions import TradingFunctions
         trading_functions = TradingFunctions()
-        
+
         order_params = {
             'symbol': symbol,
             'quantity': quantity,
@@ -1359,9 +1402,9 @@ def quick_sell():
             'product': 'CNC',
             'validity': 'DAY'
         }
-        
+
         result = trading_functions.place_order(client, order_params)
-        
+
         if result.get('success'):
             return jsonify({
                 'success': True,
@@ -1373,7 +1416,7 @@ def quick_sell():
                 'success': False,
                 'message': result.get('message', 'Failed to place sell order')
             }), 400
-        
+
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
@@ -1406,6 +1449,8 @@ try:
     from api.admin_signals_api import admin_signals_bp
     from api.supabase_api import supabase_bp
     from api.deals import deals_bp  # Added deals blueprint import
+    from api.google_finance_api import google_finance_bp
+    from api.yahoo_finance_api import yahoo_bp #Import yahoo blueprint
 
     # Blueprint registration moved to main.py to avoid conflicts
     print("✓ Blueprint imports available")
@@ -1430,6 +1475,12 @@ try:
     print("✓ Deals blueprint registered")
 except Exception as e:
     print(f"Warning: Could not register deals blueprint: {e}")
+
+# Register Google Finance API blueprint
+    app.register_blueprint(google_finance_bp)
+
+    # Register Yahoo Finance API blueprint  
+    app.register_blueprint(yahoo_bp)
 
 if __name__ == '__main__':
     with app.app_context():
@@ -1458,6 +1509,74 @@ if __name__ == '__main__':
 # Initialize auto-sync triggers
 from Scripts.sync_default_deals import setup_auto_sync_triggers
 setup_auto_sync_triggers()
+
+# Live CMP update endpoint using Google Finance
+@app.route('/api/update-live-cmp')
+def update_live_cmp_endpoint():
+    """API endpoint to update live CMP data using Google Finance via yfinance"""
+    try:
+        from Scripts.google_finance_cmp_updater import update_all_cmp_data
+
+        result = update_all_cmp_data()
+
+        return jsonify({
+            'success': result['success'],
+            'message': result['message'],
+            'updated_count': result['updated_count'],
+            'total_symbols': result.get('total_symbols', 0),
+            'successful_symbols': result.get('successful_symbols', 0),
+            'error_count': result['error_count'],
+            'duration': result.get('duration', 0),
+            'results': result.get('results', {})
+        })
+
+    except Exception as e:
+        import logging
+        logging.error(f"Error updating live CMP via Google Finance: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to update live CMP data via Google Finance'
+        }), 500
+
+# Update specific symbols CMP endpoint
+@app.route('/api/update-cmp-symbols', methods=['POST'])
+def update_specific_symbols_cmp():
+    """API endpoint to update CMP for specific symbols"""
+    try:
+        from Scripts.google_finance_cmp_updater import update_specific_cmp_data
+        from flask import request
+
+        data = request.get_json()
+        symbols = data.get('symbols', []) if data else []
+
+        if not symbols:
+            return jsonify({
+                'success': False,
+                'message': 'No symbols provided'
+            }), 400
+
+        result = update_specific_cmp_data(symbols)
+
+        return jsonify({
+            'success': result['success'],
+            'message': result['message'],
+            'updated_count': result['updated_count'],
+            'symbols_processed': result.get('symbols_processed', 0),
+            'successful_symbols': result.get('successful_symbols', 0),
+            'error_count': result['error_count'],
+            'duration': result.get('duration', 0),
+            'results': result.get('results', {})
+        })
+
+    except Exception as e:
+        import logging
+        logging.error(f"Error updating specific symbols CMP: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to update specific symbols CMP'
+        }), 500
 
 # Health check endpoint for domain verification
 @app.route('/health')
@@ -1494,12 +1613,12 @@ def preview_test():
         <div class="container">
             <h1 class="success">✓ Preview Access Working!</h1>
             <p class="info">Kotak Neo Trading Platform is running successfully</p>
-            
+
             <div class="correct-url">
                 <strong>Correct URL:</strong><br>
                 <a href="https://{correct_domain}/" target="_blank">https://{correct_domain}/</a>
             </div>
-            
+
             <p class="error">⚠️ DNS Issues? Try these solutions:</p>
             <ol>
                 <li>Use Replit's built-in webview (click the preview/webview button in Replit)</li>
@@ -1507,7 +1626,7 @@ def preview_test():
                 <li>Clear your browser cache and try again</li>
                 <li>Try accessing from an incognito/private browser window</li>
             </ol>
-            
+
             <p>Status: Application is accessible from external domains</p>
             <a href="/">Go to Login Page</a>
         </div>
