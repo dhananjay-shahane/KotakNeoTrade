@@ -14,20 +14,26 @@ def update_prices():
     try:
         logger.info("Manual price update requested via API")
         
-        # Update admin signals
-        signals_updated = yahoo_service.update_admin_signals_prices()
+        # Update all symbols with new prices
+        result = yahoo_service.update_all_symbols()
         
-        # Update realtime quotes
-        quotes_updated = yahoo_service.update_realtime_quotes()
-        
-        return jsonify({
-            'success': True,
-            'message': f'Successfully updated {signals_updated} signals and {quotes_updated} quotes',
-            'signals_updated': signals_updated,
-            'quotes_updated': quotes_updated,
-            'timestamp': datetime.utcnow().isoformat(),
-            'data_source': 'Yahoo Finance'
-        })
+        if result['status'] == 'success':
+            return jsonify({
+                'success': True,
+                'message': f'Successfully updated {result["successful_updates"]} symbols',
+                'total_symbols': result['total_symbols'],
+                'successful_updates': result['successful_updates'],
+                'failed_updates': result['failed_updates'],
+                'timestamp': datetime.utcnow().isoformat(),
+                'data_source': 'Yahoo Finance (Fallback)',
+                'updates': result['updates']
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result.get('error', 'Unknown error'),
+                'message': 'Failed to update prices from Yahoo Finance'
+            }), 500
         
     except Exception as e:
         logger.error(f"Error in manual price update: {str(e)}")

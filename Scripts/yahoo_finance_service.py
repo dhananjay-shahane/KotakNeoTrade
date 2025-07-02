@@ -75,6 +75,18 @@ class YahooFinanceService:
         logger.info(f"Yahoo Finance rate limited - using fallback data for {symbol}")
         return self.generate_fallback_price(symbol)
 
+    def get_multiple_prices(self, symbols):
+        """Get prices for multiple symbols"""
+        prices = []
+        for symbol in symbols:
+            try:
+                price_data = self.get_stock_price(symbol)
+                if price_data:
+                    prices.append(price_data)
+            except Exception as e:
+                logger.error(f"Error fetching price for {symbol}: {e}")
+        return prices
+
     def update_all_symbols(self):
         """Update CMP for all symbols in the database"""
         if not self.engine:
