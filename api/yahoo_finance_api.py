@@ -139,27 +139,27 @@ def update_prices():
             
             # Get all unique symbols from admin_trade_signals
             if symbols_to_update:
-                    # Update only specified symbols
-                    placeholders = ','.join(['%s'] * len(symbols_to_update))
-                    cursor.execute(f"""
-                        SELECT DISTINCT 
-                            COALESCE(symbol, etf) as etf_symbol,
-                            COUNT(*) as record_count
-                        FROM admin_trade_signals 
-                        WHERE COALESCE(symbol, etf) IN ({placeholders})
-                        AND COALESCE(symbol, etf) IS NOT NULL AND COALESCE(symbol, etf) != ''
-                        GROUP BY COALESCE(symbol, etf)
-                    """, symbols_to_update)
-                else:
-                    # Update all symbols
-                    cursor.execute("""
-                        SELECT DISTINCT 
-                            COALESCE(symbol, etf) as etf_symbol,
-                            COUNT(*) as record_count
-                        FROM admin_trade_signals 
-                        WHERE COALESCE(symbol, etf) IS NOT NULL AND COALESCE(symbol, etf) != ''
-                        GROUP BY COALESCE(symbol, etf)
-                    """)
+                # Update only specified symbols
+                placeholders = ','.join(['%s'] * len(symbols_to_update))
+                cursor.execute(f"""
+                    SELECT DISTINCT 
+                        COALESCE(symbol, etf) as etf_symbol,
+                        COUNT(*) as record_count
+                    FROM admin_trade_signals 
+                    WHERE COALESCE(symbol, etf) IN ({placeholders})
+                    AND COALESCE(symbol, etf) IS NOT NULL AND COALESCE(symbol, etf) != ''
+                    GROUP BY COALESCE(symbol, etf)
+                """, symbols_to_update)
+            else:
+                # Update all symbols
+                cursor.execute("""
+                    SELECT DISTINCT 
+                        COALESCE(symbol, etf) as etf_symbol,
+                        COUNT(*) as record_count
+                    FROM admin_trade_signals 
+                    WHERE COALESCE(symbol, etf) IS NOT NULL AND COALESCE(symbol, etf) != ''
+                    GROUP BY COALESCE(symbol, etf)
+                """)
                 
                 symbol_data = cursor.fetchall()
                 symbols = [row['etf_symbol'] for row in symbol_data]
