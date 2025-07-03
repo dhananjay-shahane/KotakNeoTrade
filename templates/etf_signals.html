@@ -87,8 +87,8 @@
                         <tr id="tableHeaders">
                             <th style="cursor: pointer;" title="Trade Signal ID - Click to sort" onclick="sortSignalsByColumn('trade_signal_id')">ID <i class="fas fa-sort ms-1"></i></th>
                             <th style="cursor: pointer;" title="ETF Symbol - Click to sort A-Z" onclick="sortSignalsByColumn('symbol')">ETF <i class="fas fa-sort ms-1"></i></th>
-                            <th style="cursor: pointer;" title="30 Day Performance - Click to sort" onclick="sortSignalsByColumn('thirty')">30 <i class="fas fa-sort ms-1"></i></th>
-                            <th style="cursor: pointer;" title="Days Held - Click to sort" onclick="sortSignalsByColumn('dh')">DH <i class="fas fa-sort ms-1"></i></th>
+                            <th style="cursor: pointer;" title="30 Day Price - Click to sort" onclick="sortSignalsByColumn('thirty')">30D <i class="fas fa-sort ms-1"></i></th>
+                            <th style="cursor: pointer;" title="30 Day Change % - Click to sort" onclick="sortSignalsByColumn('dh')">30D% <i class="fas fa-sort ms-1"></i></th>
                             <th style="cursor: pointer;" title="Entry Date - Click to sort" onclick="sortSignalsByColumn('date')">DATE <i class="fas fa-sort ms-1"></i></th>
                             <th style="cursor: pointer;" title="Quantity - Click to sort" onclick="sortSignalsByColumn('qty')">QTY <i class="fas fa-sort ms-1"></i></th>
                             <th style="cursor: pointer;" title="Entry Price - Click to sort" onclick="sortSignalsByColumn('ep')">EP <i class="fas fa-sort ms-1"></i></th>
@@ -107,8 +107,8 @@
                             <th style="cursor: pointer;" title="Intraday Performance - Click to sort" onclick="sortSignalsByColumn('ip')">IP <i class="fas fa-sort ms-1"></i></th>
                             <th style="cursor: pointer;" title="Notes/Tags - Click to sort" onclick="sortSignalsByColumn('nt')">NT <i class="fas fa-sort ms-1"></i></th>
                             <!-- <th style="cursor: pointer;" title="Quote Time - Click to sort" onclick="sortSignalsByColumn('qt')">QT <i class="fas fa-sort ms-1"></i></th> -->
-                            <th style="cursor: pointer;" title="7 Day Change - Click to sort" onclick="sortSignalsByColumn('seven')">7 <i class="fas fa-sort ms-1"></i></th>
-                            <th style="cursor: pointer;" title="Percentage Change - Click to sort" onclick="sortSignalsByColumn('change2')">%CH <i class="fas fa-sort ms-1"></i></th>
+                            <th style="cursor: pointer;" title="7 Day Price - Click to sort" onclick="sortSignalsByColumn('seven')">7D <i class="fas fa-sort ms-1"></i></th>
+                            <th style="cursor: pointer;" title="7 Day Change % - Click to sort" onclick="sortSignalsByColumn('ch')">7D% <i class="fas fa-sort ms-1"></i></th>
                             <th title="Actions">ACTIONS</th>
                         </tr>
                     </thead>
@@ -221,5 +221,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/etf_signals.js') }}"></script>
+<!-- Ensure jQuery is loaded -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ url_for('static', filename='js/etf_signals.js') }}"></script>
 {% endblock %}

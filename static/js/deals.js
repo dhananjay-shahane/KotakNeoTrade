@@ -59,6 +59,7 @@ DealsManager.prototype.init = function() {
     this.startAutoRefresh();
     this.setupEventListeners();
     this.setupColumnSettingsModal();
+    this.checkPriceUpdateStatus();
 
     var autoRefreshToggle = document.getElementById('autoRefreshToggle');
     var self = this;
@@ -86,6 +87,46 @@ DealsManager.prototype.setupColumnSettingsModal = function() {
         // Also generate checkboxes immediately to ensure they exist
         self.generateColumnCheckboxes();
     }
+};
+
+DealsManager.prototype.checkPriceUpdateStatus = function() {
+    var self = this;
+    
+    // Check Google Finance scheduler status
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/api/google-finance-scheduler/status', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            var response = JSON.parse(xhr.responseText);
+            var statusElement = document.getElementById('priceUpdateStatus');
+            var lastUpdateElement = document.getElementById('lastPriceUpdate');
+            
+            if (response.status === 'running') {
+                statusElement.innerHTML = '<i class="fas fa-sync-alt fa-spin me-1"></i>Live CMP Updates';
+                statusElement.className = 'badge bg-success me-2';
+                lastUpdateElement.textContent = 'Every 5 minutes';
+            } else {
+                statusElement.innerHTML = '<i class="fas fa-pause me-1"></i>CMP Updates Paused';
+                statusElement.className = 'badge bg-warning me-2';
+                lastUpdateElement.textContent = 'Not running';
+            }
+        }
+    };
+    
+    xhr.onerror = function() {
+        var statusElement = document.getElementById('priceUpdateStatus');
+        statusElement.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>CMP Update Error';
+        statusElement.className = 'badge bg-danger me-2';
+    };
+    
+    xhr.send();
+    
+    // Check status every 30 seconds
+    setTimeout(function() {
+        self.checkPriceUpdateStatus();
+    }, 30000);
 };
 
 DealsManager.prototype.generateColumnCheckboxes = function() {

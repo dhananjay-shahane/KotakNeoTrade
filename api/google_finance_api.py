@@ -14,7 +14,6 @@ from typing import Optional
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-google_finance_bp = Blueprint('google_finance', __name__, url_prefix='/api/google-finance/update-etf-cmp')
 # Initialize Flask blueprint for Google Finance API
 google_finance_bp = Blueprint('google_finance', __name__, url_prefix='/api/google-finance')
 logger = logging.getLogger(__name__)

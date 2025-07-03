@@ -117,6 +117,14 @@ def start_schedulers():
             print("📊 Real-time quotes scheduler started")
         except ImportError:
             print("⚠️ Real-time quotes manager not available")
+        
+        # Start Google Finance scheduler for automatic CMP updates
+        try:
+            from Scripts.google_finance_scheduler import start_google_finance_scheduler
+            start_google_finance_scheduler()
+            print("💰 Google Finance scheduler started - updating every 5 minutes")
+        except Exception as e:
+            print(f"⚠️ Google Finance scheduler failed to start: {e}")
 
         # Start Yahoo Finance scheduler
         try:

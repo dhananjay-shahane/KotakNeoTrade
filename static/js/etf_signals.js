@@ -5,7 +5,7 @@
  */
 function ETFSignalsManager() {
     var self = this;
-    
+
     // Core data management
     this.signals = [];                  // All ETF signals from database
     this.filteredSignals = [];          // Filtered signals based on search/sort
@@ -13,7 +13,7 @@ function ETFSignalsManager() {
     this.itemsPerPage = 25;             // Number of signals per page
     this.isLoading = false;             // Loading state flag
     this.refreshInterval = null;        // Auto-refresh timer
-    
+
     // Table sorting configuration
     this.sortField = 'id';              // Current sort field
     this.sortDirection = 'asc';         // Sort direction (asc/desc)
@@ -22,8 +22,8 @@ function ETFSignalsManager() {
     this.availableColumns = [
         { key: 'trade_signal_id', label: 'ID', visible: true },
         { key: 'etf', label: 'ETF', visible: true },
-        { key: 'thirty', label: '30', visible: true },
-        { key: 'dh', label: 'DH', visible: true },
+        { key: 'thirty', label: '30D', visible: true },
+        { key: 'dh', label: '30D%', visible: true },
         { key: 'date', label: 'DATE', visible: true },
         { key: 'qty', label: 'QTY', visible: true },
         { key: 'ep', label: 'EP', visible: true },
@@ -42,8 +42,8 @@ function ETFSignalsManager() {
         { key: 'ip', label: 'IP', visible: false },
         { key: 'nt', label: 'NT', visible: false },
         { key: 'qt', label: 'QT', visible: false },
-        { key: 'seven', label: '7', visible: false },
-        { key: 'ch', label: '%CH', visible: true },
+        { key: 'seven', label: '7D', visible: true },
+        { key: 'ch', label: '7D%', visible: true },
         { key: 'actions', label: 'ACTIONS', visible: true }
     ];
 
@@ -242,10 +242,25 @@ ETFSignalsManager.prototype.createSignalRow = function(signal) {
                 cellValue = '<span class="fw-bold text-primary">' + symbol + '</span>';
                 break;
             case 'thirty':
-                cellValue = signal.thirty || '--';
+                var thirtyValue = signal.thirty || signal.d30 || 0;
+                if (typeof thirtyValue === 'string') {
+                    thirtyValue = parseFloat(thirtyValue) || 0;
+                }
+                cellValue = thirtyValue > 0 ? '₹' + thirtyValue.toFixed(2) : '₹0.00';
                 break;
             case 'dh':
-                cellValue = signal.dh || '0';
+                var dhValue = signal.dh || signal.ch30 || '0.00%';
+                if (typeof dhValue === 'number') {
+                    dhValue = dhValue.toFixed(2) + '%';
+                }
+                if (typeof dhValue === 'string' && !dhValue.includes('%')) {
+                    dhValue = parseFloat(dhValue).toFixed(2) + '%';
+                }
+                var percentage = parseFloat(dhValue.replace('%', ''));
+                var colorClass = percentage >= 0 ? 'text-success' : 'text-danger';
+                var bgColor = this.getGradientBackgroundColor(percentage);
+                cellStyle = bgColor;
+                cellValue = '<span class="fw-bold ' + colorClass + '">' + dhValue + '</span>';
                 break;
             case 'date':
                 cellValue = signal.date || '--';
@@ -306,13 +321,25 @@ ETFSignalsManager.prototype.createSignalRow = function(signal) {
             //     cellValue = signal.qt || quantity;
             //     break;
             case 'seven':
-                cellValue = signal.seven || '--';
+                var sevenValue = signal.seven || signal.d7 || 0;
+                if (typeof sevenValue === 'string') {
+                    sevenValue = parseFloat(sevenValue) || 0;
+                }
+                cellValue = sevenValue > 0 ? '₹' + sevenValue.toFixed(2) : '₹0.00';
                 break;
             case 'ch':
-                var chValue = signal.ch || changePct.toFixed(2) + '%';
-                var bgColor = this.getGradientBackgroundColor(changePct);
+                var chValue = signal.ch || signal.ch7 || '0.00%';
+                if (typeof chValue === 'number') {
+                    chValue = chValue.toFixed(2) + '%';
+                }
+                if (typeof chValue === 'string' && !chValue.includes('%')) {
+                    chValue = parseFloat(chValue).toFixed(2) + '%';
+                }
+                var percentage = parseFloat(chValue.replace('%', ''));
+                var colorClass = percentage >= 0 ? 'text-success' : 'text-danger';
+                var bgColor = this.getGradientBackgroundColor(percentage);
                 cellStyle = bgColor;
-                cellValue = '<span class="fw-bold">' + chValue + '</span>';
+                cellValue = '<span class="fw-bold ' + colorClass + '">' + chValue + '</span>';
                 break;
             case 'actions':
                 var signalId = signal.trade_signal_id || signal.id || index;
@@ -789,7 +816,7 @@ function setRefreshInterval(interval, text) {
         interval = 300000;
         text = '5 Min';
     }
-    
+
     if (window.etfSignalsManager) {
         window.etfSignalsManager.stopAutoRefresh();
         if (interval > 0) {
@@ -827,7 +854,7 @@ function exportSignals() {
             var symbol = signal.etf || signal.symbol || '';
             var entryPrice = signal.ep || signal.entry_price || 0;
             var currentPrice = signal.cmp || signal.current_price || 0;
-            var quantity = signal.qty || signal.quantity || 0;
+            var quantity = signal.qty || signal|| signal.quantity || 0;
             var investment = signal.inv || signal.investment_amount || 0;
             var pnl = signal.pl || signal.pnl || 0;
             var changePct = signal.change_pct || signal.pp || 0;
@@ -1167,6 +1194,12 @@ function updateCMPDirectlyFromSource(source) {
     // Use the appropriate API endpoint based on source
     var apiEndpoint = source === 'google' ? '/api/google-finance/update-etf-cmp' : '/api/yahoo/update-prices';
 
+    // Create AbortController for timeout handling
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function() {
+        controller.abort();
+    }, 35000); // 35 second timeout
+
     fetch(apiEndpoint, {
         method: 'POST',
         headers: {
@@ -1175,9 +1208,11 @@ function updateCMPDirectlyFromSource(source) {
         body: JSON.stringify({
             direct_update: true,
             source: source
-        })
+        }),
+        signal: controller.signal
     })
     .then(function(response) {
+        clearTimeout(timeoutId); // Clear the timeout since request completed
         return response.json();
     })
     .then(function(data) {
@@ -1221,6 +1256,7 @@ function updateCMPDirectlyFromSource(source) {
         }
     })
     .catch(function(error) {
+        clearTimeout(timeoutId); // Clear the timeout
         console.error('Error updating CMP directly:', error);
 
         // Hide update status icon
@@ -1229,11 +1265,17 @@ function updateCMPDirectlyFromSource(source) {
             statusIcon.style.display = 'none';
         }
 
+        // Check if it's a timeout/abort error
+        var errorMessage = 'Failed to connect to ' + (source === 'google' ? 'Google Finance' : 'Yahoo Finance') + ' service';
+        if (error.name === 'AbortError') {
+            errorMessage = 'Update took too long and was cancelled. The update might still be running in the background.';
+        }
+
         // Show error notification
         if (typeof showToaster === 'function') {
             showToaster(
                 'Network Error', 
-                'Failed to connect to ' + (source === 'google' ? 'Google Finance' : 'Yahoo Finance') + ' service',
+                errorMessage,
                 'error'
             );
         }
@@ -1250,8 +1292,10 @@ function updatePricesFromDataSource(source) {
     updateCMPDirectlyFromSource(source);
 }
 
-// 
-setInterval(updateCMPDirectlyFromSource('google'), 10); 
+// Auto-update CMP every 5 minutes
+setInterval(function() {
+    updateCMPDirectlyFromSource('google');
+}, 300000); 
 
 function updateCurrentDataSourceIndicator() {
     var dataSource = localStorage.getItem('data-source') || 'google';
@@ -1448,3 +1492,6 @@ function getLivePrice(symbol) {
     // }, 5000); // Update every 5 seconds (adjust as needed)
 
 // Column settings functionality is handled by ETF Signals Manager
+
+// Note: jQuery-dependent DataTable functionality removed to avoid $ dependency
+// The main ETF signals functionality is handled by ETFSignalsManager class above

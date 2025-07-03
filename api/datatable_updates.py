@@ -198,12 +198,12 @@ def refresh_datatable_data():
             entry_price = float(signal.entry_price) if signal.entry_price else 0
             current_price = float(signal.current_price) if signal.current_price else 0
             quantity = signal.quantity or 0
-            
+
             investment = entry_price * quantity
             current_value = current_price * quantity
             pnl_amount = current_value - investment
             pnl_percent = ((current_price - entry_price) / entry_price * 100) if entry_price > 0 else 0
-            
+
             formatted_data.append({
                 'id': signal.id,
                 'symbol': signal.symbol,
@@ -228,19 +228,112 @@ def refresh_datatable_data():
                     'pnl_percent': f"{pnl_percent:+.2f}%"
                 }
             })
-        
+
         return jsonify({
             'success': True,
             'message': f'Refreshed data for {len(formatted_data)} signals',
             'total_records': len(formatted_data),
             'data': formatted_data
         })
-        
+
     except Exception as e:
         logger.error(f"Error refreshing datatable data: {e}")
         return jsonify({
             'success': False,
             'error': str(e)
+        }), 500
+
+@datatable_updates_bp.route('/refresh-performance-data', methods=['POST'])
+def refresh_performance_data():
+    """Refresh datatable data with latest performance metrics"""
+    try:
+        if 'user_id' not in session:
+            return jsonify({'error': 'Authentication required'}), 401
+        
+        logger.info("🔄 Refreshing datatable with latest performance data")
+        
+        # Import here to avoid circular imports
+        from Scripts.external_db_service import get_etf_signals_data_json
+        
+        # Get fresh data from external database
+        fresh_data = get_etf_signals_data_json()
+        
+        if 'error' in fresh_data:
+            return jsonify({
+                'success': False,
+                'message': f"Error refreshing data: {fresh_data['error']}"
+            }), 500
+        
+        # Count records with performance data
+        performance_count = 0
+        for record in fresh_data['data']:
+            if record.get('d30', 0) > 0 or record.get('d7', 0) > 0:
+                performance_count += 1
+        
+        logger.info(f"✅ Refreshed {fresh_data['recordsTotal']} records, {performance_count} with performance data")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Refreshed {fresh_data["recordsTotal"]} records with latest performance data',
+            'data': fresh_data['data'],
+            'recordsTotal': fresh_data['recordsTotal'],
+            'recordsFiltered': fresh_data['recordsFiltered'],
+            'performance_records': performance_count
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error refreshing performance data: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to refresh performance data'
+        }), 500
+
+@datatable_updates_bp.route('/force-performance-update', methods=['POST'])
+def force_performance_update():
+    """Force update performance data and refresh datatable"""
+    try:
+        if 'user_id' not in session:
+            return jsonify({'error': 'Authentication required'}), 401
+        
+        logger.info("🚀 Force updating performance data...")
+        
+        # Import performance calculator
+        from Scripts.google_finance_cmp_updater import GoogleFinanceCMPUpdater
+        
+        # Update performance data
+        updater = GoogleFinanceCMPUpdater()
+        result = updater.update_all_symbols()
+        
+        if result.get('success'):
+            # Get refreshed datatable data
+            from Scripts.external_db_service import get_etf_signals_data_json
+            fresh_data = get_etf_signals_data_json()
+            
+            return jsonify({
+                'success': True,
+                'message': f'Updated {result.get("updated_count", 0)} records with performance data',
+                'data': fresh_data['data'],
+                'recordsTotal': fresh_data['recordsTotal'],
+                'update_details': {
+                    'symbols_processed': result.get('total_symbols', 0),
+                    'successful_updates': result.get('successful_symbols', 0),
+                    'database_rows_updated': result.get('updated_count', 0),
+                    'duration': result.get('duration', 0)
+                }
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': f'Performance update failed: {result.get("message", "Unknown error")}'
+            }), 500
+        
+    except Exception as e:
+        logger.error(f"❌ Error in force performance update: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to force update performance data'
         }), 500
 
 @datatable_updates_bp.route('/symbols', methods=['GET'])

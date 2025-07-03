@@ -904,7 +904,7 @@ def test_auto_sync_endpoint():
 
 
 @app.route('/api/place-order', methods=['POST'])
-@require_auth
+@require_auth  
 def place_order():
     """API endpoint to place buy/sell orders using Kotak Neo API"""
     try:
@@ -1104,6 +1104,50 @@ def quick_sell():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
+# Google Finance Scheduler API endpoints
+@app.route('/api/google-finance-scheduler/status', methods=['GET'])
+def get_scheduler_status():
+    """Get Google Finance scheduler status"""
+    try:
+        from Scripts.google_finance_scheduler import get_scheduler_status
+        return jsonify(get_scheduler_status())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/google-finance-scheduler/start', methods=['POST'])
+def start_scheduler():
+    """Start Google Finance scheduler"""
+    try:
+        from Scripts.google_finance_scheduler import start_google_finance_scheduler
+        start_google_finance_scheduler()
+        return jsonify({'success': True, 'message': 'Google Finance scheduler started'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/google-finance-scheduler/stop', methods=['POST'])
+def stop_scheduler():
+    """Stop Google Finance scheduler"""
+    try:
+        from Scripts.google_finance_scheduler import stop_google_finance_scheduler
+        stop_google_finance_scheduler()
+        return jsonify({'success': True, 'message': 'Google Finance scheduler stopped'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/google-finance-scheduler/force-update', methods=['POST'])
+def force_scheduler_update():
+    """Force an immediate Google Finance update"""
+    try:
+        from Scripts.google_finance_scheduler import force_update_now
+        result = force_update_now()
+        if result:
+            return jsonify({'success': True, 'message': 'Update triggered successfully'})
+        else:
+            return jsonify({'success': False, 'message': 'Scheduler not running'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 from routes.auth import auth_bp
 from routes.main import main_bp
 from api.dashboard import dashboard_api
@@ -1159,13 +1203,33 @@ try:
 except Exception as e:
     print(f"Warning: Could not register deals blueprint: {e}")
 
-# Register Google Finance API blueprint
+# Register ETF signals blueprint
+    app.register_blueprint(etf_bp, url_prefix='/api')
+    
+    # Register other blueprints
+    app.register_blueprint(admin_bp, url_prefix='/api/admin')
+    app.register_blueprint(notifications_bp, url_prefix='/api')
+    app.register_blueprint(quotes_bp, url_prefix='/api')
+    app.register_blueprint(datatable_bp, url_prefix='/api')
+    app.register_blueprint(enhanced_etf_bp, url_prefix='/api')
+    app.register_blueprint(admin_signals_bp, url_prefix='/api')
+    app.register_blueprint(supabase_bp, url_prefix='/api')
+    
+    # Register Google Finance API blueprint
     try:
         from api.google_finance_api import google_finance_bp
         app.register_blueprint(google_finance_bp)
         logging.info("✓ Google Finance API blueprint registered")
     except ImportError as e:
         logging.warning(f"Could not register Google Finance API: {e}")
+
+    # Register Performance Calculator API blueprint
+    try:
+        from api.performance_calculator import performance_bp
+        app.register_blueprint(performance_bp)
+        logging.info("✓ Performance Calculator API blueprint registered")
+    except ImportError as e:
+        logging.warning(f"Could not register Performance Calculator API: {e}")
 
     # Register Yahoo Finance API blueprint
     app.register_blueprint(yahoo_bp)
@@ -1201,7 +1265,7 @@ setup_auto_sync_triggers()
 
 
 # Live CMP update endpoint using Google Finance
-@app.route('/api/google-finance/update-etf-cmp')
+@app.route('/api/google-finance/update-etf-cmp', methods=['GET', 'POST'])
 def update_live_cmp_endpoint():
     """API endpoint to update live CMP data using Google Finance via yfinance"""
     try:

@@ -17,6 +17,8 @@ from psycopg2.extras import RealDictCursor
 import yfinance as yf
 import requests
 from typing import Dict, List, Optional, Tuple
+import concurrent.futures
+from threading import Lock
 
 # Install required packages if not available
 try:
@@ -37,6 +39,66 @@ logging.basicConfig(
 
 class GoogleFinanceCMPUpdater:
     """Google Finance CMP Updater for admin_trade_signals table"""
+    
+    def __init__(self):
+        """Initialize with external database configuration"""
+        self.db_config = {
+            'host': "dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com",
+            'database': "kotak_trading_db",
+            'user': "kotak_trading_db_user",
+            'password': "JRUlk8RutdgVcErSiUXqljDUdK8sBsYO",
+            'port': 5432
+        }
+        self.updated_count = 0
+        self.error_count = 0
+        self.lock = Lock()  # Thread lock for shared counters
+
+    def _process_single_symbol(self, symbol: str) -> Dict:
+        """Process a single symbol and return result (for parallel execution)"""
+        try:
+            # First try to get comprehensive historical data
+            historical_data = self.fetch_historical_data(symbol)
+            
+            if historical_data:
+                # Update database with historical data
+                updated_rows = self.update_symbol_with_historical_data(symbol, historical_data)
+                return {
+                    'price': historical_data.get('cmp'),
+                    'updated_rows': updated_rows,
+                    'status': 'success',
+                    'historical_data': historical_data
+                }
+            else:
+                # Fallback to simple price update
+                # Try Google Finance first
+                live_price = self.fetch_google_finance_price(symbol)
+
+                # If Google Finance fails, try yfinance as fallback
+                if not live_price or live_price <= 0:
+                    live_price = self.fetch_live_price_yfinance(symbol)
+
+                if live_price and live_price > 0:
+                    # Update database
+                    updated_rows = self.update_symbol_cmp(symbol, live_price)
+                    return {
+                        'price': live_price,
+                        'updated_rows': updated_rows,
+                        'status': 'success'
+                    }
+                else:
+                    return {
+                        'price': None,
+                        'updated_rows': 0,
+                        'status': 'failed'
+                    }
+        except Exception as e:
+            logging.error(f"❌ Error processing {symbol}: {e}")
+            return {
+                'price': None,
+                'updated_rows': 0,
+                'status': 'failed',
+                'error': str(e)
+            }
 
     def fetch_google_finance_price(self, symbol: str) -> Optional[float]:
         """Fetch live price from Google Finance with enhanced error handling"""
@@ -63,7 +125,7 @@ class GoogleFinanceCMPUpdater:
                 
                 try:
                     logging.info(f"Trying Google Finance: {url}")
-                    response = requests.get(url, headers=headers, timeout=10)
+                    response = requests.get(url, headers=headers, timeout=5)
                     if response.status_code == 200:
                         soup = BeautifulSoup(response.text, 'html.parser')
                         
@@ -151,13 +213,64 @@ class GoogleFinanceCMPUpdater:
         except Exception as e:
             logging.error(f"❌ Error fetching price for {symbol}: {e}")
             return None
+
+    def fetch_historical_data(self, symbol: str) -> Dict:
+        """Fetch historical price data for performance calculations"""
+        try:
+            yahoo_symbol = self.get_yahoo_symbol(symbol)
+            ticker = yf.Ticker(yahoo_symbol)
+            
+            # Get 35 days of data to ensure we have 30 trading days
+            hist = ticker.history(period="35d")
+            
+            if hist.empty:
+                logging.warning(f"No historical data found for {symbol}")
+                return {}
+            
+            # Get current price (latest close)
+            current_price = float(hist['Close'].iloc[-1])
+            
+            # Calculate 30-day performance
+            d30_price = None
+            ch30 = 0.0
+            
+            if len(hist) >= 30:
+                d30_price = float(hist['Close'].iloc[-30])
+                ch30 = ((current_price - d30_price) / d30_price) * 100
+            elif len(hist) >= 20:  # Fallback to 20 days if less than 30
+                d30_price = float(hist['Close'].iloc[-20])
+                ch30 = ((current_price - d30_price) / d30_price) * 100
+            
+            # Calculate 7-day performance
+            d7_price = None
+            ch7 = 0.0
+            
+            if len(hist) >= 7:
+                d7_price = float(hist['Close'].iloc[-7])
+                ch7 = ((current_price - d7_price) / d7_price) * 100
+            
+            result = {
+                'cmp': current_price,
+                'd30': d30_price or current_price,
+                'ch30': round(ch30, 2),
+                'd7': d7_price or current_price,
+                'ch7': round(ch7, 2),
+                'nt': current_price  # Net price (same as current price)
+            }
+            
+            logging.info(f"✓ Historical data for {symbol}: CMP=₹{current_price:.2f}, 30d={ch30:.2f}%, 7d={ch7:.2f}%")
+            return result
+            
+        except Exception as e:
+            logging.error(f"❌ Error fetching historical data for {symbol}: {e}")
+            return {}
         
     def get_symbols_from_database(self) -> List[str]:
         """Get all unique symbols from admin_trade_signals table"""
         symbols = []
 
         try:
-            with psycopg2.connect(self.connection_string) as conn:
+            with psycopg2.connect(**self.db_config) as conn:
                 with conn.cursor(cursor_factory=RealDictCursor) as cursor:
                     # Get unique symbols from both symbol and etf columns
                     cursor.execute("""
@@ -179,14 +292,143 @@ class GoogleFinanceCMPUpdater:
 
         return symbols
 
-    def update_symbol_cmp(self, symbol: str, new_cmp: float) -> int:
-        """Update CMP for a specific symbol in admin_trade_signals table"""
+    def get_yahoo_symbol(self, symbol: str) -> str:
+        """Convert Indian stock symbol to Yahoo Finance format"""
+        clean_symbol = symbol.strip().upper()
+        
+        # Add .NS suffix for NSE stocks if not already present
+        if not clean_symbol.endswith('.NS') and not clean_symbol.endswith('.BO'):
+            return f"{clean_symbol}.NS"
+        
+        return clean_symbol
+
+    def update_symbol_with_historical_data(self, symbol: str, data: Dict) -> int:
+        """Update symbol with comprehensive market data including historical performance"""
         updated_rows = 0
 
         try:
-            with psycopg2.connect(self.connection_string) as conn:
+            with psycopg2.connect(**self.db_config) as conn:
                 with conn.cursor() as cursor:
-                    # Update all records where symbol or etf matches
+                    # Check which columns exist in admin_trade_signals
+                    cursor.execute("""
+                        SELECT column_name FROM information_schema.columns 
+                        WHERE table_name = 'admin_trade_signals' 
+                        AND column_name IN ('updated_at', 'last_update_time', 'thirty', 'dh', 'seven', 'ch')
+                    """)
+                    existing_columns = [row[0] for row in cursor.fetchall()]
+
+                    # Build dynamic update query based on available columns
+                    update_fields = ['cmp = %s']
+                    update_values = [data.get('cmp', 0)]
+
+                    # Add performance fields if they exist
+                    if 'thirty' in existing_columns:
+                        update_fields.append('thirty = %s')
+                        update_values.append(data.get('d30', 0))
+                    
+                    if 'dh' in existing_columns:
+                        update_fields.append('dh = %s')
+                        update_values.append(f"{data.get('ch30', 0):.2f}%")
+                    
+                    if 'seven' in existing_columns:
+                        update_fields.append('seven = %s')
+                        update_values.append(data.get('d7', 0))
+                    
+                    if 'ch' in existing_columns:
+                        update_fields.append('ch = %s')
+                        update_values.append(f"{data.get('ch7', 0):.2f}%")
+                    
+                    # Also update d30, ch30, d7, ch7 if they exist
+                    cursor.execute("""
+                        SELECT column_name FROM information_schema.columns 
+                        WHERE table_name = 'admin_trade_signals' 
+                        AND column_name IN ('d30', 'ch30', 'd7', 'ch7')
+                    """)
+                    performance_columns = [row[0] for row in cursor.fetchall()]
+                    
+                    if 'd30' in performance_columns:
+                        update_fields.append('d30 = %s')
+                        update_values.append(data.get('d30', 0))
+                    
+                    if 'ch30' in performance_columns:
+                        update_fields.append('ch30 = %s')
+                        update_values.append(f"{data.get('ch30', 0):.2f}%")
+                    
+                    if 'd7' in performance_columns:
+                        update_fields.append('d7 = %s')
+                        update_values.append(data.get('d7', 0))
+                    
+                    if 'ch7' in performance_columns:
+                        update_fields.append('ch7 = %s')
+                        update_values.append(f"{data.get('ch7', 0):.2f}%")
+                        update_values.append(data.get('d30', 0))
+                    
+                    if 'ch30' in performance_columns:
+                        update_fields.append('ch30 = %s')
+                        update_values.append(f"{data.get('ch30', 0):.2f}%")
+                    
+                    if 'd7' in performance_columns:
+                        update_fields.append('d7 = %s')
+                        update_values.append(data.get('d7', 0))
+                    
+                    if 'ch7' in performance_columns:
+                        update_fields.append('ch7 = %s')
+                        update_values.append(f"{data.get('ch7', 0):.2f}%")
+
+                    # Add timestamp field
+                    if 'last_update_time' in existing_columns:
+                        update_fields.append('last_update_time = CURRENT_TIMESTAMP')
+                    elif 'updated_at' in existing_columns:
+                        update_fields.append('updated_at = CURRENT_TIMESTAMP')
+
+                    # Add condition values
+                    update_values.extend([symbol, symbol, data.get('cmp', 0)])
+
+                    # Execute update
+                    query = f"""
+                        UPDATE admin_trade_signals 
+                        SET {', '.join(update_fields)}
+                        WHERE (symbol = %s OR etf = %s)
+                        AND (cmp IS NULL OR ABS(cmp - %s) > 0.01)
+                    """
+                    
+                    cursor.execute(query, update_values)
+                    admin_updated_rows = cursor.rowcount
+
+                    # Update user_deals table
+                    cursor.execute("""
+                        UPDATE user_deals 
+                        SET cmp = %s, 
+                            current_price = %s,
+                            last_price_update = CURRENT_TIMESTAMP
+                        WHERE (symbol = %s OR etf_symbol = %s)
+                        AND (cmp IS NULL OR ABS(cmp - %s) > 0.01)
+                    """, (data.get('cmp', 0), data.get('cmp', 0), symbol, symbol, data.get('cmp', 0)))
+
+                    user_deals_updated_rows = cursor.rowcount
+                    updated_rows = admin_updated_rows + user_deals_updated_rows
+
+                    conn.commit()
+
+                    if updated_rows > 0:
+                        logging.info(f"✓ Updated {admin_updated_rows} admin_trade_signals and {user_deals_updated_rows} user_deals records for {symbol}")
+                        logging.info(f"  CMP: ₹{data.get('cmp', 0):.2f}, 30d: {data.get('ch30', 0):.2f}%, 7d: {data.get('ch7', 0):.2f}%")
+                    else:
+                        logging.info(f"• No updates needed for {symbol}")
+
+        except Exception as e:
+            logging.error(f"❌ Error updating data for {symbol}: {e}")
+
+        return updated_rows
+
+    def update_symbol_cmp(self, symbol: str, new_cmp: float) -> int:
+        """Update CMP for a specific symbol in both admin_trade_signals and user_deals tables"""
+        updated_rows = 0
+
+        try:
+            with psycopg2.connect(**self.db_config) as conn:
+                with conn.cursor() as cursor:
+                    # Update admin_trade_signals table
                     # First check if updated_at column exists
                     cursor.execute("""
                         SELECT column_name FROM information_schema.columns 
@@ -204,32 +446,46 @@ class GoogleFinanceCMPUpdater:
                     if has_last_update_time:
                         cursor.execute("""
                             UPDATE admin_trade_signals 
-                            SET current_price = %s, 
+                            SET cmp = %s, 
                                 last_update_time = CURRENT_TIMESTAMP
-                            WHERE symbol = %s
-                            AND (current_price IS NULL OR current_price != %s)
-                        """, (new_cmp, symbol, new_cmp))
+                            WHERE (symbol = %s OR etf = %s)
+                            AND (cmp IS NULL OR ABS(cmp - %s) > 0.01)
+                        """, (new_cmp, symbol, symbol, new_cmp))
                     elif has_updated_at:
                         cursor.execute("""
                             UPDATE admin_trade_signals 
-                            SET current_price = %s, 
+                            SET cmp = %s, 
                                 updated_at = CURRENT_TIMESTAMP
-                            WHERE symbol = %s
-                            AND (current_price IS NULL OR current_price != %s)
-                        """, (new_cmp, symbol, new_cmp))
+                            WHERE (symbol = %s OR etf = %s)
+                            AND (cmp IS NULL OR ABS(cmp - %s) > 0.01)
+                        """, (new_cmp, symbol, symbol, new_cmp))
                     else:
                         cursor.execute("""
                             UPDATE admin_trade_signals 
-                            SET current_price = %s 
-                            WHERE symbol = %s
-                            AND (current_price IS NULL OR current_price != %s)
-                        """, (new_cmp, symbol, new_cmp))
+                            SET cmp = %s 
+                            WHERE (symbol = %s OR etf = %s)
+                            AND (cmp IS NULL OR ABS(cmp - %s) > 0.01)
+                        """, (new_cmp, symbol, symbol, new_cmp))
 
-                    updated_rows = cursor.rowcount
+                    admin_updated_rows = cursor.rowcount
+
+                    # Update user_deals table
+                    cursor.execute("""
+                        UPDATE user_deals 
+                        SET cmp = %s, 
+                            current_price = %s,
+                            last_price_update = CURRENT_TIMESTAMP
+                        WHERE (symbol = %s OR etf_symbol = %s)
+                        AND (cmp IS NULL OR ABS(cmp - %s) > 0.01)
+                    """, (new_cmp, new_cmp, symbol, symbol, new_cmp))
+
+                    user_deals_updated_rows = cursor.rowcount
+                    updated_rows = admin_updated_rows + user_deals_updated_rows
+
                     conn.commit()
 
                     if updated_rows > 0:
-                        logging.info(f"✓ Updated {updated_rows} records for {symbol} with CMP: ₹{new_cmp}")
+                        logging.info(f"✓ Updated {admin_updated_rows} admin_trade_signals and {user_deals_updated_rows} user_deals records for {symbol} with CMP: ₹{new_cmp}")
                     else:
                         logging.info(f"• No updates needed for {symbol} (CMP already ₹{new_cmp})")
 
@@ -262,44 +518,41 @@ class GoogleFinanceCMPUpdater:
         success_count = 0
         results = {}
 
-        # Process each symbol
-        for i, symbol in enumerate(symbols, 1):
-            logging.info(f"Processing {i}/{len(symbols)}: {symbol}")
-
-            # Try Google Finance first
-            live_price = self.fetch_google_finance_price(symbol)
-
-            # If Google Finance fails, try yfinance
-            if not live_price or live_price <= 0:
-                logging.info(f"Google Finance failed, trying yfinance for {symbol}")
-                live_price = self.fetch_live_price_yfinance(symbol)
-
-            # If both fail, try alternative/simulated price
-            if not live_price or live_price <= 0:
-                logging.info(f"Trying fallback source for {symbol}")
-                live_price = self.fetch_alternative_price(symbol)
-
-            if live_price and live_price > 0:
-                # Update database
-                updated_rows = self.update_symbol_cmp(symbol, live_price)
-                self.updated_count += updated_rows
-                success_count += 1
-
-                results[symbol] = {
-                    'price': live_price,
-                    'updated_rows': updated_rows,
-                    'status': 'success'
-                }
-            else:
-                self.error_count += 1
-                results[symbol] = {
-                    'price': None,
-                    'updated_rows': 0,
-                    'status': 'failed'
-                }
-
-            # Small delay to avoid rate limiting
-            time.sleep(0.5)
+        # Process symbols in parallel for speed
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            # Submit all tasks
+            future_to_symbol = {
+                executor.submit(self._process_single_symbol, symbol): symbol 
+                for symbol in symbols
+            }
+            
+            # Collect results as they complete
+            for i, future in enumerate(concurrent.futures.as_completed(future_to_symbol), 1):
+                symbol = future_to_symbol[future]
+                logging.info(f"Processing {i}/{len(symbols)}: {symbol}")
+                
+                try:
+                    result = future.result()
+                    results[symbol] = result
+                    
+                    if result['status'] == 'success':
+                        with self.lock:
+                            self.updated_count += result['updated_rows']
+                            success_count += 1
+                    else:
+                        with self.lock:
+                            self.error_count += 1
+                            
+                except Exception as e:
+                    logging.error(f"❌ Error processing {symbol}: {e}")
+                    with self.lock:
+                        self.error_count += 1
+                    results[symbol] = {
+                        'price': None,
+                        'updated_rows': 0,
+                        'status': 'failed',
+                        'error': str(e)
+                    }
 
         duration = time.time() - start_time
 

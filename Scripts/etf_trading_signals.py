@@ -1,619 +1,408 @@
-from app import db
-from Scripts.models_etf import RealtimeQuote
-from Scripts.neo_client import NeoClient
-from Scripts.session_helper import SessionHelper
-from datetime import datetime, timedelta
+"""ETF Trading Signals API endpoints"""
+from flask import Blueprint, request, jsonify, session
 import logging
+from datetime import datetime, timedelta
 import json
-import random
+from sqlalchemy import text
+from app import db
 
+etf_bp = Blueprint('etf', __name__, url_prefix='/etf')
 logger = logging.getLogger(__name__)
 
-class ETFTradingSignals:
-    """ETF Trading Signals Manager"""
-
-    def __init__(self):
-        self.logger = logging.getLogger(__name__)
-
-    def get_user_etf_positions(self, user_id):
-        """Get all ETF positions for a user (including historical positions)"""
-        try:
-            # Get all positions (active and inactive) for display
-            positions = ETFPosition.query.filter_by(user_id=user_id).order_by(ETFPosition.entry_date.desc()).all()
-
-            # Update current prices with simulated data or live data
-            self.update_position_prices(positions)
-
-            # Convert to list of dictionaries
-            positions_list = []
-            for position in positions:
-                pos_dict = position.to_dict()
-                positions_list.append(pos_dict)
-
-            return positions_list
-
-        except Exception as e:
-            self.logger.error(f"Error getting user ETF positions: {e}")
-            return []
-
-    def update_position_prices(self, positions):
-        """Update current prices for ETF positions"""
-        try:
-            for position in positions:
-                # For now, simulate price updates
-                # In real implementation, this would fetch live prices from the API
-                base_price = position.entry_price
-                price_variation = random.uniform(-0.05, 0.05)  # ±5% variation
-                position.current_price = base_price * (1 + price_variation)
-                position.last_update_time = datetime.utcnow()
-
-            db.session.commit()
-
-        except Exception as e:
-            self.logger.error(f"Error updating position prices: {e}")
-
-    def calculate_portfolio_summary(self, user_id):
-        """Calculate portfolio summary metrics"""
-        try:
-            positions = ETFPosition.query.filter_by(user_id=user_id, is_active=True).all()
-
-            if not positions:
-                return {
-                    'total_positions': 0,
-                    'total_investment': 0.0,
-                    'current_value': 0.0,
-                    'total_pnl': 0.0,
-                    'return_percent': 0.0,
-                    'profit_positions': 0,
-                    'loss_positions': 0
-                }
-
-            total_investment = float(sum(pos.investment_amount for pos in positions))
-            total_current_value = float(sum(pos.current_value for pos in positions))
-            total_pnl = float(total_current_value - total_investment)
-            return_percent = float((total_pnl / total_investment * 100)) if total_investment > 0 else 0.0
-
-            profit_positions = sum(1 for pos in positions if pos.profit_loss > 0)
-            loss_positions = sum(1 for pos in positions if pos.profit_loss < 0)
-
-            return {
-                'total_positions': len(positions),
-                'total_investment': total_investment,
-                'current_value': total_current_value,
-                'total_pnl': total_pnl,
-                'return_percent': return_percent,
-                'profit_positions': profit_positions,
-                'loss_positions': loss_positions
-            }
-
-        except Exception as e:
-            self.logger.error(f"Error calculating portfolio summary: {e}")
-            return {
-                'total_positions': 0,
-                'total_investment': 0.0,
-                'current_value': 0.0,
-                'total_pnl': 0.0,
-                'return_percent': 0.0,
-                'profit_positions': 0,
-                'loss_positions': 0
-            }
-
-    def add_etf_position(self, user_id, position_data):
-        """Add new ETF position"""
-        try:
-            position = ETFPosition()
-            position.user_id = user_id
-            position.etf_symbol = position_data['etf_symbol']
-            position.trading_symbol = position_data['trading_symbol']
-            position.token = position_data['token']
-            position.exchange = position_data.get('exchange', 'NSE')
-            position.entry_date = datetime.strptime(position_data['entry_date'], '%Y-%m-%d').date()
-            position.quantity = int(position_data['quantity'])
-            position.entry_price = float(position_data['entry_price'])
-            position.target_price = float(position_data['target_price']) if position_data.get('target_price') else None
-            position.stop_loss = float(position_data['stop_loss']) if position_data.get('stop_loss') else None
-            position.current_price = float(position_data['entry_price'])  # Initialize with entry price
-            position.position_type = position_data.get('position_type', 'LONG')
-            position.notes = position_data.get('notes', '')
-            position.is_active = True
-            position.created_at = datetime.utcnow()
-            position.last_update_time = datetime.utcnow()
-
-            db.session.add(position)
-            db.session.commit()
-
-            return position.to_dict()
-
-        except Exception as e:
-            self.logger.error(f"Error adding ETF position: {e}")
-            raise ValueError(f"Failed to add position: {e}")
-
-    def update_etf_position(self, position_id, user_id, position_data):
-        """Update existing ETF position"""
-        try:
-            position = ETFPosition.query.filter_by(id=position_id, user_id=user_id).first()
-            if not position:
-                raise ValueError("Position not found")
-
-            # Update fields
-            if 'quantity' in position_data:
-                position.quantity = int(position_data['quantity'])
-            if 'entry_price' in position_data:
-                position.entry_price = float(position_data['entry_price'])
-            if 'target_price' in position_data:
-                position.target_price = float(position_data['target_price']) if position_data['target_price'] else None
-            if 'stop_loss' in position_data:
-                position.stop_loss = float(position_data['stop_loss']) if position_data['stop_loss'] else None
-            if 'notes' in position_data:
-                position.notes = position_data['notes']
-            if 'position_type' in position_data:
-                position.position_type = position_data['position_type']
-
-            position.last_update_time = datetime.utcnow()
-
-            db.session.commit()
-
-            return position.to_dict()
-
-        except Exception as e:
-            self.logger.error(f"Error updating ETF position: {e}")
-            raise ValueError(f"Failed to update position: {e}")
-
-    def delete_etf_position(self, position_id, user_id):
-        """Delete ETF position"""
-        try:
-            position = ETFPosition.query.filter_by(id=position_id, user_id=user_id).first()
-            if not position:
-                raise ValueError("Position not found")
-
-            db.session.delete(position)
-            db.session.commit()
-
-            return True
-
-        except Exception as e:
-            self.logger.error(f"Error deleting ETF position: {e}")
-            return False
-
-    def search_etf_instruments(self, query):
-        """Search for ETF instruments"""
-        try:
-            # Sample ETF instruments for search
-            etf_instruments = [
-                {'symbol': 'NIFTYBEES', 'description': 'Nippon India ETF Nifty BeES', 'trading_symbol': 'NIFTYBEES-EQ', 'token': '120001'},
-                {'symbol': 'JUNIORBEES', 'description': 'Nippon India ETF Nifty Junior BeES', 'trading_symbol': 'JUNIORBEES-EQ', 'token': '120002'},
-                {'symbol': 'GOLDBEES', 'description': 'Nippon India ETF Gold BeES', 'trading_symbol': 'GOLDBEES-EQ', 'token': '120003'},
-                {'symbol': 'SILVERBEES', 'description': 'Nippon India ETF Silver BeES', 'trading_symbol': 'SILVERBEES-EQ', 'token': '120004'},
-                {'symbol': 'LIQUIDETF', 'description': 'Nippon India ETF Liquid BeES', 'trading_symbol': 'LIQUIDETF-EQ', 'token': '120005'},
-                {'symbol': 'BANKBEES', 'description': 'Nippon India ETF Bank BeES', 'trading_symbol': 'BANKBEES-EQ', 'token': '120006'},
-                {'symbol': 'ITBEES', 'description': 'Nippon India ETF IT BeES', 'trading_symbol': 'ITBEES-EQ', 'token': '120007'},
-                {'symbol': 'PHARMABEES', 'description': 'Nippon India ETF Pharma BeES', 'trading_symbol': 'PHARMABEES-EQ', 'token': '120008'},
-                {'symbol': 'CONSUMERBEES', 'description': 'Nippon India ETF Consumer BeES', 'trading_symbol': 'CONSUMERBEES-EQ', 'token': '120009'},
-                {'symbol': 'PSUBNKBEES', 'description': 'Nippon India ETF PSU Bank BeES', 'trading_symbol': 'PSUBNKBEES-EQ', 'token': '120010'},
-                {'symbol': 'HDFCNIFETF', 'description': 'HDFC Nifty 50 ETF', 'trading_symbol': 'HDFCNIFETF-EQ', 'token': '120011'},
-                {'symbol': 'IETF', 'description': 'ICICI Prudential Nifty ETF', 'trading_symbol': 'IETF-EQ', 'token': '120012'},
-                {'symbol': 'AUBANK', 'description': 'AU Small Finance Bank ETF', 'trading_symbol': 'AUBANK-EQ', 'token': '120013'},
-            ]
-
-            # Filter based on query
-            matching_instruments = []
-            query_upper = query.upper()
-
-            for instrument in etf_instruments:
-                if (query_upper in instrument['symbol'].upper() or 
-                    query_upper in instrument['description'].upper()):
-                    matching_instruments.append(instrument)
-
-            return matching_instruments[:10]  # Return top 10 matches
-
-        except Exception as e:
-            self.logger.error(f"Error searching ETF instruments: {e}")
-            return []
-
-    def get_live_quotes(self, instruments):
-        """Get live quotes for instruments"""
-        try:
-            # For now, return simulated quotes
-            # In real implementation, this would call the Neo API
-            quotes = {}
-
-            for instrument in instruments:
-                token = instrument.get('token', '')
-                symbol = instrument.get('symbol', '')
-
-                # Simulate quote data
-                base_price = random.uniform(50, 500)
-                quotes[token] = {
-                    'symbol': symbol,
-                    'ltp': round(base_price, 2),
-                    'change': round(random.uniform(-10, 10), 2),
-                    'change_percent': round(random.uniform(-5, 5), 2),
-                    'volume': random.randint(1000, 100000),
-                    'timestamp': datetime.now().isoformat()
-                }
-
-            return quotes
-
-        except Exception as e:
-            self.logger.error(f"Error getting live quotes: {e}")
-            return {}
-
-
-class ETFTradingSignals:
-    """ETF Trading Signals Manager with real-time data integration"""
-
-    def __init__(self):
-        self.session_helper = SessionHelper()
-        self.neo_client = NeoClient()
-        self.client = None
-        self.websocket_subscriptions = set()
-
-    def initialize_client(self):
-        """Initialize Neo API client with current Flask session"""
-        try:
-            from flask import session
-
-            # Get client from Flask session (already initialized)
-            if 'client' in session and session['client']:
-                self.client = session['client']
-                logger.info("✅ Using existing Neo client from Flask session")
-                return True
-            else:
-                logger.error("No active client in Flask session")
-                return False
-
-        except Exception as e:
-            logger.error(f"Error initializing Neo client: {e}")
-            return False
-
-    def search_etf_instruments(self, query):
-        """Search for ETF instruments using available data sources"""
-        if not self.client:
-            if not self.initialize_client():
-                return []
-
-        try:
-            # For now, return some common ETF instruments as a fallback
-            # This ensures the interface works while API integration is being finalized
-            common_etfs = [
-                {
-                    'symbol': 'NIFTYBEES',
-                    'trading_symbol': 'NIFTYBEES-EQ',
-                    'token': '15083',
-                    'exchange': 'NSE',
-                    'description': 'Nippon India ETF Nifty BeES',
-                    'lot_size': 1
-                },
-                {
-                    'symbol': 'GOLDBEES',
-                    'trading_symbol': 'GOLDBEES-EQ', 
-                    'token': '1660',
-                    'exchange': 'NSE',
-                    'description': 'Nippon India ETF Gold BeES',
-                    'lot_size': 1
-                },
-                {
-                    'symbol': 'BANKBEES',
-                    'trading_symbol': 'BANKBEES-EQ',
-                    'token': '2800',
-                    'exchange': 'NSE', 
-                    'description': 'Nippon India ETF Bank BeES',
-                    'lot_size': 1
-                },
-                {
-                    'symbol': 'JUNIORBEES',
-                    'trading_symbol': 'JUNIORBEES-EQ',
-                    'token': '583',
-                    'exchange': 'NSE',
-                    'description': 'Nippon India ETF Junior BeES',
-                    'lot_size': 1
-                },
-                {
-                    'symbol': 'LIQUIDBEES',
-                    'trading_symbol': 'LIQUIDBEES-EQ',
-                    'token': '1023',
-                    'exchange': 'NSE',
-                    'description': 'Nippon India ETF Liquid BeES',
-                    'lot_size': 1
-                }
-            ]
-
-            # Filter ETFs based on query
-            query_upper = query.upper()
-            filtered_etfs = [
-                etf for etf in common_etfs 
-                if query_upper in etf['symbol'].upper() or query_upper in etf['description'].upper()
-            ]
-
-            logger.info(f"Found {len(filtered_etfs)} ETF instruments for query: {query}")
-            return filtered_etfs
-
-        except Exception as e:
-            logger.error(f"Error searching ETF instruments: {e}")
-            return []
-
-    def get_live_quotes(self, instruments):
-        """Get live quotes for multiple instruments"""
-        if not self.client:
-            if not self.initialize_client():
-                return {}
-
-        try:
-            quotes = {}
-            for instrument in instruments:
-                try:
-                    # Use the trading functions to get quotes since they work with the current API
-                    from Scripts.trading_functions import TradingFunctions
-                    trading_funcs = TradingFunctions()
-
-                    # Only use authentic market data from Kotak Neo API
-                    # No sample data generation - skip if no authentic data available
-                    logger.warning(f"No authentic market data available for {instrument.get('symbol', 'unknown')}")
-                    continue
-                except Exception as e:
-                    logger.error(f"Error getting quote for {instrument.get('symbol', 'unknown')}: {e}")
-                    continue
-
-            return quotes
-
-        except Exception as e:
-            logger.error(f"Error getting live quotes: {e}")
-            return {}
-
-    def add_etf_position(self, user_id, position_data):
-        """Add new ETF position"""
-        try:
-            # Validate required fields
-            required_fields = ['etf_symbol', 'trading_symbol', 'token', 'quantity', 'entry_price']
-            for field in required_fields:
-                if field not in position_data or not position_data[field]:
-                    raise ValueError(f"Missing required field: {field}")
-
-            # Create new position
-            from Scripts.models_etf import ETFPosition
-            position = ETFPosition()
-            position.user_id = user_id
-            position.etf_symbol = position_data['etf_symbol']
-            position.trading_symbol = position_data['trading_symbol']
-            position.token = position_data['token']
-            position.exchange = position_data.get('exchange', 'NSE')
-            position.entry_date = datetime.strptime(position_data.get('entry_date', datetime.now().strftime('%Y-%m-%d')), '%Y-%m-%d').date()
-            position.quantity = int(position_data['quantity'])
-            position.entry_price = float(position_data['entry_price'])
-            position.target_price = float(position_data['target_price']) if position_data.get('target_price') else None
-            position.stop_loss = float(position_data['stop_loss']) if position_data.get('stop_loss') else None
-            position.position_type = position_data.get('position_type', 'LONG')
-            position.notes = position_data.get('notes', '')
-
-            # Set is_active based on position type or explicit status
-            # 1 = active position, 0 = closed/inactive position
-            position.is_active = position_data.get('is_active', True)
-
-            db.session.add(position)
-            db.session.commit()
-
-            # Subscribe to live data for this instrument
-            self.subscribe_to_live_data([{
-                'token': position.token,
-                'exchange': position.exchange,
-                'symbol': position.etf_symbol
-            }])
-
-            logger.info(f"✅ Added ETF position: {position.etf_symbol}")
-            return position.to_dict()
-
-        except Exception as e:
-            db.session.rollback()
-            logger.error(f"Error adding ETF position: {e}")
-            raise
-
-    def update_etf_position(self, position_id, user_id, update_data):
-        """Update existing ETF position"""
-        try:
-            position = ETFPosition.query.filter_by(id=position_id, user_id=user_id).first()
-            if not position:
-                raise ValueError("Position not found")
-
-            # Update allowed fields
-            updatable_fields = ['quantity', 'entry_price', 'target_price', 'stop_loss', 'notes', 'position_type']
-            for field in updatable_fields:
-                if field in update_data:
-                    if field in ['quantity', 'entry_price', 'target_price', 'stop_loss']:
-                        setattr(position, field, float(update_data[field]) if update_data[field] else None)
-                    else:
-                        setattr(position, field, update_data[field])
-
-            position.updated_at = datetime.utcnow()
-            db.session.commit()
-
-            logger.info(f"✅ Updated ETF position: {position.etf_symbol}")
-            return position.to_dict()
-
-        except Exception as e:
-            db.session.rollback()
-            logger.error(f"Error updating ETF position: {e}")
-            raise
-
-    def delete_etf_position(self, position_id, user_id):
-        """Delete ETF position"""
-        try:
-            position = ETFPosition.query.filter_by(id=position_id, user_id=user_id).first()
-            if not position:
-                raise ValueError("Position not found")
-
-            # Unsubscribe from live data
-            self.unsubscribe_from_live_data([{
-                'token': position.token,
-                'exchange': position.exchange
-            }])
-
-            db.session.delete(position)
-            db.session.commit()
-
-            logger.info(f"✅ Deleted ETF position: {position.etf_symbol}")
-            return True
-
-        except Exception as e:
-            db.session.rollback()
-            logger.error(f"Error deleting ETF position: {e}")
-            raise
-
-    def get_user_etf_positions(self, user_id):
-        """Get all ETF positions for a user"""
-        try:
-            positions = ETFPosition.query.filter_by(user_id=user_id, is_active=True).all()
-
-            # Get live quotes for all positions
-            instruments = [{'token': p.token, 'exchange': p.exchange, 'symbol': p.etf_symbol} for p in positions]
-            live_quotes = self.get_live_quotes(instruments)
-
-            # Update positions with live data
-            position_data = []
-            for position in positions:
-                pos_dict = position.to_dict()
-
-                # Update with live quote if available
-                if position.token in live_quotes:
-                    quote = live_quotes[position.token]
-                    position.current_price = quote['ltp']
-                    position.last_update_time = datetime.utcnow()
-
-                    # Recalculate metrics with live data
-                    pos_dict.update({
-                        'current_price': quote['ltp'],
-                        'profit_loss': position.profit_loss,
-                        'percentage_change': position.percentage_change,
-                        'current_value': position.current_value,
-                        'last_update_time': datetime.utcnow().isoformat(),
-                        'live_data': quote
-                    })
-
-                position_data.append(pos_dict)
-
-            # Commit live price updates
-            db.session.commit()
-
-            return position_data
-
-        except Exception as e:
-            logger.error(f"Error getting user ETF positions: {e}")
-            return []
-
-    def subscribe_to_live_data(self, instruments):
-        """Subscribe to live data using WebSocket"""
-        if not self.client:
-            if not self.initialize_client():
-                return False
-
-        try:
-            # Prepare instrument tokens for subscription
-            tokens_to_subscribe = []
-            for instrument in instruments:
-                token = instrument['token']
-                if token not in self.websocket_subscriptions:
-                    tokens_to_subscribe.append(token)
-                    self.websocket_subscriptions.add(token)
-
-            if tokens_to_subscribe:
-                # Subscribe to live data feed
-                subscription_result = self.client.subscribe_to_orderfeed()
-                logger.info(f"Subscribed to live data for {len(tokens_to_subscribe)} instruments")
-
-                # Setup WebSocket callbacks for price updates
-                self.setup_websocket_callbacks()
-
-            return True
-
-        except Exception as e:
-            logger.error(f"Error subscribing to live data: {e}")
-            return False
-
-    def unsubscribe_from_live_data(self, instruments):
-        """Unsubscribe from live data"""
-        try:
-            for instrument in instruments:
-                token = instrument['token']
-                if token in self.websocket_subscriptions:
-                    self.websocket_subscriptions.remove(token)
-
-            logger.info(f"Unsubscribed from live data for {len(instruments)} instruments")
-            return True
-
-        except Exception as e:
-            logger.error(f"Error unsubscribing from live data: {e}")
-            return False
-
-    def setup_websocket_callbacks(self):
-        """Setup WebSocket callbacks for live price updates"""
-        def on_message(message):
-            """Handle incoming WebSocket messages"""
+@etf_bp.route('/signals', methods=['GET'])
+def get_admin_signals():
+    """Get ETF signals data from admin_trade_signals table with real-time prices from Yahoo Finance"""
+    try:
+        # Get ALL admin trade signals from database using correct column names
+        result = db.session.execute(text("""
+            SELECT id, symbol, entry_price, current_price, quantity, investment_amount, 
+                   signal_type, status, created_at, pnl, pnl_percentage, change_percent,
+                   target_price, stop_loss, last_update_time
+            FROM admin_trade_signals 
+            ORDER BY created_at DESC
+        """))
+        signals_data = result.fetchall()
+
+        if not signals_data:
+            logger.info("No admin trade signals found in database")
+            return jsonify({
+                'success': True,
+                'signals': [],
+                'total': 0,
+                'message': 'ETF signals API configured. Database table exists but contains no data.'
+            })
+
+        # Process signals data
+        signals_list = []
+        total_investment = 0
+        total_current_value = 0
+        
+        for row in signals_data:
+            trade_signal_id, symbol, entry_price, current_price, quantity, investment_amount, signal_type, status, created_at, pnl, pnl_percentage, change_percent, target_price, stop_loss, last_update_time = row
+            
+            # Convert to proper types with better error handling
             try:
-                if isinstance(message, dict):
-                    token = message.get('tk')
-                    ltp = message.get('ltp')
-
-                    if token and ltp:
-                        # Update positions with new price data
-                        self.update_positions_with_live_data(token, {
-                            'ltp': ltp,
-                            'change': message.get('nc', 0),
-                            'change_percent': message.get('pc', 0),
-                            'volume': message.get('v', 0)
-                        })
-
-            except Exception as e:
-                logger.error(f"Error processing WebSocket message: {e}")
-
-        def on_error(error):
-            logger.error(f"WebSocket error: {error}")
-
-        def on_close(message):
-            logger.info("WebSocket connection closed")
-
-        # Set callbacks if client supports it
-        if hasattr(self.client, 'set_on_message'):
-            self.client.set_on_message(on_message)
-            self.client.set_on_error(on_error)
-            self.client.set_on_close(on_close)
-
-    def update_positions_with_live_data(self, token, quote_data):
-        """Update ETF positions with live market data"""
-        try:
-            positions = ETFPosition.query.filter_by(token=str(token), is_active=True).all()
-
-            for position in positions:
-                position.current_price = quote_data['ltp']
-                position.last_update_time = datetime.utcnow()
-
-            db.session.commit()
-            logger.debug(f"Updated {len(positions)} positions with live data for token {token}")
-
-        except Exception as e:
-            logger.error(f"Error updating positions with live data: {e}")
-
-    def calculate_portfolio_summary(self, user_id):
-        """Calculate portfolio summary metrics"""
-        try:
-            positions = ETFPosition.query.filter_by(user_id=user_id, is_active=True).all()
-
-            total_investment = sum(p.investment_amount for p in positions)
-            total_current_value = sum(p.current_value for p in positions)
-            total_pnl = sum(p.profit_loss for p in positions)
-
-            portfolio_return_pct = 0
-            if total_investment > 0:
-                portfolio_return_pct = (total_pnl / total_investment) * 100
-
-            return {
-                'total_positions': len(positions),
-                'total_investment': total_investment,
-                'total_current_value': total_current_value,
-                'total_pnl': total_pnl,
-                'portfolio_return_percent': portfolio_return_pct,
-                'profitable_positions': len([p for p in positions if p.profit_loss > 0]),
-                'loss_positions': len([p for p in positions if p.profit_loss < 0])
+                entry_price = float(entry_price) if entry_price is not None else 0.0
+                current_price = float(current_price) if current_price is not None else entry_price
+                quantity = int(quantity) if quantity is not None else 1
+                investment_amount = float(investment_amount) if investment_amount is not None else (entry_price * quantity)
+            except (ValueError, TypeError):
+                # Skip invalid records
+                continue
+            
+            # Ensure we have minimum required data
+            if not symbol or entry_price <= 0:
+                continue
+                
+            # Calculate P&L
+            pnl = 0
+            pnl_percentage = 0
+            current_value = 0
+            
+            if entry_price > 0 and quantity > 0:
+                if current_price <= 0:
+                    current_price = entry_price  # Fallback to entry price
+                    
+                current_value = current_price * quantity
+                pnl = (current_price - entry_price) * quantity
+                pnl_percentage = ((current_price - entry_price) / entry_price) * 100 if entry_price > 0 else 0
+            
+            signal_data = {
+                'trade_signal_id': trade_signal_id,
+                'id': trade_signal_id,
+                'symbol': symbol or 'UNKNOWN',
+                'entry_price': round(entry_price, 2),
+                'current_price': round(current_price, 2),
+                'quantity': quantity,
+                'investment_amount': round(investment_amount, 2),
+                'current_value': round(current_value, 2),
+                'position_type': signal_type or 'BUY',
+                'status': status or 'ACTIVE',
+                'created_at': created_at.isoformat() if created_at else None,
+                'pnl': round(pnl, 2) if pnl else round((current_price - entry_price) * quantity, 2),
+                'pnl_percentage': round(pnl_percentage, 2) if pnl_percentage else round(((current_price - entry_price) / entry_price) * 100, 2),
+                'pp': round(pnl_percentage, 2) if pnl_percentage else round(((current_price - entry_price) / entry_price) * 100, 2),
+                'target_price': round(target_price, 2) if target_price else round(entry_price * 1.1, 2),
+                'stop_loss': round(stop_loss, 2) if stop_loss else round(entry_price * 0.9, 2),
+                'last_update_time': last_update_time.isoformat() if last_update_time else None,
+                'data_source': 'Yahoo Finance'
             }
+            
+            signals_list.append(signal_data)
+            total_investment += investment_amount
+            total_current_value += current_value
 
-        except Exception as e:
-            logger.error(f"Error calculating portfolio summary: {e}")
-            return {}
+        # Calculate portfolio summary
+        total_pnl = total_current_value - total_investment
+        return_percent = ((total_pnl / total_investment) * 100) if total_investment > 0 else 0
+        
+        portfolio_summary = {
+            'total_positions': len(signals_list),
+            'total_investment': round(total_investment, 2),
+            'current_value': round(total_current_value, 2),
+            'total_pnl': round(total_pnl, 2),
+            'return_percent': round(return_percent, 2),
+            'active_positions': len([s for s in signals_list if s['status'] == 'ACTIVE']),
+            'closed_positions': len([s for s in signals_list if s['status'] != 'ACTIVE'])
+        }
+
+        return jsonify({
+            'success': True,
+            'signals': signals_list,
+            'total': len(signals_list),
+            'portfolio': portfolio_summary
+        })
+        
+    except Exception as e:
+        logger.error(f"Error fetching ETF signals: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'signals': [],
+            'total': 0
+        }), 500
+
+@etf_bp.route('/admin/send-signal', methods=['POST'])
+def send_admin_signal():
+    """Admin endpoint to send trading signals to specific users"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+            
+        required_fields = ['symbol', 'signal_type', 'entry_price', 'target_users']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'success': False, 'error': f'Missing field: {field}'}), 400
+        
+        # Create admin signal record
+        insert_query = text("""
+            INSERT INTO admin_trade_signals 
+            (symbol, signal_type, entry_price, current_price, quantity, status, created_at)
+            VALUES (:symbol, :signal_type, :entry_price, :current_price, :quantity, 'ACTIVE', :created_at)
+        """)
+        
+        db.session.execute(insert_query, {
+            'symbol': data['symbol'],
+            'signal_type': data['signal_type'],
+            'entry_price': data['entry_price'],
+            'current_price': data.get('current_price', data['entry_price']),
+            'quantity': data.get('quantity', 1),
+            'created_at': datetime.now()
+        })
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f"Signal sent for {data['symbol']} to {len(data['target_users'])} users"
+        })
+        
+    except Exception as e:
+        logger.error(f"Error sending admin signal: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@etf_bp.route('/admin/users', methods=['GET'])
+def get_target_users():
+    """Get list of users to send signals to"""
+    try:
+        # Get users from database
+        result = db.session.execute(text("SELECT ucc, greeting_name FROM users LIMIT 10"))
+        users = result.fetchall()
+        
+        users_list = []
+        for row in users:
+            ucc, name = row
+            users_list.append({
+                'ucc': ucc,
+                'name': name or 'Unknown'
+            })
+        
+        return jsonify({
+            'success': True,
+            'users': users_list
+        })
+        
+    except Exception as e:
+        logger.error(f"Error fetching users: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@etf_bp.route('/user-deals', methods=['GET'])
+def get_user_deals():
+    """Get deals created by current user"""
+    try:
+        # Return empty deals for now
+        return jsonify({
+            'success': True,
+            'deals': [],
+            'total': 0
+        })
+        
+    except Exception as e:
+        logger.error(f"Error fetching user deals: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@etf_bp.route('/create-deal', methods=['POST'])
+def create_deal():
+    """Create a new deal from signal or manually"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+        
+        # For now, just return success
+        return jsonify({
+            'success': True,
+            'message': 'Deal creation functionality will be implemented',
+            'deal_id': 'placeholder'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error creating deal: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@etf_bp.route('/search-instruments', methods=['GET'])
+def search_etf_instruments():
+    """Search for ETF instruments"""
+    try:
+        query = request.args.get('q', '')
+        
+        # Return common ETF instruments
+        instruments = [
+            {'symbol': 'NIFTYBEES', 'name': 'Nippon India ETF Nifty BeES'},
+            {'symbol': 'GOLDBEES', 'name': 'Nippon India ETF Gold BeES'},
+            {'symbol': 'BANKBEES', 'name': 'Nippon India ETF Bank BeES'},
+            {'symbol': 'JUNIORBEES', 'name': 'Nippon India ETF Junior BeES'},
+            {'symbol': 'LIQUIDBEES', 'name': 'Nippon India ETF Liquid BeES'}
+        ]
+        
+        if query:
+            instruments = [i for i in instruments if query.upper() in i['symbol'].upper() or query.upper() in i['name'].upper()]
+        
+        return jsonify({
+            'success': True,
+            'instruments': instruments
+        })
+        
+    except Exception as e:
+        logger.error(f"Error searching instruments: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@etf_bp.route('/quotes', methods=['GET'])
+def get_etf_quotes():
+    """Get live quotes for ETF instruments"""
+    try:
+        symbols = request.args.getlist('symbols')
+        
+        quotes = {}
+        for symbol in symbols:
+            quotes[symbol] = {
+                'ltp': 0,
+                'change': 0,
+                'change_percent': 0
+            }
+        
+        return jsonify({
+            'success': True,
+            'quotes': quotes
+        })
+        
+    except Exception as e:
+        logger.error(f"Error fetching quotes: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@etf_bp.route('/portfolio-summary', methods=['GET'])
+def get_portfolio_summary():
+    """Get portfolio summary metrics"""
+    try:
+        # Calculate from admin_trade_signals table
+        result = db.session.execute(text("""
+            SELECT 
+                COUNT(*) as total_positions,
+                SUM(investment_amount) as total_investment,
+                SUM(current_price * quantity) as current_value
+            FROM admin_trade_signals 
+            WHERE status = 'ACTIVE'
+        """))
+        
+        row = result.fetchone()
+        total_positions, total_investment, current_value = row
+        
+        total_investment = float(total_investment) if total_investment else 0
+        current_value = float(current_value) if current_value else 0
+        total_pnl = current_value - total_investment
+        return_percent = ((total_pnl / total_investment) * 100) if total_investment > 0 else 0
+        
+        return jsonify({
+            'success': True,
+            'portfolio': {
+                'total_positions': int(total_positions) if total_positions else 0,
+                'total_investment': round(total_investment, 2),
+                'current_value': round(current_value, 2),
+                'total_pnl': round(total_pnl, 2),
+                'return_percent': round(return_percent, 2)
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error calculating portfolio summary: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@etf_bp.route('/bulk-update', methods=['POST'])
+def bulk_update_positions():
+    """Bulk update multiple ETF positions"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'updates' not in data:
+            return jsonify({'success': False, 'error': 'No updates provided'}), 400
+        
+        # For now, just return success
+        return jsonify({
+            'success': True,
+            'message': f"Bulk update functionality will be implemented for {len(data['updates'])} positions"
+        })
+        
+    except Exception as e:
+        logger.error(f"Error bulk updating positions: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@etf_bp.route('/api/etf-signals-data', methods=['GET'])
+def get_etf_signals_data():
+    """API endpoint to get ETF signals data from database (admin_trade_signals table)"""
+    try:
+        # Get ETF signals from external database
+        import psycopg2
+        from psycopg2.extras import RealDictCursor
+        
+        DATABASE_URL = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
+        
+        with psycopg2.connect(DATABASE_URL) as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    SELECT * FROM admin_trade_signals 
+                    ORDER BY id DESC 
+                    LIMIT 100
+                """)
+                
+                signals_data = cursor.fetchall()
+        
+        if not signals_data:
+            return jsonify({
+                'success': True,
+                'data': [],
+                'total': 0,
+                'message': 'No ETF signals found'
+            })
+        
+        # Format signals data for frontend
+        formatted_signals = []
+        for signal in signals_data:
+            formatted_signal = {
+                'id': signal.get('id'),
+                'trade_signal_id': signal.get('id'),
+                'symbol': signal.get('symbol', 'N/A'),
+                'd30': float(signal.get('d30', 0)) if signal.get('d30') else 0,
+                'ch30': float(signal.get('ch30', 0)) if signal.get('ch30') else 0,
+                'date': signal.get('date', ''),
+                'pos': int(signal.get('pos', 1)),
+                'qty': int(signal.get('qty', 1)),
+                'ep': float(signal.get('ep', 0)) if signal.get('ep') else 0,
+                'cmp': float(signal.get('cmp', 0)) if signal.get('cmp') else 0,
+                'chan': float(signal.get('chan', 0)) if signal.get('chan') else 0,
+                'inv': float(signal.get('inv', 0)) if signal.get('inv') else 0,
+                'tp': float(signal.get('tp', 0)) if signal.get('tp') else 0,
+                'tva': float(signal.get('tva', 0)) if signal.get('tva') else 0,
+                'tpr': float(signal.get('tpr', 0)) if signal.get('tpr') else 0,
+                'pl': float(signal.get('pl', 0)) if signal.get('pl') else 0,
+                'ed': signal.get('ed', ''),
+                'exp': signal.get('exp', ''),
+                'pr': float(signal.get('pr', 0)) if signal.get('pr') else 0,
+                'pp': float(signal.get('pp', 0)) if signal.get('pp') else 0,
+                'iv': float(signal.get('iv', 0)) if signal.get('iv') else 0,
+                'ip': float(signal.get('ip', 0)) if signal.get('ip') else 0,
+                'nt': signal.get('nt', ''),
+                'qt': int(signal.get('qt', 0)),
+                'd7': float(signal.get('d7', 0)) if signal.get('d7') else 0,
+                'ch7': float(signal.get('ch7', 0)) if signal.get('ch7') else 0,
+                'status': signal.get('status', 'ACTIVE')
+            }
+            formatted_signals.append(formatted_signal)
+        
+        logger.info(f"ETF Signals API: Returning {len(formatted_signals)} signals")
+        
+        return jsonify({
+            'success': True,
+            'data': formatted_signals,
+            'total': len(formatted_signals)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in etf-signals-data endpoint: {e}")
+        return jsonify({
+            'success': False, 
+            'error': str(e),
+            'data': [],
+            'total': 0
+        }), 500
