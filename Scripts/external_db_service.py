@@ -184,12 +184,40 @@ def get_etf_signals_data_json():
         formatted_signals = []
 
         for signal in signals:
-            # Get d30 and ch30 values with proper handling
-            d30_value = signal.get('thirty') or signal.get('d30') or 0
-            ch30_value = signal.get('dh') or signal.get('ch30') or '0.00%'
-            d7_value = signal.get('seven') or signal.get('d7') or 0  
-            ch7_value = signal.get('ch') or signal.get('ch7') or '0.00%'
-
+            # Get basic trading data
+            symbol = str(signal.get('symbol') or signal.get('etf') or 'N/A').upper()
+            pos = int(signal.get('pos', 1))  # Position: 1 for long, -1 for short
+            qty = float(signal.get('qty', 0))
+            ep = float(signal.get('ep', 0))  # Entry price
+            cmp = float(signal.get('cmp', 0))  # Current market price
+            
+            # Calculate investment amount (qty * ep)
+            inv = qty * ep if qty and ep else 0
+            
+            # Calculate current value and P&L
+            current_value = qty * cmp if qty and cmp else 0
+            if pos == 1:  # Long position
+                pl = current_value - inv  # Profit/Loss
+                chan_percent = ((cmp - ep) / ep) * 100 if ep > 0 else 0
+            else:  # Short position
+                pl = inv - current_value  # Profit/Loss (reversed for short)
+                chan_percent = ((ep - cmp) / ep) * 100 if ep > 0 else 0
+            
+            # Calculate target price (assume 10% target)
+            target_percent = 10.0
+            if pos == 1:  # Long position
+                tp = ep * (1 + target_percent / 100) if ep > 0 else 0
+            else:  # Short position
+                tp = ep * (1 - target_percent / 100) if ep > 0 else 0
+            
+            # Calculate target value amount and target profit
+            tva = qty * tp if qty and tp else 0
+            tPr = tva - inv if pos == 1 else inv - tva if tva > 0 else 0
+            
+            # Get historical data for 30-day and 7-day performance
+            d30_value = signal.get('thirty') or signal.get('d30') or cmp or 0
+            d7_value = signal.get('seven') or signal.get('d7') or cmp or 0
+            
             # Convert to proper types
             try:
                 d30_value = float(d30_value) if d30_value else 0.0
@@ -197,61 +225,70 @@ def get_etf_signals_data_json():
             except (ValueError, TypeError):
                 d30_value = 0.0
                 d7_value = 0.0
-
-            # Ensure percentage values are properly formatted
-            if isinstance(ch30_value, (int, float)):
-                ch30_value = f"{ch30_value:.2f}%"
-            elif isinstance(ch30_value, str) and not ch30_value.endswith('%'):
-                try:
-                    ch30_value = f"{float(ch30_value):.2f}%"
-                except (ValueError, TypeError):
-                    ch30_value = "0.00%"
-
-            if isinstance(ch7_value, (int, float)):
-                ch7_value = f"{ch7_value:.2f}%"
-            elif isinstance(ch7_value, str) and not ch7_value.endswith('%'):
-                try:
-                    ch7_value = f"{float(ch7_value):.2f}%"
-                except (ValueError, TypeError):
-                    ch7_value = "0.00%"
+            
+            # Calculate 30-day and 7-day performance percentages
+            ch30_percent = ((cmp - d30_value) / d30_value) * 100 if d30_value > 0 and cmp > 0 else 0
+            ch7_percent = ((cmp - d7_value) / d7_value) * 100 if d7_value > 0 and cmp > 0 else 0
+            
+            # Format percentage values
+            ch30_value = f"{ch30_percent:.2f}%"
+            ch7_value = f"{ch7_percent:.2f}%"
+            chan_value = f"{chan_percent:.2f}%"
+            
+            # Calculate total quantities and investment for this symbol
+            qt = qty  # Total quantity for this record
+            iv = inv  # Total invested value for this record
+            ip = ep   # Initial price (same as entry price)
+            nt = cmp  # Net price (same as current price)
+            
+            # Exit fields (blank for active signals)
+            ed = signal.get('ed', '')  # Exit date
+            exp = signal.get('exp', '')  # Exit price
+            pr = signal.get('pr', '')   # Profit on exit
+            pp = signal.get('pp', '')   # Profit percentage on exit
 
             formatted_signal = {
                 'trade_signal_id': signal.get('id') or count,
                 'id': signal.get('id') or count,
-                'etf': signal.get('etf') or signal.get('symbol') or 'N/A',
-                'symbol': signal.get('symbol') or signal.get('etf') or 'N/A',
-                'thirty': float(d30_value) if d30_value else 0.0,
-                'd30': float(d30_value) if d30_value else 0.0,
+                'etf': symbol,
+                'symbol': symbol,
+                'thirty': round(d30_value, 2),
+                'd30': round(d30_value, 2),
                 'dh': ch30_value,
                 'ch30': ch30_value,
-                'seven': float(d7_value) if d7_value else 0.0,
-                'd7': float(d7_value) if d7_value else 0.0,
+                'seven': round(d7_value, 2),
+                'd7': round(d7_value, 2),
                 'ch': ch7_value,
                 'ch7': ch7_value,
                 'date': signal.get('date', ''),
-                'pos': signal.get('pos', 0),
-                'qty': signal.get('qty', 0),
-                'ep': signal.get('ep', 0),
-                'cmp': signal.get('cmp', 0),
-                'chan': signal.get('chan', ''),
-                'inv': signal.get('inv', 0),
-                'tp': signal.get('tp', 0),
-                'tva': signal.get('tva', 0),
-                'tpr': signal.get('tpr', ''),
-                'pl': signal.get('pl', 0),
-                'ed': signal.get('ed', ''),
-                'exp': signal.get('exp', ''),
-                'pr': signal.get('pr', ''),
-                'pp': signal.get('pp', ''),
-                'iv': signal.get('iv', ''),
-                'ip': signal.get('ip', ''),
-                'nt': signal.get('nt', 0),
-                'qt': signal.get('qt', 0),
+                'pos': pos,
+                'qty': int(qty),
+                'ep': round(ep, 2),
+                'cmp': round(cmp, 2),
+                'chan': chan_value,
+                'inv': round(inv, 2),
+                'tp': round(tp, 2),
+                'tva': round(tva, 2),
+                'tpr': round(tPr, 2),
+                'pl': round(pl, 2),
+                'ed': ed,
+                'exp': exp,
+                'pr': pr,
+                'pp': pp,
+                'iv': round(iv, 2),
+                'ip': round(ip, 2),
+                'nt': round(nt, 2),
+                'qt': int(qt),
                 'created_at': signal.get('created_at', ''),
                 # Add formatted display values
-                'd30_formatted': f"₹{d30_value:.2f}" if d30_value else "₹0.00",
-                'd7_formatted': f"₹{d7_value:.2f}" if d7_value else "₹0.00",
-                'cmp_formatted': f"₹{signal.get('cmp', 0):.2f}" if signal.get('cmp') else "₹0.00"
+                'd30_formatted': f"₹{d30_value:.2f}",
+                'd7_formatted': f"₹{d7_value:.2f}",
+                'cmp_formatted': f"₹{cmp:.2f}",
+                'inv_formatted': f"₹{inv:.2f}",
+                'pl_formatted': f"₹{pl:.2f}",
+                'tp_formatted': f"₹{tp:.2f}",
+                'tva_formatted': f"₹{tva:.2f}",
+                'tpr_formatted': f"₹{tPr:.2f}"
             }
             formatted_signals.append(formatted_signal)
 

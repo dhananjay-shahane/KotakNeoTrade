@@ -20,6 +20,12 @@ from typing import Dict, List, Optional, Tuple
 import concurrent.futures
 from threading import Lock
 
+# Import the new trading calculations engine
+try:
+    from .trading_calculations import TradingCalculations, calculate_trade_metrics
+except ImportError:
+    from trading_calculations import TradingCalculations, calculate_trade_metrics
+
 # Install required packages if not available
 try:
     from bs4 import BeautifulSoup
@@ -52,25 +58,26 @@ class GoogleFinanceCMPUpdater:
         self.updated_count = 0
         self.error_count = 0
         self.lock = Lock()  # Thread lock for shared counters
+        self.calculator = TradingCalculations(self.db_config)
 
     def _process_single_symbol(self, symbol: str) -> Dict:
-        """Process a single symbol and return result (for parallel execution)"""
+        """Process a single symbol with comprehensive calculations"""
         try:
             # First try to get comprehensive historical data
             historical_data = self.fetch_historical_data(symbol)
             
             if historical_data:
-                # Update database with historical data
-                updated_rows = self.update_symbol_with_historical_data(symbol, historical_data)
+                # Update database with comprehensive calculations
+                updated_rows = self.update_symbol_with_comprehensive_calculations(symbol, historical_data)
                 return {
                     'price': historical_data.get('cmp'),
                     'updated_rows': updated_rows,
                     'status': 'success',
-                    'historical_data': historical_data
+                    'historical_data': historical_data,
+                    'calculations': 'comprehensive'
                 }
             else:
-                # Fallback to simple price update
-                # Try Google Finance first
+                # Fallback to simple price update with basic calculations
                 live_price = self.fetch_google_finance_price(symbol)
 
                 # If Google Finance fails, try yfinance as fallback
@@ -78,12 +85,23 @@ class GoogleFinanceCMPUpdater:
                     live_price = self.fetch_live_price_yfinance(symbol)
 
                 if live_price and live_price > 0:
-                    # Update database
-                    updated_rows = self.update_symbol_cmp(symbol, live_price)
+                    # Create basic market data for calculations
+                    market_data = {
+                        'cmp': live_price,
+                        'd30': live_price,  # Will be updated when historical data is available
+                        'd7': live_price,   # Will be updated when historical data is available
+                        'ch30': 0.0,
+                        'ch7': 0.0,
+                        'nt': live_price
+                    }
+                    
+                    # Update with comprehensive calculations
+                    updated_rows = self.update_symbol_with_comprehensive_calculations(symbol, market_data)
                     return {
                         'price': live_price,
                         'updated_rows': updated_rows,
-                        'status': 'success'
+                        'status': 'success',
+                        'calculations': 'basic'
                     }
                 else:
                     return {
@@ -301,6 +319,104 @@ class GoogleFinanceCMPUpdater:
             return f"{clean_symbol}.NS"
         
         return clean_symbol
+
+    def update_symbol_with_comprehensive_calculations(self, symbol: str, market_data: Dict) -> int:
+        """Update symbol with comprehensive calculations including P&L, targets, and performance"""
+        updated_rows = 0
+
+        try:
+            with psycopg2.connect(**self.db_config) as conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    # Get all trades for this symbol
+                    cursor.execute("""
+                        SELECT * FROM admin_trade_signals 
+                        WHERE (symbol = %s OR etf = %s)
+                        AND qty IS NOT NULL AND ep IS NOT NULL
+                    """, (symbol, symbol))
+                    
+                    trades = cursor.fetchall()
+                    
+                    for trade in trades:
+                        trade_dict = dict(trade)
+                        
+                        # Add current market data
+                        trade_dict.update(market_data)
+                        
+                        # Calculate all trading metrics
+                        calculated_data = self.calculator.calculate_all_metrics(trade_dict)
+                        
+                        if calculated_data:
+                            # Update individual trade record
+                            self._update_trade_record(cursor, trade_dict['id'], calculated_data)
+                            updated_rows += 1
+                    
+                    conn.commit()
+                    
+            if updated_rows > 0:
+                logging.info(f"✓ Updated {updated_rows} trade records for {symbol} with comprehensive calculations")
+                logging.info(f"  Market Data: CMP=₹{market_data.get('cmp', 0):.2f}, 30d={market_data.get('ch30', 0):.2f}%, 7d={market_data.get('ch7', 0):.2f}%")
+            
+            return updated_rows
+            
+        except Exception as e:
+            logging.error(f"❌ Error updating comprehensive calculations for {symbol}: {e}")
+            return 0
+
+    def _update_trade_record(self, cursor, trade_id: int, calculated_data: Dict):
+        """Update individual trade record with calculated metrics"""
+        try:
+            # Check which columns exist in the table
+            cursor.execute("""
+                SELECT column_name FROM information_schema.columns 
+                WHERE table_name = 'admin_trade_signals'
+            """)
+            columns = [row[0] for row in cursor.fetchall()]
+            
+            # Build update query with available columns
+            update_fields = []
+            update_values = []
+            
+            # Map calculated data to database columns
+            column_mapping = {
+                'cmp': 'cmp',
+                'inv': 'inv', 
+                'pl': 'pl',
+                'chan': 'chan',
+                'tp': 'tp',
+                'tva': 'tva',
+                'tPr': 'tpr',
+                'd30': 'thirty',
+                'ch30': 'dh', 
+                'd7': 'seven',
+                'ch7': 'ch',
+                'nt': 'nt',
+                'qt': 'qt',
+                'iv': 'iv',
+                'ip': 'ip'
+            }
+            
+            for calc_field, db_column in column_mapping.items():
+                if db_column in columns and calc_field in calculated_data:
+                    update_fields.append(f"{db_column} = %s")
+                    update_values.append(calculated_data[calc_field])
+            
+            # Add timestamp
+            if 'updated_at' in columns:
+                update_fields.append('updated_at = CURRENT_TIMESTAMP')
+            
+            if update_fields:
+                update_values.append(trade_id)
+                
+                query = f"""
+                    UPDATE admin_trade_signals 
+                    SET {', '.join(update_fields)}
+                    WHERE id = %s
+                """
+                
+                cursor.execute(query, update_values)
+                
+        except Exception as e:
+            logging.error(f"❌ Error updating trade record {trade_id}: {e}")
 
     def update_symbol_with_historical_data(self, symbol: str, data: Dict) -> int:
         """Update symbol with comprehensive market data including historical performance"""
