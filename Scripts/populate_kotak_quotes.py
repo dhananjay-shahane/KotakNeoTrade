@@ -12,7 +12,7 @@ from Scripts.models_etf import KotakNeoQuote, AdminTradeSignal
 from Scripts.trading_functions import TradingFunctions
 from datetime import datetime
 import logging
-import random
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -71,26 +71,26 @@ def populate_comprehensive_quotes():
                     net_change = ltp - close_price if close_price > 0 else 0
                     percentage_change = (net_change / close_price * 100) if close_price > 0 else 0
                     
-                    # Volume and value data
-                    volume = int(quote_data.get('volume', random.randint(1000, 50000)))
-                    value = float(quote_data.get('value', quote_data.get('turnover', ltp * volume)))
+                    # Volume and value data - only use authentic data from API
+                    volume = int(quote_data.get('volume', 0))
+                    value = float(quote_data.get('value', quote_data.get('turnover', 0)))
                     
-                    # Bid/Ask data (simulate if not available)
-                    bid_price = float(quote_data.get('bid_price', quote_data.get('bid', ltp - 0.05)))
-                    ask_price = float(quote_data.get('ask_price', quote_data.get('ask', ltp + 0.05)))
-                    bid_size = int(quote_data.get('bid_size', random.randint(10, 100)))
-                    ask_size = int(quote_data.get('ask_size', random.randint(10, 100)))
+                    # Bid/Ask data - only use authentic data from API
+                    bid_price = float(quote_data.get('bid_price', quote_data.get('bid', 0)))
+                    ask_price = float(quote_data.get('ask_price', quote_data.get('ask', 0)))
+                    bid_size = int(quote_data.get('bid_size', 0))
+                    ask_size = int(quote_data.get('ask_size', 0))
                     
-                    # Circuit limits (simulate based on LTP)
-                    upper_circuit = ltp * 1.20  # 20% upper circuit
-                    lower_circuit = ltp * 0.80  # 20% lower circuit
+                    # Circuit limits - only use authentic data from API
+                    upper_circuit = float(quote_data.get('upper_circuit', 0))
+                    lower_circuit = float(quote_data.get('lower_circuit', 0))
                     
-                    # 52-week data (simulate realistic values)
-                    week_52_high = ltp * random.uniform(1.15, 1.50)
-                    week_52_low = ltp * random.uniform(0.60, 0.85)
+                    # 52-week data - only use authentic data from API
+                    week_52_high = float(quote_data.get('week_52_high', 0))
+                    week_52_low = float(quote_data.get('week_52_low', 0))
                     
-                    # VWAP (simulate)
-                    avg_price = ltp * random.uniform(0.98, 1.02)
+                    # VWAP - only use authentic data from API
+                    avg_price = float(quote_data.get('avg_price', quote_data.get('vwap', 0)))
                     
                     # Check if record exists for today
                     existing_quote = KotakNeoQuote.query.filter_by(symbol=symbol).filter(

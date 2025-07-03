@@ -93,18 +93,8 @@ class GoogleFinanceCMPUpdater:
                 except (requests.exceptions.RequestException, requests.exceptions.Timeout) as e:
                     logging.warning(f"⚠️ Google Finance network error for {symbol} on {exchange}: {e}")
                     continue
-    
-
-            if symbol in price_map:
-                price = round(price_map[symbol], 2)
-                logging.info(f"✓ Google Finance fallback price for {symbol}: ₹{price}")
-                return price
-
-            # Last resort - generate a reasonable price based on symbol characteristics
-            base_price = hash(symbol) % 1000 + 50
-            price = round(base_price + random.uniform(-5, 5), 2)
-            logging.info(f"✓ Google Finance generated price for {symbol}: ₹{price}")
-            return price
+            
+            # No fallback data - return None if no authentic price source available
 
         except Exception as e:
             logging.error(f"❌ Google Finance price fetch failed for {symbol}: {e}")
@@ -161,43 +151,7 @@ class GoogleFinanceCMPUpdater:
         except Exception as e:
             logging.error(f"❌ Error fetching price for {symbol}: {e}")
             return None
-
-    def fetch_alternative_price(self, symbol: str) -> Optional[float]:
-        """Alternative price fetching using web scraping (fallback method)"""
-        try:
-            # For demonstration, return a simulated price based on symbol
-            # In real implementation, this could scrape from alternative sources
-
-            # Simulate realistic ETF prices
-            price_map = {
-                'NIFTYBEES': 267.50,
-                'JUNIORBEES': 722.72,
-                'GOLDBEES': 59.84,
-                'SILVERBEES': 72.15,
-                'BANKBEES': 531.25,
-                'CONSUMBEES': 126.92,
-                'PHARMABEES': 22.28,
-                'AUTOIETF': 23.83,
-                'FMCGIETF': 58.30,
-                'FINIETF': 30.47,
-                'INFRABEES': 933.97,
-                'TNIDETF': 93.75,
-                'MOM30IETF': 31.97,
-                'HDFCPVTBAN': 28.09,
-                'APOLLOHOSP': 6950.25
-            }
-
-            if symbol in price_map:
-                price = price_map[symbol]
-                logging.info(f"✓ Alternative price for {symbol}: ₹{price}")
-                return price
-
-            return None
-
-        except Exception as e:
-            logging.error(f"❌ Alternative price fetch failed for {symbol}: {e}")
-            return None
-
+        
     def get_symbols_from_database(self) -> List[str]:
         """Get all unique symbols from admin_trade_signals table"""
         symbols = []

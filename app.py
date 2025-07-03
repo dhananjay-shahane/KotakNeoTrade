@@ -1,5 +1,9 @@
+"""
+Kotak Neo Trading Platform - Main Flask Application
+Provides a comprehensive trading interface with real-time market data,
+portfolio management, and automated trading signals.
+"""
 import os
-import subprocess
 import sys
 import logging
 from dotenv import load_dotenv
@@ -7,21 +11,19 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-
-# Setup library paths for pandas/numpy dependencies
 def setup_library_paths():
-    """Setup LD_LIBRARY_PATH for required libraries"""
-    # Critical: Set library paths before any imports that might use them
-    import os
-    os.environ[
-        'LD_LIBRARY_PATH'] = '/nix/store/xvzz97yk73hw03v5dhhz3j47ggwf1yq1-gcc-13.2.0-lib/lib:/nix/store/026hln0aq1hyshaxsdvhg0kmcm6yf45r-zlib-1.2.13/lib'
-    print(f"Set LD_LIBRARY_PATH: {os.environ['LD_LIBRARY_PATH']}")
+    """
+    Configure library paths for pandas/numpy dependencies
+    Required for Replit environment compatibility with scientific libraries
+    """
+    library_path = '/nix/store/xvzz97yk73hw03v5dhhz3j47ggwf1yq1-gcc-13.2.0-lib/lib:/nix/store/026hln0aq1hyshaxsdvhg0kmcm6yf45r-zlib-1.2.13/lib'
+    os.environ['LD_LIBRARY_PATH'] = library_path
+    print(f"Set LD_LIBRARY_PATH: {library_path}")
 
-    # Force reload of dynamic libraries by importing ctypes
+    # Preload essential libraries for stability
     try:
         import ctypes
         import ctypes.util
-        # Preload essential libraries
         libstdc = ctypes.util.find_library('stdc++')
         if libstdc:
             ctypes.CDLL(libstdc)
@@ -29,33 +31,39 @@ def setup_library_paths():
     except Exception as e:
         print(f"Library preload warning: {e}")
 
-
-# Setup environment before importing other modules
+# Setup environment before importing Flask modules
 setup_library_paths()
+
+# ========================================
+# FLASK APPLICATION SETUP
+# ========================================
 
 from flask import Flask, request, make_response, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-
 class Base(DeclarativeBase):
+    """Base class for SQLAlchemy database models"""
     pass
 
-
+# Initialize Flask application and database
 db = SQLAlchemy(model_class=Base)
-# create the app
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET")
-app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1,
-                        x_host=1)  # needed for url_for to generate with https
 
-# configure the database, relative to the app instance folder
-# Use external database if specified, otherwise fall back to environment variable
+# ========================================
+# APPLICATION CONFIGURATION
+# ========================================
+
+# Security configuration
+app.secret_key = os.environ.get("SESSION_SECRET")
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)  # Enable HTTPS URL generation
+
+# Database configuration
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_recycle": 300,
-    "pool_pre_ping": True,
+    "pool_recycle": 300,     # Recycle connections every 5 minutes
+    "pool_pre_ping": True,   # Verify connections before use
 }
 
 # Configure Flask for Replit deployment and external access

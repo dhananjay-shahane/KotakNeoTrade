@@ -104,31 +104,13 @@ def update_prices():
                 except Exception as fallback_error:
                     logger.warning(f"Fallback price generation failed for {symbol}: {fallback_error}")
                 
-                # Static fallback prices for common ETFs
-                price_ranges = {
-                    'NIFTYBEES': (265, 270), 'JUNIORBEES': (730, 740), 'GOLDBEES': (58, 62),
-                    'SILVERBEES': (100, 105), 'BANKBEES': (580, 590), 'CONSUMBEES': (130, 135),
-                    'PHARMABEES': (22, 24), 'AUTOIETF': (24, 26), 'FMCGIETF': (57, 60),
-                    'FINIETF': (30, 32), 'INFRABEES': (960, 970), 'TNIDETF': (94, 96),
-                    'MOM30IETF': (32, 34), 'HDFCPVTBAN': (28, 30), 'APOLLOHOSP': (7400, 7500)
-                }
-                
-                if symbol in price_ranges:
-                    min_price, max_price = price_ranges[symbol]
-                    fallback_price = round(random.uniform(min_price, max_price), 2)
-                    logger.info(f"Using static fallback price for {symbol}: ₹{fallback_price}")
-                    return fallback_price
-                
+                # No static fallback data - return None if no authentic price source available
                 logger.warning(f"No price data available for {symbol}")
                 return None
                     
             except Exception as main_error:
                 logger.error(f"Yahoo Finance error for {symbol}: {main_error}")
-                # Return a fallback price even if everything fails
-                import random
-                fallback_price = round(random.uniform(50, 100), 2)
-                logger.info(f"Emergency fallback price for {symbol}: ₹{fallback_price}")
-                return fallback_price
+                return None
         
         updated_count = 0
         errors = []

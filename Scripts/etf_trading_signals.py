@@ -346,31 +346,10 @@ class ETFTradingSignals:
                     from Scripts.trading_functions import TradingFunctions
                     trading_funcs = TradingFunctions()
 
-                    # Generate realistic sample quote data based on instrument
-                    base_price = 100.0 if 'NIFTY' in instrument.get('symbol', '') else 50.0
-                    if 'GOLD' in instrument.get('symbol', ''):
-                        base_price = 45.0
-                    elif 'BANK' in instrument.get('symbol', ''):
-                        base_price = 300.0
-                    elif 'LIQUID' in instrument.get('symbol', ''):
-                        base_price = 1000.0
-
-                    # Add some realistic variation
-                    import random
-                    random.seed(hash(instrument.get('symbol', '')) % 1000)
-                    price_variation = random.uniform(-0.05, 0.05)
-                    current_price = base_price * (1 + price_variation)
-
-                    quotes[instrument['token']] = {
-                        'ltp': current_price,
-                        'change': current_price - base_price,
-                        'change_percent': price_variation * 100,
-                        'volume': random.randint(10000, 100000),
-                        'high': current_price * 1.02,
-                        'low': current_price * 0.98,
-                        'open': base_price,
-                        'close': base_price
-                    }
+                    # Only use authentic market data from Kotak Neo API
+                    # No sample data generation - skip if no authentic data available
+                    logger.warning(f"No authentic market data available for {instrument.get('symbol', 'unknown')}")
+                    continue
                 except Exception as e:
                     logger.error(f"Error getting quote for {instrument.get('symbol', 'unknown')}: {e}")
                     continue

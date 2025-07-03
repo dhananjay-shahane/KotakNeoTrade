@@ -23,51 +23,9 @@ class YahooFinanceService:
             self.db_session = None
     
     def generate_fallback_price(self, symbol):
-        """Generate a fallback price when Yahoo Finance fails"""
-        import random
-        
-        # Realistic price ranges for common symbols
-        price_ranges = {
-            'NIFTYBEES': (265, 270),
-            'JUNIORBEES': (720, 730),
-            'GOLDBEES': (58, 62),
-            'SILVERBEES': (71, 75),
-            'BANKBEES': (530, 540),
-            'CONSUMBEES': (125, 130),
-            'PHARMABEES': (22, 24),
-            'AUTOIETF': (23, 25),
-            'FMCGIETF': (57, 61),
-            'FINIETF': (30, 32),
-            'INFRABEES': (930, 940),
-            'TNIDETF': (92, 96),
-            'MOM30IETF': (31, 33),
-            'HDFCPVTBAN': (28, 30),
-            'APOLLOHOSP': (6900, 7000)
-        }
-        
-        if symbol in price_ranges:
-            min_price, max_price = price_ranges[symbol]
-            current_price = round(random.uniform(min_price, max_price), 2)
-        else:
-            # Generate based on symbol hash for consistency
-            base_price = (hash(symbol) % 500) + 50
-            current_price = round(base_price + random.uniform(-10, 10), 2)
-        
-        price_data = {
-            'symbol': symbol,
-            'current_price': current_price,
-            'open_price': current_price * random.uniform(0.98, 1.02),
-            'high_price': current_price * random.uniform(1.0, 1.05),
-            'low_price': current_price * random.uniform(0.95, 1.0),
-            'volume': random.randint(10000, 100000),
-            'previous_close': current_price * random.uniform(0.97, 1.03),
-            'change_amount': round(current_price * random.uniform(-0.02, 0.02), 2),
-            'change_percent': round(random.uniform(-2, 2), 2),
-            'timestamp': datetime.utcnow()
-        }
-        
-        logger.info(f"✅ Generated fallback price for {symbol}: ₹{current_price}")
-        return price_data
+        """No fallback data - return None if no authentic price source available"""
+        logger.warning(f"⚠️ No authentic price source available for {symbol}")
+        return None
 
     def get_yahoo_symbol(self, symbol):
         """Convert Indian symbol to Yahoo Finance format with dynamic suffix detection"""

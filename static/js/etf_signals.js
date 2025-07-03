@@ -1,14 +1,22 @@
-// ETF Signals Manager - ES5 Compatible
+/**
+ * ETF Signals Manager - ES5 Compatible
+ * Manages real-time ETF trading signals display and updates
+ * Fetches authentic market data from external trading database
+ */
 function ETFSignalsManager() {
     var self = this;
-    this.signals = [];
-    this.filteredSignals = [];
-    this.currentPage = 1;
-    this.itemsPerPage = 25;
-    this.isLoading = false;
-    this.refreshInterval = null;
-    this.sortField = 'id';
-    this.sortDirection = 'asc';
+    
+    // Core data management
+    this.signals = [];                  // All ETF signals from database
+    this.filteredSignals = [];          // Filtered signals based on search/sort
+    this.currentPage = 1;               // Current page in pagination
+    this.itemsPerPage = 25;             // Number of signals per page
+    this.isLoading = false;             // Loading state flag
+    this.refreshInterval = null;        // Auto-refresh timer
+    
+    // Table sorting configuration
+    this.sortField = 'id';              // Current sort field
+    this.sortDirection = 'asc';         // Sort direction (asc/desc)
 
     // Column visibility settings
     this.availableColumns = [

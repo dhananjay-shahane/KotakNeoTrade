@@ -90,3 +90,7 @@ uv.lock
 
 # Render / Deployment / Local setup artifacts
 local_setup.sh
+__pycache__/
+*.pyc
+__pycache__/
+*.pyc
