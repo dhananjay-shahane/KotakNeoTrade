@@ -86,21 +86,7 @@ def get_google_finance_price(symbol: str) -> Optional[float]:
     except Exception as e:
         logger.warning(f"⚠️ YFinance fallback failed for {symbol}: {str(e)}")
     
-    # Final fallback to realistic price ranges
-    price_ranges = {
-        'AUTOIETF': (24, 26), 'TNIDETF': (94, 96), 'HDFCPVTBAN': (28, 30),
-        'MOM30IETF': (32, 34), 'JUNIORBEES': (730, 740), 'INFRABEES': (960, 970),
-        'FMCGIETF': (57, 60), 'CONSUMBEES': (130, 135), 'APOLLOHOSP': (7400, 7500),
-        'PHARMABEES': (22, 24), 'SILVERBEES': (100, 105), 'NIFTY31JULFUT': (44800, 44900),
-        'FINIETF': (30, 32), 'BANKBEES': (580, 590), 'NIFTYBEES': (265, 270)
-    }
-    
-    if symbol in price_ranges:
-        import random
-        min_price, max_price = price_ranges[symbol]
-        fallback_price = round(random.uniform(min_price, max_price), 2)
-        logger.info(f"✅ Fallback price for {symbol}: ₹{fallback_price}")
-        return fallback_price
+    # No fallback data - return None if no authentic price source available
     
     logger.warning(f"⚠️ No price source available for {symbol}")
     return None

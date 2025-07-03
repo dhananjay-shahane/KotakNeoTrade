@@ -98,8 +98,8 @@ class NotebookDataFetcher:
                     return []
             
             if not self.authenticate_with_stored_session():
-                logging.warning("Authentication required - returning sample structure")
-                return self.get_sample_positions_structure()
+                logging.warning("Authentication required - no sample data available")
+                return []
             
             # Fetch positions from API
             positions = self.client.positions()
@@ -109,7 +109,7 @@ class NotebookDataFetcher:
             
         except Exception as e:
             logging.error(f"Error fetching positions: {str(e)}")
-            return self.get_sample_positions_structure()
+            return []
     
     def fetch_holdings_data(self):
         """Fetch holdings data"""
@@ -155,41 +155,6 @@ class NotebookDataFetcher:
         except Exception as e:
             logging.error(f"Error fetching limits: {str(e)}")
             return {}
-    
-    def get_sample_positions_structure(self):
-        """Return sample positions structure based on notebook data"""
-        return [
-            {
-                'symbol': 'KPITTECH25JUNFUT',
-                'product': 'NRML',
-                'quantity': 400,
-                'avg_price': 1353.60,
-                'ltp': 1400.00,
-                'pnl': 18560.00,
-                'pnl_percent': 3.42,
-                'segment': 'nse_fo'
-            },
-            {
-                'symbol': 'CONSUMBEES-EQ',
-                'product': 'MTF',
-                'quantity': 532,
-                'avg_price': 125.46,
-                'ltp': 128.50,
-                'pnl': 1616.48,
-                'pnl_percent': 2.42,
-                'segment': 'nse_cm'
-            },
-            {
-                'symbol': 'NEXT50IETF-EQ',
-                'product': 'MTF', 
-                'quantity': 1400,
-                'avg_price': 70.90,
-                'ltp': 72.15,
-                'pnl': 1750.00,
-                'pnl_percent': 1.76,
-                'segment': 'nse_cm'
-            }
-        ]
     
     def format_positions_data(self, positions):
         """Format positions data to standard structure"""

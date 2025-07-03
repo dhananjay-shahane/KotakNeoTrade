@@ -176,36 +176,7 @@ class GoogleFinanceCMPUpdater:
                     logging.warning(f"⚠️ Google Finance network error for {symbol} on {exchange}: {e}")
                     continue
             
-            # Fallback to realistic simulated prices with slight variation
-            import random
-            price_map = {
-                'NIFTYBEES': 268.00 + random.uniform(-2, 2),
-                'JUNIORBEES': 723.00 + random.uniform(-5, 5),
-                'GOLDBEES': 60.00 + random.uniform(-1, 1),
-                'SILVERBEES': 73.00 + random.uniform(-1, 1),
-                'BANKBEES': 532.00 + random.uniform(-3, 3),
-                'CONSUMBEES': 127.00 + random.uniform(-2, 2),
-                'PHARMABEES': 23.00 + random.uniform(-0.5, 0.5),
-                'AUTOIETF': 24.00 + random.uniform(-0.5, 0.5),
-                'FMCGIETF': 59.00 + random.uniform(-1, 1),
-                'FINIETF': 31.00 + random.uniform(-1, 1),
-                'INFRABEES': 934.00 + random.uniform(-10, 10),
-                'TNIDETF': 94.00 + random.uniform(-2, 2),
-                'MOM30IETF': 32.00 + random.uniform(-1, 1),
-                'HDFCPVTBAN': 29.00 + random.uniform(-1, 1),
-                'APOLLOHOSP': 6951.00 + random.uniform(-50, 50)
-            }
-
-            if symbol in price_map:
-                price = round(price_map[symbol], 2)
-                logging.info(f"✓ Google Finance fallback price for {symbol}: ₹{price}")
-                return price
-
-            # Last resort - generate a reasonable price based on symbol characteristics
-            base_price = hash(symbol) % 1000 + 50
-            price = round(base_price + random.uniform(-5, 5), 2)
-            logging.info(f"✓ Google Finance generated price for {symbol}: ₹{price}")
-            return price
+            # No fallback data - return None if no authentic price source available
 
         except Exception as e:
             logging.error(f"❌ Google Finance price fetch failed for {symbol}: {e}")
