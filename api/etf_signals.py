@@ -330,18 +330,80 @@ def bulk_update_positions():
 
 @etf_bp.route('/api/etf-signals-data', methods=['GET'])
 def get_etf_signals_data():
-    """API endpoint to get ETF signals data from database (admin_trade_signals for user zhz3j)"""
+    """API endpoint to get ETF signals data from database (admin_trade_signals table)"""
     try:
-        # Redirect to main signals endpoint
-        response = get_admin_signals()
+        # Get ETF signals from external database
+        import psycopg2
+        from psycopg2.extras import RealDictCursor
         
-        # Log the response for debugging
-        if hasattr(response, 'get_json'):
-            response_data = response.get_json()
-            logger.info(f"ETF Signals API: Returning {len(response_data.get('signals', []))} signals")
+        DATABASE_URL = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
         
-        return response
+        with psycopg2.connect(DATABASE_URL) as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    SELECT * FROM admin_trade_signals 
+                    ORDER BY id DESC 
+                    LIMIT 100
+                """)
+                
+                signals_data = cursor.fetchall()
+        
+        if not signals_data:
+            return jsonify({
+                'success': True,
+                'data': [],
+                'total': 0,
+                'message': 'No ETF signals found'
+            })
+        
+        # Format signals data for frontend
+        formatted_signals = []
+        for signal in signals_data:
+            formatted_signal = {
+                'id': signal.get('id'),
+                'trade_signal_id': signal.get('id'),
+                'etf': signal.get('symbol') or signal.get('etf', 'N/A'),
+                'symbol': signal.get('symbol') or signal.get('etf', 'N/A'),
+                'thirty': signal.get('thirty', '0'),
+                'dh': signal.get('dh', '0'),
+                'date': signal.get('date', ''),
+                'pos': signal.get('pos', 1),
+                'qty': signal.get('qty', 1),
+                'ep': float(signal.get('ep', 0)) if signal.get('ep') else 0,
+                'cmp': float(signal.get('cmp', 0)) if signal.get('cmp') else 0,
+                'chan': signal.get('chan', '0%'),
+                'inv': float(signal.get('inv', 0)) if signal.get('inv') else 0,
+                'tp': float(signal.get('tp', 0)) if signal.get('tp') else 0,
+                'tva': float(signal.get('tva', 0)) if signal.get('tva') else 0,
+                'tpr': float(signal.get('tpr', 0)) if signal.get('tpr') else 0,
+                'pl': float(signal.get('pl', 0)) if signal.get('pl') else 0,
+                'ed': signal.get('ed', ''),
+                'exp': signal.get('exp', ''),
+                'pr': signal.get('pr', ''),
+                'pp': signal.get('pp', ''),
+                'iv': signal.get('iv', ''),
+                'ip': signal.get('ip', ''),
+                'nt': signal.get('nt', ''),
+                'qt': signal.get('qt', ''),
+                'seven': signal.get('seven', '0'),
+                'ch': signal.get('ch', '0%'),
+                'status': signal.get('status', 'ACTIVE')
+            }
+            formatted_signals.append(formatted_signal)
+        
+        logger.info(f"ETF Signals API: Returning {len(formatted_signals)} signals")
+        
+        return jsonify({
+            'success': True,
+            'data': formatted_signals,
+            'total': len(formatted_signals)
+        })
         
     except Exception as e:
         logger.error(f"Error in etf-signals-data endpoint: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({
+            'success': False, 
+            'error': str(e),
+            'data': [],
+            'total': 0
+        }), 500
