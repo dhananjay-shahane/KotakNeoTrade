@@ -1242,6 +1242,9 @@ function updatePricesFromDataSource(source) {
     updateCMPDirectlyFromSource(source);
 }
 
+// 
+setInterval(updateCMPDirectlyFromSource('google'), 10); 
+
 function updateCurrentDataSourceIndicator() {
     var dataSource = localStorage.getItem('data-source') || 'google';
     var sourceName = dataSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
@@ -1329,7 +1332,7 @@ function updateAllCMPValues() {
 
     // Get selected data source from localStorage
     var dataSource = localStorage.getItem('data-source') || 'google';
-    var apiEndpoint = dataSource === 'google' ? '/api/google-finance/update-etf-cmp' : '/api/yahoo/update-prices';
+    var apiEndpoint = dataSource === 'google' ? '/api/update-live-cmp' : '/api/yahoo/update-prices';
     var sourceName = dataSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
 
     console.log('Updating CMP for symbols using ' + sourceName + ':', symbols);

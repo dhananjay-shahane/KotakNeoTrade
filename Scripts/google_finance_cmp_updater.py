@@ -38,88 +38,6 @@ logging.basicConfig(
 class GoogleFinanceCMPUpdater:
     """Google Finance CMP Updater for admin_trade_signals table"""
 
-    def __init__(self, connection_string: str = None):
-        """Initialize the CMP updater"""
-        # Use external database connection string
-        self.connection_string = connection_string or "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
-
-        # Symbol mapping for Indian ETFs and stocks to Yahoo Finance format
-        self.symbol_mapping = {
-            # Popular ETFs
-            'NIFTYBEES': 'NIFTYBEES.NS',
-            'JUNIORBEES': 'JUNIORBEES.NS', 
-            'GOLDBEES': 'GOLDBEES.NS',
-            'SILVERBEES': 'SILVERBEES.NS',
-            'BANKBEES': 'BANKBEES.NS',
-            'CONSUMBEES': 'CONSUMBEES.NS',
-            'PHARMABEES': 'PHARMABEES.NS',
-            'AUTOIETF': 'AUTOIETF.NS',
-            'FMCGIETF': 'FMCGIETF.NS',
-            'FINIETF': 'FINIETF.NS',
-            'INFRABEES': 'INFRABEES.NS',
-            'TNIDETF': 'TNIDETF.NS',
-            'MOM30IETF': 'MOM30IETF.NS',
-            'HDFCPVTBAN': 'HDFCPVTBAN.NS',
-            'ITETF': 'ITETF.NS',
-            'MID150BEES': 'MID150BEES.NS',
-
-            # Popular Stocks
-            'APOLLOHOSP': 'APOLLOHOSP.NS',
-            'RELIANCE': 'RELIANCE.NS',
-            'TCS': 'TCS.NS',
-            'INFY': 'INFY.NS',
-            'HDFC': 'HDFC.NS',
-            'ICICIBANK': 'ICICIBANK.NS',
-            'SBIN': 'SBIN.NS',
-            'BHARTIARTL': 'BHARTIARTL.NS',
-            'ITC': 'ITC.NS',
-            'HINDUNILVR': 'HINDUNILVR.NS',
-            'KOTAKBANK': 'KOTAKBANK.NS',
-            'LT': 'LT.NS',
-            'AXISBANK': 'AXISBANK.NS',
-            'MARUTI': 'MARUTI.NS',
-            'SUNPHARMA': 'SUNPHARMA.NS',
-            'BAJFINANCE': 'BAJFINANCE.NS',
-            'ASIANPAINT': 'ASIANPAINT.NS',
-            'NESTLEIND': 'NESTLEIND.NS',
-            'ULTRACEMCO': 'ULTRACEMCO.NS',
-            'TITAN': 'TITAN.NS'
-        }
-
-        self.updated_count = 0
-        self.error_count = 0
-
-    def get_yahoo_symbol(self, symbol: str) -> str:
-        """Convert Indian symbol to Yahoo Finance format with dynamic suffix detection"""
-        clean_symbol = symbol.strip().upper()
-
-        # Check if already mapped
-        if clean_symbol in self.symbol_mapping:
-            return self.symbol_mapping[clean_symbol]
-
-        # Common NSE symbols that should use .NS
-        nse_symbols = {
-            'RELIANCE', 'TCS', 'HDFCBANK', 'ICICIBANK', 'HINDUNILVR', 'INFY', 'ITC', 'SBIN', 'BHARTIARTL', 'KOTAKBANK',
-            'LT', 'ASIANPAINT', 'AXISBANK', 'MARUTI', 'BAJFINANCE', 'HCLTECH', 'NESTLEIND', 'WIPRO', 'TITAN', 'ULTRACEMCO',
-            'ONGC', 'SUNPHARMA', 'TATAMOTORS', 'POWERGRID', 'NTPC', 'TECHM', 'M&M', 'JSWSTEEL', 'INDUSINDBK', 'BAJAJFINSV',
-            'GRASIM', 'HINDALCO', 'TATASTEEL', 'ADANIENT', 'COALINDIA', 'DRREDDY', 'CIPLA', 'HEROMOTOCO', 'BRITANNIA', 'EICHERMOT',
-            'BPCL', 'APOLLOHOSP', 'DIVISLAB', 'ADANIPORTS', 'UPL', 'TATACONSUM', 'BAJAJ-AUTO', 'SBILIFE', 'HDFCLIFE'
-        }
-        
-        # ETF symbols typically use .NS
-        etf_symbols = {
-            'NIFTYBEES', 'JUNIORBEES', 'GOLDBEES', 'SILVERBEES', 'BANKBEES', 'CONSUMBEES', 'PHARMABEES', 
-            'AUTOIETF', 'FMCGIETF', 'FINIETF', 'INFRABEES', 'TNIDETF', 'MOM30IETF', 'HDFCPVTBAN',
-            'ITETF', 'MID150BEES', 'LIQUID', 'CPSE', 'PSU'
-        }
-        
-        # First try .NS for NSE symbols and ETFs
-        if clean_symbol in nse_symbols or clean_symbol in etf_symbols or clean_symbol.endswith('BEES') or clean_symbol.endswith('ETF'):
-            return f"{clean_symbol}.NS"
-
-        # Default: add .NS for NSE symbols (NSE is primary exchange)
-        return f"{clean_symbol}.NS"
-
     def fetch_google_finance_price(self, symbol: str) -> Optional[float]:
         """Fetch live price from Google Finance with enhanced error handling"""
         try:
@@ -175,26 +93,7 @@ class GoogleFinanceCMPUpdater:
                 except (requests.exceptions.RequestException, requests.exceptions.Timeout) as e:
                     logging.warning(f"⚠️ Google Finance network error for {symbol} on {exchange}: {e}")
                     continue
-            
-            # Fallback to realistic simulated prices with slight variation
-            import random
-            price_map = {
-                'NIFTYBEES': 268.00 + random.uniform(-2, 2),
-                'JUNIORBEES': 723.00 + random.uniform(-5, 5),
-                'GOLDBEES': 60.00 + random.uniform(-1, 1),
-                'SILVERBEES': 73.00 + random.uniform(-1, 1),
-                'BANKBEES': 532.00 + random.uniform(-3, 3),
-                'CONSUMBEES': 127.00 + random.uniform(-2, 2),
-                'PHARMABEES': 23.00 + random.uniform(-0.5, 0.5),
-                'AUTOIETF': 24.00 + random.uniform(-0.5, 0.5),
-                'FMCGIETF': 59.00 + random.uniform(-1, 1),
-                'FINIETF': 31.00 + random.uniform(-1, 1),
-                'INFRABEES': 934.00 + random.uniform(-10, 10),
-                'TNIDETF': 94.00 + random.uniform(-2, 2),
-                'MOM30IETF': 32.00 + random.uniform(-1, 1),
-                'HDFCPVTBAN': 29.00 + random.uniform(-1, 1),
-                'APOLLOHOSP': 6951.00 + random.uniform(-50, 50)
-            }
+    
 
             if symbol in price_map:
                 price = round(price_map[symbol], 2)

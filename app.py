@@ -1099,6 +1099,9 @@ def quick_sell():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
+
+
+
 from routes.auth import auth_bp
 from routes.main import main_bp
 from api.dashboard import dashboard_api
@@ -1190,95 +1193,6 @@ from Scripts.sync_default_deals import setup_auto_sync_triggers
 setup_auto_sync_triggers()
 
 
-# Live CMP update endpoint using Google Finance
-@app.route('/api/update-live-cmp')
-def update_live_cmp_endpoint():
-    """API endpoint to update live CMP data using Google Finance via yfinance"""
-    try:
-        from Scripts.google_finance_cmp_updater import update_all_cmp_data
-
-        result = update_all_cmp_data()
-
-        return jsonify({
-            'success':
-            result['success'],
-            'message':
-            result['message'],
-            'updated_count':
-            result['updated_count'],
-            'total_symbols':
-            result.get('total_symbols', 0),
-            'successful_symbols':
-            result.get('successful_symbols', 0),
-            'error_count':
-            result['error_count'],
-            'duration':
-            result.get('duration', 0),
-            'results':
-            result.get('results', {})
-        })
-
-    except Exception as e:
-        import logging
-        logging.error(f"Error updating live CMP via Google Finance: {str(e)}")
-        return jsonify({
-            'success':
-            False,
-            'error':
-            str(e),
-            'message':
-            'Failed to update live CMP data via Google Finance'
-        }), 500
-
-
-# Update specific symbols CMP endpoint
-@app.route('/api/update-cmp-symbols', methods=['POST'])
-def update_specific_symbols_cmp():
-    """API endpoint to update CMP for specific symbols"""
-    try:
-        from Scripts.google_finance_cmp_updater import update_specific_cmp_data
-        from flask import request
-
-        data = request.get_json()
-        symbols = data.get('symbols', []) if data else []
-
-        if not symbols:
-            return jsonify({
-                'success': False,
-                'message': 'No symbols provided'
-            }), 400
-
-        result = update_specific_cmp_data(symbols)
-
-        return jsonify({
-            'success':
-            result['success'],
-            'message':
-            result['message'],
-            'updated_count':
-            result['updated_count'],
-            'symbols_processed':
-            result.get('symbols_processed', 0),
-            'successful_symbols':
-            result.get('successful_symbols', 0),
-            'error_count':
-            result['error_count'],
-            'duration':
-            result.get('duration', 0),
-            'results':
-            result.get('results', {})
-        })
-
-    except Exception as e:
-        import logging
-        logging.error(f"Error updating specific symbols CMP: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'message': 'Failed to update specific symbols CMP'
-        }), 500
-
-
 # Health check endpoint for domain verification
 @app.route('/health')
 def health_check():
@@ -1298,52 +1212,6 @@ def test_endpoint():
         'message': 'DNS test successful',
         'domain': os.environ.get('REPLIT_DOMAINS', 'localhost')
     }, 200
-
-
-# Simple HTML page for testing external access
-@app.route('/preview')
-def preview_test():
-    """Simple preview test page"""
-    correct_domain = os.environ.get('REPLIT_DOMAINS', 'localhost')
-    return f'''
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Kotak Neo Trading Platform - Preview Test</title>
-        <style>
-            body {{ font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }}
-            .container {{ background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
-            .success {{ color: #28a745; font-size: 18px; font-weight: bold; }}
-            .info {{ color: #007bff; margin: 10px 0; }}
-            .error {{ color: #dc3545; margin: 10px 0; }}
-            .correct-url {{ background: #e9ecef; padding: 10px; border-radius: 4px; margin: 10px 0; }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1 class="success">✓ Preview Access Working!</h1>
-            <p class="info">Kotak Neo Trading Platform is running successfully</p>
-
-            <div class="correct-url">
-                <strong>Correct URL:</strong><br>
-                <a href="https://{correct_domain}/" target="_blank">https://{correct_domain}/</a>
-            </div>
-
-            <p class="error">⚠️ DNS Issues? Try these solutions:</p>
-            <ol>
-                <li>Use Replit's built-in webview (click the preview/webview button in Replit)</li>
-                <li>Wait 2-3 minutes for domain propagation</li>
-                <li>Clear your browser cache and try again</li>
-                <li>Try accessing from an incognito/private browser window</li>
-            </ol>
-
-            <p>Status: Application is accessible from external domains</p>
-            <a href="/">Go to Login Page</a>
-        </div>
-    </body>
-    </html>
-    '''
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
