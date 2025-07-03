@@ -1,142 +1,150 @@
+"""
+Main application entry point for Kotak Neo Trading Platform
+Handles environment setup, library paths, and blueprint registration
+"""
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
+# Load environment variables from .env file
 load_dotenv()
 
-# Setup library paths for pandas/numpy dependencies
 def setup_library_paths():
-    """Setup LD_LIBRARY_PATH for required libraries"""
-    os.environ['LD_LIBRARY_PATH'] = '/nix/store/xvzz97yk73hw03v5dhhz3j47ggwf1yq1-gcc-13.2.0-lib/lib:/nix/store/026hln0aq1hyshaxsdvhg0kmcm6yf45r-zlib-1.2.13/lib'
-    print(f"Set LD_LIBRARY_PATH: {os.environ['LD_LIBRARY_PATH']}")
+    """
+    Configure library paths for pandas/numpy dependencies
+    Required for Replit environment compatibility
+    """
+    library_path = '/nix/store/xvzz97yk73hw03v5dhhz3j47ggwf1yq1-gcc-13.2.0-lib/lib:/nix/store/026hln0aq1hyshaxsdvhg0kmcm6yf45r-zlib-1.2.13/lib'
+    os.environ['LD_LIBRARY_PATH'] = library_path
+    print(f"Set LD_LIBRARY_PATH: {library_path}")
 
 # Setup environment before importing Flask modules
 setup_library_paths()
 
-from app import app  # noqa: F401
+# Import main Flask application
+from app import app
 
-# Register blueprints only once to avoid conflicts
-try:
-    from routes.auth import auth_bp
-    from routes.main import main_bp
-    from api.dashboard import dashboard_api as dashboard_bp
-    from api.trading import trading_api
-    # Import etf_bp after app initialization to avoid circular imports
-    from api.admin import admin_bp
-    from api.deals import deals_bp
-    from api.notifications import notifications_bp
-    from api.supabase_api import supabase_bp
-    from api.admin_signals_api import admin_signals_bp
-    from api.signals_datatable import datatable_bp as signals_datatable_bp
-    from api.enhanced_etf_signals import enhanced_etf_bp
-    from api.google_finance_api import google_finance_bp
-    from api.yahoo_finance_api import yahoo_bp
-    from api.datatable_updates import datatable_updates_bp
-
-    # Import realtime quotes after creating the manager
-    from api.realtime_quotes import quotes_bp as realtime_bp
-
-    # Check if blueprints are already registered to avoid duplicates
-    registered_blueprints = [bp.name for bp in app.blueprints.values()]
-
-    if 'auth' not in registered_blueprints:
-        app.register_blueprint(auth_bp)
-    if 'main' not in registered_blueprints:
-        app.register_blueprint(main_bp)
-    if 'dashboard_api' not in registered_blueprints:
-        app.register_blueprint(dashboard_bp)
-    if 'trading_api' not in registered_blueprints:
-        app.register_blueprint(trading_api)
-    # Register ETF blueprint
+def register_blueprints():
+    """
+    Register all application blueprints for different features
+    - Authentication and main routes
+    - Trading API endpoints
+    - ETF signals and admin panels
+    - Real-time data and notifications
+    """
     try:
-        import sys
-        import importlib
-
-        # Force reload the ETF signals module to ensure clean import
-        if 'api.etf_signals' in sys.modules:
-            importlib.reload(sys.modules['api.etf_signals'])
-
+        # Core application routes
+        from routes.auth import auth_bp
+        from routes.main import main_bp
+        
+        # API endpoints
+        from api.dashboard import dashboard_api as dashboard_bp
+        from api.trading import trading_api
+        from api.admin import admin_bp
+        from api.deals import deals_bp
+        from api.notifications import notifications_bp
+        
+        # ETF and signals
         from api.etf_signals import etf_bp
+        from api.admin_signals_api import admin_signals_bp
+        from api.enhanced_etf_signals import enhanced_etf_bp
+        
+        # Market data APIs
+        from api.google_finance_api import google_finance_bp
+        from api.yahoo_finance_api import yahoo_bp
+        from api.realtime_quotes import quotes_bp as realtime_bp
+        
+        # Data management
+        from api.supabase_api import supabase_bp
+        from api.signals_datatable import datatable_bp as signals_datatable_bp
+        from api.datatable_updates import datatable_updates_bp
 
-        # Remove any existing ETF blueprint registration
-        if 'etf' in app.blueprints:
-            del app.blueprints['etf']
-
-        app.register_blueprint(etf_bp)
-        print("✓ ETF signals blueprint registered successfully")
-
-        # Verify the /etf/signals route exists
+        # Register all blueprints
+        blueprints = [
+            (auth_bp, 'auth'),
+            (main_bp, 'main'),
+            (dashboard_bp, 'dashboard_api'),
+            (trading_api, 'trading_api'),
+            (etf_bp, 'etf'),
+            (admin_bp, 'admin'),
+            (deals_bp, 'deals'),
+            (notifications_bp, 'notifications'),
+            (realtime_bp, 'quotes'),
+            (admin_signals_bp, 'admin_signals'),
+            (enhanced_etf_bp, 'enhanced_etf'),
+            (google_finance_bp, 'google_finance'),
+            (yahoo_bp, 'yahoo_finance'),
+            (supabase_bp, 'supabase'),
+            (signals_datatable_bp, 'signals_datatable'),
+            (datatable_updates_bp, 'datatable_updates')
+        ]
+        
+        # Register each blueprint if not already registered
+        registered_blueprints = [bp.name for bp in app.blueprints.values()]
+        
+        for blueprint, name in blueprints:
+            if name not in registered_blueprints:
+                app.register_blueprint(blueprint)
+                
+        print("✓ All blueprints registered successfully")
+        
+        # Verify ETF routes are available
         etf_routes = [rule.rule for rule in app.url_map.iter_rules() if rule.rule.startswith('/etf/')]
         if etf_routes:
-            print(f"✓ ETF routes registered: {etf_routes}")
-        else:
-            print("✗ No ETF routes found after registration")
-
-    except Exception as etf_error:
-        print(f"✗ ETF blueprint registration failed: {etf_error}")
+            print(f"✓ ETF routes available: {len(etf_routes)} endpoints")
+        
+    except Exception as e:
+        print(f"✗ Error registering blueprints: {e}")
         import traceback
         traceback.print_exc()
-    # Register additional blueprints only if not already registered
-    if 'admin' not in registered_blueprints:
-        app.register_blueprint(admin_bp)
-    if 'quotes' not in registered_blueprints:
-        app.register_blueprint(realtime_bp)
-    if 'deals' not in registered_blueprints:
-        app.register_blueprint(deals_bp)
-    if 'notifications' not in registered_blueprints:
-        app.register_blueprint(notifications_bp)
-    if 'supabase' not in registered_blueprints:
-        app.register_blueprint(supabase_bp)
-    if 'admin_signals' not in registered_blueprints:
-        app.register_blueprint(admin_signals_bp)
-    if 'signals_datatable' not in registered_blueprints:
-        app.register_blueprint(signals_datatable_bp)
-    if 'enhanced_etf' not in registered_blueprints:
-        app.register_blueprint(enhanced_etf_bp)
 
-    # Register Google Finance API blueprint
-    app.register_blueprint(google_finance_bp)
-
-    # Register Yahoo Finance API blueprint
-    app.register_blueprint(yahoo_bp)
-    
-    # Register Datatable Updates API blueprint
-    app.register_blueprint(datatable_updates_bp)
-
-    print("✓ Additional blueprints registered successfully")
-except Exception as e:
-    print(f"✗ Error registering blueprints: {e}")
-    import traceback
-    traceback.print_exc()
-
-if __name__ == '__main__':
+def start_schedulers():
+    """
+    Start background schedulers for market data updates
+    - Real-time quotes manager (if available)
+    - Yahoo Finance price updates
+    """
     try:
-        print("🚀 Starting Flask application...")
-
         # Start real-time quotes scheduler
         try:
             from Scripts.realtime_quotes_manager import realtime_quotes_manager
             realtime_quotes_manager.start()
             print("📊 Real-time quotes scheduler started")
         except ImportError:
-            print("⚠️  Real-time quotes manager not available, skipping")
+            print("⚠️ Real-time quotes manager not available")
 
         # Start Yahoo Finance scheduler
-        from Scripts.yahoo_scheduler import start_yahoo_scheduler
-        start_yahoo_scheduler()
-        print("📈 Yahoo Finance scheduler started")
+        try:
+            from Scripts.yahoo_scheduler import start_yahoo_scheduler
+            start_yahoo_scheduler()
+            print("📈 Yahoo Finance scheduler started")
+        except ImportError:
+            print("⚠️ Yahoo Finance scheduler not available")
+            
+    except Exception as e:
+        print(f"⚠️ Scheduler startup error: {e}")
 
-        # Get port from environment or default to 5000
+if __name__ == '__main__':
+    try:
+        print("🚀 Starting Kotak Neo Trading Platform...")
+        
+        # Register all application blueprints
+        register_blueprints()
+        
+        # Start background schedulers
+        start_schedulers()
+        
+        # Configure server settings
         port = int(os.environ.get('PORT', 5000))
-
-        print(f"🌐 Application will be available at:")
+        
+        print(f"🌐 Server starting on:")
         print(f"   Local: http://0.0.0.0:{port}")
         if os.environ.get('REPLIT_DOMAINS'):
             print(f"   External: https://{os.environ.get('REPLIT_DOMAINS')}")
-
-        # Run with proper Replit configuration
+        
+        # Start Flask application server
         app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
+        
     except Exception as e:
-        print(f"❌ Error starting application: {str(e)}")
+        print(f"❌ Application startup failed: {str(e)}")
         import traceback
         traceback.print_exc()

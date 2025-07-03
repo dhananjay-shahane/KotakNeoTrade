@@ -1,17 +1,20 @@
 """
-CSV Data Fetcher - Extract real trading data from CSV files
+CSV Data Fetcher - Extract authentic trading data from uploaded CSV files
+Processes real portfolio data for dashboard and trading analysis
 """
 import pandas as pd
 import os
 import logging
 from datetime import datetime
-import random
 
 class CSVDataFetcher:
-    """Fetch real trading data from CSV files"""
+    """
+    Extract authentic trading data from CSV files
+    Used for importing real portfolio positions and trading history
+    """
     
     def __init__(self):
-        self.csv_directory = "attached_assets"
+        self.csv_directory = "attached_assets"  # Directory containing uploaded CSV files
         self.logger = logging.getLogger(__name__)
         
     def get_latest_csv_file(self):
@@ -81,8 +84,8 @@ class CSVDataFetcher:
                     # Investment amount
                     investment = float(row.iloc[9]) if len(row) > 9 and pd.notna(row.iloc[9]) else 0
                     
-                    # Add slight price variation for real-time simulation
-                    ltp = current_price * (1 + random.uniform(-0.015, 0.015))  # ±1.5% variation
+                    # Use authentic current price from CSV data
+                    ltp = current_price
                     
                     # Calculate P&L from current vs entry price
                     pnl = (ltp - entry_price) * quantity

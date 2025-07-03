@@ -1,15 +1,21 @@
-# Applying the change to add the method `get_quotes_for_symbols` to the `TradingFunctions` class.
+"""
+Trading Functions - Kotak Neo API Integration
+Handles all trading operations including dashboard data, positions, holdings, and orders
+Uses only authentic market data from Kotak Neo API - no fallback data
+"""
 import logging
-# pandas will be imported lazily when needed
 from datetime import datetime
 from Scripts.csv_data_fetcher import CSVDataFetcher
 
 class TradingFunctions:
-    """Trading functions for Kotak Neo API with CSV data integration"""
+    """
+    Core trading functionality for Kotak Neo API
+    Provides methods for fetching portfolio data, placing orders, and managing positions
+    """
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-        self.csv_fetcher = CSVDataFetcher()
+        self.csv_fetcher = CSVDataFetcher()  # For importing CSV portfolio data
 
     def get_dashboard_data(self, client):
         """Get dashboard data including positions, holdings, and portfolio summary"""

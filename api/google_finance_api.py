@@ -1,19 +1,24 @@
 
-"""Google Finance API for live CMP updates"""
+"""
+Google Finance API for Real-time Market Data
+Fetches live stock prices from Google Finance and updates the trading database
+Only uses authentic market data - no fallback or synthetic prices
+"""
 from flask import Blueprint, request, jsonify
 import logging
 import requests
 from bs4 import BeautifulSoup
 import time
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Optional
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
+# Initialize Flask blueprint for Google Finance API
 google_finance_bp = Blueprint('google_finance', __name__, url_prefix='/api/google-finance')
 logger = logging.getLogger(__name__)
 
-# Database connection string
+# External database connection for admin trade signals
 DATABASE_URL = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
 
 def get_google_finance_price(symbol: str) -> Optional[float]:
