@@ -141,14 +141,6 @@ def dashboard():
         flash(f'Error loading dashboard: {str(e)}', 'error')
         return render_template('dashboard.html', data={})
 
-@main_bp.route('/etf-signals')
-@login_required
-def etf_signals():
-    """ETF Trading Signals page"""
-    return render_template('etf_signals.html')
-
-# ETF signals route removed - handled by app.py
-
 @main_bp.route('/positions')
 @login_required
 def positions():
@@ -391,6 +383,7 @@ def api_live_quotes():
         }), 500
 
 @main_bp.route('/etf-signals')
+@login_required
 def etf_signals():
     """ETF Signals page - show admin_trade_signals data in table"""
     try:
