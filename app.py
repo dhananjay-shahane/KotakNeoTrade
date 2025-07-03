@@ -611,10 +611,7 @@ def charts():
     return render_template('charts.html')
 
 
-@app.route('/etf-signals')
-def etf_signals():
-    """ETF Trading Signals page"""
-    return render_template('etf_signals.html')
+# ETF signals route is handled by main blueprint in routes/main.py
 
 
 @app.route('/etf-signals-advanced')

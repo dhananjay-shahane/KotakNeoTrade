@@ -141,8 +141,6 @@ def dashboard():
         flash(f'Error loading dashboard: {str(e)}', 'error')
         return render_template('dashboard.html', data={})
 
-# ETF signals route removed - handled by app.py
-
 @main_bp.route('/positions')
 @login_required
 def positions():
@@ -256,7 +254,7 @@ def api_positions():
             },
             'timestamp': int(time.time())
         }
-        
+
         logging.info(f"Returning positions API response: success={response_data['success']}, positions_count={len(positions_data)}")
         return jsonify(response_data)
     except Exception as e:
@@ -385,20 +383,21 @@ def api_live_quotes():
         }), 500
 
 @main_bp.route('/etf-signals')
+@login_required
 def etf_signals():
     """ETF Signals page - show admin_trade_signals data in table"""
     try:
         from Scripts.models_etf import AdminTradeSignal
-        
+
         # Get all active admin trade signals for the table
         signals = AdminTradeSignal.query.filter_by(status='ACTIVE').order_by(
             AdminTradeSignal.created_at.desc()
         ).all()
-        
+
         logging.info(f"ETF Signals page: Displaying {len(signals)} admin trade signals in datatable")
-        
+
         return render_template('etf_signals.html', signals_count=len(signals))
-        
+
     except Exception as e:
         logging.error(f"ETF signals page error: {str(e)}")
         return f"Error loading ETF signals page: {str(e)}"
