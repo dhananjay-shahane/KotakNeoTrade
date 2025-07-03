@@ -388,19 +388,38 @@ def etf_signals():
     """ETF Signals page - show admin_trade_signals data in table"""
     try:
         from Scripts.models_etf import AdminTradeSignal
+        from sqlalchemy import text
 
-        # Get all active admin trade signals for the table
-        signals = AdminTradeSignal.query.filter_by(status='ACTIVE').order_by(
-            AdminTradeSignal.created_at.desc()
-        ).all()
+        # Use raw SQL query to avoid ORM column mapping issues
+        try:
+            # First try to get signals using ORM
+            signals = AdminTradeSignal.query.filter_by(status='ACTIVE').order_by(
+                AdminTradeSignal.created_at.desc()
+            ).all()
+            signals_count = len(signals)
+        except Exception as orm_error:
+            logging.warning(f"ORM query failed, trying raw SQL: {str(orm_error)}")
+            # Fallback to raw SQL query with only existing columns
+            try:
+                from app import db
+                result = db.session.execute(text("""
+                    SELECT COUNT(*) as count 
+                    FROM admin_trade_signals 
+                    WHERE status = 'ACTIVE'
+                """))
+                signals_count = result.scalar() or 0
+            except Exception as sql_error:
+                logging.error(f"Raw SQL query also failed: {str(sql_error)}")
+                signals_count = 0
 
-        logging.info(f"ETF Signals page: Displaying {len(signals)} admin trade signals in datatable")
+        logging.info(f"ETF Signals page: Displaying {signals_count} admin trade signals in datatable")
 
-        return render_template('etf_signals.html', signals_count=len(signals))
+        return render_template('etf_signals.html', signals_count=signals_count)
 
     except Exception as e:
         logging.error(f"ETF signals page error: {str(e)}")
-        return f"Error loading ETF signals page: {str(e)}"
+        flash(f'Error loading ETF signals page: {str(e)}', 'error')
+        return redirect(url_for('main.dashboard'))
 
 @main_bp.route('/api/etf_positions')
 @login_required
@@ -660,6 +679,76 @@ def deals():
 def default_deals():
     """Default deals page showing all deals"""
     return render_template('default_deals.html')
+
+# @main_bp.route('/api/etf-signals-data')
+# @login_required
+# def api_etf_signals_data():
+#     """API endpoint for ETF signals data"""
+#     try:
+#         from sqlalchemy import text
+#         from app import db
+
+#         # Use raw SQL to get signals data with only existing columns
+#         result = db.session.execute(text("""
+#             SELECT id, symbol, entry_price, current_price, quantity, investment_amount, 
+#                    signal_type, status, created_at, pnl, pnl_percentage, change_percent,
+#                    target_price, stop_loss, last_update_time
+#             FROM admin_trade_signals 
+#             ORDER BY created_at DESC
+#             LIMIT 100
+#         """))
+
+#         signals_data = result.fetchall()
+
+#         # Format data for frontend
+#         formatted_signals = []
+#         for row in signals_data:
+#             signal = {
+#                 'id': row[0],
+#                 'trade_signal_id': row[0],
+#                 'etf': row[1] or 'N/A',
+#                 'symbol': row[1] or 'N/A',
+#                 'thirty': '30',
+#                 'dh': '0',
+#                 'date': row[8].strftime('%Y-%m-%d') if row[8] else '',
+#                 'pos': 1 if row[2] == 'BUY' else -1,
+#                 'qty': row[6] or 1,
+#                 'ep': float(row[3]) if row[3] else 0,
+#                 'cmp': float(row[4]) if row[4] else 0,
+#                 'chan': f"{float(row[12]):.2f}%" if row[12] else "0%",
+#                 'inv': float(row[9]) if row[9] else 0,
+#                 'tp': float(row[5]) if row[5] else 0,
+#                 'tva': 0,
+#                 'tpr': 0,
+#                 'pl': float(row[10]) if row[10] else 0,
+#                 'ed': row[8].strftime('%Y-%m-%d') if row[8] else '',
+#                 'exp': '',
+#                 'pr': '',
+#                 'pp': f"{float(row[11]):.2f}%" if row[11] else "0%",
+#                 'iv': '',
+#                 'ip': '',
+#                 'nt': '',
+#                 'qt': '',
+#                 'seven': '0',
+#                 'ch': f"{float(row[12]):.2f}%" if row[12] else "0%",
+#                 'status': row[7] or 'ACTIVE'
+#             }
+#             formatted_signals.append(signal)
+
+#         return jsonify({
+#             'success': True,
+#             'data': formatted_signals,
+#             'total': len(formatted_signals)
+#         })
+
+#     except Exception as e:
+#         logging.error(f"ETF signals data API error: {str(e)}")
+#         return jsonify({
+#             'success': False,
+#             'error': str(e),
+#             'data': [],
+#             'total': 0
+#         }), 500
 
 @main_bp.route('/admin')
 @login_required
