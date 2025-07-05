@@ -91,18 +91,18 @@ DealsManager.prototype.setupColumnSettingsModal = function() {
 
 DealsManager.prototype.checkPriceUpdateStatus = function() {
     var self = this;
-    
+
     // Check Google Finance scheduler status
     var xhr = new XMLHttpRequest();
     xhr.open('GET', '/api/google-finance-scheduler/status', true);
     xhr.setRequestHeader('Content-Type', 'application/json');
-    
+
     xhr.onload = function() {
         if (xhr.status === 200) {
             var response = JSON.parse(xhr.responseText);
             var statusElement = document.getElementById('priceUpdateStatus');
             var lastUpdateElement = document.getElementById('lastPriceUpdate');
-            
+
             if (response.status === 'running') {
                 if (statusElement) {
                     statusElement.innerHTML = '<i class="fas fa-sync-alt fa-spin me-1"></i>Live CMP Updates';
@@ -122,7 +122,7 @@ DealsManager.prototype.checkPriceUpdateStatus = function() {
             }
         }
     };
-    
+
     xhr.onerror = function() {
         var statusElement = document.getElementById('priceUpdateStatus');
         if (statusElement) {
@@ -130,9 +130,9 @@ DealsManager.prototype.checkPriceUpdateStatus = function() {
             statusElement.className = 'badge bg-danger me-2';
         }
     };
-    
+
     xhr.send();
-    
+
     // Check status every 30 seconds
     setTimeout(function() {
         self.checkPriceUpdateStatus();
@@ -601,7 +601,7 @@ DealsManager.prototype.renderDealsTable = function() {
     var visibleDealsCount = document.getElementById('visibleDealsCount');
     var showingCount = document.getElementById('showingCount');
     var totalCount = document.getElementById('totalCount');
-    
+
     if (visibleDealsCount) visibleDealsCount.textContent = this.filteredDeals.length;
     if (showingCount) showingCount.textContent = Math.min(endIndex, this.filteredDeals.length);
     if (totalCount) totalCount.textContent = this.filteredDeals.length;
@@ -614,7 +614,7 @@ DealsManager.prototype.updatePagination = function() {
     var totalPagesElement = document.getElementById('totalPages');
     var prevBtn = document.getElementById('prevBtn');
     var nextBtn = document.getElementById('nextBtn');
-    
+
     if (currentPageElement) currentPageElement.textContent = this.currentPage;
     if (totalPagesElement) totalPagesElement.textContent = totalPages;
     if (prevBtn) prevBtn.disabled = this.currentPage <= 1;
@@ -869,10 +869,10 @@ function setRefreshInterval(intervalMs, displayText) {
         intervalMs = 300000;
         displayText = '5 Min';
     }
-    
+
     window.dealsManager.refreshIntervalTime = intervalMs;
     document.getElementById('currentInterval').textContent = displayText;
-    
+
     if (window.dealsManager.autoRefresh) {
         window.dealsManager.startAutoRefresh();
     }
@@ -1346,9 +1346,9 @@ function updateDealsCMP() {
     var dataSource = localStorage.getItem('data-source') || 'google';
     var apiEndpoint = dataSource === 'google' ? '/api/google-finance/update-etf-cmp' : '/api/yahoo/update-prices';
     var sourceName = dataSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
-    
+
     console.log('Updating deals CMP using ' + sourceName);
-    
+
     fetch(apiEndpoint, {
         method: 'POST',
         headers: {
@@ -1359,12 +1359,12 @@ function updateDealsCMP() {
     .then(data => {
         if (data.success) {
             console.log('Deals CMP update response from ' + sourceName + ':', data);
-            
+
             // Refresh the deals table
             if (window.dealsManager) {
                 window.dealsManager.loadDeals();
             }
-            
+
             var updatedCount = data.updated_count || data.signals_updated || 0;
             showNotification('Updated CMP for ' + updatedCount + ' records from ' + sourceName, 'success');
         } else {
@@ -1418,7 +1418,7 @@ function createSampleDeals() {
         var xhr = new XMLHttpRequest();
         xhr.open('POST', '/api/deals/create-sample', true);
         xhr.setRequestHeader('Content-Type', 'application/json');
-        
+
         xhr.onload = function() {
             if (xhr.status === 200) {
                 var response = JSON.parse(xhr.responseText);
@@ -1435,13 +1435,59 @@ function createSampleDeals() {
                 showNotification('Error creating sample deals', 'error');
             }
         };
-        
+
         xhr.onerror = function() {
             showNotification('Network error creating sample deals', 'error');
         };
-        
+
         xhr.send();
     }
+}
+
+// Auto CMP update variables for deals
+let dealsCmpUpdateInterval = null;
+
+// Function to update CMP from Google Finance for deals
+function updateDealsCMPFromGoogleFinance() {
+    console.log('🔄 Updating deals CMP from Google Finance...');
+
+    fetch('/api/google-finance/update-etf-cmp', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('✅ Deals CMP updated successfully:', data.updated_count, 'records');
+            // Refresh the deals table after update
+            if (window.dealsManager) {
+                window.dealsManager.loadDeals();
+            }
+        } else {
+            console.error('❌ Deals CMP update failed:', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error updating deals CMP:', error);
+    });
+}
+
+// Function to start automatic CMP updates for deals
+function startDealsCMPUpdates() {
+    // Clear any existing interval
+    if (dealsCmpUpdateInterval) {
+        clearInterval(dealsCmpUpdateInterval);
+    }
+
+    // Set up 5-minute interval for CMP updates
+    dealsCmpUpdateInterval = setInterval(() => {
+        console.log('🕐 Auto deals CMP update triggered (5min interval)');
+        updateDealsCMPFromGoogleFinance();
+    }, 5 * 60 * 1000); // 5 minutes in milliseconds
+
+    console.log('✅ Auto deals CMP updates started (every 5 minutes)');
 }
 
 // Initialize Deals Manager on page load
@@ -1449,11 +1495,26 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Initializing Deals Manager...');
     window.dealsManager = new DealsManager();
 
+    // Load initial data
+    window.dealsManager.loadDeals();
+
+    // Check price update status
+    window.dealsManager.checkPriceUpdateStatus();
+
+    // Start automatic CMP updates
+    startDealsCMPUpdates();
+
+    // Update CMP immediately on page load
+    setTimeout(() => {
+        console.log('🚀 Initial deals CMP update on page load');
+        updateDealsCMPFromGoogleFinance();
+    }, 3000); // Wait 3 seconds for page to fully load
+
     // Set default data source to Google Finance if not already set
     if (!localStorage.getItem('data-source')) {
         localStorage.setItem('data-source', 'google');
     }
-    
+
     // Ensure Google Finance is selected by default
     switchDataSource('google');
     updateCurrentDataSourceIndicator();
@@ -1548,4 +1609,12 @@ document.addEventListener('DOMContentLoaded', function() {
             menu.style.zIndex = '';
         }
     });
+});
+
+// Clean up interval when page unloads
+window.addEventListener('beforeunload', function() {
+    if (dealsCmpUpdateInterval) {
+        clearInterval(dealsCmpUpdateInterval);
+        dealsCmpUpdateInterval = null;
+    }
 });

@@ -1307,6 +1307,73 @@ function updateCurrentDataSourceIndicator() {
     }
 }
 
+// Auto CMP update variables
+let cmpUpdateInterval = null;
+
+// Function to update CMP from Google Finance
+function updateCMPFromGoogleFinance() {
+    console.log('🔄 Updating CMP from Google Finance...');
+    
+    const updateBtn = document.querySelector('[onclick*="updateCMPDirectlyFromSource"]');
+    if (updateBtn) {
+        updateBtn.innerHTML = '<i class="fas fa-sync-alt fa-spin me-2"></i>Updating...';
+        updateBtn.disabled = true;
+    }
+
+    fetch('/api/google-finance/update-etf-cmp', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('✅ CMP updated successfully:', data.updated_count, 'records');
+            // Refresh the signals table after update
+            if (window.etfSignalsManager) {
+                window.etfSignalsManager.loadSignals();
+            }
+        } else {
+            console.error('❌ CMP update failed:', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error updating CMP:', error);
+    })
+    .finally(() => {
+        if (updateBtn) {
+            updateBtn.innerHTML = '<i class="fas fa-sync-alt me-2"></i>Force Update CMP';
+            updateBtn.disabled = false;
+        }
+    });
+}
+
+// Function to start automatic CMP updates
+function startAutoCMPUpdates() {
+    // Clear any existing interval
+    if (cmpUpdateInterval) {
+        clearInterval(cmpUpdateInterval);
+    }
+    
+    // Set up 5-minute interval for CMP updates
+    cmpUpdateInterval = setInterval(() => {
+        console.log('🕐 Auto CMP update triggered (5min interval)');
+        updateCMPFromGoogleFinance();
+    }, 5 * 60 * 1000); // 5 minutes in milliseconds
+    
+    console.log('✅ Auto CMP updates started (every 5 minutes)');
+}
+
+// Function to stop automatic CMP updates
+function stopAutoCMPUpdates() {
+    if (cmpUpdateInterval) {
+        clearInterval(cmpUpdateInterval);
+        cmpUpdateInterval = null;
+        console.log('⏹️ Auto CMP updates stopped');
+    }
+}
+
 // Initialize the ETF Signals Manager
 window.etfSignalsManager = new ETFSignalsManager();
 
@@ -1331,6 +1398,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Ensure Google Finance is selected by default
     switchDataSource('google');
+    
+    // Start automatic CMP updates
+    startAutoCMPUpdates();
+    
+    // Update CMP immediately on page load
+    setTimeout(() => {
+        console.log('🚀 Initial CMP update on page load');
+        updateCMPFromGoogleFinance();
+    }, 2000); // Wait 2 seconds for page to fully load
+});
+
+// Clean up interval when page unloads
+window.addEventListener('beforeunload', function() {
+    stopAutoCMPUpdates();
 });
 
 

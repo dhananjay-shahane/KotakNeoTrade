@@ -45,7 +45,7 @@ logging.basicConfig(
 
 class GoogleFinanceCMPUpdater:
     """Google Finance CMP Updater for admin_trade_signals table"""
-    
+
     def __init__(self):
         """Initialize with external database configuration"""
         self.db_config = {
@@ -65,7 +65,7 @@ class GoogleFinanceCMPUpdater:
         try:
             # First try to get comprehensive historical data
             historical_data = self.fetch_historical_data(symbol)
-            
+
             if historical_data:
                 # Update database with comprehensive calculations
                 updated_rows = self.update_symbol_with_comprehensive_calculations(symbol, historical_data)
@@ -94,7 +94,7 @@ class GoogleFinanceCMPUpdater:
                         'ch7': 0.0,
                         'nt': live_price
                     }
-                    
+
                     # Update with comprehensive calculations
                     updated_rows = self.update_symbol_with_comprehensive_calculations(symbol, market_data)
                     return {
@@ -123,12 +123,12 @@ class GoogleFinanceCMPUpdater:
         try:
             import requests
             from bs4 import BeautifulSoup
-            
+
             clean_symbol = symbol.strip().upper()
-            
+
             # Try different exchange suffixes for Google Finance
             exchanges = ['NSE', 'BSE']  # Try NSE first, then BSE
-            
+
             for exchange in exchanges:
                 url = f"https://www.google.com/finance/quote/{clean_symbol}:{exchange}"
                 headers = {
@@ -140,13 +140,13 @@ class GoogleFinanceCMPUpdater:
                     "Connection": "keep-alive",
                     "Upgrade-Insecure-Requests": "1"
                 }
-                
+
                 try:
                     logging.info(f"Trying Google Finance: {url}")
                     response = requests.get(url, headers=headers, timeout=5)
                     if response.status_code == 200:
                         soup = BeautifulSoup(response.text, 'html.parser')
-                        
+
                         # Try multiple selectors for price
                         price_selectors = [
                             "div[class*='YMlKec fxKbKc']",
@@ -154,7 +154,7 @@ class GoogleFinanceCMPUpdater:
                             "span[class*='IsqQVc NprOob XcVN5d']",
                             "div[jsname='ip75Cb']"
                         ]
-                        
+
                         for selector in price_selectors:
                             price_element = soup.select_one(selector)
                             if price_element:
@@ -167,13 +167,13 @@ class GoogleFinanceCMPUpdater:
                                         return price
                                 except (ValueError, TypeError):
                                     continue
-                    
+
                     logging.warning(f"⚠️ Google Finance: Could not parse price for {symbol} on {exchange}")
-                    
+
                 except (requests.exceptions.RequestException, requests.exceptions.Timeout) as e:
                     logging.warning(f"⚠️ Google Finance network error for {symbol} on {exchange}: {e}")
                     continue
-            
+
             # No fallback data - return None if no authentic price source available
 
         except Exception as e:
@@ -237,36 +237,36 @@ class GoogleFinanceCMPUpdater:
         try:
             yahoo_symbol = self.get_yahoo_symbol(symbol)
             ticker = yf.Ticker(yahoo_symbol)
-            
+
             # Get 35 days of data to ensure we have 30 trading days
             hist = ticker.history(period="35d")
-            
+
             if hist.empty:
                 logging.warning(f"No historical data found for {symbol}")
                 return {}
-            
+
             # Get current price (latest close)
             current_price = float(hist['Close'].iloc[-1])
-            
+
             # Calculate 30-day performance
             d30_price = None
             ch30 = 0.0
-            
+
             if len(hist) >= 30:
                 d30_price = float(hist['Close'].iloc[-30])
                 ch30 = ((current_price - d30_price) / d30_price) * 100
             elif len(hist) >= 20:  # Fallback to 20 days if less than 30
                 d30_price = float(hist['Close'].iloc[-20])
                 ch30 = ((current_price - d30_price) / d30_price) * 100
-            
+
             # Calculate 7-day performance
             d7_price = None
             ch7 = 0.0
-            
+
             if len(hist) >= 7:
                 d7_price = float(hist['Close'].iloc[-7])
                 ch7 = ((current_price - d7_price) / d7_price) * 100
-            
+
             result = {
                 'cmp': current_price,
                 'd30': d30_price or current_price,
@@ -275,14 +275,14 @@ class GoogleFinanceCMPUpdater:
                 'ch7': round(ch7, 2),
                 'nt': current_price  # Net price (same as current price)
             }
-            
+
             logging.info(f"✓ Historical data for {symbol}: CMP=₹{current_price:.2f}, 30d={ch30:.2f}%, 7d={ch7:.2f}%")
             return result
-            
+
         except Exception as e:
             logging.error(f"❌ Error fetching historical data for {symbol}: {e}")
             return {}
-        
+
     def get_symbols_from_database(self) -> List[str]:
         """Get all unique symbols from admin_trade_signals table"""
         symbols = []
@@ -313,11 +313,11 @@ class GoogleFinanceCMPUpdater:
     def get_yahoo_symbol(self, symbol: str) -> str:
         """Convert Indian stock symbol to Yahoo Finance format"""
         clean_symbol = symbol.strip().upper()
-        
+
         # Add .NS suffix for NSE stocks if not already present
         if not clean_symbol.endswith('.NS') and not clean_symbol.endswith('.BO'):
             return f"{clean_symbol}.NS"
-        
+
         return clean_symbol
 
     def update_symbol_with_comprehensive_calculations(self, symbol: str, market_data: Dict) -> int:
@@ -333,31 +333,31 @@ class GoogleFinanceCMPUpdater:
                         WHERE (symbol = %s OR etf = %s)
                         AND qty IS NOT NULL AND ep IS NOT NULL
                     """, (symbol, symbol))
-                    
+
                     trades = cursor.fetchall()
-                    
+
                     for trade in trades:
                         trade_dict = dict(trade)
-                        
+
                         # Add current market data
                         trade_dict.update(market_data)
-                        
+
                         # Calculate all trading metrics
                         calculated_data = self.calculator.calculate_all_metrics(trade_dict)
-                        
+
                         if calculated_data:
                             # Update individual trade record
                             self._update_trade_record(cursor, trade_dict['id'], calculated_data)
                             updated_rows += 1
-                    
+
                     conn.commit()
-                    
+
             if updated_rows > 0:
                 logging.info(f"✓ Updated {updated_rows} trade records for {symbol} with comprehensive calculations")
                 logging.info(f"  Market Data: CMP=₹{market_data.get('cmp', 0):.2f}, 30d={market_data.get('ch30', 0):.2f}%, 7d={market_data.get('ch7', 0):.2f}%")
-            
+
             return updated_rows
-            
+
         except Exception as e:
             logging.error(f"❌ Error updating comprehensive calculations for {symbol}: {e}")
             return 0
@@ -371,11 +371,11 @@ class GoogleFinanceCMPUpdater:
                 WHERE table_name = 'admin_trade_signals'
             """)
             columns = [row[0] for row in cursor.fetchall()]
-            
+
             # Build update query with available columns
             update_fields = []
             update_values = []
-            
+
             # Map calculated data to database columns
             column_mapping = {
                 'cmp': 'cmp',
@@ -394,27 +394,27 @@ class GoogleFinanceCMPUpdater:
                 'iv': 'iv',
                 'ip': 'ip'
             }
-            
+
             for calc_field, db_column in column_mapping.items():
                 if db_column in columns and calc_field in calculated_data:
                     update_fields.append(f"{db_column} = %s")
                     update_values.append(calculated_data[calc_field])
-            
+
             # Add timestamp
             if 'updated_at' in columns:
                 update_fields.append('updated_at = CURRENT_TIMESTAMP')
-            
+
             if update_fields:
                 update_values.append(trade_id)
-                
+
                 query = f"""
                     UPDATE admin_trade_signals 
                     SET {', '.join(update_fields)}
                     WHERE id = %s
                 """
-                
+
                 cursor.execute(query, update_values)
-                
+
         except Exception as e:
             logging.error(f"❌ Error updating trade record {trade_id}: {e}")
 
@@ -441,19 +441,19 @@ class GoogleFinanceCMPUpdater:
                     if 'thirty' in existing_columns:
                         update_fields.append('thirty = %s')
                         update_values.append(data.get('d30', 0))
-                    
+
                     if 'dh' in existing_columns:
                         update_fields.append('dh = %s')
                         update_values.append(f"{data.get('ch30', 0):.2f}%")
-                    
+
                     if 'seven' in existing_columns:
                         update_fields.append('seven = %s')
                         update_values.append(data.get('d7', 0))
-                    
+
                     if 'ch' in existing_columns:
                         update_fields.append('ch = %s')
                         update_values.append(f"{data.get('ch7', 0):.2f}%")
-                    
+
                     # Also update d30, ch30, d7, ch7 if they exist
                     cursor.execute("""
                         SELECT column_name FROM information_schema.columns 
@@ -461,32 +461,32 @@ class GoogleFinanceCMPUpdater:
                         AND column_name IN ('d30', 'ch30', 'd7', 'ch7')
                     """)
                     performance_columns = [row[0] for row in cursor.fetchall()]
-                    
+
                     if 'd30' in performance_columns:
                         update_fields.append('d30 = %s')
                         update_values.append(data.get('d30', 0))
-                    
+
                     if 'ch30' in performance_columns:
                         update_fields.append('ch30 = %s')
                         update_values.append(f"{data.get('ch30', 0):.2f}%")
-                    
+
                     if 'd7' in performance_columns:
                         update_fields.append('d7 = %s')
                         update_values.append(data.get('d7', 0))
-                    
+
                     if 'ch7' in performance_columns:
                         update_fields.append('ch7 = %s')
                         update_values.append(f"{data.get('ch7', 0):.2f}%")
                         update_values.append(data.get('d30', 0))
-                    
+
                     if 'ch30' in performance_columns:
                         update_fields.append('ch30 = %s')
                         update_values.append(f"{data.get('ch30', 0):.2f}%")
-                    
+
                     if 'd7' in performance_columns:
                         update_fields.append('d7 = %s')
                         update_values.append(data.get('d7', 0))
-                    
+
                     if 'ch7' in performance_columns:
                         update_fields.append('ch7 = %s')
                         update_values.append(f"{data.get('ch7', 0):.2f}%")
@@ -507,7 +507,7 @@ class GoogleFinanceCMPUpdater:
                         WHERE (symbol = %s OR etf = %s)
                         AND (cmp IS NULL OR ABS(cmp - %s) > 0.01)
                     """
-                    
+
                     cursor.execute(query, update_values)
                     admin_updated_rows = cursor.rowcount
 
@@ -641,16 +641,16 @@ class GoogleFinanceCMPUpdater:
                 executor.submit(self._process_single_symbol, symbol): symbol 
                 for symbol in symbols
             }
-            
+
             # Collect results as they complete
             for i, future in enumerate(concurrent.futures.as_completed(future_to_symbol), 1):
                 symbol = future_to_symbol[future]
                 logging.info(f"Processing {i}/{len(symbols)}: {symbol}")
-                
+
                 try:
                     result = future.result()
                     results[symbol] = result
-                    
+
                     if result['status'] == 'success':
                         with self.lock:
                             self.updated_count += result['updated_rows']
@@ -658,7 +658,7 @@ class GoogleFinanceCMPUpdater:
                     else:
                         with self.lock:
                             self.error_count += 1
-                            
+
                 except Exception as e:
                     logging.error(f"❌ Error processing {symbol}: {e}")
                     with self.lock:
@@ -756,6 +756,11 @@ class GoogleFinanceCMPUpdater:
             'duration': duration,
             'results': results
         }
+
+    def fetch_alternative_price(self, symbol: str) -> Optional[float]:
+        """No fallback price generation - only real data sources"""
+        logging.warning(f"No real price source available for {symbol} - returning None")
+        return None
 
 def main():
     """Main function for standalone execution"""

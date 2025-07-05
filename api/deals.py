@@ -280,62 +280,7 @@ def get_user_deals():
                 db_deals = query.order_by(UserDeal.created_at.desc()).all()
                 logging.info(f"Found {len(db_deals)} deals in UserDeal table")
 
-                # If no deals found in UserDeal, check if we can create from AdminTradeSignal
-                if len(db_deals) == 0:
-                    logging.info("No deals found in UserDeal table, checking AdminTradeSignal table")
-                    admin_signals = AdminTradeSignal.query.limit(10).all()
-                    logging.info(f"Found {len(admin_signals)} admin signals")
-                    
-                    # Create some demo deals from admin signals if available
-                    for signal in admin_signals[:5]:  # Create max 5 demo deals
-                        try:
-                            demo_deal = UserDeal(
-                                user_id=current_user.id,
-                                trade_signal_id=str(signal.id),
-                                etf_symbol=signal.etf_symbol or 'DEMO',
-                                symbol=signal.etf_symbol or 'DEMO',
-                                trading_symbol=signal.etf_symbol or 'DEMO',
-                                exchange='NSE',
-                                pos=1,  # Long position
-                                qty=signal.qty or 1,
-                                ep=float(signal.ep or 100),
-                                cmp=float(signal.cmp or signal.ep or 100),
-                                tp=float(signal.tp) if signal.tp else None,
-                                inv=float(signal.inv or (signal.ep or 100) * (signal.qty or 1)),
-                                pl=float(signal.pl or 0),
-                                chan_percent=signal.chan_percent or '0%',
-                                thirty=signal.thirty or '0%',
-                                dh=signal.dh or 0,
-                                signal_date=signal.date or '',
-                                position_type='LONG',
-                                quantity=signal.qty or 1,
-                                entry_price=float(signal.ep or 100),
-                                current_price=float(signal.cmp or signal.ep or 100),
-                                invested_amount=float(signal.inv or (signal.ep or 100) * (signal.qty or 1)),
-                                notes=f'Demo deal from admin signal {signal.id}',
-                                deal_type='SIGNAL'
-                            )
-                            
-                            # Calculate P&L
-                            try:
-                                demo_deal.calculate_pnl()
-                            except:
-                                demo_deal.pnl_amount = 0.0
-                                demo_deal.pnl_percent = 0.0
-                            
-                            db.session.add(demo_deal)
-                            logging.info(f"Created demo deal from signal {signal.id}")
-                        except Exception as demo_error:
-                            logging.error(f"Error creating demo deal: {demo_error}")
-                            continue
-                    
-                    if admin_signals:
-                        db.session.commit()
-                        logging.info("Committed demo deals to database")
-                        
-                        # Re-query for deals
-                        db_deals = UserDeal.query.filter_by(user_id=current_user.id).order_by(UserDeal.created_at.desc()).all()
-                        logging.info(f"After creating demo deals, found {len(db_deals)} deals")
+                # Only return actual user deals - no demo data creation
 
                 # Convert database deals to response format
                 for deal in db_deals:
@@ -375,9 +320,7 @@ def get_user_deals():
                         db.session.commit()
                         current_user = new_user
                         logging.info(f"Created new user with UCC: {user_ucc}")
-                        
-                        # Recursively call this function to create demo deals for new user
-                        return get_user_deals()
+                        # No demo deals - only real user data
                     except Exception as create_error:
                         logging.error(f"Error creating new user: {create_error}")
                         db.session.rollback()

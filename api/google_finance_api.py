@@ -92,8 +92,7 @@ def get_google_finance_price(symbol: str) -> Optional[float]:
         logger.warning(f"⚠️ YFinance fallback failed for {symbol}: {str(e)}")
     
     # No fallback data - return None if no authentic price source available
-    
-    logger.warning(f"⚠️ No price source available for {symbol}")
+    logger.warning(f"⚠️ No authentic price source available for {symbol}")
     return None
 
 @google_finance_bp.route('/live-price/<symbol>', methods=['GET'])

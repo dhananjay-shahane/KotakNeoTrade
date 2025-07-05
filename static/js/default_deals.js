@@ -642,22 +642,22 @@ function showTradeModal(symbol, currentPrice, tradeType) {
     var modalTitle = tradeType === 'BUY' ? 'Buy Trade' : 'Sell Trade';
     var iconClass = tradeType === 'BUY' ? 'fas fa-plus' : 'fas fa-minus';
     document.getElementById('tradeModalLabel').innerHTML = '<i class="' + iconClass + ' me-2"></i>' + modalTitle;
-    
+
     // Set form values
     document.getElementById('tradeSymbol').value = symbol;
     document.getElementById('tradeType').value = tradeType;
     document.getElementById('tradePrice').value = currentPrice || 0;
     document.getElementById('tradeQuantity').value = 1;
-    
+
     // Reset form to defaults
     document.getElementById('orderType').value = 'L'; // Default to Limit
     document.getElementById('productType').value = 'CNC';
     document.getElementById('validityType').value = 'DAY';
     document.getElementById('triggerPrice').value = 0;
-    
+
     // Enable/disable price fields based on order type
     togglePriceFields();
-    
+
     var modal = new bootstrap.Modal(document.getElementById('tradeModal'));
     modal.show();
 }
@@ -667,7 +667,7 @@ function togglePriceFields() {
     var orderType = document.getElementById('orderType').value;
     var priceField = document.getElementById('tradePrice');
     var triggerField = document.getElementById('triggerPrice');
-    
+
     if (orderType === 'MKT') {
         // Market order - disable price and trigger
         priceField.disabled = true;
@@ -700,24 +700,24 @@ function submitAdvancedTrade() {
     var quantity = document.getElementById('tradeQuantity').value;
     var validity = document.getElementById('validityType').value;
     var triggerPrice = document.getElementById('triggerPrice').value;
-    
+
     if (!symbol || !quantity || quantity <= 0) {
         showNotification('Please enter valid trade details', 'error');
         return;
     }
-    
+
     // Validate price for limit orders
     if ((orderType === 'L' || orderType === 'SL') && (!price || price <= 0)) {
         showNotification('Please enter a valid price for limit orders', 'error');
         return;
     }
-    
+
     // Validate trigger price for stop loss orders
     if ((orderType === 'SL' || orderType === 'SL-M') && (!triggerPrice || triggerPrice <= 0)) {
         showNotification('Please enter a valid trigger price for stop loss orders', 'error');
         return;
     }
-    
+
     var orderData = {
         symbol: symbol,
         quantity: quantity,
@@ -733,12 +733,12 @@ function submitAdvancedTrade() {
         market_protection: '0',
         pf: 'N'
     };
-    
+
     var submitBtn = document.querySelector('#tradeModal .btn-primary');
     var originalText = submitBtn.textContent;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Placing Order...';
     submitBtn.disabled = true;
-    
+
     fetch('/api/place-order', {
         method: 'POST',
         headers: {
@@ -750,14 +750,17 @@ function submitAdvancedTrade() {
     .then(function(data) {
         submitBtn.innerHTML = '<i class="fas fa-chart-line me-2"></i>Place Trade';
         submitBtn.disabled = false;
-        
+
         if (data.success) {
             var orderTypeText = orderType === 'MKT' ? 'Market' : orderType === 'L' ? 'Limit' : 'Stop Loss';
             showNotification(tradeType + ' ' + orderTypeText + ' order placed successfully for ' + symbol, 'success');
             bootstrap.Modal.getInstance(document.getElementById('tradeModal')).hide();
             refreshDeals();
         } else {
-            showNotification('Failed to place order: ' + data.message, 'error');
+            showNotification('Failed to place order: ' + data.message, 'error');<previous_generation>```text
+
+</previous_generation>
+            return;
         }
     })
     .catch(function(error) {
@@ -782,9 +785,9 @@ var sortState = {
 function sortTable(column) {
     var tbody = document.getElementById('defaultDealsTableBody');
     if (!tbody) return;
-    
+
     var rows = Array.from(tbody.querySelectorAll('tr'));
-    
+
     // Toggle sort direction
     if (sortState.column === column) {
         sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
@@ -792,11 +795,11 @@ function sortTable(column) {
         sortState.column = column;
         sortState.direction = 'asc';
     }
-    
+
     // Sort rows based on column
     rows.sort(function(a, b) {
         var aValue, bValue;
-        
+
         switch (column) {
             case 'symbol':
                 aValue = (a.dataset.symbol || '').toLowerCase();
@@ -833,7 +836,7 @@ function sortTable(column) {
             default:
                 return 0;
         }
-        
+
         // Compare values
         var result;
         if (typeof aValue === 'string') {
@@ -841,13 +844,13 @@ function sortTable(column) {
         } else {
             result = aValue - bValue;
         }
-        
+
         return sortState.direction === 'asc' ? result : -result;
     });
-    
+
     // Update sort indicators
     updateSortIndicators(column, sortState.direction);
-    
+
     // Rebuild table with sorted rows
     tbody.innerHTML = '';
     rows.forEach(function(row) {
@@ -861,20 +864,20 @@ function updateSortIndicators(activeColumn, direction) {
     indicators.forEach(function(indicator) {
         indicator.classList.add('d-none');
     });
-    
+
     // Show active indicator
     var activeIndicator = document.getElementById('sort-' + activeColumn + '-' + direction);
     if (activeIndicator) {
         activeIndicator.classList.remove('d-none');
     }
-    
+
     // Update sort icons in headers
     var sortIcons = document.querySelectorAll('.sortable .fa-sort');
     sortIcons.forEach(function(icon) {
         icon.classList.remove('text-primary');
         icon.classList.add('text-muted');
     });
-    
+
     var activeHeader = document.querySelector('.sortable[onclick*="' + activeColumn + '"] .fa-sort');
     if (activeHeader) {
         activeHeader.classList.remove('text-muted');
@@ -1017,7 +1020,7 @@ function setRefreshInterval(intervalMs, displayText) {
         intervalMs = 300000;
         displayText = '5 Min';
     }
-    
+
     window.dealsManager.refreshIntervalTime = intervalMs;
     document.getElementById('currentInterval').textContent = displayText;
 
@@ -1089,7 +1092,7 @@ function submitTrade() {
             var modal = bootstrap.Modal.getInstance(document.getElementById('tradeModal'));
             modal.hide();
             alert(type + ' order for ' + quantity + ' ' + symbol + ' at ₹' + price + ' placed successfully! Order ID: ' + (data.order_id || 'N/A'));
-            
+
             // Refresh deals after order placement
             setTimeout(function() {
                 window.dealsManager.loadDeals();
@@ -1102,7 +1105,7 @@ function submitTrade() {
         // Reset button state
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
-        
+
         console.error('Error placing order:', error);
         alert('Error placing order: ' + error.message);
     });
@@ -1314,9 +1317,9 @@ function updateDefaultDealsCMP() {
     var dataSource = localStorage.getItem('data-source') || 'google';
     var apiEndpoint = dataSource === 'google' ? '/api/google-finance/update-etf-cmp' : '/api/yahoo/update-prices';
     var sourceName = dataSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
-    
+
     console.log('Updating default deals CMP using ' + sourceName);
-    
+
     fetch(apiEndpoint, {
         method: 'POST',
         headers: {
@@ -1327,12 +1330,12 @@ function updateDefaultDealsCMP() {
     .then(data => {
         if (data.success) {
             console.log('Default deals CMP update response from ' + sourceName + ':', data);
-            
+
             // Refresh the deals table
             if (window.dealsManager) {
                 window.dealsManager.loadDeals();
             }
-            
+
             var updatedCount = data.updated_count || data.signals_updated || 0;
             showSuccessMessage('Updated CMP for ' + updatedCount + ' records from ' + sourceName);
         } else {
@@ -1389,7 +1392,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!localStorage.getItem('data-source')) {
         localStorage.setItem('data-source', 'google');
     }
-    
+
     // Ensure Google Finance is selected by default
     switchDataSource('google');
     updateCurrentDataSourceIndicator();
@@ -1467,4 +1470,78 @@ document.addEventListener('DOMContentLoaded', function() {
             menu.style.zIndex = '';
         }
     });
+});
+
+// Auto CMP update variables for default deals
+let defaultDealsCmpUpdateInterval = null;
+
+// Function to update CMP from Google Finance for default deals
+function updateDefaultDealsCMPFromGoogleFinance() {
+    console.log('🔄 Updating default deals CMP from Google Finance...');
+
+    fetch('/api/google-finance/update-etf-cmp', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('✅ Default deals CMP updated successfully:', data.updated_count, 'records');
+            // Refresh the deals table after update
+            if (window.dealsManager) {
+                window.dealsManager.loadDeals();
+            }
+        } else {
+            console.error('❌ Default deals CMP update failed:', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error updating default deals CMP:', error);
+    });
+}
+
+// Function to start automatic CMP updates for default deals
+function startDefaultDealsCMPUpdates() {
+    // Clear any existing interval
+    if (defaultDealsCmpUpdateInterval) {
+        clearInterval(defaultDealsCmpUpdateInterval);
+    }
+
+    // Set up 5-minute interval for CMP updates
+    defaultDealsCmpUpdateInterval = setInterval(() => {
+        console.log('🕐 Auto default deals CMP update triggered (5min interval)');
+        updateDefaultDealsCMPFromGoogleFinance();
+    }, 5 * 60 * 1000); // 5 minutes in milliseconds
+
+    console.log('✅ Auto default deals CMP updates started (every 5 minutes)');
+}
+
+// Initialize when document is ready
+$(document).ready(function() {
+    console.log('Default deals page loaded, initializing...');
+
+    // Initialize the default deals manager
+    window.defaultDealsManager = new DealsManager();
+
+    // Load initial data
+    window.defaultDealsManager.loadDeals();
+
+    // Start automatic CMP updates
+    startDefaultDealsCMPUpdates();
+
+    // Update CMP immediately on page load
+    setTimeout(() => {
+        console.log('🚀 Initial default deals CMP update on page load');
+        updateDefaultDealsCMPFromGoogleFinance();
+    }, 3000); // Wait 3 seconds for page to fully load
+});
+
+// Clean up interval when page unloads
+window.addEventListener('beforeunload', function() {
+    if (defaultDealsCmpUpdateInterval) {
+        clearInterval(defaultDealsCmpUpdateInterval);
+        defaultDealsCmpUpdateInterval = null;
+    }
 });
