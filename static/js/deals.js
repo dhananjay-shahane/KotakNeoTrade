@@ -104,21 +104,31 @@ DealsManager.prototype.checkPriceUpdateStatus = function() {
             var lastUpdateElement = document.getElementById('lastPriceUpdate');
             
             if (response.status === 'running') {
-                statusElement.innerHTML = '<i class="fas fa-sync-alt fa-spin me-1"></i>Live CMP Updates';
-                statusElement.className = 'badge bg-success me-2';
-                lastUpdateElement.textContent = 'Every 5 minutes';
+                if (statusElement) {
+                    statusElement.innerHTML = '<i class="fas fa-sync-alt fa-spin me-1"></i>Live CMP Updates';
+                    statusElement.className = 'badge bg-success me-2';
+                }
+                if (lastUpdateElement) {
+                    lastUpdateElement.textContent = 'Every 5 minutes';
+                }
             } else {
-                statusElement.innerHTML = '<i class="fas fa-pause me-1"></i>CMP Updates Paused';
-                statusElement.className = 'badge bg-warning me-2';
-                lastUpdateElement.textContent = 'Not running';
+                if (statusElement) {
+                    statusElement.innerHTML = '<i class="fas fa-pause me-1"></i>CMP Updates Paused';
+                    statusElement.className = 'badge bg-warning me-2';
+                }
+                if (lastUpdateElement) {
+                    lastUpdateElement.textContent = 'Not running';
+                }
             }
         }
     };
     
     xhr.onerror = function() {
         var statusElement = document.getElementById('priceUpdateStatus');
-        statusElement.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>CMP Update Error';
-        statusElement.className = 'badge bg-danger me-2';
+        if (statusElement) {
+            statusElement.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>CMP Update Error';
+            statusElement.className = 'badge bg-danger me-2';
+        }
     };
     
     xhr.send();
@@ -585,19 +595,27 @@ DealsManager.prototype.renderDealsTable = function() {
         tbody.appendChild(row);
     }
 
-    document.getElementById('visibleDealsCount').textContent = this.filteredDeals.length;
-    document.getElementById('showingCount').textContent = Math.min(endIndex, this.filteredDeals.length);
-    document.getElementById('totalCount').textContent = this.filteredDeals.length;
+    var visibleDealsCount = document.getElementById('visibleDealsCount');
+    var showingCount = document.getElementById('showingCount');
+    var totalCount = document.getElementById('totalCount');
+    
+    if (visibleDealsCount) visibleDealsCount.textContent = this.filteredDeals.length;
+    if (showingCount) showingCount.textContent = Math.min(endIndex, this.filteredDeals.length);
+    if (totalCount) totalCount.textContent = this.filteredDeals.length;
 };
 
 DealsManager.prototype.updatePagination = function() {
     var totalPages = Math.ceil(this.filteredDeals.length / this.pageSize);
 
-    document.getElementById('currentPage').textContent = this.currentPage;
-    document.getElementById('totalPages').textContent = totalPages;
-
-    document.getElementById('prevBtn').disabled = this.currentPage <= 1;
-    document.getElementById('nextBtn').disabled = this.currentPage >= totalPages;
+    var currentPageElement = document.getElementById('currentPage');
+    var totalPagesElement = document.getElementById('totalPages');
+    var prevBtn = document.getElementById('prevBtn');
+    var nextBtn = document.getElementById('nextBtn');
+    
+    if (currentPageElement) currentPageElement.textContent = this.currentPage;
+    if (totalPagesElement) totalPagesElement.textContent = totalPages;
+    if (prevBtn) prevBtn.disabled = this.currentPage <= 1;
+    if (nextBtn) nextBtn.disabled = this.currentPage >= totalPages;
 };
 
 DealsManager.prototype.startAutoRefresh = function() {
