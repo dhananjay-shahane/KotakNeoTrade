@@ -184,12 +184,14 @@ def get_etf_signals_data_json():
         formatted_signals = []
 
         for signal in signals:
-            # Get basic trading data
+            # Get basic trading data with proper null handling
             symbol = str(signal.get('symbol') or signal.get('etf') or 'N/A').upper()
-            pos = int(signal.get('pos', 1))  # Position: 1 for long, -1 for short
-            qty = float(signal.get('qty', 0))
-            ep = float(signal.get('ep', 0))  # Entry price
-            cmp = float(signal.get('cmp', 0))  # Current market price
+            pos = int(signal.get('pos') or 1)  # Position: 1 for long, -1 for short
+            
+            # Handle numeric fields with null safety
+            qty = float(signal.get('qty') or 0) if signal.get('qty') is not None else 0.0
+            ep = float(signal.get('ep') or 0) if signal.get('ep') is not None else 0.0
+            cmp = float(signal.get('cmp') or 0) if signal.get('cmp') is not None else 0.0
             
             # Calculate investment amount (qty * ep)
             inv = qty * ep if qty and ep else 0
@@ -214,17 +216,20 @@ def get_etf_signals_data_json():
             tva = qty * tp if qty and tp else 0
             tPr = tva - inv if pos == 1 else inv - tva if tva > 0 else 0
             
-            # Get historical data for 30-day and 7-day performance
-            d30_value = signal.get('thirty') or signal.get('d30') or cmp or 0
-            d7_value = signal.get('seven') or signal.get('d7') or cmp or 0
+            # Get historical data for 30-day and 7-day performance with null safety
+            d30_raw = signal.get('thirty') or signal.get('d30')
+            d7_raw = signal.get('seven') or signal.get('d7')
             
-            # Convert to proper types
+            # Handle null/empty values safely
             try:
-                d30_value = float(d30_value) if d30_value else 0.0
-                d7_value = float(d7_value) if d7_value else 0.0
+                d30_value = float(d30_raw) if d30_raw is not None and str(d30_raw).strip() != '' else cmp
             except (ValueError, TypeError):
-                d30_value = 0.0
-                d7_value = 0.0
+                d30_value = cmp
+                
+            try:
+                d7_value = float(d7_raw) if d7_raw is not None and str(d7_raw).strip() != '' else cmp
+            except (ValueError, TypeError):
+                d7_value = cmp
             
             # Calculate 30-day and 7-day performance percentages
             ch30_percent = ((cmp - d30_value) / d30_value) * 100 if d30_value > 0 and cmp > 0 else 0
