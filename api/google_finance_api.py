@@ -567,8 +567,7 @@ def force_update_symbol(symbol):
                 with conn.cursor() as cursor:
                     cursor.execute("""
                         UPDATE admin_trade_signals 
-                        SET cmp = %s,
-                            updated_at = CURRENT_TIMESTAMP
+                        SET cmp = %s
                         WHERE (symbol = %s OR etf = %s)
                     """, (price, symbol, symbol))
                     

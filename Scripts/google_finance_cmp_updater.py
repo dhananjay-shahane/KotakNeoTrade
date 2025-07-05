@@ -343,8 +343,7 @@ class GoogleFinanceCMPUpdater:
                     if cmp_value > 0:
                         cursor.execute("""
                             UPDATE admin_trade_signals 
-                            SET cmp = %s,
-                                updated_at = CURRENT_TIMESTAMP
+                            SET cmp = %s
                             WHERE (symbol = %s OR etf = %s)
                             AND (cmp IS NULL OR ABS(cmp - %s) > 0.01)
                         """, (cmp_value, symbol, symbol, cmp_value))
@@ -534,11 +533,7 @@ class GoogleFinanceCMPUpdater:
                         update_fields.append('ch7 = %s')
                         update_values.append(f"{data.get('ch7', 0):.2f}%")
 
-                    # Add timestamp field
-                    if 'last_update_time' in existing_columns:
-                        update_fields.append('last_update_time = CURRENT_TIMESTAMP')
-                    elif 'updated_at' in existing_columns:
-                        update_fields.append('updated_at = CURRENT_TIMESTAMP')
+                    # Remove timestamp updates as column doesn't exist
 
                     # Add condition values
                     update_values.extend([symbol, symbol, data.get('cmp', 0)])
@@ -602,29 +597,12 @@ class GoogleFinanceCMPUpdater:
                     """)
                     has_last_update_time = cursor.fetchone() is not None
 
-                    if has_last_update_time:
-                        cursor.execute("""
-                            UPDATE admin_trade_signals 
-                            SET cmp = %s, 
-                                last_update_time = CURRENT_TIMESTAMP
-                            WHERE (symbol = %s OR etf = %s)
-                            AND (cmp IS NULL OR ABS(cmp - %s) > 0.01)
-                        """, (new_cmp, symbol, symbol, new_cmp))
-                    elif has_updated_at:
-                        cursor.execute("""
-                            UPDATE admin_trade_signals 
-                            SET cmp = %s, 
-                                updated_at = CURRENT_TIMESTAMP
-                            WHERE (symbol = %s OR etf = %s)
-                            AND (cmp IS NULL OR ABS(cmp - %s) > 0.01)
-                        """, (new_cmp, symbol, symbol, new_cmp))
-                    else:
-                        cursor.execute("""
-                            UPDATE admin_trade_signals 
-                            SET cmp = %s 
-                            WHERE (symbol = %s OR etf = %s)
-                            AND (cmp IS NULL OR ABS(cmp - %s) > 0.01)
-                        """, (new_cmp, symbol, symbol, new_cmp))
+                    cursor.execute("""
+                        UPDATE admin_trade_signals 
+                        SET cmp = %s 
+                        WHERE (symbol = %s OR etf = %s)
+                        AND (cmp IS NULL OR ABS(cmp - %s) > 0.01)
+                    """, (new_cmp, symbol, symbol, new_cmp))
 
                     admin_updated_rows = cursor.rowcount
 
