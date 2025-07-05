@@ -399,32 +399,17 @@ def api_live_quotes():
 @main_bp.route('/etf-signals')
 @login_required
 def etf_signals():
-    """ETF Signals page - show admin_trade_signals data in table"""
+    """ETF Signals page - show admin_trade_signals data from external database"""
     try:
-        from Scripts.models_etf import AdminTradeSignal
-        from sqlalchemy import text
-
-        # Use raw SQL query to avoid ORM column mapping issues
+        # Get signals count from external database
+        from Scripts.external_db_service import get_etf_signals_from_external_db
+        
         try:
-            # First try to get signals using ORM
-            signals = AdminTradeSignal.query.filter_by(status='ACTIVE').order_by(
-                AdminTradeSignal.created_at.desc()
-            ).all()
-            signals_count = len(signals)
-        except Exception as orm_error:
-            logging.warning(f"ORM query failed, trying raw SQL: {str(orm_error)}")
-            # Fallback to raw SQL query with only existing columns
-            try:
-                from app import db
-                result = db.session.execute(text("""
-                    SELECT COUNT(*) as count 
-                    FROM admin_trade_signals 
-                    WHERE status = 'ACTIVE'
-                """))
-                signals_count = result.scalar() or 0
-            except Exception as sql_error:
-                logging.error(f"Raw SQL query also failed: {str(sql_error)}")
-                signals_count = 0
+            signals = get_etf_signals_from_external_db()
+            signals_count = len(signals) if signals else 0
+        except Exception as e:
+            logging.error(f"Error fetching signals from external DB: {str(e)}")
+            signals_count = 0
 
         logging.info(f"ETF Signals page: Displaying {signals_count} admin trade signals in datatable")
 
