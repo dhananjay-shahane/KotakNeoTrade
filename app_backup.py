@@ -23,8 +23,6 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_session import Session
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
-
-# Functions imports
 from functions.positions.positions import positions
 from functions.holdings.holdings import holdings
 from functions.orders.orders import orders
