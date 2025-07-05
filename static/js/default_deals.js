@@ -1489,16 +1489,22 @@ function updateDefaultDealsCMPFromGoogleFinance() {
     .then(data => {
         if (data.success) {
             console.log('✅ Default deals CMP updated successfully:', data.updated_count, 'records');
+            
+            // Show success notification
+            showSuccessMessage(`Updated CMP for ${data.updated_count || 0} records from Google Finance`);
+            
             // Refresh the deals table after update
             if (window.dealsManager) {
                 window.dealsManager.loadDeals();
             }
         } else {
             console.error('❌ Default deals CMP update failed:', data.error);
+            showErrorMessage(`CMP update failed: ${data.error}`);
         }
     })
     .catch(error => {
         console.error('❌ Error updating default deals CMP:', error);
+        showErrorMessage(`Error updating CMP: ${error.message}`);
     });
 }
 
@@ -1516,6 +1522,12 @@ function startDefaultDealsCMPUpdates() {
     }, 5 * 60 * 1000); // 5 minutes in milliseconds
 
     console.log('✅ Auto default deals CMP updates started (every 5 minutes)');
+}
+
+// Force CMP update function for manual trigger
+function forceCMPUpdate() {
+    console.log('🚀 Force CMP update triggered by user');
+    updateDefaultDealsCMPFromGoogleFinance();
 }
 
 // Initialize when document is ready

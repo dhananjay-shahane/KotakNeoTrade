@@ -18,6 +18,9 @@
             <p class="text-muted mb-0">All trading deals and positions</p>
         </div>
         <div class="d-flex gap-2">
+            <button class="btn btn-outline-info" onclick="forceCMPUpdate()">
+                <i class="fas fa-chart-line me-1"></i>Update CMP
+            </button>
             <button class="btn btn-outline-success" onclick="syncDefaultDeals()">
                 <i class="fas fa-database me-1"></i>Sync from Admin Signals
             </button>
@@ -38,6 +41,9 @@
             <h5 class="mb-0 text-light">
                 <i class="fas fa-list me-2 text-primary"></i>All Trading Deals
                 <span class="badge bg-primary ms-2" id="visibleDealsCount">0</span>
+                <span class="badge bg-success ms-2" id="priceUpdateStatus">
+                    <i class="fas fa-sync-alt fa-spin me-1"></i>Live CMP Updates
+                </span>
             </h5>
             <div class="d-flex gap-2 align-items-center">
                 <div class="dropdown">

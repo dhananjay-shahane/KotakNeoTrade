@@ -11,6 +11,9 @@
             <p class="text-muted mb-0">Orders placed from trading signals</p>
         </div>
         <div class="d-flex gap-2">
+            <button class="btn btn-outline-success" onclick="forceCMPUpdate()">
+                <i class="fas fa-chart-line me-1"></i>Update CMP
+            </button>
             <button class="btn btn-outline-secondary text-muted" onclick="refreshDeals()">
                 <i class="fas fa-sync-alt me-1"></i>Refresh
             </button>
@@ -29,6 +32,9 @@
             <h5 class="mb-0 text-light">
                 <i class="fas fa-handshake me-2 text-primary"></i>Signal-Based Deals
                 <span class="badge bg-primary ms-2" id="visibleDealsCount">0</span>
+                <span class="badge bg-success ms-2" id="priceUpdateStatus">
+                    <i class="fas fa-sync-alt fa-spin me-1"></i>Live CMP Updates
+                </span>
             </h5>
             <div class="d-flex gap-2 align-items-center">
                 <div class="form-check form-switch">
