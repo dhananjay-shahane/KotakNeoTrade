@@ -416,8 +416,11 @@ DealsManager.prototype.renderDealsTable = function() {
             '<td colspan="' + this.selectedColumns.length + '" class="text-center py-4">' +
                 '<i class="fas fa-handshake fa-3x mb-3 text-primary"></i>' +
                 '<h6 class="text-light">No Deals Found</h6>' +
-                '<p class="text-muted mb-0">You haven\'t added any deals yet</p>' +
-                '<small class="text-muted">Visit the ETF Signals page to add deals from trading signals</small>' +
+                '<p class="text-muted mb-3">You haven\'t added any deals yet</p>' +
+                '<button class="btn btn-primary btn-sm me-2" onclick="createSampleDeals()">' +
+                    '<i class="fas fa-plus me-1"></i>Create Sample Deals' +
+                '</button>' +
+                '<small class="text-muted d-block mt-2">Or visit the ETF Signals page to add deals from trading signals</small>' +
             '</td>';
         tbody.appendChild(row);
         return;
@@ -1406,6 +1409,38 @@ function updateCurrentDataSourceIndicator() {
     var currentDataSourceSpan = document.getElementById('currentDataSource');
     if (currentDataSourceSpan) {
         currentDataSourceSpan.textContent = sourceName;
+    }
+}
+
+// Function to create sample deals for testing
+function createSampleDeals() {
+    if (confirm('This will create sample deals for testing. Continue?')) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/deals/create-sample', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                var response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    showNotification('Sample deals created successfully!', 'success');
+                    // Refresh the deals table
+                    if (window.dealsManager) {
+                        window.dealsManager.loadDeals();
+                    }
+                } else {
+                    showNotification('Failed to create sample deals: ' + response.message, 'error');
+                }
+            } else {
+                showNotification('Error creating sample deals', 'error');
+            }
+        };
+        
+        xhr.onerror = function() {
+            showNotification('Network error creating sample deals', 'error');
+        };
+        
+        xhr.send();
     }
 }
 

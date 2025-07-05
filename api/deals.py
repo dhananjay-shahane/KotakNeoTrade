@@ -235,6 +235,9 @@ def get_user_deals():
         user_ucc = session.get('ucc')
         user_id = session.get('user_id') or session.get('db_user_id')
 
+        logging.info(f"Session data: UCC={user_ucc}, user_id={user_id}")
+        logging.info(f"Full session: {dict(session)}")
+
         if not user_ucc and not user_id:
             logging.warning("No authenticated user found in session")
             return jsonify({
@@ -252,7 +255,7 @@ def get_user_deals():
         # Get deals from database only - no CSV fallback
         try:
             from Scripts.models import User
-            from Scripts.models_etf import UserDeal
+            from Scripts.models_etf import UserDeal, AdminTradeSignal
 
             current_user = None
 
@@ -275,6 +278,64 @@ def get_user_deals():
                     logging.info(f"Filtering deals by symbol: {symbol_filter}")
                 
                 db_deals = query.order_by(UserDeal.created_at.desc()).all()
+                logging.info(f"Found {len(db_deals)} deals in UserDeal table")
+
+                # If no deals found in UserDeal, check if we can create from AdminTradeSignal
+                if len(db_deals) == 0:
+                    logging.info("No deals found in UserDeal table, checking AdminTradeSignal table")
+                    admin_signals = AdminTradeSignal.query.limit(10).all()
+                    logging.info(f"Found {len(admin_signals)} admin signals")
+                    
+                    # Create some demo deals from admin signals if available
+                    for signal in admin_signals[:5]:  # Create max 5 demo deals
+                        try:
+                            demo_deal = UserDeal(
+                                user_id=current_user.id,
+                                trade_signal_id=str(signal.id),
+                                etf_symbol=signal.etf_symbol or 'DEMO',
+                                symbol=signal.etf_symbol or 'DEMO',
+                                trading_symbol=signal.etf_symbol or 'DEMO',
+                                exchange='NSE',
+                                pos=1,  # Long position
+                                qty=signal.qty or 1,
+                                ep=float(signal.ep or 100),
+                                cmp=float(signal.cmp or signal.ep or 100),
+                                tp=float(signal.tp) if signal.tp else None,
+                                inv=float(signal.inv or (signal.ep or 100) * (signal.qty or 1)),
+                                pl=float(signal.pl or 0),
+                                chan_percent=signal.chan_percent or '0%',
+                                thirty=signal.thirty or '0%',
+                                dh=signal.dh or 0,
+                                signal_date=signal.date or '',
+                                position_type='LONG',
+                                quantity=signal.qty or 1,
+                                entry_price=float(signal.ep or 100),
+                                current_price=float(signal.cmp or signal.ep or 100),
+                                invested_amount=float(signal.inv or (signal.ep or 100) * (signal.qty or 1)),
+                                notes=f'Demo deal from admin signal {signal.id}',
+                                deal_type='SIGNAL'
+                            )
+                            
+                            # Calculate P&L
+                            try:
+                                demo_deal.calculate_pnl()
+                            except:
+                                demo_deal.pnl_amount = 0.0
+                                demo_deal.pnl_percent = 0.0
+                            
+                            db.session.add(demo_deal)
+                            logging.info(f"Created demo deal from signal {signal.id}")
+                        except Exception as demo_error:
+                            logging.error(f"Error creating demo deal: {demo_error}")
+                            continue
+                    
+                    if admin_signals:
+                        db.session.commit()
+                        logging.info("Committed demo deals to database")
+                        
+                        # Re-query for deals
+                        db_deals = UserDeal.query.filter_by(user_id=current_user.id).order_by(UserDeal.created_at.desc()).all()
+                        logging.info(f"After creating demo deals, found {len(db_deals)} deals")
 
                 # Convert database deals to response format
                 for deal in db_deals:
@@ -286,17 +347,19 @@ def get_user_deals():
                         if 'position_type' not in deal_dict and hasattr(deal, 'position_type'):
                             deal_dict['position_type'] = deal.position_type
                         deals_data.append(deal_dict)
+                        logging.info(f"Added deal {deal.id} to response: {deal.symbol}")
                     except Exception as deal_error:
                         logging.error(f"Error converting deal {deal.id} to dict: {deal_error}")
                         continue
 
-                logging.info(f"Found {len(db_deals)} deals in database for user {current_user.ucc}")
+                logging.info(f"Final deals data length: {len(deals_data)}")
             else:
                 logging.warning(f"No user found for UCC: {user_ucc} or ID: {user_id}")
                 # Check if there are any users in the database
                 total_users = User.query.count()
                 total_deals = UserDeal.query.count()
-                logging.info(f"Total users in database: {total_users}, Total deals: {total_deals}")
+                total_admin_signals = AdminTradeSignal.query.count()
+                logging.info(f"Total users: {total_users}, Total deals: {total_deals}, Total admin signals: {total_admin_signals}")
 
                 # If no user found but we have session data, create a default user
                 if user_ucc:
@@ -312,15 +375,16 @@ def get_user_deals():
                         db.session.commit()
                         current_user = new_user
                         logging.info(f"Created new user with UCC: {user_ucc}")
+                        
+                        # Recursively call this function to create demo deals for new user
+                        return get_user_deals()
                     except Exception as create_error:
                         logging.error(f"Error creating new user: {create_error}")
                         db.session.rollback()
 
         except Exception as db_error:
             logging.error(f"Database error fetching deals: {db_error}")
-
-        except Exception as db_error:
-            logging.error(f"Database error fetching deals: {db_error}")
+            db.session.rollback()
             return jsonify({
                 'success': False, 
                 'message': f'Database error: {str(db_error)}',
@@ -433,6 +497,134 @@ def update_deal():
         db.session.rollback()
         logging.error(f"Error updating deal: {str(e)}")
         return jsonify({'success': False, 'message': f'Error updating deal: {str(e)}'}), 500
+
+@deals_bp.route('/create-sample', methods=['POST'])
+def create_sample_deals():
+    """Create sample deals for testing purposes"""
+    try:
+        user_ucc = session.get('ucc')
+        user_id = session.get('user_id') or session.get('db_user_id')
+        
+        if not user_ucc and not user_id:
+            return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+
+        from Scripts.models import User
+        from Scripts.models_etf import UserDeal
+
+        # Find or create user
+        current_user = None
+        if user_ucc:
+            current_user = User.query.filter_by(ucc=user_ucc).first()
+        if not current_user and user_id:
+            current_user = User.query.get(user_id)
+            
+        if not current_user:
+            current_user = User(
+                ucc=user_ucc or str(user_id),
+                mobile_number=session.get('mobile_number', ''),
+                greeting_name=session.get('greeting_name', str(user_ucc or user_id)),
+                user_id=str(user_ucc or user_id),
+                is_active=True
+            )
+            db.session.add(current_user)
+            db.session.commit()
+
+        # Sample deals data
+        sample_deals = [
+            {
+                'trade_signal_id': 'SAMPLE001',
+                'symbol': 'NIFTYBEES',
+                'pos': 1,
+                'qty': 100,
+                'ep': 189.50,
+                'cmp': 192.75,
+                'tp': 200.00,
+                'inv': 18950.00,
+                'pl': 325.00,
+                'chan_percent': '1.71%'
+            },
+            {
+                'trade_signal_id': 'SAMPLE002', 
+                'symbol': 'JUNIORBEES',
+                'pos': 1,
+                'qty': 50,
+                'ep': 456.20,
+                'cmp': 448.90,
+                'tp': 480.00,
+                'inv': 22810.00,
+                'pl': -365.00,
+                'chan_percent': '-1.60%'
+            },
+            {
+                'trade_signal_id': 'SAMPLE003',
+                'symbol': 'BANKBEES',
+                'pos': 1,
+                'qty': 75,
+                'ep': 398.75,
+                'cmp': 405.20,
+                'tp': 420.00,
+                'inv': 29906.25,
+                'pl': 483.75,
+                'chan_percent': '1.62%'
+            }
+        ]
+
+        created_deals = []
+        for sample_data in sample_deals:
+            # Check if deal already exists
+            existing = UserDeal.query.filter_by(
+                user_id=current_user.id,
+                trade_signal_id=sample_data['trade_signal_id']
+            ).first()
+            
+            if not existing:
+                deal = UserDeal(
+                    user_id=current_user.id,
+                    trade_signal_id=sample_data['trade_signal_id'],
+                    etf_symbol=sample_data['symbol'],
+                    symbol=sample_data['symbol'],
+                    trading_symbol=sample_data['symbol'],
+                    exchange='NSE',
+                    pos=sample_data['pos'],
+                    qty=sample_data['qty'],
+                    ep=sample_data['ep'],
+                    cmp=sample_data['cmp'],
+                    tp=sample_data['tp'],
+                    inv=sample_data['inv'],
+                    pl=sample_data['pl'],
+                    chan_percent=sample_data['chan_percent'],
+                    position_type='LONG',
+                    quantity=sample_data['qty'],
+                    entry_price=sample_data['ep'],
+                    current_price=sample_data['cmp'],
+                    target_price=sample_data['tp'],
+                    invested_amount=sample_data['inv'],
+                    notes='Sample deal for testing',
+                    deal_type='SIGNAL'
+                )
+                
+                # Calculate P&L
+                try:
+                    deal.calculate_pnl()
+                except:
+                    deal.pnl_amount = sample_data['pl']
+                    deal.pnl_percent = float(sample_data['chan_percent'].replace('%', ''))
+                
+                db.session.add(deal)
+                created_deals.append(sample_data['symbol'])
+
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Created {len(created_deals)} sample deals',
+            'deals_created': created_deals
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error creating sample deals: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error creating sample deals: {str(e)}'}), 500
 
 @deals_bp.route('/stats', methods=['GET'])
 def get_deals_stats():
