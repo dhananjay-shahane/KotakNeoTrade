@@ -4,7 +4,7 @@ import logging
 import time
 from datetime import datetime
 
-from utils.auth import login_required, validate_current_session
+from utils.auth import login_required, validate_current_session, is_session_expired
 from Scripts.trading_functions import TradingFunctions
 from Scripts.neo_client import NeoClient
 
@@ -20,6 +20,20 @@ def index():
     if session.get('authenticated'):
         return redirect(url_for('main.dashboard'))
     return redirect(url_for('auth.login'))
+
+@main_bp.route('/health')
+def health():
+    """Health check for webview accessibility"""
+    return jsonify({
+        'status': 'healthy',
+        'message': 'Kotak Neo Trading Platform is running',
+        'timestamp': datetime.now().isoformat()
+    })
+
+@main_bp.route('/test')
+def test():
+    """Simple test route for webview verification"""
+    return '<h1>Kotak Neo Trading Platform</h1><p>Application is running successfully!</p>'
 
 @main_bp.route('/dashboard')
 @login_required
