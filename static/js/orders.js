@@ -248,7 +248,7 @@ function updateOrdersTable(orders) {
 
     // Add update animation
     tableBody.classList.add('data-updated');
-    setTimeout(()=>{}, function() {
+    setTimeout(function() {
         tableBody.classList.remove('data-updated');
     }, 1000);
 }

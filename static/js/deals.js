@@ -739,7 +739,6 @@ function buyTrade(symbol, currentPrice) {
         currentPrice = 100; // Default fallback price
         console.warn('Invalid price provided, using fallback:', currentPrice);
     }
-
     console.log('Opening buy trade modal for:', symbol, 'at price:', currentPrice);
 
     var modal = new bootstrap.Modal(document.getElementById('tradeModal'));
@@ -1461,10 +1460,10 @@ function updateDealsCMPFromGoogleFinance() {
     .then(data => {
         if (data.success) {
             console.log('✅ Deals CMP updated successfully:', data.updated_count, 'records');
-            
+
             // Show success notification
             showNotification(`Updated CMP for ${data.updated_count || 0} records from Google Finance`, 'success');
-            
+
             // Refresh the deals table after update
             if (window.dealsManager) {
                 window.dealsManager.loadDeals();

@@ -757,9 +757,7 @@ function submitAdvancedTrade() {
             bootstrap.Modal.getInstance(document.getElementById('tradeModal')).hide();
             refreshDeals();
         } else {
-            showNotification('Failed to place order: ' + data.message, 'error');<previous_generation>```text
-
-</previous_generation>
+            showNotification('Failed to place order: ' + data.message, 'error');
             return;
         }
     })
@@ -1489,10 +1487,10 @@ function updateDefaultDealsCMPFromGoogleFinance() {
     .then(data => {
         if (data.success) {
             console.log('✅ Default deals CMP updated successfully:', data.updated_count, 'records');
-            
+
             // Show success notification
             showSuccessMessage(`Updated CMP for ${data.updated_count || 0} records from Google Finance`);
-            
+
             // Refresh the deals table after update
             if (window.dealsManager) {
                 window.dealsManager.loadDeals();
@@ -1555,5 +1553,24 @@ window.addEventListener('beforeunload', function() {
     if (defaultDealsCmpUpdateInterval) {
         clearInterval(defaultDealsCmpUpdateInterval);
         defaultDealsCmpUpdateInterval = null;
+    }
+});
+
+</script>
+        setTimeout(function() {
+                                    ltpCell.classList.remove('price-up', 'price-down');
+                                }, 1000);
+    }
+
+    setInterval(updateLTP, 5000); // Update every 5 seconds
+
+    function calculateChangePercentage(oldPrice, newPrice) {
+        if (!oldPrice || !newPrice) return 0;
+        return ((newPrice - oldPrice) / oldPrice) * 100;
+    }
+
+    function formatNumber(number) {
+        if (!number) return 'N/A';
+        return number.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 });
