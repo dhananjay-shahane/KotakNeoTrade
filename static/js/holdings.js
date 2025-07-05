@@ -1,40 +1,40 @@
-function refreshHoldings() {
-    var refreshBtn = document.querySelector('button[onclick="refreshHoldings()"]');
-    if (refreshBtn) {
-        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...';
-        refreshBtn.disabled = true;
-    }
+// function refreshHoldings() {
+//     var refreshBtn = document.querySelector('button[onclick="refreshHoldings()"]');
+//     if (refreshBtn) {
+//         refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...';
+//         refreshBtn.disabled = true;
+//     }
     
-    fetch('/api/holdings')
-        .then(response => response.json())
-        .then(function(data) {
-            if (data.success) {
-                // Store holdings data globally for price lookup
-                window.holdingsData = data;
-                console.log('Holdings data stored globally:', data);
-                if (typeof updateHoldingsTable === 'function') {
-                    updateHoldingsTable(data.holdings);
-                }
-                if (typeof updateHoldingsSummary === 'function') {
-                    updateHoldingsSummary(data.summary);
-                }
-                setTimeout(calculateAndUpdateCards, 100);
-                showNotification('Holdings refreshed successfully', 'success');
-            } else {
-                showNotification('Failed to refresh holdings: ' + data.message, 'error');
-            }
-        })
-        .catch(function(error) {
-            console.error('Error refreshing holdings:', error);
-            showNotification('Error refreshing holdings', 'error');
-        })
-        .finally(function() {
-            if (refreshBtn) {
-                refreshBtn.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
-                refreshBtn.disabled = false;
-            }
-        });
-}
+//     fetch('/api/holdings')
+//         .then(response => response.json())
+//         .then(function(data) {
+//             if (data.success) {
+//                 // Store holdings data globally for price lookup
+//                 window.holdingsData = data;
+//                 console.log('Holdings data stored globally:', data);
+//                 if (typeof updateHoldingsTable === 'function') {
+//                     updateHoldingsTable(data.holdings);
+//                 }
+//                 if (typeof updateHoldingsSummary === 'function') {
+//                     updateHoldingsSummary(data.summary);
+//                 }
+//                 setTimeout(calculateAndUpdateCards, 100);
+//                 showNotification('Holdings refreshed successfully', 'success');
+//             } else {
+//                 showNotification('Failed to refresh holdings: ' + data.message, 'error');
+//             }
+//         })
+//         .catch(function(error) {
+//             console.error('Error refreshing holdings:', error);
+//             showNotification('Error refreshing holdings', 'error');
+//         })
+//         .finally(function() {
+//             if (refreshBtn) {
+//                 refreshBtn.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
+//                 refreshBtn.disabled = false;
+//             }
+//         });
+// }
 
 function buyHolding(symbol) {
     showHoldingTradeModal(symbol, null, 'BUY');

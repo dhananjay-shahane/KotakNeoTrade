@@ -3,10 +3,31 @@ Kotak Neo Trading Platform - Main Flask Application
 Provides a comprehensive trading interface with real-time market data,
 portfolio management, and automated trading signals.
 """
+
+# ========================================
+# ALL IMPORTS - ORGANIZED AT TOP
+# ========================================
+
+# Standard library imports
 import os
 import sys
 import logging
+import json
+from datetime import datetime, timedelta
+from functools import wraps
+
+# Third-party imports
 from dotenv import load_dotenv
+from flask import Flask, request, make_response, redirect, url_for, render_template, session, jsonify, flash
+from flask_sqlalchemy import SQLAlchemy
+from flask_session import Session
+from sqlalchemy.orm import DeclarativeBase
+from werkzeug.middleware.proxy_fix import ProxyFix
+from functions.positions.positions import positions
+from functions.holdings.holdings import holdings
+from functions.orders.orders import orders
+from functions.dashboard.dashboard import dashboard
+from functions.dashboard.dashboard_data import get_dashboard_data_api
 
 # Load environment variables from .env file
 load_dotenv()
@@ -38,10 +59,7 @@ setup_library_paths()
 # FLASK APPLICATION SETUP
 # ========================================
 
-from flask import Flask, request, make_response, redirect, url_for
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase
-from werkzeug.middleware.proxy_fix import ProxyFix
+# Flask imports already added to top section
 
 class Base(DeclarativeBase):
     """Base class for SQLAlchemy database models"""
@@ -500,107 +518,19 @@ def dashboard():
 
 @app.route('/positions')
 @require_auth
-def positions():
-    """Positions page"""
-
-    try:
-        client = session.get('client')
-        if not client:
-            flash('Session expired. Please login again.', 'error')
-            return redirect(url_for('login'))
-
-        # Fetch positions data
-        positions_data = trading_functions.get_positions(client)
-
-        # Ensure positions_data is a list
-        if isinstance(positions_data, dict):
-            if 'data' in positions_data:
-                positions_list = positions_data['data']
-            elif 'positions' in positions_data:
-                positions_list = positions_data['positions']
-            else:
-                positions_list = []
-        elif isinstance(positions_data, list):
-            positions_list = positions_data
-        else:
-            positions_list = []
-
-        return render_template('positions.html', positions=positions_list)
-
-    except Exception as e:
-        logging.error(f"Positions page error: {e}")
-        flash(f'Error loading positions: {str(e)}', 'error')
-        return render_template('positions.html', positions=[])
+def show_positions():
+    return positions()
 
 
 @app.route('/holdings')
 @require_auth
-def holdings():
-    """Holdings page"""
-
-    try:
-        client = session.get('client')
-        if not client:
-            flash('Session expired. Please login again.', 'error')
-            return redirect(url_for('login'))
-
-        # Fetch holdings data
-        holdings_data = trading_functions.get_holdings(client)
-
-        # Ensure holdings_data is a list
-        if isinstance(holdings_data, dict):
-            if 'data' in holdings_data:
-                holdings_list = holdings_data['data']
-            elif 'holdings' in holdings_data:
-                holdings_list = holdings_data['holdings']
-            else:
-                holdings_list = []
-        elif isinstance(holdings_data, list):
-            holdings_list = holdings_data
-        else:
-            holdings_list = []
-
-        return render_template('holdings.html', holdings=holdings_list)
-
-    except Exception as e:
-        logging.error(f"Holdings page error: {e}")
-        flash(f'Error loading holdings: {str(e)}', 'error')
-        return render_template('holdings.html', holdings=[])
-
+def show_holdings():
+    return holdings()
 
 @app.route('/orders')
 @require_auth
-def orders():
-    """Orders page"""
-
-    try:
-        client = session.get('client')
-        if not client:
-            flash('Session expired. Please login again.', 'error')
-            return redirect(url_for('login'))
-
-        # Fetch orders data
-        orders_data = trading_functions.get_orders(client)
-
-        # Ensure orders_data is a list
-        if isinstance(orders_data, dict):
-            if 'data' in orders_data:
-                orders_list = orders_data['data']
-            elif 'orders' in orders_data:
-                orders_list = orders_data['orders']
-            else:
-                orders_list = []
-        elif isinstance(orders_data, list):
-            orders_list = orders_data
-        else:
-            orders_list = []
-
-        return render_template('orders.html', orders=orders_list)
-
-    except Exception as e:
-        logging.error(f"Orders page error: {e}")
-        flash(f'Error loading orders: {str(e)}', 'error')
-        return render_template('orders.html', orders=[])
+def show_orders():
+    return orders()
 
 
 @app.route('/charts')
@@ -648,13 +578,6 @@ def admin_signals_basic():
     return render_template('admin_signals.html')
 
 
-@app.route('/supabase-admin')
-@require_auth
-def supabase_admin():
-    """Supabase Integration Admin Dashboard"""
-    return render_template('supabase_admin.html')
-
-
 # API endpoints
 @app.route('/api/dashboard-data')
 def get_dashboard_data_api():
@@ -673,7 +596,6 @@ def get_dashboard_data_api():
     except Exception as e:
         logging.error(f"Dashboard data error: {e}")
         return jsonify({'error': str(e)}), 500
-
 
 @app.route('/api/holdings')
 def get_holdings_api():
@@ -1432,73 +1354,6 @@ def calculate_symbol_metrics(symbol):
             'success': False,
             'message': f'Error calculating metrics for {symbol}: {str(e)}'
         }), 500
-
-
-# Health check endpoint for domain verification
-@app.route('/health')
-def health_check():
-    """Health check endpoint for domain verification"""
-    return {
-        'status': 'ok',
-        'message': 'Kotak Neo Trading Platform is running',
-        'port': 5000
-    }, 200
-
-
-# Test endpoint for DNS verification
-@app.route('/test')
-def test_endpoint():
-    """Test endpoint for DNS verification"""
-    return {
-        'message': 'DNS test successful',
-        'domain': os.environ.get('REPLIT_DOMAINS', 'localhost')
-    }, 200
-
-
-# Simple HTML page for testing external access
-@app.route('/preview')
-def preview_test():
-    """Simple preview test page"""
-    correct_domain = os.environ.get('REPLIT_DOMAINS', 'localhost')
-    return f'''
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Kotak Neo Trading Platform - Preview Test</title>
-        <style>
-            body {{ font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }}
-            .container {{ background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
-            .success {{ color: #28a745; font-size: 18px; font-weight: bold; }}
-            .info {{ color: #007bff; margin: 10px 0; }}
-            .error {{ color: #dc3545; margin: 10px 0; }}
-            .correct-url {{ background: #e9ecef; padding: 10px; border-radius: 4px; margin: 10px 0; }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1 class="success">✓ Preview Access Working!</h1>
-            <p class="info">Kotak Neo Trading Platform is running successfully</p>
-
-            <div class="correct-url">
-                <strong>Correct URL:</strong><br>
-                <a href="https://{correct_domain}/" target="_blank">https://{correct_domain}/</a>
-            </div>
-
-            <p class="error">⚠️ DNS Issues? Try these solutions:</p>
-            <ol>
-                <li>Use Replit's built-in webview (click the preview/webview button in Replit)</li>
-                <li>Wait 2-3 minutes for domain propagation</li>
-                <li>Clear your browser cache and try again</li>
-                <li>Try accessing from an incognito/private browser window</li>
-            </ol>
-
-            <p>Status: Application is accessible from external domains</p>
-            <a href="/">Go to Login Page</a>
-        </div>
-    </body>
-    </html>
-    '''
-
-
+    
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
