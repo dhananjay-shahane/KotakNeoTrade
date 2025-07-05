@@ -327,39 +327,71 @@ class GoogleFinanceCMPUpdater:
         try:
             with psycopg2.connect(**self.db_config) as conn:
                 with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    # Get all trades for this symbol
+                    # First, do a simple CMP update for all records with this symbol
+                    cmp_value = market_data.get('cmp', 0)
+                    if cmp_value > 0:
+                        cursor.execute("""
+                            UPDATE admin_trade_signals 
+                            SET cmp = %s,
+                                updated_at = CURRENT_TIMESTAMP
+                            WHERE (symbol = %s OR etf = %s)
+                            AND (cmp IS NULL OR ABS(cmp - %s) > 0.01)
+                        """, (cmp_value, symbol, symbol, cmp_value))
+                        
+                        basic_updated = cursor.rowcount
+                        updated_rows += basic_updated
+                        
+                        if basic_updated > 0:
+                            logging.info(f"✓ Updated CMP for {basic_updated} records of {symbol} to ₹{cmp_value}")
+
+                    # Then try to get trades for detailed calculations
                     cursor.execute("""
                         SELECT * FROM admin_trade_signals 
                         WHERE (symbol = %s OR etf = %s)
                         AND qty IS NOT NULL AND ep IS NOT NULL
+                        LIMIT 5
                     """, (symbol, symbol))
 
                     trades = cursor.fetchall()
 
                     for trade in trades:
-                        trade_dict = dict(trade)
+                        try:
+                            trade_dict = dict(trade)
+                            # Add current market data
+                            trade_dict.update(market_data)
 
-                        # Add current market data
-                        trade_dict.update(market_data)
+                            # Calculate basic P&L
+                            qty = float(trade_dict.get('qty', 0))
+                            ep = float(trade_dict.get('ep', 0))
+                            cmp = float(trade_dict.get('cmp', 0))
+                            
+                            if qty > 0 and ep > 0 and cmp > 0:
+                                pl = (cmp - ep) * qty
+                                
+                                # Update with basic calculations
+                                cursor.execute("""
+                                    UPDATE admin_trade_signals 
+                                    SET pl = %s
+                                    WHERE id = %s
+                                """, (round(pl, 2), trade_dict['id']))
+                                
+                                if cursor.rowcount > 0:
+                                    logging.info(f"✓ Updated P&L for trade {trade_dict['id']}: ₹{pl:.2f}")
 
-                        # Calculate all trading metrics
-                        calculated_data = self.calculator.calculate_all_metrics(trade_dict)
-
-                        if calculated_data:
-                            # Update individual trade record
-                            self._update_trade_record(cursor, trade_dict['id'], calculated_data)
-                            updated_rows += 1
+                        except Exception as trade_error:
+                            logging.warning(f"⚠️ Error calculating for trade {trade.get('id', 'unknown')}: {trade_error}")
+                            continue
 
                     conn.commit()
 
             if updated_rows > 0:
-                logging.info(f"✓ Updated {updated_rows} trade records for {symbol} with comprehensive calculations")
-                logging.info(f"  Market Data: CMP=₹{market_data.get('cmp', 0):.2f}, 30d={market_data.get('ch30', 0):.2f}%, 7d={market_data.get('ch7', 0):.2f}%")
+                logging.info(f"✓ Updated {updated_rows} trade records for {symbol}")
+                logging.info(f"  Market Data: CMP=₹{market_data.get('cmp', 0):.2f}")
 
             return updated_rows
 
         except Exception as e:
-            logging.error(f"❌ Error updating comprehensive calculations for {symbol}: {e}")
+            logging.error(f"❌ Error updating calculations for {symbol}: {e}")
             return 0
 
     def _update_trade_record(self, cursor, trade_id: int, calculated_data: Dict):

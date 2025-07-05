@@ -533,3 +533,65 @@ def get_bulk_prices():
             'success': False,
             'error': str(e)
         }), 500
+
+@google_finance_bp.route('/force-update-symbol/<symbol>', methods=['POST'])
+def force_update_symbol(symbol):
+    """Force update CMP for a specific symbol"""
+    try:
+        logger.info(f"🔄 Force updating CMP for {symbol}")
+        
+        # Get live price
+        price = get_google_finance_price(symbol)
+        
+        if not price or price <= 0:
+            # Try yfinance as fallback
+            try:
+                import yfinance as yf
+                yf_symbol = symbol + ".NS"
+                ticker = yf.Ticker(yf_symbol)
+                hist = ticker.history(period="1d", timeout=5)
+                if not hist.empty:
+                    price = hist['Close'].iloc[-1]
+                    price = float(round(price, 2))
+            except Exception as e:
+                logger.warning(f"YFinance fallback failed for {symbol}: {e}")
+        
+        if price and price > 0:
+            # Update database directly
+            with psycopg2.connect(DATABASE_URL) as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute("""
+                        UPDATE admin_trade_signals 
+                        SET cmp = %s,
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE (symbol = %s OR etf = %s)
+                    """, (price, symbol, symbol))
+                    
+                    updated_rows = cursor.rowcount
+                    conn.commit()
+                    
+                    logger.info(f"✅ Force updated {updated_rows} records for {symbol} with CMP: ₹{price}")
+                    
+                    return jsonify({
+                        'success': True,
+                        'symbol': symbol,
+                        'price': price,
+                        'updated_rows': updated_rows,
+                        'message': f'Successfully updated CMP for {symbol} to ₹{price}'
+                    })
+        else:
+            return jsonify({
+                'success': False,
+                'symbol': symbol,
+                'error': 'Could not fetch live price',
+                'message': f'Failed to get live price for {symbol}'
+            }), 404
+            
+    except Exception as e:
+        logger.error(f"Error force updating {symbol}: {e}")
+        return jsonify({
+            'success': False,
+            'symbol': symbol,
+            'error': str(e),
+            'message': f'Error updating CMP for {symbol}'
+        }), 500

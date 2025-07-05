@@ -1349,6 +1349,56 @@ function updateCMPFromGoogleFinance() {
     });
 }
 
+// Function to force update a specific symbol
+function forceUpdateSymbol(symbol) {
+    console.log(`🔄 Force updating ${symbol}...`);
+    
+    fetch(`/api/google-finance/force-update-symbol/${symbol}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log(`✅ ${symbol} updated successfully to ₹${data.price}`);
+            // Show success message
+            if (window.showToaster) {
+                window.showToaster('Symbol Updated', `${symbol} CMP updated to ₹${data.price}`, 'success');
+            }
+            // Refresh the signals table
+            if (window.etfSignalsManager) {
+                window.etfSignalsManager.loadSignals();
+            }
+        } else {
+            console.error(`❌ Failed to update ${symbol}:`, data.error);
+            if (window.showToaster) {
+                window.showToaster('Update Failed', `Failed to update ${symbol}: ${data.error}`, 'error');
+            }
+        }
+    })
+    .catch(error => {
+        console.error(`❌ Error updating ${symbol}:`, error);
+        if (window.showToaster) {
+            window.showToaster('Update Error', `Error updating ${symbol}`, 'error');
+        }
+    });
+}
+
+// Add click handler for symbol rows to allow force update
+function addSymbolUpdateHandlers() {
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('force-update-symbol')) {
+            e.preventDefault();
+            const symbol = e.target.getAttribute('data-symbol');
+            if (symbol) {
+                forceUpdateSymbol(symbol);
+            }
+        }
+    });
+}
+
 // Function to start automatic CMP updates
 function startAutoCMPUpdates() {
     // Clear any existing interval
