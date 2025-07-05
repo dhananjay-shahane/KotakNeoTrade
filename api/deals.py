@@ -67,6 +67,9 @@ def create_deal_from_signal():
             try:
                 if value is None or value == '':
                     return default
+                # Handle percentage strings by removing % sign
+                if isinstance(value, str) and '%' in value:
+                    value = value.replace('%', '')
                 return int(float(value))  # Convert to float first to handle decimal strings
             except (ValueError, TypeError):
                 return default
@@ -101,7 +104,7 @@ def create_deal_from_signal():
             pl=pl,
             chan_percent=str(signal_data.get('change_pct', signal_data.get('chan', ''))),
             thirty=str(signal_data.get('thirty', '')),
-            dh=int(signal_data.get('dh', 0)),
+            dh=safe_int(signal_data.get('dh', 0)),
             signal_date=str(signal_data.get('date', '')),
             ed=str(signal_data.get('ed', '')),
             exp=str(signal_data.get('exp', '')),
