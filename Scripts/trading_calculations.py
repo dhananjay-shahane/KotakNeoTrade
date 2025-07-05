@@ -371,12 +371,10 @@ class TradingCalculations:
         calculator = TradingCalculations(db_config)
         return calculator.calculate_all_metrics(trade_data)
 
-    def update_all_calculations(db_config: Dict) -> Dict:
+    def update_all_calculations_for_instance(self) -> Dict:
         """Update calculations for all trades in the database"""
-        calculator = TradingCalculations(db_config)
-
         try:
-            with psycopg2.connect(**db_config) as conn:
+            with psycopg2.connect(**self.db_config) as conn:
                 with conn.cursor(cursor_factory=RealDictCursor) as cursor:
                     # Get all trades
                     cursor.execute("""
@@ -389,16 +387,16 @@ class TradingCalculations:
 
                     for trade in trades:
                         trade_dict = dict(trade)
-                        calculated_data = calculator.calculate_all_metrics(trade_dict)
+                        calculated_data = self.calculate_all_metrics(trade_dict)
 
                         if calculated_data:
-                            calculator._update_trade_record(cursor, trade_dict.get('id', -1), calculated_data)
+                            self._update_trade_record(cursor, trade_dict.get('id', -1), calculated_data)
                             updated_count += 1
 
                     conn.commit()
 
                 # Get portfolio summary
-                portfolio_summary = calculator.calculate_portfolio_summary()
+                portfolio_summary = self.calculate_portfolio_summary()
 
                 logger.info(f"✓ Updated calculations for {updated_count} trade records")
                 return {
@@ -424,44 +422,4 @@ def calculate_trade_metrics(trade_data: Dict, db_config: Dict) -> Dict:
 def update_all_calculations(db_config: Dict) -> Dict:
     """Update calculations for all trades in the database"""
     calculator = TradingCalculations(db_config)
-
-    try:
-        with psycopg2.connect(**db_config) as conn:
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                # Get all trades
-                cursor.execute("""
-                    SELECT * FROM admin_trade_signals 
-                    WHERE qty IS NOT NULL AND ep IS NOT NULL
-                """)
-
-                trades = cursor.fetchall()
-                updated_count = 0
-
-                for trade in trades:
-                    trade_dict = dict(trade)
-                    calculated_data = calculator.calculate_all_metrics(trade_dict)
-
-                    if calculated_data:
-                        calculator._update_trade_record(cursor, trade_dict.get('id', -1), calculated_data)
-                        updated_count += 1
-
-                    conn.commit()
-
-                # Get portfolio summary
-                portfolio_summary = calculator.calculate_portfolio_summary()
-
-                logger.info(f"✓ Updated calculations for {updated_count} trade records")
-                return {
-                    'updated_trades': updated_count,
-                    'portfolio_summary': portfolio_summary,
-                    'status': 'success'
-                }
-
-        except Exception as e:
-            logger.error(f"❌ Error updating all calculations: {e}")
-            return {
-                'updated_trades': 0,
-                'portfolio_summary': {},
-                'status': 'error',
-                'error': str(e)
-            }
+    return calculator.update_all_calculations_for_instance()

@@ -119,15 +119,16 @@ class GoogleFinanceCMPUpdater:
             }
 
     def fetch_google_finance_price(self, symbol: str) -> Optional[float]:
-        """Fetch live price from Google Finance with enhanced error handling"""
+        """Fetch live price from Google Finance with enhanced error handling - NO SAMPLE DATA"""
         try:
             import requests
             from bs4 import BeautifulSoup
 
             clean_symbol = symbol.strip().upper()
+            logging.info(f"🌐 Fetching REAL price for {clean_symbol} from Google Finance")
 
             # Try different exchange suffixes for Google Finance
-            exchanges = ['NSE', 'BSE']  # Try NSE first, then BSE
+            exchanges = ['NSE', 'BSE']
 
             for exchange in exchanges:
                 url = f"https://www.google.com/finance/quote/{clean_symbol}:{exchange}"
@@ -138,98 +139,108 @@ class GoogleFinanceCMPUpdater:
                     "Accept-Encoding": "gzip, deflate",
                     "DNT": "1",
                     "Connection": "keep-alive",
-                    "Upgrade-Insecure-Requests": "1"
+                    "Upgrade-Insecure-Requests": "1",
+                    "Cache-Control": "no-cache",
+                    "Pragma": "no-cache"
                 }
 
                 try:
-                    logging.info(f"Trying Google Finance: {url}")
-                    response = requests.get(url, headers=headers, timeout=5)
+                    logging.info(f"🔍 Fetching from Google Finance: {url}")
+                    response = requests.get(url, headers=headers, timeout=8)
+                    
                     if response.status_code == 200:
                         soup = BeautifulSoup(response.text, 'html.parser')
 
-                        # Try multiple selectors for price
+                        # Enhanced selectors for Google Finance price extraction
                         price_selectors = [
+                            "div[data-last-price]",
                             "div[class*='YMlKec fxKbKc']",
                             "div[class*='YMlKec']",
                             "span[class*='IsqQVc NprOob XcVN5d']",
-                            "div[jsname='ip75Cb']"
+                            "div[jsname='ip75Cb']",
+                            ".kf1m0",
+                            "c-wiz div[data-last-price]"
                         ]
 
                         for selector in price_selectors:
                             price_element = soup.select_one(selector)
                             if price_element:
-                                price_text = price_element.get_text().strip()
-                                price_text = price_text.replace("₹", "").replace(",", "").replace("$", "").strip()
-                                try:
-                                    price = float(price_text)
-                                    if price > 0:
-                                        logging.info(f"✓ Google Finance live price for {symbol} from {exchange}: ₹{price}")
-                                        return price
-                                except (ValueError, TypeError):
-                                    continue
+                                # Try data attribute first
+                                price_text = price_element.get('data-last-price')
+                                if not price_text:
+                                    price_text = price_element.get_text(strip=True)
+                                
+                                if price_text:
+                                    # Clean price text
+                                    price_text = price_text.replace("₹", "").replace(",", "").replace("$", "").strip()
+                                    try:
+                                        price = float(price_text)
+                                        if price > 0:
+                                            logging.info(f"✅ REAL Google Finance price for {symbol}: ₹{price} from {exchange}")
+                                            return price
+                                    except (ValueError, TypeError):
+                                        continue
 
-                    logging.warning(f"⚠️ Google Finance: Could not parse price for {symbol} on {exchange}")
+                    logging.warning(f"⚠️ Google Finance: No price found for {symbol} on {exchange}")
 
                 except (requests.exceptions.RequestException, requests.exceptions.Timeout) as e:
                     logging.warning(f"⚠️ Google Finance network error for {symbol} on {exchange}: {e}")
                     continue
 
-            # No fallback data - return None if no authentic price source available
+            logging.warning(f"❌ Google Finance: No real price available for {symbol}")
+            return None
 
         except Exception as e:
             logging.error(f"❌ Google Finance price fetch failed for {symbol}: {e}")
             return None
 
     def fetch_live_price_yfinance(self, symbol: str) -> Optional[float]:
-        """Fetch live price using yfinance with enhanced error handling"""
+        """Fetch REAL live price using yfinance - NO SAMPLE DATA"""
         try:
             yahoo_symbol = self.get_yahoo_symbol(symbol)
-            logging.info(f"Fetching price for {symbol} -> {yahoo_symbol}")
+            logging.info(f"📈 Fetching REAL market price for {symbol} -> {yahoo_symbol}")
 
             # Create ticker object
             ticker = yf.Ticker(yahoo_symbol)
 
-            # Method 1: Try history for last few days (most reliable)
+            # Method 1: Try recent history (most reliable for real data)
             try:
-                hist = ticker.history(period="5d")
-                if not hist.empty:
+                hist = ticker.history(period="5d", timeout=10)
+                if not hist.empty and len(hist) > 0:
                     price = hist['Close'].iloc[-1]
                     if price and price > 0:
-                        logging.info(f"✓ History price for {symbol}: ₹{price}")
+                        logging.info(f"✅ REAL yfinance price for {symbol}: ₹{price}")
                         return float(price)
             except Exception as e:
-                logging.warning(f"History method failed for {symbol}: {e}")
+                logging.warning(f"YFinance history method failed for {symbol}: {e}")
 
-            # Method 2: Try info dict (less reliable but sometimes works)
+            # Method 2: Try 1-day period as fallback
             try:
-                info = ticker.info
-                if info:
-                    price = (info.get('regularMarketPrice') or 
-                            info.get('currentPrice') or 
-                            info.get('previousClose') or
-                            info.get('lastPrice'))
-                    if price and price > 0:
-                        logging.info(f"✓ Info price for {symbol}: ₹{price}")
-                        return float(price)
-            except Exception as e:
-                logging.warning(f"Info method failed for {symbol}: {e}")
-
-            # Method 3: Alternative approach - try different period
-            try:
-                hist = ticker.history(period="1d")
-                if not hist.empty:
+                hist = ticker.history(period="1d", timeout=8)
+                if not hist.empty and len(hist) > 0:
                     price = hist['Close'].iloc[-1]
                     if price and price > 0:
-                        logging.info(f"✓ 1d History price for {symbol}: ₹{price}")
+                        logging.info(f"✅ REAL yfinance 1d price for {symbol}: ₹{price}")
                         return float(price)
             except Exception as e:
-                logging.warning(f"1d History method failed for {symbol}: {e}")
+                logging.warning(f"YFinance 1d method failed for {symbol}: {e}")
 
-            logging.warning(f"⚠️ Could not fetch price for {symbol}")
+            # Method 3: Try fast_info for current price
+            try:
+                fast_info = ticker.fast_info
+                if fast_info and hasattr(fast_info, 'last_price'):
+                    price = fast_info.last_price
+                    if price and price > 0:
+                        logging.info(f"✅ REAL yfinance fast_info price for {symbol}: ₹{price}")
+                        return float(price)
+            except Exception as e:
+                logging.warning(f"YFinance fast_info method failed for {symbol}: {e}")
+
+            logging.warning(f"❌ No REAL price available for {symbol} from yfinance")
             return None
 
         except Exception as e:
-            logging.error(f"❌ Error fetching price for {symbol}: {e}")
+            logging.error(f"❌ Error fetching REAL price for {symbol}: {e}")
             return None
 
     def fetch_historical_data(self, symbol: str) -> Dict:
