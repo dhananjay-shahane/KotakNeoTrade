@@ -147,31 +147,9 @@ def main():
     print("   - complete_data_analysis.json")
     print()
     
-    print("🔧 SAMPLE DATA STRUCTURE:")
-    print("Here's what typical data looks like:")
-    print()
-    
-    # Show sample data structures
-    sample_position = {
-        "symbol": "RELIANCE",
-        "quantity": 100,
-        "buyPrice": 2500.00,
-        "currentPrice": 2550.00,
-        "pnl": 5000.00,
-        "pnlPercent": 2.0
-    }
-    
-    sample_holding = {
-        "symbol": "TCS",
-        "quantity": 50,
-        "avgPrice": 3200.00,
-        "currentPrice": 3350.00,
-        "totalValue": 167500.00,
-        "dayChange": 150.00
-    }
-    
-    view_function_data("Sample Position", [sample_position])
-    view_function_data("Sample Holding", [sample_holding])
+    print("🔧 REAL DATA ANALYSIS:")
+    print("The application works only with authentic trading data from Kotak Neo API.")
+    print("No sample or demo data is used - all data comes from live trading account.")
     
     print("=" * 80)
     print("✅ Data viewer information complete!")
