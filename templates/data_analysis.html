@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Data Analysis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .data-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .field-badge {
+            background: #007bff;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin: 2px;
+        }
+        .status-success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .status-error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .json-display {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="mb-4">📊 Trading Data Analysis</h1>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <button class="btn btn-primary" onclick="analyzeAllData()">
+                            🔍 Analyze All Data
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <select class="form-select" id="dataTypeSelect">
+                            <option value="">Select specific data type...</option>
+                            <option value="dashboard">Dashboard Data</option>
+                            <option value="positions">Positions Data</option>
+                            <option value="holdings">Holdings Data</option>
+                            <option value="orders">Orders Data</option>
+                            <option value="limits">Account Limits</option>
+                        </select>
+                        <button class="btn btn-secondary mt-2" onclick="analyzeSpecificData()">
+                            🎯 Analyze Specific Data
+                        </button>
+                    </div>
+                </div>
+
+                <div id="loadingIndicator" class="d-none">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Analyzing data...</p>
+                    </div>
+                </div>
+
+                <div id="analysisResults"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function showLoading() {
+            document.getElementById('loadingIndicator').classList.remove('d-none');
+            document.getElementById('analysisResults').innerHTML = '';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingIndicator').classList.add('d-none');
+        }
+
+        function analyzeAllData() {
+            showLoading();
+            
+            fetch('/api/analyze-data')
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    displayAnalysisResults(data);
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error:', error);
+                    document.getElementById('analysisResults').innerHTML = 
+                        `<div class="alert alert-danger">Error analyzing data: ${error.message}</div>`;
+                });
+        }
+
+        function analyzeSpecificData() {
+            const dataType = document.getElementById('dataTypeSelect').value;
+            if (!dataType) {
+                alert('Please select a data type first');
+                return;
+            }
+
+            showLoading();
+            
+            fetch(`/api/analyze-specific/${dataType}`)
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    displaySpecificAnalysis(data);
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error:', error);
+                    document.getElementById('analysisResults').innerHTML = 
+                        `<div class="alert alert-danger">Error analyzing ${dataType} data: ${error.message}</div>`;
+                });
+        }
+
+        function displayAnalysisResults(data) {
+            if (data.status === 'success') {
+                const analysis = data.analysis;
+                let html = `
+                    <div class="alert alert-success">
+                        <h4>✅ Analysis Complete</h4>
+                        <p><strong>Analysis Date:</strong> ${new Date(analysis.timestamp).toLocaleString()}</p>
+                        <p><strong>Client Type:</strong> ${analysis.client_type}</p>
+                        <p><strong>Report File:</strong> ${data.report_file}</p>
+                    </div>
+                `;
+
+                for (const [sourceName, sourceData] of Object.entries(analysis.data_sources)) {
+                    html += createDataSourceCard(sourceName, sourceData);
+                }
+
+                document.getElementById('analysisResults').innerHTML = html;
+            } else {
+                document.getElementById('analysisResults').innerHTML = 
+                    `<div class="alert alert-danger">Analysis failed: ${data.error}</div>`;
+            }
+        }
+
+        function displaySpecificAnalysis(data) {
+            if (data.status === 'success') {
+                const html = createDataSourceCard(data.data_type, data.analysis);
+                document.getElementById('analysisResults').innerHTML = html;
+            } else {
+                document.getElementById('analysisResults').innerHTML = 
+                    `<div class="alert alert-danger">Analysis failed: ${data.error}</div>`;
+            }
+        }
+
+        function createDataSourceCard(sourceName, sourceData) {
+            const statusClass = sourceData.status === 'success' ? 'status-success' : 'status-error';
+            
+            let html = `
+                <div class="data-card">
+                    <h3>📋 ${sourceName.toUpperCase()} DATA</h3>
+                    <p><strong>Function:</strong> ${sourceData.function_name || 'N/A'}</p>
+                    <p><strong>Status:</strong> <span class="${statusClass}">${sourceData.status || 'N/A'}</span></p>
+            `;
+
+            if (sourceData.status === 'success') {
+                html += `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Data Type:</strong> ${sourceData.data_type || 'N/A'}</p>
+                            <p><strong>Item Count:</strong> ${sourceData.data_count || 'N/A'}</p>
+                            <p><strong>Available Fields:</strong> ${sourceData.fields_available?.length || 0}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Data Structure:</strong></p>
+                            <div class="json-display">
+                                <pre>${JSON.stringify(sourceData.data_structure, null, 2)}</pre>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                if (sourceData.fields_available && sourceData.fields_available.length > 0) {
+                    html += `
+                        <div class="mt-3">
+                            <p><strong>Available Fields:</strong></p>
+                            <div>
+                    `;
+                    sourceData.fields_available.forEach(field => {
+                        html += `<span class="field-badge">${field}</span>`;
+                    });
+                    html += `</div></div>`;
+                }
+
+                if (sourceData.sample_data) {
+                    html += `
+                        <div class="mt-3">
+                            <p><strong>Sample Data:</strong></p>
+                            <div class="json-display">
+                                <pre>${JSON.stringify(sourceData.sample_data, null, 2)}</pre>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                html += `<p><strong>Error:</strong> ${sourceData.error || 'Unknown error'}</p>`;
+            }
+
+            html += `</div>`;
+            return html;
+        }
+    </script>
+</body>
+</html>

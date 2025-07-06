@@ -57,6 +57,7 @@ def register_blueprints():
         from api.supabase_api import supabase_bp
         from api.signals_datatable import datatable_bp as signals_datatable_bp
         from api.datatable_updates import datatable_updates_bp
+        from api.data_analysis import data_analysis_bp
 
         # Register all blueprints
         blueprints = [
@@ -75,7 +76,8 @@ def register_blueprints():
             (yahoo_bp, 'yahoo_finance'),
             (supabase_bp, 'supabase'),
             (signals_datatable_bp, 'signals_datatable'),
-            (datatable_updates_bp, 'datatable_updates')
+            (datatable_updates_bp, 'datatable_updates'),
+            (data_analysis_bp, 'data_analysis')
         ]
         
         # Register each blueprint if not already registered
