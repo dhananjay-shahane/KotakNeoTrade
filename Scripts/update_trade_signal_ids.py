@@ -16,7 +16,7 @@ def update_trade_signal_ids():
     """Ensure all records have unique trade_signal_id in external database"""
     
     # Database connection parameters
-    DB_HOST = os.getenv('SUPABASE_DB_HOST', 'aws-0-ap-south-1.pooler.supabase.com')
+    # Supabase removed - using PostgreSQL only
     DB_PORT = os.getenv('SUPABASE_DB_PORT', '6543')
     DB_NAME = os.getenv('SUPABASE_DB_NAME', 'postgres')
     DB_USER = os.getenv('SUPABASE_DB_USER', 'postgres.crlxmtjhvbnlezfgqvnl')

@@ -49,12 +49,9 @@ def register_blueprints():
         from api.enhanced_etf_signals import enhanced_etf_bp
         
         # Market data APIs
-        from api.google_finance_api import google_finance_bp
-        from api.yahoo_finance_api import yahoo_bp
         from api.realtime_quotes import quotes_bp as realtime_bp
         
-        # Data management
-        from api.supabase_api import supabase_bp
+        # Data management - Google Finance, Yahoo Finance, and Supabase removed
         from api.signals_datatable import datatable_bp as signals_datatable_bp
         from api.datatable_updates import datatable_updates_bp
         from api.data_analysis import data_analysis_bp
@@ -72,9 +69,7 @@ def register_blueprints():
             (realtime_bp, 'quotes'),
             (admin_signals_bp, 'admin_signals'),
             (enhanced_etf_bp, 'enhanced_etf'),
-            (google_finance_bp, 'google_finance'),
-            (yahoo_bp, 'yahoo_finance'),
-            (supabase_bp, 'supabase'),
+            # Google Finance, Yahoo Finance, and Supabase removed
             (signals_datatable_bp, 'signals_datatable'),
             (datatable_updates_bp, 'datatable_updates'),
             (data_analysis_bp, 'data_analysis')
@@ -120,21 +115,8 @@ def start_schedulers():
         except ImportError:
             print("⚠️ Real-time quotes manager not available")
         
-        # Start Google Finance scheduler for automatic CMP updates
-        try:
-            from Scripts.google_finance_scheduler import start_google_finance_scheduler
-            start_google_finance_scheduler()
-            print("💰 Google Finance scheduler started - updating every 5 minutes")
-        except Exception as e:
-            print(f"⚠️ Google Finance scheduler failed to start: {e}")
-
-        # Start Yahoo Finance scheduler
-        try:
-            from Scripts.yahoo_scheduler import start_yahoo_scheduler
-            start_yahoo_scheduler()
-            print("📈 Yahoo Finance scheduler started")
-        except ImportError:
-            print("⚠️ Yahoo Finance scheduler not available")
+        # Google Finance and Yahoo Finance schedulers removed - using Kotak Neo API only
+        print("✅ Market data will be provided by Kotak Neo API only")
             
     except Exception as e:
         print(f"⚠️ Scheduler startup error: {e}")

@@ -1,7 +1,7 @@
 
 from flask import Blueprint, request, jsonify
 import logging
-from Scripts.google_finance_cmp_updater import GoogleFinanceCMPUpdater
+# Google Finance CMP Updater removed - using Kotak Neo API only
 from Scripts.external_db_service import get_etf_signals_from_external_db
 import time
 

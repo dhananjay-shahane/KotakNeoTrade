@@ -19,7 +19,6 @@ dependencies = [
     "trafilatura>=1.12.2",
     "schedule>=1.2.2",
     "supabase>=0.0.3",
-    "yfinance>=0.1.67",
     "scripts>=3.0",
     "beautifulsoup4>=4.13.4",
 ]

@@ -11,7 +11,7 @@ from datetime import datetime
 import threading
 import signal
 import sys
-from google_finance_cmp_updater import GoogleFinanceCMPUpdater
+# Google Finance CMP Updater removed - using Kotak Neo API only
 
 # Configure logging
 logging.basicConfig(

@@ -15,7 +15,11 @@ A comprehensive trading platform integrated with Kotak Neo API for real-time por
 - **Data Sources**: All data must come from live Kotak Neo API
 
 ## Recent Changes
-- **2025-01-06**: Successfully migrated from Replit Agent to standard Replit environment
+- **2025-01-10**: Successfully completed migration from Replit Agent to standard Replit environment
+- **2025-01-10**: Completely removed all Yahoo Finance, Google Finance, and Supabase integrations
+- **2025-01-10**: Cleaned up frontend JavaScript to remove external data source selectors
+- **2025-01-10**: Simplified architecture to use only Kotak Neo API for all market data
+- **2025-01-10**: Project now runs cleanly with PostgreSQL database only
 - **2025-01-06**: PostgreSQL database configured and connected
 - **2025-01-06**: All Python dependencies installed and working
 - **2025-01-06**: Created data analysis tools for viewing real trading data structure

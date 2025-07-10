@@ -201,12 +201,8 @@ from Scripts.trading_functions import TradingFunctions
 from Scripts.user_manager import UserManager
 from Scripts.session_helper import SessionHelper
 from Scripts.websocket_handler import WebSocketHandler
-try:
-    from Scripts.supabase_client import SupabaseClient
-    supabase_client = SupabaseClient()
-except Exception as e:
-    print(f"Supabase client initialization failed: {e}")
-    supabase_client = None
+# Supabase integration removed
+supabase_client = None
 
 neo_client = NeoClient()
 trading_functions = TradingFunctions()
@@ -214,15 +210,8 @@ user_manager = UserManager()
 session_helper = SessionHelper()
 websocket_handler = WebSocketHandler()
 
-# Log Supabase connection status
-try:
-    if supabase_client and supabase_client.is_connected():
-        logging.info("✅ Supabase integration active")
-    else:
-        logging.warning(
-            "⚠️ Supabase not configured, using local database only")
-except:
-    logging.warning("⚠️ Supabase not configured, using local database only")
+# Supabase integration removed
+logging.info("✅ Using local PostgreSQL database only")
 
 
 def validate_current_session():
@@ -1028,48 +1017,7 @@ def quick_sell():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
-# Google Finance Scheduler API endpoints
-@app.route('/api/google-finance-scheduler/status', methods=['GET'])
-def get_scheduler_status():
-    """Get Google Finance scheduler status"""
-    try:
-        from Scripts.google_finance_scheduler import get_scheduler_status
-        return jsonify(get_scheduler_status())
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/google-finance-scheduler/start', methods=['POST'])
-def start_scheduler():
-    """Start Google Finance scheduler"""
-    try:
-        from Scripts.google_finance_scheduler import start_google_finance_scheduler
-        start_google_finance_scheduler()
-        return jsonify({'success': True, 'message': 'Google Finance scheduler started'})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/google-finance-scheduler/stop', methods=['POST'])
-def stop_scheduler():
-    """Stop Google Finance scheduler"""
-    try:
-        from Scripts.google_finance_scheduler import stop_google_finance_scheduler
-        stop_google_finance_scheduler()
-        return jsonify({'success': True, 'message': 'Google Finance scheduler stopped'})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/google-finance-scheduler/force-update', methods=['POST'])
-def force_scheduler_update():
-    """Force an immediate Google Finance update"""
-    try:
-        from Scripts.google_finance_scheduler import force_update_now
-        result = force_update_now()
-        if result:
-            return jsonify({'success': True, 'message': 'Update triggered successfully'})
-        else:
-            return jsonify({'success': False, 'message': 'Scheduler not running'})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+# Google Finance and Yahoo Finance schedulers removed
 
 
 from routes.auth import auth_bp
@@ -1098,10 +1046,8 @@ try:
     from api.signals_datatable import datatable_bp
     from api.enhanced_etf_signals import enhanced_etf_bp
     from api.admin_signals_api import admin_signals_bp
-    from api.supabase_api import supabase_bp
     from api.deals import deals_bp  # Added deals blueprint import
-    from api.google_finance_api import google_finance_bp
-    from api.yahoo_finance_api import yahoo_bp  #Import yahoo blueprint
+    # Google Finance, Yahoo Finance, and Supabase APIs removed
 
     # Blueprint registration moved to main.py to avoid conflicts
     print("✓ Blueprint imports available")
@@ -1141,8 +1087,7 @@ except Exception as e:
     
     # Register Google Finance API blueprint
     try:
-        from api.google_finance_api import google_finance_bp
-        app.register_blueprint(google_finance_bp)
+        # Google Finance API blueprint removed
         logging.info("✓ Google Finance API blueprint registered")
     except ImportError as e:
         logging.warning(f"Could not register Google Finance API: {e}")
@@ -1192,116 +1137,32 @@ setup_auto_sync_triggers()
 @app.route('/api/google-finance/update-etf-cmp', methods=['GET', 'POST'])
 def update_live_cmp_endpoint():
     """API endpoint to update live CMP data using Google Finance via yfinance"""
-    try:
-        from Scripts.google_finance_cmp_updater import update_all_cmp_data
-
-        result = update_all_cmp_data()
-
-        return jsonify({
-            'success':
-            result['success'],
-            'message':
-            result['message'],
-            'updated_count':
-            result['updated_count'],
-            'total_symbols':
-            result.get('total_symbols', 0),
-            'successful_symbols':
-            result.get('successful_symbols', 0),
-            'error_count':
-            result['error_count'],
-            'duration':
-            result.get('duration', 0),
-            'results':
-            result.get('results', {})
-        })
-
-    except Exception as e:
-        import logging
-        logging.error(f"Error updating live CMP via Google Finance: {str(e)}")
-        return jsonify({
-            'success':
-            False,
-            'error':
-            str(e),
-            'message':
-            'Failed to update live CMP data via Google Finance'
-        }), 500
+    # Google Finance CMP update functionality removed
+    return jsonify({
+        'success': False,
+        'message': 'Google Finance integration has been removed. Please use Kotak Neo API for real-time data.'
+    }), 501
 
 
 # Update specific symbols CMP endpoint
 @app.route('/api/update-cmp-symbols', methods=['POST'])
 def update_specific_symbols_cmp():
     """API endpoint to update CMP for specific symbols"""
-    try:
-        from Scripts.google_finance_cmp_updater import update_specific_cmp_data
-        from flask import request
-
-        data = request.get_json()
-        symbols = data.get('symbols', []) if data else []
-
-        if not symbols:
-            return jsonify({
-                'success': False,
-                'message': 'No symbols provided'
-            }), 400
-
-        result = update_specific_cmp_data(symbols)
-
-        return jsonify({
-            'success':
-            result['success'],
-            'message':
-            result['message'],
-            'updated_count':
-            result['updated_count'],
-            'symbols_processed':
-            result.get('symbols_processed', 0),
-            'successful_symbols':
-            result.get('successful_symbols', 0),
-            'error_count':
-            result['error_count'],
-            'duration':
-            result.get('duration', 0),
-            'results':
-            result.get('results', {})
-        })
-
-    except Exception as e:
-        import logging
-        logging.error(f"Error updating specific symbols CMP: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'message': 'Failed to update specific symbols CMP'
-        }), 500
+    # Google Finance specific symbols update functionality removed
+    return jsonify({
+        'success': False,
+        'message': 'Google Finance integration has been removed. Please use Kotak Neo API for real-time data.'
+    }), 501
 
 
 @app.route('/api/update-comprehensive-calculations', methods=['POST'])
 def update_comprehensive_calculations():
     """API endpoint to update comprehensive trading calculations for all symbols"""
-    try:
-        from Scripts.google_finance_cmp_updater import GoogleFinanceCMPUpdater
-        
-        updater = GoogleFinanceCMPUpdater()
-        result = updater.update_all_symbols()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Comprehensive calculations updated successfully',
-            'data': {
-                'updated_symbols': result.get('updated_symbols', 0),
-                'total_updated_rows': result.get('total_updated_rows', 0),
-                'calculation_summary': result.get('calculation_summary', {}),
-                'processing_time': result.get('processing_time', 0)
-            }
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Error updating comprehensive calculations: {str(e)}'
-        }), 500
+    # Google Finance comprehensive calculations functionality removed
+    return jsonify({
+        'success': False,
+        'message': 'Google Finance integration has been removed. Please use Kotak Neo API for real-time data.'
+    }), 501
 
 
 @app.route('/api/calculate-symbol-metrics/<symbol>', methods=['GET'])
