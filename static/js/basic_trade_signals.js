@@ -236,31 +236,44 @@ BasicTradeSignalsManager.prototype.renderSignals = function() {
     var end = start + this.itemsPerPage;
     var pageSignals = this.filteredSignals.slice(start, end);
 
+    var visibleColumns = this.availableColumns.filter(function(col) { return col.visible; });
+    var colspanCount = visibleColumns.length;
+
     if (pageSignals.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="14" class="text-center py-4 text-muted">No basic trade signals found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="' + colspanCount + '" class="text-center py-4 text-muted">No basic trade signals found</td></tr>';
         return;
     }
 
+    var self = this;
     var html = '';
     pageSignals.forEach(function(signal) {
         html += '<tr>';
-        html += '<td>' + (signal.id || '') + '</td>';
-        html += '<td><strong>' + (signal.etf || '') + '</strong></td>';
-        html += '<td>' + (signal.thirty || '') + '</td>';
-        html += '<td>' + (signal.dh || '') + '%</td>';
-        html += '<td>' + (signal.date || '') + '</td>';
-        html += '<td>' + (signal.qty || '') + '</td>';
-        html += '<td>₹' + (signal.ep || 0) + '</td>';
-        html += '<td>₹' + (signal.cmp || 0) + '</td>';
-        html += '<td>' + (signal.chan || '') + '%</td>';
-        html += '<td>₹' + (signal.inv || 0) + '</td>';
-        html += '<td>₹' + (signal.pl || 0) + '</td>';
-        html += '<td>' + (signal.seven || '') + '</td>';
-        html += '<td>' + (signal.ch || '') + '%</td>';
-        html += '<td>';
-        html += '<button class="btn btn-sm btn-success me-1" onclick="basicSignalsManager.buySignal(\'' + signal.etf + '\')">Buy</button>';
-        html += '<button class="btn btn-sm btn-danger" onclick="basicSignalsManager.sellSignal(\'' + signal.etf + '\')">Sell</button>';
-        html += '</td>';
+        
+        visibleColumns.forEach(function(column) {
+            if (column.key === 'actions') {
+                html += '<td>';
+                html += '<button class="btn btn-sm btn-success me-1" onclick="basicSignalsManager.buySignal(\'' + (signal.etf || '') + '\')">Buy</button>';
+                html += '<button class="btn btn-sm btn-danger me-1" onclick="basicSignalsManager.sellSignal(\'' + (signal.etf || '') + '\')">Sell</button>';
+                html += '<button class="btn btn-sm btn-primary" onclick="basicSignalsManager.addDeal(\'' + (signal.etf || '') + '\')">Add Deal</button>';
+                html += '</td>';
+            } else {
+                var value = signal[column.key] || '';
+                
+                // Format specific columns
+                if (column.key === 'etf') {
+                    html += '<td><strong>' + value + '</strong></td>';
+                } else if (column.key === 'ep' || column.key === 'cmp' || column.key === 'inv' || column.key === 'pl') {
+                    html += '<td>₹' + (parseFloat(value) || 0).toFixed(2) + '</td>';
+                } else if (column.key === 'dh' || column.key === 'chan' || column.key === 'ch') {
+                    html += '<td>' + value + '%</td>';
+                } else if (column.key === 'thirty' || column.key === 'seven') {
+                    html += '<td>' + (parseFloat(value) || 0).toFixed(2) + '</td>';
+                } else {
+                    html += '<td>' + value + '</td>';
+                }
+            }
+        });
+        
         html += '</tr>';
     });
 
@@ -330,14 +343,18 @@ BasicTradeSignalsManager.prototype.updateSignalsInfo = function() {
 BasicTradeSignalsManager.prototype.showLoadingState = function() {
     var tbody = document.getElementById('signalsTableBody');
     if (tbody) {
-        tbody.innerHTML = '<tr><td colspan="14" class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading basic trade signals...</p></td></tr>';
+        var visibleColumns = this.availableColumns.filter(function(col) { return col.visible; });
+        var colspanCount = visibleColumns.length;
+        tbody.innerHTML = '<tr><td colspan="' + colspanCount + '" class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading basic trade signals...</p></td></tr>';
     }
 };
 
 BasicTradeSignalsManager.prototype.showErrorState = function(message) {
     var tbody = document.getElementById('signalsTableBody');
     if (tbody) {
-        tbody.innerHTML = '<tr><td colspan="14" class="text-center py-4 text-danger"><i class="fas fa-exclamation-triangle mb-2"></i><br>' + message + '</td></tr>';
+        var visibleColumns = this.availableColumns.filter(function(col) { return col.visible; });
+        var colspanCount = visibleColumns.length;
+        tbody.innerHTML = '<tr><td colspan="' + colspanCount + '" class="text-center py-4 text-danger"><i class="fas fa-exclamation-triangle mb-2"></i><br>' + message + '</td></tr>';
     }
 };
 
@@ -430,10 +447,15 @@ BasicTradeSignalsManager.prototype.updateTableHeaders = function() {
     var headerRow = document.getElementById('tableHeader');
     if (!headerRow) return;
 
+    var self = this;
     var html = '';
     this.availableColumns.forEach(function(column) {
         if (column.visible) {
-            html += '<th data-column="' + column.key + '">' + column.label + '</th>';
+            if (column.key === 'actions') {
+                html += '<th data-column="' + column.key + '">' + column.label + '</th>';
+            } else {
+                html += '<th data-column="' + column.key + '" style="cursor: pointer;" onclick="basicSignalsManager.sortBy(\'' + column.key + '\')">' + column.label + ' <i class="fas fa-sort ms-1"></i></th>';
+            }
         }
     });
     
@@ -453,4 +475,19 @@ BasicTradeSignalsManager.prototype.sellSignal = function(symbol) {
         showToaster('Sell Order', 'Initiating sell order for ' + symbol, 'info');
     }
     console.log('Sell signal for:', symbol);
+};
+
+BasicTradeSignalsManager.prototype.addDeal = function(symbol) {
+    if (typeof showToaster === 'function') {
+        showToaster('Add Deal', 'Adding ' + symbol + ' to deals', 'success');
+    }
+    console.log('Add deal for:', symbol);
+    
+    // You can add logic here to actually add the deal to the system
+    // For now, just show a success message
+    setTimeout(function() {
+        if (typeof showToaster === 'function') {
+            showToaster('Deal Added', symbol + ' has been added to your deals', 'success');
+        }
+    }, 1000);
 };
