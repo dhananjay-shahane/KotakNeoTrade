@@ -176,6 +176,102 @@ def get_etf_signals_from_external_db() -> List[Dict]:
     finally:
         db_service.disconnect()
 
+def get_basic_trade_signals_data_json():
+    """Get Basic Trade signals data in JSON format for API response"""
+    try:
+        signals = get_etf_signals_from_external_db()
+        count = 0
+        formatted_signals = []
+
+        for signal in signals:
+            # Get basic trading data with proper null handling
+            symbol = str(signal.get('symbol') or signal.get('etf') or 'N/A').upper()
+            pos = int(signal.get('pos') or 1)  # Position: 1 for long, -1 for short
+            
+            # Handle numeric fields with null safety
+            qty = float(signal.get('qty') or 0) if signal.get('qty') is not None else 0.0
+            ep = float(signal.get('ep') or 0) if signal.get('ep') is not None else 0.0
+            cmp = float(signal.get('cmp') or 0) if signal.get('cmp') is not None else 0.0
+            
+            # Calculate investment amount (qty * ep)
+            inv = qty * ep if qty and ep else 0
+            
+            # Calculate current value and P&L
+            current_value = qty * cmp if qty and cmp else 0
+            if pos == 1:  # Long position
+                pl = current_value - inv  # Profit/Loss
+                chan_percent = ((cmp - ep) / ep) * 100 if ep > 0 else 0
+            else:  # Short position
+                pl = inv - current_value  # Profit/Loss (reversed for short)
+                chan_percent = ((ep - cmp) / ep) * 100 if ep > 0 else 0
+            
+            # Get historical data for 30-day and 7-day performance with null safety
+            d30_raw = signal.get('thirty') or signal.get('d30')
+            d7_raw = signal.get('seven') or signal.get('d7')
+            
+            # Handle null/empty values safely
+            try:
+                d30_value = float(d30_raw) if d30_raw is not None and str(d30_raw).strip() != '' else cmp
+            except (ValueError, TypeError):
+                d30_value = cmp
+                
+            try:
+                d7_value = float(d7_raw) if d7_raw is not None and str(d7_raw).strip() != '' else cmp
+            except (ValueError, TypeError):
+                d7_value = cmp
+            
+            # Calculate 30-day and 7-day performance percentages
+            ch30_percent = ((cmp - d30_value) / d30_value) * 100 if d30_value > 0 and cmp > 0 else 0
+            ch7_percent = ((cmp - d7_value) / d7_value) * 100 if d7_value > 0 and cmp > 0 else 0
+            
+            # Format percentage values
+            ch30_value = f"{ch30_percent:.2f}"
+            ch7_value = f"{ch7_percent:.2f}"
+            chan_value = f"{chan_percent:.2f}"
+            
+            # Create basic trade signal record
+            basic_signal = {
+                'id': signal.get('id', count + 1),
+                'etf': symbol,
+                'symbol': symbol,
+                'thirty': d30_value,
+                'dh': ch30_value,
+                'date': str(signal.get('date', '')),
+                'qty': qty,
+                'ep': ep,
+                'cmp': cmp,
+                'chan': chan_value,
+                'inv': inv,
+                'pl': pl,
+                'seven': d7_value,
+                'ch': ch7_value,
+                'pos': pos
+            }
+            
+            formatted_signals.append(basic_signal)
+            count += 1
+
+        logger.info(f"✅ Formatted {count} basic trade signals for API response")
+
+        return {
+            'success': True,
+            'signals': formatted_signals,
+            'total_count': count,
+            'message': f'Successfully loaded {count} basic trade signals'
+        }
+
+    except Exception as e:
+        logger.error(f"Error formatting basic trade signals data: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            'success': False,
+            'signals': [],
+            'total_count': 0,
+            'error': str(e),
+            'message': 'Failed to load basic trade signals data'
+        }
+
 def get_etf_signals_data_json():
     """Get ETF signals data in JSON format for API response"""
     try:

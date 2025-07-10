@@ -569,6 +569,13 @@ def admin_signals_basic():
     return render_template('admin_signals.html')
 
 
+@app.route('/basic-trade-signals')
+@require_auth
+def basic_trade_signals():
+    """Basic Trade Signals page"""
+    return render_template('basic_trade_signals.html')
+
+
 # API endpoints
 @app.route('/api/dashboard-data')
 def get_dashboard_data_api():
@@ -614,6 +621,17 @@ def get_etf_signals_data():
         return jsonify(get_etf_signals_data_json())
     except Exception as e:
         logging.error(f"ETF signals API error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/basic-trade-signals-data')
+def get_basic_trade_signals_data():
+    """API endpoint to get basic trade signals data from external admin_trade_signals table"""
+    try:
+        from Scripts.external_db_service import get_basic_trade_signals_data_json
+        return jsonify(get_basic_trade_signals_data_json())
+    except Exception as e:
+        logging.error(f"Basic trade signals API error: {e}")
         return jsonify({'error': str(e)}), 500
 
 
