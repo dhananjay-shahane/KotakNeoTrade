@@ -243,7 +243,7 @@ DealsManager.prototype.loadDeals = function () {
     console.log("Loading deals from external database...");
 
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", "/api/deals", true);
+    xhr.open("GET", "/api/user-deals", true);
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.timeout = 10000; // 10 second timeout
 

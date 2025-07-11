@@ -604,7 +604,6 @@ def get_etf_signals_data_json():
             formatted_signal = {
                 'trade_signal_id': signal_id or count,
                 'id': signal_id or count,
-                'etf': symbol,
                 'symbol': symbol,
                 'thirty': round(d30_price, 2),
                 'd30': round(d30_price, 2),

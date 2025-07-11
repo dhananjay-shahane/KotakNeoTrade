@@ -41,6 +41,7 @@ def register_blueprints():
         from api.trading import trading_api
         from api.admin import admin_bp
         from api.deals import deals_bp
+        from api.deals_api import deals_api
         from api.notifications import notifications_bp
         
         # ETF and signals
@@ -65,6 +66,7 @@ def register_blueprints():
             (etf_bp, 'etf'),
             (admin_bp, 'admin'),
             (deals_bp, 'deals'),
+            (deals_api, 'deals_api'),
             (notifications_bp, 'notifications'),
             (realtime_bp, 'quotes'),
             (admin_signals_bp, 'admin_signals'),
