@@ -324,7 +324,8 @@ DealsManager.prototype.loadDeals = function () {
                         
                         // If no deals found, show helpful message
                         if (uniqueDeals.length === 0) {
-                            console.log("No deals found, user needs to create some");
+                            console.log("No deals found - user needs to add real trading data");
+                            self.showEmptyStateMessage();
                         }
                     } else {
                         console.log("No deals found in API response");
@@ -333,6 +334,7 @@ DealsManager.prototype.loadDeals = function () {
                             self.filteredDeals = [];
                             self.renderDealsTable();
                             self.updatePagination();
+                            self.showEmptyStateMessage();
                         }
                     }
                 } catch (parseError) {
@@ -1694,6 +1696,29 @@ document.addEventListener("DOMContentLoaded", function () {
     // Ensure Google Finance is selected by default
     switchDataSource("google");
     updateCurrentDataSourceIndicator();
+
+    // Add empty state message function
+    DealsManager.prototype.showEmptyStateMessage = function () {
+        var tableBody = document.querySelector('#deals-table tbody');
+        if (tableBody) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="12" class="text-center p-4">
+                        <div class="empty-state">
+                            <h5 class="text-muted">No Trading Deals Found</h5>
+                            <p class="text-muted">Please add your real trading data to the user_deals table.</p>
+                            <p class="text-muted small">Only authentic trading data from your broker account is allowed.</p>
+                            <div class="mt-3">
+                                <button class="btn btn-primary btn-sm" onclick="location.reload()">
+                                    <i class="fas fa-sync"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+    };
 
     var savedInterval = localStorage.getItem("dealsRefreshInterval");
     var savedDisplay = localStorage.getItem("dealsRefreshIntervalDisplay");

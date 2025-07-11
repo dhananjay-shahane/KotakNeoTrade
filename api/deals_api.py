@@ -17,18 +17,18 @@ deals_api = Blueprint('deals_api', __name__)
 
 def get_user_deals_from_db():
     """
-    Get user deals from external database (user_deals table)
-    Returns all deals with proper structure for calculations
+    Get user deals from user_deals table (real data only)
+    Returns all authentic deals with proper structure for calculations
     """
     try:
-        # Connect to external database
+        # Connect to database
         conn = get_db_connection()
         if not conn:
-            logger.error("Failed to connect to external database")
+            logger.error("Failed to connect to database")
             return []
             
         with conn.cursor() as cursor:
-            # Query to get all user deals with proper joins if needed
+            # Query to get all user deals - only real data
             query = """
             SELECT 
                 id,
@@ -46,6 +46,7 @@ def get_user_deals_from_db():
                 created_at,
                 updated_at
             FROM user_deals 
+            WHERE symbol IS NOT NULL AND symbol != ''
             ORDER BY created_at DESC
             """
             
@@ -55,9 +56,16 @@ def get_user_deals_from_db():
             
             for row in cursor.fetchall():
                 deal = dict(zip(columns, row))
-                deals.append(deal)
+                # Only include deals with valid trading data
+                if deal.get('symbol') and deal.get('qty') and deal.get('ep'):
+                    deals.append(deal)
                 
-            logger.info(f"✓ Fetched {len(deals)} user deals from database")
+            logger.info(f"✓ Fetched {len(deals)} authentic user deals from database")
+            
+            # If no deals found, return empty with clear message
+            if len(deals) == 0:
+                logger.info("No user deals found in database - user needs to add real trading data")
+                
             return deals
             
     except Exception as e:
@@ -198,12 +206,13 @@ def get_user_deals():
         raw_deals = get_user_deals_from_db()
         
         if not raw_deals:
-            logger.warning("No deals found in database")
+            logger.info("No user deals found - database is empty")
             return jsonify({
                 'data': [],
                 'recordsTotal': 0,
                 'recordsFiltered': 0,
-                'message': 'No deals found in database'
+                'message': 'No trading deals found. Please add your real trading data to the user_deals table.',
+                'instructions': 'Use real trading data from your broker account - no sample data allowed.'
             })
 
         # Process each deal with calculations
@@ -324,6 +333,149 @@ def get_deal_details(deal_id):
                 
     except Exception as e:
         logger.error(f"❌ Error in get_deal_details: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+@deals_api.route('/api/deals/add', methods=['POST'])
+@require_auth
+def add_deal():
+    """
+    Add a new trading deal to user_deals table
+    Only accepts real trading data - no sample data
+    """
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['symbol', 'qty', 'ep', 'pos']
+        for field in required_fields:
+            if field not in data or not data[field]:
+                return jsonify({'error': f'Missing required field: {field}'}), 400
+        
+        # Validate numeric fields
+        try:
+            qty = float(data['qty'])
+            ep = float(data['ep'])
+            pos = int(data['pos'])
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid numeric values provided'}), 400
+        
+        # Validate position type
+        if pos not in [1, -1]:
+            return jsonify({'error': 'Position must be 1 (buy) or -1 (sell)'}), 400
+        
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'Database connection failed'}), 500
+            
+        with conn.cursor() as cursor:
+            # Insert new deal
+            query = """
+            INSERT INTO user_deals (symbol, date, pos, qty, ep, cmp, d30, d7, status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
+            """
+            values = (
+                data['symbol'].upper(),
+                data.get('date', 'CURRENT_DATE'),
+                pos,
+                qty,
+                ep,
+                data.get('cmp', 0),
+                data.get('d30', 0),
+                data.get('d7', 0),
+                data.get('status', 1)
+            )
+            
+            cursor.execute(query, values)
+            deal_id = cursor.fetchone()[0]
+            conn.commit()
+            
+            logger.info(f"✓ Added new deal: {data['symbol']} - ID: {deal_id}")
+            
+            return jsonify({
+                'success': True,
+                'message': f'Deal added successfully: {data["symbol"]}',
+                'deal_id': deal_id
+            })
+            
+    except Exception as e:
+        logger.error(f"❌ Error adding deal: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+@deals_api.route('/api/deals/bulk-import', methods=['POST'])
+@require_auth
+def bulk_import_deals():
+    """
+    Bulk import trading deals from authentic broker data
+    Accepts CSV or JSON format with real trading data
+    """
+    try:
+        data = request.get_json()
+        
+        if not data or 'deals' not in data:
+            return jsonify({'error': 'No deals data provided'}), 400
+            
+        deals_data = data['deals']
+        if not isinstance(deals_data, list):
+            return jsonify({'error': 'Deals data must be an array'}), 400
+            
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'Database connection failed'}), 500
+            
+        imported_count = 0
+        errors = []
+        
+        with conn.cursor() as cursor:
+            for i, deal in enumerate(deals_data):
+                try:
+                    # Validate each deal
+                    if not deal.get('symbol') or not deal.get('qty') or not deal.get('ep'):
+                        errors.append(f"Row {i+1}: Missing required fields")
+                        continue
+                    
+                    # Insert deal
+                    query = """
+                    INSERT INTO user_deals (symbol, date, pos, qty, ep, cmp, d30, d7, status)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """
+                    values = (
+                        deal['symbol'].upper(),
+                        deal.get('date', 'CURRENT_DATE'),
+                        int(deal.get('pos', 1)),
+                        float(deal['qty']),
+                        float(deal['ep']),
+                        float(deal.get('cmp', 0)),
+                        float(deal.get('d30', 0)),
+                        float(deal.get('d7', 0)),
+                        int(deal.get('status', 1))
+                    )
+                    
+                    cursor.execute(query, values)
+                    imported_count += 1
+                    
+                except Exception as e:
+                    errors.append(f"Row {i+1}: {str(e)}")
+                    
+            conn.commit()
+            
+        logger.info(f"✓ Bulk imported {imported_count} deals")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Successfully imported {imported_count} deals',
+            'imported_count': imported_count,
+            'errors': errors
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error in bulk import: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
         if conn:
