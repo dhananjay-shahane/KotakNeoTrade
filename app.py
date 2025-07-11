@@ -34,6 +34,7 @@ from functions.dashboard.dashboard_data import get_dashboard_data_api
 # Load environment variables from .env file
 load_dotenv()
 
+
 def setup_library_paths():
     """
     Configure library paths for pandas/numpy dependencies
@@ -54,6 +55,7 @@ def setup_library_paths():
     except Exception as e:
         print(f"Library preload warning: {e}")
 
+
 # Setup environment before importing Flask modules
 setup_library_paths()
 
@@ -63,9 +65,11 @@ setup_library_paths()
 
 # Flask imports already added to top section
 
+
 class Base(DeclarativeBase):
     """Base class for SQLAlchemy database models"""
     pass
+
 
 # Initialize Flask application and database
 db = SQLAlchemy(model_class=Base)
@@ -77,13 +81,14 @@ app = Flask(__name__)
 
 # Security configuration
 app.secret_key = os.environ.get("SESSION_SECRET")
-app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)  # Enable HTTPS URL generation
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1,
+                        x_host=1)  # Enable HTTPS URL generation
 
 # Database configuration
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_recycle": 300,     # Recycle connections every 5 minutes
-    "pool_pre_ping": True,   # Verify connections before use
+    "pool_recycle": 300,  # Recycle connections every 5 minutes
+    "pool_pre_ping": True,  # Verify connections before use
 }
 
 # Configure Flask for Replit deployment and external access
@@ -518,6 +523,7 @@ def show_positions():
 def show_holdings():
     return holdings()
 
+
 @app.route('/orders')
 @require_auth
 def show_orders():
@@ -573,7 +579,7 @@ def admin_signals_basic():
 @require_auth
 def basic_trade_signals():
     """Basic Trade Signals page"""
-    return render_template('basic_trade_signals.html')
+    return render_template('basic_etf_signals.html')
 
 
 # API endpoints
@@ -594,6 +600,7 @@ def get_dashboard_data_api():
     except Exception as e:
         logging.error(f"Dashboard data error: {e}")
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/holdings')
 def get_holdings_api():
@@ -835,7 +842,7 @@ def test_auto_sync_endpoint():
 
 
 @app.route('/api/place-order', methods=['POST'])
-@require_auth  
+@require_auth
 def place_order():
     """API endpoint to place buy/sell orders using Kotak Neo API"""
     try:
@@ -1037,7 +1044,6 @@ def quick_sell():
 
 # Google Finance and Yahoo Finance schedulers removed
 
-
 from routes.auth import auth_bp
 from routes.main import main_bp
 from api.dashboard import dashboard_api
@@ -1091,9 +1097,9 @@ try:
 except Exception as e:
     print(f"Warning: Could not register deals blueprint: {e}")
 
-# Register ETF signals blueprint
+    # Register ETF signals blueprint
     app.register_blueprint(etf_bp, url_prefix='/api')
-    
+
     # Register other blueprints
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
     app.register_blueprint(notifications_bp, url_prefix='/api')
@@ -1102,7 +1108,7 @@ except Exception as e:
     app.register_blueprint(enhanced_etf_bp, url_prefix='/api')
     app.register_blueprint(admin_signals_bp, url_prefix='/api')
     app.register_blueprint(supabase_bp, url_prefix='/api')
-    
+
     # Register Google Finance API blueprint
     try:
         # Google Finance API blueprint removed
@@ -1157,8 +1163,10 @@ def update_live_cmp_endpoint():
     """API endpoint to update live CMP data using Google Finance via yfinance"""
     # Google Finance CMP update functionality removed
     return jsonify({
-        'success': False,
-        'message': 'Google Finance integration has been removed. Please use Kotak Neo API for real-time data.'
+        'success':
+        False,
+        'message':
+        'Google Finance integration has been removed. Please use Kotak Neo API for real-time data.'
     }), 501
 
 
@@ -1168,8 +1176,10 @@ def update_specific_symbols_cmp():
     """API endpoint to update CMP for specific symbols"""
     # Google Finance specific symbols update functionality removed
     return jsonify({
-        'success': False,
-        'message': 'Google Finance integration has been removed. Please use Kotak Neo API for real-time data.'
+        'success':
+        False,
+        'message':
+        'Google Finance integration has been removed. Please use Kotak Neo API for real-time data.'
     }), 501
 
 
@@ -1178,8 +1188,10 @@ def update_comprehensive_calculations():
     """API endpoint to update comprehensive trading calculations for all symbols"""
     # Google Finance comprehensive calculations functionality removed
     return jsonify({
-        'success': False,
-        'message': 'Google Finance integration has been removed. Please use Kotak Neo API for real-time data.'
+        'success':
+        False,
+        'message':
+        'Google Finance integration has been removed. Please use Kotak Neo API for real-time data.'
     }), 501
 
 
@@ -1188,7 +1200,7 @@ def calculate_symbol_metrics(symbol):
     """API endpoint to calculate metrics for a specific symbol"""
     try:
         from Scripts.trading_calculations import TradingCalculations
-        
+
         db_config = {
             'host': "dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com",
             'database': "kotak_trading_db",
@@ -1196,28 +1208,30 @@ def calculate_symbol_metrics(symbol):
             'password': "JRUlk8RutdgVcErSiUXqljDUdK8sBsYO",
             'port': 5432
         }
-        
+
         calculator = TradingCalculations(db_config)
-        
+
         # Get trade data for the symbol
         import psycopg2
         from psycopg2.extras import RealDictCursor
-        
+
         with psycopg2.connect(**db_config) as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT * FROM admin_trade_signals 
                     WHERE (symbol = %s OR etf = %s)
                     AND qty IS NOT NULL AND ep IS NOT NULL
                     LIMIT 1
                 """, (symbol, symbol))
-                
+
                 trade = cursor.fetchone()
-                
+
                 if trade:
                     trade_dict = dict(trade)
-                    calculated_metrics = calculator.calculate_all_metrics(trade_dict)
-                    
+                    calculated_metrics = calculator.calculate_all_metrics(
+                        trade_dict)
+
                     return jsonify({
                         'success': True,
                         'symbol': symbol,
@@ -1226,15 +1240,20 @@ def calculate_symbol_metrics(symbol):
                     })
                 else:
                     return jsonify({
-                        'success': False,
-                        'message': f'No trade data found for symbol {symbol}'
+                        'success':
+                        False,
+                        'message':
+                        f'No trade data found for symbol {symbol}'
                     }), 404
-                    
+
     except Exception as e:
         return jsonify({
-            'success': False,
-            'message': f'Error calculating metrics for {symbol}: {str(e)}'
+            'success':
+            False,
+            'message':
+            f'Error calculating metrics for {symbol}: {str(e)}'
         }), 500
-    
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
