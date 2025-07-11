@@ -13,7 +13,15 @@ import traceback
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-deals_api = Blueprint('deals_api', __name__)
+deals_api = Blueprint('deals_api', __name__, url_prefix='/api')
+
+@deals_api.route('/test-deals', methods=['GET'])
+def test_deals():
+    """Test endpoint to verify blueprint registration"""
+    return jsonify({
+        'message': 'Deals API blueprint is working',
+        'success': True
+    })
 
 def get_user_deals_from_db():
     """
@@ -194,7 +202,7 @@ def calculate_deal_metrics(deal):
         logger.error(f"Error calculating metrics for deal {deal.get('id', 'unknown')}: {e}")
         return None
 
-@deals_api.route('/api/user-deals', methods=['GET'])
+@deals_api.route('/user-deals', methods=['GET'])
 def get_user_deals():
     """
     API endpoint to get user deals with all calculations
@@ -248,7 +256,7 @@ def get_user_deals():
             'message': f'❌ Error loading deals: {str(e)}'
         }), 500
 
-@deals_api.route('/api/deals-summary', methods=['GET'])
+@deals_api.route('/deals-summary', methods=['GET'])
 def get_deals_summary():
     """
     Get summary statistics for user deals
@@ -298,7 +306,7 @@ def get_deals_summary():
         logger.error(f"❌ Error in get_deals_summary: {e}")
         return jsonify({'error': str(e)}), 500
 
-@deals_api.route('/api/deals/<int:deal_id>', methods=['GET'])
+@deals_api.route('/deals/<int:deal_id>', methods=['GET'])
 def get_deal_details(deal_id):
     """
     Get detailed information for a specific deal
@@ -335,7 +343,7 @@ def get_deal_details(deal_id):
         if conn:
             conn.close()
 
-@deals_api.route('/api/deals/add', methods=['POST'])
+@deals_api.route('/deals/add', methods=['POST'])
 def add_deal():
     """
     Add a new trading deal to user_deals table
@@ -404,7 +412,7 @@ def add_deal():
         if conn:
             conn.close()
 
-@deals_api.route('/api/deals/bulk-import', methods=['POST'])
+@deals_api.route('/deals/bulk-import', methods=['POST'])
 def bulk_import_deals():
     """
     Bulk import trading deals from authentic broker data

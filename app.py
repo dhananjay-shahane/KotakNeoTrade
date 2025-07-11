@@ -673,5 +673,15 @@ from Scripts.sync_default_deals import setup_auto_sync_triggers
 
 setup_auto_sync_triggers()
 
+# Register deals_api blueprint directly
+try:
+    from api.deals_api import deals_api
+    app.register_blueprint(deals_api)
+    print("✓ Registered deals_api blueprint directly")
+except Exception as e:
+    print(f"✗ Error registering deals_api: {e}")
+    import traceback
+    traceback.print_exc()
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

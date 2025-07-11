@@ -82,7 +82,13 @@ def register_blueprints():
         
         for blueprint, name in blueprints:
             if name not in registered_blueprints:
-                app.register_blueprint(blueprint)
+                try:
+                    app.register_blueprint(blueprint)
+                    print(f"✓ Registered blueprint: {name}")
+                except Exception as e:
+                    print(f"✗ Error registering blueprint {name}: {e}")
+                    import traceback
+                    traceback.print_exc()
         
         # Add the ETF signals data route to the main app
         @app.route('/api/etf-signals-data', methods=['GET'])
