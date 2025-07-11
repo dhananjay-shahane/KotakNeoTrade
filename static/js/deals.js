@@ -77,7 +77,6 @@ DealsManager.prototype.init = function () {
     this.startAutoRefresh();
     this.setupEventListeners();
     this.setupColumnSettingsModal();
-    this.checkPriceUpdateStatus();
 
     var autoRefreshToggle = document.getElementById("autoRefreshToggle");
     var self = this;
@@ -748,6 +747,21 @@ DealsManager.prototype.showError = function (message) {
         '<button class="btn btn-outline-primary btn-sm mt-2" onclick="window.dealsManager.loadDeals()">' +
         '<i class="fas fa-sync me-1"></i>Retry' +
         "</button>" +
+        "</td>" +
+        "</tr>";
+};
+
+DealsManager.prototype.showEmptyStateMessage = function () {
+    var tbody = document.getElementById("dealsTableBody");
+    tbody.innerHTML =
+        "<tr>" +
+        '<td colspan="' +
+        this.selectedColumns.length +
+        '" class="text-center py-4">' +
+        '<i class="fas fa-handshake fa-3x mb-3 text-primary"></i>' +
+        '<h6 class="text-light">No Deals Found</h6>' +
+        '<p class="text-muted mb-3">You haven\'t added any deals yet</p>' +
+        '<small class="text-muted d-block mt-2">Visit the ETF Signals page to add deals from trading signals</small>' +
         "</td>" +
         "</tr>";
 };
@@ -1675,14 +1689,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Check price update status
     window.dealsManager.checkPriceUpdateStatus();
 
-    // Start automatic CMP updates
-    startDealsCMPUpdates();
-
-    // Update CMP immediately on page load
-    setTimeout(() => {
-        console.log("🚀 Initial deals CMP update on page load");
-        updateDealsCMPFromGoogleFinance();
-    }, 3000); // Wait 3 seconds for page to fully load
+    // Auto-update CMP will be handled by the refresh interval
 
     // Set default data source to Google Finance if not already set
     if (!localStorage.getItem("data-source")) {
@@ -1693,28 +1700,7 @@ document.addEventListener("DOMContentLoaded", function () {
     switchDataSource("google");
     updateCurrentDataSourceIndicator();
 
-    // Add empty state message function
-    DealsManager.prototype.showEmptyStateMessage = function () {
-        var tableBody = document.querySelector('#deals-table tbody');
-        if (tableBody) {
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="12" class="text-center p-4">
-                        <div class="empty-state">
-                            <h5 class="text-muted">No Trading Deals Found</h5>
-                            <p class="text-muted">Please add your real trading data to the user_deals table.</p>
-                            <p class="text-muted small">Only authentic trading data from your broker account is allowed.</p>
-                            <div class="mt-3">
-                                <button class="btn btn-primary btn-sm" onclick="location.reload()">
-                                    <i class="fas fa-sync"></i> Refresh
-                                </button>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        }
-    };
+    
 
     var savedInterval = localStorage.getItem("dealsRefreshInterval");
     var savedDisplay = localStorage.getItem("dealsRefreshIntervalDisplay");
@@ -1810,8 +1796,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Clean up interval when page unloads
 window.addEventListener("beforeunload", function () {
-    if (dealsCmpUpdateInterval) {
-        clearInterval(dealsCmpUpdateInterval);
-        dealsCmpUpdateInterval = null;
+    if (window.dealsManager && window.dealsManager.refreshInterval) {
+        clearInterval(window.dealsManager.refreshInterval);
+        window.dealsManager.refreshInterval = null;
     }
 });
