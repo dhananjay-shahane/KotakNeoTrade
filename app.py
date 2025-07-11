@@ -561,8 +561,9 @@ def quick_sell():
 
 # Google Finance and Yahoo Finance schedulers removed
 
-from routes.auth import auth_bp
-from routes.main import main_bp
+# Import blueprints
+from routes.auth_routes import auth_bp as auth_routes_bp
+from routes.main_routes import main_bp as main_routes_bp
 from api.dashboard import dashboard_api
 from api.trading import trading_api
 from Scripts.sync_default_deals import sync_admin_signals_to_default_deals, update_default_deal_from_admin_signal
@@ -571,9 +572,6 @@ from Scripts.models import DefaultDeal
 # ETF signals blueprint will be registered separately
 
 # Register blueprints with consistent naming
-from routes.auth_routes import auth_bp as auth_routes_bp
-from routes.main_routes import main_bp as main_routes_bp
-
 app.register_blueprint(auth_routes_bp)
 app.register_blueprint(main_routes_bp)
 app.register_blueprint(dashboard_api, url_prefix='/api')

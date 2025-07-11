@@ -146,3 +146,4 @@ if __name__ == '__main__':
         print(f"❌ Application startup failed: {str(e)}")
         import traceback
         traceback.print_exc()
+```
