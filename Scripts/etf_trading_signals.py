@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timedelta
 import json
 from sqlalchemy import text
-from app import db
+from core.database import db
 
 etf_bp = Blueprint('etf', __name__, url_prefix='/etf')
 logger = logging.getLogger(__name__)

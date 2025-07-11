@@ -4,7 +4,8 @@ Automatic Synchronization System for admin_trade_signals to default_deals
 Creates real-time sync triggers and handlers for automatic data synchronization
 """
 
-from app import app, db
+from core.database import db
+from flask import current_app
 from sqlalchemy import event, text
 import logging
 
@@ -13,7 +14,7 @@ logger = logging.getLogger(__name__)
 def create_database_trigger():
     """Create database-level trigger for automatic synchronization"""
     try:
-        with app.app_context():
+        with current_app.app_context():
             # Create trigger function for PostgreSQL
             trigger_function = """
             CREATE OR REPLACE FUNCTION sync_admin_signals_to_default_deals()
@@ -204,7 +205,7 @@ def test_auto_sync():
         logger.info("Testing automatic synchronization system...")
         
         # Count current records
-        with app.app_context():
+        with current_app.app_context():
             admin_count = db.session.execute(text("SELECT COUNT(*) FROM admin_trade_signals")).scalar()
             default_count = db.session.execute(text("SELECT COUNT(*) FROM default_deals")).scalar()
             

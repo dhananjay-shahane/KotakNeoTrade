@@ -17,7 +17,7 @@ from sqlalchemy.orm import sessionmaker
 # Add current directory to path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from app import db, app
+from core.database import db
 from Scripts.models_etf import AdminTradeSignal, RealtimeQuote
 from Scripts.models import User
 from Scripts.trading_functions import TradingFunctions

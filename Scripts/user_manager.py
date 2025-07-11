@@ -1,4 +1,5 @@
-from Scripts.models import db, User, UserSession, UserPreferences
+from core.database import db
+from Scripts.models import User, UserSession, UserPreferences
 from datetime import datetime, timedelta
 import json
 import uuid

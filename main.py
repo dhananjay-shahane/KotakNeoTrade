@@ -21,7 +21,7 @@ def setup_library_paths():
 setup_library_paths()
 
 # Import main Flask application
-from app import app
+from app_clean import app
 
 def register_blueprints():
     """
