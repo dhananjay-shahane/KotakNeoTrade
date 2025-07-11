@@ -195,7 +195,6 @@ def calculate_deal_metrics(deal):
         return None
 
 @deals_api.route('/api/user-deals', methods=['GET'])
-@require_auth
 def get_user_deals():
     """
     API endpoint to get user deals with all calculations
@@ -250,7 +249,6 @@ def get_user_deals():
         }), 500
 
 @deals_api.route('/api/deals-summary', methods=['GET'])
-@require_auth
 def get_deals_summary():
     """
     Get summary statistics for user deals
@@ -301,7 +299,6 @@ def get_deals_summary():
         return jsonify({'error': str(e)}), 500
 
 @deals_api.route('/api/deals/<int:deal_id>', methods=['GET'])
-@require_auth
 def get_deal_details(deal_id):
     """
     Get detailed information for a specific deal
@@ -339,7 +336,6 @@ def get_deal_details(deal_id):
             conn.close()
 
 @deals_api.route('/api/deals/add', methods=['POST'])
-@require_auth
 def add_deal():
     """
     Add a new trading deal to user_deals table
@@ -409,7 +405,6 @@ def add_deal():
             conn.close()
 
 @deals_api.route('/api/deals/bulk-import', methods=['POST'])
-@require_auth
 def bulk_import_deals():
     """
     Bulk import trading deals from authentic broker data

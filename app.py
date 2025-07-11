@@ -158,7 +158,7 @@ def page_not_found(error):
     # Check if user is authenticated before showing 404 page
     if not validate_current_session():
         flash('Please login to access this application', 'error')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth_routes.login'))
 
     return render_template('404.html'), 404
 
