@@ -1214,10 +1214,9 @@ def calculate_symbol_metrics(symbol):
             'success': False,
             'message': 'CMP update functionality has been disabled'
         }), 404
-                        'success':
-                        False,
-                        'message':
-                        f'No trade data found for symbol {symbol}'
+                        return jsonify({
+                        'success': False,
+                        'message': f'No trade data found for symbol {symbol}'
                     }), 404
 
     except Exception as e:
