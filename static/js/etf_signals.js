@@ -1240,6 +1240,34 @@ function updateCMPDirectlyFromSource(source) {
         if (typeof showToaster === 'function') {
             showToaster(
                 'Network Error', 
+                'Failed to update CMP from selected source',
+                'error'
+            );
+        }
+
+        // Still try to refresh the table
+        if (window.etfSignalsManager) {
+            window.etfSignalsManager.loadSignals();
+        }
+    })
+    .catch(function(error) {
+        // Hide update status icon
+        var statusIcon = document.getElementById('updateStatusIcon');
+        if (statusIcon) {
+            statusIcon.style.display = 'none';
+        }
+
+        var errorMessage = 'Network error occurred';
+        if (error.name === 'AbortError') {
+            errorMessage = 'Update request timed out after 35 seconds';
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
+
+        // Show error notification
+        if (typeof showToaster === 'function') {
+            showToaster(
+                'Network Error', 
                 errorMessage,
                 'error'
             );
@@ -1252,11 +1280,7 @@ function updateCMPDirectlyFromSource(source) {
     });
 }
 
-// CMP update functionality removed 
-
-// Data source indicator functionality removed
-
-// Auto CMP update functionality removedon to update CMP from Google Finance
+// Function to update CMP from Google Finance
 function updateCMPFromGoogleFinance() {
     console.log('🔄 Updating CMP from Google Finance...');
     
