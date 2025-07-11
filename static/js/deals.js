@@ -1411,91 +1411,9 @@ function updateCurrentDataSourceIndicator() {
     }
 }
 
-// Function to create sample deals for testing
-function createSampleDeals() {
-    if (confirm('This will create sample deals for testing. Continue?')) {
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', '/api/deals/create-sample', true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
+// Function to create // Sample deals creation functionality removed
 
-        xhr.onload = function() {
-            if (xhr.status === 200) {
-                var response = JSON.parse(xhr.responseText);
-                if (response.success) {
-                    showNotification('Sample deals created successfully!', 'success');
-                    // Refresh the deals table
-                    if (window.dealsManager) {
-                        window.dealsManager.loadDeals();
-                    }
-                } else {
-                    showNotification('Failed to create sample deals: ' + response.message, 'error');
-                }
-            } else {
-                showNotification('Error creating sample deals', 'error');
-            }
-        };
-
-        xhr.onerror = function() {
-            showNotification('Network error creating sample deals', 'error');
-        };
-
-        xhr.send();
-    }
-}
-
-// Auto CMP update variables for deals
-let dealsCmpUpdateInterval = null;
-
-// Function to update CMP from Google Finance for deals
-function updateDealsCMPFromGoogleFinance() {
-    console.log('🔄 Updating deals CMP from Google Finance...');
-
-    fetch('/api/google-finance/update-etf-cmp', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            console.log('✅ Deals CMP updated successfully:', data.updated_count, 'records');
-
-            // Show success notification
-            showNotification(`Updated CMP for ${data.updated_count || 0} records from Google Finance`, 'success');
-
-            // Refresh the deals table after update
-            if (window.dealsManager) {
-                window.dealsManager.loadDeals();
-            }
-        } else {
-            console.error('❌ Deals CMP update failed:', data.error);
-            showNotification(`CMP update failed: ${data.error}`, 'error');
-        }
-    })
-    .catch(error => {
-        console.error('❌ Error updating deals CMP:', error);
-        showNotification(`Error updating CMP: ${error.message}`, 'error');
-    });
-}
-
-// Function to start automatic CMP updates for deals
-function startDealsCMPUpdates() {
-    // Clear any existing interval
-    if (dealsCmpUpdateInterval) {
-        clearInterval(dealsCmpUpdateInterval);
-    }
-
-    // Set up 5-minute interval for CMP updates
-    dealsCmpUpdateInterval = setInterval(() => {
-        console.log('🕐 Auto deals CMP update triggered (5min interval)');
-        updateDealsCMPFromGoogleFinance();
-    }, 5 * 60 * 1000); // 5 minutes in milliseconds
-
-    console.log('✅ Auto deals CMP updates started (every 5 minutes)');
-}
-
-// Force CMP update function for manual trigger
+// Auto CMP update functionality removedm // Google Finance CMP update functionality removeda// Auto CMP update functionality removede CMP update function for manual trigger
 function forceCMPUpdate() {
     console.log('🚀 Force CMP update triggered by user');
     updateDealsCMPFromGoogleFinance();

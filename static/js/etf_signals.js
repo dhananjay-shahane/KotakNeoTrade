@@ -1232,43 +1232,7 @@ function updateCMPDirectlyFromSource(source) {
                     'CMP Updated Successfully', 
                     'Updated ' + updatedCount + ' records directly from ' + sourceName + ' in ' + (data.duration || 0).toFixed(1) + 's',
                     'success'
-                );
-            }
-
-            // Immediately refresh the signals table
-            if (window.etfSignalsManager) {
-                window.etfSignalsManager.loadSignals();
-            }
-        } else {
-            // Show error notification
-            if (typeof showToaster === 'function') {
-                showToaster(
-                    'CMP Update Failed', 
-                    'Failed to update CMP: ' + (data.error || 'Unknown error'),
-                    'error'
-                );
-            }
-
-            // Still try to refresh the table
-            if (window.etfSignalsManager) {
-                window.etfSignalsManager.loadSignals();
-            }
-        }
-    })
-    .catch(function(error) {
-        clearTimeout(timeoutId); // Clear the timeout
-        console.error('Error updating CMP directly:', error);
-
-        // Hide update status icon
-        var statusIcon = document.getElementById('updateStatusIcon');
-        if (statusIcon) {
-            statusIcon.style.display = 'none';
-        }
-
-        // Check if it's a timeout/abort error
-        var errorMessage = 'Failed to connect to ' + (source === 'google' ? 'Google Finance' : 'Yahoo Finance') + ' service';
-        if (error.name === 'AbortError') {
-            errorMessage = 'Update took too long and was cancelled. The update might still be running in the background.';
+                // CMP update functionality removednning in the background.';
         }
 
         // Show error notification
@@ -1287,30 +1251,11 @@ function updateCMPDirectlyFromSource(source) {
     });
 }
 
-function updatePricesFromDataSource(source) {
-    // Redirect to the new direct update function
-    updateCMPDirectlyFromSource(source);
-}
+// CMP update functionality removed 
 
-// Auto-update CMP every 5 minutes
-setInterval(function() {
-    updateCMPDirectlyFromSource('google');
-}, 300000); 
+// Data source indicator functionality removed
 
-function updateCurrentDataSourceIndicator() {
-    var dataSource = localStorage.getItem('data-source') || 'google';
-    var sourceName = dataSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
-
-    var currentDataSourceSpan = document.getElementById('currentDataSource');
-    if (currentDataSourceSpan) {
-        currentDataSourceSpan.textContent = sourceName;
-    }
-}
-
-// Auto CMP update variables
-let cmpUpdateInterval = null;
-
-// Function to update CMP from Google Finance
+// Auto CMP update functionality removedon to update CMP from Google Finance
 function updateCMPFromGoogleFinance() {
     console.log('🔄 Updating CMP from Google Finance...');
     
@@ -1386,33 +1331,9 @@ function forceUpdateSymbol(symbol) {
     });
 }
 
-// Add click handler for symbol rows to allow force update
-function addSymbolUpdateHandlers() {
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('force-update-symbol')) {
-            e.preventDefault();
-            const symbol = e.target.getAttribute('data-symbol');
-            if (symbol) {
-                forceUpdateSymbol(symbol);
-            }
-        }
-    });
-}
+// Symbol update handlers removed
 
-// Function to start automatic CMP updates
-function startAutoCMPUpdates() {
-    // Clear any existing interval
-    if (cmpUpdateInterval) {
-        clearInterval(cmpUpdateInterval);
-    }
-    
-    // Set up 5-minute interval for CMP updates
-    cmpUpdateInterval = setInterval(() => {
-        console.log('🕐 Auto CMP update triggered (5min interval)');
-        updateCMPFromGoogleFinance();
-    }, 5 * 60 * 1000); // 5 minutes in milliseconds
-    
-    console.log('✅ Auto CMP updates started (every 5 minutes)');
+// Auto CMP update functionality removedvery 5 minutes)');
 }
 
 // Function to stop automatic CMP updates

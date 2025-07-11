@@ -1209,37 +1209,11 @@ def calculate_symbol_metrics(symbol):
             'port': 5432
         }
 
-        calculator = TradingCalculations(db_config)
-
-        # Get trade data for the symbol
-        import psycopg2
-        from psycopg2.extras import RealDictCursor
-
-        with psycopg2.connect(**db_config) as conn:
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute(
-                    """
-                    SELECT * FROM admin_trade_signals 
-                    WHERE (symbol = %s OR etf = %s)
-                    AND qty IS NOT NULL AND ep IS NOT NULL
-                    LIMIT 1
-                """, (symbol, symbol))
-
-                trade = cursor.fetchone()
-
-                if trade:
-                    trade_dict = dict(trade)
-                    calculated_metrics = calculator.calculate_all_metrics(
-                        trade_dict)
-
-                    return jsonify({
-                        'success': True,
-                        'symbol': symbol,
-                        'trade_data': trade_dict,
-                        'calculated_metrics': calculated_metrics
-                    })
-                else:
-                    return jsonify({
+        # CMP update and trading calculations functionality removed
+        return jsonify({
+            'success': False,
+            'message': 'CMP update functionality has been disabled'
+        }), 404
                         'success':
                         False,
                         'message':

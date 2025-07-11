@@ -523,108 +523,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-async function refreshQuotes() {
-    var button = document.querySelector('[onclick="refreshQuotes()"]');
-    if (button) {
-        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
-        button.disabled = true;
-    }
-
-    try {
-        // Fetch fresh quote data from server
-        var response = await fetch('/api/live_quotes');
-        var data = await response.json();
-
-        if (data.success) {
-            // Update quotes table with real data
-            var quotesTableBody = document.getElementById('quotesTableBody');
-            if (quotesTableBody && data.quotes) {
-                data.quotes.forEach(quote, function() {
-                    var row = document.querySelector(`tr[data-symbol="${quote.symbol}"]`);
-                    if (row) {
-                        var ltpCell = row.querySelector('.price-ltp');
-                        var changeCell = row.querySelector('.price-change');
-                        var changePctCell = row.cells[3];
-                        var timeCell = row.querySelector('small');
-
-                        if (ltpCell) {
-                            var oldPrice = parseFloat(ltpCell.textContent.replace(/[₹,]/g, ''));
-                            var newPrice = parseFloat(quote.ltp);
-
-                            ltpCell.textContent = `₹${newPrice.toFixed(2)}`;
-
-                            // Add animation based on price change
-                            if (newPrice > oldPrice) {
-                                ltpCell.classList.add('price-up');
-                            } else if (newPrice < oldPrice) {
-                                ltpCell.classList.add('price-down');
-                            }
-
-                            setTimeout(function() {
-                                ltpCell.classList.remove('price-up', 'price-down');
-                            }, 1000);
-                        }
-
-                        if (changeCell && quote.change !== undefined) {
-                            changeCell.textContent = `${quote.change >= 0 ? '+' : ''}${parseFloat(quote.change).toFixed(2)}`;
-                            changeCell.className = `price-change ${quote.change >= 0 ? 'text-success' : 'text-danger'}`;
-                        }
-
-                        if (changePctCell && quote.changePct !== undefined) {
-                            changePctCell.textContent = `${quote.changePct >= 0 ? '+' : ''}${parseFloat(quote.changePct).toFixed(2)}%`;
-                            changePctCell.className = quote.changePct >= 0 ? 'text-success' : 'text-danger';
-                        }
-
-                        if (timeCell) {
-                            timeCell.textContent = new Date().toLocaleTimeString();
-                        }
-                    }
-                });
-            }
-        } else {
-            // Fallback to simulated updates if API fails
-            simulateQuoteUpdates();
-        }
-    } catch (error) {
-        console.error('Error refreshing quotes:', error);
-        // Fallback to simulated updates
-        simulateQuoteUpdates();
-    }
-
-    if (button) {
-        button.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
-        button.disabled = false;
-    }
-}
-
-function simulateQuoteUpdates() {
-    var quotes = document.querySelectorAll('#quotesTable .price-ltp');
-    quotes.forEach(function(quote) {
-        var currentPrice = parseFloat(quote.textContent.replace(/[₹,]/g, ''));
-        var change = (Math.random() - 0.5) * 20;
-        var newPrice = currentPrice + change;
-
-        quote.textContent = `₹${newPrice.toFixed(2)}`;
-
-        var row = quote.closest('tr');
-        var changeCell = row.querySelector('.price-change');
-        var changePctCell = row.cells[3];
-
-        if (changeCell && changePctCell) {
-            var changePercent = (change / currentPrice * 100);
-            changeCell.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}`;
-            changeCell.className = `price-change ${change >= 0 ? 'text-success' : 'text-danger'}`;
-
-            changePctCell.textContent = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%`;
-            changePctCell.className = change >= 0 ? 'text-success' : 'text-danger';
-        }
-
-        quote.classList.add(change >= 0 ? 'price-up' : 'price-down');
-        setTimeout(()=>{}, function() {
-            quote.classList.remove('price-up', 'price-down');
-        }, 1000);
-    });
-}
+// Quote refresh functionality removed
 
 async function refreshPositions() {
     var button = document.querySelector('[onclick="refreshPositions()"]');
@@ -837,12 +736,7 @@ async function loadUserProfile() {
     }
 }
 
-// Auto-refresh specific sections every 15 seconds instead of full page
-setInterval(()=>{}, function() {
-    refreshQuotes();
-    refreshPositions();
-    refreshPortfolioSummary();
-}, 15000);
+// Auto-refresh functionality removed
 
 
 

@@ -1470,59 +1470,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Auto CMP update variables for default deals
-let defaultDealsCmpUpdateInterval = null;
-
-// Function to update CMP from Google Finance for default deals
-function updateDefaultDealsCMPFromGoogleFinance() {
-    console.log('🔄 Updating default deals CMP from Google Finance...');
-
-    fetch('/api/google-finance/update-etf-cmp', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            console.log('✅ Default deals CMP updated successfully:', data.updated_count, 'records');
-
-            // Show success notification
-            showSuccessMessage(`Updated CMP for ${data.updated_count || 0} records from Google Finance`);
-
-            // Refresh the deals table after update
-            if (window.dealsManager) {
-                window.dealsManager.loadDeals();
-            }
-        } else {
-            console.error('❌ Default deals CMP update failed:', data.error);
-            showErrorMessage(`CMP update failed: ${data.error}`);
-        }
-    })
-    .catch(error => {
-        console.error('❌ Error updating default deals CMP:', error);
-        showErrorMessage(`Error updating CMP: ${error.message}`);
-    });
-}
-
-// Function to start automatic CMP updates for default deals
-function startDefaultDealsCMPUpdates() {
-    // Clear any existing interval
-    if (defaultDealsCmpUpdateInterval) {
-        clearInterval(defaultDealsCmpUpdateInterval);
-    }
-
-    // Set up 5-minute interval for CMP updates
-    defaultDealsCmpUpdateInterval = setInterval(() => {
-        console.log('🕐 Auto default deals CMP update triggered (5min interval)');
-        updateDefaultDealsCMPFromGoogleFinance();
-    }, 5 * 60 * 1000); // 5 minutes in milliseconds
-
-    console.log('✅ Auto default deals CMP updates started (every 5 minutes)');
-}
-
-// Force CMP update function for manual trigger
+// Auto CMP update variables // CMP update functionality removed // Google Finance CMP update functionality removedP // Auto CMP update functionality removeddate function for manual trigger
 function forceCMPUpdate() {
     console.log('🚀 Force CMP update triggered by user');
     updateDefaultDealsCMPFromGoogleFinance();
