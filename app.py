@@ -302,10 +302,10 @@ def etf_signals_advanced():
     return render_template('etf_signals_datatable.html')
 
 
-@app.route('/default-deals')
-def default_deals():
-    """Default Deals page"""
-    return render_template('default_deals.html')
+# @app.route('/default-deals')
+# def default_deals():
+#     """Default Deals page"""
+#     return render_template('default_deals.html')
 
 
 @app.route('/admin-signals-datatable')
@@ -466,7 +466,7 @@ def place_order():
     """API endpoint to place buy/sell orders using Kotak Neo API - using modular API"""
     from api.trading_api import handle_place_order_logic
     from Scripts.neo_client import NeoClient
-    
+
     neo_client = NeoClient()
     return handle_place_order_logic(trading_functions, neo_client)
 
@@ -597,104 +597,13 @@ app.register_blueprint(trading_api, url_prefix='/api')
 
 # Register deals blueprint
 try:
-    from api.deals import deals_bp
-    app.register_blueprint(deals_bp, url_prefix='/api')
+    from api.user_deals_api import user_deals_bp
+    app.register_blueprint(user_deals_bp, url_prefix='/api')
     print("✓ Deals blueprint registered")
 except Exception as e:
     print(f"Warning: Could not register deals blueprint: {e}")
-    
-# Add endpoint to create sample deals for testing
-@app.route('/api/create-sample-deals', methods=['POST'])
-@require_auth
-def create_sample_deals():
-    """Create sample deals in user_deals table for testing"""
-    try:
-        from api.deals import get_current_user_id
-        from Scripts.models_etf import UserDeal
-        from Scripts.models import db
-        
-        user_id = get_current_user_id()
-        if not user_id:
-            return jsonify({'success': False, 'message': 'Not authenticated'}), 401
-        
-        # Sample deals data
-        sample_deals = [
-            {
-                'symbol': 'NIFTYBEES',
-                'position_type': 'LONG',
-                'quantity': 100,
-                'entry_price': 250.50,
-                'current_price': 255.75,
-                'target_price': 270.00,
-                'notes': 'Sample ETF deal'
-            },
-            {
-                'symbol': 'BANKBEES',
-                'position_type': 'LONG', 
-                'quantity': 50,
-                'entry_price': 420.25,
-                'current_price': 415.50,
-                'target_price': 450.00,
-                'notes': 'Banking sector ETF'
-            },
-            {
-                'symbol': 'GOLDBEES',
-                'position_type': 'LONG',
-                'quantity': 75,
-                'entry_price': 45.80,
-                'current_price': 47.20,
-                'target_price': 50.00,
-                'notes': 'Gold ETF position'
-            }
-        ]
-        
-        created_deals = []
-        for deal_data in sample_deals:
-            # Check if deal already exists
-            existing = UserDeal.query.filter_by(
-                user_id=user_id, 
-                symbol=deal_data['symbol']
-            ).first()
-            
-            if not existing:
-                deal = UserDeal(
-                    user_id=user_id,
-                    symbol=deal_data['symbol'],
-                    trading_symbol=deal_data['symbol'],
-                    exchange='NSE',
-                    position_type=deal_data['position_type'],
-                    quantity=deal_data['quantity'],
-                    entry_price=deal_data['entry_price'],
-                    current_price=deal_data['current_price'],
-                    target_price=deal_data['target_price'],
-                    invested_amount=deal_data['quantity'] * deal_data['entry_price'],
-                    notes=deal_data['notes'],
-                    deal_type='SAMPLE',
-                    status='ACTIVE'
-                )
-                
-                # Calculate P&L
-                try:
-                    deal.calculate_pnl()
-                except:
-                    deal.pnl_amount = (deal_data['current_price'] - deal_data['entry_price']) * deal_data['quantity']
-                    deal.pnl_percent = ((deal_data['current_price'] - deal_data['entry_price']) / deal_data['entry_price']) * 100
-                
-                db.session.add(deal)
-                created_deals.append(deal_data['symbol'])
-        
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': f'Created {len(created_deals)} sample deals',
-            'deals': created_deals
-        })
-        
-    except Exception as e:
-        db.session.rollback()
-        logging.error(f"Error creating sample deals: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500
+
+# Sample deals functionality removed - deals should be created from real trading signals
 
 # ETF Signals functionality will be handled by the blueprint
 
@@ -707,7 +616,7 @@ try:
     from api.signals_datatable import datatable_bp
     from api.enhanced_etf_signals import enhanced_etf_bp
     from api.admin_signals_api import admin_signals_bp
-    from api.deals import deals_bp  # Added deals blueprint import
+    from api.user_deals_api import user_deals_bp  # Added deals blueprint import
     # Google Finance, Yahoo Finance, and Supabase APIs removed
 
     # Blueprint registration moved to main.py to avoid conflicts
@@ -726,8 +635,8 @@ except ImportError as e:
 
     # Register deals blueprint
     try:
-        from api.deals import deals_bp
-        app.register_blueprint(deals_bp, url_prefix='/api/deals')
+        from api.user_deals_api import user_deals_bp
+        app.register_blueprint(user_deals_bp, url_prefix='/api')
         print("✓ Deals blueprint registered")
     except Exception as e:
         print(f"Warning: Could not register deals blueprint: {e}")

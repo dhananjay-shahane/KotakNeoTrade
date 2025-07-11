@@ -447,10 +447,7 @@ DealsManager.prototype.renderDealsTable = function () {
             '<i class="fas fa-handshake fa-3x mb-3 text-primary"></i>' +
             '<h6 class="text-light">No Deals Found</h6>' +
             '<p class="text-muted mb-3">You haven\'t added any deals yet</p>' +
-            '<button class="btn btn-primary btn-sm me-2" onclick="createSampleDeals()">' +
-            '<i class="fas fa-plus me-1"></i>Create Sample Deals' +
-            "</button>" +
-            '<small class="text-muted d-block mt-2">Or visit the ETF Signals page to add deals from trading signals</small>' +
+            '<small class="text-muted d-block mt-2">Visit the ETF Signals page to add deals from trading signals</small>' +
             "</td>";
         tbody.appendChild(row);
         return;
@@ -1661,34 +1658,7 @@ function updateCurrentDataSourceIndicator() {
     }
 }
 
-// Function to create sample deals for testing
-function createSampleDeals() {
-    console.log("Creating sample deals...");
-    
-    fetch('/api/create-sample-deals', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-        if (data.success) {
-            showNotification('Sample deals created successfully!', 'success');
-            setTimeout(function() {
-                window.dealsManager.loadDeals();
-            }, 1000);
-        } else {
-            showNotification('Failed to create sample deals: ' + data.message, 'error');
-        }
-    })
-    .catch(function(error) {
-        console.error('Error creating sample deals:', error);
-        showNotification('Failed to create sample deals: ' + error.message, 'error');
-    });
-}
+// Removed sample deals functionality - deals should be created from real trading data
 
 // Auto CMP update functionality removedm // Google Finance CMP update functionality removeda// Auto CMP update functionality removede CMP update function for manual trigger
 function forceCMPUpdate() {
