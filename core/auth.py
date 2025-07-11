@@ -18,23 +18,22 @@ session_helper = SessionHelper()
 def validate_current_session():
     """Validate current session and check expiration"""
     try:
-        # Real-time mode - use actual Kotak Neo API authentication
-        client = session.get('client')
-        
-        if not client:
-            logging.debug("No client in session")
+        # Check if user is authenticated first
+        if not session.get('authenticated'):
+            logging.debug("Session not authenticated")
             return False
-
-        # Quick validation by checking if client has required fields
-        required_fields = ['access_token', 'session_token', 'sid']
+            
+        # Check for required session fields directly in Flask session
+        required_fields = ['access_token', 'session_token', 'ucc']
         for field in required_fields:
-            if not client.get(field):
-                logging.debug(f"Missing required field in client: {field}")
+            if not session.get(field):
+                logging.debug(f"Missing required session field: {field}")
                 return False
 
-        # Basic session validation - check if required fields exist
-        if not all([client.get('access_token'), client.get('session_token'), client.get('sid')]):
-            logging.debug("Missing required session fields")
+        # Additional validation for token format
+        access_token = session.get('access_token')
+        if not access_token or len(access_token) < 50:
+            logging.debug("Invalid access token format")
             return False
 
         # Session is valid

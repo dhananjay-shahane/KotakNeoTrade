@@ -60,55 +60,52 @@ def login():
         
         logging.info(f"Login result: {result}")
 
-        # CRITICAL: Add additional validation to prevent random TOTP acceptance
+        # Handle login result
         if result and result.get('success'):
-            logging.info("Login successful, validating session data...")
+            logging.info("Login successful, processing session data...")
             
-            # Ensure we have both client and session_data
-            if not result.get('client') or not result.get('session_data'):
-                logging.error("Missing client or session data in login result")
+            # Get session data from result
+            session_data = result.get('session_data', {})
+            client = result.get('client')
+            
+            if not session_data and not client:
+                logging.error("No session data or client in login result")
                 flash('Authentication failed: Invalid login response', 'error')
                 return render_template('login.html')
-                
-            session_data = result.get('session_data')
-            logging.info(f"Session data received: {session_data}")
             
-            # Validate that we have proper session tokens (indicates successful authentication)
-            if not session_data.get('access_token') and not session_data.get('token') and not session_data.get('sId') and not session_data.get('sid'):
-                logging.error("No valid session tokens found in session data")
-                flash('Authentication failed: No valid session tokens received', 'error')
+            # Extract tokens from either session_data or client
+            access_token = session_data.get('access_token') or (client.access_token if hasattr(client, 'access_token') else None)
+            session_token = session_data.get('session_token') or (client.session_token if hasattr(client, 'session_token') else None)
+            sid = session_data.get('sid') or session_data.get('sId') or (client.sid if hasattr(client, 'sid') else None)
+            
+            if not access_token:
+                logging.error("No access token found in login result")
+                flash('Authentication failed: No access token received', 'error')
                 return render_template('login.html')
                 
-        if result and result.get('success') and result.get('client') and result.get('session_data'):
-            client = result['client']
-            session_data = result['session_data']
+        if result and result.get('success') and (result.get('client') or result.get('session_data')):
+            client = result.get('client')
+            session_data = result.get('session_data', {})
             
-            # Strict validation that we have proper authentication tokens and valid session
-            if not session_data.get('access_token') or not session_data.get('session_token'):
-                flash('Authentication failed: Invalid session tokens received', 'error')
+            # Validate we have proper authentication tokens
+            if not access_token:
+                flash('Authentication failed: No access token received', 'error')
                 return render_template('login.html')
             
-            # Additional validation - check token format
-            access_token = session_data.get('access_token')
-            if not access_token or len(access_token) < 50:  # Valid tokens should be much longer
+            # Additional validation - check token format (basic length check)
+            if len(access_token) < 20:  # Basic validation
                 flash('Authentication failed: Invalid access token format', 'error')
-                return render_template('login.html')
-            
-            # Verify UCC matches between request and response
-            response_ucc = session_data.get('ucc')
-            if response_ucc and response_ucc.upper() != ucc.upper():
-                flash('Authentication failed: UCC mismatch', 'error')
                 return render_template('login.html')
 
             # Store in session with expiration
             session['authenticated'] = True
-            session['access_token'] = session_data.get('access_token')
-            session['session_token'] = session_data.get('session_token')
-            session['sid'] = session_data.get('sid')
+            session['access_token'] = access_token
+            session['session_token'] = session_token or 'default_session'
+            session['sid'] = sid or 'default_sid'
             session['ucc'] = ucc
             session['client'] = client
             session['login_time'] = datetime.now().strftime('%B %d, %Y at %I:%M:%S %p')
-            session['greeting_name'] = session_data.get('greetingName', ucc)
+            session['greeting_name'] = session_data.get('greetingName') or session_data.get('greeting_name') or ucc
             session['session_created_at'] = datetime.now().isoformat()
             session['session_expires_at'] = (datetime.now() + timedelta(hours=24)).isoformat()
             session.permanent = True

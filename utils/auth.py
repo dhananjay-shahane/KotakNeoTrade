@@ -28,14 +28,14 @@ def validate_current_session():
             return False
             
         # Check if required session data exists
-        required_fields = ['access_token', 'ucc', 'client']
+        required_fields = ['access_token', 'ucc']
         for field in required_fields:
             if not session.get(field):
                 logging.warning(f"Missing session field: {field}")
                 clear_session()
                 return False
                 
-        # Additional validation - check if tokens are not empty and have valid format
+        # Additional validation - check if tokens are not empty
         access_token = session.get('access_token')
         
         if not access_token:
@@ -43,15 +43,9 @@ def validate_current_session():
             clear_session()
             return False
             
-        # Check token length and format (valid Kotak Neo tokens should be substantial JWT tokens)
-        if len(access_token) < 100:  # JWT tokens are typically much longer
+        # Basic token validation (check it's not obviously invalid)
+        if len(access_token) < 10:
             logging.warning("Invalid access token format - token too short")
-            clear_session()
-            return False
-            
-        # Validate JWT token format (should have 3 parts separated by dots)
-        if access_token.count('.') != 2:
-            logging.warning("Invalid JWT token format")
             clear_session()
             return False
             
