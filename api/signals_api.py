@@ -72,96 +72,111 @@ def get_default_deals_data():
                     WHERE symbol IS NOT NULL
                     ORDER BY created_at DESC, id DESC
                 """
-
+                
                 cursor.execute(query)
-                signals = cursor.fetchall()
-
-                # Format signals as default deals data for frontend
+                rows = cursor.fetchall()
+                
                 deals_data = []
-                total_investment = 0
-                total_current_value = 0
-                total_pnl = 0
+                total_investment = 0.0
+                total_current_value = 0.0
+                total_pnl = 0.0
+                
+                if rows:
+                    for count, row in enumerate(rows, 1):
+                        # Safe type conversion with fallbacks
+                        quantity = int(row.get('qty') or 0) if row.get('qty') is not None else 0
+                        entry_price = float(row.get('ep') or 0) if row.get('ep') is not None else 0.0
+                        current_price = float(row.get('cmp') or 0) if row.get('cmp') is not None else 0.0
+                        pnl_amount = float(row.get('pl') or 0) if row.get('pl') is not None else 0.0
+                        investment = float(row.get('inv') or 0) if row.get('inv') is not None else 0.0
+                        target_price = float(row.get('tp') or 0) if row.get('tp') is not None else 0.0
+                        current_value = float(row.get('tva') or 0) if row.get('tva') is not None else 0.0
 
-                for row in signals:
-                    # Calculate values with proper null handling
-                    entry_price = float(row.get('ep') or 0) if row.get('ep') is not None else 0.0
-                    current_price = float(row.get('cmp') or 0) if row.get('cmp') is not None else 0.0
-                    quantity = int(row.get('qty') or 0) if row.get('qty') is not None else 0
-                    investment = float(row.get('inv') or 0) if row.get('inv') is not None else 0.0
-                    pnl_amount = float(row.get('pl') or 0) if row.get('pl') is not None else 0.0
-                    target_price = float(row.get('tp') or 0) if row.get('tp') is not None else 0.0
+                        # Handle percentage change
+                        chan_value = row.get('chan') or '0'
+                        if isinstance(chan_value, str):
+                            chan_value = chan_value.replace('%', '')
+                        pnl_pct = float(chan_value) if chan_value else 0.0
 
-                    # Calculate derived values
-                    current_value = current_price * quantity if current_price > 0 and quantity > 0 else 0.0
-                    pnl_pct = ((current_price - entry_price) / entry_price * 100) if entry_price > 0 and current_price > 0 else 0.0
+                        # Position type from pos column (1 = BUY, -1 = SELL)
+                        pos = int(row.get('pos', 1))
+                        position_type = 'BUY' if pos > 0 else 'SELL'
 
-                    # Update totals
-                    total_investment += investment
-                    total_current_value += current_value
-                    total_pnl += pnl_amount
+                        # Accumulate totals
+                        total_investment += investment
+                        total_current_value += current_value
+                        total_pnl += pnl_amount
 
-                    # Create deal dictionary with all columns preserved
-                    deal_dict = {
-                        # Original CSV columns preserved
-                        'id': row.get('id'),
-                        'etf': row.get('etf') or '',
-                        'symbol': row.get('symbol') or '',
-                        'thirty': row.get('thirty') or '',
-                        'dh': row.get('dh') or '',
-                        'date': str(row.get('date') or ''),
-                        'pos': row.get('pos') or '',
-                        'qty': quantity,
-                        'ep': entry_price,
-                        'cmp': current_price,
-                        'chan': row.get('chan') or '',
-                        'inv': investment,
-                        'tp': target_price,
-                        'tva': row.get('tva') or '',
-                        'tpr': row.get('tpr') or '',
-                        'pl': pnl_amount,
-                        'ed': row.get('ed') or '',
-                        'exp': row.get('exp') or '',
-                        'pr': row.get('pr') or '',
-                        'pp': row.get('pp') or '',
-                        'iv': row.get('iv') or '',
-                        'ip': row.get('ip') or '',
-                        'nt': row.get('nt') or '',
-                        'qt': row.get('qt') or '',
-                        'seven': row.get('seven') or '',
-                        'ch': row.get('ch') or '',
-                        'created_at': str(row.get('created_at') or ''),
-                        # Standard fields for compatibility
-                        'entry_price': entry_price,
-                        'current_price': current_price,
-                        'quantity': quantity,
-                        'investment_amount': investment,
-                        'target_price': target_price,
-                        'total_value': current_value,
-                        'pnl': pnl_amount,
-                        'price_change_percent': pnl_pct,
-                        'entry_date': str(row.get('date') or ''),
-                        'admin_signal_id': row.get('id'),
-                        'status': 'ACTIVE'
+                        deal_dict = {
+                            'trade_signal_id': row.get('id') or count,
+                            'id': row.get('id') or count,
+                            'etf': row.get('etf') or 'N/A',
+                            'symbol': row.get('symbol') or 'N/A',
+                            'thirty': row.get('thirty') or '',
+                            'dh': row.get('dh') or '',
+                            'date': str(row.get('date') or ''),
+                            'pos': pos,
+                            'position_type': position_type,
+                            'qty': quantity,
+                            'ep': entry_price,
+                            'cmp': current_price,
+                            'chan': row.get('chan') or f'{pnl_pct:.2f}%',
+                            'inv': investment,
+                            'tp': target_price,
+                            'tva': current_value,
+                            'tpr': row.get('tpr') or '',
+                            'pl': pnl_amount,
+                            'ed': row.get('ed') or '',
+                            'exp': row.get('exp') or '',
+                            'pr': row.get('pr') or '',
+                            'pp': row.get('pp') or '',
+                            'iv': row.get('iv') or '',
+                            'ip': row.get('ip') or '',
+                            'nt': row.get('nt') or 0,
+                            'qt': float(row.get('qt') or 0),
+                            'seven': row.get('seven') or '',
+                            'ch': row.get('ch') or '',
+                            'created_at': str(row.get('created_at') or ''),
+                            # Standard fields for compatibility
+                            'entry_price': entry_price,
+                            'current_price': current_price,
+                            'quantity': quantity,
+                            'investment_amount': investment,
+                            'target_price': target_price,
+                            'total_value': current_value,
+                            'pnl': pnl_amount,
+                            'price_change_percent': pnl_pct,
+                            'entry_date': str(row.get('date') or ''),
+                            'admin_signal_id': row.get('id'),
+                            'status': 'ACTIVE'
+                        }
+                        deals_data.append(deal_dict)
+
+                logging.info(f"Default deals API: Returning {len(deals_data)} deals from admin_trade_signals")
+
+                return jsonify({
+                    'success': True,
+                    'data': deals_data,
+                    'total_count': len(deals_data),
+                    'portfolio': {
+                        'total_investment': total_investment,
+                        'total_current_value': total_current_value,
+                        'total_pnl': total_pnl,
+                        'total_positions': len(deals_data)
                     }
-                    deals_data.append(deal_dict)
-
-        logging.info(f"Default deals API: Returning {len(deals_data)} deals from admin_trade_signals")
-
-        return jsonify({
-            'success': True,
-            'data': deals_data,
-            'total_count': len(deals_data),
-            'portfolio': {
-                'total_investment': total_investment,
-                'total_current_value': total_current_value,
-                'total_pnl': total_pnl,
-                'total_positions': len(deals_data)
-            }
-        })
+                })
 
     except Exception as e:
         logging.error(f"Error fetching default deals data: {str(e)}")
         return jsonify({'success': False, 'error': str(e), 'data': []}), 500
+
+
+def handle_default_deals_data_logic():
+    """
+    Handle default deals data fetching logic - moved from app.py for modularity
+    This function contains the business logic separated from the Flask route
+    """
+    return get_default_deals_data()
 
 
 @signals_bp.route('/initialize-auto-sync', methods=['POST'])

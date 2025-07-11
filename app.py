@@ -291,235 +291,29 @@ def require_auth(f):
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Login page with TOTP authentication only"""
-    # Check if session expired and show message
-    session_expired = request.args.get('expired') == 'true'
-    if session_expired:
-        flash('Your session has expired. Please login again.', 'warning')
+    """Login page with TOTP authentication - using modular API"""
+    from api.auth_api import handle_login_post, handle_login_get
+    
     if request.method == 'POST':
-        try:
-            # Get form data
-            mobile_number = request.form.get('mobile_number', '').strip()
-            ucc = request.form.get('ucc', '').strip()
-            totp = request.form.get('totp', '').strip()
-            mpin = request.form.get('mpin', '').strip()
-
-            # Validate inputs
-            if not all([mobile_number, ucc, totp, mpin]):
-                flash('All fields are required', 'error')
-                return render_template('login.html')
-
-            # Validate formats
-            if len(mobile_number) != 10 or not mobile_number.isdigit():
-                flash('Mobile number must be 10 digits', 'error')
-                return render_template('login.html')
-
-            if len(totp) != 6 or not totp.isdigit():
-                flash('TOTP must be 6 digits', 'error')
-                return render_template('login.html')
-
-            if len(mpin) != 6 or not mpin.isdigit():
-                flash('MPIN must be 6 digits', 'error')
-                return render_template('login.html')
-
-            # Execute TOTP login
-            result = neo_client.execute_totp_login(mobile_number, ucc, totp,
-                                                   mpin)
-
-            if result and result.get('success'):
-                client = result.get('client')
-                session_data = result.get('session_data', {})
-
-                # Store in session
-                session['authenticated'] = True
-                session['access_token'] = session_data.get('access_token')
-                session['session_token'] = session_data.get('session_token')
-                session['sid'] = session_data.get('sid')
-                session['ucc'] = ucc
-                session['client'] = client
-                session['login_time'] = datetime.now().strftime(
-                    '%Y-%m-%d %H:%M:%S')
-                session['greeting_name'] = session_data.get(
-                    'greetingName', ucc)
-                session.permanent = True
-
-                # Set session expiration (24 hours from now)
-                expiry_time = datetime.now() + timedelta(hours=24)
-                session['session_expires_at'] = expiry_time.isoformat()
-
-                # Store additional user data
-                session['rid'] = session_data.get('rid')
-                session['user_id'] = session_data.get('user_id')
-                session['client_code'] = session_data.get('client_code')
-                session['is_trial_account'] = session_data.get(
-                    'is_trial_account')
-
-                # Store user data in database
-                try:
-                    login_response = {
-                        'success': True,
-                        'data': {
-                            'ucc':
-                            ucc,
-                            'mobile_number':
-                            mobile_number,
-                            'greeting_name':
-                            session_data.get('greetingName'),
-                            'user_id':
-                            session_data.get('user_id'),
-                            'client_code':
-                            session_data.get('client_code'),
-                            'product_code':
-                            session_data.get('product_code'),
-                            'account_type':
-                            session_data.get('account_type'),
-                            'branch_code':
-                            session_data.get('branch_code'),
-                            'is_trial_account':
-                            session_data.get('is_trial_account', False),
-                            'access_token':
-                            session_data.get('access_token'),
-                            'session_token':
-                            session_data.get('session_token'),
-                            'sid':
-                            session_data.get('sid'),
-                            'rid':
-                            session_data.get('rid')
-                        }
-                    }
-
-                    db_user = user_manager.create_or_update_user(
-                        login_response)
-                    user_session = user_manager.create_user_session(
-                        db_user.id, login_response)
-
-                    session['db_user_id'] = db_user.id
-                    session['db_session_id'] = user_session.session_id
-
-                    logging.info(
-                        f"User data stored in database for UCC: {ucc}")
-
-                except Exception as db_error:
-                    logging.error(
-                        f"Failed to store user data in database: {db_error}")
-
-                flash('Successfully authenticated with TOTP!', 'success')
-                return redirect(url_for('dashboard'))
-            else:
-                error_msg = result.get(
-                    'message',
-                    'Authentication failed') if result else 'Login failed'
-                flash(f'TOTP login failed: {error_msg}', 'error')
-
-        except Exception as e:
-            logging.error(f"Login error: {str(e)}")
-            flash(f'Login failed: {str(e)}', 'error')
-
-    return render_template('login.html')
+        redirect_response, template_response = handle_login_post(neo_client, user_manager)
+        return redirect_response if redirect_response else template_response
+    else:
+        return handle_login_get()
 
 
 @app.route('/logout')
 def logout():
-    """Logout and clear session"""
-    session.clear()
-    flash('Logged out successfully', 'info')
-    return redirect(url_for('login'))
+    """Logout and clear session - using modular API"""
+    from api.auth_api import handle_logout
+    return handle_logout()
 
 
 @app.route('/dashboard')
 @require_auth
 def dashboard():
-    """Main dashboard with portfolio overview"""
-
-    try:
-        client = session.get('client')
-        if not client:
-            flash('Session expired. Please login again.', 'error')
-            return redirect(url_for('login'))
-
-        # Fetch dashboard data with error handling
-        dashboard_data = {}
-        try:
-            raw_dashboard_data = trading_functions.get_dashboard_data(client)
-
-            # Ensure dashboard_data is always a dictionary
-            if isinstance(raw_dashboard_data, dict):
-                dashboard_data = raw_dashboard_data
-                # Validate that positions and holdings are lists
-                if not isinstance(dashboard_data.get('positions'), list):
-                    dashboard_data['positions'] = []
-                if not isinstance(dashboard_data.get('holdings'), list):
-                    dashboard_data['holdings'] = []
-                if not isinstance(dashboard_data.get('limits'), dict):
-                    dashboard_data['limits'] = {}
-                if not isinstance(dashboard_data.get('recent_orders'), list):
-                    dashboard_data['recent_orders'] = []
-            elif isinstance(raw_dashboard_data, list):
-                # If API returns a list directly, wrap it properly
-                dashboard_data = {
-                    'positions': raw_dashboard_data,
-                    'holdings': [],
-                    'limits': {},
-                    'recent_orders': [],
-                    'total_positions': len(raw_dashboard_data),
-                    'total_holdings': 0,
-                    'total_orders': 0
-                }
-            else:
-                # Fallback empty structure
-                dashboard_data = {
-                    'positions': [],
-                    'holdings': [],
-                    'limits': {},
-                    'recent_orders': [],
-                    'total_positions': 0,
-                    'total_holdings': 0,
-                    'total_orders': 0
-                }
-
-            # Ensure all required keys exist with default values
-            dashboard_data.setdefault('positions', [])
-            dashboard_data.setdefault('holdings', [])
-            dashboard_data.setdefault('limits', {})
-            dashboard_data.setdefault('recent_orders', [])
-            dashboard_data.setdefault('total_positions',
-                                      len(dashboard_data['positions']))
-            dashboard_data.setdefault('total_holdings',
-                                      len(dashboard_data['holdings']))
-            dashboard_data.setdefault('total_orders',
-                                      len(dashboard_data['recent_orders']))
-
-        except Exception as dashboard_error:
-            logging.error(f"Dashboard data fetch failed: {dashboard_error}")
-            # For errors, show dashboard with empty data
-            flash(f'Some data could not be loaded: {str(dashboard_error)}',
-                  'warning')
-            dashboard_data = {
-                'positions': [],
-                'holdings': [],
-                'limits': {},
-                'recent_orders': [],
-                'total_positions': 0,
-                'total_holdings': 0,
-                'total_orders': 0
-            }
-
-        return render_template('dashboard.html', data=dashboard_data)
-
-    except Exception as e:
-        logging.error(f"Dashboard error: {str(e)}")
-        flash(f'Error loading dashboard: {str(e)}', 'error')
-        # Return dashboard with empty data structure
-        empty_data = {
-            'positions': [],
-            'holdings': [],
-            'limits': {},
-            'recent_orders': [],
-            'total_positions': 0,
-            'total_holdings': 0,
-            'total_orders': 0
-        }
-        return render_template('dashboard.html', data=empty_data)
+    """Main dashboard with portfolio overview - using modular API"""
+    from api.dashboard_api import handle_dashboard_page
+    return handle_dashboard_page(trading_functions)
 
 
 @app.route('/positions')
@@ -672,142 +466,9 @@ def sync_default_deals_endpoint():
 
 @app.route('/api/default-deals-data')
 def get_default_deals_data():
-    """API endpoint to get default deals data directly from admin_trade_signals with correct column mapping"""
-    try:
-        import logging
-        logging.info(
-            "Default deals API: Fetching data from admin_trade_signals table")
-
-        # Connect to external database using the same connection as ETF signals
-        connection_string = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
-
-        import psycopg2
-        from psycopg2.extras import RealDictCursor
-
-        # Connect to external database
-        with psycopg2.connect(connection_string) as conn:
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-
-                query = """
-                    SELECT id, etf, symbol, thirty, dh, date, pos, qty, ep, cmp, chan, inv, 
-                           tp, tva, tpr, pl, ed, exp, pr, pp, iv, ip, nt, qt, seven, ch, created_at
-                    FROM admin_trade_signals 
-                    WHERE symbol IS NOT NULL
-                    ORDER BY created_at DESC, id DESC
-                """
-
-                cursor.execute(query)
-                signals = cursor.fetchall()
-
-                # Format signals as default deals data for frontend
-                deals_data = []
-                total_investment = 0
-                total_current_value = 0
-                total_pnl = 0
-                count = 0
-
-                for row in signals:
-                    count += 1
-                    # Calculate values with proper null handling using CSV column names
-                    entry_price = float(
-                        row.get('ep')
-                        or 0) if row.get('ep') is not None else 0.0
-                    current_price = float(
-                        row.get('cmp')
-                        or 0) if row.get('cmp') is not None else 0.0
-                    quantity = int(row.get('qty')
-                                   or 0) if row.get('qty') is not None else 0
-                    investment = float(
-                        row.get('inv')
-                        or 0) if row.get('inv') is not None else 0.0
-                    pnl_amount = float(row.get('pl') or
-                                       0) if row.get('pl') is not None else 0.0
-                    target_price = float(
-                        row.get('tp')
-                        or 0) if row.get('tp') is not None else 0.0
-                    current_value = float(
-                        row.get('tva')
-                        or 0) if row.get('tva') is not None else 0.0
-
-                    # Handle percentage change
-                    chan_value = row.get('chan') or '0'
-                    if isinstance(chan_value, str):
-                        chan_value = chan_value.replace('%', '')
-                    pnl_pct = float(chan_value) if chan_value else 0.0
-
-                    # Position type from pos column (1 = BUY, -1 = SELL)
-                    pos = int(row.get('pos', 1))
-                    position_type = 'BUY' if pos > 0 else 'SELL'
-
-                    # Accumulate totals
-                    total_investment += investment
-                    total_current_value += current_value
-                    total_pnl += pnl_amount
-
-                    deal_dict = {
-                        'trade_signal_id': row.get('id') or count,
-                        'id': row.get('id') or count,
-                        'etf': row.get('etf') or 'N/A',
-                        'symbol': row.get('symbol') or 'N/A',
-                        'thirty': row.get('thirty') or '',
-                        'dh': row.get('dh') or '',
-                        'date': str(row.get('date') or ''),
-                        'pos': pos,
-                        'position_type': position_type,
-                        'qty': quantity,
-                        'ep': entry_price,
-                        'cmp': current_price,
-                        'chan': row.get('chan') or f'{pnl_pct:.2f}%',
-                        'inv': investment,
-                        'tp': target_price,
-                        'tva': current_value,
-                        'tpr': row.get('tpr') or '',
-                        'pl': pnl_amount,
-                        'ed': row.get('ed') or '',
-                        'exp': row.get('exp') or '',
-                        'pr': row.get('pr') or '',
-                        'pp': row.get('pp') or '',
-                        'iv': row.get('iv') or '',
-                        'ip': row.get('ip') or '',
-                        'nt': row.get('nt') or 0,
-                        'qt': float(row.get('qt') or 0),
-                        'seven': row.get('seven') or '',
-                        'ch': row.get('ch') or '',
-                        'created_at': str(row.get('created_at') or ''),
-                        # Standard fields for compatibility
-                        'entry_price': entry_price,
-                        'current_price': current_price,
-                        'quantity': quantity,
-                        'investment_amount': investment,
-                        'target_price': target_price,
-                        'total_value': current_value,
-                        'pnl': pnl_amount,
-                        'price_change_percent': pnl_pct,
-                        'entry_date': str(row.get('date') or ''),
-                        'admin_signal_id': row.get('id'),
-                        'status': 'ACTIVE'
-                    }
-                    deals_data.append(deal_dict)
-
-        logging.info(
-            f"Default deals API: Returning {len(deals_data)} deals from admin_trade_signals"
-        )
-
-        return jsonify({
-            'success': True,
-            'data': deals_data,
-            'total_count': len(deals_data),
-            'portfolio': {
-                'total_investment': total_investment,
-                'total_current_value': total_current_value,
-                'total_pnl': total_pnl,
-                'total_positions': len(deals_data)
-            }
-        })
-
-    except Exception as e:
-        logging.error(f"Error fetching default deals data: {str(e)}")
-        return jsonify({'success': False, 'error': str(e), 'data': []}), 500
+    """API endpoint to get default deals data directly from admin_trade_signals - using modular API"""
+    from api.signals_api import handle_default_deals_data_logic
+    return handle_default_deals_data_logic()
 
 
 @app.route('/api/initialize-auto-sync', methods=['POST'])
@@ -834,96 +495,12 @@ def initialize_auto_sync_endpoint():
 @app.route('/api/place-order', methods=['POST'])
 @require_auth
 def place_order():
-    """API endpoint to place buy/sell orders using Kotak Neo API"""
-    try:
-        from Scripts.trading_functions import TradingFunctions
-
-        # Get order data from request
-        order_data = request.get_json()
-
-        # Validate required fields
-        required_fields = [
-            'symbol', 'quantity', 'transaction_type', 'order_type'
-        ]
-        for field in required_fields:
-            if field not in order_data:
-                return jsonify({
-                    'success': False,
-                    'message': f'Missing required field: {field}'
-                }), 400
-
-        # Get client from session
-        client = session.get('client')
-        if not client:
-            return jsonify({
-                'success': False,
-                'message': 'Session expired. Please login again.'
-            }), 401
-
-        # Validate session before placing order
-        try:
-            # Quick session validation by checking if we can fetch basic data
-            from Scripts.neo_client import NeoClient
-            neo_client = NeoClient()
-            if not neo_client.validate_session(client):
-                return jsonify({
-                    'success':
-                    False,
-                    'message':
-                    'Trading session has expired. Please logout and login again to enable trading operations.'
-                }), 401
-        except Exception as e:
-            logging.warning(f"Session validation failed: {e}")
-            # Continue with order placement attempt
-
-        # Initialize trading functions
-        trading_functions = TradingFunctions()
-
-        # Prepare order data with defaults
-        order_params = {
-            'symbol': order_data['symbol'],
-            'quantity': str(order_data['quantity']),
-            'transaction_type':
-            order_data['transaction_type'],  # B (Buy) or S (Sell)
-            'order_type': order_data['order_type'],  # MARKET, LIMIT, STOPLOSS
-            'exchange_segment': order_data.get('exchange_segment', 'nse_cm'),
-            'product': order_data.get('product', 'CNC'),  # CNC, MIS, NRML
-            'validity': order_data.get('validity', 'DAY'),
-            'price': order_data.get('price', '0'),
-            'trigger_price': order_data.get('trigger_price', '0'),
-            'disclosed_quantity': order_data.get('disclosed_quantity', '0'),
-            'amo': order_data.get('amo', 'NO'),
-            'market_protection': order_data.get('market_protection', '0'),
-            'pf': order_data.get('pf', 'N'),
-            'tag': order_data.get('tag', None)
-        }
-
-        # Place the order
-        result = trading_functions.place_order(client, order_params)
-
-        if result.get('success'):
-            return jsonify({
-                'success': True,
-                'message':
-                f'Order placed successfully for {order_data["symbol"]}',
-                'data': result.get('data'),
-                'order_id': result.get('order_id')
-            })
-        else:
-            error_message = result.get('message', 'Failed to place order')
-
-            # Check for specific API authentication errors
-            if 'invalid access type' in error_message.lower(
-            ) or 'not_ok' in str(result).lower():
-                error_message = 'Trading session has expired. Please logout and login again to place orders.'
-            elif 'session' in error_message.lower():
-                error_message = 'Session expired. Please refresh the page and try again.'
-
-            return jsonify({'success': False, 'message': error_message}), 400
-
-    except Exception as e:
-        logging.error(f"Error placing order: {str(e)}")
-        return jsonify({'success': False, 'message': str(e)}), 500
+    """API endpoint to place buy/sell orders using Kotak Neo API - using modular API"""
+    from api.trading_api import handle_place_order_logic
+    from Scripts.neo_client import NeoClient
+    
+    neo_client = NeoClient()
+    return handle_place_order_logic(trading_functions, neo_client)
 
 
 @app.route('/api/quick-buy', methods=['POST'])
