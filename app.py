@@ -1087,45 +1087,18 @@ try:
 except ImportError as e:
     print(f"Warning: Could not import additional blueprint: {e}")
 
-# Register deals blueprint
-try:
-    from api.deals import deals_bp
-    app.register_blueprint(
-        deals_bp,
-        url_prefix='/api/deals')  # Register deals blueprint with prefix
-    print("✓ Deals blueprint registered")
-except Exception as e:
-    print(f"Warning: Could not register deals blueprint: {e}")
+    # Register deals blueprint
+    try:
+        from api.deals import deals_bp
+        app.register_blueprint(
+            deals_bp,
+            url_prefix='/api/deals')  # Register deals blueprint with prefix
+        print("✓ Deals blueprint registered")
+    except Exception as e:
+        print(f"Warning: Could not register deals blueprint: {e}")
 
     # Register ETF signals blueprint
     app.register_blueprint(etf_bp, url_prefix='/api')
-
-    # Register other blueprints
-    app.register_blueprint(admin_bp, url_prefix='/api/admin')
-    app.register_blueprint(notifications_bp, url_prefix='/api')
-    app.register_blueprint(quotes_bp, url_prefix='/api')
-    app.register_blueprint(datatable_bp, url_prefix='/api')
-    app.register_blueprint(enhanced_etf_bp, url_prefix='/api')
-    app.register_blueprint(admin_signals_bp, url_prefix='/api')
-    app.register_blueprint(supabase_bp, url_prefix='/api')
-
-    # Register Google Finance API blueprint
-    try:
-        # Google Finance API blueprint removed
-        logging.info("✓ Google Finance API blueprint registered")
-    except ImportError as e:
-        logging.warning(f"Could not register Google Finance API: {e}")
-
-    # Register Performance Calculator API blueprint
-    try:
-        from api.performance_calculator import performance_bp
-        app.register_blueprint(performance_bp)
-        logging.info("✓ Performance Calculator API blueprint registered")
-    except ImportError as e:
-        logging.warning(f"Could not register Performance Calculator API: {e}")
-
-    # Register Yahoo Finance API blueprint
-    app.register_blueprint(yahoo_bp)
 
 if __name__ == '__main__':
     with app.app_context():
@@ -1155,74 +1128,6 @@ if __name__ == '__main__':
 from Scripts.sync_default_deals import setup_auto_sync_triggers
 
 setup_auto_sync_triggers()
-
-
-# Live CMP update endpoint using Google Finance
-@app.route('/api/google-finance/update-etf-cmp', methods=['GET', 'POST'])
-def update_live_cmp_endpoint():
-    """API endpoint to update live CMP data using Google Finance via yfinance"""
-    # Google Finance CMP update functionality removed
-    return jsonify({
-        'success':
-        False,
-        'message':
-        'Google Finance integration has been removed. Please use Kotak Neo API for real-time data.'
-    }), 501
-
-
-# Update specific symbols CMP endpoint
-@app.route('/api/update-cmp-symbols', methods=['POST'])
-def update_specific_symbols_cmp():
-    """API endpoint to update CMP for specific symbols"""
-    # Google Finance specific symbols update functionality removed
-    return jsonify({
-        'success':
-        False,
-        'message':
-        'Google Finance integration has been removed. Please use Kotak Neo API for real-time data.'
-    }), 501
-
-
-@app.route('/api/update-comprehensive-calculations', methods=['POST'])
-def update_comprehensive_calculations():
-    """API endpoint to update comprehensive trading calculations for all symbols"""
-    # Google Finance comprehensive calculations functionality removed
-    return jsonify({
-        'success':
-        False,
-        'message':
-        'Google Finance integration has been removed. Please use Kotak Neo API for real-time data.'
-    }), 501
-
-
-@app.route('/api/calculate-symbol-metrics/<symbol>', methods=['GET'])
-def calculate_symbol_metrics(symbol):
-    """API endpoint to calculate metrics for a specific symbol"""
-    try:
-        from Scripts.trading_calculations import TradingCalculations
-
-        db_config = {
-            'host': "dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com",
-            'database': "kotak_trading_db",
-            'user': "kotak_trading_db_user",
-            'password': "JRUlk8RutdgVcErSiUXqljDUdK8sBsYO",
-            'port': 5432
-        }
-
-        # CMP update and trading calculations functionality removed
-        return jsonify({
-            'success': False,
-            'message': 'CMP update functionality has been disabled'
-        }), 404
-
-    except Exception as e:
-        return jsonify({
-            'success':
-            False,
-            'message':
-            f'Error calculating metrics for {symbol}: {str(e)}'
-        }), 500
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
