@@ -180,3 +180,10 @@ def admin_signals_basic():
 def basic_trade_signals():
     """Basic Trade Signals page"""
     return render_template('basic_etf_signals.html')
+
+
+@main_bp.route('/deals')
+@require_auth
+def deals():
+    """Deals page for user deals from user_deals table"""
+    return render_template('deals.html')

@@ -243,7 +243,7 @@ DealsManager.prototype.loadDeals = function () {
     console.log("Loading deals from external database...");
 
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", "/api/deals/user", true);
+    xhr.open("GET", "/api/deals", true);
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.timeout = 10000; // 10 second timeout
 
@@ -263,90 +263,44 @@ DealsManager.prototype.loadDeals = function () {
                         var uniqueDeals = response.deals.map(function (deal) {
                             return {
                                 id: deal.id,
-                                trade_signal_id:
-                                    deal.trade_signal_id || deal.id || "",
-                                symbol: deal.symbol || deal.etf || "",
-                                pos:
-                                    deal.pos ||
-                                    (deal.position_type === "LONG" ? 1 : -1),
-                                qty: deal.qty || deal.quantity || 0,
-                                ep: parseFloat(
-                                    deal.ep || deal.entry_price || 0,
-                                ),
-                                cmp: parseFloat(
-                                    deal.cmp ||
-                                        deal.current_price ||
-                                        deal.entry_price ||
-                                        0,
-                                ),
-                                pl: parseFloat(deal.pl || deal.pnl_amount || 0),
-                                chan_percent:
-                                    deal.chan_percent ||
-                                    (deal.pnl_percent
-                                        ? deal.pnl_percent.toFixed(2) + "%"
-                                        : "0%"),
-                                inv: parseFloat(
-                                    deal.inv || deal.invested_amount || 0,
-                                ),
-                                tp: parseFloat(
-                                    deal.tp || deal.target_price || 0,
-                                ),
-                                tva:
-                                    parseFloat(deal.tva || 0) ||
-                                    parseFloat(deal.target_price || 0) *
-                                        (deal.quantity || 0),
-                                tpr: parseFloat(deal.tpr || 0),
-                                date:
-                                    deal.signal_date ||
-                                    deal.date ||
-                                    (deal.entry_date
-                                        ? deal.entry_date.split("T")[0]
-                                        : ""),
+                                trade_signal_id: deal.id || "",
+                                symbol: deal.symbol || "",
+                                pos: deal.position_type === "LONG" ? 1 : 0,
+                                qty: deal.quantity || 0,
+                                ep: parseFloat(deal.entry_price || 0),
+                                cmp: parseFloat(deal.current_price || deal.entry_price || 0),
+                                pl: parseFloat(deal.pnl_amount || 0),
+                                chan_percent: deal.pnl_percent ? deal.pnl_percent.toFixed(2) + "%" : "0%",
+                                inv: parseFloat(deal.invested_amount || 0),
+                                tp: parseFloat(deal.target_price || 0),
+                                tva: parseFloat(deal.target_price || 0) * (deal.quantity || 0),
+                                tpr: parseFloat(deal.pnl_amount || 0),
+                                date: deal.created_at ? deal.created_at.split("T")[0] : "",
                                 status: deal.status || "ACTIVE",
-                                thirty: deal.thirty || "0%",
-                                dh: deal.dh || deal.days_held || 0,
-                                ed:
-                                    deal.ed ||
-                                    (deal.entry_date
-                                        ? deal.entry_date.split("T")[0]
-                                        : ""),
-                                exp: deal.exp || "",
-                                pr: deal.pr || "0%",
-                                pp: deal.pp || "--",
-                                iv: deal.iv || "",
-                                ip:
-                                    deal.ip ||
-                                    (deal.pnl_percent
-                                        ? (deal.pnl_percent > 0 ? "+" : "") +
-                                          deal.pnl_percent.toFixed(1) +
-                                          "%"
-                                        : "0%"),
-                                nt: deal.nt || deal.notes || "--",
-                                qt:
-                                    deal.qt ||
-                                    new Date().toLocaleTimeString("en-GB", {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                    }),
-                                seven: deal.seven || "0%",
-                                ch: deal.ch || deal.chan_percent || "0%",
-                                entry_price: parseFloat(
-                                    deal.entry_price || deal.ep || 0,
-                                ),
-                                current_price: parseFloat(
-                                    deal.current_price ||
-                                        deal.cmp ||
-                                        deal.entry_price ||
-                                        0,
-                                ),
-                                invested_amount: parseFloat(
-                                    deal.invested_amount || deal.inv || 0,
-                                ),
-                                pnl_amount: parseFloat(
-                                    deal.pnl_amount || deal.pl || 0,
-                                ),
+                                thirty: "0%",
+                                dh: deal.days_held || 0,
+                                ed: deal.created_at ? deal.created_at.split("T")[0] : "",
+                                exp: "",
+                                pr: "0%",
+                                pp: "--",
+                                iv: "",
+                                ip: deal.pnl_percent ? (deal.pnl_percent > 0 ? "+" : "") + deal.pnl_percent.toFixed(1) + "%" : "0%",
+                                nt: deal.notes || "--",
+                                qt: new Date().toLocaleTimeString("en-GB", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                }),
+                                seven: "0%",
+                                ch: deal.pnl_percent ? deal.pnl_percent.toFixed(2) + "%" : "0%",
+                                entry_price: parseFloat(deal.entry_price || 0),
+                                current_price: parseFloat(deal.current_price || deal.entry_price || 0),
+                                invested_amount: parseFloat(deal.invested_amount || 0),
+                                pnl_amount: parseFloat(deal.pnl_amount || 0),
                                 pnl_percent: parseFloat(deal.pnl_percent || 0),
-                                deal_type: deal.deal_type || "SIGNAL",
+                                deal_type: deal.deal_type || "MANUAL",
+                                position_type: deal.position_type || "LONG",
+                                trading_symbol: deal.trading_symbol || deal.symbol,
+                                exchange: deal.exchange || "NSE"
                             };
                         });
 
@@ -1702,7 +1656,48 @@ function updateCurrentDataSourceIndicator() {
     }
 }
 
-// Function to create // Sample deals creation functionality removed
+// Function to create sample deals for testing
+function createSampleDeals() {
+    var sampleDeals = [
+        {
+            symbol: 'NIFTYBEES',
+            position_type: 'LONG',
+            quantity: 100,
+            entry_price: 250.50,
+            current_price: 255.75,
+            target_price: 270.00,
+            notes: 'Sample ETF deal'
+        },
+        {
+            symbol: 'BANKBEES',
+            position_type: 'LONG', 
+            quantity: 50,
+            entry_price: 420.25,
+            current_price: 415.50,
+            target_price: 450.00,
+            notes: 'Banking sector ETF'
+        }
+    ];
+
+    var promises = sampleDeals.map(function(deal) {
+        return fetch('/api/deals', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(deal)
+        });
+    });
+
+    Promise.all(promises)
+        .then(function() {
+            showNotification('Sample deals created successfully!', 'success');
+            window.dealsManager.loadDeals();
+        })
+        .catch(function(error) {
+            showNotification('Failed to create sample deals: ' + error.message, 'error');
+        });
+}
 
 // Auto CMP update functionality removedm // Google Finance CMP update functionality removeda// Auto CMP update functionality removede CMP update function for manual trigger
 function forceCMPUpdate() {

@@ -595,6 +595,14 @@ app.register_blueprint(main_routes_bp)
 app.register_blueprint(dashboard_api, url_prefix='/api')
 app.register_blueprint(trading_api, url_prefix='/api')
 
+# Register deals blueprint
+try:
+    from api.deals import deals_bp
+    app.register_blueprint(deals_bp, url_prefix='/api')
+    print("✓ Deals blueprint registered")
+except Exception as e:
+    print(f"Warning: Could not register deals blueprint: {e}")
+
 # ETF Signals functionality will be handled by the blueprint
 
 # Additional blueprints
