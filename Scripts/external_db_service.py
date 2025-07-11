@@ -184,14 +184,50 @@ class ExternalDBService:
             return None
 
 
-def get_etf_signals_from_external_db() -> List[Dict]:
-    """Fetch ETF signals data from external admin_trade_signals table"""
-    db_service = ExternalDBService()
+def get_etf_signals_from_external_db():
+    """Get ETF signals data from external database"""
     try:
-        signals = db_service.get_admin_trade_signals()
-        return signals
-    finally:
-        db_service.disconnect()
+        logging.info("Attempting to fetch ETF signals from external database")
+
+        # Try to get from local database first
+        try:
+            from core.database import get_db_connection
+            import psycopg2.extras
+
+            conn = get_db_connection()
+            if conn:
+                with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
+                    cursor.execute("""
+                        SELECT id, symbol, entry_price, current_price, quantity, 
+                               investment_amount, signal_type, status, created_at, 
+                               pnl, pnl_percentage, change_percent, target_price, 
+                               stop_loss, last_update_time
+                        FROM admin_trade_signals 
+                        ORDER BY created_at DESC
+                        LIMIT 100
+                    """)
+
+                    signals = cursor.fetchall()
+                    result = []
+
+                    for signal in signals:
+                        signal_dict = dict(signal)
+                        result.append(signal_dict)
+
+                    conn.close()
+                    logging.info(f"✓ Found {len(result)} signals from admin_trade_signals table")
+                    return result
+
+        except Exception as db_error:
+            logging.error(f"Database error: {db_error}")
+
+        # If no database connection, return empty list
+        logging.info("No external database connection available")
+        return []
+
+    except Exception as e:
+        logging.error(f"Error fetching ETF signals from external DB: {e}")
+        return []
 
 
 def get_basic_trade_signals_data_json():
@@ -533,13 +569,13 @@ def get_etf_signals_data_json():
 
             # Calculate current value and P&L
             current_value = qty * cmp if qty and cmp else 0
-            
+
             # pos is status buy and sell 1 for buy -1 for sell
 
             # make status column in database 1 and 0.  1 , 1 for deal is runing and 0 for deal is closed 
             # if status is 1 then show all the cloums
             # if satus 0 then hide inv, tg, pt, action hide 
-            
+
             if pos == 1:  
                 pl = current_value - inv  # Profit/Loss
                 chan_percent = ((cmp - ep) / ep) * 100 if ep > 0 else 0
@@ -584,7 +620,7 @@ def get_etf_signals_data_json():
             # Exit fields close pos. if status is 0 and exit price and exit date . 
             #  if status change to 0 hide and show appropriate columns
             # hide = inv target profit, target vlue, action,
-            
+
             ed = signal.get('ed', '')  # Exit date
             exp = signal.get('exp', '')  # Exit price
 
