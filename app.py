@@ -1090,9 +1090,7 @@ except ImportError as e:
     # Register deals blueprint
     try:
         from api.deals import deals_bp
-        app.register_blueprint(
-            deals_bp,
-            url_prefix='/api/deals')  # Register deals blueprint with prefix
+        app.register_blueprint(deals_bp, url_prefix='/api/deals')
         print("✓ Deals blueprint registered")
     except Exception as e:
         print(f"Warning: Could not register deals blueprint: {e}")
