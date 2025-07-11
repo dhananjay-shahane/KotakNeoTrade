@@ -1232,7 +1232,8 @@ function updateCMPDirectlyFromSource(source) {
                     'CMP Updated Successfully', 
                     'Updated ' + updatedCount + ' records directly from ' + sourceName + ' in ' + (data.duration || 0).toFixed(1) + 's',
                     'success'
-                // CMP update functionality removednning in the background.';
+                );
+            }
         }
 
         // Show error notification
