@@ -150,8 +150,8 @@ def etf_signals_advanced():
 @main_bp.route('/default-deals')
 @require_auth
 def default_deals():
-    """Default Deals page"""
-    return render_template('default_deals.html')
+    """Default Deals page - legacy route for backwards compatibility"""
+    return redirect(url_for('main_routes.deals'))
 
 
 @main_bp.route('/admin-signals-datatable')
