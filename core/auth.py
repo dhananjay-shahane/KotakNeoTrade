@@ -32,11 +32,9 @@ def validate_current_session():
                 logging.debug(f"Missing required field in client: {field}")
                 return False
 
-        # Extended session check using session helper
-        session_valid = session_helper.validate_session(client.get('sid', ''))
-        
-        if not session_valid:
-            logging.debug("Session helper validation failed")
+        # Basic session validation - check if required fields exist
+        if not all([client.get('access_token'), client.get('session_token'), client.get('sid')]):
+            logging.debug("Missing required session fields")
             return False
 
         # Session is valid
@@ -55,7 +53,7 @@ def require_auth(f):
             if request.is_json:
                 return jsonify({'error': 'Authentication required'}), 401
             flash('Please login to access this page', 'error')
-            return redirect(url_for('auth.login'))
+            return redirect(url_for('auth_routes.login'))
         return f(*args, **kwargs)
     return decorated_function
 

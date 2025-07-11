@@ -34,7 +34,8 @@ class AdminSignalsScheduler:
     def update_admin_signals_with_quotes(self):
         """Update admin trade signals with latest Kotak Neo quotes data"""
         try:
-            with app.app_context():
+            from flask import current_app
+            with current_app.app_context():
                 # Get all active admin trade signals
                 active_signals = AdminTradeSignal.query.filter_by(status='ACTIVE').all()
                 
