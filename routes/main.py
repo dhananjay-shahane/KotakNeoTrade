@@ -1,5 +1,5 @@
 """Main application routes"""
-from flask import Blueprint, render_template, session, flash, redirect, url_for, jsonify
+from flask import Blueprint, render_template, session, flash, redirect, url_for, jsonify, request
 import logging
 import time
 from datetime import datetime
@@ -692,6 +692,106 @@ def api_get_user_deals():
             'deals': [],
             'total': 0,
             'error': str(e)
+        }), 500
+
+@main_bp.route('/api/deals/create-from-signal', methods=['POST'])
+def api_create_deal_from_signal():
+    """API endpoint for creating a deal from a signal"""
+    try:
+        from core.database import get_db_connection
+        import psycopg2.extras
+        
+        data = request.get_json()
+        if not data or 'signal_data' not in data:
+            return jsonify({
+                'success': False,
+                'message': 'No signal data provided'
+            }), 400
+            
+        signal_data = data['signal_data']
+        
+        # Extract signal information
+        symbol = signal_data.get('symbol') or signal_data.get('etf', 'UNKNOWN')
+        qty = int(signal_data.get('qty', 1))
+        ep = float(signal_data.get('ep', 0))
+        cmp = float(signal_data.get('cmp', ep))
+        pos = int(signal_data.get('pos', 1))
+        inv = float(signal_data.get('inv', ep * qty))
+        tp = float(signal_data.get('tp', ep * 1.05))
+        
+        # Connect to database
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({
+                'success': False,
+                'message': 'Database connection failed'
+            }), 500
+        
+        try:
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
+                # Insert into user_deals table
+                insert_query = """
+                INSERT INTO user_deals (
+                    symbol, position_type, quantity, entry_price, current_price, 
+                    target_price, invested_amount, current_value, pnl_amount, 
+                    pnl_percent, status, deal_type, notes, created_at
+                ) VALUES (
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW()
+                ) RETURNING id
+                """
+                
+                # Calculate current value and PnL
+                current_value = cmp * qty
+                pnl_amount = current_value - inv
+                pnl_percent = (pnl_amount / inv * 100) if inv > 0 else 0
+                
+                values = (
+                    symbol.upper(),
+                    'LONG' if pos == 1 else 'SHORT',
+                    qty,
+                    ep,
+                    cmp,
+                    tp,
+                    inv,
+                    current_value,
+                    pnl_amount,
+                    pnl_percent,
+                    'ACTIVE',
+                    'SIGNAL',
+                    f'Added from ETF signal - {symbol}',
+                )
+                
+                cursor.execute(insert_query, values)
+                deal_id = cursor.fetchone()['id']
+                conn.commit()
+                
+                logging.info(f"✓ Created deal from signal: {symbol} - Deal ID: {deal_id}")
+                
+                return jsonify({
+                    'success': True,
+                    'message': f'Deal created successfully for {symbol}',
+                    'deal_id': deal_id,
+                    'symbol': symbol,
+                    'entry_price': ep,
+                    'quantity': qty
+                })
+                
+        except Exception as db_error:
+            conn.rollback()
+            logging.error(f"Database error creating deal: {db_error}")
+            return jsonify({
+                'success': False,
+                'message': f'Database error: {str(db_error)}'
+            }), 500
+            
+        finally:
+            conn.close()
+            
+    except Exception as e:
+        logging.error(f"Error creating deal from signal: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Error creating deal: {str(e)}'
         }), 500
 
 @main_bp.route('/api/etf-signals-data', methods=['GET'])
