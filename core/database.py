@@ -39,18 +39,30 @@ def get_db_connection():
     Returns a psycopg2 connection object
     """
     try:
-        database_url = os.environ.get('DATABASE_URL')
-        if not database_url:
-            logger.error("DATABASE_URL environment variable not set")
-            return None
-            
-        # Connect to PostgreSQL database
+        # Use external PostgreSQL database from user
+        external_db_url = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
+        
+        logger.info("🔗 Connecting to external PostgreSQL database")
         conn = psycopg2.connect(
-            database_url,
+            external_db_url,
             cursor_factory=RealDictCursor
         )
+        logger.info("✅ Successfully connected to external database")
         return conn
         
     except Exception as e:
-        logger.error(f"Failed to connect to database: {e}")
+        logger.error(f"❌ External database connection failed: {e}")
+        # Fallback to local database
+        try:
+            database_url = os.environ.get('DATABASE_URL')
+            if database_url:
+                conn = psycopg2.connect(
+                    database_url,
+                    cursor_factory=RealDictCursor
+                )
+                logger.info("✅ Connected to local PostgreSQL database")
+                return conn
+        except Exception as local_e:
+            logger.error(f"❌ Local database connection also failed: {local_e}")
+            return None
         return None

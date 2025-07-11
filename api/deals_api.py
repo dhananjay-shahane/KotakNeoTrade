@@ -8,6 +8,7 @@ from core.database import get_db_connection
 from core.auth import require_auth
 from datetime import datetime, timedelta
 import traceback
+import psycopg2.extras
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -35,22 +36,27 @@ def get_user_deals_from_db():
             logger.error("Failed to connect to database")
             return []
             
-        with conn.cursor() as cursor:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
             # Query to get all user deals - only real data
             query = """
             SELECT 
                 id,
                 symbol,
-                date,
-                pos,
-                qty,
-                ep,
-                cmp,
-                d30,
-                d7,
+                entry_date,
+                position_type,
+                quantity,
+                entry_price,
+                current_price,
+                target_price,
+                stop_loss,
+                invested_amount,
+                current_value,
+                pnl_amount,
+                pnl_percent,
                 status,
-                ed,
-                exp,
+                deal_type,
+                notes,
+                tags,
                 created_at,
                 updated_at
             FROM user_deals 
@@ -59,13 +65,12 @@ def get_user_deals_from_db():
             """
             
             cursor.execute(query)
-            columns = [desc[0] for desc in cursor.description]
             deals = []
             
             for row in cursor.fetchall():
-                deal = dict(zip(columns, row))
+                deal = dict(row)
                 # Only include deals with valid trading data
-                if deal.get('symbol') and deal.get('qty') and deal.get('ep'):
+                if deal.get('symbol') and deal.get('quantity') and deal.get('entry_price'):
                     deals.append(deal)
                 
             logger.info(f"✓ Fetched {len(deals)} authentic user deals from database")
@@ -94,106 +99,78 @@ def calculate_deal_metrics(deal):
         if not symbol or symbol == 'N/A':
             symbol = 'UNKNOWN'
 
-        # Position: 1 for buy (long), -1 for sell (short)
-        pos = int(deal.get('pos', 1))
+        # Position type: LONG or SHORT
+        position_type = str(deal.get('position_type', 'LONG')).upper()
         
-        # Status: 1 for running deal, 0 for closed deal
-        status = int(deal.get('status', 1))
+        # Status: ACTIVE, CLOSED, etc.
+        status = str(deal.get('status', 'ACTIVE')).upper()
 
-        # Handle numeric fields with null safety
-        qty = float(deal.get('qty', 0)) if deal.get('qty') is not None else 0.0
-        ep = float(deal.get('ep', 0)) if deal.get('ep') is not None else 0.0
-        cmp = float(deal.get('cmp', 0)) if deal.get('cmp') is not None else 0.0
+        # Handle numeric fields with null safety using correct column names
+        quantity = float(deal.get('quantity', 0)) if deal.get('quantity') is not None else 0.0
+        entry_price = float(deal.get('entry_price', 0)) if deal.get('entry_price') is not None else 0.0
+        current_price = float(deal.get('current_price', 0)) if deal.get('current_price') is not None else 0.0
         
-        # Historical prices for 7-day and 30-day calculations
-        d7_price = float(deal.get('d7', 0)) if deal.get('d7') is not None else 0.0
-        d30_price = float(deal.get('d30', 0)) if deal.get('d30') is not None else 0.0
+        # Use the existing calculated values from the database
+        target_price = float(deal.get('target_price', 0)) if deal.get('target_price') is not None else 0.0
+        stop_loss = float(deal.get('stop_loss', 0)) if deal.get('stop_loss') is not None else 0.0
+        invested_amount = float(deal.get('invested_amount', 0)) if deal.get('invested_amount') is not None else 0.0
+        current_value = float(deal.get('current_value', 0)) if deal.get('current_value') is not None else 0.0
+        pnl_amount = float(deal.get('pnl_amount', 0)) if deal.get('pnl_amount') is not None else 0.0
+        pnl_percent = float(deal.get('pnl_percent', 0)) if deal.get('pnl_percent') is not None else 0.0
 
-        # Calculate investment amount (qty * ep)
-        inv = qty * ep if qty and ep else 0
-
-        # Calculate current value and P&L
-        current_value = qty * cmp if qty and cmp else 0
+        # Calculate additional metrics if needed
+        if invested_amount == 0 and quantity > 0 and entry_price > 0:
+            invested_amount = quantity * entry_price
         
-        # Calculate P&L based on position type
-        if pos == 1:  # Long position (buy)
-            pl = current_value - inv  # Profit/Loss
-            chan_percent = ((cmp - ep) / ep) * 100 if ep > 0 else 0
-        else:  # Short position (sell)
-            pl = inv - current_value  # Profit/Loss (reversed for short)
-            chan_percent = ((ep - cmp) / ep) * 100 if ep > 0 else 0
+        if current_value == 0 and quantity > 0 and current_price > 0:
+            current_value = quantity * current_price
+        
+        if pnl_amount == 0 and invested_amount > 0 and current_value > 0:
+            pnl_amount = current_value - invested_amount
+        
+        if pnl_percent == 0 and invested_amount > 0 and pnl_amount != 0:
+            pnl_percent = (pnl_amount / invested_amount) * 100
 
-        # Calculate 30-day and 7-day performance percentages
-        ch30_percent = ((cmp - d30_price) / d30_price) * 100 if d30_price > 0 else 0
-        ch7_percent = ((cmp - d7_price) / d7_price) * 100 if d7_price > 0 else 0
-
-        # Calculate price changes
-        ch30_value = cmp - d30_price if d30_price > 0 else 0
-        ch7_value = cmp - d7_price if d7_price > 0 else 0
-        chan_value = cmp - ep if ep > 0 else 0
-
-        # Calculate target price (assume 3% target)
-        target_percent = 3.0
-        if pos == 1:  # Long position
-            tp = ep * (1 + target_percent / 100)
-        else:  # Short position
-            tp = ep * (1 - target_percent / 100) if ep > 0 else 0
-
-        # Calculate target value amount and target profit
-        tva = qty * tp if qty and tp else 0
-        tpr = tva - inv if pos == 1 else inv - tva
-
-        # Handle exit data for closed deals
-        ed = deal.get('ed', '')  # Exit date
-        exp = deal.get('exp', '')  # Exit price
-
-        # Calculate exit profit if exit price exists
-        if exp and status == 0:  # Only for closed deals
-            try:
-                exp_value = float(exp)
-                pr = (exp_value - ep) * qty if qty and ep else 0
-                pp = (pr / inv * 100) if inv > 0 else 0
-            except (ValueError, TypeError):
-                pr = 0
-                pp = 0
+        # Status color based on PnL
+        if pnl_amount > 0:
+            status_color = 'success'
+            status_text = 'Profit'
+        elif pnl_amount < 0:
+            status_color = 'danger'
+            status_text = 'Loss'
         else:
-            pr = 0
-            pp = 0
+            status_color = 'secondary'
+            status_text = 'Break Even'
 
         return {
+            'id': deal.get('id', ''),
             'symbol': symbol,
-            'date': deal.get('date', ''),
-            'pos': pos,
+            'entry_date': deal.get('entry_date', ''),
+            'position_type': position_type,
             'status': status,
-            'qty': int(qty),
-            'ep': round(ep, 2),
-            'cmp': round(cmp, 2),
-            'inv': round(inv, 2),
+            'quantity': int(quantity),
+            'entry_price': round(entry_price, 2),
+            'current_price': round(current_price, 2),
+            'target_price': round(target_price, 2),
+            'stop_loss': round(stop_loss, 2),
+            'invested_amount': round(invested_amount, 2),
             'current_value': round(current_value, 2),
-            'pl': round(pl, 2),
-            'chan_percent': f"{chan_percent:.2f}%",
-            'chan_value': round(chan_value, 2),
-            'd30_price': round(d30_price, 2),
-            'd7_price': round(d7_price, 2),
-            'ch30_percent': f"{ch30_percent:.2f}%",
-            'ch7_percent': f"{ch7_percent:.2f}%",
-            'ch30_value': round(ch30_value, 2),
-            'ch7_value': round(ch7_value, 2),
-            'tp': round(tp, 2),
-            'tva': round(tva, 2),
-            'tpr': round(tpr, 2),
-            'ed': ed,
-            'exp': exp,
-            'pr': round(pr, 2),
-            'pp': f"{pp:.2f}%",
+            'pnl_amount': round(pnl_amount, 2),
+            'pnl_percent': round(pnl_percent, 2),
+            'status_color': status_color,
+            'status_text': status_text,
+            'deal_type': deal.get('deal_type', ''),
+            'notes': deal.get('notes', ''),
+            'tags': deal.get('tags', ''),
             # Formatted display values
-            'ep_formatted': f"₹{ep:.2f}",
-            'cmp_formatted': f"₹{cmp:.2f}",
-            'inv_formatted': f"₹{inv:.2f}",
-            'pl_formatted': f"₹{pl:.2f}",
-            'tp_formatted': f"₹{tp:.2f}",
-            'tva_formatted': f"₹{tva:.2f}",
-            'tpr_formatted': f"₹{tpr:.2f}",
+            'entry_price_formatted': f"₹{entry_price:.2f}",
+            'current_price_formatted': f"₹{current_price:.2f}",
+            'invested_amount_formatted': f"₹{invested_amount:.2f}",
+            'pnl_amount_formatted': f"₹{pnl_amount:.2f}",
+            'target_price_formatted': f"₹{target_price:.2f}",
+            'stop_loss_formatted': f"₹{stop_loss:.2f}",
+            'current_value_formatted': f"₹{current_value:.2f}",
+            'pnl_percent_formatted': f"{pnl_percent:.2f}%",
             'created_at': deal.get('created_at', ''),
             'updated_at': deal.get('updated_at', '')
         }
