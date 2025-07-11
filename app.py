@@ -356,6 +356,24 @@ def get_dashboard_data_api():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/positions')
+def get_positions_api():
+    """API endpoint to get positions"""
+    if not validate_current_session():
+        return jsonify({'error': 'Not authenticated'}), 401
+
+    try:
+        client = session.get('client')
+        if not client:
+            return jsonify({'error': 'No active client'}), 400
+
+        positions = trading_functions.get_positions(client)
+        return jsonify(positions)
+    except Exception as e:
+        logging.error(f"Positions API error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/holdings')
 def get_holdings_api():
     """API endpoint to get holdings"""
