@@ -731,86 +731,96 @@ def api_create_deal_from_signal():
         
         logging.info(f"Parsed signal - Symbol: {symbol}, Qty: {qty}, EP: {ep}, CMP: {cmp}")
         
-        # Import database connection
+        # Use the existing models to create a user deal
         try:
-            from core.database import get_db_connection
-            import psycopg2.extras
-        except ImportError as e:
-            logging.error(f"Import error: {e}")
-            return jsonify({
-                'success': False,
-                'message': 'Database module import failed'
-            }), 500
-        
-        # Connect to database
-        conn = get_db_connection()
-        if not conn:
-            logging.error("Database connection failed")
-            return jsonify({
-                'success': False,
-                'message': 'Database connection failed'
-            }), 500
-        
-        try:
-            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
-                # Insert into user_deals table
-                insert_query = """
-                INSERT INTO user_deals (
-                    symbol, position_type, quantity, entry_price, current_price, 
-                    target_price, invested_amount, current_value, pnl_amount, 
-                    pnl_percent, status, deal_type, notes, created_at
-                ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW()
-                ) RETURNING id
-                """
-                
-                # Calculate current value and PnL
-                current_value = cmp * qty
-                pnl_amount = current_value - inv
-                pnl_percent = (pnl_amount / inv * 100) if inv > 0 else 0
-                
-                values = (
-                    symbol.upper(),
-                    'LONG' if pos == 1 else 'SHORT',
-                    qty,
-                    ep,
-                    cmp,
-                    tp,
-                    inv,
-                    current_value,
-                    pnl_amount,
-                    pnl_percent,
-                    'ACTIVE',
-                    'SIGNAL',
-                    f'Added from ETF signal - {symbol}',
-                )
-                
-                logging.info(f"Executing insert query with values: {values}")
-                cursor.execute(insert_query, values)
-                deal_id = cursor.fetchone()['id']
-                conn.commit()
-                
-                logging.info(f"✓ Created deal from signal: {symbol} - Deal ID: {deal_id}")
-                
-                return jsonify({
-                    'success': True,
-                    'message': f'Deal created successfully for {symbol}',
-                    'deal_id': deal_id,
-                    'symbol': symbol,
-                    'entry_price': ep,
-                    'quantity': qty
-                })
-                
-        except Exception as db_error:
-            conn.rollback()
-            logging.error(f"Database error creating deal: {db_error}")
-            return jsonify({
-                'success': False,
-                'message': f'Database error: {str(db_error)}'
-            }), 500
+            from Scripts.models_etf import UserDeal
+            from Scripts.models import db, User
             
-        finally:
-            conn.close()
+            # Get or create a user
+            user = User.query.first()
+            if not user:
+                # Create a default user
+                user = User(
+                    ucc='DEFAULT_USER',
+                    mobile_number='0000000000',
+                    greeting_name='Default User',
+                    user_id='1',
+                    is_active=True
+                )
+                db.session.add(user)
+                db.session.commit()
+            
+            # Calculate current value and PnL
+            current_value = cmp * qty
+            pnl_amount = current_value - inv
+            pnl_percent = (pnl_amount / inv * 100) if inv > 0 else 0
+            
+            # Create new user deal
+            new_deal = UserDeal(
+                user_id=user.id,
+                symbol=symbol.upper(),
+                trading_symbol=f"{symbol.upper()}-EQ",
+                exchange='NSE',
+                position_type='LONG' if pos == 1 else 'SHORT',
+                quantity=qty,
+                entry_price=ep,
+                current_price=cmp,
+                target_price=tp,
+                invested_amount=inv,
+                current_value=current_value,
+                pnl_amount=pnl_amount,
+                pnl_percent=pnl_percent,
+                status='ACTIVE',
+                deal_type='SIGNAL',
+                notes=f'Added from ETF signal - {symbol}',
+                # ETF Signal specific fields
+                pos=pos,
+                qty=qty,
+                ep=ep,
+                cmp=cmp,
+                tp=tp,
+                inv=inv,
+                pl=pnl_amount,
+                chan_percent=f"{pnl_percent:.2f}%",
+                signal_date=signal_data.get('date', ''),
+                thirty=signal_data.get('thirty', '0%'),
+                dh=signal_data.get('dh', 0),
+                ed=signal_data.get('ed', ''),
+                exp=signal_data.get('exp', ''),
+                pr=signal_data.get('pr', ''),
+                pp=signal_data.get('pp', ''),
+                iv=signal_data.get('iv', ''),
+                ip=signal_data.get('ip', ''),
+                nt=signal_data.get('nt', f'Signal for {symbol}'),
+                qt=signal_data.get('qt', ''),
+                seven=signal_data.get('seven', '0%'),
+                ch=signal_data.get('ch', '0%'),
+                tva=signal_data.get('tva', current_value),
+                tpr=signal_data.get('tpr', pnl_amount)
+            )
+            
+            db.session.add(new_deal)
+            db.session.commit()
+            
+            logging.info(f"✓ Created deal from signal: {symbol} - Deal ID: {new_deal.id}")
+            
+            return jsonify({
+                'success': True,
+                'message': f'Deal created successfully for {symbol}',
+                'deal_id': new_deal.id,
+                'symbol': symbol,
+                'entry_price': ep,
+                'quantity': qty
+            })
+            
+        except Exception as model_error:
+            logging.error(f"Model error creating deal: {model_error}")
+            if 'db' in locals():
+                db.session.rollback()
+            return jsonify({
+                'success': False,
+                'message': f'Failed to create deal: {str(model_error)}'
+            }), 500
             
     except Exception as e:
         logging.error(f"Error creating deal from signal: {e}")
@@ -825,154 +835,104 @@ def get_etf_signals_data():
     try:
         logging.info("ETF signals data API called")
         
-        # Try to get data from external database service first
+        # Use the improved external database service
         try:
-            from Scripts.external_db_service import get_etf_signals_from_external_db
-            signals_data = get_etf_signals_from_external_db()
+            from Scripts.external_db_service import get_etf_signals_data_json
+            signals_response = get_etf_signals_data_json()
             
-            if signals_data and len(signals_data) > 0:
-                logging.info(f"✓ Found {len(signals_data)} signals from external database")
+            if signals_response and signals_response.get('success'):
+                logging.info(f"✓ Found {len(signals_response.get('data', []))} signals from external database")
+                return jsonify({
+                    'success': True,
+                    'data': signals_response.get('data', []),
+                    'total': len(signals_response.get('data', [])),
+                    'message': signals_response.get('message', 'Signals loaded successfully')
+                })
+            elif signals_response and signals_response.get('data'):
+                # Fallback to data even if success flag is missing
+                return jsonify({
+                    'success': True,
+                    'data': signals_response.get('data', []),
+                    'total': len(signals_response.get('data', []))
+                })
                 
-                # Format data for frontend
+        except Exception as ext_db_error:
+            logging.error(f"External database service error: {ext_db_error}")
+        
+        # Fallback: Try getting basic signals data
+        try:
+            from Scripts.external_db_service import get_basic_trade_signals_data_json
+            basic_response = get_basic_trade_signals_data_json()
+            
+            if basic_response and basic_response.get('success'):
+                return jsonify({
+                    'success': True,
+                    'data': basic_response.get('signals', []),
+                    'total': len(basic_response.get('signals', [])),
+                    'message': basic_response.get('message', 'Basic signals loaded successfully')
+                })
+                
+        except Exception as basic_error:
+            logging.error(f"Basic signals error: {basic_error}")
+        
+        # Last resort: Check if we have any admin trade signals
+        try:
+            from Scripts.models_etf import AdminTradeSignal
+            from Scripts.models import db
+            
+            signals = AdminTradeSignal.query.order_by(AdminTradeSignal.created_at.desc()).limit(100).all()
+            
+            if signals:
                 formatted_signals = []
-                for signal in signals_data:
+                for signal in signals:
                     try:
-                        # Extract signal data with fallbacks
-                        symbol = signal.get('symbol', 'N/A')
-                        entry_price = float(signal.get('entry_price', 0))
-                        current_price = float(signal.get('current_price', entry_price))
-                        quantity = int(signal.get('quantity', 1))
-                        investment = float(signal.get('investment_amount', entry_price * quantity))
-                        pnl = float(signal.get('pnl', 0))
-                        change_pct = float(signal.get('change_percent', 0))
-                        
-                        formatted_signal = {
-                            'id': signal.get('id', 0),
-                            'trade_signal_id': signal.get('id', 0),
-                            'etf': symbol,
-                            'symbol': symbol,
-                            'thirty': current_price,
-                            'dh': f"{change_pct:.2f}%",
-                            'date': signal.get('created_at', '')[:10] if signal.get('created_at') else '',
-                            'pos': 1 if signal.get('signal_type') == 'BUY' else -1,
-                            'qty': quantity,
-                            'ep': entry_price,
-                            'cmp': current_price,
-                            'chan': f"{change_pct:.2f}%",
-                            'inv': investment,
-                            'tp': float(signal.get('target_price', entry_price * 1.1)),
-                            'tva': current_price * quantity,
-                            'tpr': pnl,
-                            'pl': pnl,
-                            'ed': signal.get('created_at', '')[:10] if signal.get('created_at') else '',
-                            'exp': '',
-                            'pr': '',
-                            'pp': f"{change_pct:.2f}%",
-                            'iv': '',
-                            'ip': '',
-                            'nt': f"Signal for {symbol}",
-                            'qt': '',
-                            'seven': current_price,
-                            'ch': f"{change_pct:.2f}%",
-                            'status': signal.get('status', 'ACTIVE')
+                        signal_dict = {
+                            'id': signal.id,
+                            'trade_signal_id': signal.id,
+                            'etf': signal.symbol,
+                            'symbol': signal.symbol,
+                            'thirty': signal.thirty or 0,
+                            'dh': signal.dh or '0%',
+                            'date': signal.date.strftime('%Y-%m-%d') if signal.date else '',
+                            'pos': signal.pos or 1,
+                            'qty': signal.qty or 1,
+                            'ep': float(signal.ep or 0),
+                            'cmp': float(signal.cmp or signal.ep or 0),
+                            'chan': signal.chan or '0%',
+                            'inv': float(signal.inv or 0),
+                            'tp': float(signal.tp or 0),
+                            'tva': float(signal.tva or 0),
+                            'tpr': float(signal.tpr or 0),
+                            'pl': float(signal.pl or 0),
+                            'ed': signal.ed or '',
+                            'exp': signal.exp or '',
+                            'pr': signal.pr or '',
+                            'pp': signal.pp or '',
+                            'iv': signal.iv or '',
+                            'ip': signal.ip or '',
+                            'nt': signal.nt or f'Signal for {signal.symbol}',
+                            'qt': signal.qt or '',
+                            'seven': signal.seven or 0,
+                            'ch': signal.ch or '0%',
+                            'status': 'ACTIVE'
                         }
-                        formatted_signals.append(formatted_signal)
-                        
+                        formatted_signals.append(signal_dict)
                     except Exception as format_error:
-                        logging.error(f"Error formatting signal {signal.get('id', 'unknown')}: {format_error}")
+                        logging.error(f"Error formatting admin signal {signal.id}: {format_error}")
                         continue
                 
                 return jsonify({
                     'success': True,
                     'data': formatted_signals,
-                    'total': len(formatted_signals)
+                    'total': len(formatted_signals),
+                    'message': f'Loaded {len(formatted_signals)} signals from admin_trade_signals'
                 })
                 
-        except Exception as ext_db_error:
-            logging.error(f"External database error: {ext_db_error}")
+        except Exception as admin_error:
+            logging.error(f"Admin signals error: {admin_error}")
         
-        # Fallback: Try to get from local database
-        try:
-            from core.database import get_db_connection
-            import psycopg2.extras
-            
-            conn = get_db_connection()
-            if conn:
-                with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
-                    cursor.execute("""
-                        SELECT id, symbol, entry_price, current_price, quantity, 
-                               investment_amount, signal_type, status, created_at, 
-                               pnl, pnl_percentage, change_percent, target_price, 
-                               stop_loss, last_update_time
-                        FROM admin_trade_signals 
-                        ORDER BY created_at DESC
-                        LIMIT 100
-                    """)
-                    
-                    signals_data = cursor.fetchall()
-                    
-                    formatted_signals = []
-                    for row in signals_data:
-                        signal = dict(row)
-                        try:
-                            symbol = signal.get('symbol', 'N/A')
-                            entry_price = float(signal.get('entry_price', 0))
-                            current_price = float(signal.get('current_price', entry_price))
-                            quantity = int(signal.get('quantity', 1))
-                            investment = float(signal.get('investment_amount', entry_price * quantity))
-                            pnl = float(signal.get('pnl', 0))
-                            change_pct = float(signal.get('change_percent', 0))
-                            
-                            formatted_signal = {
-                                'id': signal.get('id', 0),
-                                'trade_signal_id': signal.get('id', 0),
-                                'etf': symbol,
-                                'symbol': symbol,
-                                'thirty': current_price,
-                                'dh': f"{change_pct:.2f}%",
-                                'date': signal.get('created_at').strftime('%Y-%m-%d') if signal.get('created_at') else '',
-                                'pos': 1 if signal.get('signal_type') == 'BUY' else -1,
-                                'qty': quantity,
-                                'ep': entry_price,
-                                'cmp': current_price,
-                                'chan': f"{change_pct:.2f}%",
-                                'inv': investment,
-                                'tp': float(signal.get('target_price', entry_price * 1.1)),
-                                'tva': current_price * quantity,
-                                'tpr': pnl,
-                                'pl': pnl,
-                                'ed': signal.get('created_at').strftime('%Y-%m-%d') if signal.get('created_at') else '',
-                                'exp': '',
-                                'pr': '',
-                                'pp': f"{change_pct:.2f}%",
-                                'iv': '',
-                                'ip': '',
-                                'nt': f"Signal for {symbol}",
-                                'qt': '',
-                                'seven': current_price,
-                                'ch': f"{change_pct:.2f}%",
-                                'status': signal.get('status', 'ACTIVE')
-                            }
-                            formatted_signals.append(formatted_signal)
-                            
-                        except Exception as format_error:
-                            logging.error(f"Error formatting signal {signal.get('id', 'unknown')}: {format_error}")
-                            continue
-                    
-                    conn.close()
-                    
-                    if formatted_signals:
-                        return jsonify({
-                            'success': True,
-                            'data': formatted_signals,
-                            'total': len(formatted_signals)
-                        })
-                        
-        except Exception as local_db_error:
-            logging.error(f"Local database error: {local_db_error}")
-        
-        # If no data found, return sample data to test the UI
-        logging.info("No database data found, returning sample data")
+        # Return enhanced sample data if no real data available
+        logging.info("No database data found, returning enhanced sample data")
         sample_signals = [
             {
                 'id': 1,
@@ -1033,6 +993,36 @@ def get_etf_signals_data():
                 'seven': 42.80,
                 'ch': '-0.47%',
                 'status': 'ACTIVE'
+            },
+            {
+                'id': 3,
+                'trade_signal_id': 3,
+                'etf': 'BANKBEES',
+                'symbol': 'BANKBEES',
+                'thirty': 512.30,
+                'dh': '1.85%',
+                'date': '2024-01-15',
+                'pos': 1,
+                'qty': 20,
+                'ep': 505.00,
+                'cmp': 512.30,
+                'chan': '1.45%',
+                'inv': 10100.00,
+                'tp': 530.25,
+                'tva': 10246.00,
+                'tpr': 146.00,
+                'pl': 146.00,
+                'ed': '2024-01-15',
+                'exp': '',
+                'pr': '',
+                'pp': '1.45%',
+                'iv': '',
+                'ip': '',
+                'nt': 'Sample Bank ETF signal',
+                'qt': '',
+                'seven': 508.75,
+                'ch': '0.70%',
+                'status': 'ACTIVE'
             }
         ]
         
@@ -1040,7 +1030,7 @@ def get_etf_signals_data():
             'success': True,
             'data': sample_signals,
             'total': len(sample_signals),
-            'message': 'Sample data - configure database connection for real signals'
+            'message': 'Sample data - Add real signals to admin_trade_signals table'
         })
 
     except Exception as e:

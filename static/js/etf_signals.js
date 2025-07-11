@@ -875,7 +875,7 @@ function exportSignals() {
 
 function addDeal(signalId) {
     console.log('Add Deal called with signalId:', signalId);
-    
+
     // Find the complete signal data from the current signals array
     var signal = null;
     if (window.etfSignalsManager && window.etfSignalsManager.signals) {
@@ -948,7 +948,7 @@ function proceedWithAddingDeal(signal, symbol, price, quantity, investment) {
         if (xhr.readyState === 4) {
             console.log('Response status:', xhr.status);
             console.log('Response text:', xhr.responseText);
-            
+
             if (xhr.status === 200) {
                 try {
                     var response = JSON.parse(xhr.responseText);
@@ -1324,6 +1324,86 @@ function startAutoCMPUpdates() {
     }
 }
 
+// Add Deal functionality
+function addDealFromSignal(symbol, signalData) {
+    try {
+        var signal = typeof signalData === 'string' ? JSON.parse(signalData) : signalData;
+
+        console.log('Adding deal for signal:', signal);
+        console.log('Symbol:', symbol);
+
+        // Validate signal data
+        if (!signal || !symbol) {
+            showMessage('Invalid signal data. Cannot create deal.', 'error');
+            return;
+        }
+
+        var price = signal.cmp || signal.ep || 0;
+        var quantity = signal.qty || 1;
+
+        if (!confirm('Add deal for ' + symbol + ' at ₹' + price.toFixed(2) + ' (Qty: ' + quantity + ')?')) {
+            return;
+        }
+
+        // Show loading state
+        showMessage('Creating deal for ' + symbol + '...', 'info');
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/deals/create-from-signal', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.timeout = 10000; // 10 second timeout
+
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                try {
+                    if (xhr.status === 200) {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.success) {
+                            showMessage('Deal created successfully for ' + symbol + '! Deal ID: ' + response.deal_id, 'success');
+
+                            // Optional: redirect to deals page after a delay
+                            setTimeout(function() {
+                                if (confirm('Deal created! Would you like to view your deals page?')) {
+                                    window.location.href = '/deals';
+                                }
+                            }, 2000);
+                        } else {
+                            showMessage('Failed to create deal: ' + (response.message || 'Unknown error'), 'error');
+                        }
+                    } else if (xhr.status === 400) {
+                        var errorResponse = JSON.parse(xhr.responseText);
+                        showMessage('Invalid request: ' + (errorResponse.message || 'Bad request'), 'error');
+                    } else if (xhr.status === 500) {
+                        var errorResponse = JSON.parse(xhr.responseText);
+                        showMessage('Server error: ' + (errorResponse.message || 'Internal server error'), 'error');
+                    } else {
+                        showMessage('Request failed with status: ' + xhr.status + '. Please try again.', 'error');
+                    }
+                } catch (parseError) {
+                    console.error('Error parsing response:', parseError);
+                    showMessage('Invalid response from server. Please try again.', 'error');
+                }
+            }
+        };
+
+        xhr.ontimeout = function() {
+            showMessage('Request timed out. Please try again.', 'error');
+        };
+
+        xhr.onerror = function() {
+            showMessage('Network error. Please check your connection and try again.', 'error');
+        };
+
+        xhr.send(JSON.stringify({
+            signal_data: signal
+        }));
+
+    } catch (error) {
+        console.error('Error adding deal:', error);
+        showMessage('Error processing request: ' + error.message, 'error');
+    }
+}
+
 // Function to stop automatic CMP updates
 function stopAutoCMPUpdates() {
     if (typeof cmpUpdateInterval !== 'undefined' && cmpUpdateInterval) {
@@ -1338,6 +1418,50 @@ window.addEventListener('beforeunload', function() {
     stopAutoCMPUpdates();
 });
 
+function showMessage(message, type) {
+    // Remove any existing alerts first
+    var existingAlerts = document.querySelectorAll('.custom-alert');
+    existingAlerts.forEach(function(alert) {
+        alert.remove();
+    });
+
+    var alertClass, iconClass;
+    switch(type) {
+        case 'success':
+            alertClass = 'alert-success';
+            iconClass = 'fa-check-circle';
+            break;
+        case 'error':
+            alertClass = 'alert-danger';
+            iconClass = 'fa-exclamation-triangle';
+            break;
+        case 'info':
+            alertClass = 'alert-info';
+            iconClass = 'fa-info-circle';
+            break;
+        default:
+            alertClass = 'alert-primary';
+            iconClass = 'fa-info-circle';
+    }
+
+    var alertHtml = '<div class="alert ' + alertClass + ' alert-dismissible fade show custom-alert position-fixed" role="alert" style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">' +
+                    '<i class="fas ' + iconClass + ' me-2"></i>' +
+                    message +
+                    '<button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>' +
+                    '</div>';
+
+    var alertDiv = document.createElement('div');
+    alertDiv.innerHTML = alertHtml;
+    document.body.appendChild(alertDiv);
+
+    // Auto-remove after 5 seconds
+    setTimeout(function() {
+        var alert = document.querySelector('.custom-alert');
+        if (alert) {
+            alert.remove();
+        }
+    }, 5000);
+}
 
 // Expose global functions for HTML event handlers
 
