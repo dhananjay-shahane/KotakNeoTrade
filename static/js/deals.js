@@ -1682,7 +1682,7 @@ function updateCurrentDataSourceIndicator() {
 
 // Removed sample deals functionality - deals should be created from real trading data
 
-// Auto CMP update functionality removedm // Google Finance CMP update functionality removeda// Auto CMP update functionality removede CMP update function for manual trigger
+// CMP update function for manual trigger
 function forceCMPUpdate() {
     console.log("🚀 Force CMP update triggered by user");
     updateDealsCMPFromGoogleFinance();
@@ -1698,8 +1698,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Check price update status
     window.dealsManager.checkPriceUpdateStatus();
-
-    // Auto-update CMP will be handled by the refresh interval
 
     // Set default data source to Google Finance if not already set
     if (!localStorage.getItem("data-source")) {

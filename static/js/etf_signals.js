@@ -814,7 +814,7 @@ function setRefreshInterval(interval, text) {
     // Only allow 5 minute intervals
     if (interval !== 300000) {
         interval = 300000;
-        text = '5 Min';
+text = '5 Min';
     }
 
     if (window.etfSignalsManager) {
@@ -1376,7 +1376,7 @@ window.etfSignalsManager = new ETFSignalsManager();
 function updateCurrentDataSourceIndicator() {
     var dataSource = localStorage.getItem('data-source') || 'google';
     var sourceName = dataSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
-    
+
     var currentDataSourceSpan = document.getElementById('currentDataSource');
     if (currentDataSourceSpan) {
         currentDataSourceSpan.textContent = sourceName;
@@ -1405,10 +1405,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Ensure Google Finance is selected by default
     switchDataSource('google');
 
-    // Start automatic CMP updates (if function exists)
-    if (typeof startAutoCMPUpdates === 'function') {
-        startAutoCMPUpdates();
-    }
 
     // Update CMP immediately on page load
     setTimeout(() => {
@@ -1605,3 +1601,5 @@ function getLivePrice(symbol) {
 
 // Note: jQuery-dependent DataTable functionality removed to avoid $ dependency
 // The main ETF signals functionality is handled by ETFSignalsManager class above
+
+// Removing the startAutoCMPUpdates functionality from the document ready section, and the function definition.
