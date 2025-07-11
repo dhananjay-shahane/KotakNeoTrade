@@ -722,6 +722,15 @@ def api_create_deal_from_signal():
             pos = int(signal_data.get('pos', 1))
             inv = float(signal_data.get('inv', ep * qty))
             tp = float(signal_data.get('tp', ep * 1.05))
+            
+            # Validate required data
+            if not symbol or symbol == 'UNKNOWN':
+                raise ValueError("Invalid symbol")
+            if ep <= 0:
+                raise ValueError("Invalid entry price")
+            if qty <= 0:
+                raise ValueError("Invalid quantity")
+                
         except (ValueError, TypeError) as e:
             logging.error(f"Error parsing signal data: {e}")
             return jsonify({
@@ -733,81 +742,85 @@ def api_create_deal_from_signal():
         
         # Use the existing models to create a user deal
         try:
-            from Scripts.models_etf import UserDeal
-            from Scripts.models import db, User
+            from core.database import get_db_connection
+            import psycopg2.extras
             
-            # Get or create a user
-            user = User.query.first()
-            if not user:
-                # Create a default user
-                user = User(
-                    ucc='DEFAULT_USER',
-                    mobile_number='0000000000',
-                    greeting_name='Default User',
-                    user_id='1',
-                    is_active=True
-                )
-                db.session.add(user)
-                db.session.commit()
-            
+            # Get database connection
+            conn = get_db_connection()
+            if not conn:
+                raise Exception("Failed to connect to database")
+                
             # Calculate current value and PnL
             current_value = cmp * qty
             pnl_amount = current_value - inv
             pnl_percent = (pnl_amount / inv * 100) if inv > 0 else 0
             
-            # Create new user deal
-            new_deal = UserDeal(
-                user_id=user.id,
-                symbol=symbol.upper(),
-                trading_symbol=f"{symbol.upper()}-EQ",
-                exchange='NSE',
-                position_type='LONG' if pos == 1 else 'SHORT',
-                quantity=qty,
-                entry_price=ep,
-                current_price=cmp,
-                target_price=tp,
-                invested_amount=inv,
-                current_value=current_value,
-                pnl_amount=pnl_amount,
-                pnl_percent=pnl_percent,
-                status='ACTIVE',
-                deal_type='SIGNAL',
-                notes=f'Added from ETF signal - {symbol}',
-                # ETF Signal specific fields
-                pos=pos,
-                qty=qty,
-                ep=ep,
-                cmp=cmp,
-                tp=tp,
-                inv=inv,
-                pl=pnl_amount,
-                chan_percent=f"{pnl_percent:.2f}%",
-                signal_date=signal_data.get('date', ''),
-                thirty=signal_data.get('thirty', '0%'),
-                dh=signal_data.get('dh', 0),
-                ed=signal_data.get('ed', ''),
-                exp=signal_data.get('exp', ''),
-                pr=signal_data.get('pr', ''),
-                pp=signal_data.get('pp', ''),
-                iv=signal_data.get('iv', ''),
-                ip=signal_data.get('ip', ''),
-                nt=signal_data.get('nt', f'Signal for {symbol}'),
-                qt=signal_data.get('qt', ''),
-                seven=signal_data.get('seven', '0%'),
-                ch=signal_data.get('ch', '0%'),
-                tva=signal_data.get('tva', current_value),
-                tpr=signal_data.get('tpr', pnl_amount)
-            )
+            with conn.cursor() as cursor:
+                # Insert new deal into user_deals table
+                insert_query = """
+                    INSERT INTO user_deals (
+                        symbol, entry_date, position_type, quantity, entry_price, 
+                        current_price, target_price, invested_amount, current_value,
+                        pnl_amount, pnl_percent, status, deal_type, notes,
+                        pos, qty, ep, cmp, tp, inv, pl, chan_percent,
+                        signal_date, thirty, dh, ed, exp, pr, pp, iv, ip, nt, qt, seven, ch, tva, tpr,
+                        created_at
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    ) RETURNING id
+                """
+                
+                cursor.execute(insert_query, (
+                    symbol.upper(),
+                    signal_data.get('date', 'CURRENT_DATE'),
+                    'LONG' if pos == 1 else 'SHORT',
+                    qty,
+                    ep,
+                    cmp,
+                    tp,
+                    inv,
+                    current_value,
+                    pnl_amount,
+                    pnl_percent,
+                    'ACTIVE',
+                    'SIGNAL',
+                    f'Added from ETF signal - {symbol}',
+                    pos,
+                    qty,
+                    ep,
+                    cmp,
+                    tp,
+                    inv,
+                    pnl_amount,
+                    f"{pnl_percent:.2f}%",
+                    signal_data.get('date', ''),
+                    signal_data.get('thirty', '0%'),
+                    signal_data.get('dh', 0),
+                    signal_data.get('ed', ''),
+                    signal_data.get('exp', ''),
+                    signal_data.get('pr', ''),
+                    signal_data.get('pp', ''),
+                    signal_data.get('iv', ''),
+                    signal_data.get('ip', ''),
+                    signal_data.get('nt', f'Signal for {symbol}'),
+                    signal_data.get('qt', ''),
+                    signal_data.get('seven', '0%'),
+                    signal_data.get('ch', '0%'),
+                    signal_data.get('tva', current_value),
+                    signal_data.get('tpr', pnl_amount),
+                    'NOW()'
+                ))
+                
+                deal_id = cursor.fetchone()[0]
+                conn.commit()
             
-            db.session.add(new_deal)
-            db.session.commit()
-            
-            logging.info(f"✓ Created deal from signal: {symbol} - Deal ID: {new_deal.id}")
+            logging.info(f"✓ Created deal from signal: {symbol} - Deal ID: {deal_id}")
             
             return jsonify({
                 'success': True,
                 'message': f'Deal created successfully for {symbol}',
-                'deal_id': new_deal.id,
+                'deal_id': deal_id,
                 'symbol': symbol,
                 'entry_price': ep,
                 'quantity': qty
@@ -815,12 +828,15 @@ def api_create_deal_from_signal():
             
         except Exception as model_error:
             logging.error(f"Model error creating deal: {model_error}")
-            if 'db' in locals():
-                db.session.rollback()
+            if conn:
+                conn.rollback()
             return jsonify({
                 'success': False,
                 'message': f'Failed to create deal: {str(model_error)}'
             }), 500
+        finally:
+            if conn:
+                conn.close()
             
     except Exception as e:
         logging.error(f"Error creating deal from signal: {e}")

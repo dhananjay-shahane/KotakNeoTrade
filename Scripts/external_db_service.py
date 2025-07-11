@@ -198,14 +198,14 @@ def get_etf_signals_from_external_db():
             if conn:
                 with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
                     cursor.execute("""
-                        SELECT id, symbol, entry_price, current_price, quantity, 
-                               investment_amount, signal_type, status, created_at, 
-                               pnl, pnl_percentage, change_percent, target_price, 
-                               stop_loss, last_update_time
-                        FROM admin_trade_signals 
-                        ORDER BY created_at DESC
-                        LIMIT 100
-                    """)
+                    SELECT id, symbol, ep as entry_price, cmp as current_price, qty as quantity, 
+                           inv as investment_amount, pos as signal_type, created_at, 
+                           pl as pnl, chan as pnl_percentage, tp as target_price,
+                           date, thirty, seven, dh, ch, tva, tpr, ed, exp, pr, pp, iv, ip, nt, qt
+                    FROM admin_trade_signals 
+                    ORDER BY created_at DESC
+                    LIMIT 100
+                """)
 
                     signals = cursor.fetchall()
                     result = []

@@ -58,7 +58,14 @@ def get_user_deals_from_db():
                 notes,
                 tags,
                 created_at,
-                updated_at
+                updated_at,
+                pos,
+                qty,
+                ep,
+                cmp,
+                tp,
+                inv,
+                pl
             FROM user_deals 
             WHERE symbol IS NOT NULL AND symbol != ''
             ORDER BY created_at DESC

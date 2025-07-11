@@ -886,7 +886,7 @@ function addDeal(signalId) {
 
     if (!signal) {
         console.error('Signal not found for ID:', signalId);
-        alert('Signal data not found. Please refresh the page and try again.');
+        showMessage('Signal data not found. Please refresh the page and try again.', 'error');
         return;
     }
 
@@ -897,8 +897,14 @@ function addDeal(signalId) {
     var quantity = signal.qty || 1;
     var investment = signal.inv || (price * quantity);
 
+    // Validate data before proceeding
+    if (!symbol || symbol === 'UNKNOWN' || price <= 0 || quantity <= 0) {
+        showMessage('Invalid signal data. Cannot create deal.', 'error');
+        return;
+    }
+
     // Show confirmation dialog
-    if (confirm('Add deal for ' + symbol + ' at ₹' + parseFloat(price).toFixed(2) + '?')) {
+    if (confirm('Add deal for ' + symbol + ' at ₹' + parseFloat(price).toFixed(2) + ' (Qty: ' + quantity + ')?')) {
         proceedWithAddingDeal(signal, symbol, price, quantity, investment);
     }
 }
