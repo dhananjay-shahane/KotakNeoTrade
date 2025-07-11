@@ -79,13 +79,23 @@ app = Flask(__name__)
 # APPLICATION CONFIGURATION
 # ========================================
 
-# Security configuration
-app.secret_key = os.environ.get("SESSION_SECRET")
+# Security configuration with fallback
+session_secret = os.environ.get("SESSION_SECRET")
+if not session_secret:
+    session_secret = "replit-kotak-neo-trading-platform-secret-key-2025"
+    print("Using fallback session secret for development")
+app.secret_key = session_secret
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1,
                         x_host=1)  # Enable HTTPS URL generation
 
-# Database configuration
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+# Database configuration with fallback
+database_url = os.environ.get("DATABASE_URL")
+if not database_url:
+    # Fallback to SQLite for development
+    database_url = "sqlite:///trading_platform.db"
+    print("Using SQLite fallback database for development")
+
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,  # Recycle connections every 5 minutes
     "pool_pre_ping": True,  # Verify connections before use
