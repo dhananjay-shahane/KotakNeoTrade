@@ -1283,8 +1283,8 @@ function updateCMPDirectlyFromSource(source) {
 // Function to update CMP from Google Finance
 function updateCMPFromGoogleFinance() {
     console.log('🔄 Updating CMP from Google Finance...');
-    
-    const updateBtn = document.querySelector('[onclick*="updateCMPDirectlyFromSource"]');
+
+    var updateBtn = document.querySelector('[onclick*="updateCMPDirectlyFromSource"]');
     if (updateBtn) {
         updateBtn.innerHTML = '<i class="fas fa-sync-alt fa-spin me-2"></i>Updating...';
         updateBtn.disabled = true;
@@ -1296,8 +1296,10 @@ function updateCMPFromGoogleFinance() {
             'Content-Type': 'application/json'
         }
     })
-    .then(response => response.json())
-    .then(data => {
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(data) {
         if (data.success) {
             console.log('✅ CMP updated successfully:', data.updated_count, 'records');
             // Refresh the signals table after update
@@ -1308,10 +1310,10 @@ function updateCMPFromGoogleFinance() {
             console.error('❌ CMP update failed:', data.error);
         }
     })
-    .catch(error => {
+    .catch(function(error) {
         console.error('❌ Error updating CMP:', error);
     })
-    .finally(() => {
+    .finally(function() {
         if (updateBtn) {
             updateBtn.innerHTML = '<i class="fas fa-sync-alt me-2"></i>Force Update CMP';
             updateBtn.disabled = false;
@@ -1321,49 +1323,46 @@ function updateCMPFromGoogleFinance() {
 
 // Function to force update a specific symbol
 function forceUpdateSymbol(symbol) {
-    console.log(`🔄 Force updating ${symbol}...`);
-    
-    fetch(`/api/google-finance/force-update-symbol/${symbol}`, {
+    console.log('🔄 Force updating ' + symbol + '...');
+
+    fetch('/api/google-finance/force-update-symbol/' + symbol, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         }
     })
-    .then(response => response.json())
-    .then(data => {
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(data) {
         if (data.success) {
-            console.log(`✅ ${symbol} updated successfully to ₹${data.price}`);
+            console.log('✅ ' + symbol + ' updated successfully to ₹' + data.price);
             // Show success message
             if (window.showToaster) {
-                window.showToaster('Symbol Updated', `${symbol} CMP updated to ₹${data.price}`, 'success');
+                window.showToaster('Symbol Updated', symbol + ' CMP updated to ₹' + data.price, 'success');
             }
             // Refresh the signals table
             if (window.etfSignalsManager) {
                 window.etfSignalsManager.loadSignals();
             }
         } else {
-            console.error(`❌ Failed to update ${symbol}:`, data.error);
+            console.error('❌ Failed to update ' + symbol + ':', data.error);
             if (window.showToaster) {
-                window.showToaster('Update Failed', `Failed to update ${symbol}: ${data.error}`, 'error');
+                window.showToaster('Update Failed', 'Failed to update ' + symbol + ': ' + data.error, 'error');
             }
         }
     })
-    .catch(error => {
-        console.error(`❌ Error updating ${symbol}:`, error);
+    .catch(function(error) {
+        console.error('❌ Error updating ' + symbol + ':', error);
         if (window.showToaster) {
-            window.showToaster('Update Error', `Error updating ${symbol}`, 'error');
+            window.showToaster('Update Error', 'Error updating ' + symbol, 'error');
         }
     });
 }
 
-// Symbol update handlers removed
-
-// Auto CMP update functionality removedvery 5 minutes)');
-}
-
 // Function to stop automatic CMP updates
 function stopAutoCMPUpdates() {
-    if (cmpUpdateInterval) {
+    if (typeof cmpUpdateInterval !== 'undefined' && cmpUpdateInterval) {
         clearInterval(cmpUpdateInterval);
         cmpUpdateInterval = null;
         console.log('⏹️ Auto CMP updates stopped');
@@ -1394,10 +1393,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Ensure Google Finance is selected by default
     switchDataSource('google');
-    
+
     // Start automatic CMP updates
     startAutoCMPUpdates();
-    
+
     // Update CMP immediately on page load
     setTimeout(() => {
         console.log('🚀 Initial CMP update on page load');
