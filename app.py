@@ -257,31 +257,13 @@ def require_auth(f):
 # @app.route('/')
 
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    """Login page with TOTP authentication - using modular API"""
-    from api.auth_api import handle_login_post, handle_login_get
-    
-    if request.method == 'POST':
-        redirect_response, template_response = handle_login_post(neo_client, user_manager)
-        return redirect_response if redirect_response else template_response
-    else:
-        return handle_login_get()
+# Login route is now handled by auth_routes blueprint
 
 
-@app.route('/logout')
-def logout():
-    """Logout and clear session - using modular API"""
-    from api.auth_api import handle_logout
-    return handle_logout()
+# Logout route is now handled by auth_routes blueprint
 
 
-@app.route('/dashboard')
-@require_auth
-def dashboard():
-    """Main dashboard with portfolio overview - using modular API"""
-    from api.dashboard_api import handle_dashboard_page
-    return handle_dashboard_page(trading_functions)
+# Dashboard route is now handled by main_routes blueprint
 
 
 @app.route('/positions')
@@ -588,9 +570,12 @@ from Scripts.auto_sync_triggers import initialize_auto_sync
 from Scripts.models import DefaultDeal
 # ETF signals blueprint will be registered separately
 
-# Register blueprints
-app.register_blueprint(auth_bp, url_prefix='/auth')
-app.register_blueprint(main_bp)
+# Register blueprints with consistent naming
+from routes.auth_routes import auth_bp as auth_routes_bp
+from routes.main_routes import main_bp as main_routes_bp
+
+app.register_blueprint(auth_routes_bp)
+app.register_blueprint(main_routes_bp)
 app.register_blueprint(dashboard_api, url_prefix='/api')
 app.register_blueprint(trading_api, url_prefix='/api')
 
