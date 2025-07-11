@@ -21,7 +21,7 @@ def setup_library_paths():
 setup_library_paths()
 
 # Import main Flask application
-from app_clean import app
+from app import app
 
 def register_blueprints():
     """
@@ -33,8 +33,8 @@ def register_blueprints():
     """
     try:
         # Core application routes
-        from routes.auth import auth_bp
-        from routes.main import main_bp
+        from routes.auth_routes import auth_bp
+        from routes.main_routes import main_bp
         
         # API endpoints
         from api.dashboard import dashboard_api as dashboard_bp
@@ -146,4 +146,3 @@ if __name__ == '__main__':
         print(f"❌ Application startup failed: {str(e)}")
         import traceback
         traceback.print_exc()
-```
