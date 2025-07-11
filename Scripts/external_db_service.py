@@ -518,10 +518,13 @@ def get_etf_signals_data_json():
                         or 0) if signal.get('qty') is not None else 0.0
             ep = float(signal.get('ep')
                        or 0) if signal.get('ep') is not None else 0.0
-            cmp = float(signal.get('cmp')
+            # cmp  is to be taken from the last row close cloumn
+            cmp = float(signal.get('cmp')  
                         or 0) if signal.get('cmp') is not None else 0.0
+            # d7_price come from symbol_5min table  current row - 375 previous row else 0 no price, symbol_daily table  
             d7_price = float(signal.get('d7')
                              or 0) if signal.get('d7') is not None else 0.0
+            # d30_price come from symbol_5min table  current row - 375 previous row else 0 no price, symbol_daily table
             d30_price = float(signal.get('d30')
                               or 0) if signal.get('d30') is not None else 0.0
 
@@ -530,7 +533,14 @@ def get_etf_signals_data_json():
 
             # Calculate current value and P&L
             current_value = qty * cmp if qty and cmp else 0
-            if pos == 1:  # Long position
+            
+            # pos is status buy and sell 1 for buy -1 for sell
+
+            # make status column in database 1 and 0.  1 , 1 for deal is runing and 0 for deal is closed 
+            # if status is 1 then show all the cloums
+            # if satus 0 then hide inv, tg, pt, action hide 
+            
+            if pos == 1:  
                 pl = current_value - inv  # Profit/Loss
                 chan_percent = ((cmp - ep) / ep) * 100 if ep > 0 else 0
             else:  # Short position
@@ -550,14 +560,16 @@ def get_etf_signals_data_json():
 
             # Calculate target price (assume 3% target)
             target_percent = 3.0
-            if pos == 1:  # Long position
-                tp = ep * (1 + target_percent / 100) if ep > 0 else 0
-            else:  # Short position
-                tp = ep * (1 - target_percent / 100) if ep > 0 else 0
+            # # tp = pos * ()
+            # if pos == 1:  # Long 
+            # tp = ep+ep*target_percent
+            tp = ep + pos* (1 + target_percent / 100)
+            # else:  # Short position
+            #     tp = ep * (1 - target_percent / 100) if ep > 0 else 0
 
             # Calculate target value amount and target profit
             tva = qty * tp if qty and tp else 0
-            tPr = tva - inv if pos == 1 else inv - tva if tva > 0 else 0
+            tPr = tva - inv * pos 
 
             # Get total trades for this symbol
             qt = symbol_counts.get(symbol, 1)
@@ -569,7 +581,10 @@ def get_etf_signals_data_json():
             nt = cmp * symbol_quantities.get(symbol,
                                              qty)  # Net total for symbol
 
-            # Exit fields (from database)
+            # Exit fields close pos. if status is 0 and exit price and exit date . 
+            #  if status change to 0 hide and show appropriate columns
+            # hide = inv target profit, target vlue, action,
+            
             ed = signal.get('ed', '')  # Exit date
             exp = signal.get('exp', '')  # Exit price
 
