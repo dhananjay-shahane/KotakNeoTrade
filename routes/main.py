@@ -698,30 +698,54 @@ def api_get_user_deals():
 def api_create_deal_from_signal():
     """API endpoint for creating a deal from a signal"""
     try:
-        from core.database import get_db_connection
-        import psycopg2.extras
+        logging.info("Create deal from signal endpoint called")
         
         data = request.get_json()
+        logging.info(f"Received data: {data}")
+        
         if not data or 'signal_data' not in data:
+            logging.error("No signal data provided in request")
             return jsonify({
                 'success': False,
                 'message': 'No signal data provided'
             }), 400
             
         signal_data = data['signal_data']
+        logging.info(f"Signal data: {signal_data}")
         
-        # Extract signal information
-        symbol = signal_data.get('symbol') or signal_data.get('etf', 'UNKNOWN')
-        qty = int(signal_data.get('qty', 1))
-        ep = float(signal_data.get('ep', 0))
-        cmp = float(signal_data.get('cmp', ep))
-        pos = int(signal_data.get('pos', 1))
-        inv = float(signal_data.get('inv', ep * qty))
-        tp = float(signal_data.get('tp', ep * 1.05))
+        # Extract signal information with better error handling
+        try:
+            symbol = signal_data.get('symbol') or signal_data.get('etf', 'UNKNOWN')
+            qty = int(signal_data.get('qty', 1))
+            ep = float(signal_data.get('ep', 0))
+            cmp = float(signal_data.get('cmp', ep))
+            pos = int(signal_data.get('pos', 1))
+            inv = float(signal_data.get('inv', ep * qty))
+            tp = float(signal_data.get('tp', ep * 1.05))
+        except (ValueError, TypeError) as e:
+            logging.error(f"Error parsing signal data: {e}")
+            return jsonify({
+                'success': False,
+                'message': f'Invalid signal data format: {str(e)}'
+            }), 400
+        
+        logging.info(f"Parsed signal - Symbol: {symbol}, Qty: {qty}, EP: {ep}, CMP: {cmp}")
+        
+        # Import database connection
+        try:
+            from core.database import get_db_connection
+            import psycopg2.extras
+        except ImportError as e:
+            logging.error(f"Import error: {e}")
+            return jsonify({
+                'success': False,
+                'message': 'Database module import failed'
+            }), 500
         
         # Connect to database
         conn = get_db_connection()
         if not conn:
+            logging.error("Database connection failed")
             return jsonify({
                 'success': False,
                 'message': 'Database connection failed'
@@ -761,6 +785,7 @@ def api_create_deal_from_signal():
                     f'Added from ETF signal - {symbol}',
                 )
                 
+                logging.info(f"Executing insert query with values: {values}")
                 cursor.execute(insert_query, values)
                 deal_id = cursor.fetchone()['id']
                 conn.commit()

@@ -874,6 +874,8 @@ function exportSignals() {
 }
 
 function addDeal(signalId) {
+    console.log('Add Deal called with signalId:', signalId);
+    
     // Find the complete signal data from the current signals array
     var signal = null;
     if (window.etfSignalsManager && window.etfSignalsManager.signals) {
@@ -883,127 +885,36 @@ function addDeal(signalId) {
     }
 
     if (!signal) {
+        console.error('Signal not found for ID:', signalId);
         alert('Signal data not found. Please refresh the page and try again.');
         return;
     }
+
+    console.log('Found signal:', signal);
 
     var symbol = signal.etf || signal.symbol || 'UNKNOWN';
     var price = signal.cmp || signal.ep || 0;
     var quantity = signal.qty || 1;
     var investment = signal.inv || (price * quantity);
 
-    // First, check if this deal already exists
-    checkExistingDeal(symbol, price, function(exists) {
-        if (exists) {
-            // Show duplicate confirmation dialog
-            Swal.fire({
-                title: 'Trade Already Added!',
-                html: '<div class="text-start">' +
-                    '<p class="text-warning"><i class="fas fa-exclamation-triangle"></i> This trade is already added to your deals page.</p>' +
-                    '<hr>' +
-                    '<p><strong>Symbol:</strong> ' + symbol + '</p>' +
-                    '<p><strong>Entry Price:</strong> ₹' + parseFloat(price).toFixed(2) + '</p>' +
-                    '<p><strong>Quantity:</strong> ' + quantity + '</p>' +
-                    '<p><strong>Investment:</strong> ₹' + parseFloat(investment).toFixed(2) + '</p>' +
-                    '<hr>' +
-                    '<p class="text-info">Do you want to add this trade again?</p>' +
-                    '</div>',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#28a745',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: '<i class="fas fa-plus"></i> Yes, Add Again',
-                cancelButtonText: '<i class="fas fa-times"></i> Cancel'
-            }).then(function(result) {
-                if (result.isConfirmed) {
-                    // User confirmed to add duplicate
-                    proceedWithAddingDeal(signal, symbol, price, quantity, investment);
-                }
-                // If cancelled, do nothing
-            });
-        } else {
-            // No duplicate, show regular confirmation dialog
-            Swal.fire({
-                title: 'Add Deal',
-                html: '<div class="text-start">' +
-                    '<p><strong>Symbol:</strong> ' + symbol + '</p>' +
-                    '<p><strong>Entry Price:</strong> ₹' + parseFloat(price).toFixed(2) + '</p>' +
-                    '<p><strong>Quantity:</strong> ' + quantity + '</p>' +
-                    '<p><strong>Position:</strong> ' + (signal.pos == 1 ? 'LONG' : 'SHORT') + '</p>' +
-                    '<p><strong>Investment:</strong> ₹' + parseFloat(investment).toFixed(2) + '</p>' +
-                    '<p><strong>Target Price:</strong> ₹' + parseFloat(signal.tp || price * 1.05).toFixed(2) + '</p>' +
-                    '</div>',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#28a745',
-                cancelButtonColor: '#dc3545',
-                confirmButtonText: 'Yes, Add Deal!',
-                cancelButtonText: 'Cancel'
-            }).then(function(result) {
-                if (result.isConfirmed) {
-                    proceedWithAddingDeal(signal, symbol, price, quantity, investment);
-                }
-            });
-        }
-    });
+    // Show confirmation dialog
+    if (confirm('Add deal for ' + symbol + ' at ₹' + parseFloat(price).toFixed(2) + '?')) {
+        proceedWithAddingDeal(signal, symbol, price, quantity, investment);
+    }
 }
 
-function checkExistingDeal(symbol, price, callback) {
-    // Check for existing deals via API
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', '/api/deals/user?symbol=' + encodeURIComponent(symbol), true);
-    xhr.withCredentials = true; // Include cookies for authentication
-
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-            if (xhr.status === 200) {
-                try {
-                    var response = JSON.parse(xhr.responseText);
-                    var deals = response.deals || [];
-
-                    console.log('Duplicate check - Symbol:', symbol, 'Found deals:', deals.length);
-
-                    // Simply check if any deal has the same symbol
-                    var duplicate = deals.length > 0 && deals.some(function(deal) {
-                        var dealSymbol = deal.symbol || deal.etf || '';
-                        return dealSymbol.toUpperCase() === symbol.toUpperCase();
-                    });
-
-                    console.log('Duplicate detected:', duplicate);
-                    callback(duplicate);
-                } catch (parseError) {
-                    console.error('Failed to parse deals response:', parseError);
-                    callback(false);
-                }
-            } else {
-                console.error('Failed to check existing deals - Status:', xhr.status);
-                // For authentication issues, assume no duplicate to avoid blocking
-                callback(false);
-            }
-        }
-    };
-
-    xhr.send();
-}
+// Function removed - no longer checking for duplicates to simplify the flow
 
 function proceedWithAddingDeal(signal, symbol, price, quantity, investment) {
-    // Show loading
-    Swal.fire({
-        title: 'Creating Deal...',
-        text: 'Please wait while we process your request',
-        allowOutsideClick: false,
-        didOpen: function() {
-            Swal.showLoading();
-        }
-    });
+    console.log('Proceeding with adding deal:', { signal: signal, symbol: symbol, price: price, quantity: quantity, investment: investment });
 
     // Prepare complete signal data for the API
     var signalData = {
-        etf: signal.etf || signal.symbol,
-        symbol: signal.etf || signal.symbol,
+        etf: signal.etf || signal.symbol || symbol,
+        symbol: signal.etf || signal.symbol || symbol,
         trade_signal_id: signal.trade_signal_id || signal.id,
         pos: signal.pos || 1,
-        qty: signal.qty || 1,
+        qty: signal.qty || quantity || 1,
         ep: signal.ep || price,
         cmp: signal.cmp || price,
         tp: signal.tp || (price * 1.05),
@@ -1027,52 +938,40 @@ function proceedWithAddingDeal(signal, symbol, price, quantity, investment) {
         tpr: signal.tpr || ((signal.tp || price * 1.05) - price) * quantity
     };
 
+    console.log('Sending signal data:', signalData);
+
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/deals/create-from-signal', true);
     xhr.setRequestHeader('Content-Type', 'application/json');
 
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
+            console.log('Response status:', xhr.status);
+            console.log('Response text:', xhr.responseText);
+            
             if (xhr.status === 200) {
                 try {
                     var response = JSON.parse(xhr.responseText);
                     if (response.success) {
-                        Swal.fire({
-                            title: 'Success!',
-                            text: 'Deal created successfully for ' + symbol,
-                            icon: 'success',
-                            confirmButtonColor: '#28a745',
-                            timer: 2000,
-                            timerProgressBar: true
-                        }).then(function() {
-                            window.location.href = '/deals?symbol=' + encodeURIComponent(symbol) + '&price=' + parseFloat(price).toFixed(2);
-                        });
+                        alert('Deal created successfully for ' + symbol + '!');
+                        // Optionally redirect to deals page
+                        window.location.href = '/deals';
                     } else {
-                        Swal.fire({
-                            title: 'Failed!',
-                            text: response.message || 'Unknown error occurred',
-                            icon: 'error',
-                            confirmButtonColor: '#dc3545'
-                        });
+                        alert('Failed to create deal: ' + (response.message || 'Unknown error'));
                     }
                 } catch (parseError) {
                     console.error('Failed to parse API response:', parseError);
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'Invalid response from server',
-                        icon: 'error',
-                        confirmButtonColor: '#dc3545'
-                    });
+                    alert('Invalid response from server');
                 }
             } else {
-                Swal.fire({
-                    title: 'Server Error!',
-                    text: 'Server returned status: ' + xhr.status + '. Please try again or contact support.',
-                    icon: 'error',
-                    confirmButtonColor: '#dc3545'
-                });
+                alert('Server returned status: ' + xhr.status + '. Please try again or contact support.');
             }
         }
+    };
+
+    xhr.onerror = function() {
+        console.error('Network error occurred');
+        alert('Network error occurred. Please check your connection.');
     };
 
     xhr.send(JSON.stringify({signal_data: signalData}));
