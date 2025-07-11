@@ -831,26 +831,6 @@ def initialize_auto_sync_endpoint():
         logging.error(f"Error initializing auto-sync: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-
-@app.route('/api/test-auto-sync', methods=['POST'])
-def test_auto_sync_endpoint():
-    """API endpoint to test automatic synchronization"""
-    try:
-        from Scripts.auto_sync_system import test_auto_sync
-        test_result = test_auto_sync()
-
-        return jsonify({
-            'success':
-            test_result,
-            'message':
-            'Auto-sync test passed' if test_result else 'Auto-sync test failed'
-        })
-
-    except Exception as e:
-        logging.error(f"Error testing auto-sync: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
 @app.route('/api/place-order', methods=['POST'])
 @require_auth
 def place_order():
