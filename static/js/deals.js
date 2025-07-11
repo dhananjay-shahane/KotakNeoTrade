@@ -766,6 +766,17 @@ DealsManager.prototype.showEmptyStateMessage = function () {
         "</tr>";
 };
 
+// Method to check if price updates are running
+    this.checkPriceUpdateStatus = function() {
+        // Simple implementation to check update status
+        return false; // Default to not updating
+    };
+
+    // Alternative implementation with more functionality
+    this.checkPriceUpdateStatusAdvanced = function() {
+        // Implementation logic here
+    };
+
 function applyFilters() {
     var orderType = document.getElementById("orderTypeFilter").value;
     var status = document.getElementById("statusFilter").value;
@@ -864,8 +875,7 @@ function buyTrade(symbol, currentPrice) {
         currentPrice = 100; // Default fallback price
         console.warn("Invalid price provided, using fallback:", currentPrice);
     }
-    console.log(
-        "Opening buy trade modal for:",
+    console.log(        "Opening buy trade modal for:",
         symbol,
         "at price:",
         currentPrice,
@@ -1700,7 +1710,7 @@ document.addEventListener("DOMContentLoaded", function () {
     switchDataSource("google");
     updateCurrentDataSourceIndicator();
 
-    
+
 
     var savedInterval = localStorage.getItem("dealsRefreshInterval");
     var savedDisplay = localStorage.getItem("dealsRefreshIntervalDisplay");

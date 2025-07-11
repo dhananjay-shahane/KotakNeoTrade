@@ -35,7 +35,7 @@ def register_blueprints():
         # Core application routes
         from routes.auth_routes import auth_bp
         from routes.main_routes import main_bp
-        
+
         # API endpoints
         from api.dashboard import dashboard_api as dashboard_bp
         from api.trading import trading_api
@@ -43,15 +43,15 @@ def register_blueprints():
         from api.deals import deals_bp
         from api.deals_api import deals_api
         from api.notifications import notifications_bp
-        
+
         # ETF and signals
         from api.etf_signals import etf_bp
         from api.admin_signals_api import admin_signals_bp
         from api.enhanced_etf_signals import enhanced_etf_bp
-        
+
         # Market data APIs
         from api.realtime_quotes import quotes_bp as realtime_bp
-        
+
         # Data management - Google Finance, Yahoo Finance, and Supabase removed
         from api.signals_datatable import datatable_bp as signals_datatable_bp
         from api.datatable_updates import datatable_updates_bp
@@ -76,10 +76,10 @@ def register_blueprints():
             (datatable_updates_bp, 'datatable_updates'),
             (data_analysis_bp, 'data_analysis')
         ]
-        
+
         # Register each blueprint if not already registered
         registered_blueprints = [bp.name for bp in app.blueprints.values()]
-        
+
         for blueprint, name in blueprints:
             if name not in registered_blueprints:
                 try:
@@ -89,20 +89,20 @@ def register_blueprints():
                     print(f"✗ Error registering blueprint {name}: {e}")
                     import traceback
                     traceback.print_exc()
-        
+
         # Add the ETF signals data route to the main app
         @app.route('/api/etf-signals-data', methods=['GET'])
         def etf_signals_data():
             from api.etf_signals import get_etf_signals_data
             return get_etf_signals_data()
-                
+
         print("✓ All blueprints registered successfully")
-        
+
         # Verify ETF routes are available
         etf_routes = [rule.rule for rule in app.url_map.iter_rules() if rule.rule.startswith('/etf/')]
         if etf_routes:
             print(f"✓ ETF routes available: {len(etf_routes)} endpoints")
-        
+
     except Exception as e:
         print(f"✗ Error registering blueprints: {e}")
         import traceback
@@ -122,34 +122,34 @@ def start_schedulers():
             print("📊 Real-time quotes scheduler started")
         except ImportError:
             print("⚠️ Real-time quotes manager not available")
-        
+
         # Google Finance and Yahoo Finance schedulers removed - using Kotak Neo API only
         print("✅ Market data will be provided by Kotak Neo API only")
-            
+
     except Exception as e:
         print(f"⚠️ Scheduler startup error: {e}")
 
 if __name__ == '__main__':
     try:
         print("🚀 Starting Kotak Neo Trading Platform...")
-        
+
         # Register all application blueprints
         register_blueprints()
-        
+
         # Start background schedulers
         start_schedulers()
-        
+
         # Configure server settings
         port = int(os.environ.get('PORT', 5000))
-        
+
         print(f"🌐 Server starting on:")
         print(f"   Local: http://0.0.0.0:{port}")
         if os.environ.get('REPLIT_DOMAINS'):
             print(f"   External: https://{os.environ.get('REPLIT_DOMAINS')}")
-        
+
         # Start Flask application server
         app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
-        
+
     except Exception as e:
         print(f"❌ Application startup failed: {str(e)}")
         import traceback

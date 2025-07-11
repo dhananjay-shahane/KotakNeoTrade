@@ -1372,6 +1372,17 @@ function stopAutoCMPUpdates() {
 // Initialize the ETF Signals Manager
 window.etfSignalsManager = new ETFSignalsManager();
 
+// Function to update current data source indicator
+function updateCurrentDataSourceIndicator() {
+    var dataSource = localStorage.getItem('data-source') || 'google';
+    var sourceName = dataSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
+    
+    var currentDataSourceSpan = document.getElementById('currentDataSource');
+    if (currentDataSourceSpan) {
+        currentDataSourceSpan.textContent = sourceName;
+    }
+}
+
 // Update data source indicator when page loads
 document.addEventListener('DOMContentLoaded', function() {
     updateCurrentDataSourceIndicator();
@@ -1394,8 +1405,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Ensure Google Finance is selected by default
     switchDataSource('google');
 
-    // Start automatic CMP updates
-    startAutoCMPUpdates();
+    // Start automatic CMP updates (if function exists)
+    if (typeof startAutoCMPUpdates === 'function') {
+        startAutoCMPUpdates();
+    }
 
     // Update CMP immediately on page load
     setTimeout(() => {
@@ -1403,6 +1416,27 @@ document.addEventListener('DOMContentLoaded', function() {
         updateCMPFromGoogleFinance();
     }, 2000); // Wait 2 seconds for page to fully load
 });
+
+// Function to start automatic CMP updates
+function startAutoCMPUpdates() {
+    // Auto CMP updates every 5 minutes
+    if (typeof cmpUpdateInterval === 'undefined') {
+        window.cmpUpdateInterval = setInterval(function() {
+            var dataSource = localStorage.getItem('data-source') || 'google';
+            updateCMPDirectlyFromSource(dataSource);
+        }, 300000); // 5 minutes
+        console.log('🚀 Auto CMP updates started (5 min interval)');
+    }
+}
+
+// Function to stop automatic CMP updates
+function stopAutoCMPUpdates() {
+    if (typeof cmpUpdateInterval !== 'undefined' && cmpUpdateInterval) {
+        clearInterval(cmpUpdateInterval);
+        cmpUpdateInterval = null;
+        console.log('⏹️ Auto CMP updates stopped');
+    }
+}
 
 // Clean up interval when page unloads
 window.addEventListener('beforeunload', function() {

@@ -403,7 +403,7 @@ def etf_signals():
     try:
         # Get signals count from external database
         from Scripts.external_db_service import get_etf_signals_from_external_db
-        
+
         try:
             signals = get_etf_signals_from_external_db()
             signals_count = len(signals) if signals else 0
@@ -679,75 +679,89 @@ def default_deals():
     """Default deals page showing all deals"""
     return render_template('default_deals.html')
 
-# @main_bp.route('/api/etf-signals-data')
-# @login_required
-# def api_etf_signals_data():
-#     """API endpoint for ETF signals data"""
-#     try:
-#         from sqlalchemy import text
-#         from app import db
+@main_bp.route('/api/deals/user', methods=['GET'])
+def api_get_user_deals():
+    """API endpoint for getting user deals - redirect to deals API"""
+    try:
+        from api.deals_api import get_user_deals_api
+        return get_user_deals_api()
+    except Exception as e:
+        logging.error(f"Error in user deals API: {e}")
+        return jsonify({
+            'success': False,
+            'deals': [],
+            'total': 0,
+            'error': str(e)
+        }), 500
 
-#         # Use raw SQL to get signals data with only existing columns
-#         result = db.session.execute(text("""
-#             SELECT id, symbol, entry_price, current_price, quantity, investment_amount, 
-#                    signal_type, status, created_at, pnl, pnl_percentage, change_percent,
-#                    target_price, stop_loss, last_update_time
-#             FROM admin_trade_signals 
-#             ORDER BY created_at DESC
-#             LIMIT 100
-#         """))
+@main_bp.route('/api/etf-signals-data', methods=['GET'])
+def get_etf_signals_data():
+    """API endpoint for ETF signals data"""
+    try:
+        from sqlalchemy import text
+        from app import db
 
-#         signals_data = result.fetchall()
+        # Use raw SQL to get signals data with only existing columns
+        result = db.session.execute(text("""
+            SELECT id, symbol, entry_price, current_price, quantity, investment_amount, 
+                   signal_type, status, created_at, pnl, pnl_percentage, change_percent,
+                   target_price, stop_loss, last_update_time
+            FROM admin_trade_signals 
+            ORDER BY created_at DESC
+            LIMIT 100
+        """))
 
-#         # Format data for frontend
-#         formatted_signals = []
-#         for row in signals_data:
-#             signal = {
-#                 'id': row[0],
-#                 'trade_signal_id': row[0],
-#                 'etf': row[1] or 'N/A',
-#                 'symbol': row[1] or 'N/A',
-#                 'thirty': '30',
-#                 'dh': '0',
-#                 'date': row[8].strftime('%Y-%m-%d') if row[8] else '',
-#                 'pos': 1 if row[2] == 'BUY' else -1,
-#                 'qty': row[6] or 1,
-#                 'ep': float(row[3]) if row[3] else 0,
-#                 'cmp': float(row[4]) if row[4] else 0,
-#                 'chan': f"{float(row[12]):.2f}%" if row[12] else "0%",
-#                 'inv': float(row[9]) if row[9] else 0,
-#                 'tp': float(row[5]) if row[5] else 0,
-#                 'tva': 0,
-#                 'tpr': 0,
-#                 'pl': float(row[10]) if row[10] else 0,
-#                 'ed': row[8].strftime('%Y-%m-%d') if row[8] else '',
-#                 'exp': '',
-#                 'pr': '',
-#                 'pp': f"{float(row[11]):.2f}%" if row[11] else "0%",
-#                 'iv': '',
-#                 'ip': '',
-#                 'nt': '',
-#                 'qt': '',
-#                 'seven': '0',
-#                 'ch': f"{float(row[12]):.2f}%" if row[12] else "0%",
-#                 'status': row[7] or 'ACTIVE'
-#             }
-#             formatted_signals.append(signal)
+        signals_data = result.fetchall()
 
-#         return jsonify({
-#             'success': True,
-#             'data': formatted_signals,
-#             'total': len(formatted_signals)
-#         })
+        # Format data for frontend
+        formatted_signals = []
+        for row in signals_data:
+            signal = {
+                'id': row[0],
+                'trade_signal_id': row[0],
+                'etf': row[1] or 'N/A',
+                'symbol': row[1] or 'N/A',
+                'thirty': '30',
+                'dh': '0',
+                'date': row[8].strftime('%Y-%m-%d') if row[8] else '',
+                'pos': 1 if row[2] == 'BUY' else -1,
+                'qty': row[6] or 1,
+                'ep': float(row[3]) if row[3] else 0,
+                'cmp': float(row[4]) if row[4] else 0,
+                'chan': f"{float(row[12]):.2f}%" if row[12] else "0%",
+                'inv': float(row[9]) if row[9] else 0,
+                'tp': float(row[5]) if row[5] else 0,
+                'tva': 0,
+                'tpr': 0,
+                'pl': float(row[10]) if row[10] else 0,
+                'ed': row[8].strftime('%Y-%m-%d') if row[8] else '',
+                'exp': '',
+                'pr': '',
+                'pp': f"{float(row[11]):.2f}%" if row[11] else "0%",
+                'iv': '',
+                'ip': '',
+                'nt': '',
+                'qt': '',
+                'seven': '0',
+                'ch': f"{float(row[12]):.2f}%" if row[12] else "0%",
+                'status': row[7] or 'ACTIVE'
+            }
+            formatted_signals.append(signal)
 
-#     except Exception as e:
-#         logging.error(f"ETF signals data API error: {str(e)}")
-#         return jsonify({
-#             'success': False,
-#             'error': str(e),
-#             'data': [],
-#             'total': 0
-#         }), 500
+        return jsonify({
+            'success': True,
+            'data': formatted_signals,
+            'total': len(formatted_signals)
+        })
+
+    except Exception as e:
+        logging.error(f"ETF signals data API error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'data': [],
+            'total': 0
+        }), 500
 
 @main_bp.route('/admin')
 @login_required

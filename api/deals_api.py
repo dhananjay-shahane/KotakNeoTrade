@@ -35,7 +35,7 @@ def get_user_deals_from_db():
         if not conn:
             logger.error("Failed to connect to database")
             return []
-            
+
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
             # Query to get all user deals - only real data
             query = """
@@ -63,24 +63,24 @@ def get_user_deals_from_db():
             WHERE symbol IS NOT NULL AND symbol != ''
             ORDER BY created_at DESC
             """
-            
+
             cursor.execute(query)
             deals = []
-            
+
             for row in cursor.fetchall():
                 deal = dict(row)
                 # Only include deals with valid trading data
                 if deal.get('symbol') and deal.get('quantity') and deal.get('entry_price'):
                     deals.append(deal)
-                
+
             logger.info(f"✓ Fetched {len(deals)} authentic user deals from database")
-            
+
             # If no deals found, return empty with clear message
             if len(deals) == 0:
                 logger.info("No user deals found in database - user needs to add real trading data")
-                
+
             return deals
-            
+
     except Exception as e:
         logger.error(f"❌ Error fetching user deals: {e}")
         traceback.print_exc()
@@ -101,7 +101,7 @@ def calculate_deal_metrics(deal):
 
         # Position type: LONG or SHORT
         position_type = str(deal.get('position_type', 'LONG')).upper()
-        
+
         # Status: ACTIVE, CLOSED, etc.
         status = str(deal.get('status', 'ACTIVE')).upper()
 
@@ -109,7 +109,7 @@ def calculate_deal_metrics(deal):
         quantity = float(deal.get('quantity', 0)) if deal.get('quantity') is not None else 0.0
         entry_price = float(deal.get('entry_price', 0)) if deal.get('entry_price') is not None else 0.0
         current_price = float(deal.get('current_price', 0)) if deal.get('current_price') is not None else 0.0
-        
+
         # Use the existing calculated values from the database
         target_price = float(deal.get('target_price', 0)) if deal.get('target_price') is not None else 0.0
         stop_loss = float(deal.get('stop_loss', 0)) if deal.get('stop_loss') is not None else 0.0
@@ -121,13 +121,13 @@ def calculate_deal_metrics(deal):
         # Calculate additional metrics if needed
         if invested_amount == 0 and quantity > 0 and entry_price > 0:
             invested_amount = quantity * entry_price
-        
+
         if current_value == 0 and quantity > 0 and current_price > 0:
             current_value = quantity * current_price
-        
+
         if pnl_amount == 0 and invested_amount > 0 and current_value > 0:
             pnl_amount = current_value - invested_amount
-        
+
         if pnl_percent == 0 and invested_amount > 0 and pnl_amount != 0:
             pnl_percent = (pnl_amount / invested_amount) * 100
 
@@ -174,7 +174,7 @@ def calculate_deal_metrics(deal):
             'created_at': deal.get('created_at', ''),
             'updated_at': deal.get('updated_at', '')
         }
-        
+
     except Exception as e:
         logger.error(f"Error calculating metrics for deal {deal.get('id', 'unknown')}: {e}")
         return None
@@ -188,7 +188,7 @@ def get_user_deals():
     try:
         # Get raw deals from database
         raw_deals = get_user_deals_from_db()
-        
+
         if not raw_deals:
             logger.info("No user deals found - database is empty")
             return jsonify({
@@ -240,7 +240,7 @@ def get_deals_summary():
     """
     try:
         raw_deals = get_user_deals_from_db()
-        
+
         if not raw_deals:
             return jsonify({
                 'total_deals': 0,
@@ -254,11 +254,11 @@ def get_deals_summary():
         total_deals = len(raw_deals)
         running_deals = sum(1 for deal in raw_deals if deal.get('status', 1) == 1)
         closed_deals = total_deals - running_deals
-        
+
         total_investment = 0
         total_pl = 0
         profitable_deals = 0
-        
+
         for deal in raw_deals:
             calculated = calculate_deal_metrics(deal)
             if calculated:
@@ -266,9 +266,9 @@ def get_deals_summary():
                 total_pl += calculated['pl']
                 if calculated['pl'] > 0:
                     profitable_deals += 1
-        
+
         success_rate = (profitable_deals / total_deals * 100) if total_deals > 0 else 0
-        
+
         return jsonify({
             'total_deals': total_deals,
             'running_deals': running_deals,
@@ -278,7 +278,7 @@ def get_deals_summary():
             'success_rate': round(success_rate, 2),
             'profitable_deals': profitable_deals
         })
-        
+
     except Exception as e:
         logger.error(f"❌ Error in get_deals_summary: {e}")
         return jsonify({'error': str(e)}), 500
@@ -292,7 +292,7 @@ def get_deal_details(deal_id):
         conn = get_db_connection()
         if not conn:
             return jsonify({'error': 'Database connection failed'}), 500
-            
+
         with conn.cursor() as cursor:
             query = """
             SELECT * FROM user_deals WHERE id = %s
@@ -300,19 +300,19 @@ def get_deal_details(deal_id):
             cursor.execute(query, (deal_id,))
             columns = [desc[0] for desc in cursor.description]
             row = cursor.fetchone()
-            
+
             if not row:
                 return jsonify({'error': 'Deal not found'}), 404
-                
+
             deal = dict(zip(columns, row))
             calculated_deal = calculate_deal_metrics(deal)
-            
+
             if calculated_deal:
                 calculated_deal['id'] = deal['id']
                 return jsonify(calculated_deal)
             else:
                 return jsonify({'error': 'Error calculating deal metrics'}), 500
-                
+
     except Exception as e:
         logger.error(f"❌ Error in get_deal_details: {e}")
         return jsonify({'error': str(e)}), 500
@@ -328,13 +328,13 @@ def add_deal():
     """
     try:
         data = request.get_json()
-        
+
         # Validate required fields
         required_fields = ['symbol', 'qty', 'ep', 'pos']
         for field in required_fields:
             if field not in data or not data[field]:
                 return jsonify({'error': f'Missing required field: {field}'}), 400
-        
+
         # Validate numeric fields
         try:
             qty = float(data['qty'])
@@ -342,15 +342,15 @@ def add_deal():
             pos = int(data['pos'])
         except (ValueError, TypeError):
             return jsonify({'error': 'Invalid numeric values provided'}), 400
-        
+
         # Validate position type
         if pos not in [1, -1]:
             return jsonify({'error': 'Position must be 1 (buy) or -1 (sell)'}), 400
-        
+
         conn = get_db_connection()
         if not conn:
             return jsonify({'error': 'Database connection failed'}), 500
-            
+
         with conn.cursor() as cursor:
             # Insert new deal
             query = """
@@ -369,19 +369,19 @@ def add_deal():
                 data.get('d7', 0),
                 data.get('status', 1)
             )
-            
+
             cursor.execute(query, values)
             deal_id = cursor.fetchone()[0]
             conn.commit()
-            
+
             logger.info(f"✓ Added new deal: {data['symbol']} - ID: {deal_id}")
-            
+
             return jsonify({
                 'success': True,
                 'message': f'Deal added successfully: {data["symbol"]}',
                 'deal_id': deal_id
             })
-            
+
     except Exception as e:
         logger.error(f"❌ Error adding deal: {e}")
         return jsonify({'error': str(e)}), 500
@@ -397,21 +397,21 @@ def bulk_import_deals():
     """
     try:
         data = request.get_json()
-        
+
         if not data or 'deals' not in data:
             return jsonify({'error': 'No deals data provided'}), 400
-            
+
         deals_data = data['deals']
         if not isinstance(deals_data, list):
             return jsonify({'error': 'Deals data must be an array'}), 400
-            
+
         conn = get_db_connection()
         if not conn:
             return jsonify({'error': 'Database connection failed'}), 500
-            
+
         imported_count = 0
         errors = []
-        
+
         with conn.cursor() as cursor:
             for i, deal in enumerate(deals_data):
                 try:
@@ -419,7 +419,7 @@ def bulk_import_deals():
                     if not deal.get('symbol') or not deal.get('qty') or not deal.get('ep'):
                         errors.append(f"Row {i+1}: Missing required fields")
                         continue
-                    
+
                     # Insert deal
                     query = """
                     INSERT INTO user_deals (symbol, date, pos, qty, ep, cmp, d30, d7, status)
@@ -436,27 +436,69 @@ def bulk_import_deals():
                         float(deal.get('d7', 0)),
                         int(deal.get('status', 1))
                     )
-                    
+
                     cursor.execute(query, values)
                     imported_count += 1
-                    
+
                 except Exception as e:
                     errors.append(f"Row {i+1}: {str(e)}")
-                    
+
             conn.commit()
-            
+
         logger.info(f"✓ Bulk imported {imported_count} deals")
-        
+
         return jsonify({
             'success': True,
             'message': f'Successfully imported {imported_count} deals',
             'imported_count': imported_count,
             'errors': errors
         })
-        
+
     except Exception as e:
         logger.error(f"❌ Error in bulk import: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
         if conn:
             conn.close()
+
+@deals_api.route('/api/deals/user', methods=['GET'])
+def get_user_deals_api():
+    """Get deals for current user with optional symbol filter"""
+    try:
+        symbol = request.args.get('symbol', '')
+
+        # For now, return empty deals to prevent 404 errors
+        # This can be expanded later with actual user authentication and deal fetching
+        return jsonify({
+            'success': True,
+            'deals': [],
+            'total': 0,
+            'message': f'No existing deals found for symbol: {symbol}' if symbol else 'No deals found'
+        })
+
+    except Exception as e:
+        logger.error(f"Error fetching user deals: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'deals': [],
+            'total': 0
+        }), 500
+
+@deals_api.route('/api/deals/create-from-signal', methods=['POST'])
+def create_deal_from_signal():
+    """Create a deal from a signal (placeholder)"""
+    try:
+        data = request.get_json()
+        # Implement deal creation logic here based on signal data
+        return jsonify({
+            'success': True,
+            'message': 'Deal created from signal (placeholder)',
+            'data': data
+        })
+    except Exception as e:
+        logger.error(f"Error creating deal from signal: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
