@@ -321,7 +321,7 @@ DealsManager.prototype.loadDeals = function () {
                         } else {
                             console.log("No data changes detected");
                         }
-                        
+
                         // If no deals found, show helpful message
                         if (uniqueDeals.length === 0) {
                             console.log("No deals found - user needs to add real trading data");
@@ -722,10 +722,6 @@ DealsManager.prototype.startAutoRefresh = function () {
             // Only refresh if page is visible and not already loading
             if (!document.hidden && !self.isLoading) {
                 self.loadDeals();
-                // Update CMP using selected data source every refresh
-                var dataSource =
-                    localStorage.getItem("data-source") || "google";
-                updateDealsCMP();
             }
         }, this.refreshIntervalTime);
     }
