@@ -321,6 +321,11 @@ DealsManager.prototype.loadDeals = function () {
                         } else {
                             console.log("No data changes detected");
                         }
+                        
+                        // If no deals found, show helpful message
+                        if (uniqueDeals.length === 0) {
+                            console.log("No deals found, user needs to create some");
+                        }
                     } else {
                         console.log("No deals found in API response");
                         if (self.deals.length === 0) {
@@ -1658,45 +1663,31 @@ function updateCurrentDataSourceIndicator() {
 
 // Function to create sample deals for testing
 function createSampleDeals() {
-    var sampleDeals = [
-        {
-            symbol: 'NIFTYBEES',
-            position_type: 'LONG',
-            quantity: 100,
-            entry_price: 250.50,
-            current_price: 255.75,
-            target_price: 270.00,
-            notes: 'Sample ETF deal'
-        },
-        {
-            symbol: 'BANKBEES',
-            position_type: 'LONG', 
-            quantity: 50,
-            entry_price: 420.25,
-            current_price: 415.50,
-            target_price: 450.00,
-            notes: 'Banking sector ETF'
+    console.log("Creating sample deals...");
+    
+    fetch('/api/create-sample-deals', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
         }
-    ];
-
-    var promises = sampleDeals.map(function(deal) {
-        return fetch('/api/deals', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(deal)
-        });
-    });
-
-    Promise.all(promises)
-        .then(function() {
+    })
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(data) {
+        if (data.success) {
             showNotification('Sample deals created successfully!', 'success');
-            window.dealsManager.loadDeals();
-        })
-        .catch(function(error) {
-            showNotification('Failed to create sample deals: ' + error.message, 'error');
-        });
+            setTimeout(function() {
+                window.dealsManager.loadDeals();
+            }, 1000);
+        } else {
+            showNotification('Failed to create sample deals: ' + data.message, 'error');
+        }
+    })
+    .catch(function(error) {
+        console.error('Error creating sample deals:', error);
+        showNotification('Failed to create sample deals: ' + error.message, 'error');
+    });
 }
 
 // Auto CMP update functionality removedm // Google Finance CMP update functionality removeda// Auto CMP update functionality removede CMP update function for manual trigger
