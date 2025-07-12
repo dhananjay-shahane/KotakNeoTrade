@@ -55,13 +55,33 @@ class ExternalDBService:
         try:
             with self.connection.cursor(
                     cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
-                # First, check what tables exist to find the correct CMP source
+                # First, check what tables exist and get row count
                 cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
-                tables = [row[0] for row in cursor.fetchall()]
+                tables = [row['table_name'] for row in cursor.fetchall()]
                 logger.info(f"Available tables: {tables}")
                 
+                # Check if admin_trade_signals table exists and has data
+                if 'admin_trade_signals' in tables:
+                    cursor.execute("SELECT COUNT(*) as count FROM admin_trade_signals")
+                    row_count = cursor.fetchone()['count']
+                    logger.info(f"admin_trade_signals table has {row_count} rows")
+                    
+                    if row_count == 0:
+                        logger.warning("admin_trade_signals table is empty - checking table structure")
+                        # Check table structure
+                        cursor.execute("""
+                            SELECT column_name, data_type 
+                            FROM information_schema.columns 
+                            WHERE table_name = 'admin_trade_signals'
+                        """)
+                        columns = cursor.fetchall()
+                        logger.info(f"Table structure: {columns}")
+                        return []
+                else:
+                    logger.error("admin_trade_signals table does not exist")
+                    return []
+                
                 # Get only required fields from admin_trade_signals
-                # Since symbols table doesn't exist, we'll get CMP from admin_trade_signals.cmp field
                 query = """
                 SELECT 
                     id,
@@ -118,6 +138,8 @@ class ExternalDBService:
 
         except Exception as e:
             logger.error(f"Error fetching admin trade signals: {e}")
+            import traceback
+            logger.error(f"Full traceback: {traceback.format_exc()}")
             return []
 
     def get_signal_by_id(self, signal_id: int) -> Optional[Dict]:
@@ -171,6 +193,21 @@ def get_etf_signals_data_json(page=1, page_size=10):
     """Get ETF signals data in JSON format for API response with pagination"""
     try:
         signals = get_etf_signals_from_external_db()
+        
+        # If no signals found, return appropriate message
+        if not signals:
+            logger.info("No signals found in database - returning empty result")
+            return {
+                'data': [],
+                'recordsTotal': 0,
+                'recordsFiltered': 0,
+                'page': page,
+                'page_size': page_size,
+                'total_pages': 0,
+                'has_more': False,
+                'message': 'No trading signals found in admin_trade_signals table. Please check if data exists in the external database.'
+            }
+            
         formatted_signals = []
         count = 0
 
@@ -234,6 +271,8 @@ def get_etf_signals_data_json(page=1, page_size=10):
 
     except Exception as e:
         logger.error(f"Error getting ETF signals data: {e}")
+        import traceback
+        logger.error(f"Full traceback: {traceback.format_exc()}")
         return {
             'data': [],
             'recordsTotal': 0,
@@ -241,5 +280,6 @@ def get_etf_signals_data_json(page=1, page_size=10):
             'page': page,
             'page_size': page_size,
             'has_more': False,
-            'error': str(e)
+            'error': str(e),
+            'message': 'No trading signals found - admin_trade_signals table may be empty'
         }
