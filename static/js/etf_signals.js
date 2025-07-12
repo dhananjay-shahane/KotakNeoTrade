@@ -631,7 +631,7 @@ function sortTable(column) {
             case "chanPercent":
             case "ch":
                 aValue = parseFloat(a.dataset.chanPercent || a.dataset.ch) || 0;
-                bValue = parseFloat(b.dataset.chanPercent || b.dataset.ch) || 0;
+                bValue = parseFloat(b.dataset.chanPercent || a.dataset.ch) || 0;
                 break;
             case "targetPrice":
             case "tp":
@@ -1356,7 +1356,7 @@ function addDealFromSignal(symbol, signalData) {
         var quantity = signal.qty || 1;
 
         if (
-            !confirm(
+            confirm(
                 "Add deal for " +
                     symbol +
                     " at ₹" +

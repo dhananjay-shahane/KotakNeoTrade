@@ -221,3 +221,48 @@
     transform: scale(1);
     animation: pulse 2s ease-in-out infinite;
 }
+
+/* ETF Signals Styling */
+
+/* SweetAlert2 Dark Theme Customization */
+.swal-dark-theme {
+    border-radius: 10px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+}
+
+.swal-dark-theme .swal2-title {
+    color: #fff !important;
+    font-weight: 600 !important;
+}
+
+.swal-dark-theme .swal2-html-container {
+    color: #e2e8f0 !important;
+}
+
+.swal-dark-theme .swal2-confirm {
+    background: linear-gradient(45deg, #28a745, #20c997) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 10px 20px !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+}
+
+.swal-dark-theme .swal2-confirm:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4) !important;
+}
+
+.swal-dark-theme .swal2-cancel {
+    background: linear-gradient(45deg, #6c757d, #495057) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 10px 20px !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+}
+
+.swal-dark-theme .swal2-cancel:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4) !important;
+}
