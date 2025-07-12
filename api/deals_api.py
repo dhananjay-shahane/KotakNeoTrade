@@ -609,16 +609,16 @@ def create_deal_from_signal():
 
         try:
             with conn.cursor() as cursor:
-                # Insert into user_deals table with user_id
+                # Insert into user_deals table with user_id and trading_symbol
                 insert_query = """
                     INSERT INTO user_deals (
-                        user_id, symbol, entry_date, position_type, quantity, entry_price,
+                        user_id, symbol, trading_symbol, entry_date, position_type, quantity, entry_price,
                         current_price, target_price, stop_loss, invested_amount,
                         current_value, pnl_amount, pnl_percent, status, deal_type,
                         notes, tags, created_at, updated_at,
                         pos, qty, ep, cmp, tp, inv, pl
                     ) VALUES (
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                         %s, %s, %s, %s, %s, %s, %s
                     ) RETURNING id
                 """
@@ -626,6 +626,7 @@ def create_deal_from_signal():
                 values = (
                     user_id,  # Add user_id as first parameter
                     symbol.upper(),
+                    symbol.upper(),  # trading_symbol - use same as symbol
                     signal_data.get('date', 'CURRENT_DATE'),
                     'LONG' if pos == 1 else 'SHORT',
                     qty,
