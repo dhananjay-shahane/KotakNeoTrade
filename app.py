@@ -394,28 +394,28 @@ def get_holdings_api():
 
 @app.route('/api/etf-signals-data')
 def get_etf_signals_data():
-    """API endpoint to get ETF signals data - optimized for fast loading"""
+    """API endpoint to get ETF signals data from external admin_trade_signals table"""
     try:
-        # Use fast local service for immediate response
-        from Scripts.fast_etf_service import get_fast_etf_signals_data
+        # First test if external database is available
+        from Scripts.fallback_data_service import test_external_database_availability, get_fallback_error_response
         
-        # Get data from local cache for speed
-        result = get_fast_etf_signals_data()
+        if not test_external_database_availability():
+            logging.warning("External database unavailable - returning error response")
+            return jsonify(get_fallback_error_response("External database connection failed")), 200
         
-        logging.info(f"ETF signals API completed in {result.get('load_time', 'unknown')} - {result.get('status', 'unknown')} status")
-        
-        return jsonify(result), 200
+        # If database is available, try to get data with shorter timeout
+        try:
+            from Scripts.external_db_service import get_etf_signals_data_json
+            result = get_etf_signals_data_json()
+            return jsonify(result)
+        except Exception as e:
+            logging.error(f"ETF signals data retrieval error: {e}")
+            return jsonify(get_fallback_error_response(f"Data retrieval failed: {str(e)}")), 200
             
     except Exception as e:
         logging.error(f"ETF signals API error: {e}")
-        return jsonify({
-            'data': [],
-            'recordsTotal': 0,
-            'recordsFiltered': 0,
-            'message': f'API error: {str(e)}',
-            'status': 'error',
-            'load_time': '< 0.1 seconds'
-        }), 200
+        from Scripts.fallback_data_service import get_fallback_error_response
+        return jsonify(get_fallback_error_response(str(e))), 200
 
 
 @app.route('/api/basic-trade-signals-data')
