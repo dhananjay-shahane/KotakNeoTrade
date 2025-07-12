@@ -7,49 +7,49 @@ function ETFSignalsManager() {
     var self = this;
 
     // Core data management
-    this.signals = [];                  // All ETF signals from database
-    this.filteredSignals = [];          // Filtered signals based on search/sort
-    this.currentPage = 1;               // Current page in pagination
-    this.itemsPerPage = 25;             // Number of signals per page
-    this.isLoading = false;             // Loading state flag
-    this.refreshInterval = null;        // Auto-refresh timer
+    this.signals = []; // All ETF signals from database
+    this.filteredSignals = []; // Filtered signals based on search/sort
+    this.currentPage = 1; // Current page in pagination
+    this.itemsPerPage = 25; // Number of signals per page
+    this.isLoading = false; // Loading state flag
+    this.refreshInterval = null; // Auto-refresh timer
 
     // Table sorting configuration
-    this.sortField = 'id';              // Current sort field
-    this.sortDirection = 'asc';         // Sort direction (asc/desc)
+    this.sortField = "id"; // Current sort field
+    this.sortDirection = "asc"; // Sort direction (asc/desc)
 
     // Column visibility settings
     this.availableColumns = [
-        { key: 'trade_signal_id', label: 'ID', visible: true },
-        { key: 'etf', label: 'ETF', visible: true },
-        { key: 'thirty', label: '30D', visible: true },
-        { key: 'dh', label: '30D%', visible: true },
-        { key: 'date', label: 'DATE', visible: true },
-        { key: 'qty', label: 'QTY', visible: true },
-        { key: 'ep', label: 'EP', visible: true },
-        { key: 'cmp', label: 'CMP', visible: true },
-        { key: 'chan', label: '%CHAN', visible: true },
-        { key: 'inv', label: 'INV.', visible: true },
-        { key: 'tp', label: 'TP', visible: false },
-        { key: 'tva', label: 'TVA', visible: false },
-        { key: 'tpr', label: 'TPR', visible: false },
-        { key: 'pl', label: 'PL', visible: true },
-        { key: 'ed', label: 'ED', visible: false },
-        { key: 'exp', label: 'EXP', visible: false },
-        { key: 'pr', label: 'PR', visible: false },
-        { key: 'pp', label: 'PP', visible: false },
-        { key: 'iv', label: 'IV', visible: false },
-        { key: 'ip', label: 'IP', visible: false },
-        { key: 'nt', label: 'NT', visible: false },
-        { key: 'qt', label: 'QT', visible: false },
-        { key: 'seven', label: '7D', visible: true },
-        { key: 'ch', label: '7D%', visible: true },
-        { key: 'actions', label: 'ACTIONS', visible: true }
+        { key: "trade_signal_id", label: "ID", visible: true },
+        { key: "etf", label: "ETF", visible: true },
+        { key: "thirty", label: "30D", visible: true },
+        { key: "dh", label: "30D%", visible: true },
+        { key: "date", label: "DATE", visible: true },
+        { key: "qty", label: "QTY", visible: true },
+        { key: "ep", label: "EP", visible: true },
+        { key: "cmp", label: "CMP", visible: true },
+        { key: "chan", label: "%CHAN", visible: true },
+        { key: "inv", label: "INV.", visible: true },
+        { key: "tp", label: "TP", visible: false },
+        { key: "tva", label: "TVA", visible: false },
+        { key: "tpr", label: "TPR", visible: false },
+        { key: "pl", label: "PL", visible: true },
+        { key: "ed", label: "ED", visible: false },
+        { key: "exp", label: "EXP", visible: false },
+        { key: "pr", label: "PR", visible: false },
+        { key: "pp", label: "PP", visible: false },
+        { key: "iv", label: "IV", visible: false },
+        { key: "ip", label: "IP", visible: false },
+        { key: "nt", label: "NT", visible: false },
+        { key: "qt", label: "QT", visible: false },
+        { key: "seven", label: "7D", visible: true },
+        { key: "ch", label: "7D%", visible: true },
+        { key: "actions", label: "ACTIONS", visible: true },
     ];
 
     // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", function () {
             self.init();
         });
     } else {
@@ -57,8 +57,8 @@ function ETFSignalsManager() {
     }
 }
 
-ETFSignalsManager.prototype.init = function() {
-    console.log('ETF Signals Manager initialized');
+ETFSignalsManager.prototype.init = function () {
+    console.log("ETF Signals Manager initialized");
     this.loadColumnSettings();
     this.setupEventListeners();
     this.setupColumnSettings();
@@ -67,21 +67,21 @@ ETFSignalsManager.prototype.init = function() {
     this.startAutoRefresh();
 };
 
-ETFSignalsManager.prototype.setupEventListeners = function() {
+ETFSignalsManager.prototype.setupEventListeners = function () {
     var self = this;
 
     // Refresh button
-    var refreshBtn = document.getElementById('refreshSignalsBtn');
+    var refreshBtn = document.getElementById("refreshSignalsBtn");
     if (refreshBtn) {
-        refreshBtn.addEventListener('click', function() {
+        refreshBtn.addEventListener("click", function () {
             self.loadSignals();
         });
     }
 
     // Auto-refresh controls
-    var autoRefreshToggle = document.getElementById('autoRefreshToggle');
+    var autoRefreshToggle = document.getElementById("autoRefreshToggle");
     if (autoRefreshToggle) {
-        autoRefreshToggle.addEventListener('change', function(e) {
+        autoRefreshToggle.addEventListener("change", function (e) {
             if (e.target.checked) {
                 self.startAutoRefresh();
             } else {
@@ -91,17 +91,17 @@ ETFSignalsManager.prototype.setupEventListeners = function() {
     }
 
     // Search functionality
-    var searchInput = document.getElementById('signalSearch');
+    var searchInput = document.getElementById("signalSearch");
     if (searchInput) {
-        searchInput.addEventListener('input', function() {
+        searchInput.addEventListener("input", function () {
             self.applyFilters();
         });
     }
 
     // Items per page selector
-    var itemsPerPageSelect = document.getElementById('itemsPerPage');
+    var itemsPerPageSelect = document.getElementById("itemsPerPage");
     if (itemsPerPageSelect) {
-        itemsPerPageSelect.addEventListener('change', function(e) {
+        itemsPerPageSelect.addEventListener("change", function (e) {
             self.itemsPerPage = parseInt(e.target.value);
             self.currentPage = 1;
             self.renderSignalsTable();
@@ -110,7 +110,7 @@ ETFSignalsManager.prototype.setupEventListeners = function() {
     }
 };
 
-ETFSignalsManager.prototype.loadSignals = function() {
+ETFSignalsManager.prototype.loadSignals = function () {
     var self = this;
 
     if (this.isLoading) return;
@@ -118,52 +118,60 @@ ETFSignalsManager.prototype.loadSignals = function() {
     this.isLoading = true;
     this.showLoadingState();
 
-    console.log('Loading ETF signals from API...');
+    console.log("Loading ETF signals from API...");
 
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', '/api/etf-signals-data', true);
-    xhr.onreadystatechange = function() {
+    xhr.open("GET", "/api/etf-signals-data", true);
+    xhr.onreadystatechange = function () {
         if (xhr.readyState === 4) {
             self.isLoading = false;
             self.hideLoadingState();
 
-            console.log('API Response Status:', xhr.status);
-            console.log('API Response Text:', xhr.responseText);
+            console.log("API Response Status:", xhr.status);
+            console.log("API Response Text:", xhr.responseText);
 
             if (xhr.status === 200) {
                 try {
                     var data = JSON.parse(xhr.responseText);
-                    console.log('Parsed API data:', data);
+                    console.log("Parsed API data:", data);
 
                     if (data.data && Array.isArray(data.data)) {
                         self.signals = data.data || [];
                         self.filteredSignals = self.signals.slice();
                         self.renderSignalsTable();
                         self.updatePagination();
-                        self.showSuccessMessage('Loaded ' + self.signals.length + ' signals');
-                        console.log('Successfully loaded', self.signals.length, 'signals');
+                        self.showSuccessMessage(
+                            "Loaded " + self.signals.length + " signals",
+                        );
+                        console.log(
+                            "Successfully loaded",
+                            self.signals.length,
+                            "signals",
+                        );
                     } else if (data.error) {
                         throw new Error(data.error);
                     } else {
-                        throw new Error('Invalid response format');
+                        throw new Error("Invalid response format");
                     }
                 } catch (parseError) {
-                    console.error('Error parsing response:', parseError);
-                    self.showErrorMessage('Error parsing server response');
+                    console.error("Error parsing response:", parseError);
+                    self.showErrorMessage("Error parsing server response");
                 }
             } else {
-                console.error('API request failed with status:', xhr.status);
-                self.showErrorMessage('Failed to load signals: Server error ' + xhr.status);
+                console.error("API request failed with status:", xhr.status);
+                self.showErrorMessage(
+                    "Failed to load signals: Server error " + xhr.status,
+                );
             }
         }
     };
     xhr.send();
 };
 
-ETFSignalsManager.prototype.renderSignalsTable = function() {
-    var tbody = document.getElementById('signalsTableBody');
+ETFSignalsManager.prototype.renderSignalsTable = function () {
+    var tbody = document.getElementById("signalsTableBody");
     if (!tbody) {
-        console.error('Table body not found');
+        console.error("Table body not found");
         return;
     }
 
@@ -178,12 +186,15 @@ ETFSignalsManager.prototype.renderSignalsTable = function() {
     }
 
     if (pageSignals.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="' + visibleColumnCount + '" class="text-center text-muted">No ETF signals found</td></tr>';
+        tbody.innerHTML =
+            '<tr><td colspan="' +
+            visibleColumnCount +
+            '" class="text-center text-muted">No ETF signals found</td></tr>';
         return;
     }
 
     var self = this;
-    tbody.innerHTML = '';
+    tbody.innerHTML = "";
 
     for (var i = 0; i < pageSignals.length; i++) {
         var signal = pageSignals[i];
@@ -191,28 +202,35 @@ ETFSignalsManager.prototype.renderSignalsTable = function() {
         tbody.appendChild(row);
     }
 
-    console.log('Rendered', pageSignals.length, 'signals in table');
+    console.log("Rendered", pageSignals.length, "signals in table");
 };
 
-ETFSignalsManager.prototype.createSignalRow = function(signal) {
-    var row = document.createElement('tr');
+ETFSignalsManager.prototype.createSignalRow = function (signal) {
+    var row = document.createElement("tr");
 
     // Extract and format signal data
-    var symbol = signal.etf || signal.symbol || 'N/A';
+    var symbol = signal.etf || signal.symbol || "N/A";
     var entryPrice = parseFloat(signal.ep || signal.entry_price || 0);
-    var currentPrice = parseFloat(signal.cmp || signal.current_price || entryPrice);
+    var currentPrice = parseFloat(
+        signal.cmp || signal.current_price || entryPrice,
+    );
     var quantity = parseInt(signal.qty || signal.quantity || 0);
     var pnl = parseFloat(signal.pl || signal.pnl || 0);
     var changePct = parseFloat(signal.change_pct || signal.pp || 0);
-    var investment = parseFloat(signal.inv || signal.investment_amount || (entryPrice * quantity));
-    var targetPrice = parseFloat(signal.tp || signal.target_price || entryPrice * 1.1);
-    var status = signal.status || 'ACTIVE';
-    var positionType = signal.position_type || (signal.pos === 1 ? 'LONG' : 'SHORT') || 'LONG';
+    var investment = parseFloat(
+        signal.inv || signal.investment_amount || entryPrice * quantity,
+    );
+    var targetPrice = parseFloat(
+        signal.tp || signal.target_price || entryPrice * 1.1,
+    );
+    var status = signal.status || "ACTIVE";
+    var positionType =
+        signal.position_type || (signal.pos === 1 ? "LONG" : "SHORT") || "LONG";
 
     // Parse percentage change from chan field (remove % symbol)
-    var chanValue = signal.chan || '';
-    if (chanValue && typeof chanValue === 'string' && chanValue.includes('%')) {
-        changePct = parseFloat(chanValue.replace('%', ''));
+    var chanValue = signal.chan || "";
+    if (chanValue && typeof chanValue === "string" && chanValue.includes("%")) {
+        changePct = parseFloat(chanValue.replace("%", ""));
     }
 
     // Calculate values if not provided
@@ -225,131 +243,162 @@ ETFSignalsManager.prototype.createSignalRow = function(signal) {
     }
 
     // Create table cells based on visible columns
-    var cells = '';
+    var cells = "";
     for (var i = 0; i < this.availableColumns.length; i++) {
         var column = this.availableColumns[i];
         if (!column.visible) continue;
 
-        var cellValue = '';
-        var cellStyle = '';
+        var cellValue = "";
+        var cellStyle = "";
 
         switch (column.key) {
-            case 'trade_signal_id':
-                var tradeId = signal.trade_signal_id || signal.id || 'N/A';
-                cellValue = '<span class="badge bg-secondary">' + tradeId + '</span>';
+            case "trade_signal_id":
+                var tradeId = signal.trade_signal_id || signal.id || "N/A";
+                cellValue =
+                    '<span class="badge bg-secondary">' + tradeId + "</span>";
                 break;
-            case 'etf':
-                cellValue = '<span class="fw-bold text-primary">' + symbol + '</span>';
+            case "etf":
+                cellValue =
+                    '<span class="fw-bold text-primary">' + symbol + "</span>";
                 break;
-            case 'thirty':
+            case "thirty":
                 var thirtyValue = signal.thirty || signal.d30 || 0;
-                if (typeof thirtyValue === 'string') {
+                if (typeof thirtyValue === "string") {
                     thirtyValue = parseFloat(thirtyValue) || 0;
                 }
-                cellValue = thirtyValue > 0 ? '₹' + thirtyValue.toFixed(2) : '₹0.00';
+                cellValue =
+                    thirtyValue > 0 ? "₹" + thirtyValue.toFixed(2) : "₹0.00";
                 break;
-            case 'dh':
-                var dhValue = signal.dh || signal.ch30 || '0.00%';
-                if (typeof dhValue === 'number') {
-                    dhValue = dhValue.toFixed(2) + '%';
+            case "dh":
+                var dhValue = signal.dh || signal.ch30 || "0.00%";
+                if (typeof dhValue === "number") {
+                    dhValue = dhValue.toFixed(2) + "%";
                 }
-                if (typeof dhValue === 'string' && !dhValue.includes('%')) {
-                    dhValue = parseFloat(dhValue).toFixed(2) + '%';
+                if (typeof dhValue === "string" && !dhValue.includes("%")) {
+                    dhValue = parseFloat(dhValue).toFixed(2) + "%";
                 }
-                var percentage = parseFloat(dhValue.replace('%', ''));
-                var colorClass = percentage >= 0 ? 'text-success' : 'text-danger';
+                var percentage = parseFloat(dhValue.replace("%", ""));
+                var colorClass =
+                    percentage >= 0 ? "text-success" : "text-danger";
                 var bgColor = this.getGradientBackgroundColor(percentage);
                 cellStyle = bgColor;
-                cellValue = '<span class="fw-bold ' + colorClass + '">' + dhValue + '</span>';
+                cellValue =
+                    '<span class="fw-bold ' +
+                    colorClass +
+                    '">' +
+                    dhValue +
+                    "</span>";
                 break;
-            case 'date':
-                cellValue = signal.date || '--';
+            case "date":
+                cellValue = signal.date || "--";
                 break;
-            case 'qty':
-                cellValue = '<span class="badge bg-info">' + quantity + '</span>';
+            case "qty":
+                cellValue =
+                    '<span class="badge bg-info">' + quantity + "</span>";
                 break;
-            case 'ep':
-                cellValue = '₹' + entryPrice.toFixed(2);
+            case "ep":
+                cellValue = "₹" + entryPrice.toFixed(2);
                 break;
-            case 'cmp':
-                cellValue = '<span class="cmp-value fw-bold" data-symbol="' + symbol + '">₹' + currentPrice.toFixed(2) + '</span>';
+            case "cmp":
+                cellValue =
+                    '<span class="cmp-value fw-bold" data-symbol="' +
+                    symbol +
+                    '">₹' +
+                    currentPrice.toFixed(2) +
+                    "</span>";
                 break;
-            case 'chan':
-                var chanDisplay = signal.chan || changePct.toFixed(2) + '%';
+            case "chan":
+                var chanDisplay = signal.chan || changePct.toFixed(2) + "%";
                 var bgColor = this.getGradientBackgroundColor(changePct);
                 cellStyle = bgColor;
-                cellValue = '<span class="fw-bold">' + chanDisplay + '</span>';
+                cellValue = '<span class="fw-bold">' + chanDisplay + "</span>";
                 break;
-            case 'inv':
-                cellValue = '₹' + investment.toFixed(0);
+            case "inv":
+                cellValue = "₹" + investment.toFixed(0);
                 break;
-            case 'tp':
-                cellValue = '₹' + targetPrice.toFixed(2);
+            case "tp":
+                cellValue = "₹" + targetPrice.toFixed(2);
                 break;
-            case 'tva':
-                cellValue = '₹' + (signal.tva || (currentPrice * quantity)).toFixed(2);
+            case "tva":
+                cellValue =
+                    "₹" + (signal.tva || currentPrice * quantity).toFixed(2);
                 break;
-            case 'tpr':
-                cellValue = signal.tpr || '--';
+            case "tpr":
+                cellValue = signal.tpr || "--";
                 break;
-            case 'pl':
-                var plClass = pnl >= 0 ? 'text-success' : 'text-danger';
-                cellValue = '<span class="fw-bold ' + plClass + '">₹' + pnl.toFixed(2) + '</span>';
+            case "pl":
+                var plClass = pnl >= 0 ? "text-success" : "text-danger";
+                cellValue =
+                    '<span class="fw-bold ' +
+                    plClass +
+                    '">₹' +
+                    pnl.toFixed(2) +
+                    "</span>";
                 break;
-            case 'ed':
-                cellValue = signal.ed || '--';
+            case "ed":
+                cellValue = signal.ed || "--";
                 break;
-            case 'exp':
-                cellValue = signal.exp || '--';
+            case "exp":
+                cellValue = signal.exp || "--";
                 break;
-            case 'pr':
-                cellValue = signal.pr || '--';
+            case "pr":
+                cellValue = signal.pr || "--";
                 break;
-            case 'pp':
-                cellValue = signal.pp || '--';
+            case "pp":
+                cellValue = signal.pp || "--";
                 break;
-            case 'iv':
-                cellValue = signal.iv || '--';
+            case "iv":
+                cellValue = signal.iv || "--";
                 break;
-            case 'ip':
-                cellValue = signal.ip || '--';
+            case "ip":
+                cellValue = signal.ip || "--";
                 break;
-            case 'nt':
-                cellValue = signal.nt || '--';
+            case "nt":
+                cellValue = signal.nt || "--";
                 break;
             // case 'qt':
             //     cellValue = signal.qt || quantity;
             //     break;
-            case 'seven':
+            case "seven":
                 var sevenValue = signal.seven || signal.d7 || 0;
-                if (typeof sevenValue === 'string') {
+                if (typeof sevenValue === "string") {
                     sevenValue = parseFloat(sevenValue) || 0;
                 }
-                cellValue = sevenValue > 0 ? '₹' + sevenValue.toFixed(2) : '₹0.00';
+                cellValue =
+                    sevenValue > 0 ? "₹" + sevenValue.toFixed(2) : "₹0.00";
                 break;
-            case 'ch':
-                var chValue = signal.ch || signal.ch7 || '0.00%';
-                if (typeof chValue === 'number') {
-                    chValue = chValue.toFixed(2) + '%';
+            case "ch":
+                var chValue = signal.ch || signal.ch7 || "0.00%";
+                if (typeof chValue === "number") {
+                    chValue = chValue.toFixed(2) + "%";
                 }
-                if (typeof chValue === 'string' && !chValue.includes('%')) {
-                    chValue = parseFloat(chValue).toFixed(2) + '%';
+                if (typeof chValue === "string" && !chValue.includes("%")) {
+                    chValue = parseFloat(chValue).toFixed(2) + "%";
                 }
-                var percentage = parseFloat(chValue.replace('%', ''));
-                var colorClass = percentage >= 0 ? 'text-success' : 'text-danger';
+                var percentage = parseFloat(chValue.replace("%", ""));
+                var colorClass =
+                    percentage >= 0 ? "text-success" : "text-danger";
                 var bgColor = this.getGradientBackgroundColor(percentage);
                 cellStyle = bgColor;
-                cellValue = '<span class="fw-bold ' + colorClass + '">' + chValue + '</span>';
+                cellValue =
+                    '<span class="fw-bold ' +
+                    colorClass +
+                    '">' +
+                    chValue +
+                    "</span>";
                 break;
-            case 'actions':
+            case "actions":
                 var signalId = signal.trade_signal_id || signal.id || index;
-                cellValue = '<button class="btn btn-sm btn-success" onclick="addDeal(' + signalId + ')"><i class="fas fa-plus me-1"></i>Add Deal</button>';
+                cellValue =
+                    '<button class="btn btn-sm btn-success" onclick="addDeal(' +
+                    signalId +
+                    ')"><i class="fas fa-plus me-1"></i>Add Deal</button>';
                 break;
             default:
-                cellValue = '--';
+                cellValue = "--";
         }
 
-        cells += '<td style="' + cellStyle + '">' + cellValue + '</td>';
+        cells += '<td style="' + cellStyle + '">' + cellValue + "</td>";
     }
 
     row.innerHTML = cells;
@@ -357,56 +406,80 @@ ETFSignalsManager.prototype.createSignalRow = function(signal) {
 };
 
 // Gradient Background Color Function for %CH column
-ETFSignalsManager.prototype.getGradientBackgroundColor = function(value) {
+ETFSignalsManager.prototype.getGradientBackgroundColor = function (value) {
     var numValue = parseFloat(value);
-    if (isNaN(numValue)) return '';
+    if (isNaN(numValue)) return "";
 
     var intensity = Math.min(Math.abs(numValue) / 5, 1); // Scale to 0-1, max at 5%
-    var alpha = 0.3 + (intensity * 0.5); // Alpha from 0.3 to 0.8
+    var alpha = 0.3 + intensity * 0.5; // Alpha from 0.3 to 0.8
 
     if (numValue < 0) {
         // Red gradient for negative values
         if (intensity <= 0.3) {
             // Light red for small negative values
-            return 'background-color: rgba(255, 182, 193, ' + alpha + '); color: #000;'; // Light pink
+            return (
+                "background-color: rgba(255, 182, 193, " +
+                alpha +
+                "); color: #000;"
+            ); // Light pink
         } else if (intensity <= 0.6) {
             // Medium red
-            return 'background-color: rgba(255, 99, 71, ' + alpha + '); color: #fff;'; // Tomato
+            return (
+                "background-color: rgba(255, 99, 71, " +
+                alpha +
+                "); color: #fff;"
+            ); // Tomato
         } else {
             // Dark red for large negative values
-            return 'background-color: rgba(139, 0, 0, ' + alpha + '); color: #fff;'; // Dark red
+            return (
+                "background-color: rgba(139, 0, 0, " + alpha + "); color: #fff;"
+            ); // Dark red
         }
     } else if (numValue > 0) {
         // Green gradient for positive values
         if (intensity <= 0.3) {
             // Light green for small positive values
-            return 'background-color: rgba(144, 238, 144, ' + alpha + '); color: #000;'; // Light green
+            return (
+                "background-color: rgba(144, 238, 144, " +
+                alpha +
+                "); color: #000;"
+            ); // Light green
         } else if (intensity <= 0.6) {
             // Medium green
-            return 'background-color: rgba(50, 205, 50, ' + alpha + '); color: #fff;'; // Lime green
+            return (
+                "background-color: rgba(50, 205, 50, " +
+                alpha +
+                "); color: #fff;"
+            ); // Lime green
         } else {
             // Dark green for large positive values
-            return 'background-color: rgba(0, 128, 0, ' + alpha + '); color: #fff;'; // Green
+            return (
+                "background-color: rgba(0, 128, 0, " + alpha + "); color: #fff;"
+            ); // Green
         }
     }
-    return '';
+    return "";
 };
 
-ETFSignalsManager.prototype.updateTableHeaders = function() {
-    var headerRow = document.getElementById('tableHeaders');
+ETFSignalsManager.prototype.updateTableHeaders = function () {
+    var headerRow = document.getElementById("tableHeaders");
     if (!headerRow) return;
 
-    headerRow.innerHTML = '';
+    headerRow.innerHTML = "";
 
     for (var i = 0; i < this.availableColumns.length; i++) {
         var column = this.availableColumns[i];
         if (column.visible) {
-            var th = document.createElement('th');
-            th.style.cursor = 'pointer';
-            th.title = column.label + ' - Click to sort';
-            if (column.key !== 'actions') {
-                th.setAttribute('onclick', 'sortSignalsByColumn(\'' + column.key + '\')');
-                th.innerHTML = column.label + ' <i class="fas fa-sort ms-1"></i>';
+            var th = document.createElement("th");
+            th.style.cursor = "pointer";
+            th.title = column.label + " - Click to sort";
+            if (column.key !== "actions") {
+                th.setAttribute(
+                    "onclick",
+                    "sortSignalsByColumn('" + column.key + "')",
+                );
+                th.innerHTML =
+                    column.label + ' <i class="fas fa-sort ms-1"></i>';
             } else {
                 th.innerHTML = column.label;
             }
@@ -416,8 +489,8 @@ ETFSignalsManager.prototype.updateTableHeaders = function() {
 };
 
 // Column Management Functions
-ETFSignalsManager.prototype.loadColumnSettings = function() {
-    var savedSettings = localStorage.getItem('etfSignalsColumnSettings');
+ETFSignalsManager.prototype.loadColumnSettings = function () {
+    var savedSettings = localStorage.getItem("etfSignalsColumnSettings");
     if (savedSettings) {
         try {
             var settings = JSON.parse(savedSettings);
@@ -428,7 +501,7 @@ ETFSignalsManager.prototype.loadColumnSettings = function() {
                 }
             }
         } catch (e) {
-            console.error('Error loading column settings:', e);
+            console.error("Error loading column settings:", e);
         }
     }
 };
@@ -436,74 +509,86 @@ ETFSignalsManager.prototype.loadColumnSettings = function() {
 // Enhanced sorting functionality for ETF signals table
 var sortState = {
     column: null,
-    direction: 'asc'
+    direction: "asc",
 };
 
 function sortTable(column) {
-    var tbody = document.getElementById('etfSignalsTableBody');
+    var tbody = document.getElementById("etfSignalsTableBody");
     if (!tbody) return;
 
-    var rows = Array.from(tbody.querySelectorAll('tr'));
+    var rows = Array.from(tbody.querySelectorAll("tr"));
 
     // Toggle sort direction
     if (sortState.column === column) {
-        sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+        sortState.direction = sortState.direction === "asc" ? "desc" : "asc";
     } else {
         sortState.column = column;
-        sortState.direction = 'asc';
+        sortState.direction = "asc";
     }
 
     // Sort rows based on column
-    rows.sort(function(a, b) {
+    rows.sort(function (a, b) {
         var aValue, bValue;
 
         switch (column) {
-            case 'symbol':
-            case 'etf':
-                aValue = (a.dataset.symbol || a.dataset.etf || '').toLowerCase();
-                bValue = (b.dataset.symbol || b.dataset.etf || '').toLowerCase();
+            case "symbol":
+            case "etf":
+                aValue = (
+                    a.dataset.symbol ||
+                    a.dataset.etf ||
+                    ""
+                ).toLowerCase();
+                bValue = (
+                    b.dataset.symbol ||
+                    b.dataset.etf ||
+                    ""
+                ).toLowerCase();
                 break;
-            case 'quantity':
-            case 'qty':
+            case "quantity":
+            case "qty":
                 aValue = parseFloat(a.dataset.quantity || a.dataset.qty) || 0;
                 bValue = parseFloat(b.dataset.quantity || b.dataset.qty) || 0;
                 break;
-            case 'entryPrice':
-            case 'ep':
+            case "entryPrice":
+            case "ep":
                 aValue = parseFloat(a.dataset.entryPrice || a.dataset.ep) || 0;
                 bValue = parseFloat(b.dataset.entryPrice || b.dataset.ep) || 0;
                 break;
-            case 'currentPrice':
-            case 'cmp':
-                aValue = parseFloat(a.dataset.currentPrice || a.dataset.cmp) || 0;
-                bValue = parseFloat(b.dataset.currentPrice || b.dataset.cmp) || 0;
+            case "currentPrice":
+            case "cmp":
+                aValue =
+                    parseFloat(a.dataset.currentPrice || a.dataset.cmp) || 0;
+                bValue =
+                    parseFloat(b.dataset.currentPrice || b.dataset.cmp) || 0;
                 break;
-            case 'pnl':
-            case 'pl':
+            case "pnl":
+            case "pl":
                 aValue = parseFloat(a.dataset.pnl || a.dataset.pl) || 0;
                 bValue = parseFloat(b.dataset.pnl || b.dataset.pl) || 0;
                 break;
-            case 'investment':
-            case 'inv':
+            case "investment":
+            case "inv":
                 aValue = parseFloat(a.dataset.investment || a.dataset.inv) || 0;
                 bValue = parseFloat(b.dataset.investment || b.dataset.inv) || 0;
                 break;
-            case 'currentValue':
-            case 'tva':
-                aValue = parseFloat(a.dataset.currentValue || a.dataset.tva) || 0;
-                bValue = parseFloat(b.dataset.currentValue || b.dataset.tva) || 0;
+            case "currentValue":
+            case "tva":
+                aValue =
+                    parseFloat(a.dataset.currentValue || a.dataset.tva) || 0;
+                bValue =
+                    parseFloat(b.dataset.currentValue || b.dataset.tva) || 0;
                 break;
-            case 'chanPercent':
-            case 'ch':
+            case "chanPercent":
+            case "ch":
                 aValue = parseFloat(a.dataset.chanPercent || a.dataset.ch) || 0;
                 bValue = parseFloat(b.dataset.chanPercent || b.dataset.ch) || 0;
                 break;
-            case 'targetPrice':
-            case 'tp':
+            case "targetPrice":
+            case "tp":
                 aValue = parseFloat(a.dataset.targetPrice || a.dataset.tp) || 0;
                 bValue = parseFloat(b.dataset.targetPrice || b.dataset.tp) || 0;
                 break;
-            case 'date':
+            case "date":
                 aValue = new Date(a.dataset.date || 0);
                 bValue = new Date(b.dataset.date || 0);
                 break;
@@ -515,21 +600,21 @@ function sortTable(column) {
         var result;
         if (aValue instanceof Date) {
             result = aValue.getTime() - bValue.getTime();
-        } else if (typeof aValue === 'string') {
+        } else if (typeof aValue === "string") {
             result = aValue.localeCompare(bValue);
         } else {
             result = aValue - bValue;
         }
 
-        return sortState.direction === 'asc' ? result : -result;
+        return sortState.direction === "asc" ? result : -result;
     });
 
     // Update sort indicators
     updateSortIndicators(column, sortState.direction);
 
     // Rebuild table with sorted rows
-    tbody.innerHTML = '';
-    rows.forEach(function(row) {
+    tbody.innerHTML = "";
+    rows.forEach(function (row) {
         tbody.appendChild(row);
     });
 }
@@ -537,27 +622,31 @@ function sortTable(column) {
 function updateSortIndicators(activeColumn, direction) {
     // Hide all sort indicators
     var indicators = document.querySelectorAll('[id^="sort-"]');
-    indicators.forEach(function(indicator) {
-        indicator.classList.add('d-none');
+    indicators.forEach(function (indicator) {
+        indicator.classList.add("d-none");
     });
 
     // Show active indicator
-    var activeIndicator = document.getElementById('sort-' + activeColumn + '-' + direction);
+    var activeIndicator = document.getElementById(
+        "sort-" + activeColumn + "-" + direction,
+    );
     if (activeIndicator) {
-        activeIndicator.classList.remove('d-none');
+        activeIndicator.classList.remove("d-none");
     }
 
     // Update sort icons in headers
-    var sortIcons = document.querySelectorAll('.sortable .fa-sort');
-    sortIcons.forEach(function(icon) {
-        icon.classList.remove('text-primary');
-        icon.classList.add('text-muted');
+    var sortIcons = document.querySelectorAll(".sortable .fa-sort");
+    sortIcons.forEach(function (icon) {
+        icon.classList.remove("text-primary");
+        icon.classList.add("text-muted");
     });
 
-    var activeHeader = document.querySelector('.sortable[onclick*="' + activeColumn + '"] .fa-sort');
+    var activeHeader = document.querySelector(
+        '.sortable[onclick*="' + activeColumn + '"] .fa-sort',
+    );
     if (activeHeader) {
-        activeHeader.classList.remove('text-muted');
-        activeHeader.classList.add('text-primary');
+        activeHeader.classList.remove("text-muted");
+        activeHeader.classList.add("text-primary");
     }
 }
 
@@ -566,40 +655,40 @@ function sortSignalsByColumn(column) {
     sortTable(column);
 }
 
-ETFSignalsManager.prototype.saveColumnSettings = function() {
+ETFSignalsManager.prototype.saveColumnSettings = function () {
     var settings = {};
     for (var i = 0; i < this.availableColumns.length; i++) {
         var column = this.availableColumns[i];
         settings[column.key] = column.visible;
     }
-    localStorage.setItem('etfSignalsColumnSettings', JSON.stringify(settings));
+    localStorage.setItem("etfSignalsColumnSettings", JSON.stringify(settings));
 };
 
-ETFSignalsManager.prototype.setupColumnSettings = function() {
+ETFSignalsManager.prototype.setupColumnSettings = function () {
     var self = this;
-    var container = document.getElementById('columnCheckboxes');
+    var container = document.getElementById("columnCheckboxes");
     if (!container) return;
 
-    container.innerHTML = '';
+    container.innerHTML = "";
 
     for (var i = 0; i < this.availableColumns.length; i++) {
         var column = this.availableColumns[i];
-        var colDiv = document.createElement('div');
-        colDiv.className = 'col-md-4 mb-2';
+        var colDiv = document.createElement("div");
+        colDiv.className = "col-md-4 mb-2";
 
-        var checkDiv = document.createElement('div');
-        checkDiv.className = 'form-check';
+        var checkDiv = document.createElement("div");
+        checkDiv.className = "form-check";
 
-        var checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.className = 'form-check-input';
-        checkbox.id = 'col_' + column.key;
+        var checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "form-check-input";
+        checkbox.id = "col_" + column.key;
         checkbox.checked = column.visible;
-        checkbox.setAttribute('data-column', column.key);
+        checkbox.setAttribute("data-column", column.key);
 
-        var label = document.createElement('label');
-        label.className = 'form-check-label text-light';
-        label.setAttribute('for', checkbox.id);
+        var label = document.createElement("label");
+        label.className = "form-check-label text-light";
+        label.setAttribute("for", checkbox.id);
         label.textContent = column.label;
 
         checkDiv.appendChild(checkbox);
@@ -613,57 +702,98 @@ ETFSignalsManager.prototype.setupColumnSettings = function() {
 function selectAllColumns() {
     if (window.etfSignalsManager) {
         // Update all columns to visible
-        for (var i = 0; i < window.etfSignalsManager.availableColumns.length; i++) {
+        for (
+            var i = 0;
+            i < window.etfSignalsManager.availableColumns.length;
+            i++
+        ) {
             window.etfSignalsManager.availableColumns[i].visible = true;
         }
 
         // Update all checkboxes to checked
-        var checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
+        var checkboxes = document.querySelectorAll(
+            '#columnCheckboxes input[type="checkbox"]',
+        );
         for (var i = 0; i < checkboxes.length; i++) {
             checkboxes[i].checked = true;
         }
 
-        console.log('All columns selected');
+        console.log("All columns selected");
     }
 }
 
 function resetDefaultColumns() {
     if (window.etfSignalsManager) {
-        var defaultVisible = ['trade_signal_id', 'etf', 'thirty', 'dh', 'date', 'qty', 'ep', 'cmp', 'chan', 'inv', 'pl', 'ch', 'actions'];
+        var defaultVisible = [
+            "trade_signal_id",
+            "etf",
+            "thirty",
+            "dh",
+            "date",
+            "qty",
+            "ep",
+            "cmp",
+            "chan",
+            "inv",
+            "pl",
+            "ch",
+            "actions",
+        ];
 
         // Update column visibility
-        for (var i = 0; i < window.etfSignalsManager.availableColumns.length; i++) {
+        for (
+            var i = 0;
+            i < window.etfSignalsManager.availableColumns.length;
+            i++
+        ) {
             var column = window.etfSignalsManager.availableColumns[i];
             column.visible = defaultVisible.indexOf(column.key) !== -1;
         }
 
         // Update checkboxes to match default settings
-        var checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
+        var checkboxes = document.querySelectorAll(
+            '#columnCheckboxes input[type="checkbox"]',
+        );
         for (var i = 0; i < checkboxes.length; i++) {
-            var columnKey = checkboxes[i].getAttribute('data-column');
+            var columnKey = checkboxes[i].getAttribute("data-column");
             checkboxes[i].checked = defaultVisible.indexOf(columnKey) !== -1;
         }
 
-        console.log('Reset to default columns');
+        console.log("Reset to default columns");
     }
 }
 
 function applyColumnSettings() {
-    console.log('Applying column settings...');
+    console.log("Applying column settings...");
     if (window.etfSignalsManager) {
-        var checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
-        console.log('Found checkboxes:', checkboxes.length);
+        var checkboxes = document.querySelectorAll(
+            '#columnCheckboxes input[type="checkbox"]',
+        );
+        console.log("Found checkboxes:", checkboxes.length);
 
         // Update column visibility based on checkbox states
         for (var i = 0; i < checkboxes.length; i++) {
-            var columnKey = checkboxes[i].getAttribute('data-column');
+            var columnKey = checkboxes[i].getAttribute("data-column");
             var isChecked = checkboxes[i].checked;
 
             // Find and update the column in availableColumns array
-            for (var j = 0; j < window.etfSignalsManager.availableColumns.length; j++) {
-                if (window.etfSignalsManager.availableColumns[j].key === columnKey) {
-                    window.etfSignalsManager.availableColumns[j].visible = isChecked;
-                    console.log('Updated column', columnKey, 'visible:', isChecked);
+            for (
+                var j = 0;
+                j < window.etfSignalsManager.availableColumns.length;
+                j++
+            ) {
+                if (
+                    window.etfSignalsManager.availableColumns[j].key ===
+                    columnKey
+                ) {
+                    window.etfSignalsManager.availableColumns[j].visible =
+                        isChecked;
+                    console.log(
+                        "Updated column",
+                        columnKey,
+                        "visible:",
+                        isChecked,
+                    );
                     break;
                 }
             }
@@ -676,7 +806,7 @@ function applyColumnSettings() {
         window.etfSignalsManager.updatePagination();
 
         // Close modal
-        var modalElement = document.getElementById('columnSettingsModal');
+        var modalElement = document.getElementById("columnSettingsModal");
         if (modalElement && window.bootstrap) {
             var modal = bootstrap.Modal.getInstance(modalElement);
             if (modal) {
@@ -686,22 +816,23 @@ function applyColumnSettings() {
                 newModal.hide();
             }
         }
-        console.log('Column settings applied successfully');
+        console.log("Column settings applied successfully");
     } else {
-        console.error('ETF Signals Manager not found');
+        console.error("ETF Signals Manager not found");
     }
 }
 
-ETFSignalsManager.prototype.updatePortfolioSummary = function(portfolio) {
+ETFSignalsManager.prototype.updatePortfolioSummary = function (portfolio) {
     if (!portfolio) return;
 
     var elements = {
-        'totalPositions': portfolio.total_positions || 0,
-        'activePositions': portfolio.active_positions || 0,
-        'totalInvestment': '₹' + (portfolio.total_investment || 0).toLocaleString(),
-        'currentValue': '₹' + (portfolio.current_value || 0).toLocaleString(),
-        'totalPnl': '₹' + (portfolio.total_pnl || 0).toLocaleString(),
-        'returnPercent': (portfolio.return_percent || 0).toFixed(2) + '%'
+        totalPositions: portfolio.total_positions || 0,
+        activePositions: portfolio.active_positions || 0,
+        totalInvestment:
+            "₹" + (portfolio.total_investment || 0).toLocaleString(),
+        currentValue: "₹" + (portfolio.current_value || 0).toLocaleString(),
+        totalPnl: "₹" + (portfolio.total_pnl || 0).toLocaleString(),
+        returnPercent: (portfolio.return_percent || 0).toFixed(2) + "%",
     };
 
     for (var id in elements) {
@@ -710,16 +841,18 @@ ETFSignalsManager.prototype.updatePortfolioSummary = function(portfolio) {
     }
 };
 
-ETFSignalsManager.prototype.applyFilters = function() {
-    var searchInput = document.getElementById('signalSearch');
-    var searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+ETFSignalsManager.prototype.applyFilters = function () {
+    var searchInput = document.getElementById("signalSearch");
+    var searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
 
     var self = this;
-    this.filteredSignals = this.signals.filter(function(signal) {
-        var symbol = signal.etf || signal.symbol || '';
-        var status = signal.status || '';
-        return symbol.toLowerCase().indexOf(searchTerm) !== -1 ||
-               status.toLowerCase().indexOf(searchTerm) !== -1;
+    this.filteredSignals = this.signals.filter(function (signal) {
+        var symbol = signal.etf || signal.symbol || "";
+        var status = signal.status || "";
+        return (
+            symbol.toLowerCase().indexOf(searchTerm) !== -1 ||
+            status.toLowerCase().indexOf(searchTerm) !== -1
+        );
     });
 
     this.currentPage = 1;
@@ -727,28 +860,33 @@ ETFSignalsManager.prototype.applyFilters = function() {
     this.updatePagination();
 };
 
-ETFSignalsManager.prototype.updatePagination = function() {
+ETFSignalsManager.prototype.updatePagination = function () {
     var totalPages = Math.ceil(this.filteredSignals.length / this.itemsPerPage);
 
     // Update counts
-    var showingCount = document.getElementById('showingCount');
-    var totalCount = document.getElementById('totalCount');
-    var visibleSignalsCount = document.getElementById('visibleSignalsCount');
+    var showingCount = document.getElementById("showingCount");
+    var totalCount = document.getElementById("totalCount");
+    var visibleSignalsCount = document.getElementById("visibleSignalsCount");
 
     if (showingCount) {
         var startItem = (this.currentPage - 1) * this.itemsPerPage + 1;
-        var endItem = Math.min(this.currentPage * this.itemsPerPage, this.filteredSignals.length);
-        showingCount.textContent = this.filteredSignals.length > 0 ? startItem + '-' + endItem : '0';
+        var endItem = Math.min(
+            this.currentPage * this.itemsPerPage,
+            this.filteredSignals.length,
+        );
+        showingCount.textContent =
+            this.filteredSignals.length > 0 ? startItem + "-" + endItem : "0";
     }
 
     if (totalCount) totalCount.textContent = this.signals.length;
-    if (visibleSignalsCount) visibleSignalsCount.textContent = this.filteredSignals.length;
+    if (visibleSignalsCount)
+        visibleSignalsCount.textContent = this.filteredSignals.length;
 
     // Update pagination buttons
-    var prevBtn = document.getElementById('prevBtn');
-    var nextBtn = document.getElementById('nextBtn');
-    var currentPageSpan = document.getElementById('currentPage');
-    var totalPagesSpan = document.getElementById('totalPages');
+    var prevBtn = document.getElementById("prevBtn");
+    var nextBtn = document.getElementById("nextBtn");
+    var currentPageSpan = document.getElementById("currentPage");
+    var totalPagesSpan = document.getElementById("totalPages");
 
     if (prevBtn) prevBtn.disabled = this.currentPage <= 1;
     if (nextBtn) nextBtn.disabled = this.currentPage >= totalPages;
@@ -756,47 +894,51 @@ ETFSignalsManager.prototype.updatePagination = function() {
     if (totalPagesSpan) totalPagesSpan.textContent = totalPages;
 };
 
-ETFSignalsManager.prototype.showLoadingState = function() {
-    var tbody = document.getElementById('signalsTableBody');
+ETFSignalsManager.prototype.showLoadingState = function () {
+    var tbody = document.getElementById("signalsTableBody");
     if (tbody) {
-        tbody.innerHTML = '<tr><td colspan="25" class="text-center py-5">' +
-                         '<div class="d-flex flex-column justify-content-center align-items-center">' +
-                         '<div class="spinner-border text-primary mb-3" role="status" style="width: 2.5rem; height: 2.5rem;">' +
-                         '<span class="visually-hidden">Loading...</span></div>' +
-                         '<h6 class="text-light mb-2">Loading ETF Signals</h6>' +
-                         '<small class="text-muted">Fetching data from database...</small>' +
-                         '</div></td></tr>';
+        tbody.innerHTML =
+            '<tr><td colspan="25" class="text-center py-5">' +
+            '<div class="d-flex flex-column justify-content-center align-items-center">' +
+            '<div class="spinner-border text-primary mb-3" role="status" style="width: 2.5rem; height: 2.5rem;">' +
+            '<span class="visually-hidden">Loading...</span></div>' +
+            '<h6 class="text-light mb-2">Loading ETF Signals</h6>' +
+            '<small class="text-muted">Fetching data from database...</small>' +
+            "</div></td></tr>";
     }
 };
 
-ETFSignalsManager.prototype.hideLoadingState = function() {
+ETFSignalsManager.prototype.hideLoadingState = function () {
     // Loading state is cleared when table is rendered
 };
 
-ETFSignalsManager.prototype.showSuccessMessage = function(message) {
-    console.log('Success:', message);
+ETFSignalsManager.prototype.showSuccessMessage = function (message) {
+    console.log("Success:", message);
 };
 
-ETFSignalsManager.prototype.showErrorMessage = function(message) {
-    console.error('Error:', message);
-    var tbody = document.getElementById('signalsTableBody');
+ETFSignalsManager.prototype.showErrorMessage = function (message) {
+    console.error("Error:", message);
+    var tbody = document.getElementById("signalsTableBody");
     if (tbody) {
-        tbody.innerHTML = '<tr><td colspan="25" class="text-center text-danger">' + message + '</td></tr>';
+        tbody.innerHTML =
+            '<tr><td colspan="25" class="text-center text-danger">' +
+            message +
+            "</td></tr>";
     }
 };
 
-ETFSignalsManager.prototype.startAutoRefresh = function() {
+ETFSignalsManager.prototype.startAutoRefresh = function () {
     var self = this;
     this.stopAutoRefresh();
-    this.refreshInterval = setInterval(function() {
+    this.refreshInterval = setInterval(function () {
         self.loadSignals();
         // Update CMP values with selected data source every refresh
-        var dataSource = localStorage.getItem('data-source') || 'google';
+        var dataSource = localStorage.getItem("data-source") || "google";
         updateCMPDirectlyFromSource(dataSource);
     }, 300000); // 5 minutes
 };
 
-ETFSignalsManager.prototype.stopAutoRefresh = function() {
+ETFSignalsManager.prototype.stopAutoRefresh = function () {
     if (this.refreshInterval) {
         clearInterval(this.refreshInterval);
         this.refreshInterval = null;
@@ -814,28 +956,31 @@ function setRefreshInterval(interval, text) {
     // Only allow 5 minute intervals
     if (interval !== 300000) {
         interval = 300000;
-text = '5 Min';
+        text = "5 Min";
     }
 
     if (window.etfSignalsManager) {
         window.etfSignalsManager.stopAutoRefresh();
         if (interval > 0) {
-            window.etfSignalsManager.refreshInterval = setInterval(function() {
+            window.etfSignalsManager.refreshInterval = setInterval(function () {
                 window.etfSignalsManager.loadSignals();
                 // Update CMP using selected data source
-                var dataSource = localStorage.getItem('data-source') || 'google';
+                var dataSource =
+                    localStorage.getItem("data-source") || "google";
                 updateCMPDirectlyFromSource(dataSource);
             }, interval);
         }
-        var currentIntervalSpan = document.getElementById('currentInterval');
-        var refreshIntervalDropdown = document.getElementById('refreshIntervalDropdown');
+        var currentIntervalSpan = document.getElementById("currentInterval");
+        var refreshIntervalDropdown = document.getElementById(
+            "refreshIntervalDropdown",
+        );
         if (currentIntervalSpan) {
             currentIntervalSpan.textContent = text;
         }
         if (refreshIntervalDropdown) {
             refreshIntervalDropdown.textContent = text;
         }
-        console.log('Refresh interval set to:', interval + 'ms (' + text + ')');
+        console.log("Refresh interval set to:", interval + "ms (" + text + ")");
     }
 }
 
@@ -843,23 +988,32 @@ function exportSignals() {
     if (window.etfSignalsManager) {
         var signals = window.etfSignalsManager.signals;
         if (!signals || signals.length === 0) {
-            alert('No data to export');
+            alert("No data to export");
             return;
         }
 
         var csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "ETF,Entry Price,Current Price,Quantity,Investment,P&L,Change %\n";
+        csvContent +=
+            "ETF,Entry Price,Current Price,Quantity,Investment,P&L,Change %\n";
 
-        signals.forEach(function(signal) {
-            var symbol = signal.etf || signal.symbol || '';
+        signals.forEach(function (signal) {
+            var symbol = signal.etf || signal.symbol || "";
             var entryPrice = signal.ep || signal.entry_price || 0;
             var currentPrice = signal.cmp || signal.current_price || 0;
-            var quantity = signal.qty || signal|| signal.quantity || 0;
+            var quantity = signal.qty || signal || signal.quantity || 0;
             var investment = signal.inv || signal.investment_amount || 0;
             var pnl = signal.pl || signal.pnl || 0;
             var changePct = signal.change_pct || signal.pp || 0;
 
-            var row = [symbol, entryPrice, currentPrice, quantity, investment, pnl, changePct].join(',');
+            var row = [
+                symbol,
+                entryPrice,
+                currentPrice,
+                quantity,
+                investment,
+                pnl,
+                changePct,
+            ].join(",");
             csvContent += row + "\n";
         });
 
@@ -874,37 +1028,50 @@ function exportSignals() {
 }
 
 function addDeal(signalId) {
-    console.log('Add Deal called with signalId:', signalId);
+    console.log("Add Deal called with signalId:", signalId);
 
     // Find the complete signal data from the current signals array
     var signal = null;
     if (window.etfSignalsManager && window.etfSignalsManager.signals) {
-        signal = window.etfSignalsManager.signals.find(function(s) {
+        signal = window.etfSignalsManager.signals.find(function (s) {
             return s.id == signalId || s.trade_signal_id == signalId;
         });
     }
 
     if (!signal) {
-        console.error('Signal not found for ID:', signalId);
-        showMessage('Signal data not found. Please refresh the page and try again.', 'error');
+        console.error("Signal not found for ID:", signalId);
+        showMessage(
+            "Signal data not found. Please refresh the page and try again.",
+            "error",
+        );
         return;
     }
 
-    console.log('Found signal:', signal);
+    console.log("Found signal:", signal);
 
-    var symbol = signal.etf || signal.symbol || 'UNKNOWN';
+    var symbol = signal.etf || signal.symbol || "UNKNOWN";
     var price = signal.cmp || signal.ep || 0;
     var quantity = signal.qty || 1;
-    var investment = signal.inv || (price * quantity);
+    var investment = signal.inv || price * quantity;
 
     // Validate data before proceeding
-    if (!symbol || symbol === 'UNKNOWN' || price <= 0 || quantity <= 0) {
-        showMessage('Invalid signal data. Cannot create deal.', 'error');
+    if (!symbol || symbol === "UNKNOWN" || price <= 0 || quantity <= 0) {
+        showMessage("Invalid signal data. Cannot create deal.", "error");
         return;
     }
 
     // Show confirmation dialog
-    if (confirm('Add deal for ' + symbol + ' at ₹' + parseFloat(price).toFixed(2) + ' (Qty: ' + quantity + ')?')) {
+    if (
+        confirm(
+            "Add deal for " +
+                symbol +
+                " at ₹" +
+                parseFloat(price).toFixed(2) +
+                " (Qty: " +
+                quantity +
+                ")?",
+        )
+    ) {
         proceedWithAddingDeal(signal, symbol, price, quantity, investment);
     }
 }
@@ -912,7 +1079,13 @@ function addDeal(signalId) {
 // Function removed - no longer checking for duplicates to simplify the flow
 
 function proceedWithAddingDeal(signal, symbol, price, quantity, investment) {
-    console.log('Proceeding with adding deal:', { signal: signal, symbol: symbol, price: price, quantity: quantity, investment: investment });
+    console.log("Proceeding with adding deal:", {
+        signal: signal,
+        symbol: symbol,
+        price: price,
+        quantity: quantity,
+        investment: investment,
+    });
 
     // Prepare complete signal data for the API
     var signalData = {
@@ -923,124 +1096,134 @@ function proceedWithAddingDeal(signal, symbol, price, quantity, investment) {
         qty: signal.qty || quantity || 1,
         ep: signal.ep || price,
         cmp: signal.cmp || price,
-        tp: signal.tp || (price * 1.05),
+        tp: signal.tp || price * 1.05,
         inv: signal.inv || investment,
         pl: signal.pl || 0,
         change_pct: signal.chan || signal.change_pct || 0,
         thirty: signal.thirty || 0,
         dh: signal.dh || 0,
-        date: signal.date || new Date().toISOString().split('T')[0],
+        date: signal.date || new Date().toISOString().split("T")[0],
         ed: signal.ed || signal.date,
-        exp: signal.exp || '',
-        pr: signal.pr || '',
-        pp: signal.pp || '',
-        iv: signal.iv || '',
-        ip: signal.ip || '',
-        nt: signal.nt || 'Added from ETF signals',
+        exp: signal.exp || "",
+        pr: signal.pr || "",
+        pp: signal.pp || "",
+        iv: signal.iv || "",
+        ip: signal.ip || "",
+        nt: signal.nt || "Added from ETF signals",
         qt: signal.qt || new Date().toLocaleTimeString(),
         seven: signal.seven || 0,
         ch: signal.ch || signal.change_pct || 0,
         tva: signal.tva || (signal.tp || price * 1.05) * quantity,
-        tpr: signal.tpr || ((signal.tp || price * 1.05) - price) * quantity
+        tpr: signal.tpr || ((signal.tp || price * 1.05) - price) * quantity,
     };
 
-    console.log('Sending signal data:', signalData);
+    console.log("Sending signal data:", signalData);
 
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/deals/create-from-signal', true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.open("POST", "/api/deals/create-from-signal", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
 
-    xhr.onreadystatechange = function() {
+    xhr.onreadystatechange = function () {
         if (xhr.readyState === 4) {
-            console.log('Response status:', xhr.status);
-            console.log('Response text:', xhr.responseText);
+            console.log("Response status:", xhr.status);
+            console.log("Response text:", xhr.responseText);
 
             if (xhr.status === 200) {
                 try {
                     var response = JSON.parse(xhr.responseText);
                     if (response.success) {
-                        alert('Deal created successfully for ' + symbol + '!');
+                        alert("Deal created successfully for " + symbol + "!");
                         // Optionally redirect to deals page
-                        window.location.href = '/deals';
+                        window.location.href = "/deals";
                     } else {
-                        alert('Failed to create deal: ' + (response.message || 'Unknown error'));
+                        alert(
+                            "Failed to create deal: " +
+                                (response.message || "Unknown error"),
+                        );
                     }
                 } catch (parseError) {
-                    console.error('Failed to parse API response:', parseError);
-                    alert('Invalid response from server');
+                    console.error("Failed to parse API response:", parseError);
+                    alert("Invalid response from server");
                 }
             } else {
-                alert('Server returned status: ' + xhr.status + '. Please try again or contact support.');
+                alert(
+                    "Server returned status: " +
+                        xhr.status +
+                        ". Please try again or contact support.",
+                );
             }
         }
     };
 
-    xhr.onerror = function() {
-        console.error('Network error occurred');
-        alert('Network error occurred. Please check your connection.');
+    xhr.onerror = function () {
+        console.error("Network error occurred");
+        alert("Network error occurred. Please check your connection.");
     };
 
-    xhr.send(JSON.stringify({signal_data: signalData}));
+    xhr.send(JSON.stringify({ signal_data: signalData }));
 }
 
 // Function to sort signals by any column
 function sortSignalsByColumn(column) {
     if (window.etfSignalsManager) {
-        window.etfSignalsManager.sortDirection = window.etfSignalsManager.sortDirection === 'asc' ? 'desc' : 'asc';
+        window.etfSignalsManager.sortDirection =
+            window.etfSignalsManager.sortDirection === "asc" ? "desc" : "asc";
         var direction = window.etfSignalsManager.sortDirection;
 
-        window.etfSignalsManager.filteredSignals.sort(function(a, b) {
+        window.etfSignalsManager.filteredSignals.sort(function (a, b) {
             var valueA, valueB;
 
-            switch(column) {
-                case 'trade_signal_id':
+            switch (column) {
+                case "trade_signal_id":
                     valueA = parseInt(a.trade_signal_id || a.id || 0);
                     valueB = parseInt(b.trade_signal_id || b.id || 0);
                     break;
-                case 'symbol':
-                    valueA = (a.etf || a.symbol || '').toLowerCase();
-                    valueB = (b.etf || b.symbol || '').toLowerCase();
+                case "symbol":
+                    valueA = (a.etf || a.symbol || "").toLowerCase();
+                    valueB = (b.etf || b.symbol || "").toLowerCase();
                     break;
-                case 'ep':
+                case "ep":
                     valueA = parseFloat(a.ep || a.entry_price || 0);
                     valueB = parseFloat(b.ep || b.entry_price || 0);
                     break;
-                case 'cmp':
+                case "cmp":
                     valueA = parseFloat(a.cmp || a.current_price || 0);
                     valueB = parseFloat(b.cmp || b.current_price || 0);
                     break;
-                case 'qty':
+                case "qty":
                     valueA = parseInt(a.qty || a.quantity || 0);
                     valueB = parseInt(b.qty || b.quantity || 0);
                     break;
-                case 'changePct':
+                case "changePct":
                     valueA = parseFloat(a.change_pct || a.pp || 0);
                     valueB = parseFloat(b.change_pct || b.pp || 0);
                     break;
-                case 'inv':
+                case "inv":
                     valueA = parseFloat(a.inv || a.investment_amount || 0);
                     valueB = parseFloat(b.inv || b.investment_amount || 0);
                     break;
-                case 'tp':
+                case "tp":
                     valueA = parseFloat(a.tp || a.target_price || 0);
                     valueB = parseFloat(b.tp || b.target_price || 0);
                     break;
-                case 'pl':
+                case "pl":
                     valueA = parseFloat(a.pl || a.pnl || 0);
                     valueB = parseFloat(b.pl || b.pnl || 0);
                     break;
-                case 'date':
-                    valueA = a.date || a.created_at || '';
-                    valueB = b.date || b.created_at || '';
+                case "date":
+                    valueA = a.date || a.created_at || "";
+                    valueB = b.date || b.created_at || "";
                     break;
                 default:
                     return 0;
             }
 
-            if (typeof valueA === 'string') {
-                return direction === 'asc' ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
+            if (typeof valueA === "string") {
+                return direction === "asc"
+                    ? valueA.localeCompare(valueB)
+                    : valueB.localeCompare(valueA);
             } else {
-                return direction === 'asc' ? valueA - valueB : valueB - valueA;
+                return direction === "asc" ? valueA - valueB : valueB - valueA;
             }
         });
 
@@ -1051,20 +1234,25 @@ function sortSignalsByColumn(column) {
 
 // Data source switching functions
 function switchDataSource(newSource) {
-    var oldSource = localStorage.getItem('data-source') || 'google';
-    localStorage.setItem('data-source', newSource);
+    var oldSource = localStorage.getItem("data-source") || "google";
+    localStorage.setItem("data-source", newSource);
 
-    var sourceName = newSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
+    var sourceName =
+        newSource === "google" ? "Google Finance" : "Yahoo Finance";
 
     // Update UI indicator
-    var currentDataSourceSpan = document.getElementById('currentDataSource');
+    var currentDataSourceSpan = document.getElementById("currentDataSource");
     if (currentDataSourceSpan) {
         currentDataSourceSpan.textContent = sourceName;
     }
 
     // Show immediate notification
-    if (typeof showToaster === 'function') {
-        showToaster('Data Source Changed', 'Switched to ' + sourceName + ' - Updating CMP...', 'info');
+    if (typeof showToaster === "function") {
+        showToaster(
+            "Data Source Changed",
+            "Switched to " + sourceName + " - Updating CMP...",
+            "info",
+        );
     }
 
     // Immediately update CMP when source changes
@@ -1075,202 +1263,236 @@ function switchDataSource(newSource) {
 
 function updateCMPDirectlyFromSource(source) {
     // Show update status icon
-    var statusIcon = document.getElementById('updateStatusIcon');
+    var statusIcon = document.getElementById("updateStatusIcon");
     if (statusIcon) {
-        statusIcon.style.display = 'inline';
+        statusIcon.style.display = "inline";
     }
 
     // Show enhanced loading indicator in table with better styling
-    var loadingHtml = '<tr><td colspan="25" class="text-center py-5">' +
-                     '<div class="d-flex flex-column justify-content-center align-items-center">' +
-                     '<div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">' +
-                     '<span class="visually-hidden">Loading...</span></div>' +
-                     '<h5 class="text-light mb-2">Updating CMP</h5>' +
-                     '<p class="text-muted">Fetching live prices from ' + 
-                     (source === 'google' ? 'Google Finance' : 'Yahoo Finance') + '...</p>' +
-                     '<small class="text-warning">Please wait, this may take a few moments</small>' +
-                     '</div></td></tr>';
+    var loadingHtml =
+        '<tr><td colspan="25" class="text-center py-5">' +
+        '<div class="d-flex flex-column justify-content-center align-items-center">' +
+        '<div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">' +
+        '<span class="visually-hidden">Loading...</span></div>' +
+        '<h5 class="text-light mb-2">Updating CMP</h5>' +
+        '<p class="text-muted">Fetching live prices from ' +
+        (source === "google" ? "Google Finance" : "Yahoo Finance") +
+        "...</p>" +
+        '<small class="text-warning">Please wait, this may take a few moments</small>' +
+        "</div></td></tr>";
 
-    var tableBody = document.getElementById('signalsTableBody');
+    var tableBody = document.getElementById("signalsTableBody");
     if (tableBody) {
         tableBody.innerHTML = loadingHtml;
     }
 
     // Use the appropriate API endpoint based on source
-    var apiEndpoint = source === 'google' ? '/api/google-finance/update-etf-cmp' : '/api/yahoo/update-prices';
+    var apiEndpoint =
+        source === "google"
+            ? "/api/google-finance/update-etf-cmp"
+            : "/api/yahoo/update-prices";
 
     // Create AbortController for timeout handling
     var controller = new AbortController();
-    var timeoutId = setTimeout(function() {
+    var timeoutId = setTimeout(function () {
         controller.abort();
     }, 35000); // 35 second timeout
 
     fetch(apiEndpoint, {
-        method: 'POST',
+        method: "POST",
         headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
         },
         body: JSON.stringify({
             direct_update: true,
-            source: source
+            source: source,
         }),
-        signal: controller.signal
+        signal: controller.signal,
     })
-    .then(function(response) {
-        clearTimeout(timeoutId); // Clear the timeout since request completed
-        return response.json();
-    })
-    .then(function(data) {
-        // Hide update status icon
-        var statusIcon = document.getElementById('updateStatusIcon');
-        if (statusIcon) {
-            statusIcon.style.display = 'none';
-        }
+        .then(function (response) {
+            clearTimeout(timeoutId); // Clear the timeout since request completed
+            return response.json();
+        })
+        .then(function (data) {
+            // Hide update status icon
+            var statusIcon = document.getElementById("updateStatusIcon");
+            if (statusIcon) {
+                statusIcon.style.display = "none";
+            }
 
-        if (data.success) {
-            // Show success notification with detailed info
-            var updatedCount = data.updated_count || data.successful_updates || 0;
-            var sourceName = source === 'google' ? 'Google Finance' : 'Yahoo Finance';
+            if (data.success) {
+                // Show success notification with detailed info
+                var updatedCount =
+                    data.updated_count || data.successful_updates || 0;
+                var sourceName =
+                    source === "google" ? "Google Finance" : "Yahoo Finance";
 
-            if (typeof showToaster === 'function') {
+                if (typeof showToaster === "function") {
+                    showToaster(
+                        "CMP Updated Successfully",
+                        "Updated " +
+                            updatedCount +
+                            " records directly from " +
+                            sourceName +
+                            " in " +
+                            (data.duration || 0).toFixed(1) +
+                            "s",
+                        "success",
+                    );
+                }
+            }
+
+            // Show error notification
+            if (typeof showToaster === "function") {
                 showToaster(
-                    'CMP Updated Successfully', 
-                    'Updated ' + updatedCount + ' records directly from ' + sourceName + ' in ' + (data.duration || 0).toFixed(1) + 's',
-                    'success'
+                    "Network Error",
+                    "Failed to update CMP from selected source",
+                    "error",
                 );
             }
-        }
 
-        // Show error notification
-        if (typeof showToaster === 'function') {
-            showToaster(
-                'Network Error', 
-                'Failed to update CMP from selected source',
-                'error'
-            );
-        }
+            // Still try to refresh the table
+            if (window.etfSignalsManager) {
+                window.etfSignalsManager.loadSignals();
+            }
+        })
+        .catch(function (error) {
+            // Hide update status icon
+            var statusIcon = document.getElementById("updateStatusIcon");
+            if (statusIcon) {
+                statusIcon.style.display = "none";
+            }
 
-        // Still try to refresh the table
-        if (window.etfSignalsManager) {
-            window.etfSignalsManager.loadSignals();
-        }
-    })
-    .catch(function(error) {
-        // Hide update status icon
-        var statusIcon = document.getElementById('updateStatusIcon');
-        if (statusIcon) {
-            statusIcon.style.display = 'none';
-        }
+            var errorMessage = "Network error occurred";
+            if (error.name === "AbortError") {
+                errorMessage = "Update request timed out after 35 seconds";
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
 
-        var errorMessage = 'Network error occurred';
-        if (error.name === 'AbortError') {
-            errorMessage = 'Update request timed out after 35 seconds';
-        } else if (error.message) {
-            errorMessage = error.message;
-        }
+            // Show error notification
+            if (typeof showToaster === "function") {
+                showToaster("Network Error", errorMessage, "error");
+            }
 
-        // Show error notification
-        if (typeof showToaster === 'function') {
-            showToaster(
-                'Network Error', 
-                errorMessage,
-                'error'
-            );
-        }
-
-        // Still try to refresh the table
-        if (window.etfSignalsManager) {
-            window.etfSignalsManager.loadSignals();
-        }
-    });
+            // Still try to refresh the table
+            if (window.etfSignalsManager) {
+                window.etfSignalsManager.loadSignals();
+            }
+        });
 }
 
 // Function to update CMP from Google Finance
 function updateCMPFromGoogleFinance() {
-    console.log('🔄 Updating CMP from Google Finance...');
+    console.log("🔄 Updating CMP from Google Finance...");
 
-    var updateBtn = document.querySelector('[onclick*="updateCMPDirectlyFromSource"]');
+    var updateBtn = document.querySelector(
+        '[onclick*="updateCMPDirectlyFromSource"]',
+    );
     if (updateBtn) {
-        updateBtn.innerHTML = '<i class="fas fa-sync-alt fa-spin me-2"></i>Updating...';
+        updateBtn.innerHTML =
+            '<i class="fas fa-sync-alt fa-spin me-2"></i>Updating...';
         updateBtn.disabled = true;
     }
 
-    fetch('/api/google-finance/update-etf-cmp', {
-        method: 'POST',
+    fetch("/api/google-finance/update-etf-cmp", {
+        method: "POST",
         headers: {
-            'Content-Type': 'application/json'
-        }
+            "Content-Type": "application/json",
+        },
     })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-        if (data.success) {
-            console.log('✅ CMP updated successfully:', data.updated_count, 'records');
-            // Refresh the signals table after update
-            if (window.etfSignalsManager) {
-                window.etfSignalsManager.loadSignals();
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (data) {
+            if (data.success) {
+                console.log(
+                    "✅ CMP updated successfully:",
+                    data.updated_count,
+                    "records",
+                );
+                // Refresh the signals table after update
+                if (window.etfSignalsManager) {
+                    window.etfSignalsManager.loadSignals();
+                }
+            } else {
+                console.error("❌ CMP update failed:", data.error);
             }
-        } else {
-            console.error('❌ CMP update failed:', data.error);
-        }
-    })
-    .catch(function(error) {
-        console.error('❌ Error updating CMP:', error);
-    })
-    .finally(function() {
-        if (updateBtn) {
-            updateBtn.innerHTML = '<i class="fas fa-sync-alt me-2"></i>Force Update CMP';
-            updateBtn.disabled = false;
-        }
-    });
+        })
+        .catch(function (error) {
+            console.error("❌ Error updating CMP:", error);
+        })
+        .finally(function () {
+            if (updateBtn) {
+                updateBtn.innerHTML =
+                    '<i class="fas fa-sync-alt me-2"></i>Force Update CMP';
+                updateBtn.disabled = false;
+            }
+        });
 }
 
 // Function to force update a specific symbol
 function forceUpdateSymbol(symbol) {
-    console.log('🔄 Force updating ' + symbol + '...');
+    console.log("🔄 Force updating " + symbol + "...");
 
-    fetch('/api/google-finance/force-update-symbol/' + symbol, {
-        method: 'POST',
+    fetch("/api/google-finance/force-update-symbol/" + symbol, {
+        method: "POST",
         headers: {
-            'Content-Type': 'application/json'
-        }
+            "Content-Type": "application/json",
+        },
     })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-        if (data.success) {
-            console.log('✅ ' + symbol + ' updated successfully to ₹' + data.price);
-            // Show success message
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (data) {
+            if (data.success) {
+                console.log(
+                    "✅ " + symbol + " updated successfully to ₹" + data.price,
+                );
+                // Show success message
+                if (window.showToaster) {
+                    window.showToaster(
+                        "Symbol Updated",
+                        symbol + " CMP updated to ₹" + data.price,
+                        "success",
+                    );
+                }
+                // Refresh the signals table
+                if (window.etfSignalsManager) {
+                    window.etfSignalsManager.loadSignals();
+                }
+            } else {
+                console.error(
+                    "❌ Failed to update " + symbol + ":",
+                    data.error,
+                );
+                if (window.showToaster) {
+                    window.showToaster(
+                        "Update Failed",
+                        "Failed to update " + symbol + ": " + data.error,
+                        "error",
+                    );
+                }
+            }
+        })
+        .catch(function (error) {
+            console.error("❌ Error updating " + symbol + ":", error);
             if (window.showToaster) {
-                window.showToaster('Symbol Updated', symbol + ' CMP updated to ₹' + data.price, 'success');
+                window.showToaster(
+                    "Update Error",
+                    "Error updating " + symbol,
+                    "error",
+                );
             }
-            // Refresh the signals table
-            if (window.etfSignalsManager) {
-                window.etfSignalsManager.loadSignals();
-            }
-        } else {
-            console.error('❌ Failed to update ' + symbol + ':', data.error);
-            if (window.showToaster) {
-                window.showToaster('Update Failed', 'Failed to update ' + symbol + ': ' + data.error, 'error');
-            }
-        }
-    })
-    .catch(function(error) {
-        console.error('❌ Error updating ' + symbol + ':', error);
-        if (window.showToaster) {
-            window.showToaster('Update Error', 'Error updating ' + symbol, 'error');
-        }
-    });
+        });
 }
 
 // Function to stop automatic CMP updates
 function stopAutoCMPUpdates() {
-    if (typeof cmpUpdateInterval !== 'undefined' && cmpUpdateInterval) {
+    if (typeof cmpUpdateInterval !== "undefined" && cmpUpdateInterval) {
         clearInterval(cmpUpdateInterval);
         cmpUpdateInterval = null;
-        console.log('⏹️ Auto CMP updates stopped');
+        console.log("⏹️ Auto CMP updates stopped");
     }
 }
 
@@ -1279,41 +1501,43 @@ window.etfSignalsManager = new ETFSignalsManager();
 
 // Function to update current data source indicator
 function updateCurrentDataSourceIndicator() {
-    var dataSource = localStorage.getItem('data-source') || 'google';
-    var sourceName = dataSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
+    var dataSource = localStorage.getItem("data-source") || "google";
+    var sourceName =
+        dataSource === "google" ? "Google Finance" : "Yahoo Finance";
 
-    var currentDataSourceSpan = document.getElementById('currentDataSource');
+    var currentDataSourceSpan = document.getElementById("currentDataSource");
     if (currentDataSourceSpan) {
         currentDataSourceSpan.textContent = sourceName;
     }
 }
 
 // Update data source indicator when page loads
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", function () {
     updateCurrentDataSourceIndicator();
 
     // Set default refresh interval to 5 minutes
-    var currentIntervalSpan = document.getElementById('currentInterval');
-    var refreshIntervalDropdown = document.getElementById('refreshIntervalDropdown');
+    var currentIntervalSpan = document.getElementById("currentInterval");
+    var refreshIntervalDropdown = document.getElementById(
+        "refreshIntervalDropdown",
+    );
     if (currentIntervalSpan) {
-        currentIntervalSpan.textContent = '5 Min';
+        currentIntervalSpan.textContent = "5 Min";
     }
     if (refreshIntervalDropdown) {
-        refreshIntervalDropdown.textContent = '5 Min';
+        refreshIntervalDropdown.textContent = "5 Min";
     }
 
     // Set default data source to Google Finance if not already set
-    if (!localStorage.getItem('data-source')) {
-        localStorage.setItem('data-source', 'google');
+    if (!localStorage.getItem("data-source")) {
+        localStorage.setItem("data-source", "google");
     }
 
     // Ensure Google Finance is selected by default
-    switchDataSource('google');
-
+    switchDataSource("google");
 
     // Update CMP immediately on page load
     setTimeout(() => {
-        console.log('🚀 Initial CMP update on page load');
+        console.log("🚀 Initial CMP update on page load");
         updateCMPFromGoogleFinance();
     }, 2000); // Wait 2 seconds for page to fully load
 });
@@ -1321,148 +1545,201 @@ document.addEventListener('DOMContentLoaded', function() {
 // Function to start automatic CMP updates
 function startAutoCMPUpdates() {
     // Auto CMP updates every 5 minutes
-    if (typeof cmpUpdateInterval === 'undefined') {
-        window.cmpUpdateInterval = setInterval(function() {
-            var dataSource = localStorage.getItem('data-source') || 'google';
+    if (typeof cmpUpdateInterval === "undefined") {
+        window.cmpUpdateInterval = setInterval(function () {
+            var dataSource = localStorage.getItem("data-source") || "google";
             updateCMPDirectlyFromSource(dataSource);
         }, 300000); // 5 minutes
-        console.log('🚀 Auto CMP updates started (5 min interval)');
+        console.log("🚀 Auto CMP updates started (5 min interval)");
     }
 }
 
 // Add Deal functionality
 function addDealFromSignal(symbol, signalData) {
     try {
-        var signal = typeof signalData === 'string' ? JSON.parse(signalData) : signalData;
+        var signal =
+            typeof signalData === "string"
+                ? JSON.parse(signalData)
+                : signalData;
 
-        console.log('Adding deal for signal:', signal);
-        console.log('Symbol:', symbol);
+        console.log("Adding deal for signal:", signal);
+        console.log("Symbol:", symbol);
 
         // Validate signal data
         if (!signal || !symbol) {
-            showMessage('Invalid signal data. Cannot create deal.', 'error');
+            showMessage("Invalid signal data. Cannot create deal.", "error");
             return;
         }
 
         var price = signal.cmp || signal.ep || 0;
         var quantity = signal.qty || 1;
 
-        if (!confirm('Add deal for ' + symbol + ' at ₹' + price.toFixed(2) + ' (Qty: ' + quantity + ')?')) {
+        if (
+            !confirm(
+                "Add deal for " +
+                    symbol +
+                    " at ₹" +
+                    price.toFixed(2) +
+                    " (Qty: " +
+                    quantity +
+                    ")?",
+            )
+        ) {
             return;
         }
 
         // Show loading state
-        showMessage('Creating deal for ' + symbol + '...', 'info');
+        showMessage("Creating deal for " + symbol + "...", "info");
 
         var xhr = new XMLHttpRequest();
-        xhr.open('POST', '/api/deals/create-from-signal', true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.open("POST", "/api/deals/create-from-signal", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
         xhr.timeout = 10000; // 10 second timeout
 
-        xhr.onreadystatechange = function() {
+        xhr.onreadystatechange = function () {
             if (xhr.readyState === 4) {
                 try {
                     if (xhr.status === 200) {
                         var response = JSON.parse(xhr.responseText);
                         if (response.success) {
-                            showMessage('Deal created successfully for ' + symbol + '! Deal ID: ' + response.deal_id, 'success');
+                            showMessage(
+                                "Deal created successfully for " +
+                                    symbol +
+                                    "! Deal ID: " +
+                                    response.deal_id,
+                                "success",
+                            );
 
                             // Optional: redirect to deals page after a delay
-                            setTimeout(function() {
-                                if (confirm('Deal created! Would you like to view your deals page?')) {
-                                    window.location.href = '/deals';
+                            setTimeout(function () {
+                                if (
+                                    confirm(
+                                        "Deal created! Would you like to view your deals page?",
+                                    )
+                                ) {
+                                    window.location.href = "/deals";
                                 }
                             }, 2000);
                         } else {
-                            showMessage('Failed to create deal: ' + (response.message || 'Unknown error'), 'error');
+                            showMessage(
+                                "Failed to create deal: " +
+                                    (response.message || "Unknown error"),
+                                "error",
+                            );
                         }
                     } else if (xhr.status === 400) {
                         var errorResponse = JSON.parse(xhr.responseText);
-                        showMessage('Invalid request: ' + (errorResponse.message || 'Bad request'), 'error');
+                        showMessage(
+                            "Invalid request: " +
+                                (errorResponse.message || "Bad request"),
+                            "error",
+                        );
                     } else if (xhr.status === 500) {
                         var errorResponse = JSON.parse(xhr.responseText);
-                        showMessage('Server error: ' + (errorResponse.message || 'Internal server error'), 'error');
+                        showMessage(
+                            "Server error: " +
+                                (errorResponse.message ||
+                                    "Internal server error"),
+                            "error",
+                        );
                     } else {
-                        showMessage('Request failed with status: ' + xhr.status + '. Please try again.', 'error');
+                        showMessage(
+                            "Request failed with status: " +
+                                xhr.status +
+                                ". Please try again.",
+                            "error",
+                        );
                     }
                 } catch (parseError) {
-                    console.error('Error parsing response:', parseError);
-                    showMessage('Invalid response from server. Please try again.', 'error');
+                    console.error("Error parsing response:", parseError);
+                    showMessage(
+                        "Invalid response from server. Please try again.",
+                        "error",
+                    );
                 }
             }
         };
 
-        xhr.ontimeout = function() {
-            showMessage('Request timed out. Please try again.', 'error');
+        xhr.ontimeout = function () {
+            showMessage("Request timed out. Please try again.", "error");
         };
 
-        xhr.onerror = function() {
-            showMessage('Network error. Please check your connection and try again.', 'error');
+        xhr.onerror = function () {
+            showMessage(
+                "Network error. Please check your connection and try again.",
+                "error",
+            );
         };
 
-        xhr.send(JSON.stringify({
-            signal_data: signal
-        }));
-
+        xhr.send(
+            JSON.stringify({
+                signal_data: signal,
+            }),
+        );
     } catch (error) {
-        console.error('Error adding deal:', error);
-        showMessage('Error processing request: ' + error.message, 'error');
+        console.error("Error adding deal:", error);
+        showMessage("Error processing request: " + error.message, "error");
     }
 }
 
 // Function to stop automatic CMP updates
 function stopAutoCMPUpdates() {
-    if (typeof cmpUpdateInterval !== 'undefined' && cmpUpdateInterval) {
+    if (typeof cmpUpdateInterval !== "undefined" && cmpUpdateInterval) {
         clearInterval(cmpUpdateInterval);
         cmpUpdateInterval = null;
-        console.log('⏹️ Auto CMP updates stopped');
+        console.log("⏹️ Auto CMP updates stopped");
     }
 }
 
 // Clean up interval when page unloads
-window.addEventListener('beforeunload', function() {
+window.addEventListener("beforeunload", function () {
     stopAutoCMPUpdates();
 });
 
 function showMessage(message, type) {
     // Remove any existing alerts first
-    var existingAlerts = document.querySelectorAll('.custom-alert');
-    existingAlerts.forEach(function(alert) {
+    var existingAlerts = document.querySelectorAll(".custom-alert");
+    existingAlerts.forEach(function (alert) {
         alert.remove();
     });
 
     var alertClass, iconClass;
-    switch(type) {
-        case 'success':
-            alertClass = 'alert-success';
-            iconClass = 'fa-check-circle';
+    switch (type) {
+        case "success":
+            alertClass = "alert-success";
+            iconClass = "fa-check-circle";
             break;
-        case 'error':
-            alertClass = 'alert-danger';
-            iconClass = 'fa-exclamation-triangle';
+        case "error":
+            alertClass = "alert-danger";
+            iconClass = "fa-exclamation-triangle";
             break;
-        case 'info':
-            alertClass = 'alert-info';
-            iconClass = 'fa-info-circle';
+        case "info":
+            alertClass = "alert-info";
+            iconClass = "fa-info-circle";
             break;
         default:
-            alertClass = 'alert-primary';
-            iconClass = 'fa-info-circle';
+            alertClass = "alert-primary";
+            iconClass = "fa-info-circle";
     }
 
-    var alertHtml = '<div class="alert ' + alertClass + ' alert-dismissible fade show custom-alert position-fixed" role="alert" style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">' +
-                    '<i class="fas ' + iconClass + ' me-2"></i>' +
-                    message +
-                    '<button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>' +
-                    '</div>';
+    var alertHtml =
+        '<div class="alert ' +
+        alertClass +
+        ' alert-dismissible fade show custom-alert position-fixed" role="alert" style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">' +
+        '<i class="fas ' +
+        iconClass +
+        ' me-2"></i>' +
+        message +
+        '<button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>' +
+        "</div>";
 
-    var alertDiv = document.createElement('div');
+    var alertDiv = document.createElement("div");
     alertDiv.innerHTML = alertHtml;
     document.body.appendChild(alertDiv);
 
     // Auto-remove after 5 seconds
-    setTimeout(function() {
-        var alert = document.querySelector('.custom-alert');
+    setTimeout(function () {
+        var alert = document.querySelector(".custom-alert");
         if (alert) {
             alert.remove();
         }
@@ -1471,20 +1748,23 @@ function showMessage(message, type) {
 
 // Expose global functions for HTML event handlers
 
-
 // Function to update the CMP value in the table
 function updateCMPValue(symbol, cmp) {
     // Find the cell with the matching symbol
-    const cmpCells = document.querySelectorAll(`.cmp-value[data-symbol="${symbol}"]`);
-    cmpCells.forEach(cell => {
-        const oldPrice = parseFloat(cell.textContent.replace('₹', '').replace(',', ''));
+    const cmpCells = document.querySelectorAll(
+        `.cmp-value[data-symbol="${symbol}"]`,
+    );
+    cmpCells.forEach((cell) => {
+        const oldPrice = parseFloat(
+            cell.textContent.replace("₹", "").replace(",", ""),
+        );
         cell.textContent = `₹${cmp.toFixed(2)}`;
 
         // Add visual feedback for price changes
         if (oldPrice && oldPrice !== cmp) {
-            cell.classList.add(cmp > oldPrice ? 'price-up' : 'price-down');
+            cell.classList.add(cmp > oldPrice ? "price-up" : "price-down");
             setTimeout(() => {
-                cell.classList.remove('price-up', 'price-down');
+                cell.classList.remove("price-up", "price-down");
             }, 2000);
         }
     });
@@ -1493,16 +1773,18 @@ function updateCMPValue(symbol, cmp) {
 // Function to update all CMP values using selected data source
 function updateAllCMPValues() {
     if (!window.etfSignalsManager || !window.etfSignalsManager.signals) {
-        console.log('No signals data available for CMP update');
+        console.log("No signals data available for CMP update");
         return;
     }
 
     // Get unique symbols from current signals
-    var symbolsArray = window.etfSignalsManager.signals.map(function(signal) {
-        return signal.etf || signal.symbol;
-    }).filter(function(symbol) {
-        return symbol;
-    });
+    var symbolsArray = window.etfSignalsManager.signals
+        .map(function (signal) {
+            return signal.etf || signal.symbol;
+        })
+        .filter(function (symbol) {
+            return symbol;
+        });
 
     // Remove duplicates using a simple approach
     var symbols = [];
@@ -1513,58 +1795,81 @@ function updateAllCMPValues() {
     }
 
     if (symbols.length === 0) {
-        console.log('No symbols found for CMP update');
+        console.log("No symbols found for CMP update");
         return;
     }
 
     // Get selected data source from localStorage
-    var dataSource = localStorage.getItem('data-source') || 'google';
-    var apiEndpoint = dataSource === 'google' ? '/api/update-live-cmp' : '/api/yahoo/update-prices';
-    var sourceName = dataSource === 'google' ? 'Google Finance' : 'Yahoo Finance';
+    var dataSource = localStorage.getItem("data-source") || "google";
+    var apiEndpoint =
+        dataSource === "google"
+            ? "/api/update-live-cmp"
+            : "/api/yahoo/update-prices";
+    var sourceName =
+        dataSource === "google" ? "Google Finance" : "Yahoo Finance";
 
-    console.log('Updating CMP for symbols using ' + sourceName + ':', symbols);
+    console.log("Updating CMP for symbols using " + sourceName + ":", symbols);
 
     // Call selected API to update all symbols
     fetch(apiEndpoint, {
-        method: 'POST',
+        method: "POST",
         headers: {
-            'Content-Type': 'application/json'
+            "Content-Type": "application/json",
         },
-                timeout: 30000  // 30 second timeout
+        timeout: 30000, // 30 second timeout
     })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-        if (data.success) {
-            console.log('CMP update response from ' + sourceName + ':', data);
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (data) {
+            if (data.success) {
+                console.log(
+                    "CMP update response from " + sourceName + ":",
+                    data,
+                );
 
-            // Refresh the signals table to show updated prices
-            if (window.etfSignalsManager) {
-                window.etfSignalsManager.loadSignals();
+                // Refresh the signals table to show updated prices
+                if (window.etfSignalsManager) {
+                    window.etfSignalsManager.loadSignals();
+                }
+
+                // Show success message
+                var updatedCount =
+                    data.updated_count || data.signals_updated || 0;
+                showUpdateMessage(
+                    "Updated CMP for " +
+                        updatedCount +
+                        " records from " +
+                        sourceName,
+                    "success",
+                );
+            } else {
+                console.error("CMP update failed:", data.error);
+                showUpdateMessage(
+                    "Failed to update CMP from " +
+                        sourceName +
+                        ": " +
+                        data.error,
+                    "error",
+                );
             }
-
-            // Show success message
-            var updatedCount = data.updated_count || data.signals_updated || 0;
-            showUpdateMessage('Updated CMP for ' + updatedCount + ' records from ' + sourceName, 'success');
-        } else {
-            console.error('CMP update failed:', data.error);
-            showUpdateMessage('Failed to update CMP from ' + sourceName + ': ' + data.error, 'error');
-        }
-    })
-    .catch(function(error) {
-        console.error('Error updating CMP:', error);
-        showUpdateMessage('Error updating CMP from ' + sourceName + ': ' + error.message, 'error');
-    });
+        })
+        .catch(function (error) {
+            console.error("Error updating CMP:", error);
+            showUpdateMessage(
+                "Error updating CMP from " + sourceName + ": " + error.message,
+                "error",
+            );
+        });
 }
 
 // Function to show update messages
-function showUpdateMessage(message, type = 'info') {
+function showUpdateMessage(message, type = "info") {
     // Create or update a message element
-    let messageEl = document.getElementById('cmp-update-message');
+    let messageEl = document.getElementById("cmp-update-message");
     if (!messageEl) {
-        messageEl = document.createElement('div');
-        messageEl.id = 'cmp-update-message';
+        messageEl = document.createElement("div");
+        messageEl.id = "cmp-update-message";
         messageEl.style.cssText = `
             position: fixed;
             top: 20px;
@@ -1581,13 +1886,17 @@ function showUpdateMessage(message, type = 'info') {
 
     // Set message and style based on type
     messageEl.textContent = message;
-    messageEl.style.backgroundColor = type === 'success' ? '#28a745' : 
-                                     type === 'error' ? '#dc3545' : '#17a2b8';
-    messageEl.style.opacity = '1';
+    messageEl.style.backgroundColor =
+        type === "success"
+            ? "#28a745"
+            : type === "error"
+              ? "#dc3545"
+              : "#17a2b8";
+    messageEl.style.opacity = "1";
 
     // Hide message after 3 seconds
     setTimeout(() => {
-        messageEl.style.opacity = '0';
+        messageEl.style.opacity = "0";
         setTimeout(() => {
             if (messageEl.parentNode) {
                 messageEl.parentNode.removeChild(messageEl);
@@ -1599,32 +1908,32 @@ function showUpdateMessage(message, type = 'info') {
 // Function to get live price for a single symbol
 function getLivePrice(symbol) {
     return fetch(`/api/google-finance/live-price/${symbol}`)
-        .then(response => response.json())
-        .then(data => {
+        .then((response) => response.json())
+        .then((data) => {
             if (data.success) {
                 return data.price;
             } else {
-                throw new Error(data.error || 'Failed to fetch price');
+                throw new Error(data.error || "Failed to fetch price");
             }
         });
 }
 
-    // Example usage (assuming you have a way to get live CMP data)
-    // setInterval(() => {
-    //     // Replace with your logic to fetch live CMP data
-    //     const liveCMPData = {
-    //         "RELIANCE": 2500.50,
-    //         "TCS": 3500.75,
-    //         "HDFC": 1500.20
-    //     };
+// Example usage (assuming you have a way to get live CMP data)
+// setInterval(() => {
+//     // Replace with your logic to fetch live CMP data
+//     const liveCMPData = {
+//         "RELIANCE": 2500.50,
+//         "TCS": 3500.75,
+//         "HDFC": 1500.20
+//     };
 
-    //     // Update CMP values in the table
-    //     for (const symbol in liveCMPData) {
-    //         if (liveCMPData.hasOwnProperty(symbol)) {
-    //             updateCMPValue(symbol, liveCMPData[symbol]);
-    //         }
-    //     }
-    // }, 5000); // Update every 5 seconds (adjust as needed)
+//     // Update CMP values in the table
+//     for (const symbol in liveCMPData) {
+//         if (liveCMPData.hasOwnProperty(symbol)) {
+//             updateCMPValue(symbol, liveCMPData[symbol]);
+//         }
+//     }
+// }, 5000); // Update every 5 seconds (adjust as needed)
 
 // Column settings functionality is handled by ETF Signals Manager
 

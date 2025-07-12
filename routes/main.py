@@ -14,12 +14,14 @@ main_bp = Blueprint('main', __name__)
 trading_functions = TradingFunctions()
 neo_client = NeoClient()
 
+
 @main_bp.route('/')
 def index():
     """Home page - redirect to dashboard if logged in, otherwise to login"""
     if session.get('authenticated'):
         return redirect(url_for('main.dashboard'))
     return redirect(url_for('auth.login'))
+
 
 @main_bp.route('/health')
 def health():
@@ -30,10 +32,12 @@ def health():
         'timestamp': datetime.now().isoformat()
     })
 
+
 @main_bp.route('/test')
 def test():
     """Simple test route for webview verification"""
     return '<h1>Kotak Neo Trading Platform</h1><p>Application is running successfully!</p>'
+
 
 @main_bp.route('/dashboard')
 @login_required
@@ -43,14 +47,17 @@ def dashboard():
         if is_session_expired():
             flash('Your session has expired. Please login again.', 'warning')
         else:
-            flash('Complete the 2FA process before accessing this application', 'error')
+            flash('Complete the 2FA process before accessing this application',
+                  'error')
         session.clear()
         return redirect(url_for('auth.login') + '?expired=true')
 
     try:
         client = session.get('client')
         if not client:
-            flash('Session expired. Please complete the 2FA process and login again.', 'error')
+            flash(
+                'Session expired. Please complete the 2FA process and login again.',
+                'error')
             session.clear()
             return redirect(url_for('auth.login'))
 
@@ -58,9 +65,12 @@ def dashboard():
         try:
             validation_result = neo_client.validate_session(client)
             if not validation_result:
-                logging.warning("Session validation failed, but attempting to proceed with dashboard")
+                logging.warning(
+                    "Session validation failed, but attempting to proceed with dashboard"
+                )
         except Exception as val_error:
-            logging.warning(f"Session validation error (proceeding): {val_error}")
+            logging.warning(
+                f"Session validation error (proceeding): {val_error}")
 
         # Fetch dashboard data with error handling
         dashboard_data = {}
@@ -116,24 +126,29 @@ def dashboard():
             if not isinstance(dashboard_data['recent_orders'], list):
                 dashboard_data['recent_orders'] = []
 
-            dashboard_data.setdefault('total_positions', len(dashboard_data['positions']))
-            dashboard_data.setdefault('total_holdings', len(dashboard_data['holdings']))
-            dashboard_data.setdefault('total_orders', len(dashboard_data['recent_orders']))
+            dashboard_data.setdefault('total_positions',
+                                      len(dashboard_data['positions']))
+            dashboard_data.setdefault('total_holdings',
+                                      len(dashboard_data['holdings']))
+            dashboard_data.setdefault('total_orders',
+                                      len(dashboard_data['recent_orders']))
 
         except Exception as dashboard_error:
             logging.error(f"Dashboard data fetch failed: {dashboard_error}")
             # Check if it's a 2FA error specifically
             if any(phrase in str(dashboard_error) for phrase in [
-                "Complete the 2fa process", 
-                "Invalid Credentials", 
-                "Invalid JWT token"
+                    "Complete the 2fa process", "Invalid Credentials",
+                    "Invalid JWT token"
             ]):
-                flash('Complete the 2FA process before accessing this application', 'error')
+                flash(
+                    'Complete the 2FA process before accessing this application',
+                    'error')
                 session.clear()
                 return redirect(url_for('auth.login'))
             else:
                 # For other errors, show dashboard with empty data
-                flash(f'Some data could not be loaded: {str(dashboard_error)}', 'warning')
+                flash(f'Some data could not be loaded: {str(dashboard_error)}',
+                      'warning')
                 dashboard_data = {
                     'positions': [],
                     'holdings': [],
@@ -148,12 +163,15 @@ def dashboard():
 
     except Exception as e:
         logging.error(f"Dashboard error: {str(e)}")
-        if "Complete the 2fa process" in str(e) or "Invalid Credentials" in str(e):
-            flash('Complete the 2FA process before accessing this application', 'error')
+        if "Complete the 2fa process" in str(
+                e) or "Invalid Credentials" in str(e):
+            flash('Complete the 2FA process before accessing this application',
+                  'error')
             session.clear()
             return redirect(url_for('auth.login'))
         flash(f'Error loading dashboard: {str(e)}', 'error')
         return render_template('dashboard.html', data={})
+
 
 @main_bp.route('/positions')
 @login_required
@@ -170,13 +188,21 @@ def positions():
         # Log the actual data structure for debugging
         if positions_data:
             if isinstance(positions_data, list) and len(positions_data) > 0:
-                logging.info(f"Positions data type: {type(positions_data)}, count: {len(positions_data)}")
-                logging.info(f"First position keys: {list(positions_data[0].keys()) if positions_data[0] else 'Empty position'}")
-                logging.info(f"Sample position data: {positions_data[0] if positions_data[0] else 'Empty'}")
+                logging.info(
+                    f"Positions data type: {type(positions_data)}, count: {len(positions_data)}"
+                )
+                logging.info(
+                    f"First position keys: {list(positions_data[0].keys()) if positions_data[0] else 'Empty position'}"
+                )
+                logging.info(
+                    f"Sample position data: {positions_data[0] if positions_data[0] else 'Empty'}"
+                )
             elif isinstance(positions_data, dict):
                 logging.info(f"Positions returned as dict: {positions_data}")
                 if 'error' in positions_data:
-                    flash(f'Error loading positions: {positions_data["error"]}', 'error')
+                    flash(
+                        f'Error loading positions: {positions_data["error"]}',
+                        'error')
                     return render_template('positions.html', positions=[])
         else:
             logging.info("No positions data returned")
@@ -191,6 +217,7 @@ def positions():
         flash(f'Error loading positions: {str(e)}', 'error')
         return render_template('positions.html', positions=[])
 
+
 @main_bp.route('/api/positions')
 @login_required
 def api_positions():
@@ -198,7 +225,10 @@ def api_positions():
     try:
         client = session.get('client')
         if not client:
-            return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
+            return jsonify({
+                'success': False,
+                'message': 'Session expired. Please login again.'
+            }), 401
 
         # Get fresh positions data
         positions_data = trading_functions.get_positions(client)
@@ -216,7 +246,8 @@ def api_positions():
 
         # Ensure positions_data is a list
         if not isinstance(positions_data, list):
-            logging.warning(f"Positions data is not a list, type: {type(positions_data)}")
+            logging.warning(
+                f"Positions data is not a list, type: {type(positions_data)}")
             positions_data = []
 
         # Calculate summary statistics
@@ -246,8 +277,12 @@ def api_positions():
                     unrealized_pnl += float(position.get('urPnl', 0))
 
                 # Count long/short positions
-                buy_qty = float(position.get('flBuyQty', 0) or position.get('buyQty', 0) or 0)
-                sell_qty = float(position.get('flSellQty', 0) or position.get('sellQty', 0) or 0)
+                buy_qty = float(
+                    position.get('flBuyQty', 0) or position.get('buyQty', 0)
+                    or 0)
+                sell_qty = float(
+                    position.get('flSellQty', 0) or position.get('sellQty', 0)
+                    or 0)
                 net_qty = buy_qty - sell_qty
 
                 if net_qty > 0:
@@ -269,7 +304,9 @@ def api_positions():
             'timestamp': int(time.time())
         }
 
-        logging.info(f"Returning positions API response: success={response_data['success']}, positions_count={len(positions_data)}")
+        logging.info(
+            f"Returning positions API response: success={response_data['success']}, positions_count={len(positions_data)}"
+        )
         return jsonify(response_data)
     except Exception as e:
         error_message = str(e)
@@ -291,200 +328,190 @@ def api_positions():
             'positions': []
         }), 500
 
-@main_bp.route('/api/portfolio_summary')
-@login_required
-def api_portfolio_summary():
-    """API endpoint for portfolio summary data"""
-    try:
-        client = session.get('client')
-        if not client:
-            return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
 
-        # Get dashboard data
-        dashboard_data = trading_functions.get_dashboard_data(client)
+# @main_bp.route('/api/portfolio_summary')
+# @login_required
+# def api_portfolio_summary():
+#     """API endpoint for portfolio summary data"""
+#     try:
+#         client = session.get('client')
+#         if not client:
+#             return jsonify({
+#                 'success': False,
+#                 'message': 'Session expired. Please login again.'
+#             }), 401
 
-        if not dashboard_data or not isinstance(dashboard_data, dict):
-            return jsonify({'success': False, 'message': 'Failed to fetch dashboard data.'}), 500
+#         # Get dashboard data
+#         dashboard_data = trading_functions.get_dashboard_data(client)
 
-        # Calculate summary statistics
-        limits_data = dashboard_data.get('limits', {})
-        portfolio_summary = {
-            'total_positions': dashboard_data.get('total_positions', 0),
-            'total_holdings': dashboard_data.get('total_holdings', 0),
-            'total_orders': dashboard_data.get('total_orders', 0),
-            'limits_available': float(limits_data.get('Net', 0) or 0),
-            'margin_used': float(limits_data.get('MarginUsed', 0) or 0),
-            'collateral_value': float(limits_data.get('CollateralValue', 0) or 0),
-            'total_pnl': 0.0,
-            'total_investment': 0.0
-        }
+#         if not dashboard_data or not isinstance(dashboard_data, dict):
+#             return jsonify({
+#                 'success': False,
+#                 'message': 'Failed to fetch dashboard data.'
+#             }), 500
 
-        # Calculate P&L from positions
-        positions = dashboard_data.get('positions', [])
-        for position in positions:
-            try:
-                pnl = float(position.get('pnl', 0) or 0)
-                portfolio_summary['total_pnl'] += pnl
-            except (ValueError, TypeError):
-                continue
+#         # Calculate summary statistics
+#         limits_data = dashboard_data.get('limits', {})
+#         portfolio_summary = {
+#             'total_positions': dashboard_data.get('total_positions', 0),
+#             'total_holdings': dashboard_data.get('total_holdings', 0),
+#             'total_orders': dashboard_data.get('total_orders', 0),
+#             'limits_available': float(limits_data.get('Net', 0) or 0),
+#             'margin_used': float(limits_data.get('MarginUsed', 0) or 0),
+#             'collateral_value':
+#             float(limits_data.get('CollateralValue', 0) or 0),
+#             'total_pnl': 0.0,
+#             'total_investment': 0.0
+#         }
 
-        # Calculate investment from holdings
-        holdings = dashboard_data.get('holdings', [])
-        for holding in holdings:
-            try:
-                quantity = float(holding.get('quantity', 0) or 0)
-                avg_price = float(holding.get('avgPrice', 0) or 0)
-                portfolio_summary['total_investment'] += quantity * avg_price
-            except (ValueError, TypeError):
-                continue
+#         # Calculate P&L from positions
+#         positions = dashboard_data.get('positions', [])
+#         for position in positions:
+#             try:
+#                 pnl = float(position.get('pnl', 0) or 0)
+#                 portfolio_summary['total_pnl'] += pnl
+#             except (ValueError, TypeError):
+#                 continue
 
-        return jsonify({
-            'success': True,
-            **portfolio_summary
-        })
+#         # Calculate investment from holdings
+#         holdings = dashboard_data.get('holdings', [])
+#         for holding in holdings:
+#             try:
+#                 quantity = float(holding.get('quantity', 0) or 0)
+#                 avg_price = float(holding.get('avgPrice', 0) or 0)
+#                 portfolio_summary['total_investment'] += quantity * avg_price
+#             except (ValueError, TypeError):
+#                 continue
 
-    except Exception as e:
-        logging.error(f"Portfolio summary API error: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': str(e)
-        }), 500
+#         return jsonify({'success': True, **portfolio_summary})
 
+#     except Exception as e:
+#         logging.error(f"Portfolio summary API error: {str(e)}")
+#         return jsonify({'success': False, 'message': str(e)}), 500
 
-@main_bp.route('/api/portfolio_details')
-@login_required
-def api_portfolio_details():
-    """API endpoint for detailed portfolio data"""
-    try:
-        client = session.get('client')
-        if not client:
-            return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
+# @main_bp.route('/api/portfolio_details')
+# @login_required
+# def api_portfolio_details():
+#     """API endpoint for detailed portfolio data"""
+#     try:
+#         client = session.get('client')
+#         if not client:
+#             return jsonify({
+#                 'success': False,
+#                 'message': 'Session expired. Please login again.'
+#             }), 401
 
-        portfolio_data = trading_functions.get_portfolio_summary(client)
-        return jsonify(portfolio_data)
+#         portfolio_data = trading_functions.get_portfolio_summary(client)
+#         return jsonify(portfolio_data)
 
-    except Exception as e:
-        logging.error(f"Portfolio details API error: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': str(e)
-        }), 500
+#     except Exception as e:
+#         logging.error(f"Portfolio details API error: {str(e)}")
+#         return jsonify({'success': False, 'message': str(e)}), 500
 
-@main_bp.route('/api/live_quotes')
-@login_required
-def api_live_quotes():
-    """API endpoint for live quotes"""
-    try:
-        # Return sample quotes for now - you can implement actual quote fetching
-        # sample_quotes = [
-        #     {'symbol': 'RELIANCE', 'ltp': 2890.50, 'changePct': 1.2},
-        #     {'symbol': 'TCS', 'ltp': 3456.75, 'changePct': -0.8},
-        #     {'symbol': 'HDFC', 'ltp': 1789.25, 'changePct': 0.5},
-        #     {'symbol': 'INFY', 'ltp': 1523.80, 'changePct': 2.1}
-        # ]
+# @main_bp.route('/etf-signals')
+# @login_required
+# def etf_signals():
+#     """ETF Signals page - show admin_trade_signals data from external database"""
+#     try:
+#         # Get signals count from external database
+#         from Scripts.external_db_service import get_etf_signals_from_external_db
 
-        return jsonify({
-            'success': True,
-            # 'quotes': sample_quotes
-        })
+#         try:
+#             signals = get_etf_signals_from_external_db()
+#             signals_count = len(signals) if signals else 0
+#         except Exception as e:
+#             logging.error(f"Error fetching signals from external DB: {str(e)}")
+#             signals_count = 0
 
-    except Exception as e:
-        logging.error(f"Live quotes API error: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': str(e),
-            'quotes': []
-        }), 500
+#         logging.info(
+#             f"ETF Signals page: Displaying {signals_count} admin trade signals in datatable"
+#         )
 
-@main_bp.route('/etf-signals')
-@login_required
-def etf_signals():
-    """ETF Signals page - show admin_trade_signals data from external database"""
-    try:
-        # Get signals count from external database
-        from Scripts.external_db_service import get_etf_signals_from_external_db
+#         return render_template('etf_signals.html', signals_count=signals_count)
 
-        try:
-            signals = get_etf_signals_from_external_db()
-            signals_count = len(signals) if signals else 0
-        except Exception as e:
-            logging.error(f"Error fetching signals from external DB: {str(e)}")
-            signals_count = 0
+#     except Exception as e:
+#         logging.error(f"ETF signals page error: {str(e)}")
+#         flash(f'Error loading ETF signals page: {str(e)}', 'error')
+#         return redirect(url_for('main.dashboard'))
 
-        logging.info(f"ETF Signals page: Displaying {signals_count} admin trade signals in datatable")
+# @main_bp.route('/api/etf_positions')
+# @login_required
+# def api_etf_positions():
+#     """API endpoint for ETF positions"""
+#     try:
+#         if 'user_id' not in session:
+#             return jsonify({
+#                 'success': False,
+#                 'message': 'Not authenticated'
+#             }), 401
 
-        return render_template('etf_signals.html', signals_count=signals_count)
+#         # Get current user from database
+#         from Scripts.models import User
+#         current_user = User.query.get(session['user_id'])
+#         if not current_user:
+#             return jsonify({
+#                 'success': False,
+#                 'message': 'User not found'
+#             }), 404
 
-    except Exception as e:
-        logging.error(f"ETF signals page error: {str(e)}")
-        flash(f'Error loading ETF signals page: {str(e)}', 'error')
-        return redirect(url_for('main.dashboard'))
+#         # Get ETF signal trades for current user
+#         from Scripts.models_etf import ETFSignalTrade
+#         trades = ETFSignalTrade.query.filter_by(
+#             user_id=current_user.id).order_by(
+#                 ETFSignalTrade.created_at.desc()).all()
 
-@main_bp.route('/api/etf_positions')
-@login_required
-def api_etf_positions():
-    """API endpoint for ETF positions"""
-    try:
-        if 'user_id' not in session:
-            return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+#         # Calculate portfolio summary
+#         total_invested = 0
+#         current_value = 0
+#         total_pnl = 0
+#         profit_trades = 0
+#         loss_trades = 0
 
-        # Get current user from database
-        from Scripts.models import User
-        current_user = User.query.get(session['user_id'])
-        if not current_user:
-            return jsonify({'success': False, 'message': 'User not found'}), 404
+#         trades_data = []
+#         for trade in trades:
+#             trade_dict = trade.to_dict()
+#             trades_data.append(trade_dict)
 
-        # Get ETF signal trades for current user
-        from Scripts.models_etf import ETFSignalTrade
-        trades = ETFSignalTrade.query.filter_by(user_id=current_user.id).order_by(ETFSignalTrade.created_at.desc()).all()
+#             # Update calculations
+#             if trade.invested_amount:
+#                 total_invested += float(trade.invested_amount)
+#             if trade.current_value:
+#                 current_value += float(trade.current_value)
+#             if trade.pnl_amount:
+#                 pnl = float(trade.pnl_amount)
+#                 total_pnl += pnl
+#                 if pnl > 0:
+#                     profit_trades += 1
+#                 elif pnl < 0:
+#                     loss_trades += 1
 
-        # Calculate portfolio summary
-        total_invested = 0
-        current_value = 0
-        total_pnl = 0
-        profit_trades = 0
-        loss_trades = 0
+#         # Calculate return percentage
+#         return_percent = (total_pnl / total_invested *
+#                           100) if total_invested > 0 else 0
 
-        trades_data = []
-        for trade in trades:
-            trade_dict = trade.to_dict()
-            trades_data.append(trade_dict)
+#         portfolio_summary = {
+#             'total_invested': total_invested,
+#             'current_value': current_value,
+#             'total_pnl': total_pnl,
+#             'return_percent': return_percent,
+#             'profit_trades': profit_trades,
+#             'loss_trades': loss_trades,
+#             'total_trades': len(trades_data)
+#         }
 
-            # Update calculations
-            if trade.invested_amount:
-                total_invested += float(trade.invested_amount)
-            if trade.current_value:
-                current_value += float(trade.current_value)
-            if trade.pnl_amount:
-                pnl = float(trade.pnl_amount)
-                total_pnl += pnl
-                if pnl > 0:
-                    profit_trades += 1
-                elif pnl < 0:
-                    loss_trades += 1
+#         return jsonify({
+#             'success': True,
+#             'trades': trades_data,
+#             'portfolio': portfolio_summary
+#         })
 
-        # Calculate return percentage
-        return_percent = (total_pnl / total_invested * 100) if total_invested > 0 else 0
+#     except Exception as e:
+#         logging.error(f"Error fetching ETF positions: {str(e)}")
+#         return jsonify({
+#             'success': False,
+#             'message': f'Error fetching data: {str(e)}'
+#         }), 500
 
-        portfolio_summary = {
-            'total_invested': total_invested,
-            'current_value': current_value,
-            'total_pnl': total_pnl,
-            'return_percent': return_percent,
-            'profit_trades': profit_trades,
-            'loss_trades': loss_trades,
-            'total_trades': len(trades_data)
-        }
-
-        return jsonify({
-            'success': True,
-            'trades': trades_data,
-            'portfolio': portfolio_summary
-        })
-
-    except Exception as e:
-        logging.error(f"Error fetching ETF positions: {str(e)}")
-        return jsonify({'success': False, 'message': f'Error fetching data: {str(e)}'}), 500
 
 @main_bp.route('/api/user_profile')
 @login_required
@@ -499,36 +526,50 @@ def api_user_profile():
 
         # Return comprehensive user session info
         profile_data = {
-            'greeting_name': session.get('greeting_name', session.get('user_name', 'User')),
-            'ucc': session.get('ucc', 'N/A'),
-            'user_id': session.get('user_id', 'N/A'),
-            'client_code': session.get('client_code', 'N/A'),
-            'mobile_number': session.get('mobile_number', 'N/A'),
-            'login_time': login_time,
-            'access_token': session.get('access_token', 'N/A')[:20] + '...' if session.get('access_token') else 'N/A',
-            'session_token': session.get('session_token', 'N/A')[:20] + '...' if session.get('session_token') else 'N/A',
-            'sid': session.get('sid', 'N/A'),
-            'rid': session.get('rid', 'N/A'),
-            'token_status': 'Valid' if session.get('authenticated') else 'Invalid',
-            'authenticated': session.get('authenticated', False),
-            'needs_reauth': not session.get('authenticated', False),
-            'is_trial_account': session.get('is_trial_account', False),
-            'account_type': session.get('account_type', 'Regular'),
-            'branch_code': session.get('branch_code', 'N/A'),
-            'product_code': session.get('product_code', 'N/A')
+            'greeting_name':
+            session.get('greeting_name', session.get('user_name', 'User')),
+            'ucc':
+            session.get('ucc', 'N/A'),
+            'user_id':
+            session.get('user_id', 'N/A'),
+            'client_code':
+            session.get('client_code', 'N/A'),
+            'mobile_number':
+            session.get('mobile_number', 'N/A'),
+            'login_time':
+            login_time,
+            'access_token':
+            session.get('access_token', 'N/A')[:20] +
+            '...' if session.get('access_token') else 'N/A',
+            'session_token':
+            session.get('session_token', 'N/A')[:20] +
+            '...' if session.get('session_token') else 'N/A',
+            'sid':
+            session.get('sid', 'N/A'),
+            'rid':
+            session.get('rid', 'N/A'),
+            'token_status':
+            'Valid' if session.get('authenticated') else 'Invalid',
+            'authenticated':
+            session.get('authenticated', False),
+            'needs_reauth':
+            not session.get('authenticated', False),
+            'is_trial_account':
+            session.get('is_trial_account', False),
+            'account_type':
+            session.get('account_type', 'Regular'),
+            'branch_code':
+            session.get('branch_code', 'N/A'),
+            'product_code':
+            session.get('product_code', 'N/A')
         }
 
-        return jsonify({
-            'success': True,
-            'profile': profile_data
-        })
+        return jsonify({'success': True, 'profile': profile_data})
 
     except Exception as e:
         logging.error(f"User profile API error: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': str(e)
-        }), 500
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 
 @main_bp.route('/holdings')
 @login_required
@@ -547,6 +588,7 @@ def holdings():
         flash(f'Error loading holdings: {str(e)}', 'error')
         return render_template('holdings.html', holdings=[])
 
+
 @main_bp.route('/api/holdings')
 @login_required
 def api_holdings():
@@ -554,7 +596,10 @@ def api_holdings():
     try:
         client = session.get('client')
         if not client:
-            return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
+            return jsonify({
+                'success': False,
+                'message': 'Session expired. Please login again.'
+            }), 401
 
         # Get fresh holdings data
         holdings_data = trading_functions.get_holdings(client)
@@ -621,6 +666,7 @@ def api_holdings():
             'holdings': []
         }), 500
 
+
 @main_bp.route('/orders')
 @login_required
 def orders():
@@ -638,6 +684,7 @@ def orders():
         flash(f'Error loading orders: {str(e)}', 'error')
         return render_template('orders.html', orders=[])
 
+
 @main_bp.route('/api/orders')
 @login_required
 def api_orders():
@@ -645,7 +692,10 @@ def api_orders():
     try:
         client = session.get('client')
         if not client:
-            return jsonify({'success': False, 'message': 'Session expired. Please login again.'}), 401
+            return jsonify({
+                'success': False,
+                'message': 'Session expired. Please login again.'
+            }), 401
 
         orders_data = trading_functions.get_orders(client)
         return jsonify({
@@ -661,11 +711,13 @@ def api_orders():
             'orders': []
         }), 500
 
+
 @main_bp.route('/charts')
 @login_required
 def charts():
     """Charts page for trading analysis"""
     return render_template('charts.html')
+
 
 @main_bp.route('/deals')
 @login_required
@@ -673,11 +725,13 @@ def deals():
     """Deals page for placed orders from signals"""
     return render_template('deals.html')
 
+
 @main_bp.route('/default-deals')
 @login_required
 def default_deals():
     """Default deals page showing all deals"""
     return render_template('default_deals.html')
+
 
 @main_bp.route('/api/deals/user', methods=['GET'])
 def api_get_user_deals():
@@ -694,35 +748,37 @@ def api_get_user_deals():
             'error': str(e)
         }), 500
 
+
 @main_bp.route('/api/deals/create-from-signal', methods=['POST'])
 def api_create_deal_from_signal():
     """API endpoint for creating a deal from a signal"""
     try:
         logging.info("Create deal from signal endpoint called")
-        
+
         data = request.get_json()
         logging.info(f"Received data: {data}")
-        
+
         if not data or 'signal_data' not in data:
             logging.error("No signal data provided in request")
             return jsonify({
                 'success': False,
                 'message': 'No signal data provided'
             }), 400
-            
+
         signal_data = data['signal_data']
         logging.info(f"Signal data: {signal_data}")
-        
+
         # Extract signal information with better error handling
         try:
-            symbol = signal_data.get('symbol') or signal_data.get('etf', 'UNKNOWN')
+            symbol = signal_data.get('symbol') or signal_data.get(
+                'etf', 'UNKNOWN')
             qty = int(signal_data.get('qty', 1))
             ep = float(signal_data.get('ep', 0))
             cmp = float(signal_data.get('cmp', ep))
             pos = int(signal_data.get('pos', 1))
             inv = float(signal_data.get('inv', ep * qty))
             tp = float(signal_data.get('tp', ep * 1.05))
-            
+
             # Validate required data
             if not symbol or symbol == 'UNKNOWN':
                 raise ValueError("Invalid symbol")
@@ -730,31 +786,33 @@ def api_create_deal_from_signal():
                 raise ValueError("Invalid entry price")
             if qty <= 0:
                 raise ValueError("Invalid quantity")
-                
+
         except (ValueError, TypeError) as e:
             logging.error(f"Error parsing signal data: {e}")
             return jsonify({
                 'success': False,
                 'message': f'Invalid signal data format: {str(e)}'
             }), 400
-        
-        logging.info(f"Parsed signal - Symbol: {symbol}, Qty: {qty}, EP: {ep}, CMP: {cmp}")
-        
+
+        logging.info(
+            f"Parsed signal - Symbol: {symbol}, Qty: {qty}, EP: {ep}, CMP: {cmp}"
+        )
+
         # Use the existing models to create a user deal
         try:
             from core.database import get_db_connection
             import psycopg2.extras
-            
+
             # Get database connection
             conn = get_db_connection()
             if not conn:
                 raise Exception("Failed to connect to database")
-                
+
             # Calculate current value and PnL
             current_value = cmp * qty
             pnl_amount = current_value - inv
             pnl_percent = (pnl_amount / inv * 100) if inv > 0 else 0
-            
+
             with conn.cursor() as cursor:
                 # Insert new deal into user_deals table
                 insert_query = """
@@ -770,53 +828,31 @@ def api_create_deal_from_signal():
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     ) RETURNING id
                 """
-                
-                cursor.execute(insert_query, (
-                    symbol.upper(),
-                    signal_data.get('date', 'CURRENT_DATE'),
-                    'LONG' if pos == 1 else 'SHORT',
-                    qty,
-                    ep,
-                    cmp,
-                    tp,
-                    inv,
-                    current_value,
-                    pnl_amount,
-                    pnl_percent,
-                    'ACTIVE',
-                    'SIGNAL',
-                    f'Added from ETF signal - {symbol}',
-                    pos,
-                    qty,
-                    ep,
-                    cmp,
-                    tp,
-                    inv,
-                    pnl_amount,
-                    f"{pnl_percent:.2f}%",
-                    signal_data.get('date', ''),
-                    signal_data.get('thirty', '0%'),
-                    signal_data.get('dh', 0),
-                    signal_data.get('ed', ''),
-                    signal_data.get('exp', ''),
-                    signal_data.get('pr', ''),
-                    signal_data.get('pp', ''),
-                    signal_data.get('iv', ''),
-                    signal_data.get('ip', ''),
-                    signal_data.get('nt', f'Signal for {symbol}'),
-                    signal_data.get('qt', ''),
-                    signal_data.get('seven', '0%'),
-                    signal_data.get('ch', '0%'),
-                    signal_data.get('tva', current_value),
-                    signal_data.get('tpr', pnl_amount),
-                    'NOW()'
-                ))
-                
+
+                cursor.execute(
+                    insert_query,
+                    (symbol.upper(), signal_data.get('date', 'CURRENT_DATE'),
+                     'LONG' if pos == 1 else 'SHORT', qty, ep, cmp, tp, inv,
+                     current_value, pnl_amount, pnl_percent, 'ACTIVE',
+                     'SIGNAL', f'Added from ETF signal - {symbol}', pos, qty,
+                     ep, cmp, tp, inv, pnl_amount, f"{pnl_percent:.2f}%",
+                     signal_data.get('date', ''),
+                     signal_data.get('thirty', '0%'), signal_data.get('dh', 0),
+                     signal_data.get('ed', ''), signal_data.get('exp', ''),
+                     signal_data.get('pr', ''), signal_data.get('pp', ''),
+                     signal_data.get('iv', ''), signal_data.get('ip', ''),
+                     signal_data.get('nt', f'Signal for {symbol}'),
+                     signal_data.get('qt', ''), signal_data.get(
+                         'seven', '0%'), signal_data.get('ch', '0%'),
+                     signal_data.get('tva', current_value),
+                     signal_data.get('tpr', pnl_amount), 'NOW()'))
+
                 deal_id = cursor.fetchone()[0]
                 conn.commit()
-            
-            logging.info(f"✓ Created deal from signal: {symbol} - Deal ID: {deal_id}")
-            
+
+            logging.info(
+                f"✓ Created deal from signal: {symbol} - Deal ID: {deal_id}")
+
             return jsonify({
                 'success': True,
                 'message': f'Deal created successfully for {symbol}',
@@ -825,19 +861,21 @@ def api_create_deal_from_signal():
                 'entry_price': ep,
                 'quantity': qty
             })
-            
+
         except Exception as model_error:
             logging.error(f"Model error creating deal: {model_error}")
             if conn:
                 conn.rollback()
             return jsonify({
-                'success': False,
-                'message': f'Failed to create deal: {str(model_error)}'
+                'success':
+                False,
+                'message':
+                f'Failed to create deal: {str(model_error)}'
             }), 500
         finally:
             if conn:
                 conn.close()
-            
+
     except Exception as e:
         logging.error(f"Error creating deal from signal: {e}")
         return jsonify({
@@ -845,218 +883,6 @@ def api_create_deal_from_signal():
             'message': f'Error creating deal: {str(e)}'
         }), 500
 
-@main_bp.route('/api/etf-signals-data', methods=['GET'])
-def get_etf_signals_data():
-    """API endpoint for ETF signals data"""
-    try:
-        logging.info("ETF signals data API called")
-        
-        # Use the improved external database service
-        try:
-            from Scripts.external_db_service import get_etf_signals_data_json
-            signals_response = get_etf_signals_data_json()
-            
-            if signals_response and signals_response.get('success'):
-                logging.info(f"✓ Found {len(signals_response.get('data', []))} signals from external database")
-                return jsonify({
-                    'success': True,
-                    'data': signals_response.get('data', []),
-                    'total': len(signals_response.get('data', [])),
-                    'message': signals_response.get('message', 'Signals loaded successfully')
-                })
-            elif signals_response and signals_response.get('data'):
-                # Fallback to data even if success flag is missing
-                return jsonify({
-                    'success': True,
-                    'data': signals_response.get('data', []),
-                    'total': len(signals_response.get('data', []))
-                })
-                
-        except Exception as ext_db_error:
-            logging.error(f"External database service error: {ext_db_error}")
-        
-        # Fallback: Try getting basic signals data
-        try:
-            from Scripts.external_db_service import get_basic_trade_signals_data_json
-            basic_response = get_basic_trade_signals_data_json()
-            
-            if basic_response and basic_response.get('success'):
-                return jsonify({
-                    'success': True,
-                    'data': basic_response.get('signals', []),
-                    'total': len(basic_response.get('signals', [])),
-                    'message': basic_response.get('message', 'Basic signals loaded successfully')
-                })
-                
-        except Exception as basic_error:
-            logging.error(f"Basic signals error: {basic_error}")
-        
-        # Last resort: Check if we have any admin trade signals
-        try:
-            from Scripts.models_etf import AdminTradeSignal
-            from Scripts.models import db
-            
-            signals = AdminTradeSignal.query.order_by(AdminTradeSignal.created_at.desc()).limit(100).all()
-            
-            if signals:
-                formatted_signals = []
-                for signal in signals:
-                    try:
-                        signal_dict = {
-                            'id': signal.id,
-                            'trade_signal_id': signal.id,
-                            'etf': signal.symbol,
-                            'symbol': signal.symbol,
-                            'thirty': signal.thirty or 0,
-                            'dh': signal.dh or '0%',
-                            'date': signal.date.strftime('%Y-%m-%d') if signal.date else '',
-                            'pos': signal.pos or 1,
-                            'qty': signal.qty or 1,
-                            'ep': float(signal.ep or 0),
-                            'cmp': float(signal.cmp or signal.ep or 0),
-                            'chan': signal.chan or '0%',
-                            'inv': float(signal.inv or 0),
-                            'tp': float(signal.tp or 0),
-                            'tva': float(signal.tva or 0),
-                            'tpr': float(signal.tpr or 0),
-                            'pl': float(signal.pl or 0),
-                            'ed': signal.ed or '',
-                            'exp': signal.exp or '',
-                            'pr': signal.pr or '',
-                            'pp': signal.pp or '',
-                            'iv': signal.iv or '',
-                            'ip': signal.ip or '',
-                            'nt': signal.nt or f'Signal for {signal.symbol}',
-                            'qt': signal.qt or '',
-                            'seven': signal.seven or 0,
-                            'ch': signal.ch or '0%',
-                            'status': 'ACTIVE'
-                        }
-                        formatted_signals.append(signal_dict)
-                    except Exception as format_error:
-                        logging.error(f"Error formatting admin signal {signal.id}: {format_error}")
-                        continue
-                
-                return jsonify({
-                    'success': True,
-                    'data': formatted_signals,
-                    'total': len(formatted_signals),
-                    'message': f'Loaded {len(formatted_signals)} signals from admin_trade_signals'
-                })
-                
-        except Exception as admin_error:
-            logging.error(f"Admin signals error: {admin_error}")
-        
-        # Return enhanced sample data if no real data available
-        logging.info("No database data found, returning enhanced sample data")
-        sample_signals = [
-            {
-                'id': 1,
-                'trade_signal_id': 1,
-                'etf': 'NIFTYBEES',
-                'symbol': 'NIFTYBEES',
-                'thirty': 185.50,
-                'dh': '2.45%',
-                'date': '2024-01-15',
-                'pos': 1,
-                'qty': 100,
-                'ep': 180.00,
-                'cmp': 185.50,
-                'chan': '3.06%',
-                'inv': 18000.00,
-                'tp': 198.00,
-                'tva': 18550.00,
-                'tpr': 550.00,
-                'pl': 550.00,
-                'ed': '2024-01-15',
-                'exp': '',
-                'pr': '',
-                'pp': '3.06%',
-                'iv': '',
-                'ip': '',
-                'nt': 'Sample ETF signal',
-                'qt': '',
-                'seven': 183.25,
-                'ch': '1.81%',
-                'status': 'ACTIVE'
-            },
-            {
-                'id': 2,
-                'trade_signal_id': 2,
-                'etf': 'GOLDBEES',
-                'symbol': 'GOLDBEES',
-                'thirty': 42.30,
-                'dh': '-1.25%',
-                'date': '2024-01-15',
-                'pos': 1,
-                'qty': 50,
-                'ep': 43.00,
-                'cmp': 42.30,
-                'chan': '-1.63%',
-                'inv': 2150.00,
-                'tp': 47.30,
-                'tva': 2115.00,
-                'tpr': -35.00,
-                'pl': -35.00,
-                'ed': '2024-01-15',
-                'exp': '',
-                'pr': '',
-                'pp': '-1.63%',
-                'iv': '',
-                'ip': '',
-                'nt': 'Sample Gold ETF signal',
-                'qt': '',
-                'seven': 42.80,
-                'ch': '-0.47%',
-                'status': 'ACTIVE'
-            },
-            {
-                'id': 3,
-                'trade_signal_id': 3,
-                'etf': 'BANKBEES',
-                'symbol': 'BANKBEES',
-                'thirty': 512.30,
-                'dh': '1.85%',
-                'date': '2024-01-15',
-                'pos': 1,
-                'qty': 20,
-                'ep': 505.00,
-                'cmp': 512.30,
-                'chan': '1.45%',
-                'inv': 10100.00,
-                'tp': 530.25,
-                'tva': 10246.00,
-                'tpr': 146.00,
-                'pl': 146.00,
-                'ed': '2024-01-15',
-                'exp': '',
-                'pr': '',
-                'pp': '1.45%',
-                'iv': '',
-                'ip': '',
-                'nt': 'Sample Bank ETF signal',
-                'qt': '',
-                'seven': 508.75,
-                'ch': '0.70%',
-                'status': 'ACTIVE'
-            }
-        ]
-        
-        return jsonify({
-            'success': True,
-            'data': sample_signals,
-            'total': len(sample_signals),
-            'message': 'Sample data - Add real signals to admin_trade_signals table'
-        })
-
-    except Exception as e:
-        logging.error(f"ETF signals data API error: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'data': [],
-            'total': 0
-        }), 500
 
 @main_bp.route('/admin')
 @login_required
