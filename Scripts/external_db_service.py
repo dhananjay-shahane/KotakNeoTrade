@@ -56,23 +56,37 @@ class ExternalDBService:
             with self.connection.cursor(
                     cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
                 # First, check what tables exist in both public and symbols schemas
-                cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
-                public_tables = [row['table_name'] for row in cursor.fetchall()]
+                cursor.execute(
+                    "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"
+                )
+                public_tables = [
+                    row['table_name'] for row in cursor.fetchall()
+                ]
                 logger.info(f"Available public tables: {public_tables}")
-                
+
                 # Check symbols schema for symbol tables
-                cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'symbols' AND table_type = 'BASE TABLE'")
-                symbol_tables = [row['table_name'] for row in cursor.fetchall()]
-                logger.info(f"Available symbol tables in symbols schema: {symbol_tables}")
-                
+                cursor.execute(
+                    "SELECT table_name FROM information_schema.tables WHERE table_schema = 'symbols' AND table_type = 'BASE TABLE'"
+                )
+                symbol_tables = [
+                    row['table_name'] for row in cursor.fetchall()
+                ]
+                logger.info(
+                    f"Available symbol tables in symbols schema: {symbol_tables}"
+                )
+
                 # Check if admin_trade_signals table exists and has data
                 if 'admin_trade_signals' in public_tables:
-                    cursor.execute("SELECT COUNT(*) as count FROM admin_trade_signals")
+                    cursor.execute(
+                        "SELECT COUNT(*) as count FROM admin_trade_signals")
                     row_count = cursor.fetchone()['count']
-                    logger.info(f"admin_trade_signals table has {row_count} rows")
-                    
+                    logger.info(
+                        f"admin_trade_signals table has {row_count} rows")
+
                     if row_count == 0:
-                        logger.warning("admin_trade_signals table is empty - checking table structure")
+                        logger.warning(
+                            "admin_trade_signals table is empty - checking table structure"
+                        )
                         # Check table structure
                         cursor.execute("""
                             SELECT column_name, data_type 
@@ -85,7 +99,7 @@ class ExternalDBService:
                 else:
                     logger.error("admin_trade_signals table does not exist")
                     return []
-                
+
                 # Get only required fields from admin_trade_signals (excluding CMP)
                 query = """
                 SELECT 
@@ -104,7 +118,9 @@ class ExternalDBService:
                 results = cursor.fetchall()
 
                 # Use symbol tables from symbols schema for price matching
-                logger.info(f"Found {len(symbol_tables)} symbol tables in symbols schema: {symbol_tables[:10]}...")  # Show first 10
+                logger.info(
+                    f"Found {len(symbol_tables)} symbol tables in symbols schema: {symbol_tables[:10]}..."
+                )  # Show first 10
 
                 # Convert RealDictRow to regular dict and handle data types
                 signals = []
@@ -129,7 +145,7 @@ class ExternalDBService:
                                 signal[field] = float(signal[field])
                             except (ValueError, TypeError):
                                 signal[field] = 0.0
-                    
+
                     # Initialize CMP to 0.0 - will be updated from symbol table
                     signal['cmp'] = 0.0
 
@@ -144,29 +160,30 @@ class ExternalDBService:
                     if symbol_name and symbol_tables:
                         # Look for matching table (case-insensitive, multiple matching strategies)
                         matching_table = None
-                        
+
                         # Strategy 1: Exact match with symbol name + _5m
                         exact_match = f"{symbol_name}_5m".lower()
                         for table in symbol_tables:
                             if table.lower() == exact_match:
                                 matching_table = table
                                 break
-                        
+
                         # Strategy 2: Table contains symbol name
                         if not matching_table:
                             for table in symbol_tables:
                                 if symbol_name.lower() in table.lower():
                                     matching_table = table
                                     break
-                        
+
                         # Strategy 3: Symbol name contains table name (for shorter table names)
                         if not matching_table:
                             for table in symbol_tables:
-                                table_base = table.replace('_5m', '').replace('_', '')
+                                table_base = table.replace('_5m', '').replace(
+                                    '_', '')
                                 if table_base.upper() in symbol_name.upper():
                                     matching_table = table
                                     break
-                        
+
                         if matching_table:
                             try:
                                 # Get the latest price data from the matching table in symbols schema
@@ -179,22 +196,36 @@ class ExternalDBService:
                                 """
                                 cursor.execute(price_query)
                                 price_data = cursor.fetchone()
-                                
+
                                 if price_data:
                                     # Use close price as CMP (index 4 in the result)
-                                    close_price = price_data['close'] if isinstance(price_data, dict) else price_data[4]
+                                    close_price = price_data[
+                                        'close'] if isinstance(
+                                            price_data,
+                                            dict) else price_data[4]
                                     if close_price:
-                                        signal['cmp'] = round(float(close_price), 2)
-                                        logger.info(f"Updated CMP for {symbol_name} from symbols.{matching_table}: {signal['cmp']}")
+                                        signal['cmp'] = round(
+                                            float(close_price), 2)
+                                        logger.info(
+                                            f"Updated CMP for {symbol_name} from symbols.{matching_table}: {signal['cmp']}"
+                                        )
                                     else:
-                                        logger.warning(f"No valid close price found in symbols.{matching_table} for {symbol_name}")
+                                        logger.warning(
+                                            f"No valid close price found in symbols.{matching_table} for {symbol_name}"
+                                        )
                                 else:
-                                    logger.warning(f"No price data found in symbols.{matching_table} for {symbol_name}")
-                                    
+                                    logger.warning(
+                                        f"No price data found in symbols.{matching_table} for {symbol_name}"
+                                    )
+
                             except Exception as e:
-                                logger.error(f"Error fetching price for {symbol_name} from symbols.{matching_table}: {e}")
+                                logger.error(
+                                    f"Error fetching price for {symbol_name} from symbols.{matching_table}: {e}"
+                                )
                         else:
-                            logger.info(f"No matching symbol table found for {symbol_name} among {len(symbol_tables)} symbol tables in symbols schema")
+                            logger.info(
+                                f"No matching symbol table found for {symbol_name} among {len(symbol_tables)} symbol tables in symbols schema"
+                            )
 
                     signals.append(signal)
 
@@ -260,21 +291,29 @@ def get_etf_signals_data_json(page=1, page_size=10):
     """Get ETF signals data in JSON format for API response with pagination"""
     try:
         signals = get_etf_signals_from_external_db()
-        
+
         # If no signals found, return appropriate message
         if not signals:
-            logger.info("No signals found in database - returning empty result")
+            logger.info(
+                "No signals found in database - returning empty result")
             return {
                 'data': [],
-                'recordsTotal': 0,
-                'recordsFiltered': 0,
-                'page': page,
-                'page_size': page_size,
-                'total_pages': 0,
-                'has_more': False,
-                'message': 'No trading signals found in admin_trade_signals table. Please check if data exists in the external database.'
+                'recordsTotal':
+                0,
+                'recordsFiltered':
+                0,
+                'page':
+                page,
+                'page_size':
+                page_size,
+                'total_pages':
+                0,
+                'has_more':
+                False,
+                'message':
+                'No trading signals found in admin_trade_signals table. Please check if data exists in the external database.'
             }
-            
+
         formatted_signals = []
         count = 0
 
@@ -282,17 +321,22 @@ def get_etf_signals_data_json(page=1, page_size=10):
             count += 1
             # Get only the 4 required fields from admin_trade_signals
             symbol = str(signal.get('symbol') or 'N/A').upper()
-            qty = float(signal.get('qty') or 0) if signal.get('qty') is not None else 0.0
-            entry_price = float(signal.get('entry_price') or 0) if signal.get('entry_price') is not None else 0.0
-            
+            qty = float(signal.get('qty')
+                        or 0) if signal.get('qty') is not None else 0.0
+            entry_price = float(
+                signal.get('entry_price')
+                or 0) if signal.get('entry_price') is not None else 0.0
+
             # Get CMP from admin_trade_signals table (since symbols table doesn't exist)
-            cmp = float(signal.get('cmp') or 0) if signal.get('cmp') is not None else 0.0
-            
+            cmp = float(signal.get('cmp')
+                        or 0) if signal.get('cmp') is not None else 0.0
+
             # Calculate basic metrics
             investment = qty * entry_price if qty and entry_price else 0
             current_value = qty * cmp if qty and cmp else 0
             profit_loss = current_value - investment
-            change_percent = ((cmp - entry_price) / entry_price) * 100 if entry_price > 0 else 0
+            change_percent = ((cmp - entry_price) /
+                              entry_price) * 100 if entry_price > 0 else 0
 
             # Format the data structure
             formatted_signal = {
@@ -302,7 +346,7 @@ def get_etf_signals_data_json(page=1, page_size=10):
                 'etf': symbol,
                 'qty': int(qty),
                 'ep': round(entry_price, 2),
-                'cmp': round(cmp, 2),
+                'cmp': round(cmp),
                 'inv': round(investment, 2),
                 'current_value': round(current_value, 2),
                 'pl': round(profit_loss, 2),
@@ -324,16 +368,24 @@ def get_etf_signals_data_json(page=1, page_size=10):
         start_idx = (page - 1) * page_size
         end_idx = start_idx + page_size
         paginated_signals = formatted_signals[start_idx:end_idx]
-        
+
         return {
-            'data': paginated_signals,
-            'recordsTotal': len(formatted_signals),
-            'recordsFiltered': len(formatted_signals),
-            'page': page,
-            'page_size': page_size,
-            'total_pages': (len(formatted_signals) + page_size - 1) // page_size,
-            'has_more': end_idx < len(formatted_signals),
-            'message': f'Successfully loaded {len(paginated_signals)} signals from admin_trade_signals table'
+            'data':
+            paginated_signals,
+            'recordsTotal':
+            len(formatted_signals),
+            'recordsFiltered':
+            len(formatted_signals),
+            'page':
+            page,
+            'page_size':
+            page_size,
+            'total_pages':
+            (len(formatted_signals) + page_size - 1) // page_size,
+            'has_more':
+            end_idx < len(formatted_signals),
+            'message':
+            f'Successfully loaded {len(paginated_signals)} signals from admin_trade_signals table'
         }
 
     except Exception as e:
@@ -342,11 +394,18 @@ def get_etf_signals_data_json(page=1, page_size=10):
         logger.error(f"Full traceback: {traceback.format_exc()}")
         return {
             'data': [],
-            'recordsTotal': 0,
-            'recordsFiltered': 0,
-            'page': page,
-            'page_size': page_size,
-            'has_more': False,
-            'error': str(e),
-            'message': 'No trading signals found - admin_trade_signals table may be empty'
+            'recordsTotal':
+            0,
+            'recordsFiltered':
+            0,
+            'page':
+            page,
+            'page_size':
+            page_size,
+            'has_more':
+            False,
+            'error':
+            str(e),
+            'message':
+            'No trading signals found - admin_trade_signals table may be empty'
         }
