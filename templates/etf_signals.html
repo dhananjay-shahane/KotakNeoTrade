@@ -251,13 +251,13 @@ endblock %} {% block extra_css %}
                             >
                                 NT <i class="fas fa-sort ms-1"></i>
                             </th>
-                            <th
+                            <!-- <th
                                 style="cursor: pointer"
                                 title="Quote Time - Click to sort"
                                 onclick="sortSignalsByColumn('qt')"
                             >
                                 QT <i class="fas fa-sort ms-1"></i>
-                            </th>
+                            </th> -->
                             <th
                                 style="cursor: pointer"
                                 title="7 Day Price - Click to sort"
@@ -288,7 +288,8 @@ endblock %} {% block extra_css %}
             <div class="d-flex align-items-center gap-3">
                 <small
                     >Showing <span id="showingCount">0</span> of
-                    <span id="visibleSignalsCount">0</span> filtered signals (Total: <span id="totalCount">0</span>)</small
+                    <span id="visibleSignalsCount">0</span> filtered signals
+                    (Total: <span id="totalCount">0</span>)</small
                 >
             </div>
             <div class="btn-group" role="group">
@@ -304,7 +305,7 @@ endblock %} {% block extra_css %}
                     class="btn btn-sm btn-primary"
                     id="loadMoreBtn"
                     onclick="loadMoreSignals()"
-                    style="display: none;"
+                    style="display: none"
                 >
                     <i class="fas fa-plus"></i> Load More Data
                 </button>

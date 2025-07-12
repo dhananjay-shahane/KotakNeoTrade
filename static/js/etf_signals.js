@@ -43,7 +43,7 @@ function ETFSignalsManager() {
         { key: "iv", label: "IV", visible: false },
         { key: "ip", label: "IP", visible: false },
         { key: "nt", label: "NT", visible: false },
-        { key: "qt", label: "QT", visible: false },
+        // { key: "qt", label: "QT", visible: false },
         { key: "seven", label: "7D", visible: true },
         { key: "ch", label: "7D%", visible: true },
         { key: "actions", label: "ACTIONS", visible: true },
@@ -126,7 +126,11 @@ ETFSignalsManager.prototype.loadSignals = function (resetData) {
     this.isLoading = true;
     this.showLoadingState();
 
-    var url = '/api/etf-signals-data?page=' + this.currentPage + '&page_size=' + this.itemsPerPage;
+    var url =
+        "/api/etf-signals-data?page=" +
+        this.currentPage +
+        "&page_size=" +
+        this.itemsPerPage;
 
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url, true);
@@ -163,11 +167,17 @@ ETFSignalsManager.prototype.loadSignals = function (resetData) {
                         if (self.currentPage === 1) {
                             // First load - replace all data
                             self.signals = data.data || [];
-                            self.displayedSignals = self.signals.slice(0, self.itemsPerPage);
+                            self.displayedSignals = self.signals.slice(
+                                0,
+                                self.itemsPerPage,
+                            );
                         } else {
                             // Load more - append data
                             self.signals = self.signals.concat(data.data || []);
-                             self.displayedSignals = self.signals.slice(0, self.itemsPerPage * self.currentPage);
+                            self.displayedSignals = self.signals.slice(
+                                0,
+                                self.itemsPerPage * self.currentPage,
+                            );
                         }
 
                         self.filteredSignals = self.signals.slice();
@@ -406,9 +416,9 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
             case "nt":
                 cellValue = signal.nt || "--";
                 break;
-            case "qt":
-                cellValue = signal.qt || quantity;
-                break;
+            // case "qt":
+            //     cellValue = signal.qt || quantity;
+            //     break;
             case "seven":
                 var sevenValue = signal.seven || signal.d7 || 0;
                 if (typeof sevenValue === "string") {
@@ -912,7 +922,7 @@ ETFSignalsManager.prototype.applyFilters = function () {
     this.updatePagination();
 };
 
-ETFSignalsManager.prototype.loadMoreSignals = function() {
+ETFSignalsManager.prototype.loadMoreSignals = function () {
     var self = this;
     if (this.isLoading) return;
 
@@ -937,9 +947,10 @@ ETFSignalsManager.prototype.updatePagination = function () {
     this.updateLoadMoreButton();
 };
 
-ETFSignalsManager.prototype.updateLoadMoreButton = function() {
+ETFSignalsManager.prototype.updateLoadMoreButton = function () {
     var loadMoreContainer = document.getElementById("loadMoreContainer");
-    var remainingCount = this.filteredSignals.length - this.displayedSignals.length;
+    var remainingCount =
+        this.filteredSignals.length - this.displayedSignals.length;
 
     if (!loadMoreContainer) {
         // Create load more container if it doesn't exist
@@ -961,16 +972,17 @@ ETFSignalsManager.prototype.updateLoadMoreButton = function() {
     }
 };
 
-ETFSignalsManager.prototype.createLoadMoreButton = function() {
-    var cardFooter = document.querySelector('.card-footer');
+ETFSignalsManager.prototype.createLoadMoreButton = function () {
+    var cardFooter = document.querySelector(".card-footer");
     if (cardFooter) {
-        var loadMoreHTML = '<div id="loadMoreContainer" class="text-center mt-3" style="display: none;">' +
+        var loadMoreHTML =
+            '<div id="loadMoreContainer" class="text-center mt-3" style="display: none;">' +
             '<button id="loadMoreBtn" class="btn btn-outline-primary" onclick="loadMoreSignals()">' +
             '<i class="fas fa-plus me-2"></i>Load More Data (<span id="remainingCount">0</span> remaining)' +
-            '</button>' +
-            '</div>';
+            "</button>" +
+            "</div>";
 
-        cardFooter.insertAdjacentHTML('beforeend', loadMoreHTML);
+        cardFooter.insertAdjacentHTML("beforeend", loadMoreHTML);
     }
 };
 
@@ -1126,7 +1138,10 @@ function addDeal(signalId) {
 
     if (!signal) {
         console.error("Signal not found for ID:", signalId);
-        showSwalMessage("Signal data not found. Please refresh the page and try again.", "error");
+        showSwalMessage(
+            "Signal data not found. Please refresh the page and try again.",
+            "error",
+        );
         return;
     }
 
@@ -1144,29 +1159,52 @@ function addDeal(signalId) {
     }
 
     // Show SweetAlert2 confirmation dialog
-    if (typeof Swal !== 'undefined') {
+    if (typeof Swal !== "undefined") {
         Swal.fire({
-            title: 'Add Deal',
-            html: 'Add deal for <strong>' + symbol + '</strong> at ₹' + parseFloat(price).toFixed(2) + ' (Qty: ' + quantity + ')?',
-            icon: 'question',
+            title: "Add Deal",
+            html:
+                "Add deal for <strong>" +
+                symbol +
+                "</strong> at ₹" +
+                parseFloat(price).toFixed(2) +
+                " (Qty: " +
+                quantity +
+                ")?",
+            icon: "question",
             showCancelButton: true,
-            confirmButtonColor: '#28a745',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'OK',
-            cancelButtonText: 'Cancel',
-            background: '#2c3e50',
-            color: '#fff',
+            confirmButtonColor: "#28a745",
+            cancelButtonColor: "#6c757d",
+            confirmButtonText: "OK",
+            cancelButtonText: "Cancel",
+            background: "#2c3e50",
+            color: "#fff",
             customClass: {
-                popup: 'swal-dark-theme'
-            }
+                popup: "swal-dark-theme",
+            },
         }).then((result) => {
             if (result.isConfirmed) {
-                proceedWithAddingDeal(signal, symbol, price, quantity, investment);
+                proceedWithAddingDeal(
+                    signal,
+                    symbol,
+                    price,
+                    quantity,
+                    investment,
+                );
             }
         });
     } else {
         // Fallback to regular confirm if SweetAlert2 is not available
-        if (confirm("Add deal for " + symbol + " at ₹" + parseFloat(price).toFixed(2) + " (Qty: " + quantity + ")?")) {
+        if (
+            confirm(
+                "Add deal for " +
+                    symbol +
+                    " at ₹" +
+                    parseFloat(price).toFixed(2) +
+                    " (Qty: " +
+                    quantity +
+                    ")?",
+            )
+        ) {
             proceedWithAddingDeal(signal, symbol, price, quantity, investment);
         }
     }
@@ -1184,21 +1222,21 @@ function proceedWithAddingDeal(signal, symbol, price, quantity, investment) {
     });
 
     // Show loading indicator
-    if (typeof Swal !== 'undefined') {
+    if (typeof Swal !== "undefined") {
         Swal.fire({
-            title: 'Creating Deal...',
-            text: 'Please wait while we process your request',
+            title: "Creating Deal...",
+            text: "Please wait while we process your request",
             allowOutsideClick: false,
             allowEscapeKey: false,
             showConfirmButton: false,
-            background: '#2c3e50',
-            color: '#fff',
+            background: "#2c3e50",
+            color: "#fff",
             customClass: {
-                popup: 'swal-dark-theme'
+                popup: "swal-dark-theme",
             },
             didOpen: () => {
                 Swal.showLoading();
-            }
+            },
         });
     }
 
@@ -1207,15 +1245,15 @@ function proceedWithAddingDeal(signal, symbol, price, quantity, investment) {
         etf: signal.etf || signal.symbol || symbol,
         symbol: signal.etf || signal.symbol || symbol,
         trade_signal_id: signal.trade_signal_id || signal.id,
-        pos: signal.pos || 1,
-        qty: signal.qty || quantity || 1,
-        ep: signal.ep || price,
-        cmp: signal.cmp || price,
-        tp: signal.tp || price * 1.05,
-        inv: signal.inv || investment,
-        pl: signal.pl || 0,
-        change_pct: signal.chan || signal.change_pct || 0,
-        thirty: signal.thirty || 0,
+        pos: signal.pos || "",
+        qty: signal.qty || "",
+        ep: signal.ep || "",
+        cmp: signal.cmp || "",
+        tp: signal.tp || "",
+        inv: signal.inv || "",
+        pl: signal.pl || "",
+        change_pct: signal.chan,
+        thirty: signal.thirty,
         dh: signal.dh || 0,
         date: signal.date || new Date().toISOString().split("T")[0],
         ed: signal.ed || signal.date,
@@ -1225,11 +1263,11 @@ function proceedWithAddingDeal(signal, symbol, price, quantity, investment) {
         iv: signal.iv || "",
         ip: signal.ip || "",
         nt: signal.nt || "Added from ETF signals",
-        qt: signal.qt || new Date().toLocaleTimeString(),
+        // qt: signal.qt || new Date().toLocaleTimeString(),
         seven: signal.seven || 0,
         ch: signal.ch || signal.change_pct || 0,
-        tva: signal.tva || (signal.tp || price * 1.05) * quantity,
-        tpr: signal.tpr || ((signal.tp || price * 1.05) - price) * quantity,
+        tva: signal.tva,
+        tpr: signal.tpr,
     };
 
     console.log("Sending signal data:", signalData);
@@ -1247,74 +1285,91 @@ function proceedWithAddingDeal(signal, symbol, price, quantity, investment) {
                 try {
                     var response = JSON.parse(xhr.responseText);
                     if (response.success) {
-                        if (typeof Swal !== 'undefined') {
+                        if (typeof Swal !== "undefined") {
                             Swal.fire({
-                                title: 'Success!',
-                                text: "Deal created successfully for " + symbol + "!",
-                                icon: 'success',
-                                confirmButtonColor: '#28a745',
-                                background: '#2c3e50',
-                                color: '#fff',
+                                title: "Success!",
+                                text:
+                                    "Deal created successfully for " +
+                                    symbol +
+                                    "!",
+                                icon: "success",
+                                confirmButtonColor: "#28a745",
+                                background: "#2c3e50",
+                                color: "#fff",
                                 customClass: {
-                                    popup: 'swal-dark-theme'
-                                }
+                                    popup: "swal-dark-theme",
+                                },
                             }).then(() => {
                                 window.location.href = "/deals";
                             });
                         } else {
-                            alert("Deal created successfully for " + symbol + "!");
+                            alert(
+                                "Deal created successfully for " + symbol + "!",
+                            );
                             window.location.href = "/deals";
                         }
                     } else {
-                        if (typeof Swal !== 'undefined') {
+                        if (typeof Swal !== "undefined") {
                             Swal.fire({
-                                title: 'Error!',
-                                text: "Failed to create deal: " + (response.message || "Unknown error"),
-                                icon: 'error',
-                                confirmButtonColor: '#dc3545',
-                                background: '#2c3e50',
-                                color: '#fff',
+                                title: "Error!",
+                                text:
+                                    "Failed to create deal: " +
+                                    (response.message || "Unknown error"),
+                                icon: "error",
+                                confirmButtonColor: "#dc3545",
+                                background: "#2c3e50",
+                                color: "#fff",
                                 customClass: {
-                                    popup: 'swal-dark-theme'
-                                }
+                                    popup: "swal-dark-theme",
+                                },
                             });
                         } else {
-                            alert("Failed to create deal: " + (response.message || "Unknown error"));
+                            alert(
+                                "Failed to create deal: " +
+                                    (response.message || "Unknown error"),
+                            );
                         }
                     }
                 } catch (parseError) {
                     console.error("Failed to parse API response:", parseError);
-                    if (typeof Swal !== 'undefined') {
+                    if (typeof Swal !== "undefined") {
                         Swal.fire({
-                            title: 'Error!',
+                            title: "Error!",
                             text: "Invalid response from server",
-                            icon: 'error',
-                            confirmButtonColor: '#dc3545',
-                            background: '#2c3e50',
-                            color: '#fff',
+                            icon: "error",
+                            confirmButtonColor: "#dc3545",
+                            background: "#2c3e50",
+                            color: "#fff",
                             customClass: {
-                                popup: 'swal-dark-theme'
-                            }
+                                popup: "swal-dark-theme",
+                            },
                         });
                     } else {
                         alert("Invalid response from server");
                     }
                 }
             } else {
-                if (typeof Swal !== 'undefined') {
+                if (typeof Swal !== "undefined") {
                     Swal.fire({
-                        title: 'Error!',
-                        text: "Server returned status: " + xhr.status + ". Please try again or contact support.",
-                        icon: 'error',
-                        confirmButtonColor: '#dc3545',
-                        background: '#2c3e50',
-                        color: '#fff',
+                        title: "Error!",
+                        text:
+                            "Server returned status: " +
+                            xhr.status +
+                            ". Please try again or contact support.",
+                        icon: "error",
+                        confirmButtonColor: "#dc3545",
+                        background: "#2c3e50",
+                        color: "#fff",
                         customClass: {
-                            popup: 'swal-dark-theme'
-                        }
+                            popup: "swal-dark-theme",
+                        },
                     });
                 } else {
-                    alert("Server returned status: " + xhr.status + ". Please try again or contact support.");
+                    alert(
+                        "Server returned status: " +
+                            xhr.status +
+                            ". Please try again or contact support.",
+                    );
                 }
             }
         }
@@ -1322,17 +1377,17 @@ function proceedWithAddingDeal(signal, symbol, price, quantity, investment) {
 
     xhr.onerror = function () {
         console.error("Network error occurred");
-        if (typeof Swal !== 'undefined') {
+        if (typeof Swal !== "undefined") {
             Swal.fire({
-                title: 'Network Error!',
+                title: "Network Error!",
                 text: "Network error occurred. Please check your connection.",
-                icon: 'error',
-                confirmButtonColor: '#dc3545',
-                background: '#2c3e50',
-                color: '#fff',
+                icon: "error",
+                confirmButtonColor: "#dc3545",
+                background: "#2c3e50",
+                color: "#fff",
                 customClass: {
-                    popup: 'swal-dark-theme'
-                }
+                    popup: "swal-dark-theme",
+                },
             });
         } else {
             alert("Network error occurred. Please check your connection.");
@@ -1621,26 +1676,26 @@ function showMessage(message, type) {
 }
 
 function showSwalMessage(message, type) {
-    if (typeof Swal !== 'undefined') {
-        var icon = 'info';
-        var color = '#28a745';
-        
+    if (typeof Swal !== "undefined") {
+        var icon = "info";
+        var color = "#28a745";
+
         switch (type) {
-            case 'success':
-                icon = 'success';
-                color = '#28a745';
+            case "success":
+                icon = "success";
+                color = "#28a745";
                 break;
-            case 'error':
-                icon = 'error';
-                color = '#dc3545';
+            case "error":
+                icon = "error";
+                color = "#dc3545";
                 break;
-            case 'warning':
-                icon = 'warning';
-                color = '#ffc107';
+            case "warning":
+                icon = "warning";
+                color = "#ffc107";
                 break;
             default:
-                icon = 'info';
-                color = '#17a2b8';
+                icon = "info";
+                color = "#17a2b8";
         }
 
         Swal.fire({
@@ -1648,11 +1703,11 @@ function showSwalMessage(message, type) {
             text: message,
             icon: icon,
             confirmButtonColor: color,
-            background: '#2c3e50',
-            color: '#fff',
+            background: "#2c3e50",
+            color: "#fff",
             customClass: {
-                popup: 'swal-dark-theme'
-            }
+                popup: "swal-dark-theme",
+            },
         });
     } else {
         // Fallback to regular alert
@@ -1662,9 +1717,9 @@ function showSwalMessage(message, type) {
 
 ETFSignalsManager.prototype.updatePagination = function () {
     // Update total count display
-    var totalElement = document.getElementById('totalCount');
-    var visibleElement = document.getElementById('visibleSignalsCount');
-    var showingElement = document.getElementById('showingCount');
+    var totalElement = document.getElementById("totalCount");
+    var visibleElement = document.getElementById("visibleSignalsCount");
+    var showingElement = document.getElementById("showingCount");
 
     if (totalElement) {
         totalElement.textContent = this.signals.length;
@@ -1686,9 +1741,9 @@ ETFSignalsManager.prototype.loadMoreSignals = function () {
 };
 
 ETFSignalsManager.prototype.updateLoadMoreButton = function (hasMore) {
-    var loadMoreBtn = document.getElementById('loadMoreBtn');
+    var loadMoreBtn = document.getElementById("loadMoreBtn");
     if (loadMoreBtn) {
-        loadMoreBtn.style.display = hasMore ? 'block' : 'none';
+        loadMoreBtn.style.display = hasMore ? "block" : "none";
         loadMoreBtn.disabled = this.isLoading;
     }
 };
