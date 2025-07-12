@@ -396,11 +396,45 @@ def get_holdings_api():
 def get_etf_signals_data():
     """API endpoint to get ETF signals data from external admin_trade_signals table"""
     try:
-        from Scripts.external_db_service import get_etf_signals_data_json
-        return jsonify(get_etf_signals_data_json())
+        # Set a timeout for the request
+        import signal
+        
+        def timeout_handler(signum, frame):
+            raise TimeoutError("Request timeout")
+        
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(30)  # 30 second timeout
+        
+        try:
+            from Scripts.external_db_service import get_etf_signals_data_json
+            result = get_etf_signals_data_json()
+            signal.alarm(0)  # Cancel timeout
+            return jsonify(result)
+        except TimeoutError:
+            signal.alarm(0)
+            logging.error("ETF signals API timeout")
+            return jsonify({
+                'success': False,
+                'data': [],
+                'recordsTotal': 0,
+                'recordsFiltered': 0,
+                'error': 'Request timeout - database connection too slow',
+                'message': 'Database connection timeout. Please try again.'
+            }), 200
+        except Exception as e:
+            signal.alarm(0)
+            raise e
+            
     except Exception as e:
         logging.error(f"ETF signals API error: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({
+            'success': False,
+            'data': [],
+            'recordsTotal': 0,
+            'recordsFiltered': 0,
+            'error': str(e),
+            'message': f'Error loading ETF signals: {str(e)}'
+        }), 200
 
 
 @app.route('/api/basic-trade-signals-data')

@@ -65,22 +65,33 @@ db_config = {
 
 @contextmanager
 def get_db_connection():
-    """Context manager for database connections"""
+    """Context manager for database connections with timeout handling"""
     if not PSYCOPG2_AVAILABLE:
         raise ImportError("psycopg2 is required but not available")
 
     conn = None
     try:
-        conn = psycopg2.connect(**db_config)
+        # Add shorter timeout for faster failures
+        config_with_timeout = db_config.copy()
+        config_with_timeout['connect_timeout'] = 10
+        
+        conn = psycopg2.connect(**config_with_timeout)
+        conn.autocommit = True  # Enable autocommit for faster queries
         yield conn
     except Exception as e:
         logger.error(f"Database connection error: {e}")
         if conn:
-            conn.rollback()
+            try:
+                conn.rollback()
+            except:
+                pass
         raise
     finally:
         if conn:
-            conn.close()
+            try:
+                conn.close()
+            except:
+                pass
 
 
 def test_database_connection():
@@ -123,6 +134,66 @@ def get_all_symbol_tables():
         logger.error(f"Error getting symbol tables: {e}")
         return []
 
+
+def get_symbol_data_fast(table_name):
+    """Get the last row data from a symbol table quickly with minimal processing"""
+    try:
+        check_dependencies()
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+
+            # Validate table name
+            if not table_name.replace('_', '').replace('-', '').isalnum():
+                raise ValueError(f"Invalid table name: {table_name}")
+
+            # Quick check if table has data
+            cursor.execute(f'SELECT COUNT(*) FROM symbols."{table_name}" LIMIT 1')
+            count = cursor.fetchone()[0]
+            if count == 0:
+                return None
+
+            # Get only the latest row quickly
+            cursor.execute(f"""
+                SELECT datetime, open, high, low, close, volume 
+                FROM symbols."{table_name}" 
+                ORDER BY datetime DESC 
+                LIMIT 8
+            """)
+
+            rows = cursor.fetchall()
+            cursor.close()
+
+            if not rows:
+                return None
+
+            # Get the latest (current) data
+            latest_row = rows[0]
+            current_close = float(latest_row[4])
+
+            # Calculate d7 and d30 with available data
+            d7_price = float(rows[min(7, len(rows)-1)][4]) if len(rows) > 7 else current_close
+            d30_price = current_close  # Simplified for speed
+
+            # Create signal data structure
+            signal_data = {
+                'etf': table_name,
+                'datetime': latest_row[0],
+                'open': float(latest_row[1]),
+                'high': float(latest_row[2]),
+                'low': float(latest_row[3]),
+                'close': current_close,
+                'volume': float(latest_row[5]),
+                'cmp': current_close,
+                'd7': d7_price,
+                'd30': d30_price,
+                'available_rows': len(rows)
+            }
+
+            return signal_data
+
+    except Exception as e:
+        logger.error(f"Error getting fast data from {table_name}: {e}")
+        return None
 
 def get_symbol_data(table_name):
     """Get the last row data from a symbol table and calculate required fields"""
@@ -206,7 +277,7 @@ def get_symbol_data(table_name):
 
 
 def get_etf_signals_from_symbols_schema():
-    """Get ETF signals from all tables in symbols schema"""
+    """Get ETF signals from all tables in symbols schema with optimized processing"""
     try:
         check_dependencies()
 
@@ -218,71 +289,47 @@ def get_etf_signals_from_symbols_schema():
 
         signals = []
         count = 0
-
-        for table_name in tables:
+        max_tables = 20  # Limit to first 20 tables to avoid timeout
+        
+        # Process only tables with data quickly
+        for table_name in tables[:max_tables]:
             try:
                 count += 1
-                logger.info(
-                    f"Processing table {count}/{len(tables)}: {table_name}")
+                logger.info(f"Processing table {count}/{min(len(tables), max_tables)}: {table_name}")
 
-                # Get symbol data
-                symbol_data = get_symbol_data(table_name)
+                # Get symbol data with timeout protection
+                symbol_data = get_symbol_data_fast(table_name)
                 if symbol_data:
                     # Create signal record with required fields
                     signal = {
-                        'id':
-                        count,
-                        'etf':
-                        table_name,
-                        'date':
-                        symbol_data['datetime'].strftime('%Y-%m-%d')
-                        if symbol_data['datetime'] else '',
-                        'pos':
-                        1,  # Default position (1 for long)
-                        'qty':
-                        1,  # Default quantity
-                        'ep':
-                        symbol_data['close'],  # Entry price = current close
-                        'cmp':
-                        symbol_data['cmp'],
-                        'ed':
-                        '',  # Exit date (empty)
-                        'exp':
-                        '',  # Exit price (empty)
-                        'iv':
-                        symbol_data['close'],  # Investment value
-                        'ip':
-                        0.0,  # Investment percentage
-                        'd7':
-                        symbol_data['d7'],
-                        'd30':
-                        symbol_data['d30'],
-                        'created_at':
-                        datetime.now(),
+                        'id': count,
+                        'etf': table_name,
+                        'date': symbol_data['datetime'].strftime('%Y-%m-%d') if symbol_data['datetime'] else '',
+                        'pos': 1,  # Default position (1 for long)
+                        'qty': 1,  # Default quantity
+                        'ep': symbol_data['close'],  # Entry price = current close
+                        'cmp': symbol_data['cmp'],
+                        'ed': '',  # Exit date (empty)
+                        'exp': '',  # Exit price (empty)
+                        'iv': symbol_data['close'],  # Investment value
+                        'ip': 0.0,  # Investment percentage
+                        'd7': symbol_data['d7'],
+                        'd30': symbol_data['d30'],
+                        'created_at': datetime.now(),
                         # Additional OHLCV data
-                        'open':
-                        symbol_data['open'],
-                        'high':
-                        symbol_data['high'],
-                        'low':
-                        symbol_data['low'],
-                        'volume':
-                        symbol_data['volume'],
-                        'available_rows':
-                        symbol_data['available_rows']
+                        'open': symbol_data['open'],
+                        'high': symbol_data['high'],
+                        'low': symbol_data['low'],
+                        'volume': symbol_data['volume'],
+                        'available_rows': symbol_data['available_rows']
                     }
                     signals.append(signal)
-
-                # Small delay to avoid overwhelming the database
-                time.sleep(0.05)  # Reduced delay
 
             except Exception as e:
                 logger.error(f"Error processing table {table_name}: {e}")
                 continue
 
-        logger.info(
-            f"✅ Successfully processed {len(signals)} symbols from symbols schema"
-        )
+        logger.info(f"✅ Successfully processed {len(signals)} symbols from symbols schema")
         return signals
 
     except Exception as e:

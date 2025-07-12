@@ -719,6 +719,12 @@ def charts():
     return render_template('charts.html')
 
 
+@main_bp.route('/etf-signals')
+@login_required
+def etf_signals():
+    """ETF Signals page"""
+    return render_template('etf_signals.html')
+
 @main_bp.route('/deals')
 @login_required
 def deals():

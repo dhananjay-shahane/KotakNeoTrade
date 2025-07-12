@@ -122,6 +122,8 @@ ETFSignalsManager.prototype.loadSignals = function () {
 
     var xhr = new XMLHttpRequest();
     xhr.open("GET", "/api/etf-signals-data", true);
+    xhr.timeout = 45000; // 45 second timeout
+    
     xhr.onreadystatechange = function () {
         if (xhr.readyState === 4) {
             self.isLoading = false;
@@ -134,6 +136,16 @@ ETFSignalsManager.prototype.loadSignals = function () {
                 try {
                     var data = JSON.parse(xhr.responseText);
                     console.log("Parsed API data:", data);
+
+                    if (data.success === false) {
+                        // Handle API errors gracefully
+                        self.showErrorMessage(data.message || data.error || "Unknown error occurred");
+                        self.signals = [];
+                        self.filteredSignals = [];
+                        self.renderSignalsTable();
+                        self.updatePagination();
+                        return;
+                    }
 
                     if (data.data && Array.isArray(data.data)) {
                         self.signals = data.data || [];
@@ -165,6 +177,21 @@ ETFSignalsManager.prototype.loadSignals = function () {
             }
         }
     };
+
+    xhr.ontimeout = function() {
+        self.isLoading = false;
+        self.hideLoadingState();
+        console.error("API request timed out");
+        self.showErrorMessage("Request timed out - database connection slow. Please try again.");
+    };
+
+    xhr.onerror = function() {
+        self.isLoading = false;
+        self.hideLoadingState();
+        console.error("API request failed");
+        self.showErrorMessage("Network error - please check your connection.");
+    };
+
     xhr.send();
 };
 
@@ -903,7 +930,8 @@ ETFSignalsManager.prototype.showLoadingState = function () {
             '<div class="spinner-border text-primary mb-3" role="status" style="width: 2.5rem; height: 2.5rem;">' +
             '<span class="visually-hidden">Loading...</span></div>' +
             '<h6 class="text-light mb-2">Loading ETF Signals</h6>' +
-            '<small class="text-muted">Fetching data from database...</small>' +
+            '<small class="text-muted">Fetching data from external database...</small>' +
+            '<div class="mt-2"><small class="text-warning">This may take up to 45 seconds</small></div>' +
             "</div></td></tr>";
     }
 };
@@ -921,9 +949,13 @@ ETFSignalsManager.prototype.showErrorMessage = function (message) {
     var tbody = document.getElementById("signalsTableBody");
     if (tbody) {
         tbody.innerHTML =
-            '<tr><td colspan="25" class="text-center text-danger">' +
-            message +
-            "</td></tr>";
+            '<tr><td colspan="25" class="text-center py-5">' +
+            '<div class="d-flex flex-column justify-content-center align-items-center">' +
+            '<i class="fas fa-exclamation-triangle fa-3x mb-3 text-warning"></i>' +
+            '<h6 class="text-light mb-2">Error Loading Data</h6>' +
+            '<p class="text-danger mb-3">' + message + '</p>' +
+            '<button class="btn btn-primary" onclick="refreshSignals()">Try Again</button>' +
+            "</div></td></tr>";
     }
 };
 
