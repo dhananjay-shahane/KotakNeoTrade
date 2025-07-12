@@ -396,7 +396,23 @@ def get_holdings_api():
 def get_etf_signals_data():
     """API endpoint to get ETF signals data from external admin_trade_signals table"""
     try:
-        # Only use real data from external database - no sample data allowed
+        # Check if database credentials are available first
+        import os
+        db_host = os.getenv('DB_HOST')
+        database_url = os.getenv('DATABASE_URL')
+        
+        if not database_url and not db_host:
+            # No credentials configured
+            return jsonify({
+                'success': False,
+                'data': [],
+                'recordsTotal': 0,
+                'recordsFiltered': 0,
+                'error': 'Database credentials not configured',
+                'message': 'Please configure database credentials (DATABASE_URL or DB_HOST, DB_NAME, DB_USER, DB_PASSWORD) to access trading data.'
+            }), 200
+        
+        # Try to get real data from external database
         from Scripts.external_db_service import get_etf_signals_data_json
         result = get_etf_signals_data_json()
         return jsonify(result)
@@ -409,7 +425,7 @@ def get_etf_signals_data():
             'recordsTotal': 0,
             'recordsFiltered': 0,
             'error': f'Database connection failed: {str(e)}',
-            'message': 'Cannot connect to trading database. Please provide database credentials.'
+            'message': 'Cannot connect to trading database. Please verify your database credentials are correct.'
         }), 200
 
 

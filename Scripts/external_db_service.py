@@ -43,24 +43,33 @@ def check_dependencies():
     return True
 
 
-# PostgreSQL DB config - Consider using environment variables for production
-db_config = {
-    'host':
-    os.getenv('DB_HOST',
-              "dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com"),
-    'database':
-    os.getenv('DB_NAME', "kotak_trading_db"),
-    'user':
-    os.getenv('DB_USER', "kotak_trading_db_user"),
-    'password':
-    os.getenv('DB_PASSWORD', "JRUlk8RutdgVcErSiUXqljDUdK8sBsYO"),
-    'port':
-    int(os.getenv('DB_PORT', 5432)),
-    'connect_timeout':
-    30,
-    'application_name':
-    'kotak_trading_app'
-}
+# PostgreSQL DB config - Only use if credentials are provided
+def get_db_config():
+    """Get database configuration only if credentials are available"""
+    db_host = os.getenv('DB_HOST')
+    db_name = os.getenv('DB_NAME')
+    db_user = os.getenv('DB_USER')
+    db_password = os.getenv('DB_PASSWORD')
+    database_url = os.getenv('DATABASE_URL')
+    
+    # Check if we have either individual credentials or full DATABASE_URL
+    if database_url:
+        # Parse DATABASE_URL if provided
+        return {'database_url': database_url}
+    elif all([db_host, db_name, db_user, db_password]):
+        # Use individual credentials
+        return {
+            'host': db_host,
+            'database': db_name,
+            'user': db_user,
+            'password': db_password,
+            'port': int(os.getenv('DB_PORT', 5432)),
+            'connect_timeout': 5,
+            'application_name': 'kotak_trading_app'
+        }
+    else:
+        # No credentials available
+        return None
 
 
 @contextmanager
@@ -69,15 +78,22 @@ def get_db_connection():
     if not PSYCOPG2_AVAILABLE:
         raise ImportError("psycopg2 is required but not available")
 
+    # Check if database credentials are available
+    db_config = get_db_config()
+    if not db_config:
+        raise ConnectionError("Database credentials not configured. Please provide DATABASE_URL or individual DB credentials.")
+
     conn = None
     try:
-        # Add much shorter timeout for faster failures
-        config_with_timeout = db_config.copy()
-        config_with_timeout['connect_timeout'] = 2  # Very short timeout - 2 seconds
-        config_with_timeout['options'] = '-c statement_timeout=5000'  # 5 second query timeout
+        # Use very short timeout to prevent worker timeouts
+        if 'database_url' in db_config:
+            conn = psycopg2.connect(db_config['database_url'], connect_timeout=3)
+        else:
+            config_with_timeout = db_config.copy()
+            config_with_timeout['connect_timeout'] = 3
+            conn = psycopg2.connect(**config_with_timeout)
         
-        conn = psycopg2.connect(**config_with_timeout)
-        conn.autocommit = True  # Enable autocommit for faster queries
+        conn.autocommit = True
         yield conn
     except Exception as e:
         logger.error(f"Database connection error: {e}")
@@ -86,7 +102,7 @@ def get_db_connection():
                 conn.rollback()
             except:
                 pass
-        raise ConnectionError(f"Cannot connect to external database: {e}")
+        raise ConnectionError(f"Cannot connect to trading database: {e}")
     finally:
         if conn:
             try:
@@ -149,7 +165,8 @@ def get_symbol_data_fast(table_name):
                 raise ValueError(f"Invalid table name: {table_name}")
 
             # Quick check if table has data
-            cursor.execute(f'SELECT COUNT(*) FROM symbols."{table_name}" LIMIT 1')
+            cursor.execute(
+                f'SELECT COUNT(*) FROM symbols."{table_name}" LIMIT 1')
             count = cursor.fetchone()[0]
             if count == 0:
                 return None
@@ -173,7 +190,9 @@ def get_symbol_data_fast(table_name):
             current_close = float(latest_row[4])
 
             # Calculate d7 and d30 with available data
-            d7_price = float(rows[min(7, len(rows)-1)][4]) if len(rows) > 7 else current_close
+            d7_price = float(rows[min(
+                7,
+                len(rows) - 1)][4]) if len(rows) > 7 else current_close
             d30_price = current_close  # Simplified for speed
 
             # Create signal data structure
@@ -196,6 +215,7 @@ def get_symbol_data_fast(table_name):
     except Exception as e:
         logger.error(f"Error getting fast data from {table_name}: {e}")
         return None
+
 
 def get_symbol_data(table_name):
     """Get the last row data from a symbol table and calculate required fields"""
@@ -298,33 +318,55 @@ def get_etf_signals_from_symbols_schema():
         for table_name in five_min_tables:
             try:
                 count += 1
-                logger.info(f"Processing table {count}/{len(five_min_tables)}: {table_name}")
+                logger.info(
+                    f"Processing table {count}/{len(five_min_tables)}: {table_name}"
+                )
 
                 # Get symbol data with timeout protection
                 symbol_data = get_symbol_data_fast(table_name)
                 if symbol_data:
                     # Create signal record with required fields
                     signal = {
-                        'id': count,
-                        'etf': table_name,
-                        'date': symbol_data['datetime'].strftime('%Y-%m-%d') if symbol_data['datetime'] else '',
-                        'pos': 1,  # Default position (1 for long)
-                        'qty': 1,  # Default quantity
-                        'ep': symbol_data['close'],  # Entry price = current close
-                        'cmp': symbol_data['cmp'],
-                        'ed': '',  # Exit date (empty)
-                        'exp': '',  # Exit price (empty)
-                        'iv': symbol_data['close'],  # Investment value
-                        'ip': 0.0,  # Investment percentage
-                        'd7': symbol_data['d7'],
-                        'd30': symbol_data['d30'],
-                        'created_at': datetime.now(),
+                        'id':
+                        count,
+                        'etf':
+                        table_name,
+                        'date':
+                        symbol_data['datetime'].strftime('%Y-%m-%d')
+                        if symbol_data['datetime'] else '',
+                        'pos':
+                        1,  # Default position (1 for long)
+                        'qty':
+                        1,  # Default quantity
+                        'ep':
+                        symbol_data['close'],  # Entry price = current close
+                        'cmp':
+                        symbol_data['cmp'],
+                        'ed':
+                        '',  # Exit date (empty)
+                        'exp':
+                        '',  # Exit price (empty)
+                        'iv':
+                        symbol_data['close'],  # Investment value
+                        'ip':
+                        0.0,  # Investment percentage
+                        'd7':
+                        symbol_data['d7'],
+                        'd30':
+                        symbol_data['d30'],
+                        'created_at':
+                        datetime.now(),
                         # Additional OHLCV data
-                        'open': symbol_data['open'],
-                        'high': symbol_data['high'],
-                        'low': symbol_data['low'],
-                        'volume': symbol_data['volume'],
-                        'available_rows': symbol_data['available_rows']
+                        'open':
+                        symbol_data['open'],
+                        'high':
+                        symbol_data['high'],
+                        'low':
+                        symbol_data['low'],
+                        'volume':
+                        symbol_data['volume'],
+                        'available_rows':
+                        symbol_data['available_rows']
                     }
                     signals.append(signal)
 
@@ -332,7 +374,9 @@ def get_etf_signals_from_symbols_schema():
                 logger.error(f"Error processing table {table_name}: {e}")
                 continue
 
-        logger.info(f"✅ Successfully processed {len(signals)} symbols from symbols schema")
+        logger.info(
+            f"✅ Successfully processed {len(signals)} symbols from symbols schema"
+        )
         return signals
 
     except Exception as e:
@@ -345,15 +389,17 @@ def get_etf_signals_data_json():
     try:
         # Check dependencies first
         check_dependencies()
-        
+
         # Test connection first with quick timeout
         if not test_database_connection():
-            logger.error("External database connection failed - returning empty data")
+            logger.error(
+                "External database connection failed - returning empty data")
             return {
                 'data': [],
                 'recordsTotal': 0,
                 'recordsFiltered': 0,
-                'message': 'External database connection failed. Please check database credentials.',
+                'message':
+                'External database connection failed. Please check database credentials.',
                 'status': 'error'
             }
 
