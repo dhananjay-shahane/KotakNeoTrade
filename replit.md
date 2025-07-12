@@ -22,10 +22,10 @@ A comprehensive trading platform integrated with Kotak Neo API for real-time por
 - **Data Sources**: All data must come from live Kotak Neo API
 
 ## Recent Changes
-- **2025-07-12**: ✅ **Symbol Table Integration Complete** - Created symbol tables ending with "_5m" (ultracemco_5m, tatasteel_5m, etc.) with OHLC data structure
-- **2025-07-12**: ✅ **CMP Fetching from Symbol Tables** - Modified external_db_service.py to get CMP from symbol table close prices instead of admin_trade_signals table
-- **2025-07-12**: ✅ **Real-Time Price Matching** - Implemented symbol matching logic with multiple strategies (exact match, starts with, contains) for "_5m" tables
-- **2025-07-12**: ✅ **Database Query Optimization** - Updated to fetch close price from last row of matching symbol tables with proper rounding to 2 decimal places
+- **2025-07-12**: ✅ **Symbols Schema Integration** - Updated to check symbols schema for symbol tables instead of public schema
+- **2025-07-12**: ✅ **Real Schema Table Matching** - System now matches admin_trade_signals symbols with existing tables in symbols schema
+- **2025-07-12**: ✅ **OHLC Data Structure Support** - Implemented support for datetime, open, high, low, close, volume structure from symbols schema
+- **2025-07-12**: ✅ **CMP from Symbols Schema** - Modified external_db_service.py to get CMP from symbols.table_name close prices with proper rounding to 2 decimal places
 - **2025-07-12**: ✅ **Complete Migration to Replit Environment** - Successfully migrated from Replit Agent to standard Replit environment with PostgreSQL database
 - **2025-07-12**: ✅ **External Database Service Optimized** - Modified external_db_service.py to fetch only required fields (symbol, entry_price, qty) from admin_trade_signals and get CMP from symbols table
 - **2025-07-12**: ✅ **ETF Signals API Fixed** - Fixed function signature issue and API now properly fetches data from two tables without storing CMP in admin_trade_signals
