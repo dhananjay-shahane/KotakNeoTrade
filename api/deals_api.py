@@ -609,7 +609,12 @@ def create_deal_from_signal():
 
         try:
             with conn.cursor() as cursor:
-                # Insert into user_deals table with user_id and trading_symbol
+                # Prepare proper date value
+                entry_date = signal_data.get('date')
+                if not entry_date or entry_date == 'CURRENT_DATE':
+                    entry_date = datetime.now().strftime('%Y-%m-%d')
+
+                # Insert into user_deals table with proper values
                 insert_query = """
                     INSERT INTO user_deals (
                         user_id, symbol, trading_symbol, entry_date, position_type, quantity, entry_price,
@@ -618,39 +623,38 @@ def create_deal_from_signal():
                         notes, tags, created_at, updated_at,
                         pos, qty, ep, cmp, tp, inv, pl
                     ) VALUES (
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW(),
                         %s, %s, %s, %s, %s, %s, %s
                     ) RETURNING id
                 """
                 
                 values = (
-                    user_id,  # Add user_id as first parameter
-                    symbol.upper(),
-                    symbol.upper(),  # trading_symbol - use same as symbol
-                    signal_data.get('date', 'CURRENT_DATE'),
-                    'LONG' if pos == 1 else 'SHORT',
-                    qty,
-                    ep,
-                    cmp,
-                    tp,
-                    ep * 0.95,  # Default 5% stop loss
-                    invested_amount,
-                    current_value,
-                    pnl_amount,
-                    pnl_percent,
-                    'ACTIVE',
-                    'SIGNAL',
-                    f'Added from ETF signal - {symbol}',
-                    'ETF,SIGNAL',
-                    'NOW()',
-                    'NOW()',
-                    pos,
-                    qty,
-                    ep,
-                    cmp,
-                    tp,
-                    invested_amount,
-                    pnl_amount
+                    user_id,  # user_id
+                    symbol.upper(),  # symbol
+                    f"{symbol.upper()}-EQ",  # trading_symbol - proper format
+                    entry_date,  # entry_date
+                    'LONG' if pos == 1 else 'SHORT',  # position_type
+                    int(qty),  # quantity
+                    float(ep),  # entry_price
+                    float(cmp),  # current_price
+                    float(tp),  # target_price
+                    float(ep * 0.95),  # stop_loss - 5% below entry
+                    float(invested_amount),  # invested_amount
+                    float(current_value),  # current_value
+                    float(pnl_amount),  # pnl_amount
+                    float(pnl_percent),  # pnl_percent
+                    'ACTIVE',  # status
+                    'SIGNAL',  # deal_type
+                    f'Added from ETF signal - {symbol}',  # notes
+                    'ETF,SIGNAL',  # tags
+                    # created_at and updated_at are handled by NOW() in query
+                    int(pos),  # pos
+                    int(qty),  # qty
+                    float(ep),  # ep
+                    float(cmp),  # cmp
+                    float(tp),  # tp
+                    float(invested_amount),  # inv
+                    float(pnl_amount)  # pl
                 )
 
                 cursor.execute(insert_query, values)
