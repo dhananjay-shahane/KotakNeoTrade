@@ -148,8 +148,10 @@ ETFSignalsManager.prototype.loadSignals = function () {
                     }
 
                     if (data.data && Array.isArray(data.data)) {
-                        // Show all data since external_db_service already filters to _5m tables
-                        self.signals = data.data || [];
+                        // Filter data to only include _5m tables
+                        self.signals = data.data.filter(function(item) {
+                            return item.table_name && item.table_name.includes('_5m');
+                        }) || [];
                         self.filteredSignals = self.signals.slice();
                         self.renderSignalsTable();
                         self.updatePagination();
