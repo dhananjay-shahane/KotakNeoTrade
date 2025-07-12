@@ -531,15 +531,127 @@ def get_user_deals_api():
 
 @deals_api.route('/api/deals/create-from-signal', methods=['POST'])
 def create_deal_from_signal():
-    """Create a deal from a signal (placeholder)"""
+    """Create a deal from ETF signal and save to user_deals table"""
     try:
         data = request.get_json()
-        # Implement deal creation logic here based on signal data
-        return jsonify({
-            'success': True,
-            'message': 'Deal created from signal (placeholder)',
-            'data': data
-        })
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided'
+            }), 400
+
+        # Extract signal data
+        signal_data = data.get('signal_data', {})
+        
+        # Get required fields with fallbacks
+        symbol = signal_data.get('symbol') or signal_data.get('etf', 'UNKNOWN')
+        qty = float(signal_data.get('qty', 1))
+        ep = float(signal_data.get('ep', 0))
+        cmp = signal_data.get('cmp')
+        
+        # Handle CMP - if it's "--" or invalid, use entry price
+        if cmp == "--" or cmp is None:
+            cmp = ep
+        else:
+            cmp = float(cmp)
+        
+        pos = int(signal_data.get('pos', 1))
+        tp = float(signal_data.get('tp', ep * 1.05))  # Default 5% target
+        
+        # Validate required data
+        if not symbol or symbol == 'UNKNOWN' or ep <= 0 or qty <= 0:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid signal data - missing symbol, price, or quantity'
+            }), 400
+
+        # Calculate values
+        invested_amount = ep * qty
+        current_value = cmp * qty
+        pnl_amount = current_value - invested_amount
+        pnl_percent = (pnl_amount / invested_amount * 100) if invested_amount > 0 else 0
+
+        # Connect to database
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({
+                'success': False,
+                'error': 'Database connection failed'
+            }), 500
+
+        try:
+            with conn.cursor() as cursor:
+                # Insert into user_deals table
+                insert_query = """
+                    INSERT INTO user_deals (
+                        symbol, entry_date, position_type, quantity, entry_price,
+                        current_price, target_price, stop_loss, invested_amount,
+                        current_value, pnl_amount, pnl_percent, status, deal_type,
+                        notes, tags, created_at, updated_at,
+                        pos, qty, ep, cmp, tp, inv, pl
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                        %s, %s, %s, %s, %s, %s, %s
+                    ) RETURNING id
+                """
+                
+                values = (
+                    symbol.upper(),
+                    signal_data.get('date', 'CURRENT_DATE'),
+                    'LONG' if pos == 1 else 'SHORT',
+                    qty,
+                    ep,
+                    cmp,
+                    tp,
+                    ep * 0.95,  # Default 5% stop loss
+                    invested_amount,
+                    current_value,
+                    pnl_amount,
+                    pnl_percent,
+                    'ACTIVE',
+                    'SIGNAL',
+                    f'Added from ETF signal - {symbol}',
+                    'ETF,SIGNAL',
+                    'NOW()',
+                    'NOW()',
+                    pos,
+                    qty,
+                    ep,
+                    cmp,
+                    tp,
+                    invested_amount,
+                    pnl_amount
+                )
+
+                cursor.execute(insert_query, values)
+                deal_id = cursor.fetchone()[0]
+                conn.commit()
+
+                logger.info(f"✓ Created deal from signal: {symbol} - Deal ID: {deal_id}")
+
+                return jsonify({
+                    'success': True,
+                    'message': f'Deal created successfully for {symbol}',
+                    'deal_id': deal_id,
+                    'symbol': symbol,
+                    'entry_price': ep,
+                    'quantity': qty,
+                    'invested_amount': invested_amount
+                })
+
+        except Exception as db_error:
+            logger.error(f"Database error creating deal: {db_error}")
+            if conn:
+                conn.rollback()
+            return jsonify({
+                'success': False,
+                'error': f'Failed to create deal: {str(db_error)}'
+            }), 500
+        finally:
+            if conn:
+                conn.close()
+
     except Exception as e:
         logger.error(f"Error creating deal from signal: {e}")
         return jsonify({

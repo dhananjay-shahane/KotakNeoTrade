@@ -83,35 +83,36 @@ ETFSignalsManager.prototype.setupEventListeners = function () {
     }
 };
 
-// ETFSignalsManager.prototype.loadSignals = function() {
-//     var self = this;
-//     try {
-//         // Load ETF signals data from API
-//         var xhr = new XMLHttpRequest();
-//         xhr.open('GET', '/api/etf-signals-data', true);
-//         xhr.onreadystatechange = function() {
-//             if (xhr.readyState === 4) {
-//                 if (xhr.status === 200) {
-//                     var data = JSON.parse(xhr.responseText);
-//                     if (data.success) {
-//                         self.signals = data.signals || [];
-//                         self.filteredSignals = self.signals.slice();
-//                         self.renderSignalsTable();
-//                         self.updatePagination();
-//                     } else {
-//                         self.showError('Failed to load ETF signals data');
-//                     }
-//                 } else {
-//                     self.showError('Failed to load ETF signals data');
-//                 }
-//             }
-//         };
-//         xhr.send();
-//     } catch (error) {
-//         console.error('Error loading signals:', error);
-//         this.showError('Failed to load signals data');
-//     }
-// };
+ETFSignalsManager.prototype.loadSignals = function() {
+    var self = this;
+    try {
+        // Load ETF signals data from API
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '/api/etf-signals-data?page=1&page_size=50', true);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    var data = JSON.parse(xhr.responseText);
+                    if (data.data) {
+                        self.signals = data.data || [];
+                        self.filteredSignals = self.signals.slice();
+                        self.renderSignalsTable();
+                        self.updatePagination();
+                        console.log('✓ Loaded', self.signals.length, 'ETF signals');
+                    } else {
+                        self.showError('No ETF signals data found');
+                    }
+                } else {
+                    self.showError('Failed to load ETF signals data');
+                }
+            }
+        };
+        xhr.send();
+    } catch (error) {
+        console.error('Error loading signals:', error);
+        this.showError('Failed to load signals data');
+    }
+};
 
 ETFSignalsManager.prototype.renderSignalsTable = function () {
     var tbody = document.getElementById("signalsTableBody");
@@ -269,11 +270,12 @@ ETFSignalsManager.prototype.renderSignalsTable = function () {
                     else if (change2 < 0) cell.className += " loss";
                     break;
                 case "actions":
+                    var signalJson = JSON.stringify(signal).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
                     cellContent =
                         '<button class="btn btn-sm btn-primary" onclick="addDealFromSignal(\'' +
                         (signal.symbol || signal.etf || "") +
                         "', " +
-                        JSON.stringify(signal).replace(/'/g, "\\'") +
+                        "JSON.parse(decodeURIComponent('" + encodeURIComponent(JSON.stringify(signal)) + "'))" +
                         ')">' +
                         "Add Deal</button>";
                     break;
@@ -475,17 +477,22 @@ function addDealFromSignal(symbol, signalData) {
                 ? JSON.parse(signalData)
                 : signalData;
 
+        // Get the current price for confirmation
+        var currentPrice = signal.cmp === "--" ? signal.ep : signal.cmp;
+        
         if (
             !confirm(
                 "Add deal for " +
                     symbol +
                     " at ₹" +
-                    (signal.cmp || signal.ep || 0).toFixed(2) +
-                    "?",
+                    (currentPrice || 0).toFixed(2) +
+                    "?"
             )
         ) {
             return;
         }
+
+        console.log("Creating deal from signal:", signal);
 
         var xhr = new XMLHttpRequest();
         xhr.open("POST", "/api/deals/create-from-signal", true);
@@ -493,23 +500,39 @@ function addDealFromSignal(symbol, signalData) {
 
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4) {
+                console.log("Response status:", xhr.status);
+                console.log("Response text:", xhr.responseText);
+                
                 if (xhr.status === 200) {
-                    var response = JSON.parse(xhr.responseText);
-                    if (response.success) {
-                        showMessage(
-                            "Deal created successfully for " + symbol,
-                            "success",
-                        );
-                    } else {
-                        showMessage(
-                            "Failed to create deal: " + response.message,
-                            "error",
-                        );
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.success) {
+                            showMessage(
+                                "✓ Deal created successfully for " + symbol + 
+                                " - Deal ID: " + response.deal_id,
+                                "success"
+                            );
+                            
+                            // Optionally redirect to deals page after 2 seconds
+                            setTimeout(function() {
+                                if (confirm("View your deals?")) {
+                                    window.location.href = "/deals";
+                                }
+                            }, 2000);
+                        } else {
+                            showMessage(
+                                "Failed to create deal: " + (response.error || response.message || "Unknown error"),
+                                "error"
+                            );
+                        }
+                    } catch (parseError) {
+                        console.error("Failed to parse response:", parseError);
+                        showMessage("Invalid response from server", "error");
                     }
                 } else {
                     showMessage(
-                        "Failed to create deal. Please try again.",
-                        "error",
+                        "Failed to create deal. Server error: " + xhr.status,
+                        "error"
                     );
                 }
             }
@@ -517,12 +540,12 @@ function addDealFromSignal(symbol, signalData) {
 
         xhr.send(
             JSON.stringify({
-                signal_data: signal,
-            }),
+                signal_data: signal
+            })
         );
     } catch (error) {
         console.error("Error adding deal:", error);
-        showMessage("Error adding deal. Please try again.", "error");
+        showMessage("Error adding deal: " + error.message, "error");
     }
 }
 
