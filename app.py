@@ -396,15 +396,21 @@ def get_holdings_api():
 def get_etf_signals_data():
     """API endpoint to get ETF signals data from external admin_trade_signals table"""
     try:
-        # Return sample data to make the UI functional while database is being configured
-        from Scripts.fallback_data_service import get_fallback_etf_signals_data
-        logging.info("Using sample ETF signals data - external database not configured")
-        return jsonify(get_fallback_etf_signals_data()), 200
+        # Only use real data from external database - no sample data allowed
+        from Scripts.external_db_service import get_etf_signals_data_json
+        result = get_etf_signals_data_json()
+        return jsonify(result)
             
     except Exception as e:
         logging.error(f"ETF signals API error: {e}")
-        from Scripts.fallback_data_service import get_fallback_error_response
-        return jsonify(get_fallback_error_response(str(e))), 200
+        return jsonify({
+            'success': False,
+            'data': [],
+            'recordsTotal': 0,
+            'recordsFiltered': 0,
+            'error': f'Database connection failed: {str(e)}',
+            'message': 'Cannot connect to trading database. Please provide database credentials.'
+        }), 200
 
 
 @app.route('/api/basic-trade-signals-data')

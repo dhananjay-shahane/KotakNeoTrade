@@ -141,13 +141,7 @@ def get_symbol_data_fast(table_name):
     """Get the last row data from a symbol table quickly with minimal processing"""
     try:
         check_dependencies()
-        
-        # Skip database connection altogether and return None to prevent timeouts
-        logger.warning(f"Skipping table {table_name} due to potential connection issues")
-        return None
-        
-        # Original code commented out to prevent timeouts
-        # with get_db_connection() as conn:
+        with get_db_connection() as conn:
             cursor = conn.cursor()
 
             # Validate table name
