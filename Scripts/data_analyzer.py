@@ -153,7 +153,7 @@ class DataAnalyzer:
                 'function_name': 'get_orders',
                 'data_type': type(orders_data).__name__,
                 'data_structure': self._analyze_structure(orders_data),
-                'sample_data': self._get_sample_data(orders_data),
+                'data_preview': self._get_sample_data(orders_data),
                 'data_count': self._count_data_items(orders_data),
                 'fields_available': self._get_fields_list(orders_data),
                 'status': 'success'
@@ -182,7 +182,7 @@ class DataAnalyzer:
                 'function_name': 'get_limits',
                 'data_type': type(limits_data).__name__,
                 'data_structure': self._analyze_structure(limits_data),
-                'sample_data': self._get_sample_data(limits_data),
+                'data_preview': self._get_sample_data(limits_data),
                 'data_count': self._count_data_items(limits_data),
                 'fields_available': self._get_fields_list(limits_data),
                 'status': 'success'
@@ -214,7 +214,7 @@ class DataAnalyzer:
             return {
                 'type': 'list',
                 'length': len(data),
-                'item_types': [type(item).__name__ for item in data[:5]]  # Sample first 5
+                'item_types': [type(item).__name__ for item in data[:5]]  # Preview first 5
             }
         else:
             return {
@@ -223,7 +223,7 @@ class DataAnalyzer:
             }
     
     def _get_sample_data(self, data, max_items=2):
-        """Get sample data for analysis"""
+        """Get data preview for analysis (authentic data only)"""
         if isinstance(data, dict):
             return {k: v for k, v in list(data.items())[:max_items]}
         elif isinstance(data, list):

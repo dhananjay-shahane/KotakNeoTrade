@@ -220,20 +220,7 @@ logging.info("✅ Using local PostgreSQL database only")
 def validate_current_session():
     """Validate current session and check expiration"""
     try:
-        # Real-time mode - use actual Kotak Neo API authentication
-        demo_mode = os.environ.get('DEMO_MODE', 'false').lower() == 'true'
-        if demo_mode:
-            if not session.get('authenticated'):
-                session['authenticated'] = True
-                session['ucc'] = 'DEMO001'
-                session['greeting_name'] = 'Demo User'
-                session['access_token'] = 'demo_token'
-                session['session_token'] = 'demo_session'
-                session['client'] = 'demo_client'
-                session.permanent = True
-            return True
-
-        # Check if user is authenticated
+        # Check if user is authenticated (only authentic data allowed)
         if not session.get('authenticated'):
             return False
 

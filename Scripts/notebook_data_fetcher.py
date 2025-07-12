@@ -98,7 +98,7 @@ class NotebookDataFetcher:
                     return []
             
             if not self.authenticate_with_stored_session():
-                logging.warning("Authentication required - no sample data available")
+                logging.warning("Authentication required - authentic data only")
                 return []
             
             # Fetch positions from API
