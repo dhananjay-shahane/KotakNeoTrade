@@ -47,7 +47,7 @@ class ExternalDBService:
             logger.info("✓ Disconnected from external database")
 
     def get_admin_trade_signals(self) -> List[Dict]:
-        """Fetch only required fields from admin_trade_signals with CMP from symbols table"""
+        """Fetch only required fields from admin_trade_signals and get CMP from available tables"""
         if not self.connection:
             if not self.connect():
                 return []
@@ -55,20 +55,25 @@ class ExternalDBService:
         try:
             with self.connection.cursor(
                     cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
-                # Get only required fields from admin_trade_signals and match with symbols table for CMP
+                # First, check what tables exist to find the correct CMP source
+                cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+                tables = [row[0] for row in cursor.fetchall()]
+                logger.info(f"Available tables: {tables}")
+                
+                # Get only required fields from admin_trade_signals
+                # Since symbols table doesn't exist, we'll get CMP from admin_trade_signals.cmp field
                 query = """
                 SELECT 
-                    ats.id,
-                    ats.symbol,
-                    ats.qty,
-                    ats.ep as entry_price,
-                    ats.created_at,
-                    ats.date,
-                    ats.pos,
-                    COALESCE(s.close, 0) as cmp
-                FROM admin_trade_signals ats
-                LEFT JOIN symbols s ON UPPER(TRIM(ats.symbol)) = UPPER(TRIM(s.symbol))
-                ORDER BY ats.created_at DESC
+                    id,
+                    symbol,
+                    qty,
+                    ep as entry_price,
+                    cmp,
+                    created_at,
+                    date,
+                    pos
+                FROM admin_trade_signals
+                ORDER BY created_at DESC
                 """
 
                 cursor.execute(query)
@@ -107,7 +112,7 @@ class ExternalDBService:
                     signals.append(signal)
 
                 logger.info(
-                    f"✓ Fetched {len(signals)} admin trade signals with CMP from symbols table"
+                    f"✓ Fetched {len(signals)} admin trade signals with CMP from database"
                 )
                 return signals
 
@@ -176,7 +181,7 @@ def get_etf_signals_data_json(page=1, page_size=10):
             qty = float(signal.get('qty') or 0) if signal.get('qty') is not None else 0.0
             entry_price = float(signal.get('entry_price') or 0) if signal.get('entry_price') is not None else 0.0
             
-            # Get CMP from symbols table (fetched via JOIN query)
+            # Get CMP from admin_trade_signals table (since symbols table doesn't exist)
             cmp = float(signal.get('cmp') or 0) if signal.get('cmp') is not None else 0.0
             
             # Calculate basic metrics
@@ -224,7 +229,7 @@ def get_etf_signals_data_json(page=1, page_size=10):
             'page_size': page_size,
             'total_pages': (len(formatted_signals) + page_size - 1) // page_size,
             'has_more': end_idx < len(formatted_signals),
-            'message': f'Successfully loaded {len(paginated_signals)} signals from admin_trade_signals with CMP from symbols table'
+            'message': f'Successfully loaded {len(paginated_signals)} signals from admin_trade_signals table'
         }
 
     except Exception as e:
