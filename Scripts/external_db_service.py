@@ -51,7 +51,7 @@ def get_db_config():
     db_user = os.getenv('DB_USER')
     db_password = os.getenv('DB_PASSWORD')
     database_url = os.getenv('DATABASE_URL')
-    
+
     # Check if we have either individual credentials or full DATABASE_URL
     if database_url:
         # Parse DATABASE_URL if provided
@@ -81,18 +81,21 @@ def get_db_connection():
     # Check if database credentials are available
     db_config = get_db_config()
     if not db_config:
-        raise ConnectionError("Database credentials not configured. Please provide DATABASE_URL or individual DB credentials.")
+        raise ConnectionError(
+            "Database credentials not configured. Please provide DATABASE_URL or individual DB credentials."
+        )
 
     conn = None
     try:
         # Use very short timeout to prevent worker timeouts
         if 'database_url' in db_config:
-            conn = psycopg2.connect(db_config['database_url'], connect_timeout=3)
+            conn = psycopg2.connect(db_config['database_url'],
+                                    connect_timeout=3)
         else:
             config_with_timeout = db_config.copy()
             config_with_timeout['connect_timeout'] = 3
             conn = psycopg2.connect(**config_with_timeout)
-        
+
         conn.autocommit = True
         yield conn
     except Exception as e:
@@ -175,8 +178,7 @@ def get_symbol_data_fast(table_name):
             cursor.execute(f"""
                 SELECT datetime, open, high, low, close, volume 
                 FROM symbols."{table_name}" 
-                ORDER BY datetime DESC 
-                LIMIT 8
+                ORDER BY datetime DESC
             """)
 
             rows = cursor.fetchall()

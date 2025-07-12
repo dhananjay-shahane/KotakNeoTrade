@@ -21,7 +21,7 @@ function ETFSignalsManager() {
     // Column visibility settings
     this.availableColumns = [
         { key: "trade_signal_id", label: "ID", visible: true },
-        { key: "etf", label: "ETF", visible: true },
+        { key: "etf", label: "Symbol", visible: true },
         { key: "thirty", label: "30D", visible: true },
         { key: "dh", label: "30D%", visible: true },
         { key: "date", label: "DATE", visible: true },
@@ -139,7 +139,11 @@ ETFSignalsManager.prototype.loadSignals = function () {
 
                     if (data.success === false) {
                         // Handle API errors gracefully
-                        self.showErrorMessage(data.message || data.error || "Unknown error occurred");
+                        self.showErrorMessage(
+                            data.message ||
+                                data.error ||
+                                "Unknown error occurred",
+                        );
                         self.signals = [];
                         self.filteredSignals = [];
                         self.renderSignalsTable();
@@ -179,14 +183,16 @@ ETFSignalsManager.prototype.loadSignals = function () {
         }
     };
 
-    xhr.ontimeout = function() {
+    xhr.ontimeout = function () {
         self.isLoading = false;
         self.hideLoadingState();
         console.error("API request timed out");
-        self.showErrorMessage("Request timed out - database connection slow. Please try again.");
+        self.showErrorMessage(
+            "Request timed out - database connection slow. Please try again.",
+        );
     };
 
-    xhr.onerror = function() {
+    xhr.onerror = function () {
         self.isLoading = false;
         self.hideLoadingState();
         console.error("API request failed");
@@ -384,9 +390,9 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
             case "nt":
                 cellValue = signal.nt || "--";
                 break;
-            // case 'qt':
-            //     cellValue = signal.qt || quantity;
-            //     break;
+            case "qt":
+                cellValue = signal.qt || quantity;
+                break;
             case "seven":
                 var sevenValue = signal.seven || signal.d7 || 0;
                 if (typeof sevenValue === "string") {
@@ -954,7 +960,9 @@ ETFSignalsManager.prototype.showErrorMessage = function (message) {
             '<div class="d-flex flex-column justify-content-center align-items-center">' +
             '<i class="fas fa-exclamation-triangle fa-3x mb-3 text-warning"></i>' +
             '<h6 class="text-light mb-2">Error Loading Data</h6>' +
-            '<p class="text-danger mb-3">' + message + '</p>' +
+            '<p class="text-danger mb-3">' +
+            message +
+            "</p>" +
             '<button class="btn btn-primary" onclick="refreshSignals()">Try Again</button>' +
             "</div></td></tr>";
     }
