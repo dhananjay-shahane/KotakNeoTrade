@@ -10,7 +10,7 @@ function ETFSignalsManager() {
     this.signals = []; // All ETF signals from database
     this.filteredSignals = []; // Filtered signals based on search/sort
     this.currentPage = 1; // Current page in pagination
-    this.itemsPerPage = 25; // Number of signals per page
+    this.itemsPerPage = 100000; // Number of signals per page, set to a high number to show all data
     this.isLoading = false; // Loading state flag
     this.refreshInterval = null; // Auto-refresh timer
 
@@ -123,7 +123,7 @@ ETFSignalsManager.prototype.loadSignals = function () {
     var xhr = new XMLHttpRequest();
     xhr.open("GET", "/api/etf-signals-data", true);
     xhr.timeout = 45000; // 45 second timeout
-    
+
     xhr.onreadystatechange = function () {
         if (xhr.readyState === 4) {
             self.isLoading = false;
@@ -148,7 +148,10 @@ ETFSignalsManager.prototype.loadSignals = function () {
                     }
 
                     if (data.data && Array.isArray(data.data)) {
-                        self.signals = data.data || [];
+                        // Filter data to only include _5m tables
+                        self.signals = data.data.filter(function(item) {
+                            return item.table_name && item.table_name.includes('_5m');
+                        }) || [];
                         self.filteredSignals = self.signals.slice();
                         self.renderSignalsTable();
                         self.updatePagination();
@@ -964,9 +967,6 @@ ETFSignalsManager.prototype.startAutoRefresh = function () {
     this.stopAutoRefresh();
     this.refreshInterval = setInterval(function () {
         self.loadSignals();
-        // Update CMP values with selected data source every refresh
-        var dataSource = localStorage.getItem("data-source") || "google";
-        updateCMPDirectlyFromSource(dataSource);
     }, 300000); // 5 minutes
 };
 
@@ -996,10 +996,6 @@ function setRefreshInterval(interval, text) {
         if (interval > 0) {
             window.etfSignalsManager.refreshInterval = setInterval(function () {
                 window.etfSignalsManager.loadSignals();
-                // Update CMP using selected data source
-                var dataSource =
-                    localStorage.getItem("data-source") || "google";
-                updateCMPDirectlyFromSource(dataSource);
             }, interval);
         }
         var currentIntervalSpan = document.getElementById("currentInterval");
@@ -1264,289 +1260,10 @@ function sortSignalsByColumn(column) {
     }
 }
 
-// Data source switching functions
-function switchDataSource(newSource) {
-    var oldSource = localStorage.getItem("data-source") || "google";
-    localStorage.setItem("data-source", newSource);
-
-    var sourceName =
-        newSource === "google" ? "Google Finance" : "Yahoo Finance";
-
-    // Update UI indicator
-    var currentDataSourceSpan = document.getElementById("currentDataSource");
-    if (currentDataSourceSpan) {
-        currentDataSourceSpan.textContent = sourceName;
-    }
-
-    // Show immediate notification
-    if (typeof showToaster === "function") {
-        showToaster(
-            "Data Source Changed",
-            "Switched to " + sourceName + " - Updating CMP...",
-            "info",
-        );
-    }
-
-    // Immediately update CMP when source changes
-    if (newSource !== oldSource) {
-        updateCMPDirectlyFromSource(newSource);
-    }
-}
-
-function updateCMPDirectlyFromSource(source) {
-    // Show update status icon
-    var statusIcon = document.getElementById("updateStatusIcon");
-    if (statusIcon) {
-        statusIcon.style.display = "inline";
-    }
-
-    // Show enhanced loading indicator in table with better styling
-    var loadingHtml =
-        '<tr><td colspan="25" class="text-center py-5">' +
-        '<div class="d-flex flex-column justify-content-center align-items-center">' +
-        '<div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">' +
-        '<span class="visually-hidden">Loading...</span></div>' +
-        '<h5 class="text-light mb-2">Updating CMP</h5>' +
-        '<p class="text-muted">Fetching live prices from ' +
-        (source === "google" ? "Google Finance" : "Yahoo Finance") +
-        "...</p>" +
-        '<small class="text-warning">Please wait, this may take a few moments</small>' +
-        "</div></td></tr>";
-
-    var tableBody = document.getElementById("signalsTableBody");
-    if (tableBody) {
-        tableBody.innerHTML = loadingHtml;
-    }
-
-    // Use the appropriate API endpoint based on source
-    var apiEndpoint =
-        source === "google"
-            ? "/api/google-finance/update-etf-cmp"
-            : "/api/yahoo/update-prices";
-
-    // Create AbortController for timeout handling
-    var controller = new AbortController();
-    var timeoutId = setTimeout(function () {
-        controller.abort();
-    }, 35000); // 35 second timeout
-
-    fetch(apiEndpoint, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            direct_update: true,
-            source: source,
-        }),
-        signal: controller.signal,
-    })
-        .then(function (response) {
-            clearTimeout(timeoutId); // Clear the timeout since request completed
-            return response.json();
-        })
-        .then(function (data) {
-            // Hide update status icon
-            var statusIcon = document.getElementById("updateStatusIcon");
-            if (statusIcon) {
-                statusIcon.style.display = "none";
-            }
-
-            if (data.success) {
-                // Show success notification with detailed info
-                var updatedCount =
-                    data.updated_count || data.successful_updates || 0;
-                var sourceName =
-                    source === "google" ? "Google Finance" : "Yahoo Finance";
-
-                if (typeof showToaster === "function") {
-                    showToaster(
-                        "CMP Updated Successfully",
-                        "Updated " +
-                            updatedCount +
-                            " records directly from " +
-                            sourceName +
-                            " in " +
-                            (data.duration || 0).toFixed(1) +
-                            "s",
-                        "success",
-                    );
-                }
-            }
-
-            // Show error notification
-            if (typeof showToaster === "function") {
-                showToaster(
-                    "Network Error",
-                    "Failed to update CMP from selected source",
-                    "error",
-                );
-            }
-
-            // Still try to refresh the table
-            if (window.etfSignalsManager) {
-                window.etfSignalsManager.loadSignals();
-            }
-        })
-        .catch(function (error) {
-            // Hide update status icon
-            var statusIcon = document.getElementById("updateStatusIcon");
-            if (statusIcon) {
-                statusIcon.style.display = "none";
-            }
-
-            var errorMessage = "Network error occurred";
-            if (error.name === "AbortError") {
-                errorMessage = "Update request timed out after 35 seconds";
-            } else if (error.message) {
-                errorMessage = error.message;
-            }
-
-            // Show error notification
-            if (typeof showToaster === "function") {
-                showToaster("Network Error", errorMessage, "error");
-            }
-
-            // Still try to refresh the table
-            if (window.etfSignalsManager) {
-                window.etfSignalsManager.loadSignals();
-            }
-        });
-}
-
-// Function to update CMP from Google Finance
-function updateCMPFromGoogleFinance() {
-    console.log("🔄 Updating CMP from Google Finance...");
-
-    var updateBtn = document.querySelector(
-        '[onclick*="updateCMPDirectlyFromSource"]',
-    );
-    if (updateBtn) {
-        updateBtn.innerHTML =
-            '<i class="fas fa-sync-alt fa-spin me-2"></i>Updating...';
-        updateBtn.disabled = true;
-    }
-
-    fetch("/api/google-finance/update-etf-cmp", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-    })
-        .then(function (response) {
-            return response.json();
-        })
-        .then(function (data) {
-            if (data.success) {
-                console.log(
-                    "✅ CMP updated successfully:",
-                    data.updated_count,
-                    "records",
-                );
-                // Refresh the signals table after update
-                if (window.etfSignalsManager) {
-                    window.etfSignalsManager.loadSignals();
-                }
-            } else {
-                console.error("❌ CMP update failed:", data.error);
-            }
-        })
-        .catch(function (error) {
-            console.error("❌ Error updating CMP:", error);
-        })
-        .finally(function () {
-            if (updateBtn) {
-                updateBtn.innerHTML =
-                    '<i class="fas fa-sync-alt me-2"></i>Force Update CMP';
-                updateBtn.disabled = false;
-            }
-        });
-}
-
-// Function to force update a specific symbol
-function forceUpdateSymbol(symbol) {
-    console.log("🔄 Force updating " + symbol + "...");
-
-    fetch("/api/google-finance/force-update-symbol/" + symbol, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-    })
-        .then(function (response) {
-            return response.json();
-        })
-        .then(function (data) {
-            if (data.success) {
-                console.log(
-                    "✅ " + symbol + " updated successfully to ₹" + data.price,
-                );
-                // Show success message
-                if (window.showToaster) {
-                    window.showToaster(
-                        "Symbol Updated",
-                        symbol + " CMP updated to ₹" + data.price,
-                        "success",
-                    );
-                }
-                // Refresh the signals table
-                if (window.etfSignalsManager) {
-                    window.etfSignalsManager.loadSignals();
-                }
-            } else {
-                console.error(
-                    "❌ Failed to update " + symbol + ":",
-                    data.error,
-                );
-                if (window.showToaster) {
-                    window.showToaster(
-                        "Update Failed",
-                        "Failed to update " + symbol + ": " + data.error,
-                        "error",
-                    );
-                }
-            }
-        })
-        .catch(function (error) {
-            console.error("❌ Error updating " + symbol + ":", error);
-            if (window.showToaster) {
-                window.showToaster(
-                    "Update Error",
-                    "Error updating " + symbol,
-                    "error",
-                );
-            }
-        });
-}
-
-// Function to stop automatic CMP updates
-function stopAutoCMPUpdates() {
-    if (typeof cmpUpdateInterval !== "undefined" && cmpUpdateInterval) {
-        clearInterval(cmpUpdateInterval);
-        cmpUpdateInterval = null;
-        console.log("⏹️ Auto CMP updates stopped");
-    }
-}
-
 // Initialize the ETF Signals Manager
 window.etfSignalsManager = new ETFSignalsManager();
 
-// Function to update current data source indicator
-function updateCurrentDataSourceIndicator() {
-    var dataSource = localStorage.getItem("data-source") || "google";
-    var sourceName =
-        dataSource === "google" ? "Google Finance" : "Yahoo Finance";
-
-    var currentDataSourceSpan = document.getElementById("currentDataSource");
-    if (currentDataSourceSpan) {
-        currentDataSourceSpan.textContent = sourceName;
-    }
-}
-
-// Update data source indicator when page loads
 document.addEventListener("DOMContentLoaded", function () {
-    updateCurrentDataSourceIndicator();
-
     // Set default refresh interval to 5 minutes
     var currentIntervalSpan = document.getElementById("currentInterval");
     var refreshIntervalDropdown = document.getElementById(
@@ -1558,33 +1275,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (refreshIntervalDropdown) {
         refreshIntervalDropdown.textContent = "5 Min";
     }
-
-    // Set default data source to Google Finance if not already set
-    if (!localStorage.getItem("data-source")) {
-        localStorage.setItem("data-source", "google");
-    }
-
-    // Ensure Google Finance is selected by default
-    switchDataSource("google");
-
-    // Update CMP immediately on page load
-    setTimeout(() => {
-        console.log("🚀 Initial CMP update on page load");
-        updateCMPFromGoogleFinance();
-    }, 2000); // Wait 2 seconds for page to fully load
 });
-
-// Function to start automatic CMP updates
-function startAutoCMPUpdates() {
-    // Auto CMP updates every 5 minutes
-    if (typeof cmpUpdateInterval === "undefined") {
-        window.cmpUpdateInterval = setInterval(function () {
-            var dataSource = localStorage.getItem("data-source") || "google";
-            updateCMPDirectlyFromSource(dataSource);
-        }, 300000); // 5 minutes
-        console.log("🚀 Auto CMP updates started (5 min interval)");
-    }
-}
 
 // Add Deal functionality
 function addDealFromSignal(symbol, signalData) {
@@ -1777,199 +1468,3 @@ function showMessage(message, type) {
         }
     }, 5000);
 }
-
-// Expose global functions for HTML event handlers
-
-// Function to update the CMP value in the table
-function updateCMPValue(symbol, cmp) {
-    // Find the cell with the matching symbol
-    const cmpCells = document.querySelectorAll(
-        `.cmp-value[data-symbol="${symbol}"]`,
-    );
-    cmpCells.forEach((cell) => {
-        const oldPrice = parseFloat(
-            cell.textContent.replace("₹", "").replace(",", ""),
-        );
-        cell.textContent = `₹${cmp.toFixed(2)}`;
-
-        // Add visual feedback for price changes
-        if (oldPrice && oldPrice !== cmp) {
-            cell.classList.add(cmp > oldPrice ? "price-up" : "price-down");
-            setTimeout(() => {
-                cell.classList.remove("price-up", "price-down");
-            }, 2000);
-        }
-    });
-}
-
-// Function to update all CMP values using selected data source
-function updateAllCMPValues() {
-    if (!window.etfSignalsManager || !window.etfSignalsManager.signals) {
-        console.log("No signals data available for CMP update");
-        return;
-    }
-
-    // Get unique symbols from current signals
-    var symbolsArray = window.etfSignalsManager.signals
-        .map(function (signal) {
-            return signal.etf || signal.symbol;
-        })
-        .filter(function (symbol) {
-            return symbol;
-        });
-
-    // Remove duplicates using a simple approach
-    var symbols = [];
-    for (var i = 0; i < symbolsArray.length; i++) {
-        if (symbols.indexOf(symbolsArray[i]) === -1) {
-            symbols.push(symbolsArray[i]);
-        }
-    }
-
-    if (symbols.length === 0) {
-        console.log("No symbols found for CMP update");
-        return;
-    }
-
-    // Get selected data source from localStorage
-    var dataSource = localStorage.getItem("data-source") || "google";
-    var apiEndpoint =
-        dataSource === "google"
-            ? "/api/update-live-cmp"
-            : "/api/yahoo/update-prices";
-    var sourceName =
-        dataSource === "google" ? "Google Finance" : "Yahoo Finance";
-
-    console.log("Updating CMP for symbols using " + sourceName + ":", symbols);
-
-    // Call selected API to update all symbols
-    fetch(apiEndpoint, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        timeout: 30000, // 30 second timeout
-    })
-        .then(function (response) {
-            return response.json();
-        })
-        .then(function (data) {
-            if (data.success) {
-                console.log(
-                    "CMP update response from " + sourceName + ":",
-                    data,
-                );
-
-                // Refresh the signals table to show updated prices
-                if (window.etfSignalsManager) {
-                    window.etfSignalsManager.loadSignals();
-                }
-
-                // Show success message
-                var updatedCount =
-                    data.updated_count || data.signals_updated || 0;
-                showUpdateMessage(
-                    "Updated CMP for " +
-                        updatedCount +
-                        " records from " +
-                        sourceName,
-                    "success",
-                );
-            } else {
-                console.error("CMP update failed:", data.error);
-                showUpdateMessage(
-                    "Failed to update CMP from " +
-                        sourceName +
-                        ": " +
-                        data.error,
-                    "error",
-                );
-            }
-        })
-        .catch(function (error) {
-            console.error("Error updating CMP:", error);
-            showUpdateMessage(
-                "Error updating CMP from " + sourceName + ": " + error.message,
-                "error",
-            );
-        });
-}
-
-// Function to show update messages
-function showUpdateMessage(message, type = "info") {
-    // Create or update a message element
-    let messageEl = document.getElementById("cmp-update-message");
-    if (!messageEl) {
-        messageEl = document.createElement("div");
-        messageEl.id = "cmp-update-message";
-        messageEl.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 10px 20px;
-            border-radius: 5px;
-            color: white;
-            font-weight: bold;
-            z-index: 1000;
-            transition: opacity 0.3s;
-        `;
-        document.body.appendChild(messageEl);
-    }
-
-    // Set message and style based on type
-    messageEl.textContent = message;
-    messageEl.style.backgroundColor =
-        type === "success"
-            ? "#28a745"
-            : type === "error"
-              ? "#dc3545"
-              : "#17a2b8";
-    messageEl.style.opacity = "1";
-
-    // Hide message after 3 seconds
-    setTimeout(() => {
-        messageEl.style.opacity = "0";
-        setTimeout(() => {
-            if (messageEl.parentNode) {
-                messageEl.parentNode.removeChild(messageEl);
-            }
-        }, 300);
-    }, 3000);
-}
-
-// Function to get live price for a single symbol
-function getLivePrice(symbol) {
-    return fetch(`/api/google-finance/live-price/${symbol}`)
-        .then((response) => response.json())
-        .then((data) => {
-            if (data.success) {
-                return data.price;
-            } else {
-                throw new Error(data.error || "Failed to fetch price");
-            }
-        });
-}
-
-// Example usage (assuming you have a way to get live CMP data)
-// setInterval(() => {
-//     // Replace with your logic to fetch live CMP data
-//     const liveCMPData = {
-//         "RELIANCE": 2500.50,
-//         "TCS": 3500.75,
-//         "HDFC": 1500.20
-//     };
-
-//     // Update CMP values in the table
-//     for (const symbol in liveCMPData) {
-//         if (liveCMPData.hasOwnProperty(symbol)) {
-//             updateCMPValue(symbol, liveCMPData[symbol]);
-//         }
-//     }
-// }, 5000); // Update every 5 seconds (adjust as needed)
-
-// Column settings functionality is handled by ETF Signals Manager
-
-// Note: jQuery-dependent DataTable functionality removed to avoid $ dependency
-// The main ETF signals functionality is handled by ETFSignalsManager class above
-
-// Removing the startAutoCMPUpdates functionality from the document ready section, and the function definition.

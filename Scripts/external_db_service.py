@@ -74,7 +74,7 @@ def get_db_connection():
         # Add shorter timeout for faster failures
         config_with_timeout = db_config.copy()
         config_with_timeout['connect_timeout'] = 10
-        
+
         conn = psycopg2.connect(**config_with_timeout)
         conn.autocommit = True  # Enable autocommit for faster queries
         yield conn
@@ -289,13 +289,14 @@ def get_etf_signals_from_symbols_schema():
 
         signals = []
         count = 0
-        max_tables = 20  # Limit to first 20 tables to avoid timeout
-        
-        # Process only tables with data quickly
-        for table_name in tables[:max_tables]:
+        # Filter to only _5m tables
+        five_min_tables = [table for table in tables if table.endswith('_5m')]
+
+        # Process all _5m tables without limit
+        for table_name in five_min_tables:
             try:
                 count += 1
-                logger.info(f"Processing table {count}/{min(len(tables), max_tables)}: {table_name}")
+                logger.info(f"Processing table {count}/{len(five_min_tables)}: {table_name}")
 
                 # Get symbol data with timeout protection
                 symbol_data = get_symbol_data_fast(table_name)
