@@ -345,7 +345,7 @@ class ExternalDBService:
                     signal['thirty_percent_numeric'] = round(thirty_percent, 2)
                     signal['seven_percent_numeric'] = round(seven_percent, 2)
 
-                    logger.info(f"Calculated values for {symbol}: IV={iv_value:.2f}, IP={ip_value:.2f}, NT={nt_value:.2f}, 30d={thirty_d_value:.2f}, 30%={thirty_percent:.2f}%, 7d={seven_d_value:.2f}, 7%={seven_percent:.2f}%")
+                    logger.info(f"Calculated values for {symbol_name}: IV={iv_value:.2f}, IP={ip_value:.2f}, NT={nt_value:.2f}, 30d={thirty_d_value:.2f}, 30%={thirty_percent:.2f}%, 7d={seven_d_value:.2f}, 7%={seven_percent:.2f}%")
 
                     signals.append(signal)
 
