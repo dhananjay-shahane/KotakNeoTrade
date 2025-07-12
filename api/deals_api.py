@@ -199,9 +199,12 @@ def get_user_deals():
         if not raw_deals:
             logger.info("No user deals found - database is empty")
             return jsonify({
+                'success': True,
                 'data': [],
+                'deals': [],
                 'recordsTotal': 0,
                 'recordsFiltered': 0,
+                'total': 0,
                 'message': 'No trading deals found. Please add your real trading data to the user_deals table.',
                 'instructions': 'Use real trading data from your broker account - no sample data allowed.'
             })
@@ -223,9 +226,12 @@ def get_user_deals():
         logger.info(success_message)
 
         return jsonify({
+            'success': True,
             'data': formatted_deals,
+            'deals': formatted_deals,
             'recordsTotal': total_deals,
             'recordsFiltered': total_deals,
+            'total': total_deals,
             'message': success_message
         })
 
@@ -233,9 +239,12 @@ def get_user_deals():
         logger.error(f"❌ Error in get_user_deals API: {e}")
         traceback.print_exc()
         return jsonify({
+            'success': False,
             'data': [],
+            'deals': [],
             'recordsTotal': 0,
             'recordsFiltered': 0,
+            'total': 0,
             'error': str(e),
             'message': f'❌ Error loading deals: {str(e)}'
         }), 500

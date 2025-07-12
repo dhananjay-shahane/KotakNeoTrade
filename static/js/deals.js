@@ -239,12 +239,12 @@ DealsManager.prototype.loadDeals = function () {
     }
 
     self.isLoading = true;
-    console.log("Loading deals from external database...");
+    console.log("Loading deals from user_deals database...");
 
     var xhr = new XMLHttpRequest();
     xhr.open("GET", "/api/user-deals", true);
     xhr.setRequestHeader("Content-Type", "application/json");
-    xhr.timeout = 10000; // 10 second timeout
+    xhr.timeout = 15000; // 15 second timeout
 
     xhr.onreadystatechange = function () {
         if (xhr.readyState === 4) {
@@ -253,32 +253,39 @@ DealsManager.prototype.loadDeals = function () {
             if (xhr.status === 200) {
                 try {
                     var response = JSON.parse(xhr.responseText);
+                    console.log("API Response:", response);
 
-                    if (
-                        response.success &&
-                        response.deals &&
-                        Array.isArray(response.deals)
-                    ) {
-                        var uniqueDeals = response.deals.map(function (deal) {
+                    // Check for response structure from deals_api.py
+                    var dealsData = [];
+                    if (response.data && Array.isArray(response.data)) {
+                        dealsData = response.data;
+                    } else if (response.deals && Array.isArray(response.deals)) {
+                        dealsData = response.deals;
+                    } else if (Array.isArray(response)) {
+                        dealsData = response;
+                    }
+
+                    if (dealsData.length > 0) {
+                        var uniqueDeals = dealsData.map(function (deal) {
                             return {
-                                id: deal.id,
-                                trade_signal_id: deal.id || "",
-                                symbol: deal.symbol || "",
-                                pos: deal.position_type === "LONG" ? 1 : 0,
-                                qty: deal.quantity || 0,
-                                ep: parseFloat(deal.entry_price || 0),
-                                cmp: parseFloat(deal.current_price || deal.entry_price || 0),
-                                pl: parseFloat(deal.pnl_amount || 0),
+                                id: deal.id || deal.trade_signal_id || "",
+                                trade_signal_id: deal.id || deal.trade_signal_id || "",
+                                symbol: deal.symbol || deal.trading_symbol || "",
+                                pos: deal.position_type === "LONG" || deal.pos === 1 ? 1 : 0,
+                                qty: parseInt(deal.quantity || deal.qty || 0),
+                                ep: parseFloat(deal.entry_price || deal.ep || 0),
+                                cmp: parseFloat(deal.current_price || deal.cmp || deal.entry_price || 0),
+                                pl: parseFloat(deal.pnl_amount || deal.pl || 0),
                                 chan_percent: deal.pnl_percent ? deal.pnl_percent.toFixed(2) + "%" : "0%",
-                                inv: parseFloat(deal.invested_amount || 0),
-                                tp: parseFloat(deal.target_price || 0),
-                                tva: parseFloat(deal.target_price || 0) * (deal.quantity || 0),
-                                tpr: parseFloat(deal.pnl_amount || 0),
-                                date: deal.created_at ? deal.created_at.split("T")[0] : "",
+                                inv: parseFloat(deal.invested_amount || deal.inv || 0),
+                                tp: parseFloat(deal.target_price || deal.tp || 0),
+                                tva: parseFloat(deal.target_price || deal.tp || 0) * parseInt(deal.quantity || deal.qty || 0),
+                                tpr: parseFloat(deal.pnl_amount || deal.pl || 0),
+                                date: deal.entry_date || deal.date || deal.created_at ? (deal.entry_date || deal.date || deal.created_at).split("T")[0] : "",
                                 status: deal.status || "ACTIVE",
                                 thirty: "0%",
                                 dh: deal.days_held || 0,
-                                ed: deal.created_at ? deal.created_at.split("T")[0] : "",
+                                ed: deal.entry_date || deal.date || deal.created_at ? (deal.entry_date || deal.date || deal.created_at).split("T")[0] : "",
                                 exp: "",
                                 pr: "0%",
                                 pp: "--",
@@ -291,10 +298,10 @@ DealsManager.prototype.loadDeals = function () {
                                 }),
                                 seven: "0%",
                                 ch: deal.pnl_percent ? deal.pnl_percent.toFixed(2) + "%" : "0%",
-                                entry_price: parseFloat(deal.entry_price || 0),
-                                current_price: parseFloat(deal.current_price || deal.entry_price || 0),
-                                invested_amount: parseFloat(deal.invested_amount || 0),
-                                pnl_amount: parseFloat(deal.pnl_amount || 0),
+                                entry_price: parseFloat(deal.entry_price || deal.ep || 0),
+                                current_price: parseFloat(deal.current_price || deal.cmp || deal.entry_price || 0),
+                                invested_amount: parseFloat(deal.invested_amount || deal.inv || 0),
+                                pnl_amount: parseFloat(deal.pnl_amount || deal.pl || 0),
                                 pnl_percent: parseFloat(deal.pnl_percent || 0),
                                 deal_type: deal.deal_type || "MANUAL",
                                 position_type: deal.position_type || "LONG",
@@ -303,58 +310,29 @@ DealsManager.prototype.loadDeals = function () {
                             };
                         });
 
-                        // Only update if data has changed
-                        if (
-                            JSON.stringify(uniqueDeals) !==
-                            JSON.stringify(self.deals)
-                        ) {
-                            self.deals = uniqueDeals;
-                            self.filteredDeals = self.deals.slice();
-                            self.renderDealsTable();
-                            self.updatePagination();
-                            console.log(
-                                "Updated " +
-                                    uniqueDeals.length +
-                                    " deals from database",
-                            );
-                        } else {
-                            console.log("No data changes detected");
-                        }
-
-                        // If no deals found, show helpful message
-                        if (uniqueDeals.length === 0) {
-                            console.log("No deals found - user needs to add real trading data");
-                            self.showEmptyStateMessage();
-                        }
+                        self.deals = uniqueDeals;
+                        self.filteredDeals = self.deals.slice();
+                        self.renderDealsTable();
+                        self.updatePagination();
+                        console.log("Successfully loaded " + uniqueDeals.length + " deals from user_deals table");
                     } else {
-                        console.log("No deals found in API response");
-                        if (self.deals.length === 0) {
-                            self.deals = [];
-                            self.filteredDeals = [];
-                            self.renderDealsTable();
-                            self.updatePagination();
-                            self.showEmptyStateMessage();
-                        }
+                        console.log("No deals found in database");
+                        self.deals = [];
+                        self.filteredDeals = [];
+                        self.renderDealsTable();
+                        self.updatePagination();
+                        self.showEmptyStateMessage();
                     }
                 } catch (parseError) {
-                    console.error(
-                        "Failed to parse deals API response:",
-                        parseError,
-                    );
+                    console.error("Failed to parse deals API response:", parseError);
                     self.showError("Invalid response from server");
                 }
             } else if (xhr.status === 0) {
-                console.error(
-                    "Network error - request was aborted or connection failed",
-                );
+                console.error("Network error - request was aborted or connection failed");
                 self.showError("Network connection error");
             } else {
                 console.error("Deals API call failed with status:", xhr.status);
-                self.showError(
-                    "Failed to load deals from server (Status: " +
-                        xhr.status +
-                        ")",
-                );
+                self.showError("Failed to load deals from server (Status: " + xhr.status + ")");
             }
         }
     };
