@@ -580,23 +580,51 @@ def create_deal_from_signal():
                 'error': 'Database connection failed'
             }), 500
 
+        # Get user_id from session or create/use default user
+        user_id = session.get('user_id')
+        
+        if not user_id:
+            # Create or get default user
+            try:
+                with conn.cursor() as cursor:
+                    # Check if default user exists
+                    cursor.execute("SELECT id FROM users WHERE ucc = %s", ('DEFAULT_USER',))
+                    result = cursor.fetchone()
+                    
+                    if result:
+                        user_id = result[0]
+                    else:
+                        # Create default user
+                        cursor.execute("""
+                            INSERT INTO users (ucc, mobile_number, greeting_name, is_active)
+                            VALUES (%s, %s, %s, %s)
+                            RETURNING id
+                        """, ('DEFAULT_USER', '9999999999', 'Default User', True))
+                        user_id = cursor.fetchone()[0]
+                        conn.commit()
+                        logger.info(f"Created default user with ID: {user_id}")
+            except Exception as user_error:
+                logger.warning(f"Could not create default user: {user_error}")
+                user_id = 1  # Fallback to ID 1
+
         try:
             with conn.cursor() as cursor:
-                # Insert into user_deals table
+                # Insert into user_deals table with user_id
                 insert_query = """
                     INSERT INTO user_deals (
-                        symbol, entry_date, position_type, quantity, entry_price,
+                        user_id, symbol, entry_date, position_type, quantity, entry_price,
                         current_price, target_price, stop_loss, invested_amount,
                         current_value, pnl_amount, pnl_percent, status, deal_type,
                         notes, tags, created_at, updated_at,
                         pos, qty, ep, cmp, tp, inv, pl
                     ) VALUES (
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                         %s, %s, %s, %s, %s, %s, %s
                     ) RETURNING id
                 """
                 
                 values = (
+                    user_id,  # Add user_id as first parameter
                     symbol.upper(),
                     signal_data.get('date', 'CURRENT_DATE'),
                     'LONG' if pos == 1 else 'SHORT',
@@ -628,7 +656,7 @@ def create_deal_from_signal():
                 deal_id = cursor.fetchone()[0]
                 conn.commit()
 
-                logger.info(f"✓ Created deal from signal: {symbol} - Deal ID: {deal_id}")
+                logger.info(f"✓ Created deal from signal: {symbol} - Deal ID: {deal_id} for user: {user_id}")
 
                 return jsonify({
                     'success': True,
