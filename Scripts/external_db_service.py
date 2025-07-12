@@ -149,13 +149,17 @@ class ExternalDBService:
                     # Initialize CMP to 0.0 - will be updated from symbol table
                     signal['cmp'] = 0.0
 
+                    # Initialize historical price data for calculations
+                    price_30d_ago = 0.0
+                    price_7d_ago = 0.0
+
                     # Ensure string fields are properly formatted
                     if signal.get('symbol'):
                         signal['symbol'] = str(signal['symbol']).upper()
                     else:
                         signal['symbol'] = ''
 
-                    # Try to get CMP from matching symbol table in symbols schema
+                    # Try to get CMP and historical data from matching symbol table in symbols schema
                     symbol_name = signal.get('symbol', '').upper()
                     if symbol_name and symbol_tables:
                         # Look for matching table (case-insensitive, multiple matching strategies)
@@ -187,7 +191,6 @@ class ExternalDBService:
                         if matching_table:
                             try:
                                 # Get the latest price data from the matching table in symbols schema
-                                # Use the structure shown in the provided code: datetime, open, high, low, close, volume
                                 price_query = f"""
                                 SELECT datetime, open, high, low, close, volume 
                                 FROM symbols."{matching_table}" 
@@ -198,7 +201,7 @@ class ExternalDBService:
                                 price_data = cursor.fetchone()
 
                                 if price_data:
-                                    # Use close price as CMP (index 4 in the result)
+                                    # Use close price as CMP
                                     close_price = price_data[
                                         'close'] if isinstance(
                                             price_data,
@@ -218,6 +221,35 @@ class ExternalDBService:
                                         f"No price data found in symbols.{matching_table} for {symbol_name}"
                                     )
 
+                                # Get historical data for 30-day and 7-day calculations
+                                try:
+                                    # Get 30-day old price (approximately 30 days * 78 5-minute intervals per day)
+                                    historical_30d_query = f"""
+                                    SELECT close 
+                                    FROM symbols."{matching_table}" 
+                                    ORDER BY datetime DESC
+                                    OFFSET 2340 LIMIT 1
+                                    """
+                                    cursor.execute(historical_30d_query)
+                                    historical_30d = cursor.fetchone()
+                                    if historical_30d:
+                                        price_30d_ago = float(historical_30d['close'] if isinstance(historical_30d, dict) else historical_30d[0])
+
+                                    # Get 7-day old price (approximately 7 days * 78 5-minute intervals per day)
+                                    historical_7d_query = f"""
+                                    SELECT close 
+                                    FROM symbols."{matching_table}" 
+                                    ORDER BY datetime DESC
+                                    OFFSET 546 LIMIT 1
+                                    """
+                                    cursor.execute(historical_7d_query)
+                                    historical_7d = cursor.fetchone()
+                                    if historical_7d:
+                                        price_7d_ago = float(historical_7d['close'] if isinstance(historical_7d, dict) else historical_7d[0])
+
+                                except Exception as hist_e:
+                                    logger.warning(f"Could not fetch historical data for {symbol_name}: {hist_e}")
+
                             except Exception as e:
                                 logger.error(
                                     f"Error fetching price for {symbol_name} from symbols.{matching_table}: {e}"
@@ -226,6 +258,45 @@ class ExternalDBService:
                             logger.info(
                                 f"No matching symbol table found for {symbol_name} among {len(symbol_tables)} symbol tables in symbols schema"
                             )
+
+                    # Calculate dynamic values using CMP and other data
+                    cmp = signal.get('cmp', 0.0)
+                    entry_price = signal.get('entry_price', 0.0) or 0.0
+                    qty = signal.get('qty', 0.0) or 0.0
+
+                    # IV - Investment Value (Entry Price * Quantity)
+                    iv_value = entry_price * qty
+
+                    # IP - Initial Price Percentage (same as entry price for display)
+                    ip_value = entry_price
+
+                    # NT - Net Total (Current Market Price * Quantity)
+                    nt_value = cmp * qty
+
+                    # 30d - Price 30 days ago
+                    thirty_d_value = price_30d_ago if price_30d_ago > 0 else cmp
+
+                    # 30% - 30-day percentage change
+                    thirty_percent = ((cmp - thirty_d_value) / thirty_d_value * 100) if thirty_d_value > 0 else 0.0
+
+                    # 7d - Price 7 days ago
+                    seven_d_value = price_7d_ago if price_7d_ago > 0 else cmp
+
+                    # 7% - 7-day percentage change
+                    seven_percent = ((cmp - seven_d_value) / seven_d_value * 100) if seven_d_value > 0 else 0.0
+
+                    # Add calculated values to signal
+                    signal['iv'] = round(iv_value, 2)
+                    signal['ip'] = round(ip_value, 2)
+                    signal['nt'] = round(nt_value, 2)
+                    signal['thirty'] = round(thirty_d_value, 2)
+                    signal['dh'] = f"{thirty_percent:.2f}%"
+                    signal['seven'] = round(seven_d_value, 2)
+                    signal['ch'] = f"{seven_percent:.2f}%"
+
+                    # Also store numeric values for calculations
+                    signal['thirty_percent_numeric'] = thirty_percent
+                    signal['seven_percent_numeric'] = seven_percent
 
                     signals.append(signal)
 
@@ -319,7 +390,7 @@ def get_etf_signals_data_json(page=1, page_size=10):
 
         for signal in signals:
             count += 1
-            # Get only the 4 required fields from admin_trade_signals
+            # Get the required fields from admin_trade_signals with calculated values
             symbol = str(signal.get('symbol') or 'N/A').upper()
             qty = float(signal.get('qty')
                         or 0) if signal.get('qty') is not None else 0.0
@@ -327,7 +398,7 @@ def get_etf_signals_data_json(page=1, page_size=10):
                 signal.get('entry_price')
                 or 0) if signal.get('entry_price') is not None else 0.0
 
-            # Get CMP from admin_trade_signals table (since symbols table doesn't exist)
+            # Get CMP and calculated values
             cmp = float(signal.get('cmp')
                         or 0) if signal.get('cmp') is not None else 0.0
 
@@ -338,7 +409,16 @@ def get_etf_signals_data_json(page=1, page_size=10):
             change_percent = ((cmp - entry_price) /
                               entry_price) * 100 if entry_price > 0 else 0
 
-            # Format the data structure
+            # Get calculated values from signal
+            iv_value = signal.get('iv', investment)
+            ip_value = signal.get('ip', entry_price)
+            nt_value = signal.get('nt', current_value)
+            thirty_value = signal.get('thirty', cmp)
+            dh_value = signal.get('dh', f"{change_percent:.2f}%")
+            seven_value = signal.get('seven', cmp)
+            ch_value = signal.get('ch', f"{change_percent:.2f}%")
+
+            # Format the data structure with calculated values
             formatted_signal = {
                 'id': signal.get('id') or count,
                 'trade_signal_id': signal.get('id') or count,
@@ -346,7 +426,7 @@ def get_etf_signals_data_json(page=1, page_size=10):
                 'etf': symbol,
                 'qty': int(qty),
                 'ep': round(entry_price, 2),
-                'cmp': round(cmp),
+                'cmp': round(cmp, 2),
                 'inv': round(investment, 2),
                 'current_value': round(current_value, 2),
                 'pl': round(profit_loss, 2),
@@ -355,12 +435,27 @@ def get_etf_signals_data_json(page=1, page_size=10):
                 'date': signal.get('date', ''),
                 'created_at': signal.get('created_at', ''),
                 'pos': signal.get('pos', 1),
+                
+                # Calculated values using CMP
+                'iv': round(iv_value, 2),
+                'ip': round(ip_value, 2),
+                'nt': round(nt_value, 2),
+                'thirty': round(thirty_value, 2),
+                'dh': dh_value,
+                'seven': round(seven_value, 2),
+                'ch': ch_value,
+                
                 # Formatted display values
                 'ep_formatted': f"₹{entry_price:.2f}",
                 'cmp_formatted': f"₹{cmp:.2f}",
                 'inv_formatted': f"₹{investment:.2f}",
                 'pl_formatted': f"₹{profit_loss:.2f}",
-                'current_value_formatted': f"₹{current_value:.2f}"
+                'current_value_formatted': f"₹{current_value:.2f}",
+                'iv_formatted': f"₹{iv_value:.2f}",
+                'ip_formatted': f"₹{ip_value:.2f}",
+                'nt_formatted': f"₹{nt_value:.2f}",
+                'thirty_formatted': f"₹{thirty_value:.2f}",
+                'seven_formatted': f"₹{seven_value:.2f}"
             }
             formatted_signals.append(formatted_signal)
 
