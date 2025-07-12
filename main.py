@@ -96,6 +96,12 @@ def register_blueprints():
             from api.etf_signals import get_etf_signals_data
             return get_etf_signals_data()
 
+        # Add deals create-from-signal route to the main app
+        @app.route('/api/deals/create-from-signal', methods=['POST'])
+        def create_deal_from_signal():
+            from api.deals_api import create_deal_from_signal
+            return create_deal_from_signal()
+
         print("✓ All blueprints registered successfully")
 
         # Verify ETF routes are available

@@ -529,7 +529,7 @@ def get_user_deals_api():
             'total': 0
         }), 500
 
-@deals_api.route('/api/deals/create-from-signal', methods=['POST'])
+@deals_api.route('/deals/create-from-signal', methods=['POST'])
 def create_deal_from_signal():
     """Create a deal from ETF signal and save to user_deals table"""
     try:
