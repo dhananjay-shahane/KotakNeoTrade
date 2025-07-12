@@ -99,6 +99,10 @@ class ExternalDBService:
                 cursor.execute(query)
                 results = cursor.fetchall()
 
+                # Find all symbol tables ending with "_5m" for price matching
+                symbol_tables = [table for table in tables if table.endswith('_5m')]
+                logger.info(f"Found {len(symbol_tables)} symbol tables ending with '_5m': {symbol_tables}")
+
                 # Convert RealDictRow to regular dict and handle data types
                 signals = []
                 for row in results:
@@ -128,6 +132,99 @@ class ExternalDBService:
                         signal['symbol'] = str(signal['symbol']).upper()
                     else:
                         signal['symbol'] = ''
+
+                    # Try to get CMP from matching symbol table ending with "_5m"
+                    symbol_name = signal.get('symbol', '').upper()
+                    if symbol_name and symbol_tables:
+                        # Look for matching table (case-insensitive, multiple matching strategies)
+                        matching_table = None
+                        
+                        # Strategy 1: Exact match with symbol name
+                        exact_match = f"{symbol_name}_5m".lower()
+                        for table in symbol_tables:
+                            if table.lower() == exact_match:
+                                matching_table = table
+                                break
+                        
+                        # Strategy 2: Table starts with symbol name
+                        if not matching_table:
+                            for table in symbol_tables:
+                                if table.upper().startswith(symbol_name.upper()):
+                                    matching_table = table
+                                    break
+                        
+                        # Strategy 3: Symbol name is contained in table name
+                        if not matching_table:
+                            for table in symbol_tables:
+                                if symbol_name.upper() in table.upper():
+                                    matching_table = table
+                                    break
+                        
+                        if matching_table:
+                            try:
+                                # First check what columns exist in the matching table
+                                cursor.execute(f"""
+                                    SELECT column_name 
+                                    FROM information_schema.columns 
+                                    WHERE table_name = '{matching_table}'
+                                """)
+                                columns = [col['column_name'] for col in cursor.fetchall()]
+                                
+                                # Build query based on available columns
+                                price_columns = []
+                                if 'close_price' in columns:
+                                    price_columns.append('close_price')
+                                if 'last_price' in columns:
+                                    price_columns.append('last_price')
+                                if 'close' in columns:
+                                    price_columns.append('close')
+                                if 'price' in columns:
+                                    price_columns.append('price')
+                                
+                                if price_columns:
+                                    # Get the latest price data from the matching table
+                                    # Build ORDER BY clause based on available timestamp columns
+                                    order_by_clause = "1"  # Default fallback
+                                    if 'timestamp' in columns:
+                                        order_by_clause = "timestamp DESC"
+                                    elif 'created_at' in columns:
+                                        order_by_clause = "created_at DESC"
+                                    elif 'date' in columns:
+                                        order_by_clause = "date DESC"
+                                    elif 'id' in columns:
+                                        order_by_clause = "id DESC"
+                                    
+                                    price_query = f"""
+                                    SELECT {', '.join(price_columns)} 
+                                    FROM {matching_table} 
+                                    ORDER BY {order_by_clause}
+                                    LIMIT 1
+                                    """
+                                    cursor.execute(price_query)
+                                    price_data = cursor.fetchone()
+                                    
+                                    if price_data:
+                                        # Use close_price as CMP, fallback to other price columns
+                                        cmp_value = None
+                                        for col in price_columns:
+                                            if price_data.get(col):
+                                                cmp_value = price_data.get(col)
+                                                break
+                                        
+                                        if cmp_value:
+                                            signal['cmp'] = float(cmp_value)
+                                            logger.info(f"Updated CMP for {symbol_name} from table {matching_table}: {cmp_value}")
+                                        else:
+                                            logger.warning(f"No valid price data found in {matching_table} for {symbol_name}")
+                                    else:
+                                        logger.warning(f"No price data found in {matching_table} for {symbol_name}")
+                                else:
+                                    logger.warning(f"No price columns found in {matching_table} for {symbol_name}")
+                                    
+                            except Exception as e:
+                                logger.error(f"Error fetching price for {symbol_name} from {matching_table}: {e}")
+                        else:
+                            logger.info(f"No matching symbol table found for {symbol_name} among {len(symbol_tables)} tables")
 
                     signals.append(signal)
 
