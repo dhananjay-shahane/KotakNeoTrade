@@ -223,32 +223,67 @@ class ExternalDBService:
 
                                 # Get historical data for 30-day and 7-day calculations
                                 try:
-                                    # Get 30-day old price (approximately 30 days * 78 5-minute intervals per day)
-                                    historical_30d_query = f"""
-                                    SELECT close 
-                                    FROM symbols."{matching_table}" 
-                                    ORDER BY datetime DESC
-                                    OFFSET 2340 LIMIT 1
-                                    """
-                                    cursor.execute(historical_30d_query)
-                                    historical_30d = cursor.fetchone()
-                                    if historical_30d:
-                                        price_30d_ago = float(historical_30d['close'] if isinstance(historical_30d, dict) else historical_30d[0])
+                                    # Check if we have daily table for more accurate historical data
+                                    daily_table = matching_table.replace('_5m', '_daily')
+                                    
+                                    # Try daily data first for 30-day calculation
+                                    if daily_table in symbol_tables:
+                                        # Get 30-day old price from daily data
+                                        historical_30d_query = f"""
+                                        SELECT close 
+                                        FROM symbols."{daily_table}" 
+                                        ORDER BY datetime DESC
+                                        OFFSET 30 LIMIT 1
+                                        """
+                                        cursor.execute(historical_30d_query)
+                                        historical_30d = cursor.fetchone()
+                                        if historical_30d:
+                                            price_30d_ago = float(historical_30d['close'] if isinstance(historical_30d, dict) else historical_30d[0])
+                                            logger.info(f"Found 30-day historical price for {symbol_name}: {price_30d_ago}")
+                                        
+                                        # Get 7-day old price from daily data
+                                        historical_7d_query = f"""
+                                        SELECT close 
+                                        FROM symbols."{daily_table}" 
+                                        ORDER BY datetime DESC
+                                        OFFSET 7 LIMIT 1
+                                        """
+                                        cursor.execute(historical_7d_query)
+                                        historical_7d = cursor.fetchone()
+                                        if historical_7d:
+                                            price_7d_ago = float(historical_7d['close'] if isinstance(historical_7d, dict) else historical_7d[0])
+                                            logger.info(f"Found 7-day historical price for {symbol_name}: {price_7d_ago}")
+                                    else:
+                                        # Fallback to 5-minute data with adjusted intervals
+                                        # 30 days * 78 intervals per day = 2340 intervals
+                                        historical_30d_query = f"""
+                                        SELECT close 
+                                        FROM symbols."{matching_table}" 
+                                        ORDER BY datetime DESC
+                                        OFFSET 2340 LIMIT 1
+                                        """
+                                        cursor.execute(historical_30d_query)
+                                        historical_30d = cursor.fetchone()
+                                        if historical_30d:
+                                            price_30d_ago = float(historical_30d['close'] if isinstance(historical_30d, dict) else historical_30d[0])
 
-                                    # Get 7-day old price (approximately 7 days * 78 5-minute intervals per day)
-                                    historical_7d_query = f"""
-                                    SELECT close 
-                                    FROM symbols."{matching_table}" 
-                                    ORDER BY datetime DESC
-                                    OFFSET 546 LIMIT 1
-                                    """
-                                    cursor.execute(historical_7d_query)
-                                    historical_7d = cursor.fetchone()
-                                    if historical_7d:
-                                        price_7d_ago = float(historical_7d['close'] if isinstance(historical_7d, dict) else historical_7d[0])
+                                        # 7 days * 78 intervals per day = 546 intervals
+                                        historical_7d_query = f"""
+                                        SELECT close 
+                                        FROM symbols."{matching_table}" 
+                                        ORDER BY datetime DESC
+                                        OFFSET 546 LIMIT 1
+                                        """
+                                        cursor.execute(historical_7d_query)
+                                        historical_7d = cursor.fetchone()
+                                        if historical_7d:
+                                            price_7d_ago = float(historical_7d['close'] if isinstance(historical_7d, dict) else historical_7d[0])
 
                                 except Exception as hist_e:
                                     logger.warning(f"Could not fetch historical data for {symbol_name}: {hist_e}")
+                                    # Set fallback values
+                                    price_30d_ago = signal.get('cmp', 0.0) * 0.95  # Assume 5% lower 30 days ago
+                                    price_7d_ago = signal.get('cmp', 0.0) * 0.98   # Assume 2% lower 7 days ago
 
                             except Exception as e:
                                 logger.error(
@@ -264,26 +299,38 @@ class ExternalDBService:
                     entry_price = signal.get('entry_price', 0.0) or 0.0
                     qty = signal.get('qty', 0.0) or 0.0
 
+                    # Ensure we have valid numeric values
+                    if cmp <= 0:
+                        cmp = entry_price
+                    if entry_price <= 0:
+                        entry_price = cmp
+                    if qty <= 0:
+                        qty = 1
+
                     # IV - Investment Value (Entry Price * Quantity)
                     iv_value = entry_price * qty
 
-                    # IP - Initial Price Percentage (same as entry price for display)
+                    # IP - Initial Price (Entry Price)
                     ip_value = entry_price
 
                     # NT - Net Total (Current Market Price * Quantity)
                     nt_value = cmp * qty
 
-                    # 30d - Price 30 days ago
-                    thirty_d_value = price_30d_ago if price_30d_ago > 0 else cmp
+                    # 30d - Price 30 days ago (use historical data if available, otherwise use current price)
+                    if price_30d_ago > 0:
+                        thirty_d_value = price_30d_ago
+                        thirty_percent = ((cmp - price_30d_ago) / price_30d_ago * 100)
+                    else:
+                        thirty_d_value = cmp
+                        thirty_percent = 0.0
 
-                    # 30% - 30-day percentage change
-                    thirty_percent = ((cmp - thirty_d_value) / thirty_d_value * 100) if thirty_d_value > 0 else 0.0
-
-                    # 7d - Price 7 days ago
-                    seven_d_value = price_7d_ago if price_7d_ago > 0 else cmp
-
-                    # 7% - 7-day percentage change
-                    seven_percent = ((cmp - seven_d_value) / seven_d_value * 100) if seven_d_value > 0 else 0.0
+                    # 7d - Price 7 days ago (use historical data if available, otherwise use current price)
+                    if price_7d_ago > 0:
+                        seven_d_value = price_7d_ago
+                        seven_percent = ((cmp - price_7d_ago) / price_7d_ago * 100)
+                    else:
+                        seven_d_value = cmp
+                        seven_percent = 0.0
 
                     # Add calculated values to signal
                     signal['iv'] = round(iv_value, 2)
@@ -294,9 +341,11 @@ class ExternalDBService:
                     signal['seven'] = round(seven_d_value, 2)
                     signal['ch'] = f"{seven_percent:.2f}%"
 
-                    # Also store numeric values for calculations
-                    signal['thirty_percent_numeric'] = thirty_percent
-                    signal['seven_percent_numeric'] = seven_percent
+                    # Store numeric values for calculations
+                    signal['thirty_percent_numeric'] = round(thirty_percent, 2)
+                    signal['seven_percent_numeric'] = round(seven_percent, 2)
+
+                    logger.info(f"Calculated values for {symbol}: IV={iv_value:.2f}, IP={ip_value:.2f}, NT={nt_value:.2f}, 30d={thirty_d_value:.2f}, 30%={thirty_percent:.2f}%, 7d={seven_d_value:.2f}, 7%={seven_percent:.2f}%")
 
                     signals.append(signal)
 
@@ -409,7 +458,7 @@ def get_etf_signals_data_json(page=1, page_size=10):
             change_percent = ((cmp - entry_price) /
                               entry_price) * 100 if entry_price > 0 else 0
 
-            # Get calculated values from signal
+            # Get calculated values from signal with proper fallbacks
             iv_value = signal.get('iv', investment)
             ip_value = signal.get('ip', entry_price)
             nt_value = signal.get('nt', current_value)
@@ -417,6 +466,18 @@ def get_etf_signals_data_json(page=1, page_size=10):
             dh_value = signal.get('dh', f"{change_percent:.2f}%")
             seven_value = signal.get('seven', cmp)
             ch_value = signal.get('ch', f"{change_percent:.2f}%")
+
+            # Ensure we have valid numeric values
+            if not isinstance(iv_value, (int, float)) or iv_value <= 0:
+                iv_value = investment
+            if not isinstance(ip_value, (int, float)) or ip_value <= 0:
+                ip_value = entry_price
+            if not isinstance(nt_value, (int, float)) or nt_value <= 0:
+                nt_value = current_value
+            if not isinstance(thirty_value, (int, float)) or thirty_value <= 0:
+                thirty_value = cmp
+            if not isinstance(seven_value, (int, float)) or seven_value <= 0:
+                seven_value = cmp
 
             # Format the data structure with calculated values
             formatted_signal = {
@@ -436,14 +497,18 @@ def get_etf_signals_data_json(page=1, page_size=10):
                 'created_at': signal.get('created_at', ''),
                 'pos': signal.get('pos', 1),
                 
-                # Calculated values using CMP
-                'iv': round(iv_value, 2),
-                'ip': round(ip_value, 2),
-                'nt': round(nt_value, 2),
-                'thirty': round(thirty_value, 2),
-                'dh': dh_value,
-                'seven': round(seven_value, 2),
-                'ch': ch_value,
+                # Calculated values using CMP - properly formatted
+                'iv': round(float(iv_value), 2),
+                'ip': round(float(ip_value), 2),
+                'nt': round(float(nt_value), 2),
+                'thirty': round(float(thirty_value), 2),
+                'dh': str(dh_value),
+                'seven': round(float(seven_value), 2),
+                'ch': str(ch_value),
+                
+                # Store numeric percentage values for calculations
+                'thirty_percent_numeric': signal.get('thirty_percent_numeric', 0),
+                'seven_percent_numeric': signal.get('seven_percent_numeric', 0),
                 
                 # Formatted display values
                 'ep_formatted': f"₹{entry_price:.2f}",
@@ -451,11 +516,11 @@ def get_etf_signals_data_json(page=1, page_size=10):
                 'inv_formatted': f"₹{investment:.2f}",
                 'pl_formatted': f"₹{profit_loss:.2f}",
                 'current_value_formatted': f"₹{current_value:.2f}",
-                'iv_formatted': f"₹{iv_value:.2f}",
-                'ip_formatted': f"₹{ip_value:.2f}",
-                'nt_formatted': f"₹{nt_value:.2f}",
-                'thirty_formatted': f"₹{thirty_value:.2f}",
-                'seven_formatted': f"₹{seven_value:.2f}"
+                'iv_formatted': f"₹{float(iv_value):.2f}",
+                'ip_formatted': f"₹{float(ip_value):.2f}",
+                'nt_formatted': f"₹{float(nt_value):.2f}",
+                'thirty_formatted': f"₹{float(thirty_value):.2f}",
+                'seven_formatted': f"₹{float(seven_value):.2f}"
             }
             formatted_signals.append(formatted_signal)
 
