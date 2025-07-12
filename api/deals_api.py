@@ -9,6 +9,7 @@ from core.auth import require_auth
 from datetime import datetime, timedelta
 import traceback
 import psycopg2.extras
+from Scripts.user_deals_service import get_user_deals_data
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -193,10 +194,10 @@ def get_user_deals():
     Returns properly formatted data for DataTable
     """
     try:
-        # Get raw deals from database
-        raw_deals = get_user_deals_from_db()
+        # Get deals from database with CMP from symbols schema
+        deals = get_user_deals_data()
 
-        if not raw_deals:
+        if not deals:
             logger.info("No user deals found - database is empty")
             return jsonify({
                 'success': True,
@@ -209,19 +210,46 @@ def get_user_deals():
                 'instructions': 'Use real trading data from your broker account - no sample data allowed.'
             })
 
-        # Process each deal with calculations
+        # Format deals for frontend display
         formatted_deals = []
-        for deal in raw_deals:
-            calculated_deal = calculate_deal_metrics(deal)
-            if calculated_deal:
-                calculated_deal['id'] = deal.get('id')
-                formatted_deals.append(calculated_deal)
+        for deal in deals:
+            formatted_deal = {
+                'id': deal.get('id'),
+                'symbol': deal.get('symbol', '').upper(),
+                'entry_date': deal.get('entry_date'),
+                'pos': deal.get('position_type', 'LONG'),
+                'qty': float(deal.get('quantity', 0)),
+                'ep': float(deal.get('entry_price', 0)),
+                'cmp': float(deal.get('cmp', 0)),
+                'tp': float(deal.get('target_price', 0)),
+                'sl': float(deal.get('stop_loss', 0)),
+                'inv': float(deal.get('invested_amount', 0)),
+                'cv': float(deal.get('current_value', 0)),
+                'pl': float(deal.get('pnl_amount', 0)),
+                'pl_percent': float(deal.get('pnl_percent', 0)),
+                'status': deal.get('status', 'ACTIVE'),
+                'deal_type': deal.get('deal_type', 'EQUITY'),
+                'notes': deal.get('notes', ''),
+                'tags': deal.get('tags', ''),
+                'created_at': deal.get('created_at'),
+                'updated_at': deal.get('updated_at'),
+                # Formatted values for display
+                'ep_formatted': f"₹{float(deal.get('entry_price', 0)):.2f}",
+                'cmp_formatted': f"₹{float(deal.get('cmp', 0)):.2f}",
+                'tp_formatted': f"₹{float(deal.get('target_price', 0)):.2f}",
+                'sl_formatted': f"₹{float(deal.get('stop_loss', 0)):.2f}",
+                'inv_formatted': f"₹{float(deal.get('invested_amount', 0)):.2f}",
+                'cv_formatted': f"₹{float(deal.get('current_value', 0)):.2f}",
+                'pl_formatted': f"₹{float(deal.get('pnl_amount', 0)):.2f}",
+                'pl_percent_formatted': f"{float(deal.get('pnl_percent', 0)):.2f}%"
+            }
+            formatted_deals.append(formatted_deal)
 
         # Sort by creation date (newest first)
         formatted_deals.sort(key=lambda x: x.get('created_at', ''), reverse=True)
 
         total_deals = len(formatted_deals)
-        success_message = f"✅ Successfully processed {total_deals} deals."
+        success_message = f"✅ Successfully processed {total_deals} deals with CMP from symbols schema."
 
         logger.info(success_message)
 

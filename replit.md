@@ -22,6 +22,9 @@ A comprehensive trading platform integrated with Kotak Neo API for real-time por
 - **Data Sources**: All data must come from live Kotak Neo API
 
 ## Recent Changes
+- **2025-07-12**: ✅ **User Deals Symbols Schema Integration** - Extended symbols schema functionality to user_deals table
+- **2025-07-12**: ✅ **User Deals Service Created** - Built Scripts/user_deals_service.py to fetch CMP from symbols schema for user deals
+- **2025-07-12**: ✅ **Deals API Updated** - Modified api/deals_api.py to use symbols schema for real-time CMP in user deals
 - **2025-07-12**: ✅ **Symbols Schema Integration** - Updated to check symbols schema for symbol tables instead of public schema
 - **2025-07-12**: ✅ **Real Schema Table Matching** - System now matches admin_trade_signals symbols with existing tables in symbols schema
 - **2025-07-12**: ✅ **OHLC Data Structure Support** - Implemented support for datetime, open, high, low, close, volume structure from symbols schema
