@@ -71,10 +71,10 @@ def get_db_connection():
 
     conn = None
     try:
-        # Add shorter timeout for faster failures
+        # Add much shorter timeout for faster failures
         config_with_timeout = db_config.copy()
-        config_with_timeout['connect_timeout'] = 10
-
+        config_with_timeout['connect_timeout'] = 3  # Reduced to 3 seconds
+        
         conn = psycopg2.connect(**config_with_timeout)
         conn.autocommit = True  # Enable autocommit for faster queries
         yield conn
@@ -85,7 +85,7 @@ def get_db_connection():
                 conn.rollback()
             except:
                 pass
-        raise
+        raise ConnectionError(f"Cannot connect to external database: {e}")
     finally:
         if conn:
             try:
@@ -95,7 +95,7 @@ def get_db_connection():
 
 
 def test_database_connection():
-    """Test database connection"""
+    """Test database connection with quick timeout"""
     try:
         check_dependencies()
         with get_db_connection() as conn:
@@ -103,9 +103,10 @@ def test_database_connection():
             cursor.execute("SELECT 1")
             result = cursor.fetchone()
             cursor.close()
+            logger.info("✅ External database connection successful")
             return result is not None
-    except Exception as e:
-        logger.error(f"Database connection test failed: {e}")
+    except (ConnectionError, Exception) as e:
+        logger.error(f"❌ Database connection test failed: {e}")
         return False
 
 
@@ -343,6 +344,17 @@ def get_etf_signals_data_json():
     try:
         # Check dependencies first
         check_dependencies()
+        
+        # Test connection first with quick timeout
+        if not test_database_connection():
+            logger.error("External database connection failed - returning empty data")
+            return {
+                'data': [],
+                'recordsTotal': 0,
+                'recordsFiltered': 0,
+                'message': 'External database connection failed. Please check database credentials.',
+                'status': 'error'
+            }
 
         # Get signals from symbols schema
         signals = get_etf_signals_from_symbols_schema()
