@@ -314,13 +314,12 @@ def get_etf_signals_from_symbols_schema():
         # Filter to only _5m tables
         five_min_tables = [table for table in tables if table.endswith('_5m')]
 
-        # Process only first 10 tables to prevent timeout
-        limited_tables = five_min_tables[:10]
-        for table_name in limited_tables:
+        # Process all _5m tables as requested
+        for table_name in five_min_tables:
             try:
                 count += 1
                 logger.info(
-                    f"Processing table {count}/{len(limited_tables)}: {table_name}"
+                    f"Processing table {count}/{len(five_min_tables)}: {table_name}"
                 )
 
                 # Get symbol data with timeout protection
