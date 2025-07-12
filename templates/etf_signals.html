@@ -288,35 +288,16 @@ endblock %} {% block extra_css %}
             <div class="d-flex align-items-center gap-3">
                 <small
                     >Showing <span id="showingCount">0</span> of
-                    <span id="totalCount">0</span> signals</small
+                    <span id="visibleSignalsCount">0</span> filtered signals (Total: <span id="totalCount">0</span>)</small
                 >
             </div>
             <div class="btn-group" role="group">
                 <button
                     type="button"
                     class="btn btn-sm btn-outline-light"
-                    onclick="previousPage()"
-                    id="prevBtn"
-                    disabled
+                    onclick="refreshSignals()"
                 >
-                    <i class="fas fa-chevron-left"></i> Previous
-                </button>
-                <button
-                    type="button"
-                    class="btn btn-sm btn-outline-light"
-                    disabled
-                >
-                    Page <span id="currentPage">1</span> of
-                    <span id="totalPages">1</span>
-                </button>
-                <button
-                    type="button"
-                    class="btn btn-sm btn-outline-light"
-                    onclick="nextPage()"
-                    id="nextBtn"
-                    disabled
-                >
-                    Next <i class="fas fa-chevron-right"></i>
+                    <i class="fas fa-sync-alt"></i> Refresh Data
                 </button>
             </div>
         </div>
