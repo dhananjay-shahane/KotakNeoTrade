@@ -253,15 +253,7 @@ ETFSignalsManager.prototype.renderSignalsTable = function () {
                     cellContent = "<small>" + (signal.nt || "") + "</small>";
                     break;
                 case "qt":
-                    // Format qt properly - if it's a number, convert to time format
-                    var qtValue = signal.qt || signal.qt_formatted || "";
-                    if (typeof qtValue === 'number') {
-                        qtValue = new Date().toLocaleTimeString('en-GB', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        });
-                    }
-                    cellContent = "<small>" + qtValue + "</small>";
+                    cellContent = "<small>" + (signal.qt || "") + "</small>";
                     break;
                 case "seven":
                     cellContent = signal.seven || "0%";
@@ -500,40 +492,7 @@ function addDealFromSignal(symbol, signalData) {
             return;
         }
 
-        // Clean and format signal data properly
-        var cleanSignalData = {
-            symbol: symbol || signal.symbol || signal.etf,
-            etf: signal.etf || symbol,
-            trade_signal_id: signal.trade_signal_id || signal.id,
-            pos: parseInt(signal.pos) || 1,
-            qty: parseInt(signal.qty) || 1,
-            ep: parseFloat(signal.ep) || 0,
-            cmp: signal.cmp === "--" ? parseFloat(signal.ep) : parseFloat(signal.cmp) || 0,
-            tp: parseFloat(signal.tp) || (parseFloat(signal.ep) * 1.05),
-            inv: parseFloat(signal.inv) || 0,
-            pl: parseFloat(signal.pl) || 0,
-            change_pct: parseFloat(signal.change_pct) || 0,
-            date: signal.date || new Date().toISOString().split('T')[0],
-            thirty: signal.thirty || 0,
-            dh: signal.dh || "0.00%",
-            ed: signal.ed || signal.date,
-            exp: signal.exp || "",
-            pr: signal.pr || "",
-            pp: signal.pp || "",
-            iv: parseFloat(signal.iv) || 0,
-            ip: parseFloat(signal.ip) || 0,
-            nt: parseFloat(signal.nt) || 0,
-            qt: signal.qt || new Date().toLocaleTimeString('en-GB', {
-                hour: '2-digit',
-                minute: '2-digit'
-            }),
-            seven: signal.seven || 0,
-            ch: signal.ch || "0.00%",
-            tva: parseFloat(signal.tva) || 0,
-            tpr: parseFloat(signal.tpr) || 0
-        };
-
-        console.log("Creating deal from signal:", cleanSignalData);
+        console.log("Creating deal from signal:", signal);
 
         var xhr = new XMLHttpRequest();
         xhr.open("POST", "/api/deals/create-from-signal", true);
@@ -581,7 +540,7 @@ function addDealFromSignal(symbol, signalData) {
 
         xhr.send(
             JSON.stringify({
-                signal_data: cleanSignalData
+                signal_data: signal
             })
         );
     } catch (error) {
