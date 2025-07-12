@@ -394,8 +394,12 @@ def get_holdings_api():
 
 @app.route('/api/etf-signals-data')
 def get_etf_signals_data():
-    """API endpoint to get ETF signals data from external admin_trade_signals table"""
+    """API endpoint to get ETF signals data from external database with pagination"""
     try:
+        # Get pagination parameters
+        page = int(request.args.get('page', 1))
+        page_size = int(request.args.get('page_size', 10))
+        
         # Check if database credentials are available first
         import os
         db_host = os.getenv('DB_HOST')
@@ -408,13 +412,15 @@ def get_etf_signals_data():
                 'data': [],
                 'recordsTotal': 0,
                 'recordsFiltered': 0,
+                'page': page,
+                'has_more': False,
                 'error': 'Database credentials not configured',
                 'message': 'Please configure database credentials (DATABASE_URL or DB_HOST, DB_NAME, DB_USER, DB_PASSWORD) to access trading data.'
             }), 200
         
-        # Try to get real data from external database
+        # Try to get real data from external database with pagination
         from Scripts.external_db_service import get_etf_signals_data_json
-        result = get_etf_signals_data_json()
+        result = get_etf_signals_data_json(page, page_size)
         return jsonify(result)
             
     except Exception as e:
@@ -424,6 +430,8 @@ def get_etf_signals_data():
             'data': [],
             'recordsTotal': 0,
             'recordsFiltered': 0,
+            'page': 1,
+            'has_more': False,
             'error': f'Database connection failed: {str(e)}',
             'message': 'Cannot connect to trading database. Please verify your database credentials are correct.'
         }), 200

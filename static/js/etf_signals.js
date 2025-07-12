@@ -66,7 +66,7 @@ ETFSignalsManager.prototype.init = function () {
     this.setupColumnSettings();
     this.updateTableHeaders(); // Update headers based on column settings
     this.createLoadMoreButton(); // Create load more button
-    this.loadSignals();
+    this.loadSignals(true);
     this.startAutoRefresh();
 };
 
@@ -77,7 +77,7 @@ ETFSignalsManager.prototype.setupEventListeners = function () {
     var refreshBtn = document.getElementById("refreshSignalsBtn");
     if (refreshBtn) {
         refreshBtn.addEventListener("click", function () {
-            self.loadSignals();
+            self.loadSignals(true);
         });
     }
 
@@ -113,18 +113,23 @@ ETFSignalsManager.prototype.setupEventListeners = function () {
     }
 };
 
-ETFSignalsManager.prototype.loadSignals = function () {
+ETFSignalsManager.prototype.loadSignals = function (resetData) {
     var self = this;
-
     if (this.isLoading) return;
+
+    if (resetData === true) {
+        this.currentPage = 1;
+        this.signals = [];
+        this.filteredSignals = [];
+    }
 
     this.isLoading = true;
     this.showLoadingState();
 
-    console.log("Loading ETF signals from API...");
+    var url = '/api/etf-signals-data?page=' + this.currentPage + '&page_size=' + this.itemsPerPage;
 
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", "/api/etf-signals-data", true);
+    xhr.open("GET", url, true);
     xhr.timeout = 45000; // 45 second timeout
 
     xhr.onreadystatechange = function () {
@@ -155,11 +160,22 @@ ETFSignalsManager.prototype.loadSignals = function () {
                     }
 
                     if (data.data && Array.isArray(data.data)) {
-                        // Store all data but display only first 10
-                        self.signals = data.data || [];
+                        if (self.currentPage === 1) {
+                            // First load - replace all data
+                            self.signals = data.data || [];
+                            self.displayedSignals = self.signals.slice(0, self.itemsPerPage);
+                        } else {
+                            // Load more - append data
+                            self.signals = self.signals.concat(data.data || []);
+                             self.displayedSignals = self.signals.slice(0, self.itemsPerPage * self.currentPage);
+                        }
+
                         self.filteredSignals = self.signals.slice();
-                        self.displayedSignals = self.filteredSignals.slice(0, self.itemsPerPage);
+
                         self.renderSignalsTable();
+                        self.updatePagination();
+
+                        self.updateLoadMoreButton(data.has_more || false);
                         self.updatePagination();
                         self.showSuccessMessage(
                             "Loaded " + self.signals.length + " signals",
@@ -897,24 +913,11 @@ ETFSignalsManager.prototype.applyFilters = function () {
 };
 
 ETFSignalsManager.prototype.loadMoreSignals = function() {
-    var currentDisplayed = this.displayedSignals.length;
-    var remainingSignals = this.filteredSignals.length - currentDisplayed;
-    
-    if (remainingSignals > 0) {
-        var nextBatch = this.filteredSignals.slice(
-            currentDisplayed, 
-            currentDisplayed + this.loadMoreSize
-        );
-        
-        // Add new signals to displayed signals
-        this.displayedSignals = this.displayedSignals.concat(nextBatch);
-        
-        // Re-render table
-        this.renderSignalsTable();
-        this.updatePagination();
-        
-        console.log("Loaded", nextBatch.length, "more signals");
-    }
+    var self = this;
+    if (this.isLoading) return;
+
+    this.currentPage++;
+    this.loadSignals(false); // Don't reset data
 };
 
 ETFSignalsManager.prototype.updatePagination = function () {
@@ -937,18 +940,18 @@ ETFSignalsManager.prototype.updatePagination = function () {
 ETFSignalsManager.prototype.updateLoadMoreButton = function() {
     var loadMoreContainer = document.getElementById("loadMoreContainer");
     var remainingCount = this.filteredSignals.length - this.displayedSignals.length;
-    
+
     if (!loadMoreContainer) {
         // Create load more container if it doesn't exist
         this.createLoadMoreButton();
         loadMoreContainer = document.getElementById("loadMoreContainer");
     }
-    
+
     if (remainingCount > 0) {
         loadMoreContainer.style.display = "block";
         var loadMoreBtn = document.getElementById("loadMoreBtn");
         var remainingText = document.getElementById("remainingCount");
-        
+
         if (loadMoreBtn && remainingText) {
             loadMoreBtn.disabled = false;
             remainingText.textContent = remainingCount;
@@ -966,7 +969,7 @@ ETFSignalsManager.prototype.createLoadMoreButton = function() {
             '<i class="fas fa-plus me-2"></i>Load More Data (<span id="remainingCount">0</span> remaining)' +
             '</button>' +
             '</div>';
-        
+
         cardFooter.insertAdjacentHTML('beforeend', loadMoreHTML);
     }
 };
@@ -1015,7 +1018,7 @@ ETFSignalsManager.prototype.startAutoRefresh = function () {
     var self = this;
     this.stopAutoRefresh();
     this.refreshInterval = setInterval(function () {
-        self.loadSignals();
+        self.loadSignals(true);
     }, 300000); // 5 minutes
 };
 
@@ -1029,7 +1032,7 @@ ETFSignalsManager.prototype.stopAutoRefresh = function () {
 // Global functions for HTML event handlers
 function refreshSignals() {
     if (window.etfSignalsManager) {
-        window.etfSignalsManager.loadSignals();
+        window.etfSignalsManager.loadSignals(true);
     }
 }
 
@@ -1050,7 +1053,7 @@ function setRefreshInterval(interval, text) {
         window.etfSignalsManager.stopAutoRefresh();
         if (interval > 0) {
             window.etfSignalsManager.refreshInterval = setInterval(function () {
-                window.etfSignalsManager.loadSignals();
+                window.etfSignalsManager.loadSignals(true);
             }, interval);
         }
         var currentIntervalSpan = document.getElementById("currentInterval");
@@ -1523,3 +1526,36 @@ function showMessage(message, type) {
         }
     }, 5000);
 }
+
+ETFSignalsManager.prototype.updatePagination = function () {
+    // Update total count display
+    var totalElement = document.getElementById('totalCount');
+    var visibleElement = document.getElementById('visibleSignalsCount');
+    var showingElement = document.getElementById('showingCount');
+
+    if (totalElement) {
+        totalElement.textContent = this.signals.length;
+    }
+    if (visibleElement) {
+        visibleElement.textContent = this.filteredSignals.length;
+    }
+    if (showingElement) {
+        showingElement.textContent = this.filteredSignals.length;
+    }
+};
+
+ETFSignalsManager.prototype.loadMoreSignals = function () {
+    var self = this;
+    if (this.isLoading) return;
+
+    this.currentPage++;
+    this.loadSignals(false); // Don't reset data
+};
+
+ETFSignalsManager.prototype.updateLoadMoreButton = function (hasMore) {
+    var loadMoreBtn = document.getElementById('loadMoreBtn');
+    if (loadMoreBtn) {
+        loadMoreBtn.style.display = hasMore ? 'block' : 'none';
+        loadMoreBtn.disabled = this.isLoading;
+    }
+};
