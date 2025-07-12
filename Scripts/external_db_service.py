@@ -81,14 +81,13 @@ class ExternalDBService:
                     logger.error("admin_trade_signals table does not exist")
                     return []
                 
-                # Get only required fields from admin_trade_signals
+                # Get only required fields from admin_trade_signals (excluding CMP)
                 query = """
                 SELECT 
                     id,
                     symbol,
                     qty,
                     ep as entry_price,
-                    cmp,
                     created_at,
                     date,
                     pos
@@ -118,7 +117,7 @@ class ExternalDBService:
                         ) if signal['created_at'] else None
 
                     # Ensure numeric fields are properly formatted
-                    numeric_fields = ['pos', 'qty', 'entry_price', 'cmp']
+                    numeric_fields = ['pos', 'qty', 'entry_price']
 
                     for field in numeric_fields:
                         if signal.get(field) is not None:
@@ -126,6 +125,9 @@ class ExternalDBService:
                                 signal[field] = float(signal[field])
                             except (ValueError, TypeError):
                                 signal[field] = 0.0
+                    
+                    # Initialize CMP to 0.0 - will be updated from symbol table
+                    signal['cmp'] = 0.0
 
                     # Ensure string fields are properly formatted
                     if signal.get('symbol'):
@@ -212,8 +214,8 @@ class ExternalDBService:
                                                 break
                                         
                                         if cmp_value:
-                                            signal['cmp'] = float(cmp_value)
-                                            logger.info(f"Updated CMP for {symbol_name} from table {matching_table}: {cmp_value}")
+                                            signal['cmp'] = round(float(cmp_value), 2)
+                                            logger.info(f"Updated CMP for {symbol_name} from table {matching_table}: {signal['cmp']}")
                                         else:
                                             logger.warning(f"No valid price data found in {matching_table} for {symbol_name}")
                                     else:
