@@ -146,8 +146,9 @@ class ExternalDBService:
                             except (ValueError, TypeError):
                                 signal[field] = 0.0
 
-                    # Initialize CMP to 0.0 - will be updated from symbol table
-                    signal['cmp'] = 0.0
+                    # Initialize CMP to None - will be updated from symbol table if found
+                    signal['cmp'] = None
+                    cmp_found = False
 
                     # Initialize historical price data for calculations
                     price_30d_ago = 0.0
@@ -209,6 +210,7 @@ class ExternalDBService:
                                     if close_price:
                                         signal['cmp'] = round(
                                             float(close_price), 2)
+                                        cmp_found = True
                                         logger.info(
                                             f"Updated CMP for {symbol_name} from symbols.{matching_table}: {signal['cmp']}"
                                         )
@@ -281,9 +283,10 @@ class ExternalDBService:
 
                                 except Exception as hist_e:
                                     logger.warning(f"Could not fetch historical data for {symbol_name}: {hist_e}")
-                                    # Set fallback values
-                                    price_30d_ago = signal.get('cmp', 0.0) * 0.95  # Assume 5% lower 30 days ago
-                                    price_7d_ago = signal.get('cmp', 0.0) * 0.98   # Assume 2% lower 7 days ago
+                                    # Set fallback values only if CMP was found
+                                    if cmp_found and signal.get('cmp'):
+                                        price_30d_ago = signal.get('cmp', 0.0) * 0.95  # Assume 5% lower 30 days ago
+                                        price_7d_ago = signal.get('cmp', 0.0) * 0.98   # Assume 2% lower 7 days ago
 
                             except Exception as e:
                                 logger.error(
@@ -294,16 +297,26 @@ class ExternalDBService:
                                 f"No matching symbol table found for {symbol_name} among {len(symbol_tables)} symbol tables in symbols schema"
                             )
 
+                    # Set CMP to "--" if no matching symbol table found or no CMP retrieved
+                    if not cmp_found or signal.get('cmp') is None:
+                        signal['cmp'] = "--"
+
                     # Calculate dynamic values using CMP and other data
-                    cmp = signal.get('cmp', 0.0)
+                    cmp = signal.get('cmp')
                     entry_price = signal.get('entry_price', 0.0) or 0.0
                     qty = signal.get('qty', 0.0) or 0.0
 
+                    # Handle numeric CMP for calculations
+                    if cmp == "--" or cmp is None:
+                        cmp_numeric = 0.0
+                    else:
+                        cmp_numeric = float(cmp)
+
                     # Ensure we have valid numeric values
-                    if cmp <= 0:
-                        cmp = entry_price
+                    if cmp_numeric <= 0:
+                        cmp_numeric = entry_price
                     if entry_price <= 0:
-                        entry_price = cmp
+                        entry_price = cmp_numeric if cmp_numeric > 0 else 0.0
                     if qty <= 0:
                         qty = 1
 
@@ -314,38 +327,50 @@ class ExternalDBService:
                     ip_value = entry_price
 
                     # NT - Net Total (Current Market Price * Quantity)
-                    nt_value = cmp * qty
+                    if cmp == "--":
+                        nt_value = "--"
+                    else:
+                        nt_value = cmp_numeric * qty
 
                     # 30d - Price 30 days ago (use historical data if available, otherwise use current price)
-                    if price_30d_ago > 0:
+                    if cmp == "--":
+                        thirty_d_value = "--"
+                        thirty_percent = 0.0
+                    elif price_30d_ago > 0:
                         thirty_d_value = price_30d_ago
-                        thirty_percent = ((cmp - price_30d_ago) / price_30d_ago * 100)
+                        thirty_percent = ((cmp_numeric - price_30d_ago) / price_30d_ago * 100)
                     else:
-                        thirty_d_value = cmp
+                        thirty_d_value = cmp_numeric
                         thirty_percent = 0.0
 
                     # 7d - Price 7 days ago (use historical data if available, otherwise use current price)
-                    if price_7d_ago > 0:
+                    if cmp == "--":
+                        seven_d_value = "--"
+                        seven_percent = 0.0
+                    elif price_7d_ago > 0:
                         seven_d_value = price_7d_ago
-                        seven_percent = ((cmp - price_7d_ago) / price_7d_ago * 100)
+                        seven_percent = ((cmp_numeric - price_7d_ago) / price_7d_ago * 100)
                     else:
-                        seven_d_value = cmp
+                        seven_d_value = cmp_numeric
                         seven_percent = 0.0
 
                     # Add calculated values to signal
                     signal['iv'] = round(iv_value, 2)
                     signal['ip'] = round(ip_value, 2)
-                    signal['nt'] = round(nt_value, 2)
-                    signal['thirty'] = round(thirty_d_value, 2)
-                    signal['dh'] = f"{thirty_percent:.2f}%"
-                    signal['seven'] = round(seven_d_value, 2)
-                    signal['ch'] = f"{seven_percent:.2f}%"
+                    signal['nt'] = nt_value if nt_value == "--" else round(nt_value, 2)
+                    signal['thirty'] = thirty_d_value if thirty_d_value == "--" else round(thirty_d_value, 2)
+                    signal['dh'] = f"{thirty_percent:.2f}%" if thirty_d_value != "--" else "--"
+                    signal['seven'] = seven_d_value if seven_d_value == "--" else round(seven_d_value, 2)
+                    signal['ch'] = f"{seven_percent:.2f}%" if seven_d_value != "--" else "--"
 
                     # Store numeric values for calculations
                     signal['thirty_percent_numeric'] = round(thirty_percent, 2)
                     signal['seven_percent_numeric'] = round(seven_percent, 2)
 
-                    logger.info(f"Calculated values for {symbol_name}: IV={iv_value:.2f}, IP={ip_value:.2f}, NT={nt_value:.2f}, 30d={thirty_d_value:.2f}, 30%={thirty_percent:.2f}%, 7d={seven_d_value:.2f}, 7%={seven_percent:.2f}%")
+                    if cmp == "--":
+                        logger.info(f"Symbol {symbol_name}: No matching price table found - CMP set to '--'")
+                    else:
+                        logger.info(f"Calculated values for {symbol_name}: IV={iv_value:.2f}, IP={ip_value:.2f}, NT={nt_value:.2f}, 30d={thirty_d_value:.2f}, 30%={thirty_percent:.2f}%, 7d={seven_d_value:.2f}, 7%={seven_percent:.2f}%")
 
                     signals.append(signal)
 
@@ -448,36 +473,41 @@ def get_etf_signals_data_json(page=1, page_size=10):
                 or 0) if signal.get('entry_price') is not None else 0.0
 
             # Get CMP and calculated values
-            cmp = float(signal.get('cmp')
-                        or 0) if signal.get('cmp') is not None else 0.0
+            cmp = signal.get('cmp')
+            if cmp == "--" or cmp is None:
+                cmp_numeric = 0.0
+                cmp_display = "--"
+            else:
+                cmp_numeric = float(cmp)
+                cmp_display = cmp_numeric
 
             # Calculate basic metrics
             investment = qty * entry_price if qty and entry_price else 0
-            current_value = qty * cmp if qty and cmp else 0
-            profit_loss = current_value - investment
-            change_percent = ((cmp - entry_price) /
-                              entry_price) * 100 if entry_price > 0 else 0
+            current_value = qty * cmp_numeric if qty and cmp_numeric else 0
+            profit_loss = current_value - investment if cmp != "--" else 0
+            change_percent = ((cmp_numeric - entry_price) /
+                              entry_price) * 100 if entry_price > 0 and cmp != "--" else 0
 
             # Get calculated values from signal with proper fallbacks
             iv_value = signal.get('iv', investment)
             ip_value = signal.get('ip', entry_price)
-            nt_value = signal.get('nt', current_value)
-            thirty_value = signal.get('thirty', cmp)
-            dh_value = signal.get('dh', f"{change_percent:.2f}%")
-            seven_value = signal.get('seven', cmp)
-            ch_value = signal.get('ch', f"{change_percent:.2f}%")
+            nt_value = signal.get('nt', current_value if cmp != "--" else "--")
+            thirty_value = signal.get('thirty', cmp_display if cmp != "--" else "--")
+            dh_value = signal.get('dh', f"{change_percent:.2f}%" if cmp != "--" else "--")
+            seven_value = signal.get('seven', cmp_display if cmp != "--" else "--")
+            ch_value = signal.get('ch', f"{change_percent:.2f}%" if cmp != "--" else "--")
 
-            # Ensure we have valid numeric values
+            # Ensure we have valid numeric values (skip validation for -- values)
             if not isinstance(iv_value, (int, float)) or iv_value <= 0:
                 iv_value = investment
             if not isinstance(ip_value, (int, float)) or ip_value <= 0:
                 ip_value = entry_price
-            if not isinstance(nt_value, (int, float)) or nt_value <= 0:
-                nt_value = current_value
-            if not isinstance(thirty_value, (int, float)) or thirty_value <= 0:
-                thirty_value = cmp
-            if not isinstance(seven_value, (int, float)) or seven_value <= 0:
-                seven_value = cmp
+            if nt_value != "--" and (not isinstance(nt_value, (int, float)) or nt_value <= 0):
+                nt_value = current_value if cmp != "--" else "--"
+            if thirty_value != "--" and (not isinstance(thirty_value, (int, float)) or thirty_value <= 0):
+                thirty_value = cmp_display if cmp != "--" else "--"
+            if seven_value != "--" and (not isinstance(seven_value, (int, float)) or seven_value <= 0):
+                seven_value = cmp_display if cmp != "--" else "--"
 
             # Format the data structure with calculated values
             formatted_signal = {
@@ -487,12 +517,12 @@ def get_etf_signals_data_json(page=1, page_size=10):
                 'etf': symbol,
                 'qty': int(qty),
                 'ep': round(entry_price, 2),
-                'cmp': round(cmp, 2),
+                'cmp': cmp_display if cmp != "--" else "--",
                 'inv': round(investment, 2),
-                'current_value': round(current_value, 2),
-                'pl': round(profit_loss, 2),
-                'chan': f"{change_percent:.2f}%",
-                'change_percent': round(change_percent, 2),
+                'current_value': round(current_value, 2) if cmp != "--" else "--",
+                'pl': round(profit_loss, 2) if cmp != "--" else "--",
+                'chan': f"{change_percent:.2f}%" if cmp != "--" else "--",
+                'change_percent': round(change_percent, 2) if cmp != "--" else 0,
                 'date': signal.get('date', ''),
                 'created_at': signal.get('created_at', ''),
                 'pos': signal.get('pos', 1),
@@ -500,10 +530,10 @@ def get_etf_signals_data_json(page=1, page_size=10):
                 # Calculated values using CMP - properly formatted
                 'iv': round(float(iv_value), 2),
                 'ip': round(float(ip_value), 2),
-                'nt': round(float(nt_value), 2),
-                'thirty': round(float(thirty_value), 2),
+                'nt': nt_value if nt_value == "--" else round(float(nt_value), 2),
+                'thirty': thirty_value if thirty_value == "--" else round(float(thirty_value), 2),
                 'dh': str(dh_value),
-                'seven': round(float(seven_value), 2),
+                'seven': seven_value if seven_value == "--" else round(float(seven_value), 2),
                 'ch': str(ch_value),
                 
                 # Store numeric percentage values for calculations
@@ -512,15 +542,15 @@ def get_etf_signals_data_json(page=1, page_size=10):
                 
                 # Formatted display values
                 'ep_formatted': f"₹{entry_price:.2f}",
-                'cmp_formatted': f"₹{cmp:.2f}",
+                'cmp_formatted': "--" if cmp == "--" else f"₹{cmp_display:.2f}",
                 'inv_formatted': f"₹{investment:.2f}",
-                'pl_formatted': f"₹{profit_loss:.2f}",
-                'current_value_formatted': f"₹{current_value:.2f}",
+                'pl_formatted': "--" if cmp == "--" else f"₹{profit_loss:.2f}",
+                'current_value_formatted': "--" if cmp == "--" else f"₹{current_value:.2f}",
                 'iv_formatted': f"₹{float(iv_value):.2f}",
                 'ip_formatted': f"₹{float(ip_value):.2f}",
-                'nt_formatted': f"₹{float(nt_value):.2f}",
-                'thirty_formatted': f"₹{float(thirty_value):.2f}",
-                'seven_formatted': f"₹{float(seven_value):.2f}"
+                'nt_formatted': "--" if nt_value == "--" else f"₹{float(nt_value):.2f}",
+                'thirty_formatted': "--" if thirty_value == "--" else f"₹{float(thirty_value):.2f}",
+                'seven_formatted': "--" if seven_value == "--" else f"₹{float(seven_value):.2f}"
             }
             formatted_signals.append(formatted_signal)
 
