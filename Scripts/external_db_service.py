@@ -199,7 +199,7 @@ def get_symbol_data_fast(table_name):
 
             # Create signal data structure
             signal_data = {
-                'etf': table_name,
+                'etf': table_name.replace("_5m", ""),
                 'datetime': latest_row[0],
                 'open': float(latest_row[1]),
                 'high': float(latest_row[2]),
@@ -314,54 +314,77 @@ def get_etf_signals_from_symbols_schema(page=1, page_size=10):
         # Filter to only _5m tables
         five_min_tables = [table for table in tables if table.endswith('_5m')]
         total_tables = len(five_min_tables)
-        
+
         # Calculate pagination
         start_index = (page - 1) * page_size
         end_index = min(start_index + page_size, total_tables)
-        
+
         if start_index >= total_tables:
             logger.info(f"Page {page} beyond available data")
             return [], total_tables
-            
+
         # Get tables for current page
         tables_to_process = five_min_tables[start_index:end_index]
-        
+
         signals = []
         count = start_index
 
-        logger.info(f"Processing page {page}: tables {start_index + 1}-{end_index} of {total_tables}")
+        logger.info(
+            f"Processing page {page}: tables {start_index + 1}-{end_index} of {total_tables}"
+        )
 
         # Process tables for current page
         for table_name in tables_to_process:
             try:
                 count += 1
-                logger.info(f"Processing table {count}/{total_tables}: {table_name}")
+                logger.info(
+                    f"Processing table {count}/{total_tables}: {table_name}")
 
                 # Get symbol data with timeout protection
                 symbol_data = get_symbol_data_fast(table_name)
                 if symbol_data:
                     # Create signal record with required fields
                     signal = {
-                        'id': count,
-                        'etf': table_name,
-                        'date': symbol_data['datetime'].strftime('%Y-%m-%d') if symbol_data['datetime'] else '',
-                        'pos': 1,  # Default position (1 for long)
-                        'qty': 1,  # Default quantity
-                        'ep': symbol_data['close'],  # Entry price = current close
-                        'cmp': symbol_data['cmp'],
-                        'ed': '',  # Exit date (empty)
-                        'exp': '',  # Exit price (empty)
-                        'iv': symbol_data['close'],  # Investment value
-                        'ip': 0.0,  # Investment percentage
-                        'd7': symbol_data['d7'],
-                        'd30': symbol_data['d30'],
-                        'created_at': datetime.now(),
+                        'id':
+                        count,
+                        'etf':
+                        table_name,
+                        'date':
+                        symbol_data['datetime'].strftime('%Y-%m-%d')
+                        if symbol_data['datetime'] else '',
+                        'pos':
+                        1,  # Default position (1 for long)
+                        'qty':
+                        1,  # Default quantity
+                        'ep':
+                        symbol_data['close'],  # Entry price = current close
+                        'cmp':
+                        symbol_data['cmp'],
+                        'ed':
+                        '',  # Exit date (empty)
+                        'exp':
+                        '',  # Exit price (empty)
+                        'iv':
+                        symbol_data['close'],  # Investment value
+                        'ip':
+                        0.0,  # Investment percentage
+                        'd7':
+                        symbol_data['d7'],
+                        'd30':
+                        symbol_data['d30'],
+                        'created_at':
+                        datetime.now(),
                         # Additional OHLCV data
-                        'open': symbol_data['open'],
-                        'high': symbol_data['high'],
-                        'low': symbol_data['low'],
-                        'volume': symbol_data['volume'],
-                        'available_rows': symbol_data['available_rows']
+                        'open':
+                        symbol_data['open'],
+                        'high':
+                        symbol_data['high'],
+                        'low':
+                        symbol_data['low'],
+                        'volume':
+                        symbol_data['volume'],
+                        'available_rows':
+                        symbol_data['available_rows']
                     }
                     signals.append(signal)
 
@@ -369,7 +392,8 @@ def get_etf_signals_from_symbols_schema(page=1, page_size=10):
                 logger.error(f"Error processing table {table_name}: {e}")
                 continue
 
-        logger.info(f"✅ Successfully processed {len(signals)} symbols for page {page}")
+        logger.info(
+            f"✅ Successfully processed {len(signals)} symbols for page {page}")
         return signals, total_tables
 
     except Exception as e:
@@ -385,19 +409,22 @@ def get_etf_signals_data_json(page=1, page_size=10):
 
         # Test connection first with quick timeout
         if not test_database_connection():
-            logger.error("External database connection failed - returning empty data")
+            logger.error(
+                "External database connection failed - returning empty data")
             return {
                 'data': [],
                 'recordsTotal': 0,
                 'recordsFiltered': 0,
                 'page': page,
                 'has_more': False,
-                'message': 'External database connection failed. Please check database credentials.',
+                'message':
+                'External database connection failed. Please check database credentials.',
                 'status': 'error'
             }
 
         # Get signals from symbols schema with pagination
-        signals, total_count = get_etf_signals_from_symbols_schema(page, page_size)
+        signals, total_count = get_etf_signals_from_symbols_schema(
+            page, page_size)
 
         if not signals and page == 1:
             logger.warning("No signals found in symbols schema")
@@ -473,8 +500,8 @@ def get_etf_signals_data_json(page=1, page_size=10):
                 formatted_signal = {
                     'trade_signal_id': signal['id'],
                     'id': signal['id'],
-                    'etf': symbol,
-                    'symbol': symbol,
+                    'etf': symbol.replace("_5m", "").upper(),
+                    'symbol': symbol.replace("_5m", "").upper(),
                     'thirty': round(d30_price, 2),
                     'd30': round(d30_price, 2),
                     'dh': f"{ch30_percent:.2f}%",
@@ -539,7 +566,7 @@ def get_etf_signals_data_json(page=1, page_size=10):
 
         # Calculate pagination info
         has_more = (page * page_size) < total_count
-        
+
         return {
             'data': formatted_signals,
             'recordsTotal': total_count,
