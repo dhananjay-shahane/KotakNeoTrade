@@ -98,9 +98,17 @@ class ExternalDBService:
                 cursor.execute(query)
                 results = cursor.fetchall()
 
-                # Find all symbol tables ending with "_5m" for price matching
-                symbol_tables = [table for table in tables if table.endswith('_5m')]
-                logger.info(f"Found {len(symbol_tables)} symbol tables ending with '_5m': {symbol_tables}")
+                # Find all existing symbol tables in the schema for price matching
+                # Look for tables that might contain symbol price data
+                potential_symbol_tables = []
+                for table in tables:
+                    # Check if table name might be a symbol table (contains symbol-like patterns)
+                    if ('_5m' in table or 
+                        any(symbol.lower() in table.lower() for symbol in ['nifty', 'bank', 'gold', 'silver', 'auto', 'pharma', 'ultra', 'tata', 'hdfc', 'infra', 'junior', 'consum', 'fmcg', 'fin']) or
+                        len(table) > 3 and table.replace('_', '').isalnum()):
+                        potential_symbol_tables.append(table)
+                
+                logger.info(f"Found {len(potential_symbol_tables)} potential symbol tables: {potential_symbol_tables}")
 
                 # Convert RealDictRow to regular dict and handle data types
                 signals = []
@@ -135,30 +143,31 @@ class ExternalDBService:
                     else:
                         signal['symbol'] = ''
 
-                    # Try to get CMP from matching symbol table ending with "_5m"
+                    # Try to get CMP from matching symbol table in existing schema
                     symbol_name = signal.get('symbol', '').upper()
-                    if symbol_name and symbol_tables:
+                    if symbol_name and potential_symbol_tables:
                         # Look for matching table (case-insensitive, multiple matching strategies)
                         matching_table = None
                         
-                        # Strategy 1: Exact match with symbol name
+                        # Strategy 1: Exact match with symbol name + _5m
                         exact_match = f"{symbol_name}_5m".lower()
-                        for table in symbol_tables:
+                        for table in potential_symbol_tables:
                             if table.lower() == exact_match:
                                 matching_table = table
                                 break
                         
-                        # Strategy 2: Table starts with symbol name
+                        # Strategy 2: Table contains symbol name
                         if not matching_table:
-                            for table in symbol_tables:
-                                if table.upper().startswith(symbol_name.upper()):
+                            for table in potential_symbol_tables:
+                                if symbol_name.lower() in table.lower():
                                     matching_table = table
                                     break
                         
-                        # Strategy 3: Symbol name is contained in table name
+                        # Strategy 3: Symbol name contains table name (for shorter table names)
                         if not matching_table:
-                            for table in symbol_tables:
-                                if symbol_name.upper() in table.upper():
+                            for table in potential_symbol_tables:
+                                table_base = table.replace('_5m', '').replace('_', '')
+                                if table_base.upper() in symbol_name.upper():
                                     matching_table = table
                                     break
                         
@@ -226,7 +235,7 @@ class ExternalDBService:
                             except Exception as e:
                                 logger.error(f"Error fetching price for {symbol_name} from {matching_table}: {e}")
                         else:
-                            logger.info(f"No matching symbol table found for {symbol_name} among {len(symbol_tables)} tables")
+                            logger.info(f"No matching symbol table found for {symbol_name} among {len(potential_symbol_tables)} potential tables")
 
                     signals.append(signal)
 
