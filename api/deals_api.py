@@ -544,27 +544,54 @@ def create_deal_from_signal():
         # Extract signal data
         signal_data = data.get('signal_data', {})
         
-        # Get required fields with fallbacks
-        symbol = signal_data.get('symbol') or signal_data.get('etf', 'UNKNOWN')
-        qty = float(signal_data.get('qty', 1))
-        ep = float(signal_data.get('ep', 0))
+        # Helper function to safely convert values
+        def safe_float(value, default=0.0):
+            if value is None or value == '' or value == '--':
+                return default
+            try:
+                return float(value)
+            except (ValueError, TypeError):
+                return default
+
+        def safe_int(value, default=1):
+            if value is None or value == '':
+                return default
+            try:
+                return int(float(value))
+            except (ValueError, TypeError):
+                return default
+
+        # Get required fields with safe conversion
+        symbol = signal_data.get('symbol') or signal_data.get('etf', '')
+        if not symbol or symbol == 'UNKNOWN':
+            return jsonify({
+                'success': False,
+                'error': 'Missing or invalid symbol'
+            }), 400
+
+        qty = safe_int(signal_data.get('qty'), 1)
+        ep = safe_float(signal_data.get('ep'), 0.0)
         cmp = signal_data.get('cmp')
         
         # Handle CMP - if it's "--" or invalid, use entry price
-        if cmp == "--" or cmp is None:
+        if cmp == "--" or cmp is None or cmp == '':
             cmp = ep
         else:
-            cmp = float(cmp)
+            cmp = safe_float(cmp, ep)
         
-        pos = int(signal_data.get('pos', 1))
-        tp = float(signal_data.get('tp', ep * 1.05))  # Default 5% target
+        pos = safe_int(signal_data.get('pos'), 1)
         
         # Validate required data
-        if not symbol or symbol == 'UNKNOWN' or ep <= 0 or qty <= 0:
+        if ep <= 0 or qty <= 0:
             return jsonify({
                 'success': False,
-                'error': 'Invalid signal data - missing symbol, price, or quantity'
+                'error': 'Invalid price or quantity data'
             }), 400
+
+        # Calculate target price safely
+        tp = safe_float(signal_data.get('tp'), ep * 1.05)
+        if tp <= 0:
+            tp = ep * 1.05
 
         # Calculate values
         invested_amount = ep * qty
@@ -580,36 +607,32 @@ def create_deal_from_signal():
                 'error': 'Database connection failed'
             }), 500
 
-        # Get user_id from session or create/use default user
-        user_id = session.get('user_id')
+        # Set user_id - use 1 as default for now
+        user_id = session.get('user_id', 1)
         
-        if not user_id:
-            # Create or get default user
-            try:
-                with conn.cursor() as cursor:
-                    # Check if default user exists
-                    cursor.execute("SELECT id FROM users WHERE ucc = %s", ('DEFAULT_USER',))
-                    result = cursor.fetchone()
-                    
-                    if result:
-                        user_id = result[0]
-                    else:
-                        # Create default user
-                        cursor.execute("""
-                            INSERT INTO users (ucc, mobile_number, greeting_name, is_active)
-                            VALUES (%s, %s, %s, %s)
-                            RETURNING id
-                        """, ('DEFAULT_USER', '9999999999', 'Default User', True))
-                        user_id = cursor.fetchone()[0]
-                        conn.commit()
-                        logger.info(f"Created default user with ID: {user_id}")
-            except Exception as user_error:
-                logger.warning(f"Could not create default user: {user_error}")
-                user_id = 1  # Fallback to ID 1
+        # Ensure user_id is valid
+        if not user_id or user_id == 0:
+            user_id = 1
 
         try:
             with conn.cursor() as cursor:
-                # Insert into user_deals table with user_id and trading_symbol
+                # Check if users table exists and ensure user_id 1 exists
+                try:
+                    cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
+                    if not cursor.fetchone():
+                        # Insert default user with ID 1
+                        cursor.execute("""
+                            INSERT INTO users (id, ucc, mobile_number, greeting_name, is_active)
+                            VALUES (%s, %s, %s, %s, %s)
+                            ON CONFLICT (id) DO NOTHING
+                        """, (1, 'DEFAULT_USER', '9999999999', 'Default User', True))
+                        conn.commit()
+                        logger.info("Created default user with ID 1")
+                except Exception as user_check_error:
+                    logger.warning(f"Could not verify/create user: {user_check_error}")
+                    # Continue with user_id = 1
+
+                # Insert into user_deals table
                 insert_query = """
                     INSERT INTO user_deals (
                         user_id, symbol, trading_symbol, entry_date, position_type, quantity, entry_price,
@@ -618,16 +641,15 @@ def create_deal_from_signal():
                         notes, tags, created_at, updated_at,
                         pos, qty, ep, cmp, tp, inv, pl
                     ) VALUES (
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                        %s, %s, %s, CURRENT_DATE, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW(),
                         %s, %s, %s, %s, %s, %s, %s
                     ) RETURNING id
                 """
                 
                 values = (
-                    user_id,  # Add user_id as first parameter
+                    user_id,
                     symbol.upper(),
-                    symbol.upper(),  # trading_symbol - use same as symbol
-                    signal_data.get('date', 'CURRENT_DATE'),
+                    symbol.upper(),  # trading_symbol
                     'LONG' if pos == 1 else 'SHORT',
                     qty,
                     ep,
@@ -642,8 +664,6 @@ def create_deal_from_signal():
                     'SIGNAL',
                     f'Added from ETF signal - {symbol}',
                     'ETF,SIGNAL',
-                    'NOW()',
-                    'NOW()',
                     pos,
                     qty,
                     ep,
@@ -683,6 +703,8 @@ def create_deal_from_signal():
 
     except Exception as e:
         logger.error(f"Error creating deal from signal: {e}")
+        import traceback
+        logger.error(f"Full traceback: {traceback.format_exc()}")
         return jsonify({
             'success': False,
             'error': str(e)

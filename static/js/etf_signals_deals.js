@@ -477,26 +477,35 @@ function addDealFromSignal(symbol, signalData) {
                 ? JSON.parse(signalData)
                 : signalData;
 
+        // Validate signal data
+        if (!signal || !signal.symbol) {
+            showMessage("Invalid signal data", "error");
+            return;
+        }
+
         // Get the current price for confirmation
-        var currentPrice = signal.cmp === "--" ? signal.ep : signal.cmp;
+        var currentPrice = signal.cmp;
+        if (currentPrice === "--" || currentPrice === null || currentPrice === undefined) {
+            currentPrice = signal.ep || 0;
+        }
         
-        if (
-            !confirm(
-                "Add deal for " +
-                    symbol +
-                    " at ₹" +
-                    (currentPrice || 0).toFixed(2) +
-                    "?"
-            )
-        ) {
+        var confirmMessage = "Add deal for " + symbol + " at ₹" + parseFloat(currentPrice || 0).toFixed(2) + "?";
+        confirmMessage += "\nQuantity: " + (signal.qty || 1);
+        confirmMessage += "\nPosition: " + (signal.pos === 1 ? "LONG" : "SHORT");
+        
+        if (!confirm(confirmMessage)) {
             return;
         }
 
         console.log("Creating deal from signal:", signal);
 
+        // Show loading message
+        showMessage("Creating deal for " + symbol + "...", "info");
+
         var xhr = new XMLHttpRequest();
         xhr.open("POST", "/api/deals/create-from-signal", true);
         xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.timeout = 10000; // 10 second timeout
 
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4) {
@@ -509,13 +518,14 @@ function addDealFromSignal(symbol, signalData) {
                         if (response.success) {
                             showMessage(
                                 "✓ Deal created successfully for " + symbol + 
-                                " - Deal ID: " + response.deal_id,
+                                " - Deal ID: " + response.deal_id +
+                                " - Investment: ₹" + (response.invested_amount || 0).toFixed(2),
                                 "success"
                             );
                             
-                            // Optionally redirect to deals page after 2 seconds
+                            // Optionally redirect to deals page after 3 seconds
                             setTimeout(function() {
-                                if (confirm("View your deals?")) {
+                                if (confirm("Deal created! View your deals page?")) {
                                     window.location.href = "/deals";
                                 }
                             }, 2000);
@@ -527,30 +537,62 @@ function addDealFromSignal(symbol, signalData) {
                         }
                     } catch (parseError) {
                         console.error("Failed to parse response:", parseError);
-                        showMessage("Invalid response from server", "error");
+                        showMessage("Server returned invalid response", "error");
                     }
+                } else if (xhr.status === 500) {
+                    showMessage("Server error occurred. Please try again.", "error");
+                } else if (xhr.status === 404) {
+                    showMessage("API endpoint not found. Please contact support.", "error");
                 } else {
-                    showMessage(
-                        "Failed to create deal. Server error: " + xhr.status,
-                        "error"
-                    );
+                    showMessage("Request failed with status: " + xhr.status, "error");
                 }
             }
         };
 
-        xhr.send(
-            JSON.stringify({
-                signal_data: signal
-            })
-        );
+        xhr.ontimeout = function() {
+            showMessage("Request timed out. Please try again.", "error");
+        };
+
+        xhr.onerror = function() {
+            showMessage("Network error occurred. Please check your connection.", "error");
+        };
+
+        // Send the request with sanitized data
+        var requestData = {
+            signal_data: {
+                symbol: signal.symbol || symbol,
+                qty: signal.qty || 1,
+                ep: signal.ep || 0,
+                cmp: signal.cmp || signal.ep || 0,
+                pos: signal.pos || 1,
+                tp: signal.tp || 0,
+                date: signal.date || new Date().toISOString().split('T')[0]
+            }
+        };
+
+        xhr.send(JSON.stringify(requestData));
     } catch (error) {
         console.error("Error adding deal:", error);
-        showMessage("Error adding deal: " + error.message, "error");
+        showMessage("Error preparing deal: " + error.message, "error");
     }
 }
 
 function showMessage(message, type) {
-    var alertClass = type === "success" ? "alert-success" : "alert-danger";
+    var alertClass;
+    switch(type) {
+        case "success":
+            alertClass = "alert-success";
+            break;
+        case "error":
+            alertClass = "alert-danger";
+            break;
+        case "info":
+            alertClass = "alert-info";
+            break;
+        default:
+            alertClass = "alert-secondary";
+    }
+    
     var alertHtml =
         '<div class="alert ' +
         alertClass +
@@ -564,12 +606,14 @@ function showMessage(message, type) {
     alertDiv.innerHTML = alertHtml;
     container.insertBefore(alertDiv, container.firstChild);
 
+    // Auto-remove after different times based on type
+    var timeout = type === "info" ? 3000 : 5000;
     setTimeout(function () {
-        var alert = document.querySelector(".alert");
+        var alert = alertDiv.querySelector(".alert");
         if (alert) {
             alert.remove();
         }
-    }, 5000);
+    }, timeout);
 }
 
 function exportSignals() {
