@@ -20,13 +20,15 @@ def test_user_deals_connection():
     }
     
     try:
+        logger.info("Attempting to connect to external database...")
         connection = psycopg2.connect(**db_config)
         logger.info("✓ Connected to external database")
         
         with connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
             # Check if user_deals table exists
-            cursor.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'user_deals')")
-            table_exists = cursor.fetchone()[0]
+            cursor.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'user_deals') as table_exists")
+            result = cursor.fetchone()
+            table_exists = result['table_exists']
             logger.info(f"user_deals table exists: {table_exists}")
             
             if table_exists:
@@ -35,16 +37,6 @@ def test_user_deals_connection():
                 row_count = cursor.fetchone()['count']
                 logger.info(f"user_deals table has {row_count} rows")
                 
-                # If there are rows, get a sample
-                if row_count > 0:
-                    cursor.execute("SELECT * FROM user_deals LIMIT 5")
-                    sample_data = cursor.fetchall()
-                    logger.info(f"Sample data from user_deals:")
-                    for row in sample_data:
-                        logger.info(f"  {dict(row)}")
-                else:
-                    logger.info("user_deals table is empty")
-                    
                 # Check table structure
                 cursor.execute("""
                     SELECT column_name, data_type 
@@ -56,13 +48,25 @@ def test_user_deals_connection():
                 logger.info(f"user_deals table structure:")
                 for col in columns:
                     logger.info(f"  {col['column_name']}: {col['data_type']}")
+                    
+                # If there are rows, show actual data
+                if row_count > 0:
+                    cursor.execute("SELECT * FROM user_deals LIMIT 5")
+                    actual_data = cursor.fetchall()
+                    logger.info(f"Actual data from user_deals:")
+                    for row in actual_data:
+                        logger.info(f"  {dict(row)}")
+                else:
+                    logger.info("user_deals table is empty - no authentic data available")
             else:
                 logger.error("user_deals table does not exist")
                 
         connection.close()
         
     except Exception as e:
-        logger.error(f"Error: {e}")
+        logger.error(f"Database connection error: {e}")
+        import traceback
+        traceback.print_exc()
 
 if __name__ == "__main__":
     test_user_deals_connection()
