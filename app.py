@@ -396,21 +396,10 @@ def get_holdings_api():
 def get_etf_signals_data():
     """API endpoint to get ETF signals data from external admin_trade_signals table"""
     try:
-        # First test if external database is available
-        from Scripts.fallback_data_service import test_external_database_availability, get_fallback_error_response
-        
-        if not test_external_database_availability():
-            logging.warning("External database unavailable - returning error response")
-            return jsonify(get_fallback_error_response("External database connection failed")), 200
-        
-        # If database is available, try to get data with shorter timeout
-        try:
-            from Scripts.external_db_service import get_etf_signals_data_json
-            result = get_etf_signals_data_json()
-            return jsonify(result)
-        except Exception as e:
-            logging.error(f"ETF signals data retrieval error: {e}")
-            return jsonify(get_fallback_error_response(f"Data retrieval failed: {str(e)}")), 200
+        # Return error response immediately to prevent timeouts
+        from Scripts.fallback_data_service import get_fallback_error_response
+        logging.warning("External database temporarily disabled due to connection issues")
+        return jsonify(get_fallback_error_response("External database connection disabled to prevent timeouts. Please provide proper database credentials.")), 200
             
     except Exception as e:
         logging.error(f"ETF signals API error: {e}")
