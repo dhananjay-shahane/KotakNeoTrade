@@ -22,9 +22,11 @@ A comprehensive trading platform integrated with Kotak Neo API for real-time por
 - **Data Sources**: All data must come from live Kotak Neo API
 
 ## Recent Changes
+- **2025-07-12**: ✅ **Complete Migration to Replit Environment** - Successfully migrated from Replit Agent to standard Replit environment with PostgreSQL database
+- **2025-07-12**: ✅ **External Database Service Optimized** - Modified external_db_service.py to fetch only required fields (symbol, entry_price, qty) from admin_trade_signals and get CMP from symbols table
+- **2025-07-12**: ✅ **ETF Signals API Fixed** - Fixed function signature issue and API now properly fetches data from two tables without storing CMP in admin_trade_signals
+- **2025-07-12**: ✅ **Database Architecture Improved** - Now using JOIN query to match symbols between admin_trade_signals and symbols tables for real-time pricing
 - **2025-07-12**: ✅ **Database Timeout Issues Completely Resolved** - Fixed all database connection timeouts and worker crashes
-- **2025-07-12**: ✅ **ETF Signals API Fixed** - API now properly checks for database credentials and returns clear error messages instead of timing out
-- **2025-07-12**: ✅ **Migration to Replit Environment Completed** - Successfully migrated from Replit Agent to standard Replit environment
 - **2025-07-12**: ✅ **Real Data Policy Enforced** - Removed all sample data, API requires proper database credentials for authentic trading data
 - **2025-07-11**: ✅ **User Deals API Created** - Built separate api/deals_api.py for authentic trading data from user_deals table
 - **2025-07-11**: ✅ **Database Configuration Fixed** - Updated core/database.py with proper PostgreSQL connection handling
