@@ -287,12 +287,6 @@ endblock %} {% block extra_css %}
                     <span id="visibleSignalsCount">0</span> filtered signals
                     (Total: <span id="totalCount">0</span>)</small
                 >
-                <select class="form-select form-select-sm bg-dark text-light border-secondary" id="itemsPerPageSelect" onchange="changeItemsPerPage()" style="width: auto;">
-                    <option value="10" selected>10 per page</option>
-                    <option value="25">25 per page</option>
-                    <option value="50">50 per page</option>
-                    <option value="100">100 per page</option>
-                </select>
             </div>
             <div class="d-flex align-items-center gap-2">
                 <button
@@ -302,25 +296,6 @@ endblock %} {% block extra_css %}
                 >
                     <i class="fas fa-sync-alt"></i> Refresh Data
                 </button>
-                
-                <!-- Pagination Controls -->
-                <nav aria-label="Table pagination">
-                    <ul class="pagination pagination-sm mb-0" id="paginationControls">
-                        <li class="page-item" id="prevPageItem">
-                            <button class="page-link bg-dark border-secondary text-light" onclick="goToPage(window.currentPage - 1)" aria-label="Previous">
-                                <span aria-hidden="true">&laquo;</span>
-                            </button>
-                        </li>
-                        <li class="page-item active">
-                            <span class="page-link bg-primary border-primary" id="currentPageDisplay">1 of 1</span>
-                        </li>
-                        <li class="page-item" id="nextPageItem">
-                            <button class="page-link bg-dark border-secondary text-light" onclick="goToPage(window.currentPage + 1)" aria-label="Next">
-                                <span aria-hidden="true">&raquo;</span>
-                            </button>
-                        </li>
-                    </ul>
-                </nav>
             </div>
         </div>
     </div>
