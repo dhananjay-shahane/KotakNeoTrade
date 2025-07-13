@@ -214,7 +214,7 @@ ETFSignalsManager.prototype.loadSignals = function (resetData) {
 };
 
 ETFSignalsManager.prototype.renderSignalsTable = function () {
-    var tbody = document.getElementById("signalsTableBody");
+    var tbody = document.getElementById("signalsTableBody") || document.getElementById("etfSignalsTableBody");
     if (!tbody) {
         console.error("Table body not found");
         return;
@@ -226,12 +226,17 @@ ETFSignalsManager.prototype.renderSignalsTable = function () {
         if (this.availableColumns[i].visible) visibleColumnCount++;
     }
 
-    if (this.displayedSignals.length === 0) {
-        tbody.innerHTML =
-            '<tr><td colspan="' +
-            visibleColumnCount +
-            '" class="text-center text-muted">No ETF signals found</td></tr>';
-        return;
+    // Initialize displayedSignals if not done
+    if (!this.displayedSignals || this.displayedSignals.length === 0) {
+        if (this.signals && this.signals.length > 0) {
+            this.updateDisplayedSignals();
+        } else {
+            tbody.innerHTML =
+                '<tr><td colspan="' +
+                visibleColumnCount +
+                '" class="text-center text-muted">No ETF signals found</td></tr>';
+            return;
+        }
     }
 
     var self = this;
@@ -966,12 +971,22 @@ ETFSignalsManager.prototype.updatePaginationControls = function () {
 
 ETFSignalsManager.prototype.createPaginationControls = function () {
     var cardFooter = document.querySelector(".card-footer");
+    if (!cardFooter) {
+        // If card-footer doesn't exist, create it
+        var card = document.querySelector(".card.bg-secondary");
+        if (card) {
+            cardFooter = document.createElement("div");
+            cardFooter.className = "card-footer bg-dark border-0";
+            card.appendChild(cardFooter);
+        }
+    }
+    
     if (cardFooter) {
         var paginationHTML =
             '<div id="paginationContainer" class="d-flex justify-content-between align-items-center mt-3">' +
             '<div class="d-flex align-items-center">' +
             '<label for="itemsPerPage" class="form-label me-2 mb-0">Items per page:</label>' +
-            '<select id="itemsPerPage" class="form-select form-select-sm" style="width: auto;" onchange="window.etfSignalsManager.changeItemsPerPage(this.value)">' +
+            '<select id="itemsPerPage" class="form-select form-select-sm" style="width: auto;" onchange="changeItemsPerPage(this.value)">' +
             '<option value="10">10</option>' +
             '<option value="25">25</option>' +
             '<option value="50">50</option>' +
@@ -1017,7 +1032,7 @@ ETFSignalsManager.prototype.renderPaginationHTML = function () {
     // Previous button
     buttonsHTML += '<button class="btn btn-sm btn-outline-primary me-2" ' +
         (this.currentPage === 1 ? 'disabled' : '') + 
-        ' onclick="window.etfSignalsManager.goToPage(' + (this.currentPage - 1) + ')">' +
+        ' onclick="goToPage(' + (this.currentPage - 1) + ')">' +
         '<i class="fas fa-chevron-left"></i></button>';
 
     // Page numbers
@@ -1025,7 +1040,7 @@ ETFSignalsManager.prototype.renderPaginationHTML = function () {
     var endPage = Math.min(this.totalPages, this.currentPage + 2);
 
     if (startPage > 1) {
-        buttonsHTML += '<button class="btn btn-sm btn-outline-primary me-1" onclick="window.etfSignalsManager.goToPage(1)">1</button>';
+        buttonsHTML += '<button class="btn btn-sm btn-outline-primary me-1" onclick="goToPage(1)">1</button>';
         if (startPage > 2) {
             buttonsHTML += '<span class="me-1">...</span>';
         }
@@ -1034,20 +1049,20 @@ ETFSignalsManager.prototype.renderPaginationHTML = function () {
     for (var i = startPage; i <= endPage; i++) {
         buttonsHTML += '<button class="btn btn-sm ' + 
             (i === this.currentPage ? 'btn-primary' : 'btn-outline-primary') + 
-            ' me-1" onclick="window.etfSignalsManager.goToPage(' + i + ')">' + i + '</button>';
+            ' me-1" onclick="goToPage(' + i + ')">' + i + '</button>';
     }
 
     if (endPage < this.totalPages) {
         if (endPage < this.totalPages - 1) {
             buttonsHTML += '<span class="me-1">...</span>';
         }
-        buttonsHTML += '<button class="btn btn-sm btn-outline-primary me-1" onclick="window.etfSignalsManager.goToPage(' + this.totalPages + ')">' + this.totalPages + '</button>';
+        buttonsHTML += '<button class="btn btn-sm btn-outline-primary me-1" onclick="goToPage(' + this.totalPages + ')">' + this.totalPages + '</button>';
     }
 
     // Next button
     buttonsHTML += '<button class="btn btn-sm btn-outline-primary ms-1" ' +
         (this.currentPage === this.totalPages ? 'disabled' : '') + 
-        ' onclick="window.etfSignalsManager.goToPage(' + (this.currentPage + 1) + ')">' +
+        ' onclick="goToPage(' + (this.currentPage + 1) + ')">' +
         '<i class="fas fa-chevron-right"></i></button>';
 
     buttonsContainer.innerHTML = buttonsHTML;
