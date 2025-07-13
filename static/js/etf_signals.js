@@ -937,6 +937,7 @@ ETFSignalsManager.prototype.updateDisplayedSignals = function () {
 ETFSignalsManager.prototype.goToPage = function (pageNumber) {
     if (pageNumber < 1 || pageNumber > this.totalPages) return;
     this.currentPage = pageNumber;
+    window.currentPage = this.currentPage; // Update global variable
     this.updateDisplayedSignals();
     this.renderSignalsTable();
     this.updatePagination();
@@ -946,6 +947,7 @@ ETFSignalsManager.prototype.changeItemsPerPage = function (newItemsPerPage) {
     console.log("Changing items per page to:", newItemsPerPage);
     this.itemsPerPage = parseInt(newItemsPerPage) || 10;
     this.currentPage = 1;
+    window.currentPage = 1; // Update global variable
     this.updateDisplayedSignals();
     this.renderSignalsTable();
     this.updatePagination();
@@ -970,20 +972,32 @@ ETFSignalsManager.prototype.updatePagination = function () {
 };
 
 ETFSignalsManager.prototype.updatePaginationControls = function () {
-    var paginationContainer = document.getElementById("paginationContainer");
-    if (!paginationContainer) {
-        // Create pagination container if it doesn't exist
-        this.createPaginationControls();
-        paginationContainer = document.getElementById("paginationContainer");
+    // Update global currentPage variable
+    window.currentPage = this.currentPage;
+    
+    var prevPageItem = document.getElementById("prevPageItem");
+    var nextPageItem = document.getElementById("nextPageItem");
+    var currentPageDisplay = document.getElementById("currentPageDisplay");
+    
+    if (prevPageItem) {
+        if (this.currentPage <= 1) {
+            prevPageItem.classList.add("disabled");
+        } else {
+            prevPageItem.classList.remove("disabled");
+        }
     }
-
-    if (this.totalPages <= 1) {
-        paginationContainer.style.display = "none";
-        return;
+    
+    if (nextPageItem) {
+        if (this.currentPage >= this.totalPages) {
+            nextPageItem.classList.add("disabled");
+        } else {
+            nextPageItem.classList.remove("disabled");
+        }
     }
-
-    paginationContainer.style.display = "block";
-    this.renderPaginationHTML();
+    
+    if (currentPageDisplay) {
+        currentPageDisplay.textContent = this.currentPage + " of " + this.totalPages;
+    }
 };
 
 ETFSignalsManager.prototype.createPaginationControls = function () {
@@ -1156,9 +1170,10 @@ function goToPage(pageNumber) {
     }
 }
 
-function changeItemsPerPage(newItemsPerPage) {
-    if (window.etfSignalsManager) {
-        window.etfSignalsManager.changeItemsPerPage(newItemsPerPage);
+function changeItemsPerPage() {
+    var select = document.getElementById("itemsPerPageSelect");
+    if (select && window.etfSignalsManager) {
+        window.etfSignalsManager.changeItemsPerPage(select.value);
     }
 }
 
@@ -1576,6 +1591,8 @@ function sortSignalsByColumn(column) {
 
 // Initialize the ETF Signals Manager
 window.etfSignalsManager = new ETFSignalsManager();
+// Initialize global currentPage variable
+window.currentPage = 1;
 
 document.addEventListener("DOMContentLoaded", function () {
     // Set default refresh interval to 5 minutes
