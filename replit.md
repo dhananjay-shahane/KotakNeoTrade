@@ -23,7 +23,9 @@ A comprehensive trading platform integrated with Kotak Neo API for real-time por
 
 ## Recent Changes
 - **2025-07-13**: ✅ **Complete Migration to Standard Replit Environment** - Successfully migrated from Replit Agent to standard Replit environment with PostgreSQL database integration
-- **2025-07-13**: ✅ **Database Configuration Updated** - Configured PostgreSQL database using environment variables with proper connection handling
+- **2025-07-13**: ✅ **Database Configuration Updated** - Configured PostgreSQL database using environment variables with proper connection handling  
+- **2025-07-13**: ✅ **Enhanced Historical Data Calculations** - Updated external_db_service.py to calculate 7-day and 30-day metrics using authentic daily data from symbols._daily tables
+- **2025-07-13**: ✅ **Daily Data Integration** - Implemented proper 7d/30d moving averages and percentage calculations from historical trading data without any sample data
 - **2025-07-13**: ✅ **Security Hardening** - Implemented proper client/server separation and robust security practices for production deployment
 - **2025-07-12**: ✅ **Complete Sample Data Removal** - Removed all references to sample, demo, mock, and placeholder data from entire codebase
 - **2025-07-12**: ✅ **Authentic Data Only Policy** - System now enforces strict authentic data policy across all components

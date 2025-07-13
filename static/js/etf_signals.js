@@ -24,6 +24,8 @@ function ETFSignalsManager() {
     this.availableColumns = [
         { key: "trade_signal_id", label: "ID", visible: true },
         { key: "etf", label: "Symbol", visible: true },
+        { key: "seven", label: "7D", visible: true },
+        { key: "ch", label: "7D%", visible: true },
         { key: "thirty", label: "30D", visible: true },
         { key: "dh", label: "30D%", visible: true },
         { key: "date", label: "DATE", visible: true },
@@ -44,8 +46,7 @@ function ETFSignalsManager() {
         { key: "ip", label: "IP", visible: false },
         { key: "nt", label: "NT", visible: false },
         // { key: "qt", label: "QT", visible: false },
-        { key: "seven", label: "7D", visible: true },
-        { key: "ch", label: "7D%", visible: true },
+
         { key: "actions", label: "ACTIONS", visible: true },
     ];
 

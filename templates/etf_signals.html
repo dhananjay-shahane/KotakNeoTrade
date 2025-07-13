@@ -120,6 +120,20 @@ endblock %} {% block extra_css %}
                             </th>
                             <th
                                 style="cursor: pointer"
+                                title="7 Day Price - Click to sort"
+                                onclick="sortSignalsByColumn('seven')"
+                            >
+                                7D <i class="fas fa-sort ms-1"></i>
+                            </th>
+                            <th
+                                style="cursor: pointer"
+                                title="7 Day Change % - Click to sort"
+                                onclick="sortSignalsByColumn('ch')"
+                            >
+                                7D% <i class="fas fa-sort ms-1"></i>
+                            </th>
+                            <th
+                                style="cursor: pointer"
                                 title="30 Day Price - Click to sort"
                                 onclick="sortSignalsByColumn('thirty')"
                             >
@@ -258,20 +272,7 @@ endblock %} {% block extra_css %}
                             >
                                 QT <i class="fas fa-sort ms-1"></i>
                             </th> -->
-                            <th
-                                style="cursor: pointer"
-                                title="7 Day Price - Click to sort"
-                                onclick="sortSignalsByColumn('seven')"
-                            >
-                                7D <i class="fas fa-sort ms-1"></i>
-                            </th>
-                            <th
-                                style="cursor: pointer"
-                                title="7 Day Change % - Click to sort"
-                                onclick="sortSignalsByColumn('ch')"
-                            >
-                                7D% <i class="fas fa-sort ms-1"></i>
-                            </th>
+
                             <th title="Actions">ACTIONS</th>
                         </tr>
                     </thead>

@@ -223,70 +223,104 @@ class ExternalDBService:
                                         f"No price data found in symbols.{matching_table} for {symbol_name}"
                                     )
 
-                                # Get historical data for 30-day and 7-day calculations
+                                # Get historical data for 7-day and 30-day calculations from daily data
                                 try:
-                                    # Check if we have daily table for more accurate historical data
-                                    daily_table = matching_table.replace('_5m', '_daily')
+                                    # Look for daily table specifically for accurate historical calculations
+                                    daily_table = None
                                     
-                                    # Try daily data first for 30-day calculation
-                                    if daily_table in symbol_tables:
-                                        # Get 30-day old price from daily data
-                                        historical_30d_query = f"""
-                                        SELECT close 
-                                        FROM symbols."{daily_table}" 
-                                        ORDER BY datetime DESC
-                                        OFFSET 30 LIMIT 1
-                                        """
-                                        cursor.execute(historical_30d_query)
-                                        historical_30d = cursor.fetchone()
-                                        if historical_30d:
-                                            price_30d_ago = float(historical_30d['close'] if isinstance(historical_30d, dict) else historical_30d[0])
-                                            logger.info(f"Found 30-day historical price for {symbol_name}: {price_30d_ago}")
+                                    # Check for _daily table variants
+                                    possible_daily_tables = [
+                                        f"{symbol_name.lower()}_daily",
+                                        matching_table.replace('_5m', '_daily'),
+                                        f"{symbol_name}_daily".lower()
+                                    ]
+                                    
+                                    for possible_table in possible_daily_tables:
+                                        if possible_table in symbol_tables:
+                                            daily_table = possible_table
+                                            break
+                                    
+                                    if daily_table:
+                                        logger.info(f"Using daily table: {daily_table} for {symbol_name}")
                                         
-                                        # Get 7-day old price from daily data
-                                        historical_7d_query = f"""
-                                        SELECT close 
+                                        # Get last 30 days of data for moving averages and percentage calculations
+                                        daily_data_query = f"""
+                                        SELECT datetime, close, high, low 
                                         FROM symbols."{daily_table}" 
                                         ORDER BY datetime DESC
-                                        OFFSET 7 LIMIT 1
+                                        LIMIT 30
                                         """
-                                        cursor.execute(historical_7d_query)
-                                        historical_7d = cursor.fetchone()
-                                        if historical_7d:
-                                            price_7d_ago = float(historical_7d['close'] if isinstance(historical_7d, dict) else historical_7d[0])
-                                            logger.info(f"Found 7-day historical price for {symbol_name}: {price_7d_ago}")
+                                        cursor.execute(daily_data_query)
+                                        daily_data = cursor.fetchall()
+                                        
+                                        if daily_data and len(daily_data) > 0:
+                                            # Current price (most recent close)
+                                            current_price = signal.get('cmp', 0.0)
+                                            
+                                            # Calculate 7-day moving average
+                                            if len(daily_data) >= 7:
+                                                last_7_days = daily_data[:7]  # Most recent 7 days
+                                                seven_day_ma = sum(float(row['close'] if isinstance(row, dict) else row[1]) for row in last_7_days) / 7
+                                                signal['7d'] = round(seven_day_ma, 2)
+                                                
+                                                # 7-day percentage change (current vs 7 days ago)
+                                                if len(daily_data) > 7:
+                                                    price_7d_ago = float(daily_data[7]['close'] if isinstance(daily_data[7], dict) else daily_data[7][1])
+                                                    if price_7d_ago > 0 and current_price > 0:
+                                                        pct_change_7d = ((current_price - price_7d_ago) / price_7d_ago) * 100
+                                                        signal['7%'] = f"{pct_change_7d:.2f}%"
+                                                    else:
+                                                        signal['7%'] = "0.00%"
+                                                else:
+                                                    signal['7%'] = "0.00%"
+                                            else:
+                                                signal['7d'] = current_price if current_price else 0.0
+                                                signal['7%'] = "0.00%"
+                                            
+                                            # Calculate 30-day moving average
+                                            if len(daily_data) >= 30:
+                                                thirty_day_ma = sum(float(row['close'] if isinstance(row, dict) else row[1]) for row in daily_data) / 30
+                                                signal['30d'] = round(thirty_day_ma, 2)
+                                                
+                                                # 30-day percentage change (current vs 30 days ago)
+                                                price_30d_ago = float(daily_data[-1]['close'] if isinstance(daily_data[-1], dict) else daily_data[-1][1])
+                                                if price_30d_ago > 0 and current_price > 0:
+                                                    pct_change_30d = ((current_price - price_30d_ago) / price_30d_ago) * 100
+                                                    signal['30%'] = f"{pct_change_30d:.2f}%"
+                                                else:
+                                                    signal['30%'] = "0.00%"
+                                            elif len(daily_data) > 0:
+                                                # Use available data for 30-day average
+                                                available_day_ma = sum(float(row['close'] if isinstance(row, dict) else row[1]) for row in daily_data) / len(daily_data)
+                                                signal['30d'] = round(available_day_ma, 2)
+                                                signal['30%'] = "0.00%"
+                                            else:
+                                                signal['30d'] = current_price if current_price else 0.0
+                                                signal['30%'] = "0.00%"
+                                                
+                                            logger.info(f"Calculated historical metrics for {symbol_name}: 7d={signal.get('7d')}, 30d={signal.get('30d')}, 7%={signal.get('7%')}, 30%={signal.get('30%')}")
+                                        else:
+                                            logger.warning(f"No daily data found in {daily_table} for {symbol_name}")
+                                            signal['7d'] = signal.get('cmp', 0.0)
+                                            signal['30d'] = signal.get('cmp', 0.0) 
+                                            signal['7%'] = "0.00%"
+                                            signal['30%'] = "0.00%"
                                     else:
-                                        # Fallback to 5-minute data with adjusted intervals
-                                        # 30 days * 78 intervals per day = 2340 intervals
-                                        historical_30d_query = f"""
-                                        SELECT close 
-                                        FROM symbols."{matching_table}" 
-                                        ORDER BY datetime DESC
-                                        OFFSET 2340 LIMIT 1
-                                        """
-                                        cursor.execute(historical_30d_query)
-                                        historical_30d = cursor.fetchone()
-                                        if historical_30d:
-                                            price_30d_ago = float(historical_30d['close'] if isinstance(historical_30d, dict) else historical_30d[0])
-
-                                        # 7 days * 78 intervals per day = 546 intervals
-                                        historical_7d_query = f"""
-                                        SELECT close 
-                                        FROM symbols."{matching_table}" 
-                                        ORDER BY datetime DESC
-                                        OFFSET 546 LIMIT 1
-                                        """
-                                        cursor.execute(historical_7d_query)
-                                        historical_7d = cursor.fetchone()
-                                        if historical_7d:
-                                            price_7d_ago = float(historical_7d['close'] if isinstance(historical_7d, dict) else historical_7d[0])
+                                        logger.info(f"No daily table found for {symbol_name}, using current price for averages")
+                                        current_price = signal.get('cmp', 0.0)
+                                        signal['7d'] = current_price
+                                        signal['30d'] = current_price
+                                        signal['7%'] = "0.00%"
+                                        signal['30%'] = "0.00%"
 
                                 except Exception as hist_e:
                                     logger.warning(f"Could not fetch historical data for {symbol_name}: {hist_e}")
-                                    # Set fallback values only if CMP was found
-                                    if cmp_found and signal.get('cmp'):
-                                        price_30d_ago = signal.get('cmp', 0.0) * 0.95  # Assume 5% lower 30 days ago
-                                        price_7d_ago = signal.get('cmp', 0.0) * 0.98   # Assume 2% lower 7 days ago
+                                    # Set default values if historical calculation fails
+                                    current_price = signal.get('cmp', 0.0)
+                                    signal['7d'] = current_price
+                                    signal['30d'] = current_price
+                                    signal['7%'] = "0.00%"
+                                    signal['30%'] = "0.00%"
 
                             except Exception as e:
                                 logger.error(
@@ -332,45 +366,32 @@ class ExternalDBService:
                     else:
                         nt_value = cmp_numeric * qty
 
-                    # 30d - Price 30 days ago (use historical data if available, otherwise use current price)
-                    if cmp == "--":
-                        thirty_d_value = "--"
-                        thirty_percent = 0.0
-                    elif price_30d_ago > 0:
-                        thirty_d_value = price_30d_ago
-                        thirty_percent = ((cmp_numeric - price_30d_ago) / price_30d_ago * 100)
-                    else:
-                        thirty_d_value = cmp_numeric
-                        thirty_percent = 0.0
+                    # Use the calculated 7d and 30d values from daily data if available
+                    # Otherwise, set defaults
+                    if not signal.get('7d'):
+                        signal['7d'] = cmp_numeric if cmp != "--" else "--"
+                    if not signal.get('30d'):
+                        signal['30d'] = cmp_numeric if cmp != "--" else "--"
+                    if not signal.get('7%'):
+                        signal['7%'] = "0.00%"
+                    if not signal.get('30%'):
+                        signal['30%'] = "0.00%"
 
-                    # 7d - Price 7 days ago (use historical data if available, otherwise use current price)
-                    if cmp == "--":
-                        seven_d_value = "--"
-                        seven_percent = 0.0
-                    elif price_7d_ago > 0:
-                        seven_d_value = price_7d_ago
-                        seven_percent = ((cmp_numeric - price_7d_ago) / price_7d_ago * 100)
-                    else:
-                        seven_d_value = cmp_numeric
-                        seven_percent = 0.0
-
-                    # Add calculated values to signal
+                    # Add calculated values to signal (using new field names)
                     signal['iv'] = round(iv_value, 2)
                     signal['ip'] = round(ip_value, 2)
                     signal['nt'] = nt_value if nt_value == "--" else round(nt_value, 2)
-                    signal['thirty'] = thirty_d_value if thirty_d_value == "--" else round(thirty_d_value, 2)
-                    signal['dh'] = f"{thirty_percent:.2f}%" if thirty_d_value != "--" else "--"
-                    signal['seven'] = seven_d_value if seven_d_value == "--" else round(seven_d_value, 2)
-                    signal['ch'] = f"{seven_percent:.2f}%" if seven_d_value != "--" else "--"
-
-                    # Store numeric values for calculations
-                    signal['thirty_percent_numeric'] = round(thirty_percent, 2)
-                    signal['seven_percent_numeric'] = round(seven_percent, 2)
+                    
+                    # Map to legacy field names for compatibility
+                    signal['thirty'] = signal['30d']
+                    signal['seven'] = signal['7d'] 
+                    signal['dh'] = signal['30%']
+                    signal['ch'] = signal['7%']
 
                     if cmp == "--":
                         logger.info(f"Symbol {symbol_name}: No matching price table found - CMP set to '--'")
                     else:
-                        logger.info(f"Calculated values for {symbol_name}: IV={iv_value:.2f}, IP={ip_value:.2f}, NT={nt_value:.2f}, 30d={thirty_d_value:.2f}, 30%={thirty_percent:.2f}%, 7d={seven_d_value:.2f}, 7%={seven_percent:.2f}%")
+                        logger.info(f"Calculated values for {symbol_name}: IV={iv_value:.2f}, IP={ip_value:.2f}, NT={nt_value:.2f}, 30d={signal['30d']}, 30%={signal['30%']}, 7d={signal['7d']}, 7%={signal['7%']}")
 
                     signals.append(signal)
 
