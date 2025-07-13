@@ -164,6 +164,12 @@ ETFSignalsManager.prototype.loadSignals = function (resetData) {
                         self.signals = data.data || [];
                         self.filteredSignals = self.signals.slice();
                         
+                        // Reset to first page when loading new data
+                        if (resetData === true) {
+                            self.currentPage = 1;
+                            window.currentPage = 1;
+                        }
+                        
                         // Update displayed signals based on current page
                         self.updateDisplayedSignals();
                         self.renderSignalsTable();
@@ -923,6 +929,15 @@ ETFSignalsManager.prototype.updateDisplayedSignals = function () {
     this.displayedSignals = this.filteredSignals.slice(startIndex, endIndex);
     this.totalPages = Math.ceil(this.filteredSignals.length / this.itemsPerPage);
     
+    // Ensure we don't exceed available pages
+    if (this.currentPage > this.totalPages && this.totalPages > 0) {
+        this.currentPage = this.totalPages;
+        window.currentPage = this.currentPage;
+        startIndex = (this.currentPage - 1) * this.itemsPerPage;
+        endIndex = startIndex + this.itemsPerPage;
+        this.displayedSignals = this.filteredSignals.slice(startIndex, endIndex);
+    }
+    
     console.log("updateDisplayedSignals:", {
         currentPage: this.currentPage,
         itemsPerPage: this.itemsPerPage,
@@ -948,6 +963,13 @@ ETFSignalsManager.prototype.changeItemsPerPage = function (newItemsPerPage) {
     this.itemsPerPage = parseInt(newItemsPerPage) || 10;
     this.currentPage = 1;
     window.currentPage = 1; // Update global variable
+    
+    // Update the select dropdown to reflect the change
+    var select = document.getElementById("itemsPerPageSelect");
+    if (select) {
+        select.value = this.itemsPerPage;
+    }
+    
     this.updateDisplayedSignals();
     this.renderSignalsTable();
     this.updatePagination();
@@ -959,16 +981,34 @@ ETFSignalsManager.prototype.updatePagination = function () {
     var totalCount = document.getElementById("totalCount");
     var visibleSignalsCount = document.getElementById("visibleSignalsCount");
 
+    // Calculate the range being shown
+    var startItem = this.filteredSignals.length > 0 ? (this.currentPage - 1) * this.itemsPerPage + 1 : 0;
+    var endItem = Math.min(this.currentPage * this.itemsPerPage, this.filteredSignals.length);
+
     if (showingCount) {
         showingCount.textContent = this.displayedSignals.length;
     }
 
     if (totalCount) totalCount.textContent = this.signals.length;
-    if (visibleSignalsCount)
+    if (visibleSignalsCount) {
+        // Update both visible signals count elements
         visibleSignalsCount.textContent = this.filteredSignals.length;
+        var otherVisibleCount = document.querySelectorAll('#visibleSignalsCount');
+        otherVisibleCount.forEach(function(el) {
+            el.textContent = this.filteredSignals.length;
+        }.bind(this));
+    }
+
+    // Update the items per page selector
+    var itemsPerPageSelect = document.getElementById("itemsPerPageSelect");
+    if (itemsPerPageSelect && itemsPerPageSelect.value != this.itemsPerPage) {
+        itemsPerPageSelect.value = this.itemsPerPage;
+    }
 
     // Update pagination controls
     this.updatePaginationControls();
+    
+    console.log("Pagination updated - showing", startItem, "to", endItem, "of", this.filteredSignals.length, "items");
 };
 
 ETFSignalsManager.prototype.updatePaginationControls = function () {
@@ -1173,7 +1213,9 @@ function goToPage(pageNumber) {
 function changeItemsPerPage() {
     var select = document.getElementById("itemsPerPageSelect");
     if (select && window.etfSignalsManager) {
-        window.etfSignalsManager.changeItemsPerPage(select.value);
+        var newValue = parseInt(select.value) || 10;
+        console.log("Global changeItemsPerPage called with:", newValue);
+        window.etfSignalsManager.changeItemsPerPage(newValue);
     }
 }
 
