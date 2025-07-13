@@ -11,8 +11,8 @@ function ETFSignalsManager() {
     this.filteredSignals = []; // Filtered signals based on search/sort
     this.displayedSignals = []; // Currently displayed signals
     this.currentPage = 1; // Current page in pagination
-    this.itemsPerPage = 10; // Number of signals per page for initial load
-    this.loadMoreSize = 10; // Number of items to load when "Load More" is clicked
+    this.itemsPerPage = 10; // Number of signals per page
+    this.totalPages = 1; // Total number of pages
     this.isLoading = false; // Loading state flag
     this.refreshInterval = null; // Auto-refresh timer
 
@@ -35,18 +35,17 @@ function ETFSignalsManager() {
         { key: "chan", label: "%CHAN", visible: true },
         { key: "inv", label: "INV.", visible: true },
         { key: "tp", label: "TP", visible: false },
-        { key: "tva", label: "TVA", visible: false },
         { key: "tpr", label: "TPR", visible: false },
-        { key: "pl", label: "PL", visible: true },
+        { key: "tva", label: "TVA", visible: false },
+        { key: "cpl", label: "CPL", visible: true },
         { key: "ed", label: "ED", visible: false },
         { key: "exp", label: "EXP", visible: false },
         { key: "pr", label: "PR", visible: false },
         { key: "pp", label: "PP", visible: false },
         { key: "iv", label: "IV", visible: false },
         { key: "ip", label: "IP", visible: false },
-        { key: "nt", label: "NT", visible: false },
-        // { key: "qt", label: "QT", visible: false },
 
+        // { key: "qt", label: "QT", visible: false },
         { key: "actions", label: "ACTIONS", visible: true },
     ];
 
@@ -66,7 +65,7 @@ ETFSignalsManager.prototype.init = function () {
     this.setupEventListeners();
     this.setupColumnSettings();
     this.updateTableHeaders(); // Update headers based on column settings
-    this.createLoadMoreButton(); // Create load more button
+    this.createPaginationControls(); // Create pagination controls
     this.loadSignals(true);
     this.startAutoRefresh();
 };
@@ -127,11 +126,7 @@ ETFSignalsManager.prototype.loadSignals = function (resetData) {
     this.isLoading = true;
     this.showLoadingState();
 
-    var url =
-        "/api/etf-signals-data?page=" +
-        this.currentPage +
-        "&page_size=" +
-        this.itemsPerPage;
+    var url = "/api/etf-signals-data";
 
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url, true);
@@ -165,28 +160,13 @@ ETFSignalsManager.prototype.loadSignals = function (resetData) {
                     }
 
                     if (data.data && Array.isArray(data.data)) {
-                        if (self.currentPage === 1) {
-                            // First load - replace all data
-                            self.signals = data.data || [];
-                            self.displayedSignals = self.signals.slice(
-                                0,
-                                self.itemsPerPage,
-                            );
-                        } else {
-                            // Load more - append data
-                            self.signals = self.signals.concat(data.data || []);
-                            self.displayedSignals = self.signals.slice(
-                                0,
-                                self.itemsPerPage * self.currentPage,
-                            );
-                        }
-
+                        // Load all signals at once (server-side handles pagination)
+                        self.signals = data.data || [];
                         self.filteredSignals = self.signals.slice();
-
+                        
+                        // Update displayed signals based on current page
+                        self.updateDisplayedSignals();
                         self.renderSignalsTable();
-                        self.updatePagination();
-
-                        self.updateLoadMoreButton(data.has_more || false);
                         self.updatePagination();
                         self.showSuccessMessage(
                             "Loaded " + self.signals.length + " signals",
@@ -385,9 +365,12 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                     "₹" + (signal.tva || currentPrice * quantity).toFixed(2);
                 break;
             case "tpr":
-                cellValue = signal.tpr || "--";
+                // TPR = Target Percentage (TP * qty)
+                var tpValue = parseFloat(signal.tp || targetPrice);
+                var tprValue = tpValue * quantity;
+                cellValue = "₹" + tprValue.toFixed(2);
                 break;
-            case "pl":
+            case "cpl":
                 var plClass = pnl >= 0 ? "text-success" : "text-danger";
                 cellValue =
                     '<span class="fw-bold ' +
@@ -623,9 +606,9 @@ function sortTable(column) {
                     parseFloat(b.dataset.currentPrice || b.dataset.cmp) || 0;
                 break;
             case "pnl":
-            case "pl":
-                aValue = parseFloat(a.dataset.pnl || a.dataset.pl) || 0;
-                bValue = parseFloat(b.dataset.pnl || b.dataset.pl) || 0;
+            case "cpl":
+                aValue = parseFloat(a.dataset.pnl || a.dataset.cpl) || 0;
+                bValue = parseFloat(b.dataset.pnl || b.dataset.cpl) || 0;
                 break;
             case "investment":
             case "inv":
@@ -796,7 +779,7 @@ function resetDefaultColumns() {
             "cmp",
             "chan",
             "inv",
-            "pl",
+            "cpl",
             "ch",
             "actions",
         ];
@@ -916,19 +899,35 @@ ETFSignalsManager.prototype.applyFilters = function () {
         );
     });
 
-    // Reset to show first 10 items after filtering
-    this.displayedSignals = this.filteredSignals.slice(0, this.itemsPerPage);
+    // Reset to first page after filtering
     this.currentPage = 1;
+    this.updateDisplayedSignals();
     this.renderSignalsTable();
     this.updatePagination();
 };
 
-ETFSignalsManager.prototype.loadMoreSignals = function () {
-    var self = this;
-    if (this.isLoading) return;
+// Pagination Functions
+ETFSignalsManager.prototype.updateDisplayedSignals = function () {
+    var startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    var endIndex = startIndex + this.itemsPerPage;
+    this.displayedSignals = this.filteredSignals.slice(startIndex, endIndex);
+    this.totalPages = Math.ceil(this.filteredSignals.length / this.itemsPerPage);
+};
 
-    this.currentPage++;
-    this.loadSignals(false); // Don't reset data
+ETFSignalsManager.prototype.goToPage = function (pageNumber) {
+    if (pageNumber < 1 || pageNumber > this.totalPages) return;
+    this.currentPage = pageNumber;
+    this.updateDisplayedSignals();
+    this.renderSignalsTable();
+    this.updatePagination();
+};
+
+ETFSignalsManager.prototype.changeItemsPerPage = function (newItemsPerPage) {
+    this.itemsPerPage = parseInt(newItemsPerPage) || 10;
+    this.currentPage = 1;
+    this.updateDisplayedSignals();
+    this.renderSignalsTable();
+    this.updatePagination();
 };
 
 ETFSignalsManager.prototype.updatePagination = function () {
@@ -944,48 +943,117 @@ ETFSignalsManager.prototype.updatePagination = function () {
     if (visibleSignalsCount)
         visibleSignalsCount.textContent = this.filteredSignals.length;
 
-    // Update load more button
-    this.updateLoadMoreButton();
+    // Update pagination controls
+    this.updatePaginationControls();
 };
 
-ETFSignalsManager.prototype.updateLoadMoreButton = function () {
-    var loadMoreContainer = document.getElementById("loadMoreContainer");
-    var remainingCount =
-        this.filteredSignals.length - this.displayedSignals.length;
-
-    if (!loadMoreContainer) {
-        // Create load more container if it doesn't exist
-        this.createLoadMoreButton();
-        loadMoreContainer = document.getElementById("loadMoreContainer");
+ETFSignalsManager.prototype.updatePaginationControls = function () {
+    var paginationContainer = document.getElementById("paginationContainer");
+    if (!paginationContainer) {
+        // Create pagination container if it doesn't exist
+        this.createPaginationControls();
+        paginationContainer = document.getElementById("paginationContainer");
     }
 
-    if (remainingCount > 0) {
-        loadMoreContainer.style.display = "block";
-        var loadMoreBtn = document.getElementById("loadMoreBtn");
-        var remainingText = document.getElementById("remainingCount");
-
-        if (loadMoreBtn && remainingText) {
-            loadMoreBtn.disabled = false;
-            remainingText.textContent = remainingCount;
-        }
-    } else {
-        loadMoreContainer.style.display = "none";
+    if (this.totalPages <= 1) {
+        paginationContainer.style.display = "none";
+        return;
     }
+
+    paginationContainer.style.display = "block";
+    this.renderPaginationHTML();
 };
 
-ETFSignalsManager.prototype.createLoadMoreButton = function () {
+ETFSignalsManager.prototype.createPaginationControls = function () {
     var cardFooter = document.querySelector(".card-footer");
     if (cardFooter) {
-        var loadMoreHTML =
-            '<div id="loadMoreContainer" class="text-center mt-3" style="display: none;">' +
-            '<button id="loadMoreBtn" class="btn btn-outline-primary" onclick="loadMoreSignals()">' +
-            '<i class="fas fa-plus me-2"></i>Load More Data (<span id="remainingCount">0</span> remaining)' +
-            "</button>" +
-            "</div>";
+        var paginationHTML =
+            '<div id="paginationContainer" class="d-flex justify-content-between align-items-center mt-3">' +
+            '<div class="d-flex align-items-center">' +
+            '<label for="itemsPerPage" class="form-label me-2 mb-0">Items per page:</label>' +
+            '<select id="itemsPerPage" class="form-select form-select-sm" style="width: auto;" onchange="window.etfSignalsManager.changeItemsPerPage(this.value)">' +
+            '<option value="10">10</option>' +
+            '<option value="25">25</option>' +
+            '<option value="50">50</option>' +
+            '<option value="100">100</option>' +
+            '</select>' +
+            '</div>' +
+            '<div id="paginationButtons" class="d-flex align-items-center">' +
+            '</div>' +
+            '<div class="text-muted small">' +
+            'Showing <span id="startItem">1</span>-<span id="endItem">10</span> of <span id="totalItems">0</span> items' +
+            '</div>' +
+            '</div>';
 
-        cardFooter.insertAdjacentHTML("beforeend", loadMoreHTML);
+        cardFooter.insertAdjacentHTML("beforeend", paginationHTML);
     }
 };
+
+ETFSignalsManager.prototype.renderPaginationHTML = function () {
+    var buttonsContainer = document.getElementById("paginationButtons");
+    var startItem = document.getElementById("startItem");
+    var endItem = document.getElementById("endItem");
+    var totalItems = document.getElementById("totalItems");
+    var itemsPerPageSelect = document.getElementById("itemsPerPage");
+
+    if (!buttonsContainer) return;
+
+    // Update items per page selector
+    if (itemsPerPageSelect) {
+        itemsPerPageSelect.value = this.itemsPerPage;
+    }
+
+    // Update items display
+    var startIndex = (this.currentPage - 1) * this.itemsPerPage + 1;
+    var endIndex = Math.min(this.currentPage * this.itemsPerPage, this.filteredSignals.length);
+    
+    if (startItem) startItem.textContent = startIndex;
+    if (endItem) endItem.textContent = endIndex;
+    if (totalItems) totalItems.textContent = this.filteredSignals.length;
+
+    // Generate pagination buttons
+    var buttonsHTML = '';
+    
+    // Previous button
+    buttonsHTML += '<button class="btn btn-sm btn-outline-primary me-2" ' +
+        (this.currentPage === 1 ? 'disabled' : '') + 
+        ' onclick="window.etfSignalsManager.goToPage(' + (this.currentPage - 1) + ')">' +
+        '<i class="fas fa-chevron-left"></i></button>';
+
+    // Page numbers
+    var startPage = Math.max(1, this.currentPage - 2);
+    var endPage = Math.min(this.totalPages, this.currentPage + 2);
+
+    if (startPage > 1) {
+        buttonsHTML += '<button class="btn btn-sm btn-outline-primary me-1" onclick="window.etfSignalsManager.goToPage(1)">1</button>';
+        if (startPage > 2) {
+            buttonsHTML += '<span class="me-1">...</span>';
+        }
+    }
+
+    for (var i = startPage; i <= endPage; i++) {
+        buttonsHTML += '<button class="btn btn-sm ' + 
+            (i === this.currentPage ? 'btn-primary' : 'btn-outline-primary') + 
+            ' me-1" onclick="window.etfSignalsManager.goToPage(' + i + ')">' + i + '</button>';
+    }
+
+    if (endPage < this.totalPages) {
+        if (endPage < this.totalPages - 1) {
+            buttonsHTML += '<span class="me-1">...</span>';
+        }
+        buttonsHTML += '<button class="btn btn-sm btn-outline-primary me-1" onclick="window.etfSignalsManager.goToPage(' + this.totalPages + ')">' + this.totalPages + '</button>';
+    }
+
+    // Next button
+    buttonsHTML += '<button class="btn btn-sm btn-outline-primary ms-1" ' +
+        (this.currentPage === this.totalPages ? 'disabled' : '') + 
+        ' onclick="window.etfSignalsManager.goToPage(' + (this.currentPage + 1) + ')">' +
+        '<i class="fas fa-chevron-right"></i></button>';
+
+    buttonsContainer.innerHTML = buttonsHTML;
+};
+
+
 
 ETFSignalsManager.prototype.showLoadingState = function () {
     var tbody = document.getElementById("signalsTableBody");
@@ -1049,9 +1117,16 @@ function refreshSignals() {
     }
 }
 
-function loadMoreSignals() {
+// Pagination functions
+function goToPage(pageNumber) {
     if (window.etfSignalsManager) {
-        window.etfSignalsManager.loadMoreSignals();
+        window.etfSignalsManager.goToPage(pageNumber);
+    }
+}
+
+function changeItemsPerPage(newItemsPerPage) {
+    if (window.etfSignalsManager) {
+        window.etfSignalsManager.changeItemsPerPage(newItemsPerPage);
     }
 }
 
@@ -1733,18 +1808,4 @@ ETFSignalsManager.prototype.updatePagination = function () {
     }
 };
 
-ETFSignalsManager.prototype.loadMoreSignals = function () {
-    var self = this;
-    if (this.isLoading) return;
-
-    this.currentPage++;
-    this.loadSignals(false); // Don't reset data
-};
-
-ETFSignalsManager.prototype.updateLoadMoreButton = function (hasMore) {
-    var loadMoreBtn = document.getElementById("loadMoreBtn");
-    if (loadMoreBtn) {
-        loadMoreBtn.style.display = hasMore ? "block" : "none";
-        loadMoreBtn.disabled = this.isLoading;
-    }
-};
+// Old loadMoreSignals function removed - replaced with pagination
