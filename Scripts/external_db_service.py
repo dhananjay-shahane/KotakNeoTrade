@@ -377,6 +377,18 @@ class ExternalDBService:
                     if not signal.get('30%'):
                         signal['30%'] = "0.00%"
 
+                    # Calculate TPR (Target Price Return) percentage
+                    # TPR = (Target Price - Entry Price) / Entry Price * 100
+                    # For now, assuming a 10% target return if no specific target price is available
+                    target_price = entry_price * 1.1  # 10% target assumption
+                    if entry_price > 0:
+                        tpr_percent = ((target_price - entry_price) / entry_price) * 100
+                        signal['tpr'] = f"{tpr_percent:.2f}%"
+                        signal['tp'] = round(target_price, 2)  # Target Price
+                    else:
+                        signal['tpr'] = "--"
+                        signal['tp'] = "--"
+
                     # Add calculated values to signal (using new field names)
                     signal['iv'] = round(iv_value, 2)
                     signal['ip'] = round(ip_value, 2)

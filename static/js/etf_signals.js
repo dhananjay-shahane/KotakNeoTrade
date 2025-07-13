@@ -370,10 +370,15 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                     "₹" + (signal.tva || currentPrice * quantity).toFixed(2);
                 break;
             case "tpr":
-                // TPR = Target Percentage (TP * qty)
+                // TPR = Target Price Return percentage = (Target Price - Entry Price) / Entry Price * 100
                 var tpValue = parseFloat(signal.tp || targetPrice);
-                var tprValue = tpValue * quantity;
-                cellValue = "₹" + tprValue.toFixed(2);
+                var epValue = parseFloat(signal.ep || entryPrice);
+                if (epValue > 0) {
+                    var tprPercent = ((tpValue - epValue) / epValue) * 100;
+                    cellValue = tprPercent.toFixed(2) + "%";
+                } else {
+                    cellValue = "--";
+                }
                 break;
             case "cpl":
                 var plClass = pnl >= 0 ? "text-success" : "text-danger";
@@ -917,6 +922,16 @@ ETFSignalsManager.prototype.updateDisplayedSignals = function () {
     var endIndex = startIndex + this.itemsPerPage;
     this.displayedSignals = this.filteredSignals.slice(startIndex, endIndex);
     this.totalPages = Math.ceil(this.filteredSignals.length / this.itemsPerPage);
+    
+    console.log("updateDisplayedSignals:", {
+        currentPage: this.currentPage,
+        itemsPerPage: this.itemsPerPage,
+        totalSignals: this.filteredSignals.length,
+        startIndex: startIndex,
+        endIndex: endIndex,
+        displayedCount: this.displayedSignals.length,
+        totalPages: this.totalPages
+    });
 };
 
 ETFSignalsManager.prototype.goToPage = function (pageNumber) {
@@ -928,11 +943,13 @@ ETFSignalsManager.prototype.goToPage = function (pageNumber) {
 };
 
 ETFSignalsManager.prototype.changeItemsPerPage = function (newItemsPerPage) {
+    console.log("Changing items per page to:", newItemsPerPage);
     this.itemsPerPage = parseInt(newItemsPerPage) || 10;
     this.currentPage = 1;
     this.updateDisplayedSignals();
     this.renderSignalsTable();
     this.updatePagination();
+    console.log("Updated pagination with", this.itemsPerPage, "items per page");
 };
 
 ETFSignalsManager.prototype.updatePagination = function () {
