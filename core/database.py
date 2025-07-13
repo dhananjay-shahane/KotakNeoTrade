@@ -39,30 +39,25 @@ def get_db_connection():
     Returns a psycopg2 connection object
     """
     try:
-        # Use external PostgreSQL database from user
-        external_db_url = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
+        # Use PostgreSQL database from environment variables
+        database_url = os.environ.get('DATABASE_URL')
+        if not database_url:
+            # Build URL from individual components
+            host = os.environ.get('DB_HOST', 'dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com')
+            database = os.environ.get('DB_NAME', 'kotak_trading_db')
+            user = os.environ.get('DB_USER', 'kotak_trading_db_user')
+            password = os.environ.get('DB_PASSWORD', 'JRUlk8RutdgVcErSiUXqljDUdK8sBsYO')
+            port = os.environ.get('DB_PORT', '5432')
+            database_url = f"postgresql://{user}:{password}@{host}:{port}/{database}"
         
-        logger.info("🔗 Connecting to external PostgreSQL database")
+        logger.info("🔗 Connecting to PostgreSQL database")
         conn = psycopg2.connect(
-            external_db_url,
+            database_url,
             cursor_factory=RealDictCursor
         )
-        logger.info("✅ Successfully connected to external database")
+        logger.info("✅ Successfully connected to database")
         return conn
         
     except Exception as e:
-        logger.error(f"❌ External database connection failed: {e}")
-        # Fallback to local database
-        try:
-            database_url = os.environ.get('DATABASE_URL')
-            if database_url:
-                conn = psycopg2.connect(
-                    database_url,
-                    cursor_factory=RealDictCursor
-                )
-                logger.info("✅ Connected to local PostgreSQL database")
-                return conn
-        except Exception as local_e:
-            logger.error(f"❌ Local database connection also failed: {local_e}")
-            return None
+        logger.error(f"❌ Database connection failed: {e}")
         return None
