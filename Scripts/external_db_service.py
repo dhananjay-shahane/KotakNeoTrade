@@ -377,17 +377,49 @@ class ExternalDBService:
                     if not signal.get('30%'):
                         signal['30%'] = "0.00%"
 
-                    # Calculate TPR (Target Price Return) percentage
-                    # TPR = (Target Price - Entry Price) / Entry Price * 100
-                    # For now, assuming a 10% target return if no specific target price is available
-                    target_price = entry_price * 1.1  # 10% target assumption
-                    if entry_price > 0:
+                    # Calculate TP (Target Price) and TPR (Target Profit Return) properly
+                    # Check if we have existing target price data in the database
+                    # Otherwise calculate based on current performance
+                    
+                    if entry_price > 0 and cmp_numeric > 0:
+                        # Method 1: If we have current market price, calculate target based on trend
+                        # For upward trending stocks: TP = CMP + (CMP - EP) * 0.5 (conservative 50% of current gain)
+                        # For stable/declining: TP = EP * 1.10 (10% target)
+                        
+                        current_gain_percent = ((cmp_numeric - entry_price) / entry_price) * 100
+                        
+                        if current_gain_percent > 5:  # If stock is performing well (>5% gain)
+                            # Conservative approach: Target additional 50% of current gains
+                            additional_gain = (cmp_numeric - entry_price) * 0.5
+                            target_price = cmp_numeric + additional_gain
+                        elif current_gain_percent > 0:  # Small positive gain (0-5%)
+                            # Target 15% from entry price
+                            target_price = entry_price * 1.15
+                        else:  # Stock is down or flat
+                            # Conservative 10% target from entry price
+                            target_price = entry_price * 1.10
+                        
+                        # Calculate TPR based on actual target price
+                        # TPR = (Target Price - Entry Price) / Entry Price * 100
                         tpr_percent = ((target_price - entry_price) / entry_price) * 100
+                        
+                        signal['tp'] = round(target_price, 2)
                         signal['tpr'] = f"{tpr_percent:.2f}%"
-                        signal['tp'] = round(target_price, 2)  # Target Price
+                        
+                        # Also calculate Target Value Amount (TVA) = Target Price * Quantity
+                        signal['tva'] = round(target_price * qty, 2)
+                        
+                    elif entry_price > 0:  # No CMP but have entry price
+                        # Default 10% target
+                        target_price = entry_price * 1.10
+                        tpr_percent = 10.0
+                        signal['tp'] = round(target_price, 2)
+                        signal['tpr'] = f"{tpr_percent:.2f}%"
+                        signal['tva'] = round(target_price * qty, 2)
                     else:
-                        signal['tpr'] = "--"
                         signal['tp'] = "--"
+                        signal['tpr'] = "--"
+                        signal['tva'] = "--"
 
                     # Add calculated values to signal (using new field names)
                     signal['iv'] = round(iv_value, 2)
@@ -542,6 +574,11 @@ def get_etf_signals_data_json(page=1, page_size=10):
             if seven_value != "--" and (not isinstance(seven_value, (int, float)) or seven_value <= 0):
                 seven_value = cmp_display if cmp != "--" else "--"
 
+            # Get TP, TPR, and TVA values from signal
+            tp_value = signal.get('tp', "--")
+            tpr_value = signal.get('tpr', "--")
+            tva_value = signal.get('tva', "--")
+
             # Format the data structure with calculated values
             formatted_signal = {
                 'id': signal.get('id') or count,
@@ -559,6 +596,11 @@ def get_etf_signals_data_json(page=1, page_size=10):
                 'date': signal.get('date', ''),
                 'created_at': signal.get('created_at', ''),
                 'pos': signal.get('pos', 1),
+                
+                # Target Price calculations - properly calculated per trade
+                'tp': tp_value if tp_value == "--" else round(float(tp_value), 2),
+                'tpr': str(tpr_value),
+                'tva': tva_value if tva_value == "--" else round(float(tva_value), 2),
                 
                 # Calculated values using CMP - properly formatted
                 'iv': round(float(iv_value), 2),
@@ -579,6 +621,8 @@ def get_etf_signals_data_json(page=1, page_size=10):
                 'inv_formatted': f"₹{investment:.2f}",
                 'pl_formatted': "--" if cmp == "--" else f"₹{profit_loss:.2f}",
                 'current_value_formatted': "--" if cmp == "--" else f"₹{current_value:.2f}",
+                'tp_formatted': "--" if tp_value == "--" else f"₹{float(tp_value):.2f}",
+                'tva_formatted': "--" if tva_value == "--" else f"₹{float(tva_value):.2f}",
                 'iv_formatted': f"₹{float(iv_value):.2f}",
                 'ip_formatted': f"₹{float(ip_value):.2f}",
                 'nt_formatted': "--" if nt_value == "--" else f"₹{float(nt_value):.2f}",
