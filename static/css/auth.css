@@ -171,24 +171,35 @@ body, html {
     box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
 }
 
+.form-control::placeholder {
+    color: transparent;
+}
+
+.form-floating {
+    position: relative;
+}
+
 .form-floating label {
     position: absolute;
-    top: 50%;
+    top: 1rem;
     left: 0.75rem;
-    transform: translateY(-50%);
     color: var(--gray-600);
     font-size: 1rem;
     pointer-events: none;
     transition: all 0.3s ease;
     background: white;
     padding: 0 0.25rem;
+    z-index: 2;
 }
 
 .form-control:focus + label,
-.form-control:not(:placeholder-shown) + label {
-    top: 0;
+.form-control:not(:placeholder-shown) + label,
+.form-control:valid + label {
+    top: -0.5rem;
+    left: 0.5rem;
     font-size: 0.75rem;
     color: var(--primary-blue);
+    background: white;
 }
 
 .form-text {
