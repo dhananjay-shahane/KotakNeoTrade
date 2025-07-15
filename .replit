@@ -1,4 +1,4 @@
-modules = ["python-3.11", "c-clang14", "nodejs-20", "cpp-clang14"]
+modules = ["python-3.11", "nodejs-20", "c-clang14", "cpp-clang14"]
 
 [nix]
 channel = "stable-24_05"
@@ -77,3 +77,7 @@ args = "cd kotak_neo_project && python main.py"
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 5001
+externalPort = 3000
