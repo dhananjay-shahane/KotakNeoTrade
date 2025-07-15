@@ -24,31 +24,39 @@
         {% endwith %}
 
         <form method="POST" action="{{ url_for('register') }}" id="registerForm">
-            <div class="form-floating">
+            <div class="form-group">
+                <label for="email" class="form-label">
+                    <i class="fas fa-envelope"></i>Email Address
+                </label>
                 <input type="email" class="form-control" id="email" name="email" 
-                       placeholder=" " required autocomplete="email">
-                <label for="email"><i class="fas fa-envelope"></i>Email Address</label>
+                       placeholder="Enter your email address" required autocomplete="email">
                 <div class="form-text">Your email will be used for login</div>
             </div>
 
-            <div class="form-floating">
+            <div class="form-group">
+                <label for="mobile" class="form-label">
+                    <i class="fas fa-mobile-alt"></i>Mobile Number
+                </label>
                 <input type="tel" class="form-control" id="mobile" name="mobile" 
-                       placeholder=" " required pattern="[0-9]{10}" maxlength="10" autocomplete="tel">
-                <label for="mobile"><i class="fas fa-mobile-alt"></i>Mobile Number</label>
+                       placeholder="Enter 10-digit mobile number" required pattern="[0-9]{10}" maxlength="10" autocomplete="tel">
                 <div class="form-text">10-digit mobile number</div>
             </div>
 
-            <div class="form-floating">
+            <div class="form-group">
+                <label for="password" class="form-label">
+                    <i class="fas fa-lock"></i>Password
+                </label>
                 <input type="password" class="form-control" id="password" name="password" 
-                       placeholder=" " required minlength="6" autocomplete="new-password">
-                <label for="password"><i class="fas fa-lock"></i>Password</label>
+                       placeholder="Enter your password" required minlength="6" autocomplete="new-password">
                 <div class="form-text">Minimum 6 characters</div>
             </div>
 
-            <div class="form-floating">
+            <div class="form-group">
+                <label for="confirm_password" class="form-label">
+                    <i class="fas fa-lock"></i>Confirm Password
+                </label>
                 <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
-                       placeholder=" " required autocomplete="new-password">
-                <label for="confirm_password"><i class="fas fa-lock"></i>Confirm Password</label>
+                       placeholder="Confirm your password" required autocomplete="new-password">
                 <div id="passwordMatch" class="form-text"></div>
             </div>
 

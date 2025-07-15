@@ -155,77 +155,43 @@ body, html {
     position: relative;
 }
 
-.form-floating {
-    position: relative;
+.form-group {
     margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--gray-700);
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.form-label i {
+    margin-right: 0.5rem;
+    color: var(--gray-500);
+    width: 16px;
 }
 
 .form-control {
     width: 100%;
-    padding: 1rem 1rem 1rem 1rem;
+    padding: 0.875rem 1rem;
     border: 2px solid var(--gray-300);
-    border-radius: 12px;
+    border-radius: 8px;
     font-size: 1rem;
-    background: white !important;
-    color: var(--gray-800) !important;
-    transition: all 0.3s ease;
-    height: 56px;
-    position: relative;
-    z-index: 1;
+    background: white;
+    color: var(--gray-800);
+    transition: border-color 0.2s ease;
 }
 
 .form-control:focus {
     outline: none;
     border-color: var(--primary-blue);
     box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
-    background: white !important;
-    color: var(--gray-800) !important;
 }
 
 .form-control::placeholder {
-    color: transparent !important;
-}
-
-.form-floating label {
-    position: absolute;
-    top: 1rem;
-    left: 1rem;
-    color: var(--gray-600);
-    font-size: 1rem;
-    pointer-events: none;
-    transition: all 0.3s ease;
-    background: white;
-    padding: 0 0.5rem;
-    z-index: 2;
-    transform-origin: left center;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    line-height: 1;
-}
-
-.form-control:focus + label,
-.form-control:not(:placeholder-shown) + label,
-.form-control:valid + label {
-    top: -0.5rem;
-    left: 0.75rem;
-    font-size: 0.75rem;
-    color: var(--primary-blue);
-    background: white;
-    padding: 0 0.5rem;
-    transform: scale(1);
-}
-
-.form-floating label i {
-    font-size: 1rem;
     color: var(--gray-500);
-    min-width: 16px;
-}
-
-.form-control:focus + label i,
-.form-control:not(:placeholder-shown) + label i,
-.form-control:valid + label i {
-    color: var(--primary-blue);
 }
 
 /* Fix autofill styling */
