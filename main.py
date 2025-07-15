@@ -34,6 +34,15 @@ app.secret_key = os.environ.get("SESSION_SECRET", "demo-secret-key-2025")
 app.config['WTF_CSRF_ENABLED'] = False  # Disable CSRF for API endpoints
 app.config['DEBUG'] = True
 
+# Configure Flask-Mail
+app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER')
+app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
+app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
+app.config['MAIL_USE_SSL'] = os.environ.get('MAIL_USE_SSL', 'False').lower() == 'true'
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME')
+
 # Configure database for both root app and Kotak Neo integration
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///./trading_platform.db")
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
@@ -47,6 +56,10 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Please log in to access this page.'
+
+# Initialize Flask-Mail
+from flask_mail import Mail
+mail = Mail(app)
 
 # Initialize database for root app
 from models import db, User, init_db
@@ -193,16 +206,7 @@ def api_auth_login():
 @app.route('/api/auth/register', methods=['POST'])
 def api_auth_register():
     """API endpoint for registration via AJAX"""
-    from api.auth_api import register_api, EmailService
-    
-    # Configure email service if credentials are available
-    mail = None
-    try:
-        if os.environ.get('MAIL_USERNAME'):
-            mail = EmailService.configure_mail(app)
-    except Exception as e:
-        print(f"Email configuration failed: {e}")
-    
+    from api.auth_api import register_api
     return register_api(mail)
 
 @app.route('/api/auth/status')

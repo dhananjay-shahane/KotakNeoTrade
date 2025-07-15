@@ -39,6 +39,10 @@ class EmailService:
             return False
 
         try:
+            print(f"Attempting to send registration email to: {user_email}")
+            print(f"Using SMTP server: {mail.app.config.get('MAIL_SERVER')}")
+            print(f"Username: {username}, Password: {password}")
+            
             msg = Message(
                 subject="Welcome to Trading Platform - Your Account Details",
                 recipients=[user_email])
@@ -127,7 +131,9 @@ class EmailService:
 
                 <div class="content">
                     <h2>Hello {username}!</h2>
-                    <p>Congratulations! Your trading platform account has been successfully registered. Below are your login credentials:</p>
+                    <p>Congratulations! Your trading platform account has been successfully registered.</p>
+                    
+                    <p><strong>IMPORTANT:</strong> Below are your login credentials. Please save them securely as you will need them to access your account.</p>
 
                     <div class="credentials-box">
                         <h3>🔐 Your Login Credentials</h3>
@@ -178,9 +184,12 @@ class EmailService:
             """
 
             mail.send(msg)
+            print(f"Email sent successfully to {user_email}")
             return True
         except Exception as e:
             print(f"Error sending email: {e}")
+            import traceback
+            traceback.print_exc()
             return False
 
 
