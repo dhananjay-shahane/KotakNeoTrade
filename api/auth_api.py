@@ -17,16 +17,23 @@ class EmailService:
     @staticmethod
     def configure_mail(app):
         """Configure Flask-Mail with app"""
-        app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+        app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER',
+                                                   'smtp.gmail.com')
         app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
-        app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
-        app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
-        app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
-        app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER')
+        app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS',
+                                                    'True').lower() == 'true'
+        app.config['MAIL_USERNAME'] = os.environ.get(
+            'MAIL_USERNAME', 'dhanushahane01@gmail.com')
+        app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD',
+                                                     'Dh@nush#24')
+        app.config['MAIL_DEFAULT_SENDER'] = os.environ.get(
+            'MAIL_DEFAULT_SENDER')
 
         # Only configure mail if credentials are provided
         if not app.config['MAIL_USERNAME'] or not app.config['MAIL_PASSWORD']:
-            print("Email credentials not configured. Email service will be disabled.")
+            print(
+                "Email credentials not configured. Email service will be disabled."
+            )
             return None
 
         return Mail(app)
@@ -37,8 +44,9 @@ class EmailService:
         if not mail:
             print("Email service not configured, skipping email send")
             return False
-            
-        if not mail.app.config.get('MAIL_USERNAME') or not mail.app.config.get('MAIL_PASSWORD'):
+
+        if not mail.app.config.get('MAIL_USERNAME') or not mail.app.config.get(
+                'MAIL_PASSWORD'):
             print("Email credentials not configured, skipping email send")
             return False
 
