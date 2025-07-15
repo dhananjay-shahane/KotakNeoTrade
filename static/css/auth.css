@@ -432,6 +432,79 @@ body, html {
     }
 }
 
+/* Registration Steps */
+.registration-steps {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: var(--gray-100);
+    border-radius: 12px;
+    border-left: 4px solid var(--primary-blue);
+}
+
+.steps-title {
+    color: var(--gray-800);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.step-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.step-item:last-of-type {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.step-number {
+    width: 28px;
+    height: 28px;
+    background: var(--primary-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+}
+
+.step-content {
+    flex: 1;
+}
+
+.step-title {
+    font-weight: 600;
+    color: var(--gray-800);
+    font-size: 0.8rem;
+    margin-bottom: 0.25rem;
+}
+
+.step-description {
+    color: var(--gray-600);
+    font-size: 0.7rem;
+    line-height: 1.4;
+}
+
+.security-note {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: rgba(30, 64, 175, 0.1);
+    border-radius: 6px;
+    color: var(--primary-blue);
+    display: flex;
+    align-items: center;
+    font-size: 0.7rem;
+}
+
 @media (max-width: 480px) {
     .auth-right {
         flex: 0 0 auto;
@@ -443,5 +516,24 @@ body, html {
     
     .brand-title {
         font-size: 1.75rem;
+    }
+
+    .registration-steps {
+        margin-top: 1rem;
+        padding: 1rem;
+    }
+
+    .step-number {
+        width: 24px;
+        height: 24px;
+        font-size: 0.7rem;
+    }
+
+    .step-title {
+        font-size: 0.75rem;
+    }
+
+    .step-description {
+        font-size: 0.65rem;
     }
 }
