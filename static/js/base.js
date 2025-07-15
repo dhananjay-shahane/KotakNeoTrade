@@ -281,52 +281,58 @@ function showLoginModal() {
     loginModal.show();
 }
 
+// Broker redirect functions
+function redirectToKotakLogin() {
+    // Close the modal first
+    const modal = bootstrap.Modal.getInstance(document.getElementById('loginAccountModal'));
+    modal.hide();
+    
+    // Redirect to Kotak Neo project login page
+    window.location.href = '/kotak_neo_project/login';
+}
+
+function redirectToUpstoxLogin() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('loginAccountModal'));
+    modal.hide();
+    
+    Swal.fire({
+        icon: 'info',
+        title: 'Coming Soon',
+        text: 'Upstox integration is under development',
+        background: 'var(--card-bg)',
+        color: 'var(--text-primary)'
+    });
+}
+
+function redirectToAngelLogin() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('loginAccountModal'));
+    modal.hide();
+    
+    Swal.fire({
+        icon: 'info',
+        title: 'Coming Soon',
+        text: 'Angel One integration is under development',
+        background: 'var(--card-bg)',
+        color: 'var(--text-primary)'
+    });
+}
+
+function redirectToZerodhaLogin() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('loginAccountModal'));
+    modal.hide();
+    
+    Swal.fire({
+        icon: 'info',
+        title: 'Coming Soon',
+        text: 'Zerodha integration is under development',
+        background: 'var(--card-bg)',
+        color: 'var(--text-primary)'
+    });
+}
+
 function handleAccountLogin() {
-    const brokerId = document.getElementById('brokerId').value;
-    const userId = document.getElementById('userId').value;
-    const password = document.getElementById('password').value;
-    const totp = document.getElementById('totp').value;
-    
-    // Validate required fields
-    if (!brokerId || !userId || !password) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Missing Information',
-            text: 'Please fill in all required fields (Broker, User ID, and Password)',
-            background: 'var(--card-bg)',
-            color: 'var(--text-primary)'
-        });
-        return;
-    }
-    
-    // Show loading state
-    const loginBtn = event.target;
-    const originalText = loginBtn.innerHTML;
-    loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Logging in...';
-    loginBtn.disabled = true;
-    
-    // Prepare login data
-    const loginData = {
-        broker: brokerId,
-        user_id: userId,
-        password: password,
-        totp: totp || null
-    };
-    
-    // Make login request
-    fetch('/api/account/login', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(loginData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            // Close modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('loginAccountModal'));
-            modal.hide();
+    // This function is no longer needed as we use direct redirects
+    // Keeping for backward compatibility
             
             // Show success message
             Swal.fire({

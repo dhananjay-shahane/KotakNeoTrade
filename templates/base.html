@@ -282,48 +282,78 @@
         </div>
     </div>
 
-    <!-- Login Account Modal -->
+    <!-- Broker Selection Modal -->
     <div class="modal fade" id="loginAccountModal" tabindex="-1">
-        <div class="modal-dialog modal-md">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header border-bottom border-secondary">
                     <h5 class="modal-title">
-                        <i class="fas fa-university me-2"></i>Login Trading Account
+                        <i class="fas fa-university me-2"></i>Choose Your Broker
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <form id="loginForm">
-                        <div class="mb-3">
-                            <label for="brokerId" class="form-label">Broker</label>
-                            <select class="form-select" id="brokerId" required>
-                                <option value="">Select Broker</option>
-                                <option value="kotak">Kotak Securities</option>
-                                <option value="zerodha">Zerodha</option>
-                                <option value="upstox">Upstox</option>
-                                <option value="angel">Angel One</option>
-                            </select>
+                <div class="modal-body p-4">
+                    <div class="row g-4">
+                        <!-- Kotak Neo Card -->
+                        <div class="col-md-6">
+                            <div class="broker-card" onclick="redirectToKotakLogin()">
+                                <div class="broker-icon">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <h6 class="broker-name">Kotak Neo</h6>
+                                <p class="broker-description">Advanced trading platform with real-time data</p>
+                                <div class="broker-features">
+                                    <span class="feature-tag">TOTP Auth</span>
+                                    <span class="feature-tag">Real-time</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="userId" class="form-label">User ID</label>
-                            <input type="text" class="form-control" id="userId" placeholder="Enter your user ID" required>
+
+                        <!-- Upstox Card -->
+                        <div class="col-md-6">
+                            <div class="broker-card" onclick="redirectToUpstoxLogin()">
+                                <div class="broker-icon upstox">
+                                    <i class="fas fa-rocket"></i>
+                                </div>
+                                <h6 class="broker-name">Upstox</h6>
+                                <p class="broker-description">Fast and reliable trading experience</p>
+                                <div class="broker-features">
+                                    <span class="feature-tag">API Access</span>
+                                    <span class="feature-tag">Mobile First</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="password" placeholder="Enter your password" required>
+
+                        <!-- Angel One Card -->
+                        <div class="col-md-6">
+                            <div class="broker-card" onclick="redirectToAngelLogin()">
+                                <div class="broker-icon angel">
+                                    <i class="fas fa-feather-alt"></i>
+                                </div>
+                                <h6 class="broker-name">Angel One</h6>
+                                <p class="broker-description">Comprehensive trading and investment platform</p>
+                                <div class="broker-features">
+                                    <span class="feature-tag">SmartAPI</span>
+                                    <span class="feature-tag">Research</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="totp" class="form-label">TOTP (Optional)</label>
-                            <input type="text" class="form-control" id="totp" placeholder="Enter TOTP if required">
-                            <small class="form-text text-muted">6-digit code from your authenticator app</small>
+
+                        <!-- Zerodha Card -->
+                        <div class="col-md-6">
+                            <div class="broker-card" onclick="redirectToZerodhaLogin()">
+                                <div class="broker-icon zerodha">
+                                    <i class="fas fa-bolt"></i>
+                                </div>
+                                <h6 class="broker-name">Zerodha</h6>
+                                <p class="broker-description">India's largest discount broker platform</p>
+                                <div class="broker-features">
+                                    <span class="feature-tag">Kite API</span>
+                                    <span class="feature-tag">Low Cost</span>
+                                </div>
+                            </div>
                         </div>
-                    </form>
-                </div>
-                <div class="modal-footer border-top border-secondary">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="handleAccountLogin()">
-                        <i class="fas fa-sign-in-alt me-2"></i>Login
-                    </button>
+                    </div>
                 </div>
             </div>
         </div>

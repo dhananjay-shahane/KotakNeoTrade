@@ -346,6 +346,96 @@ body {
     box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
+/* Broker Selection Cards */
+.broker-card {
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.broker-card:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.2);
+}
+
+.broker-card:hover .broker-icon {
+    transform: scale(1.1);
+    color: var(--primary-color);
+}
+
+.broker-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    background: linear-gradient(135deg, var(--primary-color), #1d4ed8);
+    color: white;
+    font-size: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.broker-icon.upstox {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+}
+
+.broker-icon.angel {
+    background: linear-gradient(135deg, #e91e63, #9c27b0);
+}
+
+.broker-icon.zerodha {
+    background: linear-gradient(135deg, #387ed1, #1565c0);
+}
+
+.broker-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.broker-description {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    line-height: 1.4;
+}
+
+.broker-features {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.feature-tag {
+    background: var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.broker-card:hover .feature-tag {
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary-color);
+}
+
 /* Main Content */
 .main-content {
     margin-left: var(--sidebar-width);
