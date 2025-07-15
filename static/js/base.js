@@ -287,9 +287,8 @@ function redirectToKotakLogin() {
     const modal = bootstrap.Modal.getInstance(document.getElementById('loginAccountModal'));
     modal.hide();
     
-    // Open Kotak Neo project in a new window/tab since it's a separate Flask app
-    // You'll need to run the Kotak Neo project separately on a different port
-    window.open('http://0.0.0.0:5001', '_blank');
+    // Redirect to the Kotak Neo login page within the same application
+    window.location.href = '/kotak-neo/login';
 }
 
 function redirectToUpstoxLogin() {

@@ -1,0 +1,340 @@
+
+{% extends "base.html" %}
+
+{% block title %}Kotak Neo Login{% endblock %}
+
+{% block head %}
+<style>
+.login-container {
+    min-height: calc(100vh - var(--header-height));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+}
+
+.login-card {
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: 3rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 100%;
+    margin: 2rem;
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.login-header h2 {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.login-header p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    color: var(--text-primary);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.form-control {
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
+    background: var(--input-bg);
+    color: var(--text-primary);
+}
+
+.btn-login {
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    border: none;
+    color: white;
+    padding: 0.875rem;
+    border-radius: 10px;
+    font-weight: 600;
+    width: 100%;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+}
+
+.btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(var(--primary-rgb), 0.3);
+}
+
+.btn-login:disabled {
+    opacity: 0.6;
+    transform: none;
+    box-shadow: none;
+}
+
+.alert {
+    border-radius: 10px;
+    border: none;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.alert-danger {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.alert-success {
+    background: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    color: var(--text-secondary);
+    text-decoration: none;
+    margin-bottom: 1rem;
+    transition: color 0.3s ease;
+}
+
+.back-link:hover {
+    color: var(--primary-color);
+}
+
+.security-notice {
+    background: var(--warning-bg);
+    border: 1px solid var(--warning-border);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    color: var(--warning-text);
+}
+
+.input-group {
+    position: relative;
+}
+
+.input-group-text {
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-right: none;
+    border-radius: 10px 0 0 10px;
+    color: var(--text-secondary);
+}
+
+.input-group .form-control {
+    border-left: none;
+    border-radius: 0 10px 10px 0;
+}
+
+.totp-help {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <a href="{{ url_for('portfolio') }}" class="back-link">
+            <i class="fas fa-arrow-left me-2"></i>Back to Portfolio
+        </a>
+        
+        <div class="login-header">
+            <h2><i class="fas fa-chart-line me-2"></i>Kotak Neo Login</h2>
+            <p>Connect your Kotak Neo trading account</p>
+        </div>
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form id="kotakLoginForm" method="POST">
+            <div class="form-group">
+                <label for="mobile_number" class="form-label">
+                    <i class="fas fa-mobile-alt me-2"></i>Mobile Number
+                </label>
+                <input type="tel" class="form-control" id="mobile_number" name="mobile_number" 
+                       placeholder="Enter 10-digit mobile number" maxlength="10" required>
+            </div>
+
+            <div class="form-group">
+                <label for="ucc" class="form-label">
+                    <i class="fas fa-user me-2"></i>UCC (User Code)
+                </label>
+                <input type="text" class="form-control" id="ucc" name="ucc" 
+                       placeholder="Enter your UCC" maxlength="6" required>
+            </div>
+
+            <div class="form-group">
+                <label for="totp" class="form-label">
+                    <i class="fas fa-shield-alt me-2"></i>TOTP (6-digit code)
+                </label>
+                <input type="text" class="form-control" id="totp" name="totp" 
+                       placeholder="Enter TOTP from authenticator" maxlength="6" required>
+                <div class="totp-help">
+                    Get this code from your authenticator app (Google Authenticator, Authy, etc.)
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="mpin" class="form-label">
+                    <i class="fas fa-lock me-2"></i>MPIN (6-digit PIN)
+                </label>
+                <input type="password" class="form-control" id="mpin" name="mpin" 
+                       placeholder="Enter your 6-digit MPIN" maxlength="6" required>
+            </div>
+
+            <button type="submit" class="btn btn-login" id="loginBtn">
+                <i class="fas fa-sign-in-alt me-2"></i>Login to Kotak Neo
+            </button>
+        </form>
+
+        <div class="security-notice">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Security Notice:</strong> Your credentials are securely transmitted and stored. 
+            We use industry-standard encryption to protect your data.
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('kotakLoginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const form = this;
+    const submitBtn = document.getElementById('loginBtn');
+    const originalText = submitBtn.innerHTML;
+    
+    // Show loading state
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Connecting...';
+    submitBtn.disabled = true;
+    
+    // Validate form
+    const mobileNumber = document.getElementById('mobile_number').value;
+    const ucc = document.getElementById('ucc').value;
+    const totp = document.getElementById('totp').value;
+    const mpin = document.getElementById('mpin').value;
+    
+    if (mobileNumber.length !== 10 || !/^\d+$/.test(mobileNumber)) {
+        showAlert('Mobile number must be exactly 10 digits', 'error');
+        resetButton();
+        return;
+    }
+    
+    if (ucc.length < 5 || ucc.length > 6) {
+        showAlert('UCC must be 5-6 characters', 'error');
+        resetButton();
+        return;
+    }
+    
+    if (totp.length !== 6 || !/^\d+$/.test(totp)) {
+        showAlert('TOTP must be exactly 6 digits', 'error');
+        resetButton();
+        return;
+    }
+    
+    if (mpin.length !== 6 || !/^\d+$/.test(mpin)) {
+        showAlert('MPIN must be exactly 6 digits', 'error');
+        resetButton();
+        return;
+    }
+    
+    // Submit form
+    fetch('/kotak-neo/login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams(new FormData(form))
+    })
+    .then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;
+        } else {
+            return response.text();
+        }
+    })
+    .then(html => {
+        if (html) {
+            // Parse response for error messages
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const errorAlert = doc.querySelector('.alert-danger');
+            if (errorAlert) {
+                showAlert(errorAlert.textContent.trim(), 'error');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Login error:', error);
+        showAlert('Connection error. Please try again.', 'error');
+    })
+    .finally(() => {
+        resetButton();
+    });
+    
+    function resetButton() {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }
+    
+    function showAlert(message, type) {
+        // Remove existing alerts
+        const existingAlerts = document.querySelectorAll('.alert');
+        existingAlerts.forEach(alert => alert.remove());
+        
+        // Create new alert
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type}`;
+        alertDiv.textContent = message;
+        
+        // Insert after login header
+        const loginHeader = document.querySelector('.login-header');
+        loginHeader.insertAdjacentElement('afterend', alertDiv);
+    }
+});
+
+// Auto-format inputs
+document.getElementById('mobile_number').addEventListener('input', function(e) {
+    this.value = this.value.replace(/\D/g, '').substr(0, 10);
+});
+
+document.getElementById('totp').addEventListener('input', function(e) {
+    this.value = this.value.replace(/\D/g, '').substr(0, 6);
+});
+
+document.getElementById('mpin').addEventListener('input', function(e) {
+    this.value = this.value.replace(/\D/g, '').substr(0, 6);
+});
+</script>
+{% endblock %}

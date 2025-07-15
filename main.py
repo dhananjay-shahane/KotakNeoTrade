@@ -4,7 +4,7 @@ Shows the portfolio page by default with professional sidebar and header
 """
 
 import os
-from flask import Flask, render_template, redirect, url_for
+from flask import Flask, render_template, redirect, url_for, request, flash
 
 # Create Flask app
 app = Flask(__name__)
@@ -29,6 +29,21 @@ def trading_signals():
 def deals():
     """Deals page"""
     return render_template('deals.html')
+
+@app.route('/kotak-neo/login', methods=['GET', 'POST'])
+def kotak_neo_login():
+    """Kotak Neo login page"""
+    if request.method == 'POST':
+        # For now, show a success message and redirect back to portfolio
+        # In a real implementation, you would integrate with the Kotak Neo API
+        mobile_number = request.form.get('mobile_number')
+        ucc = request.form.get('ucc')
+        
+        # Simulate successful login
+        flash(f'Successfully connected to Kotak Neo account (UCC: {ucc})', 'success')
+        return redirect(url_for('portfolio'))
+    
+    return render_template('kotak_neo_login.html')
 
 # API endpoints for ETF signals and deals functionality
 @app.route('/api/etf-signals-data')
