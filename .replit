@@ -56,6 +56,15 @@ mode = "sequential"
 task = "shell.exec"
 args = "python main.py"
 
+[[workflows.workflow]]
+name = "Start Kotak Neo Project"
+author = 45050042
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd kotak_neo_project && python main.py"
+
 [[ports]]
 localPort = 5000
 externalPort = 80
