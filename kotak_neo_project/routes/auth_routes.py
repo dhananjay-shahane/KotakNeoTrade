@@ -56,14 +56,19 @@ def login():
                 session_data = result.get('session_data', {})
 
                 if client:
-                    # Store in Flask session
+                    # Store in Flask session (only serializable data)
                     session['authenticated'] = True
                     session['access_token'] = session_data.get('access_token')
                     session['session_token'] = session_data.get('session_token')
                     session['sid'] = session_data.get('sid')
                     session['ucc'] = ucc
-                    session['client'] = client
+                    session['mobile_number'] = mobile_number
+                    session['greeting_name'] = session_data.get('greetingName')
+                    session['user_id'] = session_data.get('user_id')
+                    session['client_code'] = session_data.get('client_code')
                     session.permanent = True
+                    
+                    # Note: Do not store the client object as it's not JSON serializable
 
                     # Prepare login response for database storage
                     login_response = {
