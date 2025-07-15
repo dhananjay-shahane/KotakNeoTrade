@@ -23,7 +23,7 @@ class EmailService:
         app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS',
                                                     'True').lower() == 'true'
         app.config['MAIL_USERNAME'] = os.environ.get(
-            'MAIL_USERNAME', 'dhananjayshahane24@gmail.com')
+            'MAIL_USERNAME', 'dhanushahane01@gmail.com')
         app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD',
                                                      'Dh@nush#24')
         app.config['MAIL_DEFAULT_SENDER'] = os.environ.get(
@@ -42,7 +42,7 @@ class EmailService:
             print(f"Attempting to send registration email to: {user_email}")
             print(f"Using SMTP server: {mail.app.config.get('MAIL_SERVER')}")
             print(f"Username: {username}, Password: {password}")
-            
+
             msg = Message(
                 subject="Welcome to Trading Platform - Your Account Details",
                 recipients=[user_email])
@@ -199,7 +199,9 @@ def handle_login():
         return redirect(url_for('portfolio'))
 
     if request.method == 'POST':
-        username = request.form.get('email', '').strip()  # Form field is named 'email' but contains username
+        username = request.form.get(
+            'email',
+            '').strip()  # Form field is named 'email' but contains username
         password = request.form.get('password', '').strip()
 
         if not username or not password:
@@ -300,7 +302,9 @@ def login_api():
     """API endpoint for login via AJAX"""
     try:
         data = request.get_json()
-        username = data.get('email', '').strip()  # Form field named 'email' but contains username
+        username = data.get(
+            'email',
+            '').strip()  # Form field named 'email' but contains username
         password = data.get('password', '').strip()
 
         if not username or not password:
