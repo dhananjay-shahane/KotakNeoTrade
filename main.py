@@ -20,7 +20,12 @@ def setup_library_paths():
 # Setup environment before importing Flask modules
 setup_library_paths()
 
-# Import main Flask application
+# Add kotak_neo_project to Python path
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'kotak_neo_project'))
+
+# Import main Flask application from kotak_neo_project
 from app import app
 
 def register_blueprints():
