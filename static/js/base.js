@@ -274,3 +274,171 @@ setInterval(updateTimestamps, 60000);
 
 // Run initial timestamp update
 document.addEventListener('DOMContentLoaded', updateTimestamps);
+
+// Trading Account Login Functions
+function showLoginModal() {
+    const loginModal = new bootstrap.Modal(document.getElementById('loginAccountModal'));
+    loginModal.show();
+}
+
+function handleAccountLogin() {
+    const brokerId = document.getElementById('brokerId').value;
+    const userId = document.getElementById('userId').value;
+    const password = document.getElementById('password').value;
+    const totp = document.getElementById('totp').value;
+    
+    // Validate required fields
+    if (!brokerId || !userId || !password) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Missing Information',
+            text: 'Please fill in all required fields (Broker, User ID, and Password)',
+            background: 'var(--card-bg)',
+            color: 'var(--text-primary)'
+        });
+        return;
+    }
+    
+    // Show loading state
+    const loginBtn = event.target;
+    const originalText = loginBtn.innerHTML;
+    loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Logging in...';
+    loginBtn.disabled = true;
+    
+    // Prepare login data
+    const loginData = {
+        broker: brokerId,
+        user_id: userId,
+        password: password,
+        totp: totp || null
+    };
+    
+    // Make login request
+    fetch('/api/account/login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(loginData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('loginAccountModal'));
+            modal.hide();
+            
+            // Show success message
+            Swal.fire({
+                icon: 'success',
+                title: 'Login Successful',
+                text: `Connected to ${brokerId.toUpperCase()} account successfully!`,
+                background: 'var(--card-bg)',
+                color: 'var(--text-primary)',
+                timer: 3000,
+                showConfirmButton: false
+            });
+            
+            // Update UI to show logged in state
+            updateLoginState(true, brokerId, userId);
+            
+            // Clear form
+            document.getElementById('loginForm').reset();
+        } else {
+            // Show error message
+            Swal.fire({
+                icon: 'error',
+                title: 'Login Failed',
+                text: data.message || 'Unable to connect to trading account. Please check your credentials.',
+                background: 'var(--card-bg)',
+                color: 'var(--text-primary)'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Login error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Connection Error',
+            text: 'Unable to connect to the server. Please try again.',
+            background: 'var(--card-bg)',
+            color: 'var(--text-primary)'
+        });
+    })
+    .finally(() => {
+        // Reset button state
+        loginBtn.innerHTML = originalText;
+        loginBtn.disabled = false;
+    });
+}
+
+function updateLoginState(isLoggedIn, broker, userId) {
+    const loginButton = document.querySelector('.btn-login-account');
+    const accountsHeader = document.querySelector('.accounts-header h6');
+    
+    if (isLoggedIn) {
+        // Update button to show logout option
+        loginButton.innerHTML = '<i class="fas fa-sign-out-alt me-2"></i>Logout';
+        loginButton.onclick = handleAccountLogout;
+        loginButton.classList.add('btn-logout');
+        
+        // Update header to show connected account
+        accountsHeader.innerHTML = `<i class="fas fa-check-circle me-2"></i>Connected: ${broker.toUpperCase()}`;
+        accountsHeader.style.color = 'var(--success-color)';
+    } else {
+        // Reset to login state
+        loginButton.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>Login Account';
+        loginButton.onclick = showLoginModal;
+        loginButton.classList.remove('btn-logout');
+        
+        // Reset header
+        accountsHeader.innerHTML = '<i class="fas fa-university me-2"></i>Trading Accounts';
+        accountsHeader.style.color = 'var(--text-secondary)';
+    }
+}
+
+function handleAccountLogout() {
+    Swal.fire({
+        title: 'Logout Confirmation',
+        text: 'Are you sure you want to logout from your trading account?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Logout',
+        cancelButtonText: 'Cancel',
+        background: 'var(--card-bg)',
+        color: 'var(--text-primary)',
+        confirmButtonColor: 'var(--danger-color)',
+        cancelButtonColor: 'var(--secondary-color)'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Make logout request
+            fetch('/api/account/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Update UI regardless of response
+                updateLoginState(false);
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Logged Out',
+                    text: 'Successfully logged out from trading account.',
+                    background: 'var(--card-bg)',
+                    color: 'var(--text-primary)',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            })
+            .catch(error => {
+                console.error('Logout error:', error);
+                // Update UI even if request fails
+                updateLoginState(false);
+            });
+        }
+    });
+}
+document.addEventListener('DOMContentLoaded', updateTimestamps);
