@@ -52,6 +52,7 @@ class EmailService:
 
             msg = Message(
                 subject="Welcome to Trading Platform - Your Account Details",
+                sender=mail.app.config.get('MAIL_DEFAULT_SENDER') or mail.app.config.get('MAIL_USERNAME'),
                 recipients=[user_email])
 
             # Email HTML template
