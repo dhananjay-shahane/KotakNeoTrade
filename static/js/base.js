@@ -282,25 +282,24 @@ function showLoginModal() {
 }
 
 // Broker redirect functions
-function redirectToKotakLogin() {
+function redirectToKotakNeoLogin() {
     const modal = bootstrap.Modal.getInstance(document.getElementById('loginAccountModal'));
-    modal.hide();
+    if (modal) {
+        modal.hide();
+    }
 
-    // Redirect to the Kotak Neo project login page
-    window.location.href = '/kotak_neo_project/login';
+    // Redirect to the actual Kotak Neo project login page
+    window.location.href = 'http://0.0.0.0:5001/login';
 }
 
 function redirectToUpstoxLogin() {
     const modal = bootstrap.Modal.getInstance(document.getElementById('loginAccountModal'));
-    modal.hide();
+    if (modal) {
+        modal.hide();
+    }
 
-    Swal.fire({
-        icon: 'info',
-        title: 'Coming Soon',
-        text: 'Upstox integration is under development',
-        background: 'var(--card-bg)',
-        color: 'var(--text-primary)'
-    });
+    // For demo purposes, show an alert
+    alert('Upstox integration coming soon!');
 }
 
 function redirectToAngelLogin() {
@@ -452,3 +451,13 @@ function handleAccountLogout() {
     });
 }
 document.addEventListener('DOMContentLoaded', updateTimestamps);
+
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const content = document.querySelector('.content');
+
+    if (sidebar && content) {
+        sidebar.classList.toggle('collapsed');
+        content.classList.toggle('expanded');
+    }
+}
