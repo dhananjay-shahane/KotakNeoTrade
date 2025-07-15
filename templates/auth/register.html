@@ -1,124 +1,99 @@
-{% extends "base.html" %}
+{% extends "auth/base_auth.html" %}
 
 {% block title %}Register - Trading Platform{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-5">
-            <div class="card shadow-sm mt-4">
-                <div class="card-header bg-success text-white text-center">
-                    <h4><i class="fas fa-user-plus me-2"></i>Create Account</h4>
-                </div>
-                <div class="card-body">
-                    <!-- Flash messages -->
-                    {% with messages = get_flashed_messages(with_categories=true) %}
-                        {% if messages %}
-                            {% for category, message in messages %}
-                                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }} alert-dismissible fade show" role="alert">
-                                    {{ message }}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                </div>
-                            {% endfor %}
-                        {% endif %}
-                    {% endwith %}
-
-                    <form method="POST" action="{{ url_for('register') }}" id="registerForm">
-                        <div class="mb-3">
-                            <label for="email" class="form-label">
-                                <i class="fas fa-envelope me-1"></i>Email Address *
-                            </label>
-                            <input type="email" class="form-control" id="email" name="email" 
-                                   placeholder="Enter your email address" required>
-                            <div class="form-text">Your email will be used for login</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="mobile" class="form-label">
-                                <i class="fas fa-mobile-alt me-1"></i>Mobile Number *
-                            </label>
-                            <input type="tel" class="form-control" id="mobile" name="mobile" 
-                                   placeholder="Enter your mobile number" required>
-                            <div class="form-text">10-digit mobile number</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="password" class="form-label">
-                                <i class="fas fa-lock me-1"></i>Password *
-                            </label>
-                            <input type="password" class="form-control" id="password" name="password" 
-                                   placeholder="Create a password" required>
-                            <div class="form-text">Minimum 6 characters</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="confirm_password" class="form-label">
-                                <i class="fas fa-lock me-1"></i>Confirm Password *
-                            </label>
-                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
-                                   placeholder="Confirm your password" required>
-                            <div id="passwordMatch" class="form-text"></div>
-                        </div>
-
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-success" id="submitBtn">
-                                <i class="fas fa-user-plus me-2"></i>Register Account
-                            </button>
-                        </div>
-                    </form>
-
-                    <hr>
-                    
-                    <div class="text-center">
-                        <p class="mb-0">Already have an account?</p>
-                        <a href="{{ url_for('login') }}" class="btn btn-outline-primary">
-                            <i class="fas fa-sign-in-alt me-2"></i>Login Here
-                        </a>
+<div class="auth-card">
+    <div class="auth-header">
+        <h4><i class="fas fa-user-plus me-2"></i>Create Account</h4>
+        <div class="subtitle">Join our trading platform today</div>
+    </div>
+    
+    <div class="auth-body">
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
-                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('register') }}" id="registerForm">
+            <div class="form-floating">
+                <input type="email" class="form-control" id="email" name="email" 
+                       placeholder="name@example.com" required>
+                <label for="email"><i class="fas fa-envelope me-2"></i>Email Address</label>
+                <div class="form-text">Your email will be used for login</div>
             </div>
 
-            <!-- Registration Benefits Card -->
-            <div class="card shadow-sm mt-3">
-                <div class="card-body">
-                    <h6 class="card-title text-center">
-                        <i class="fas fa-star text-warning me-2"></i>
-                        Account Benefits
-                    </h6>
-                    <div class="row text-center">
-                        <div class="col-6 mb-2">
-                            <i class="fas fa-chart-line text-primary"></i>
-                            <small class="d-block">Portfolio Tracking</small>
-                        </div>
-                        <div class="col-6 mb-2">
-                            <i class="fas fa-bell text-warning"></i>
-                            <small class="d-block">Trade Signals</small>
-                        </div>
-                        <div class="col-6">
-                            <i class="fas fa-shield-alt text-success"></i>
-                            <small class="d-block">Secure Access</small>
-                        </div>
-                        <div class="col-6">
-                            <i class="fas fa-handshake text-info"></i>
-                            <small class="d-block">Deal Management</small>
-                        </div>
-                    </div>
-                </div>
+            <div class="form-floating">
+                <input type="tel" class="form-control" id="mobile" name="mobile" 
+                       placeholder="Mobile Number" required>
+                <label for="mobile"><i class="fas fa-mobile-alt me-2"></i>Mobile Number</label>
+                <div class="form-text">10-digit mobile number</div>
             </div>
 
-            <!-- Registration Process Info -->
-            <div class="card shadow-sm mt-3">
-                <div class="card-body text-center">
-                    <h6 class="card-title">
-                        <i class="fas fa-info-circle text-info me-2"></i>
-                        How Registration Works
-                    </h6>
-                    <ol class="list-unstyled text-start small">
-                        <li><i class="fas fa-check text-success me-2"></i>Fill in your details above</li>
-                        <li><i class="fas fa-check text-success me-2"></i>System generates your unique username</li>
-                        <li><i class="fas fa-check text-success me-2"></i>Account created instantly</li>
-                        <li><i class="fas fa-check text-success me-2"></i>Login with email and password</li>
-                    </ol>
+            <div class="form-floating">
+                <input type="password" class="form-control" id="password" name="password" 
+                       placeholder="Password" required>
+                <label for="password"><i class="fas fa-lock me-2"></i>Password</label>
+                <div class="form-text">Minimum 6 characters</div>
+            </div>
+
+            <div class="form-floating">
+                <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
+                       placeholder="Confirm Password" required>
+                <label for="confirm_password"><i class="fas fa-lock me-2"></i>Confirm Password</label>
+                <div id="passwordMatch" class="form-text"></div>
+            </div>
+
+            <button type="submit" class="btn-auth" id="submitBtn">
+                <i class="fas fa-user-plus me-2"></i>Create Account
+            </button>
+        </form>
+
+        <div class="auth-divider">
+            <span>Already have an account?</span>
+        </div>
+        
+        <div class="auth-links">
+            <a href="{{ url_for('login') }}" class="btn-outline-auth">
+                <i class="fas fa-sign-in-alt"></i>Sign In
+            </a>
+        </div>
+
+        <div class="features-showcase">
+            <h6 class="text-center mb-0" style="color: var(--text-dark); font-weight: 600;">
+                <i class="fas fa-gift text-success me-2"></i>What You Get
+            </h6>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="feature-title">Portfolio Tracking</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div class="feature-title">Trade Signals</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="feature-title">Secure Access</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-handshake"></i>
+                    </div>
+                    <div class="feature-title">Deal Management</div>
                 </div>
             </div>
         </div>
