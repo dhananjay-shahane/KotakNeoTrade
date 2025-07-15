@@ -26,16 +26,16 @@ endblock %} {% block content %}
         <form method="POST" action="{{ url_for('login') }}" id="loginForm">
             <div class="form-group">
                 <label for="email" class="form-label">
-                    <i class="fas fa-envelope"></i>Email Address
+                    <i class="fas fa-user"></i>Username or Email
                 </label>
                 <input
-                    type="email"
+                    type="text"
                     class="form-control"
                     id="email"
                     name="email"
-                    placeholder="Enter your email address"
+                    placeholder="Enter your username or email"
                     required
-                    autocomplete="email"
+                    autocomplete="username"
                 />
             </div>
 

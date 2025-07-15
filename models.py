@@ -37,17 +37,36 @@ class User(UserMixin, db.Model):
         return check_password_hash(self.password_hash, password)
     
     @staticmethod
-    def generate_username(email):
-        """Generate unique username from email"""
-        base_username = email.split('@')[0]
-        counter = 1
-        username = base_username
+    def generate_username(email, mobile=None):
+        """Generate unique 5-letter username from email and mobile combination"""
+        import re
         
+        # Extract letters from email (before @)
+        email_part = re.sub(r'[^a-zA-Z]', '', email.split('@')[0].lower())
+        
+        # Extract digits from mobile number
+        mobile_digits = ''
+        if mobile:
+            mobile_digits = re.sub(r'[^0-9]', '', mobile)
+        
+        # Create base username with 3 letters from email + 2 digits from mobile
+        email_letters = email_part[:3] if len(email_part) >= 3 else email_part.ljust(3, 'x')
+        mobile_nums = mobile_digits[:2] if len(mobile_digits) >= 2 else mobile_digits.ljust(2, '0')
+        
+        base_username = email_letters + mobile_nums
+        username = base_username
+        counter = 1
+        
+        # Ensure uniqueness by checking database
         while User.query.filter_by(username=username).first():
-            username = f"{base_username}{counter}"
+            # If collision, modify last character with counter
+            if counter < 10:
+                username = base_username[:-1] + str(counter)
+            else:
+                username = base_username[:-2] + str(counter)[:2]
             counter += 1
             
-        return username
+        return username[:5]  # Ensure exactly 5 characters
     
     @staticmethod
     def generate_random_password(length=8):

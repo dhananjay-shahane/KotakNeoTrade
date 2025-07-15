@@ -13,31 +13,35 @@ import string
 # Email configuration - moved from main app
 class EmailService:
     """Email service for sending registration confirmations"""
-    
+
     @staticmethod
     def configure_mail(app):
         """Configure Flask-Mail with app"""
-        app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+        app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER',
+                                                   'smtp.gmail.com')
         app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
-        app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
-        app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
-        app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
-        app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER')
-        
+        app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS',
+                                                    'True').lower() == 'true'
+        app.config['MAIL_USERNAME'] = os.environ.get(
+            'MAIL_USERNAME', 'dhananjayshahane24@gmail.com')
+        app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD',
+                                                     'Dh@nush#24')
+        app.config['MAIL_DEFAULT_SENDER'] = os.environ.get(
+            'MAIL_DEFAULT_SENDER')
+
         return Mail(app)
-    
+
     @staticmethod
     def send_registration_email(mail, user_email, username, password):
         """Send registration confirmation email with credentials"""
         if not mail or not mail.app.config.get('MAIL_USERNAME'):
             print("Email service not configured, skipping email send")
             return False
-            
+
         try:
             msg = Message(
                 subject="Welcome to Trading Platform - Your Account Details",
-                recipients=[user_email]
-            )
+                recipients=[user_email])
 
             # Email HTML template
             msg.html = f"""
@@ -183,25 +187,28 @@ def handle_login():
     """Handle user login"""
     if current_user.is_authenticated:
         return redirect(url_for('portfolio'))
-    
+
     if request.method == 'POST':
-        email = request.form.get('email', '').strip()
+        login_field = request.form.get('email', '').strip()  # Can be email or username
         password = request.form.get('password', '').strip()
-        
-        if not email or not password:
-            flash('Email and password are required', 'error')
+
+        if not login_field or not password:
+            flash('Username/Email and password are required', 'error')
             return render_template('auth/login.html')
-        
-        user = User.query.filter_by(email=email).first()
-        
+
+        # Try to find user by email first, then by username
+        user = User.query.filter_by(email=login_field).first()
+        if not user:
+            user = User.query.filter_by(username=login_field).first()
+
         if user and user.check_password(password):
             login_user(user)
             flash(f'Welcome back, {user.username}!', 'success')
             next_page = request.args.get('next')
             return redirect(next_page or url_for('portfolio'))
         else:
-            flash('Invalid email or password', 'error')
-    
+            flash('Invalid username/email or password', 'error')
+
     return render_template('auth/login.html')
 
 
@@ -209,67 +216,68 @@ def handle_register(mail=None):
     """Handle user registration with optional email service"""
     if current_user.is_authenticated:
         return redirect(url_for('portfolio'))
-    
+
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
         mobile = request.form.get('mobile', '').strip()
         password = request.form.get('password', '').strip()
         confirm_password = request.form.get('confirm_password', '').strip()
-        
+
         # Validate inputs
         if not all([email, mobile, password, confirm_password]):
             flash('All fields are required', 'error')
             return render_template('auth/register.html')
-        
+
         if password != confirm_password:
             flash('Passwords do not match', 'error')
             return render_template('auth/register.html')
-        
+
         if len(password) < 6:
             flash('Password must be at least 6 characters long', 'error')
             return render_template('auth/register.html')
-        
+
         # Check if user already exists
         if User.query.filter_by(email=email).first():
             flash('Email already registered', 'error')
             return render_template('auth/register.html')
-        
+
         if User.query.filter_by(mobile=mobile).first():
             flash('Mobile number already registered', 'error')
             return render_template('auth/register.html')
-        
+
         # Create new user
         try:
-            username = User.generate_username(email)
-            
-            user = User(
-                email=email,
-                mobile=mobile,
-                username=username
-            )
+            # Generate 5-letter username from email + mobile combination
+            username = User.generate_username(email, mobile)
+
+            user = User(email=email, mobile=mobile, username=username)
             user.set_password(password)
-            
+
             db.session.add(user)
             db.session.commit()
-            
+
             # Send registration email if email service is configured
             email_sent = False
             if mail:
-                email_sent = EmailService.send_registration_email(mail, email, username, password)
-            
+                email_sent = EmailService.send_registration_email(
+                    mail, email, username, password)
+
             if email_sent:
-                flash('Registration successful! Please check your email for login credentials.', 'success')
+                flash(
+                    'Registration successful! Please check your email for login credentials.',
+                    'success')
             else:
-                flash(f'Registration successful! Your username is: {username}', 'success')
-                flash('You can now login with your email and password', 'info')
-            
+                flash(f'Registration successful! Your username is: {username}',
+                      'success')
+                flash('You can now login with your username/email and password', 'info')
+
             return redirect(url_for('login'))
-            
+
         except Exception as e:
             db.session.rollback()
             flash('Registration failed. Please try again.', 'error')
             print(f"Registration error: {e}")
-    
+
     return render_template('auth/register.html')
 
 
@@ -285,27 +293,39 @@ def login_api():
     """API endpoint for login via AJAX"""
     try:
         data = request.get_json()
-        email = data.get('email', '').strip()
+        login_field = data.get('email', '').strip()  # Can be email or username
         password = data.get('password', '').strip()
-        
-        if not email or not password:
-            return jsonify({'success': False, 'message': 'Email and password are required'}), 400
-        
-        user = User.query.filter_by(email=email).first()
-        
+
+        if not login_field or not password:
+            return jsonify({
+                'success': False,
+                'message': 'Username/Email and password are required'
+            }), 400
+
+        # Try to find user by email first, then by username
+        user = User.query.filter_by(email=login_field).first()
+        if not user:
+            user = User.query.filter_by(username=login_field).first()
+
         if user and user.check_password(password):
             login_user(user)
             return jsonify({
-                'success': True, 
+                'success': True,
                 'message': f'Welcome back, {user.username}!',
                 'redirect_url': url_for('portfolio')
             })
         else:
-            return jsonify({'success': False, 'message': 'Invalid email or password'}), 401
-            
+            return jsonify({
+                'success': False,
+                'message': 'Invalid username/email or password'
+            }), 401
+
     except Exception as e:
         print(f"Login API error: {e}")
-        return jsonify({'success': False, 'message': 'Login failed. Please try again.'}), 500
+        return jsonify({
+            'success': False,
+            'message': 'Login failed. Please try again.'
+        }), 500
 
 
 def register_api(mail=None):
@@ -316,60 +336,79 @@ def register_api(mail=None):
         mobile = data.get('mobile', '').strip()
         password = data.get('password', '').strip()
         confirm_password = data.get('confirm_password', '').strip()
-        
+
         # Validate inputs
         if not all([email, mobile, password, confirm_password]):
-            return jsonify({'success': False, 'message': 'All fields are required'}), 400
-        
+            return jsonify({
+                'success': False,
+                'message': 'All fields are required'
+            }), 400
+
         if password != confirm_password:
-            return jsonify({'success': False, 'message': 'Passwords do not match'}), 400
-        
+            return jsonify({
+                'success': False,
+                'message': 'Passwords do not match'
+            }), 400
+
         if len(password) < 6:
-            return jsonify({'success': False, 'message': 'Password must be at least 6 characters long'}), 400
-        
+            return jsonify({
+                'success':
+                False,
+                'message':
+                'Password must be at least 6 characters long'
+            }), 400
+
         # Check if user already exists
         if User.query.filter_by(email=email).first():
-            return jsonify({'success': False, 'message': 'Email already registered'}), 409
-        
+            return jsonify({
+                'success': False,
+                'message': 'Email already registered'
+            }), 409
+
         if User.query.filter_by(mobile=mobile).first():
-            return jsonify({'success': False, 'message': 'Mobile number already registered'}), 409
-        
-        # Create new user
-        username = User.generate_username(email)
-        
-        user = User(
-            email=email,
-            mobile=mobile,
-            username=username
-        )
+            return jsonify({
+                'success': False,
+                'message': 'Mobile number already registered'
+            }), 409
+
+        # Create new user with 5-letter username from email + mobile combination
+        username = User.generate_username(email, mobile)
+
+        user = User(email=email, mobile=mobile, username=username)
         user.set_password(password)
-        
+
         db.session.add(user)
         db.session.commit()
-        
+
         # Send registration email if email service is configured
         email_sent = False
         if mail:
-            email_sent = EmailService.send_registration_email(mail, email, username, password)
-        
+            email_sent = EmailService.send_registration_email(
+                mail, email, username, password)
+
         message = 'Registration successful! Please check your email for login credentials.' if email_sent else f'Registration successful! Your username is: {username}'
-        
+
         return jsonify({
             'success': True,
             'message': message,
             'username': username,
             'redirect_url': url_for('login')
         })
-        
+
     except Exception as e:
         db.session.rollback()
         print(f"Registration API error: {e}")
-        return jsonify({'success': False, 'message': 'Registration failed. Please try again.'}), 500
+        return jsonify({
+            'success': False,
+            'message': 'Registration failed. Please try again.'
+        }), 500
 
 
 def check_user_status():
     """API endpoint to check if user is authenticated"""
     return jsonify({
-        'authenticated': current_user.is_authenticated,
-        'username': current_user.username if current_user.is_authenticated else None
+        'authenticated':
+        current_user.is_authenticated,
+        'username':
+        current_user.username if current_user.is_authenticated else None
     })
