@@ -32,6 +32,7 @@
 </head>
 <body>
 
+    {% if session.authenticated %}
     <!-- Fixed Header -->
     <header class="main-header">
         <div class="header-left">
@@ -91,11 +92,11 @@
 
             <div class="user-profile" onclick="toggleUserMenu()">
                 <div class="user-avatar text-muted">
-                    T
+                    {{ session.get('greeting_name', session.get('ucc', 'User'))[0].upper() }}
                 </div>
                 <div class="user-info">
-                    <h6>Trading Platform</h6>
-                    <small>Demo Mode</small>
+                    <h6>{{ session.get('greeting_name', session.get('ucc', 'User')) }}</h6>
+                    <small>{{ session.get('ucc', 'Trading Account') }}</small>
                 </div>
                 <i class="fas fa-chevron-down" style="font-size: 0.75rem; color: var(--text-secondary);"></i>
             </div>
@@ -110,20 +111,50 @@
         <div class="sidebar-nav">
             <div class="nav-item">
                 <a href="{{ url_for('main_routes.dashboard') }}" class="nav-link {% if request.endpoint == 'main_routes.dashboard' %}active{% endif %}">
-                    <i class="fas fa-briefcase nav-icon"></i>
-                    <span>Portfolio</span>
+                    <i class="fas fa-tachometer-alt nav-icon"></i>
+                    <span>Dashboard</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="{{ url_for('main_routes.etf_signals_advanced') }}" class="nav-link {% if request.endpoint == 'main_routes.etf_signals_advanced' %}active{% endif %}">
-                    <i class="fas fa-chart-line nav-icon"></i>
+                    <i class="fas fa-chart-bar nav-icon"></i>
                     <span>Trading Signals</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="{{ url_for('main_routes.basic_trade_signals') }}" class="nav-link {% if request.endpoint == 'main_routes.basic_trade_signals' %}active{% endif %}">
+                    <i class="fas fa-signal nav-icon"></i>
+                    <span>Basic Trade Signals</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="{{ url_for('main_routes.deals') }}" class="nav-link {% if request.endpoint == 'main_routes.deals' %}active{% endif %}">
                     <i class="fas fa-handshake nav-icon"></i>
                     <span>Deals</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="{{ url_for('main_routes.charts') }}" class="nav-link {% if request.endpoint == 'main_routes.charts' %}active{% endif %}">
+                    <i class="fas fa-chart-area nav-icon"></i>
+                    <span>Charts</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="{{ url_for('main_routes.show_orders') }}" class="nav-link {% if request.endpoint == 'main_routes.show_orders' %}active{% endif %}">
+                    <i class="fas fa-list-alt nav-icon"></i>
+                    <span>Orders</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="{{ url_for('main_routes.show_positions') }}" class="nav-link {% if request.endpoint == 'main_routes.show_positions' %}active{% endif %}">
+                    <i class="fas fa-chart-pie nav-icon"></i>
+                    <span>Positions</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="{{ url_for('main_routes.show_holdings') }}" class="nav-link {% if request.endpoint == 'main_routes.show_holdings' %}active{% endif %}">
+                    <i class="fas fa-hands-helping nav-icon"></i>
+                    <span>Holdings</span>
                 </a>
             </div>
         </div>

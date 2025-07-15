@@ -16,32 +16,26 @@ trading_functions = TradingFunctions()
 
 @main_bp.route('/')
 def index():
-    """Root route - go directly to dashboard without login"""
-    return redirect(url_for('main_routes.dashboard'))
+    """Root route - redirect to dashboard if authenticated, else login"""
+    if validate_current_session():
+        return redirect(url_for('main_routes.dashboard'))
+    return redirect(url_for('auth_routes.login'))
 
 
 @main_bp.route('/dashboard')
+@require_auth
 def dashboard():
     """Main dashboard with portfolio overview"""
     try:
         client = session.get('client')
         if not client:
-            # Create a demo client for display purposes
-            client = "demo_client"
+            flash('Session expired. Please login again.', 'error')
+            return redirect(url_for('auth_routes.login'))
 
         # Fetch dashboard data with error handling
         dashboard_data = {}
         try:
-            if client == "demo_client":
-                # Provide demo data for display
-                raw_dashboard_data = {
-                    'positions': [],
-                    'holdings': [],
-                    'limits': {},
-                    'recent_orders': []
-                }
-            else:
-                raw_dashboard_data = trading_functions.get_dashboard_data(client)
+            raw_dashboard_data = trading_functions.get_dashboard_data(client)
 
             # Ensure dashboard_data is always a dictionary
             if isinstance(raw_dashboard_data, dict):
@@ -119,18 +113,21 @@ def dashboard():
 
 
 @main_bp.route('/positions')
+@require_auth
 def show_positions():
     """Show positions page"""
     return render_template('positions.html')
 
 
 @main_bp.route('/holdings')
+@require_auth
 def show_holdings():
     """Show holdings page"""
     return render_template('holdings.html')
 
 
 @main_bp.route('/orders')
+@require_auth
 def show_orders():
     """Show orders page"""
     return render_template('orders.html')
