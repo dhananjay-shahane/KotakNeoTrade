@@ -120,7 +120,7 @@ def login():
 def register():
     """User registration page"""
     from api.auth_api import handle_register, EmailService
-    
+
     # Configure email service if credentials are available
     mail = None
     try:
@@ -128,7 +128,7 @@ def register():
             mail = EmailService.configure_mail(app)
     except Exception as e:
         print(f"Email configuration failed: {e}")
-    
+
     return handle_register(mail)
 
 @app.route('/logout')
@@ -154,35 +154,35 @@ def register_kotak_neo_blueprints():
         kotak_path = os.path.join(os.path.dirname(__file__), 'kotak_neo_project')
         if kotak_path not in sys.path:
             sys.path.insert(0, kotak_path)
-        
+
         # Import blueprints first to avoid database conflicts
         from kotak_neo_project.routes.auth_routes import auth_bp
         from kotak_neo_project.routes.main_routes import main_bp
-        
+
         # Register blueprints with URL prefix
         app.register_blueprint(auth_bp, url_prefix='/kotak')
         app.register_blueprint(main_bp, url_prefix='/kotak')
-        
+
         # Initialize database after blueprints are registered
         try:
             from kotak_neo_project.core.database import db as kotak_db
             kotak_db.init_app(app)
-            
+
             with app.app_context():
                 kotak_db.create_all()
                 print("Kotak Neo database initialized successfully")
         except Exception as e:
             print(f"Database initialization optional: {e}")
-        
+
         # Add redirect routes
         @app.route('/kotak')
         @app.route('/kotak/')
         def kotak_neo_index():
             """Redirect to Kotak Neo login"""
             return redirect('/kotak/login')
-            
+
         print("Successfully registered Kotak Neo blueprints")
-        
+
     except Exception as e:
         print(f"Error registering Kotak Neo blueprints: {e}")
         # Fallback to simple redirect
@@ -251,11 +251,30 @@ def page_not_found(error):
     """Custom 404 error page"""
     return render_template('base.html'), 404
 
+# Modified the main block to initialize the external database table
 if __name__ == '__main__':
-    print("Starting Kotak Neo Template Application...")
-    print("Default page: Portfolio")
+    with app.app_context():
+        db.create_all()
+        print("Database tables created successfully")
+
+    # Initialize external database table
+    from api.auth_api import create_external_users_table
+    if create_external_users_table():
+        print("External users table created successfully")
+    else:
+        print("Failed to create external users table")
+
+    # Configure email service
+    from api.auth_api import EmailService
+    mail = EmailService.configure_mail(app)
+
+    # Register blueprints
+    from api.auth_api import auth_blueprint
+    from api.signals_api import signals_blueprint
+    from api.deals_api import deals_blueprint
+    app.register_blueprint(auth_blueprint)
+    app.register_blueprint(signals_blueprint)
+    app.register_blueprint(deals_blueprint)
+
+    print("Application started successfully")
     app.run(host='0.0.0.0', port=5000, debug=True)
-
-
-
-

@@ -9,34 +9,73 @@ from models import db, User
 import secrets
 
 
-def store_user_in_external_db(username, password, email, mobile, trading_account_name=None):
-    """Store user registration details in external database"""
+def get_external_db_connection():
+    """Get connection to external PostgreSQL database"""
     try:
-        # Connect to external database (using SQLite for now, can be changed to other DB)
-        conn = sqlite3.connect('external_users.db')
+        import psycopg2
+        db_config = {
+            'host': "dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com",
+            'database': "kotak_trading_db",
+            'user': "kotak_trading_db_user",
+            'password': "JRUlk8RutdgVcErSiUXqljDUdK8sBsYO",
+            'port': 5432
+        }
+        conn = psycopg2.connect(**db_config)
+        return conn
+    except Exception as e:
+        print(f"Error connecting to external database: {e}")
+        return None
+
+
+def create_external_users_table():
+    """Create external_users table if it doesn't exist"""
+    conn = get_external_db_connection()
+    if not conn:
+        return False
+    
+    try:
         cursor = conn.cursor()
-        
-        # Create external_users table if it doesn't exist
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS external_users (
-                sr INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT NOT NULL,
-                password TEXT NOT NULL,
-                email TEXT NOT NULL,
-                mobile TEXT NOT NULL,
-                trading_account_name TEXT,
-                datetime TEXT NOT NULL
+                sr SERIAL PRIMARY KEY,
+                username VARCHAR(50) NOT NULL UNIQUE,
+                password VARCHAR(255) NOT NULL,
+                email VARCHAR(120) NOT NULL UNIQUE,
+                mobile VARCHAR(15) NOT NULL,
+                trading_account_name VARCHAR(100),
+                datetime TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Error creating external_users table: {e}")
+        return False
+
+
+def store_user_in_external_db(username, password, email, mobile, trading_account_name=None):
+    """Store user registration details in external PostgreSQL database"""
+    try:
+        # Ensure table exists
+        create_external_users_table()
+        
+        conn = get_external_db_connection()
+        if not conn:
+            return False
+        
+        cursor = conn.cursor()
         
         # Insert user data
         current_datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         cursor.execute('''
             INSERT INTO external_users (username, password, email, mobile, trading_account_name, datetime)
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s)
         ''', (username, password, email, mobile, trading_account_name or 'Not Set', current_datetime))
         
         conn.commit()
+        cursor.close()
         conn.close()
         
         return True
@@ -46,8 +85,43 @@ def store_user_in_external_db(username, password, email, mobile, trading_account
         return False
 
 
+def authenticate_user_from_external_db(username, password):
+    """Authenticate user from external PostgreSQL database"""
+    try:
+        conn = get_external_db_connection()
+        if not conn:
+            return None
+        
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT sr, username, email, mobile, trading_account_name, datetime 
+            FROM external_users 
+            WHERE username = %s AND password = %s
+        ''', (username, password))
+        
+        result = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        
+        if result:
+            return {
+                'sr': result[0],
+                'username': result[1],
+                'email': result[2],
+                'mobile': result[3],
+                'trading_account_name': result[4],
+                'datetime': result[5]
+            }
+        
+        return None
+        
+    except Exception as e:
+        print(f"Error authenticating user from external database: {e}")
+        return None
+
+
 import string
-import sqlite3
+import psycopg2
 from datetime import datetime
 
 
@@ -257,16 +331,37 @@ def handle_login():
             flash('Username and password are required', 'error')
             return render_template('auth/login.html')
 
-        # Find user by username only
-        user = User.query.filter_by(username=username).first()
-
-        if user and user.check_password(password):
+        # First try to authenticate from external database
+        external_user = authenticate_user_from_external_db(username, password)
+        
+        if external_user:
+            # Check if user exists in local database, if not create one
+            user = User.query.filter_by(username=username).first()
+            if not user:
+                # Create user in local database from external data
+                user = User(
+                    username=username,
+                    email=external_user['email'],
+                    mobile=external_user['mobile']
+                )
+                user.set_password(password)
+                db.session.add(user)
+                db.session.commit()
+            
             login_user(user)
             flash(f'Welcome back, {user.username}!', 'success')
             next_page = request.args.get('next')
             return redirect(next_page or url_for('portfolio'))
         else:
-            flash('Invalid username or password', 'error')
+            # Fallback to local database authentication
+            user = User.query.filter_by(username=username).first()
+            if user and user.check_password(password):
+                login_user(user)
+                flash(f'Welcome back, {user.username}!', 'success')
+                next_page = request.args.get('next')
+                return redirect(next_page or url_for('portfolio'))
+            else:
+                flash('Invalid username or password', 'error')
 
     return render_template('auth/login.html')
 
@@ -372,10 +467,23 @@ def login_api():
                 'message': 'Username and password are required'
             }), 400
 
-        # Find user by username only
-        user = User.query.filter_by(username=username).first()
-
-        if user and user.check_password(password):
+        # First try to authenticate from external database
+        external_user = authenticate_user_from_external_db(username, password)
+        
+        if external_user:
+            # Check if user exists in local database, if not create one
+            user = User.query.filter_by(username=username).first()
+            if not user:
+                # Create user in local database from external data
+                user = User(
+                    username=username,
+                    email=external_user['email'],
+                    mobile=external_user['mobile']
+                )
+                user.set_password(password)
+                db.session.add(user)
+                db.session.commit()
+            
             login_user(user)
             return jsonify({
                 'success': True,
@@ -383,10 +491,20 @@ def login_api():
                 'redirect_url': url_for('portfolio')
             })
         else:
-            return jsonify({
-                'success': False,
-                'message': 'Invalid username or password'
-            }), 401
+            # Fallback to local database authentication
+            user = User.query.filter_by(username=username).first()
+            if user and user.check_password(password):
+                login_user(user)
+                return jsonify({
+                    'success': True,
+                    'message': f'Welcome back, {user.username}!',
+                    'redirect_url': url_for('portfolio')
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'message': 'Invalid username or password'
+                }), 401
 
     except Exception as e:
         print(f"Login API error: {e}")
