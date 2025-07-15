@@ -29,12 +29,27 @@ app.secret_key = os.environ.get("SESSION_SECRET", "demo-secret-key-2025")
 app.config['WTF_CSRF_ENABLED'] = False  # Disable CSRF for API endpoints
 app.config['DEBUG'] = True
 
-# Configure database for Kotak Neo integration
+# Configure database for both root app and Kotak Neo integration
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///./trading_platform.db")
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
 }
+
+# Initialize Flask-Login
+from flask_login import LoginManager
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+login_manager.login_message = 'Please log in to access this page.'
+
+# Initialize database for root app
+from models import db, User, init_db
+init_db(app)
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 # Add static file routes for Kotak Neo project
 @app.route('/kotak/static/<path:filename>')
@@ -46,23 +61,133 @@ def kotak_static(filename):
 
 @app.route('/')
 def index():
-    """Home page - show portfolio by default"""
-    return redirect(url_for('portfolio'))
+    """Home page - check if user is logged in"""
+    from flask_login import current_user
+    if current_user.is_authenticated:
+        return redirect(url_for('portfolio'))
+    else:
+        return redirect(url_for('login'))
 
 @app.route('/portfolio')
 def portfolio():
-    """Portfolio page"""
+    """Portfolio page - requires login"""
+    from flask_login import login_required, current_user
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
     return render_template('portfolio.html')
 
 @app.route('/trading-signals')
 def trading_signals():
-    """Trading Signals page"""
+    """Trading Signals page - requires login"""
+    from flask_login import current_user
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
     return render_template('trading_signals.html')
 
 @app.route('/deals')
 def deals():
-    """Deals page"""
+    """Deals page - requires login"""
+    from flask_login import current_user
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
     return render_template('deals.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """User login page"""
+    from flask_login import login_user, current_user
+    
+    if current_user.is_authenticated:
+        return redirect(url_for('portfolio'))
+    
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '').strip()
+        
+        if not email or not password:
+            flash('Email and password are required', 'error')
+            return render_template('auth/login.html')
+        
+        user = User.query.filter_by(email=email).first()
+        
+        if user and user.check_password(password):
+            login_user(user)
+            flash(f'Welcome back, {user.username}!', 'success')
+            next_page = request.args.get('next')
+            return redirect(next_page or url_for('portfolio'))
+        else:
+            flash('Invalid email or password', 'error')
+    
+    return render_template('auth/login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    """User registration page"""
+    from flask_login import current_user
+    
+    if current_user.is_authenticated:
+        return redirect(url_for('portfolio'))
+    
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        mobile = request.form.get('mobile', '').strip()
+        password = request.form.get('password', '').strip()
+        confirm_password = request.form.get('confirm_password', '').strip()
+        
+        # Validate inputs
+        if not all([email, mobile, password, confirm_password]):
+            flash('All fields are required', 'error')
+            return render_template('auth/register.html')
+        
+        if password != confirm_password:
+            flash('Passwords do not match', 'error')
+            return render_template('auth/register.html')
+        
+        if len(password) < 6:
+            flash('Password must be at least 6 characters long', 'error')
+            return render_template('auth/register.html')
+        
+        # Check if user already exists
+        if User.query.filter_by(email=email).first():
+            flash('Email already registered', 'error')
+            return render_template('auth/register.html')
+        
+        if User.query.filter_by(mobile=mobile).first():
+            flash('Mobile number already registered', 'error')
+            return render_template('auth/register.html')
+        
+        # Create new user
+        try:
+            username = User.generate_username(email)
+            
+            user = User(
+                email=email,
+                mobile=mobile,
+                username=username
+            )
+            user.set_password(password)
+            
+            db.session.add(user)
+            db.session.commit()
+            
+            flash(f'Registration successful! Your username is: {username}', 'success')
+            flash('You can now login with your email and password', 'info')
+            return redirect(url_for('login'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash('Registration failed. Please try again.', 'error')
+            print(f"Registration error: {e}")
+    
+    return render_template('auth/register.html')
+
+@app.route('/logout')
+def logout():
+    """User logout"""
+    from flask_login import logout_user
+    logout_user()
+    flash('You have been logged out', 'info')
+    return redirect(url_for('login'))
 
 # Setup library paths for Kotak Neo project compatibility
 def setup_library_paths():

@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}Register - Trading Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-success text-white text-center">
+                    <h4><i class="fas fa-user-plus me-2"></i>Create Account</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Flash messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" action="{{ url_for('register') }}" id="registerForm">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">
+                                <i class="fas fa-envelope me-1"></i>Email Address *
+                            </label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   placeholder="Enter your email address" required>
+                            <div class="form-text">Your email will be used for login</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="mobile" class="form-label">
+                                <i class="fas fa-mobile-alt me-1"></i>Mobile Number *
+                            </label>
+                            <input type="tel" class="form-control" id="mobile" name="mobile" 
+                                   placeholder="Enter your mobile number" required>
+                            <div class="form-text">10-digit mobile number</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">
+                                <i class="fas fa-lock me-1"></i>Password *
+                            </label>
+                            <input type="password" class="form-control" id="password" name="password" 
+                                   placeholder="Create a password" required>
+                            <div class="form-text">Minimum 6 characters</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label">
+                                <i class="fas fa-lock me-1"></i>Confirm Password *
+                            </label>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
+                                   placeholder="Confirm your password" required>
+                            <div id="passwordMatch" class="form-text"></div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success" id="submitBtn">
+                                <i class="fas fa-user-plus me-2"></i>Register Account
+                            </button>
+                        </div>
+                    </form>
+
+                    <hr>
+                    
+                    <div class="text-center">
+                        <p class="mb-0">Already have an account?</p>
+                        <a href="{{ url_for('login') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login Here
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Registration Benefits Card -->
+            <div class="card shadow-sm mt-3">
+                <div class="card-body">
+                    <h6 class="card-title text-center">
+                        <i class="fas fa-star text-warning me-2"></i>
+                        Account Benefits
+                    </h6>
+                    <div class="row text-center">
+                        <div class="col-6 mb-2">
+                            <i class="fas fa-chart-line text-primary"></i>
+                            <small class="d-block">Portfolio Tracking</small>
+                        </div>
+                        <div class="col-6 mb-2">
+                            <i class="fas fa-bell text-warning"></i>
+                            <small class="d-block">Trade Signals</small>
+                        </div>
+                        <div class="col-6">
+                            <i class="fas fa-shield-alt text-success"></i>
+                            <small class="d-block">Secure Access</small>
+                        </div>
+                        <div class="col-6">
+                            <i class="fas fa-handshake text-info"></i>
+                            <small class="d-block">Deal Management</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Registration Process Info -->
+            <div class="card shadow-sm mt-3">
+                <div class="card-body text-center">
+                    <h6 class="card-title">
+                        <i class="fas fa-info-circle text-info me-2"></i>
+                        How Registration Works
+                    </h6>
+                    <ol class="list-unstyled text-start small">
+                        <li><i class="fas fa-check text-success me-2"></i>Fill in your details above</li>
+                        <li><i class="fas fa-check text-success me-2"></i>System generates your unique username</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Account created instantly</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Login with email and password</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border-radius: 10px;
+}
+
+.card-header {
+    border-radius: 10px 10px 0 0 !important;
+}
+
+.form-control:focus {
+    border-color: var(--bs-success);
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-success-rgb), 0.25);
+}
+
+.form-control.is-valid {
+    border-color: #198754;
+}
+
+.form-control.is-invalid {
+    border-color: #dc3545;
+}
+
+.btn {
+    border-radius: 6px;
+    padding: 10px 20px;
+}
+
+.alert {
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.form-text {
+    font-size: 12px;
+}
+
+@media (max-width: 576px) {
+    .container-fluid {
+        padding: 10px;
+    }
+    
+    .card {
+        margin-top: 15px !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('registerForm');
+    const emailInput = document.getElementById('email');
+    const mobileInput = document.getElementById('mobile');
+    const passwordInput = document.getElementById('password');
+    const confirmPasswordInput = document.getElementById('confirm_password');
+    const passwordMatchDiv = document.getElementById('passwordMatch');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Real-time password matching
+    function checkPasswordMatch() {
+        const password = passwordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+        
+        if (confirmPassword.length > 0) {
+            if (password === confirmPassword) {
+                confirmPasswordInput.classList.remove('is-invalid');
+                confirmPasswordInput.classList.add('is-valid');
+                passwordMatchDiv.innerHTML = '<span class="text-success"><i class="fas fa-check"></i> Passwords match</span>';
+            } else {
+                confirmPasswordInput.classList.remove('is-valid');
+                confirmPasswordInput.classList.add('is-invalid');
+                passwordMatchDiv.innerHTML = '<span class="text-danger"><i class="fas fa-times"></i> Passwords do not match</span>';
+            }
+        } else {
+            confirmPasswordInput.classList.remove('is-valid', 'is-invalid');
+            passwordMatchDiv.innerHTML = '';
+        }
+    }
+
+    // Mobile number validation
+    function validateMobile() {
+        const mobile = mobileInput.value.replace(/\D/g, ''); // Remove non-digits
+        mobileInput.value = mobile; // Update input with cleaned value
+        
+        if (mobile.length === 10) {
+            mobileInput.classList.remove('is-invalid');
+            mobileInput.classList.add('is-valid');
+        } else if (mobile.length > 0) {
+            mobileInput.classList.remove('is-valid');
+            mobileInput.classList.add('is-invalid');
+        } else {
+            mobileInput.classList.remove('is-valid', 'is-invalid');
+        }
+    }
+
+    // Password strength validation
+    function validatePassword() {
+        const password = passwordInput.value;
+        
+        if (password.length >= 6) {
+            passwordInput.classList.remove('is-invalid');
+            passwordInput.classList.add('is-valid');
+        } else if (password.length > 0) {
+            passwordInput.classList.remove('is-valid');
+            passwordInput.classList.add('is-invalid');
+        } else {
+            passwordInput.classList.remove('is-valid', 'is-invalid');
+        }
+        
+        checkPasswordMatch(); // Also check matching when password changes
+    }
+
+    // Email validation
+    function validateEmail() {
+        const email = emailInput.value;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        
+        if (emailRegex.test(email)) {
+            emailInput.classList.remove('is-invalid');
+            emailInput.classList.add('is-valid');
+        } else if (email.length > 0) {
+            emailInput.classList.remove('is-valid');
+            emailInput.classList.add('is-invalid');
+        } else {
+            emailInput.classList.remove('is-valid', 'is-invalid');
+        }
+    }
+
+    // Event listeners
+    passwordInput.addEventListener('input', validatePassword);
+    confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+    mobileInput.addEventListener('input', validateMobile);
+    emailInput.addEventListener('input', validateEmail);
+
+    // Form submission validation
+    form.addEventListener('submit', function(e) {
+        const email = emailInput.value.trim();
+        const mobile = mobileInput.value.replace(/\D/g, '');
+        const password = passwordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+
+        if (!email || !mobile || !password || !confirmPassword) {
+            e.preventDefault();
+            alert('Please fill in all required fields');
+            return;
+        }
+
+        if (mobile.length !== 10) {
+            e.preventDefault();
+            alert('Please enter a valid 10-digit mobile number');
+            mobileInput.focus();
+            return;
+        }
+
+        if (password.length < 6) {
+            e.preventDefault();
+            alert('Password must be at least 6 characters long');
+            passwordInput.focus();
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            e.preventDefault();
+            alert('Passwords do not match');
+            confirmPasswordInput.focus();
+            return;
+        }
+
+        // Show loading state
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating Account...';
+        submitBtn.disabled = true;
+    });
+
+    // Auto-dismiss success alerts
+    setTimeout(function() {
+        const alerts = document.querySelectorAll('.alert-success, .alert-info');
+        alerts.forEach(alert => {
+            alert.classList.remove('show');
+            setTimeout(() => alert.remove(), 150);
+        });
+    }, 8000);
+});
+</script>
+{% endblock %}

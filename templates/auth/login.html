@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Trading Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm mt-5">
+                <div class="card-header bg-primary text-white text-center">
+                    <h4><i class="fas fa-sign-in-alt me-2"></i>Login</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Flash messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" action="{{ url_for('login') }}">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">
+                                <i class="fas fa-envelope me-1"></i>Email Address
+                            </label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   placeholder="Enter your email" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">
+                                <i class="fas fa-lock me-1"></i>Password
+                            </label>
+                            <input type="password" class="form-control" id="password" name="password" 
+                                   placeholder="Enter your password" required>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-sign-in-alt me-2"></i>Login
+                            </button>
+                        </div>
+                    </form>
+
+                    <hr>
+                    
+                    <div class="text-center">
+                        <p class="mb-0">Don't have an account?</p>
+                        <a href="{{ url_for('register') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-user-plus me-2"></i>Register Now
+                        </a>
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-shield-alt me-1"></i>
+                            Secure login for trading platform access
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Info Card -->
+            <div class="card shadow-sm mt-3">
+                <div class="card-body text-center">
+                    <h6 class="card-title">
+                        <i class="fas fa-chart-line me-2 text-success"></i>
+                        Access Your Trading Dashboard
+                    </h6>
+                    <p class="card-text small text-muted">
+                        Login to view your portfolio, trading signals, and manage deals
+                    </p>
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <i class="fas fa-wallet text-primary"></i>
+                            <small class="d-block">Portfolio</small>
+                        </div>
+                        <div class="col-4">
+                            <i class="fas fa-signal text-warning"></i>
+                            <small class="d-block">Signals</small>
+                        </div>
+                        <div class="col-4">
+                            <i class="fas fa-handshake text-success"></i>
+                            <small class="d-block">Deals</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kotak Neo Platform Access -->
+            <div class="card shadow-sm mt-3">
+                <div class="card-body text-center">
+                    <h6 class="card-title">
+                        <i class="fas fa-rocket me-2 text-info"></i>
+                        Professional Trading Platform
+                    </h6>
+                    <p class="card-text small text-muted">
+                        Access advanced trading features with Kotak Neo integration
+                    </p>
+                    <a href="/kotak" class="btn btn-info btn-sm">
+                        <i class="fas fa-external-link-alt me-1"></i>
+                        Kotak Neo Platform
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border-radius: 10px;
+}
+
+.card-header {
+    border-radius: 10px 10px 0 0 !important;
+}
+
+.form-control:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+.btn {
+    border-radius: 6px;
+    padding: 8px 16px;
+}
+
+.alert {
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+@media (max-width: 576px) {
+    .container-fluid {
+        padding: 10px;
+    }
+    
+    .card {
+        margin-top: 20px !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-dismiss alerts after 5 seconds
+setTimeout(function() {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        if (alert.classList.contains('alert-success') || alert.classList.contains('alert-info')) {
+            alert.classList.remove('show');
+            setTimeout(() => alert.remove(), 150);
+        }
+    });
+}, 5000);
+
+// Form validation
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    
+    form.addEventListener('submit', function(e) {
+        if (!emailInput.value.trim() || !passwordInput.value.trim()) {
+            e.preventDefault();
+            alert('Please fill in all fields');
+        }
+    });
+});
+</script>
+{% endblock %}
