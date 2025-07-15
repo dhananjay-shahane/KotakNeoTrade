@@ -161,7 +161,8 @@ body, html {
     border: 2px solid var(--gray-200);
     border-radius: 8px;
     font-size: 1rem;
-    background: white;
+    background: white !important;
+    color: var(--gray-800) !important;
     transition: all 0.3s ease;
 }
 
@@ -169,10 +170,12 @@ body, html {
     outline: none;
     border-color: var(--primary-blue);
     box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+    background: white !important;
+    color: var(--gray-800) !important;
 }
 
 .form-control::placeholder {
-    color: transparent;
+    color: var(--gray-400) !important;
 }
 
 .form-floating {
@@ -200,6 +203,19 @@ body, html {
     font-size: 0.75rem;
     color: var(--primary-blue);
     background: white;
+}
+
+/* Fix autofill styling */
+.form-control:-webkit-autofill,
+.form-control:-webkit-autofill:hover,
+.form-control:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px white inset !important;
+    -webkit-text-fill-color: var(--gray-800) !important;
+    border: 2px solid var(--gray-200) !important;
+}
+
+.form-control:-webkit-autofill:focus {
+    border-color: var(--primary-blue) !important;
 }
 
 .form-text {
