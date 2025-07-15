@@ -157,13 +157,14 @@ body, html {
 
 .form-control {
     width: 100%;
-    padding: 1rem 0.75rem 0.5rem;
-    border: 2px solid var(--gray-200);
-    border-radius: 8px;
+    padding: 1rem 1rem 1rem 3rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 12px;
     font-size: 1rem;
-    background: white !important;
+    background: var(--gray-100) !important;
     color: var(--gray-800) !important;
     transition: all 0.3s ease;
+    height: 60px;
 }
 
 .form-control:focus {
@@ -175,46 +176,67 @@ body, html {
 }
 
 .form-control::placeholder {
-    color: var(--gray-400) !important;
+    color: var(--gray-500) !important;
+    font-size: 0.9rem;
 }
 
 .form-floating {
     position: relative;
+    margin-bottom: 1.5rem;
 }
 
 .form-floating label {
     position: absolute;
-    top: 1rem;
-    left: 0.75rem;
+    top: 50%;
+    left: 1rem;
     color: var(--gray-600);
-    font-size: 1rem;
+    font-size: 0.9rem;
     pointer-events: none;
     transition: all 0.3s ease;
-    background: white;
-    padding: 0 0.25rem;
+    background: transparent;
+    padding: 0;
     z-index: 2;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .form-control:focus + label,
 .form-control:not(:placeholder-shown) + label,
 .form-control:valid + label {
     top: -0.5rem;
-    left: 0.5rem;
+    left: 0.75rem;
     font-size: 0.75rem;
     color: var(--primary-blue);
     background: white;
+    padding: 0 0.25rem;
+    transform: translateY(0);
+}
+
+.form-floating label i {
+    font-size: 1rem;
+    color: var(--gray-500);
+    min-width: 16px;
+}
+
+.form-control:focus + label i,
+.form-control:not(:placeholder-shown) + label i,
+.form-control:valid + label i {
+    color: var(--primary-blue);
 }
 
 /* Fix autofill styling */
 .form-control:-webkit-autofill,
 .form-control:-webkit-autofill:hover,
 .form-control:-webkit-autofill:focus {
-    -webkit-box-shadow: 0 0 0 1000px white inset !important;
+    -webkit-box-shadow: 0 0 0 1000px var(--gray-100) inset !important;
     -webkit-text-fill-color: var(--gray-800) !important;
-    border: 2px solid var(--gray-200) !important;
+    border: 1px solid var(--gray-300) !important;
 }
 
 .form-control:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px white inset !important;
     border-color: var(--primary-blue) !important;
 }
 
@@ -373,10 +395,20 @@ body, html {
 
 .form-control.is-valid {
     border-color: var(--success);
+    background: rgba(16, 185, 129, 0.05) !important;
 }
 
 .form-control.is-invalid {
     border-color: var(--danger);
+    background: rgba(239, 68, 68, 0.05) !important;
+}
+
+.form-control.is-valid + label i {
+    color: var(--success);
+}
+
+.form-control.is-invalid + label i {
+    color: var(--danger);
 }
 
 .text-success {

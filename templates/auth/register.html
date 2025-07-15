@@ -26,29 +26,29 @@
         <form method="POST" action="{{ url_for('register') }}" id="registerForm">
             <div class="form-floating">
                 <input type="email" class="form-control" id="email" name="email" 
-                       placeholder="Enter your email" required>
-                <label for="email"><i class="fas fa-envelope me-2"></i>Email Address</label>
+                       placeholder="Enter your email address" required>
+                <label for="email"><i class="fas fa-envelope"></i>Email Address</label>
                 <div class="form-text">Your email will be used for login</div>
             </div>
 
             <div class="form-floating">
                 <input type="tel" class="form-control" id="mobile" name="mobile" 
-                       placeholder="Enter mobile number" required pattern="[0-9]{10}" maxlength="10">
-                <label for="mobile"><i class="fas fa-mobile-alt me-2"></i>Mobile Number</label>
+                       placeholder="Enter your mobile number" required pattern="[0-9]{10}" maxlength="10">
+                <label for="mobile"><i class="fas fa-mobile-alt"></i>Mobile Number</label>
                 <div class="form-text">10-digit mobile number</div>
             </div>
 
             <div class="form-floating">
                 <input type="password" class="form-control" id="password" name="password" 
-                       placeholder="Enter password" required minlength="6">
-                <label for="password"><i class="fas fa-lock me-2"></i>Password</label>
+                       placeholder="Create a password" required minlength="6">
+                <label for="password"><i class="fas fa-lock"></i>Password</label>
                 <div class="form-text">Minimum 6 characters</div>
             </div>
 
             <div class="form-floating">
                 <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
                        placeholder="Confirm your password" required>
-                <label for="confirm_password"><i class="fas fa-lock me-2"></i>Confirm Password</label>
+                <label for="confirm_password"><i class="fas fa-lock"></i>Confirm Password</label>
                 <div id="passwordMatch" class="form-text"></div>
             </div>
 
