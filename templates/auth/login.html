@@ -1,3 +1,4 @@
+
 {% extends "auth/base_auth.html" %}
 
 {% block title %}Login - Trading Platform{% endblock %}
@@ -5,8 +6,8 @@
 {% block content %}
 <div class="auth-card">
     <div class="auth-header">
-        <h4><i class="fas fa-sign-in-alt me-2"></i>Welcome Back</h4>
-        <div class="subtitle">Sign in to your trading account</div>
+        <h4><i class="fas fa-sign-in-alt me-2"></i>Login</h4>
+        <div class="subtitle">Mobile Number</div>
     </div>
     
     <div class="auth-body">
@@ -25,33 +26,40 @@
         <form method="POST" action="{{ url_for('login') }}" id="loginForm">
             <div class="form-floating">
                 <input type="email" class="form-control" id="email" name="email" 
-                       placeholder="name@example.com" required>
+                       placeholder=" " required>
                 <label for="email"><i class="fas fa-envelope me-2"></i>Email Address</label>
             </div>
 
             <div class="form-floating">
                 <input type="password" class="form-control" id="password" name="password" 
-                       placeholder="Password" required>
+                       placeholder=" " required>
                 <label for="password"><i class="fas fa-lock me-2"></i>Password</label>
             </div>
 
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="terms" required>
+                <label class="form-check-label" for="terms" style="font-size: 0.75rem; color: var(--gray-600);">
+                    By continuing, I accept Bajaj Broking's <a href="#" style="color: var(--primary-blue);">Terms and Conditions</a> and <a href="#" style="color: var(--primary-blue);">Privacy Policy</a>
+                </label>
+            </div>
+
             <button type="submit" class="btn-auth" id="loginBtn">
-                <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                <i class="fas fa-sign-in-alt me-2"></i>LOGIN
             </button>
         </form>
 
         <div class="auth-divider">
-            <span>New to our platform?</span>
+            <span>New to Bajaj?</span>
         </div>
         
         <div class="auth-links">
             <a href="{{ url_for('register') }}" class="btn-outline-auth">
-                <i class="fas fa-user-plus"></i>Create Account
+                <i class="fas fa-user-plus"></i>Open Demat Account
             </a>
         </div>
 
         <div class="features-showcase">
-            <h6 class="text-center mb-0" style="color: var(--text-dark); font-weight: 600;">
+            <h6 class="text-center mb-0" style="color: var(--gray-700); font-weight: 600;">
                 <i class="fas fa-star text-warning me-2"></i>Trading Platform Features
             </h6>
             <div class="features-grid">
@@ -77,7 +85,7 @@
                     <div class="feature-icon">
                         <i class="fas fa-rocket"></i>
                     </div>
-                    <div class="feature-title">Kotak Neo</div>
+                    <div class="feature-title">Trading</div>
                 </div>
             </div>
         </div>
@@ -92,13 +100,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
     const loginBtn = document.getElementById('loginBtn');
+    const termsCheckbox = document.getElementById('terms');
 
     // Form validation
     function validateForm() {
         const email = emailInput.value.trim();
         const password = passwordInput.value.trim();
+        const termsAccepted = termsCheckbox.checked;
         
-        if (email && password) {
+        if (email && password && termsAccepted) {
             loginBtn.disabled = false;
             loginBtn.style.opacity = '1';
         } else {
@@ -110,6 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Real-time validation
     emailInput.addEventListener('input', validateForm);
     passwordInput.addEventListener('input', validateForm);
+    termsCheckbox.addEventListener('change', validateForm);
 
     // Initial validation
     validateForm();
@@ -118,10 +129,11 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', function(e) {
         const email = emailInput.value.trim();
         const password = passwordInput.value.trim();
+        const termsAccepted = termsCheckbox.checked;
 
-        if (!email || !password) {
+        if (!email || !password || !termsAccepted) {
             e.preventDefault();
-            alert('Please fill in all fields');
+            alert('Please fill in all fields and accept terms');
             return;
         }
 

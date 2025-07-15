@@ -1,3 +1,4 @@
+
 {% extends "auth/base_auth.html" %}
 
 {% block title %}Register - Trading Platform{% endblock %}
@@ -5,7 +6,7 @@
 {% block content %}
 <div class="auth-card">
     <div class="auth-header">
-        <h4><i class="fas fa-user-plus me-2"></i>Create Account</h4>
+        <h4><i class="fas fa-user-plus me-2"></i>Open Demat Account</h4>
         <div class="subtitle">Join our trading platform today</div>
     </div>
     
@@ -25,34 +26,41 @@
         <form method="POST" action="{{ url_for('register') }}" id="registerForm">
             <div class="form-floating">
                 <input type="email" class="form-control" id="email" name="email" 
-                       placeholder="name@example.com" required>
+                       placeholder=" " required>
                 <label for="email"><i class="fas fa-envelope me-2"></i>Email Address</label>
                 <div class="form-text">Your email will be used for login</div>
             </div>
 
             <div class="form-floating">
                 <input type="tel" class="form-control" id="mobile" name="mobile" 
-                       placeholder="Mobile Number" required>
+                       placeholder=" " required pattern="[0-9]{10}" maxlength="10">
                 <label for="mobile"><i class="fas fa-mobile-alt me-2"></i>Mobile Number</label>
                 <div class="form-text">10-digit mobile number</div>
             </div>
 
             <div class="form-floating">
                 <input type="password" class="form-control" id="password" name="password" 
-                       placeholder="Password" required>
+                       placeholder=" " required minlength="6">
                 <label for="password"><i class="fas fa-lock me-2"></i>Password</label>
                 <div class="form-text">Minimum 6 characters</div>
             </div>
 
             <div class="form-floating">
                 <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
-                       placeholder="Confirm Password" required>
+                       placeholder=" " required>
                 <label for="confirm_password"><i class="fas fa-lock me-2"></i>Confirm Password</label>
                 <div id="passwordMatch" class="form-text"></div>
             </div>
 
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="terms" required>
+                <label class="form-check-label" for="terms" style="font-size: 0.75rem; color: var(--gray-600);">
+                    By continuing, I accept Bajaj Broking's <a href="#" style="color: var(--primary-blue);">Terms and Conditions</a> and <a href="#" style="color: var(--primary-blue);">Privacy Policy</a>
+                </label>
+            </div>
+
             <button type="submit" class="btn-auth" id="submitBtn">
-                <i class="fas fa-user-plus me-2"></i>Create Account
+                <i class="fas fa-user-plus me-2"></i>OPEN ACCOUNT
             </button>
         </form>
 
@@ -62,12 +70,12 @@
         
         <div class="auth-links">
             <a href="{{ url_for('login') }}" class="btn-outline-auth">
-                <i class="fas fa-sign-in-alt"></i>Sign In
+                <i class="fas fa-sign-in-alt"></i>Login
             </a>
         </div>
 
         <div class="features-showcase">
-            <h6 class="text-center mb-0" style="color: var(--text-dark); font-weight: 600;">
+            <h6 class="text-center mb-0" style="color: var(--gray-700); font-weight: 600;">
                 <i class="fas fa-gift text-success me-2"></i>What You Get
             </h6>
             <div class="features-grid">
@@ -99,53 +107,6 @@
         </div>
     </div>
 </div>
-
-<style>
-.card {
-    border-radius: 10px;
-}
-
-.card-header {
-    border-radius: 10px 10px 0 0 !important;
-}
-
-.form-control:focus {
-    border-color: var(--bs-success);
-    box-shadow: 0 0 0 0.2rem rgba(var(--bs-success-rgb), 0.25);
-}
-
-.form-control.is-valid {
-    border-color: #198754;
-}
-
-.form-control.is-invalid {
-    border-color: #dc3545;
-}
-
-.btn {
-    border-radius: 6px;
-    padding: 10px 20px;
-}
-
-.alert {
-    border-radius: 6px;
-    font-size: 14px;
-}
-
-.form-text {
-    font-size: 12px;
-}
-
-@media (max-width: 576px) {
-    .container-fluid {
-        padding: 10px;
-    }
-    
-    .card {
-        margin-top: 15px !important;
-    }
-}
-</style>
 {% endblock %}
 
 {% block extra_js %}
@@ -158,6 +119,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const confirmPasswordInput = document.getElementById('confirm_password');
     const passwordMatchDiv = document.getElementById('passwordMatch');
     const submitBtn = document.getElementById('submitBtn');
+    const termsCheckbox = document.getElementById('terms');
 
     // Real-time password matching
     function checkPasswordMatch() {
@@ -229,11 +191,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Overall form validation
+    function validateForm() {
+        const email = emailInput.value.trim();
+        const mobile = mobileInput.value.replace(/\D/g, '');
+        const password = passwordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+        const termsAccepted = termsCheckbox.checked;
+        
+        if (email && mobile.length === 10 && password.length >= 6 && password === confirmPassword && termsAccepted) {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.6';
+        }
+    }
+
     // Event listeners
-    passwordInput.addEventListener('input', validatePassword);
-    confirmPasswordInput.addEventListener('input', checkPasswordMatch);
-    mobileInput.addEventListener('input', validateMobile);
-    emailInput.addEventListener('input', validateEmail);
+    passwordInput.addEventListener('input', () => { validatePassword(); validateForm(); });
+    confirmPasswordInput.addEventListener('input', () => { checkPasswordMatch(); validateForm(); });
+    mobileInput.addEventListener('input', () => { validateMobile(); validateForm(); });
+    emailInput.addEventListener('input', () => { validateEmail(); validateForm(); });
+    termsCheckbox.addEventListener('change', validateForm);
+
+    // Initial validation
+    validateForm();
 
     // Form submission validation
     form.addEventListener('submit', function(e) {
@@ -241,10 +224,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const mobile = mobileInput.value.replace(/\D/g, '');
         const password = passwordInput.value;
         const confirmPassword = confirmPasswordInput.value;
+        const termsAccepted = termsCheckbox.checked;
 
-        if (!email || !mobile || !password || !confirmPassword) {
+        if (!email || !mobile || !password || !confirmPassword || !termsAccepted) {
             e.preventDefault();
-            alert('Please fill in all required fields');
+            alert('Please fill in all required fields and accept terms');
             return;
         }
 
