@@ -8,8 +8,13 @@ import os
 import sys
 from flask import Flask, render_template, redirect, url_for, request, flash
 
-# Add kotak_neo_project to Python path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'kotak_neo_project'))
+# Add kotak_neo_project to Python path for imports - but prioritize root level imports
+root_path = os.path.dirname(__file__)
+kotak_path = os.path.join(root_path, 'kotak_neo_project')
+if root_path not in sys.path:
+    sys.path.insert(0, root_path)
+if kotak_path not in sys.path:
+    sys.path.append(kotak_path)  # Append instead of insert to prioritize root
 
 # Create Flask app with multiple template folders
 from flask import Flask
