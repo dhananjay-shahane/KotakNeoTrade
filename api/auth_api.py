@@ -269,7 +269,7 @@ def handle_register(mail=None):
                 'Use the credentials from your email to login to your account.',
                 'info')
 
-            return redirect(url_for('registration_success'))
+            return redirect(url_for('login'))
 
         except Exception as e:
             db.session.rollback()
@@ -389,7 +389,7 @@ def register_api(mail=None):
             'success': True,
             'message': message,
             'username': username,
-            'redirect_url': url_for('registration_success')
+            'redirect_url': url_for('login')
         })
 
     except Exception as e:
