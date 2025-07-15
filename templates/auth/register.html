@@ -1,12 +1,58 @@
 {% extends "auth/base_auth.html" %} {% block title %}Register - Trading
 Platform{% endblock %} {% block content %}
-<div class="auth-card">
-    <div class="auth-header">
-        <h4><i class="fas fa-user-plus me-2"></i>Create Account</h4>
-        <div class="subtitle">Join our trading platform today</div>
+<div class="register-container">
+    <!-- Left Side - Registration Steps -->
+    <div class="registration-steps-left">
+        <h6 class="steps-title">
+            <i class="fas fa-list-ol me-2"></i>Registration Steps
+        </h6>
+        
+        <div class="step-item">
+            <div class="step-number">1</div>
+            <div class="step-content">
+                <div class="step-title">Register Account</div>
+                <div class="step-description">Fill out the registration form with your details</div>
+            </div>
+        </div>
+
+        <div class="step-item">
+            <div class="step-number">2</div>
+            <div class="step-content">
+                <div class="step-title">Receive Email</div>
+                <div class="step-description">Check your email for account verification</div>
+            </div>
+        </div>
+
+        <div class="step-item">
+            <div class="step-number">3</div>
+            <div class="step-content">
+                <div class="step-title">Register Email</div>
+                <div class="step-description">Verify your email address to activate account</div>
+            </div>
+        </div>
+
+        <div class="step-item">
+            <div class="step-number">4</div>
+            <div class="step-content">
+                <div class="step-title">Get Credentials</div>
+                <div class="step-description">Email will show your User ID and Password</div>
+            </div>
+        </div>
+
+        <div class="security-note">
+            <i class="fas fa-shield-alt me-2"></i>
+            <small>Your account will be secured with email verification</small>
+        </div>
     </div>
 
-    <div class="auth-body">
+    <!-- Right Side - Registration Form -->
+    <div class="auth-card">
+        <div class="auth-header">
+            <h4><i class="fas fa-user-plus me-2"></i>Create Account</h4>
+            <div class="subtitle">Join our trading platform today</div>
+        </div>
+
+        <div class="auth-body"></div>
         <!-- Flash messages -->
         {% with messages = get_flashed_messages(with_categories=true) %} {% if
         messages %} {% for category, message in messages %}
@@ -131,50 +177,6 @@ Platform{% endblock %} {% block content %}
             <a href="{{ url_for('login') }}" class="btn-outline-auth">
                 <i class="fas fa-sign-in-alt"></i>Login
             </a>
-        </div>
-    </div>
-
-    <!-- Registration Steps -->
-    <div class="registration-steps">
-        <h6 class="steps-title">
-            <i class="fas fa-list-ol me-2"></i>Registration Steps
-        </h6>
-        
-        <div class="step-item">
-            <div class="step-number">1</div>
-            <div class="step-content">
-                <div class="step-title">Register Account</div>
-                <div class="step-description">Fill out the registration form with your details</div>
-            </div>
-        </div>
-
-        <div class="step-item">
-            <div class="step-number">2</div>
-            <div class="step-content">
-                <div class="step-title">Receive Email</div>
-                <div class="step-description">Check your email for account verification</div>
-            </div>
-        </div>
-
-        <div class="step-item">
-            <div class="step-number">3</div>
-            <div class="step-content">
-                <div class="step-title">Register Email</div>
-                <div class="step-description">Verify your email address to activate account</div>
-            </div>
-        </div>
-
-        <div class="step-item">
-            <div class="step-number">4</div>
-            <div class="step-content">
-                <div class="step-title">Get Credentials</div>
-                <div class="step-description">Email will show your User ID and Password</div>
-            </div>
-        </div>
-
-        <div class="security-note">
-            <i class="fas fa-shield-alt me-2"></i>
-            <small>Your account will be secured with email verification</small>
         </div>
     </div>
 </div>

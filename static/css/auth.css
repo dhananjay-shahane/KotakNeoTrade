@@ -432,7 +432,26 @@ body, html {
     }
 }
 
-/* Registration Steps */
+/* Registration Container */
+.register-container {
+    display: flex;
+    gap: 2rem;
+    width: 100%;
+    max-width: 900px;
+    align-items: flex-start;
+}
+
+/* Left Side Registration Steps */
+.registration-steps-left {
+    flex: 0 0 280px;
+    padding: 1.5rem;
+    background: var(--gray-100);
+    border-radius: 12px;
+    border-left: 4px solid var(--primary-blue);
+    height: fit-content;
+}
+
+/* Original Registration Steps (now unused but keeping for compatibility) */
 .registration-steps {
     margin-top: 2rem;
     padding: 1.5rem;
@@ -505,6 +524,23 @@ body, html {
     font-size: 0.7rem;
 }
 
+@media (max-width: 768px) {
+    .register-container {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .registration-steps-left {
+        flex: none;
+        order: 2;
+        margin-top: 1rem;
+    }
+
+    .auth-card {
+        order: 1;
+    }
+}
+
 @media (max-width: 480px) {
     .auth-right {
         flex: 0 0 auto;
@@ -518,7 +554,8 @@ body, html {
         font-size: 1.75rem;
     }
 
-    .registration-steps {
+    .registration-steps,
+    .registration-steps-left {
         margin-top: 1rem;
         padding: 1rem;
     }
