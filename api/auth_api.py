@@ -7,7 +7,48 @@ from flask_login import login_user, logout_user, current_user
 from flask_mail import Mail, Message
 from models import db, User
 import secrets
+
+
+def store_user_in_external_db(username, password, email, mobile, trading_account_name=None):
+    """Store user registration details in external database"""
+    try:
+        # Connect to external database (using SQLite for now, can be changed to other DB)
+        conn = sqlite3.connect('external_users.db')
+        cursor = conn.cursor()
+        
+        # Create external_users table if it doesn't exist
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS external_users (
+                sr INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL,
+                password TEXT NOT NULL,
+                email TEXT NOT NULL,
+                mobile TEXT NOT NULL,
+                trading_account_name TEXT,
+                datetime TEXT NOT NULL
+            )
+        ''')
+        
+        # Insert user data
+        current_datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        cursor.execute('''
+            INSERT INTO external_users (username, password, email, mobile, trading_account_name, datetime)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (username, password, email, mobile, trading_account_name or 'Not Set', current_datetime))
+        
+        conn.commit()
+        conn.close()
+        
+        return True
+        
+    except Exception as e:
+        print(f"Error storing user in external database: {e}")
+        return False
+
+
 import string
+import sqlite3
+from datetime import datetime
 
 
 # Email configuration - moved from main app
@@ -280,6 +321,13 @@ def handle_register(mail=None):
                 email_sent = EmailService.send_registration_email(
                     mail, email, username, password)
 
+            # Store user details in external database
+            try:
+                store_user_in_external_db(username, password, email, mobile)
+                print(f"User {username} stored in external database successfully")
+            except Exception as e:
+                print(f"Failed to store user in external database: {e}")
+
             # Always show email check message regardless of email service status
             flash(
                 'Registration successful! Please check your email inbox for your username and password details.',
@@ -301,6 +349,9 @@ def handle_register(mail=None):
 def handle_logout():
     """Handle user logout"""
     logout_user()
+    # Clear all flash messages to prevent showing registration messages after logout
+    from flask import session
+    session.pop('_flashes', None)
     flash('You have been logged out', 'info')
     return redirect(url_for('login'))
 
@@ -402,6 +453,13 @@ def register_api(mail=None):
         if mail:
             email_sent = EmailService.send_registration_email(
                 mail, email, username, password)
+
+        # Store user details in external database
+        try:
+            store_user_in_external_db(username, password, email, mobile)
+            print(f"User {username} stored in external database successfully")
+        except Exception as e:
+            print(f"Failed to store user in external database: {e}")
 
         # Always show email check message regardless of email service status
         message = 'Registration successful! Please check your email inbox for your username and password details.'

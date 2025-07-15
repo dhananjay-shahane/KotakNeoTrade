@@ -331,6 +331,13 @@ Platform{% endblock %} {% block content %}
             submitBtn.innerHTML =
                 '<i class="fas fa-spinner fa-spin me-2"></i>Creating Account...';
             submitBtn.disabled = true;
+            
+            // Add hidden field to ensure redirect to login
+            const redirectInput = document.createElement('input');
+            redirectInput.type = 'hidden';
+            redirectInput.name = 'redirect_to_login';
+            redirectInput.value = 'true';
+            form.appendChild(redirectInput);
         });
 
         // Auto-dismiss success alerts
