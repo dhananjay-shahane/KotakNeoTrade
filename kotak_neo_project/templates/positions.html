@@ -4,7 +4,7 @@
 {% block title %}Positions - Kotak Neo Trading{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/positions.css') }}">
+<link rel="stylesheet" href="{{ "/kotak/static/css/positions.css" }}">
 <style>
 /* Enhanced Positions Skeleton Loader */
 .positions-skeleton {
@@ -461,5 +461,5 @@ function showPositionsSkeleton() {
 // Make hidePositionsSkeleton globally available
 window.hidePositionsSkeleton = hidePositionsSkeleton;
 </script>
-<script src="{{ url_for('static', filename='js/positions.js') }}"></script>
+<script src="{{ "/kotak/static/js/positions.js" }}"></script>
 {% endblock %}

@@ -22,6 +22,8 @@ A comprehensive trading platform integrated with Kotak Neo API for real-time por
 - **Data Sources**: All data must come from live Kotak Neo API
 
 ## Recent Changes
+- **2025-07-15**: ✅ **Static File Paths Fixed** - Systematically fixed all CSS and JS file paths in Kotak Neo templates (21 files updated) to use correct /kotak/static/ paths for proper resource loading
+- **2025-07-15**: ✅ **Session Serialization Resolved** - Fixed Internal Server Error by removing non-serializable NeoAPI objects from Flask session storage
 - **2025-07-15**: ✅ **Unified Application on Single Port** - Successfully integrated both root template and Kotak Neo Trading Platform on port 5000 using Flask blueprints, with /kotak routes for full platform access
 - **2025-07-15**: ✅ **Complete Migration to Standard Replit** - Migrated project from Replit Agent to standard Replit environment with enhanced security, performance, and compatibility
 - **2025-07-15**: ✅ **Root Template Structure Created** - Created professional template and static folders at root level with same Kotak Neo sidebar/header design, featuring Portfolio, Trading Signals, and Deals navigation

@@ -3,7 +3,7 @@
 {% block title %}Default Deals - Kotak Neo Trading{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/deals.css') }}">
+<link rel="stylesheet" href="{{ "/kotak/static/css/deals.css" }}">
 {% endblock %}
 
 {% block head %}
@@ -300,5 +300,5 @@
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="{{ url_for('static', filename='js/default_deals.js') }}"></script>
+<script src="{{ "/kotak/static/js/default_deals.js" }}"></script>
 {% endblock %}

@@ -25,8 +25,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/loader.css') }}">
+    <link rel="stylesheet" href="{{ "/kotak/static/css/base.css" }}">
+    <link rel="stylesheet" href="{{ "/kotak/static/css/loader.css" }}">
 
     {% block head %}{% endblock %}
 </head>
@@ -390,12 +390,12 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- Page Loader Utility -->
-    <script src="{{ url_for('static', filename='js/page-loader.js') }}"></script>
+    <script src="{{ "/kotak/static/js/page-loader.js" }}"></script>
 
     <!-- Custom JavaScript -->
     {% if session.authenticated %}
-    <script src="{{ url_for('static', filename='js/base.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/websocket.js') }}"></script>
+    <script src="{{ "/kotak/static/js/base.js" }}"></script>
+    <script src="{{ "/kotak/static/js/websocket.js" }}"></script>
     {% endif %}
 
     {% block scripts %}{% endblock %}

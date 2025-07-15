@@ -2,7 +2,7 @@
 endblock %} {% block extra_css %}
 <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/etf_signals.css') }}"
+    href="{{ "/kotak/static/css/etf_signals.css" }}"
 />
 {% endblock %} {% block extra_js %} {% endblock %} {% block content %}
 
@@ -452,5 +452,5 @@ endblock %} {% block extra_css %}
 {% endblock %} {% block scripts %}
 <!-- Ensure jQuery is loaded -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="{{ url_for('static', filename='js/etf_signals.js') }}"></script>
+<script src="{{ "/kotak/static/js/etf_signals.js" }}"></script>
 {% endblock %}
