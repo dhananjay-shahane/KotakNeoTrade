@@ -17,26 +17,20 @@ class EmailService:
     @staticmethod
     def configure_mail(app):
         """Configure Flask-Mail with app"""
-        app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER',
-                                                   'smtp.gmail.com')
+        app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
         app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
-        app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS',
-                                                    'True').lower() == 'true'
-        app.config['MAIL_USERNAME'] = os.environ.get(
-            'MAIL_USERNAME', 'dhanushahane01@gmail.com')
-        app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD',
-                                                     'bkcx yqlu psvw opdt'
-                                                     '')
-        app.config['MAIL_DEFAULT_SENDER'] = os.environ.get(
-            'MAIL_DEFAULT_SENDER')
+        app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
+        app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+        app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+        app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER')
 
         # Only configure mail if credentials are provided
         if not app.config['MAIL_USERNAME'] or not app.config['MAIL_PASSWORD']:
-            print(
-                "Email credentials not configured. Email service will be disabled."
-            )
+            print("❌ Email credentials not configured. Set MAIL_USERNAME and MAIL_PASSWORD in Secrets.")
+            print("📧 Email service will be disabled.")
             return None
 
+        print(f"✅ Email service configured for: {app.config['MAIL_USERNAME']}")
         return Mail(app)
 
     @staticmethod
