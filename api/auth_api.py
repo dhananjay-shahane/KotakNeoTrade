@@ -189,17 +189,15 @@ def handle_login():
         return redirect(url_for('portfolio'))
 
     if request.method == 'POST':
-        login_field = request.form.get('email', '').strip()  # Can be email or username
+        username = request.form.get('email', '').strip()  # Form field is named 'email' but contains username
         password = request.form.get('password', '').strip()
 
-        if not login_field or not password:
-            flash('Username/Email and password are required', 'error')
+        if not username or not password:
+            flash('Username and password are required', 'error')
             return render_template('auth/login.html')
 
-        # Try to find user by email first, then by username
-        user = User.query.filter_by(email=login_field).first()
-        if not user:
-            user = User.query.filter_by(username=login_field).first()
+        # Find user by username only
+        user = User.query.filter_by(username=username).first()
 
         if user and user.check_password(password):
             login_user(user)
@@ -207,7 +205,7 @@ def handle_login():
             next_page = request.args.get('next')
             return redirect(next_page or url_for('portfolio'))
         else:
-            flash('Invalid username/email or password', 'error')
+            flash('Invalid username or password', 'error')
 
     return render_template('auth/login.html')
 
@@ -269,7 +267,7 @@ def handle_register(mail=None):
             else:
                 flash(f'Registration successful! Your username is: {username}',
                       'success')
-                flash('You can now login with your username/email and password', 'info')
+                flash('You can now login with your username and password', 'info')
 
             return redirect(url_for('login'))
 
@@ -293,19 +291,17 @@ def login_api():
     """API endpoint for login via AJAX"""
     try:
         data = request.get_json()
-        login_field = data.get('email', '').strip()  # Can be email or username
+        username = data.get('email', '').strip()  # Form field named 'email' but contains username
         password = data.get('password', '').strip()
 
-        if not login_field or not password:
+        if not username or not password:
             return jsonify({
                 'success': False,
-                'message': 'Username/Email and password are required'
+                'message': 'Username and password are required'
             }), 400
 
-        # Try to find user by email first, then by username
-        user = User.query.filter_by(email=login_field).first()
-        if not user:
-            user = User.query.filter_by(username=login_field).first()
+        # Find user by username only
+        user = User.query.filter_by(username=username).first()
 
         if user and user.check_password(password):
             login_user(user)
@@ -317,7 +313,7 @@ def login_api():
         else:
             return jsonify({
                 'success': False,
-                'message': 'Invalid username/email or password'
+                'message': 'Invalid username or password'
             }), 401
 
     except Exception as e:
