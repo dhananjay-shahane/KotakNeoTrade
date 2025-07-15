@@ -11,8 +11,26 @@ from flask import Flask, render_template, redirect, url_for, request, flash
 # Add kotak_neo_project to Python path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'kotak_neo_project'))
 
-# Create Flask app
-app = Flask(__name__)
+# Create Flask app with multiple template folders
+from flask import Flask
+import jinja2
+
+# Configure template loader for multiple directories
+template_loader = jinja2.ChoiceLoader([
+    jinja2.FileSystemLoader('templates'),
+    jinja2.FileSystemLoader('kotak_neo_project/templates'),
+])
+
+app = Flask(__name__, template_folder='templates', static_folder='static')
+app.jinja_loader = template_loader
+
+# Add static file routes for Kotak Neo project
+@app.route('/kotak/static/<path:filename>')
+def kotak_static(filename):
+    """Serve static files for Kotak Neo project"""
+    import os
+    from flask import send_from_directory
+    return send_from_directory(os.path.join('kotak_neo_project', 'static'), filename)
 app.secret_key = os.environ.get("SESSION_SECRET", "demo-secret-key-2025")
 
 # Configure for production
