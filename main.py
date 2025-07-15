@@ -52,32 +52,37 @@ setup_library_paths()
 def register_kotak_neo_blueprints():
     """Register Kotak Neo project blueprints"""
     try:
-        # Import Kotak Neo main app configuration
-        from kotak_neo_project.app import app as kotak_app
+        # Add Kotak Neo project paths for proper imports
+        kotak_path = os.path.join(os.path.dirname(__file__), 'kotak_neo_project')
+        if kotak_path not in sys.path:
+            sys.path.insert(0, kotak_path)
         
-        # Register Kotak Neo routes with prefix
+        # Import the auth blueprint directly
+        from kotak_neo_project.routes.auth_routes import auth_bp
+        from kotak_neo_project.routes.main_routes import main_bp
+        
+        # Register blueprints with URL prefix
+        app.register_blueprint(auth_bp, url_prefix='/kotak')
+        app.register_blueprint(main_bp, url_prefix='/kotak')
+        
+        # Add redirect routes
         @app.route('/kotak')
         @app.route('/kotak/')
         def kotak_neo_index():
             """Redirect to Kotak Neo login"""
-            return redirect(url_for('kotak_neo_login'))
+            return redirect('/kotak/login')
             
-        @app.route('/kotak/login')
-        def kotak_neo_login():
-            """Kotak Neo login page"""
-            from kotak_neo_project.app import login
-            return login()
-            
-        @app.route('/kotak/dashboard')
-        def kotak_neo_dashboard():
-            """Kotak Neo dashboard"""
-            from kotak_neo_project.app import dashboard
-            return dashboard()
-            
-        print("Successfully registered Kotak Neo routes")
+        print("Successfully registered Kotak Neo blueprints")
         
     except Exception as e:
-        print(f"Note: Kotak Neo integration not available: {e}")
+        print(f"Error registering Kotak Neo blueprints: {e}")
+        # Fallback to simple redirect
+        @app.route('/kotak')
+        @app.route('/kotak/')
+        def kotak_neo_index():
+            """Simple redirect to Kotak Neo project"""
+            flash('Kotak Neo project integration is being configured. Please check back shortly.', 'info')
+            return redirect(url_for('portfolio'))
 
 # Register the blueprints
 register_kotak_neo_blueprints()
