@@ -131,6 +131,7 @@ class EmailService:
 
                     <div class="credentials-box">
                         <h3>🔐 Your Login Credentials</h3>
+                        <p><strong>Use these credentials to login to the trading platform:</strong></p>
                         <div class="credential-item">
                             <span class="credential-label">Username:</span>
                             <span class="credential-value">{username}</span>
@@ -140,7 +141,7 @@ class EmailService:
                             <span class="credential-value">{password}</span>
                         </div>
                         <div class="credential-item">
-                            <span class="credential-label">Email:</span>
+                            <span class="credential-label">Registered Email:</span>
                             <span class="credential-value">{user_email}</span>
                         </div>
                     </div>
@@ -260,14 +261,13 @@ def handle_register(mail=None):
                 email_sent = EmailService.send_registration_email(
                     mail, email, username, password)
 
-            if email_sent:
-                flash(
-                    'Registration successful! Please check your email for login credentials.',
-                    'success')
-            else:
-                flash(f'Registration successful! Your username is: {username}',
-                      'success')
-                flash('You can now login with your username and password', 'info')
+            # Always show email check message regardless of email service status
+            flash(
+                'Registration successful! Please check your email inbox for your username and password details.',
+                'success')
+            flash(
+                'Use the credentials from your email to login to your account.',
+                'info')
 
             return redirect(url_for('login'))
 
@@ -382,7 +382,8 @@ def register_api(mail=None):
             email_sent = EmailService.send_registration_email(
                 mail, email, username, password)
 
-        message = 'Registration successful! Please check your email for login credentials.' if email_sent else f'Registration successful! Your username is: {username}'
+        # Always show email check message regardless of email service status
+        message = 'Registration successful! Please check your email inbox for your username and password details.'
 
         return jsonify({
             'success': True,

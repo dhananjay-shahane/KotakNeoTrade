@@ -22,6 +22,9 @@ A comprehensive trading platform integrated with Kotak Neo API for real-time por
 - **Data Sources**: All data must come from live Kotak Neo API
 
 ## Recent Changes  
+- **2025-07-15**: ✅ **Enhanced Registration Flow** - Updated registration success to always show email check message without revealing username directly. Users receive email with 5-letter username and login with credentials from email
+- **2025-07-15**: ✅ **Username-Only Login** - Modified login page to only ask for username (not email). Users register with email+mobile, get 5-letter username, then login with username+password
+- **2025-07-15**: ✅ **5-Letter Username Generation** - Implemented username creation from email+mobile combination (3 letters from email + 2 digits from mobile number)
 - **2025-07-15**: ✅ **Authentication API Separation** - Created dedicated api/auth_api.py module with separated authentication functions. Includes email service, login/register handlers, and AJAX API endpoints for modern authentication
 - **2025-07-15**: ✅ **Modern Full-Screen Authentication UI** - Redesigned login and register pages with full-screen layouts, gradient backgrounds, floating labels, and modern card design. Removed dashboard elements from auth pages for clean user experience
 - **2025-07-15**: ✅ **Complete User Authentication System** - Created registration and login system with email, mobile, password fields. Users get auto-generated username upon registration and can login with email/password to access portfolio
