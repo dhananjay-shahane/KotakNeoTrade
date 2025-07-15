@@ -333,49 +333,7 @@ function redirectToZerodhaLogin() {
 function handleAccountLogin() {
     // This function is no longer needed as we use direct redirects
     // Keeping for backward compatibility
-            
-            // Show success message
-            Swal.fire({
-                icon: 'success',
-                title: 'Login Successful',
-                text: `Connected to ${brokerId.toUpperCase()} account successfully!`,
-                background: 'var(--card-bg)',
-                color: 'var(--text-primary)',
-                timer: 3000,
-                showConfirmButton: false
-            });
-            
-            // Update UI to show logged in state
-            updateLoginState(true, brokerId, userId);
-            
-            // Clear form
-            document.getElementById('loginForm').reset();
-        } else {
-            // Show error message
-            Swal.fire({
-                icon: 'error',
-                title: 'Login Failed',
-                text: data.message || 'Unable to connect to trading account. Please check your credentials.',
-                background: 'var(--card-bg)',
-                color: 'var(--text-primary)'
-            });
-        }
-    })
-    .catch(error => {
-        console.error('Login error:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Connection Error',
-            text: 'Unable to connect to the server. Please try again.',
-            background: 'var(--card-bg)',
-            color: 'var(--text-primary)'
-        });
-    })
-    .finally(() => {
-        // Reset button state
-        loginBtn.innerHTML = originalText;
-        loginBtn.disabled = false;
-    });
+    console.log('handleAccountLogin called - using direct redirects instead');
 }
 
 function updateLoginState(isLoggedIn, broker, userId) {
