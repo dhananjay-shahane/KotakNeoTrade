@@ -1,14 +1,23 @@
 """
-Simple Flask application to demonstrate Kotak Neo template structure
+Unified Flask application combining root template and Kotak Neo Trading Platform
 Shows the portfolio page by default with professional sidebar and header
+Includes full Kotak Neo project integration on same port
 """
 
 import os
+import sys
 from flask import Flask, render_template, redirect, url_for, request, flash
+
+# Add kotak_neo_project to Python path for imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'kotak_neo_project'))
 
 # Create Flask app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "demo-secret-key-2025")
+
+# Configure for production
+app.config['WTF_CSRF_ENABLED'] = False  # Disable CSRF for API endpoints
+app.config['DEBUG'] = True
 
 @app.route('/')
 def index():
@@ -30,37 +39,48 @@ def deals():
     """Deals page"""
     return render_template('deals.html')
 
-@app.route('/kotak_neo_project/login')
-def kotak_neo_project_login():
-    """Start Kotak Neo project and redirect to its login page"""
-    import subprocess
-    import time
-    import requests
-    
+# Setup library paths for Kotak Neo project compatibility
+def setup_library_paths():
+    """Configure library paths for pandas/numpy dependencies"""
+    library_path = '/nix/store/xvzz97yk73hw03v5dhhz3j47ggwf1yq1-gcc-13.2.0-lib/lib:/nix/store/026hln0aq1hyshaxsdvhg0kmcm6yf45r-zlib-1.2.13/lib'
+    os.environ['LD_LIBRARY_PATH'] = library_path
+
+# Setup environment before importing Kotak Neo modules
+setup_library_paths()
+
+# Import and register Kotak Neo blueprints
+def register_kotak_neo_blueprints():
+    """Register Kotak Neo project blueprints"""
     try:
-        # Check if Kotak Neo project is already running
-        try:
-            response = requests.get('http://0.0.0.0:5001/health', timeout=3)
-            if response.status_code == 200:
-                # Project is running, redirect to it
-                return redirect('http://0.0.0.0:5001/login')
-        except:
-            pass
+        # Import Kotak Neo main app configuration
+        from kotak_neo_project.app import app as kotak_app
         
-        # Start the Kotak Neo project in background
-        subprocess.Popen([
-            'python', 'kotak_neo_project/main.py'
-        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        
-        # Wait a moment for startup
-        time.sleep(3)
-        
-        # Redirect to the project
-        return redirect('http://0.0.0.0:5001/login')
+        # Register Kotak Neo routes with prefix
+        @app.route('/kotak')
+        @app.route('/kotak/')
+        def kotak_neo_index():
+            """Redirect to Kotak Neo login"""
+            return redirect(url_for('kotak_neo_login'))
+            
+        @app.route('/kotak/login')
+        def kotak_neo_login():
+            """Kotak Neo login page"""
+            from kotak_neo_project.app import login
+            return login()
+            
+        @app.route('/kotak/dashboard')
+        def kotak_neo_dashboard():
+            """Kotak Neo dashboard"""
+            from kotak_neo_project.app import dashboard
+            return dashboard()
+            
+        print("Successfully registered Kotak Neo routes")
         
     except Exception as e:
-        flash(f'Error starting Kotak Neo project: {str(e)}', 'error')
-        return redirect(url_for('portfolio'))
+        print(f"Note: Kotak Neo integration not available: {e}")
+
+# Register the blueprints
+register_kotak_neo_blueprints()
 
 # API endpoints for ETF signals and deals functionality
 @app.route('/api/etf-signals-data')
