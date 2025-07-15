@@ -292,6 +292,11 @@ function redirectToKotakNeoLogin() {
     window.open('/kotak_neo_project/login', '_blank');
 }
 
+// Alias for backward compatibility
+function redirectToKotakLogin() {
+    redirectToKotakNeoLogin();
+}
+
 function redirectToUpstoxLogin() {
     const modal = bootstrap.Modal.getInstance(document.getElementById('loginAccountModal'));
     if (modal) {
@@ -455,4 +460,23 @@ function toggleSidebar() {
         sidebar.classList.toggle('collapsed');
         content.classList.toggle('expanded');
     }
+}
+
+// Ensure all functions are properly defined
+if (typeof toggleSidebar !== 'function') {
+    window.toggleSidebar = function() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        const isOpen = sidebar && sidebar.classList.contains('show');
+
+        if (isOpen) {
+            sidebar.classList.remove('show');
+            overlay && overlay.classList.remove('show');
+            document.body.style.overflow = '';
+        } else {
+            sidebar && sidebar.classList.add('show');
+            overlay && overlay.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+    };
 }
