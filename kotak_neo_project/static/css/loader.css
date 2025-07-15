@@ -1,0 +1,241 @@
+
+/* Page Loader Styles */
+.page-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--dark-bg) 0%, var(--secondary-color) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+}
+
+.page-loader.hide {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.loader-content {
+    text-align: center;
+    padding: 2rem;
+}
+
+.loader-logo {
+    font-size: 3rem;
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+    animation: logoFloat 2s ease-in-out infinite;
+}
+
+.loader-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(37, 99, 235, 0.1);
+    border-left: 4px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1.5rem;
+}
+
+.loader-text {
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    animation: textPulse 1.5s ease-in-out infinite;
+}
+
+.loader-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.loader-progress {
+    width: 200px;
+    height: 3px;
+    background: rgba(37, 99, 235, 0.1);
+    border-radius: 2px;
+    margin: 1.5rem auto 0;
+    overflow: hidden;
+}
+
+.loader-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    border-radius: 2px;
+    animation: progressFlow 2s ease-in-out infinite;
+}
+
+/* Loading Dots Animation */
+.loading-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+}
+
+.loading-dots span {
+    width: 4px;
+    height: 4px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    animation: dotBounce 1.4s infinite ease-in-out both;
+}
+
+.loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+.loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+/* Animations */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes logoFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes textPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+@keyframes progressFlow {
+    0% { transform: translateX(-100%); }
+    50% { transform: translateX(0%); }
+    100% { transform: translateX(100%); }
+}
+
+@keyframes dotBounce {
+    0%, 80%, 100% {
+        transform: scale(0);
+    }
+    40% {
+        transform: scale(1);
+    }
+}
+
+/* Fade in animation for content after loader */
+.content-fade-in {
+    opacity: 0;
+    animation: fadeIn 0.8s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Light theme adjustments */
+:root[data-theme="light"] .page-loader {
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+}
+
+:root[data-theme="light"] .loader-spinner {
+    border-color: rgba(37, 99, 235, 0.1);
+    border-left-color: var(--primary-color);
+}
+
+:root[data-theme="light"] .loader-progress {
+    background: rgba(37, 99, 235, 0.1);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .loader-logo {
+        font-size: 2.5rem;
+    }
+    
+    .loader-text {
+        font-size: 1.1rem;
+    }
+    
+    .loader-subtitle {
+        font-size: 0.85rem;
+    }
+    
+    .loader-spinner {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .loader-progress {
+        width: 160px;
+    }
+}
+
+/* Alternative loader styles */
+.pulse-loader {
+    width: 60px;
+    height: 60px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+    margin: 0 auto 1.5rem;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.7;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.orbit-loader {
+    width: 60px;
+    height: 60px;
+    position: relative;
+    margin: 0 auto 1.5rem;
+}
+
+.orbit-loader::before,
+.orbit-loader::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    animation: orbit 2s linear infinite;
+}
+
+.orbit-loader::before {
+    width: 60px;
+    height: 60px;
+    border: 2px solid transparent;
+    border-top: 2px solid var(--primary-color);
+}
+
+.orbit-loader::after {
+    width: 40px;
+    height: 40px;
+    border: 2px solid transparent;
+    border-top: 2px solid var(--accent-color);
+    top: 10px;
+    left: 10px;
+    animation-duration: 1s;
+    animation-direction: reverse;
+}
+
+@keyframes orbit {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
