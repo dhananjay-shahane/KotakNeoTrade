@@ -146,7 +146,7 @@ if __name__ == '__main__':
         start_schedulers()
 
         # Configure server settings
-        port = int(os.environ.get('PORT', 5000))
+        port = int(os.environ.get('PORT', 5001))
 
         print(f"🌐 Server starting on:")
         print(f"   Local: http://0.0.0.0:{port}")
