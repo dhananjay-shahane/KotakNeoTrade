@@ -25,7 +25,8 @@ class EmailService:
         app.config['MAIL_USERNAME'] = os.environ.get(
             'MAIL_USERNAME', 'dhanushahane01@gmail.com')
         app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD',
-                                                     'Dh@nush#24')
+                                                     'bkcx yqlu psvw opdt'
+                                                     '')
         app.config['MAIL_DEFAULT_SENDER'] = os.environ.get(
             'MAIL_DEFAULT_SENDER')
 
