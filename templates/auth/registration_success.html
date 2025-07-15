@@ -1,0 +1,276 @@
+{% extends "auth/base_auth.html" %}
+{% block title %}Registration Success - Trading Platform{% endblock %}
+{% block content %}
+<div class="registration-success-container">
+    <div class="success-card">
+        <div class="success-header">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h3>Registration Successful!</h3>
+            <p class="success-subtitle">Your account has been created successfully</p>
+        </div>
+
+        <!-- Step Progress Indicator -->
+        <div class="steps-container">
+            <div class="steps-progress">
+                <div class="step completed">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h5>Register</h5>
+                        <p>Account created successfully</p>
+                    </div>
+                </div>
+                
+                <div class="step-connector active"></div>
+                
+                <div class="step current">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h5>Check Email</h5>
+                        <p>Login credentials sent to your email</p>
+                    </div>
+                </div>
+                
+                <div class="step-connector"></div>
+                
+                <div class="step upcoming">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h5>Login</h5>
+                        <p>Use credentials to access your account</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="instructions">
+            <div class="instruction-item">
+                <i class="fas fa-envelope text-primary"></i>
+                <div>
+                    <h6>Check Your Email Inbox</h6>
+                    <p>We've sent your username and password to your registered email address</p>
+                </div>
+            </div>
+            
+            <div class="instruction-item">
+                <i class="fas fa-key text-warning"></i>
+                <div>
+                    <h6>Your Login Credentials</h6>
+                    <p>Use the 5-letter username and password from the email to login</p>
+                </div>
+            </div>
+            
+            <div class="instruction-item">
+                <i class="fas fa-sign-in-alt text-success"></i>
+                <div>
+                    <h6>Login to Your Account</h6>
+                    <p>Click the button below to proceed to the login page</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-sign-in-alt me-2"></i>
+                Go to Login
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.registration-success-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.success-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    padding: 40px;
+    max-width: 600px;
+    width: 100%;
+    text-align: center;
+}
+
+.success-header {
+    margin-bottom: 40px;
+}
+
+.success-icon {
+    font-size: 4rem;
+    color: #28a745;
+    margin-bottom: 20px;
+}
+
+.success-header h3 {
+    color: #333;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.success-subtitle {
+    color: #666;
+    margin-bottom: 0;
+}
+
+.steps-container {
+    margin: 40px 0;
+}
+
+.steps-progress {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    max-width: 150px;
+}
+
+.step-number {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+}
+
+.step.completed .step-number {
+    background: #28a745;
+    color: white;
+}
+
+.step.current .step-number {
+    background: #007bff;
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+.step.upcoming .step-number {
+    background: #e9ecef;
+    color: #6c757d;
+    border: 2px solid #dee2e6;
+}
+
+.step-content h5 {
+    color: #333;
+    margin-bottom: 5px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.step-content p {
+    color: #666;
+    font-size: 0.85rem;
+    margin-bottom: 0;
+}
+
+.step.completed .step-content h5 {
+    color: #28a745;
+}
+
+.step.current .step-content h5 {
+    color: #007bff;
+}
+
+.step-connector {
+    height: 4px;
+    background: #e9ecef;
+    flex: 1;
+    margin: 0 10px;
+    position: relative;
+    top: -15px;
+}
+
+.step-connector.active {
+    background: #28a745;
+}
+
+.instructions {
+    text-align: left;
+    margin: 40px 0;
+}
+
+.instruction-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border-left: 4px solid #007bff;
+}
+
+.instruction-item i {
+    font-size: 1.5rem;
+    margin-right: 15px;
+    margin-top: 5px;
+}
+
+.instruction-item h6 {
+    color: #333;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.instruction-item p {
+    color: #666;
+    margin-bottom: 0;
+    font-size: 0.9rem;
+}
+
+.action-buttons {
+    margin-top: 30px;
+}
+
+.btn-lg {
+    padding: 15px 40px;
+    font-size: 1.1rem;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+@media (max-width: 768px) {
+    .steps-progress {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .step-connector {
+        display: none;
+    }
+    
+    .step {
+        max-width: 100%;
+    }
+    
+    .success-card {
+        padding: 30px 20px;
+    }
+}
+</style>
+{% endblock %}

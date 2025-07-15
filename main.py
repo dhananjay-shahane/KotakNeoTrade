@@ -118,6 +118,11 @@ def register():
     
     return handle_register(mail)
 
+@app.route('/registration-success')
+def registration_success():
+    """Registration success page with step indicators"""
+    return render_template('auth/registration_success.html')
+
 @app.route('/logout')
 def logout():
     """User logout"""
