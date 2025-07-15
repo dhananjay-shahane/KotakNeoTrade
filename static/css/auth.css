@@ -222,6 +222,50 @@ body, html {
     margin: 0;
 }
 
+/* Password Input Container */
+.password-input-container {
+    position: relative;
+    width: 100%;
+}
+
+.password-input-container .form-control {
+    padding-right: 3rem;
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--gray-600);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.password-toggle-btn:hover {
+    color: var(--primary-blue);
+    background: rgba(30, 64, 175, 0.1);
+}
+
+.password-toggle-btn:focus {
+    outline: none;
+    color: var(--primary-blue);
+    background: rgba(30, 64, 175, 0.1);
+}
+
+.password-toggle-btn i {
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
 .form-text {
     color: var(--gray-600);
     font-size: 0.75rem;
