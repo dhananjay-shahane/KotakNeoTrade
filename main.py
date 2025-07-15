@@ -72,8 +72,5 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
 
 
-# Redirect route for Kotak Neo login
-@app.route('/kotak_neo_project/login')
-def kotak_neo_login():
-    return redirect('http://0.0.0.0:5000/login')  # Adjust port if needed
+
 

@@ -287,8 +287,9 @@ function redirectToKotakLogin() {
     const modal = bootstrap.Modal.getInstance(document.getElementById('loginAccountModal'));
     modal.hide();
     
-    // Redirect to Kotak Neo project login page
-    window.location.href = '/kotak_neo_project/login';
+    // Open Kotak Neo project in a new window/tab since it's a separate Flask app
+    // You'll need to run the Kotak Neo project separately on a different port
+    window.open('http://0.0.0.0:5001', '_blank');
 }
 
 function redirectToUpstoxLogin() {
@@ -328,6 +329,53 @@ function redirectToZerodhaLogin() {
         background: 'var(--card-bg)',
         color: 'var(--text-primary)'
     });
+}
+
+// Missing functions that are called from the HTML
+function showLoginModal() {
+    const modal = new bootstrap.Modal(document.getElementById('loginAccountModal'));
+    modal.show();
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    if (sidebar && overlay) {
+        sidebar.classList.toggle('show');
+        overlay.classList.toggle('show');
+    }
+}
+
+function showSettingsModal() {
+    const modal = new bootstrap.Modal(document.getElementById('settingsModal'));
+    modal.show();
+}
+
+function toggleNotificationInbox() {
+    const inbox = document.getElementById('notificationInbox');
+    if (inbox) {
+        inbox.style.display = inbox.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+function closeNotificationInbox() {
+    const inbox = document.getElementById('notificationInbox');
+    if (inbox) {
+        inbox.style.display = 'none';
+    }
+}
+
+function toggleUserMenu() {
+    const userMenu = document.getElementById('userMenu');
+    if (userMenu) {
+        userMenu.style.display = userMenu.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+function showUserProfile() {
+    const modal = new bootstrap.Modal(document.getElementById('userProfileModal'));
+    modal.show();
 }
 
 function handleAccountLogin() {
