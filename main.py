@@ -95,99 +95,29 @@ def deals():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     """User login page"""
-    from flask_login import login_user, current_user
-    
-    if current_user.is_authenticated:
-        return redirect(url_for('portfolio'))
-    
-    if request.method == 'POST':
-        email = request.form.get('email', '').strip()
-        password = request.form.get('password', '').strip()
-        
-        if not email or not password:
-            flash('Email and password are required', 'error')
-            return render_template('auth/login.html')
-        
-        user = User.query.filter_by(email=email).first()
-        
-        if user and user.check_password(password):
-            login_user(user)
-            flash(f'Welcome back, {user.username}!', 'success')
-            next_page = request.args.get('next')
-            return redirect(next_page or url_for('portfolio'))
-        else:
-            flash('Invalid email or password', 'error')
-    
-    return render_template('auth/login.html')
+    from api.auth_api import handle_login
+    return handle_login()
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     """User registration page"""
-    from flask_login import current_user
+    from api.auth_api import handle_register, EmailService
     
-    if current_user.is_authenticated:
-        return redirect(url_for('portfolio'))
+    # Configure email service if credentials are available
+    mail = None
+    try:
+        if os.environ.get('MAIL_USERNAME'):
+            mail = EmailService.configure_mail(app)
+    except Exception as e:
+        print(f"Email configuration failed: {e}")
     
-    if request.method == 'POST':
-        email = request.form.get('email', '').strip()
-        mobile = request.form.get('mobile', '').strip()
-        password = request.form.get('password', '').strip()
-        confirm_password = request.form.get('confirm_password', '').strip()
-        
-        # Validate inputs
-        if not all([email, mobile, password, confirm_password]):
-            flash('All fields are required', 'error')
-            return render_template('auth/register.html')
-        
-        if password != confirm_password:
-            flash('Passwords do not match', 'error')
-            return render_template('auth/register.html')
-        
-        if len(password) < 6:
-            flash('Password must be at least 6 characters long', 'error')
-            return render_template('auth/register.html')
-        
-        # Check if user already exists
-        if User.query.filter_by(email=email).first():
-            flash('Email already registered', 'error')
-            return render_template('auth/register.html')
-        
-        if User.query.filter_by(mobile=mobile).first():
-            flash('Mobile number already registered', 'error')
-            return render_template('auth/register.html')
-        
-        # Create new user
-        try:
-            username = User.generate_username(email)
-            
-            user = User(
-                email=email,
-                mobile=mobile,
-                username=username
-            )
-            user.set_password(password)
-            
-            db.session.add(user)
-            db.session.commit()
-            
-            flash(f'Registration successful! Your username is: {username}', 'success')
-            flash('You can now login with your email and password', 'info')
-            return redirect(url_for('login'))
-            
-        except Exception as e:
-            db.session.rollback()
-            flash('Registration failed. Please try again.', 'error')
-            print(f"Registration error: {e}")
-    
-    return render_template('auth/register.html')
+    return handle_register(mail)
 
 @app.route('/logout')
 def logout():
     """User logout"""
-    from flask_login import logout_user
-    logout_user()
-    flash('You have been logged out', 'info')
-    return redirect(url_for('login'))
+    from api.auth_api import handle_logout
+    return handle_logout()
 
 # Setup library paths for Kotak Neo project compatibility
 def setup_library_paths():
@@ -247,6 +177,34 @@ def register_kotak_neo_blueprints():
 
 # Register the blueprints
 register_kotak_neo_blueprints()
+
+# API endpoints for authentication
+@app.route('/api/auth/login', methods=['POST'])
+def api_auth_login():
+    """API endpoint for login via AJAX"""
+    from api.auth_api import login_api
+    return login_api()
+
+@app.route('/api/auth/register', methods=['POST'])
+def api_auth_register():
+    """API endpoint for registration via AJAX"""
+    from api.auth_api import register_api, EmailService
+    
+    # Configure email service if credentials are available
+    mail = None
+    try:
+        if os.environ.get('MAIL_USERNAME'):
+            mail = EmailService.configure_mail(app)
+    except Exception as e:
+        print(f"Email configuration failed: {e}")
+    
+    return register_api(mail)
+
+@app.route('/api/auth/status')
+def api_auth_status():
+    """API endpoint to check authentication status"""
+    from api.auth_api import check_user_status
+    return check_user_status()
 
 # API endpoints for ETF signals and deals functionality
 @app.route('/api/etf-signals-data')

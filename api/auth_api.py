@@ -1,0 +1,375 @@
+"""
+Authentication API for user login and registration functionality
+"""
+import os
+from flask import request, flash, redirect, url_for, render_template, jsonify
+from flask_login import login_user, logout_user, current_user
+from flask_mail import Mail, Message
+from models import db, User
+import secrets
+import string
+
+
+# Email configuration - moved from main app
+class EmailService:
+    """Email service for sending registration confirmations"""
+    
+    @staticmethod
+    def configure_mail(app):
+        """Configure Flask-Mail with app"""
+        app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+        app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
+        app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
+        app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+        app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+        app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER')
+        
+        return Mail(app)
+    
+    @staticmethod
+    def send_registration_email(mail, user_email, username, password):
+        """Send registration confirmation email with credentials"""
+        if not mail or not mail.app.config.get('MAIL_USERNAME'):
+            print("Email service not configured, skipping email send")
+            return False
+            
+        try:
+            msg = Message(
+                subject="Welcome to Trading Platform - Your Account Details",
+                recipients=[user_email]
+            )
+
+            # Email HTML template
+            msg.html = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Welcome to Trading Platform</title>
+                <style>
+                    body {{
+                        font-family: Arial, sans-serif;
+                        line-height: 1.6;
+                        color: #333;
+                        max-width: 600px;
+                        margin: 0 auto;
+                        padding: 20px;
+                    }}
+                    .header {{
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                        padding: 30px;
+                        text-align: center;
+                        border-radius: 10px 10px 0 0;
+                    }}
+                    .content {{
+                        background: #f8f9fa;
+                        padding: 30px;
+                        border-radius: 0 0 10px 10px;
+                    }}
+                    .credentials-box {{
+                        background: white;
+                        border: 2px solid #e9ecef;
+                        border-radius: 8px;
+                        padding: 20px;
+                        margin: 20px 0;
+                        text-align: center;
+                    }}
+                    .credential-item {{
+                        margin: 15px 0;
+                        padding: 10px;
+                        background: #f8f9fa;
+                        border-radius: 5px;
+                    }}
+                    .credential-label {{
+                        font-weight: bold;
+                        color: #495057;
+                        display: block;
+                        margin-bottom: 5px;
+                    }}
+                    .credential-value {{
+                        font-size: 18px;
+                        color: #007bff;
+                        font-weight: bold;
+                        font-family: monospace;
+                    }}
+                    .warning {{
+                        background: #fff3cd;
+                        border: 1px solid #ffeaa7;
+                        color: #856404;
+                        padding: 15px;
+                        border-radius: 5px;
+                        margin: 20px 0;
+                    }}
+                    .footer {{
+                        text-align: center;
+                        margin-top: 30px;
+                        color: #6c757d;
+                        font-size: 14px;
+                    }}
+                    .logo {{
+                        font-size: 24px;
+                        font-weight: bold;
+                    }}
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <div class="logo">📈 Trading Platform</div>
+                    <h1>Welcome to Our Trading Platform!</h1>
+                    <p>Your account has been successfully created</p>
+                </div>
+
+                <div class="content">
+                    <h2>Hello {username}!</h2>
+                    <p>Congratulations! Your trading platform account has been successfully registered. Below are your login credentials:</p>
+
+                    <div class="credentials-box">
+                        <h3>🔐 Your Login Credentials</h3>
+                        <div class="credential-item">
+                            <span class="credential-label">Username:</span>
+                            <span class="credential-value">{username}</span>
+                        </div>
+                        <div class="credential-item">
+                            <span class="credential-label">Password:</span>
+                            <span class="credential-value">{password}</span>
+                        </div>
+                        <div class="credential-item">
+                            <span class="credential-label">Email:</span>
+                            <span class="credential-value">{user_email}</span>
+                        </div>
+                    </div>
+
+                    <div class="warning">
+                        <strong>⚠️ Important Security Notice:</strong><br>
+                        Please keep these credentials safe and secure. We recommend changing your password after your first login for enhanced security.
+                    </div>
+                </div>
+
+                <div class="footer">
+                    <p>Thank you for choosing Trading Platform!</p>
+                    <p>If you have any questions, please contact our support team.</p>
+                    <p style="font-size: 12px; color: #adb5bd;">This is an automated email. Please do not reply directly to this message.</p>
+                </div>
+            </body>
+            </html>
+            """
+
+            # Plain text version
+            msg.body = f"""
+            Welcome to Trading Platform!
+
+            Your account has been successfully created.
+
+            Login Credentials:
+            Username: {username}
+            Password: {password}
+            Email: {user_email}
+
+            Please keep these credentials safe and secure.
+
+            Thank you for choosing Trading Platform!
+            """
+
+            mail.send(msg)
+            return True
+        except Exception as e:
+            print(f"Error sending email: {e}")
+            return False
+
+
+def handle_login():
+    """Handle user login"""
+    if current_user.is_authenticated:
+        return redirect(url_for('portfolio'))
+    
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '').strip()
+        
+        if not email or not password:
+            flash('Email and password are required', 'error')
+            return render_template('auth/login.html')
+        
+        user = User.query.filter_by(email=email).first()
+        
+        if user and user.check_password(password):
+            login_user(user)
+            flash(f'Welcome back, {user.username}!', 'success')
+            next_page = request.args.get('next')
+            return redirect(next_page or url_for('portfolio'))
+        else:
+            flash('Invalid email or password', 'error')
+    
+    return render_template('auth/login.html')
+
+
+def handle_register(mail=None):
+    """Handle user registration with optional email service"""
+    if current_user.is_authenticated:
+        return redirect(url_for('portfolio'))
+    
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        mobile = request.form.get('mobile', '').strip()
+        password = request.form.get('password', '').strip()
+        confirm_password = request.form.get('confirm_password', '').strip()
+        
+        # Validate inputs
+        if not all([email, mobile, password, confirm_password]):
+            flash('All fields are required', 'error')
+            return render_template('auth/register.html')
+        
+        if password != confirm_password:
+            flash('Passwords do not match', 'error')
+            return render_template('auth/register.html')
+        
+        if len(password) < 6:
+            flash('Password must be at least 6 characters long', 'error')
+            return render_template('auth/register.html')
+        
+        # Check if user already exists
+        if User.query.filter_by(email=email).first():
+            flash('Email already registered', 'error')
+            return render_template('auth/register.html')
+        
+        if User.query.filter_by(mobile=mobile).first():
+            flash('Mobile number already registered', 'error')
+            return render_template('auth/register.html')
+        
+        # Create new user
+        try:
+            username = User.generate_username(email)
+            
+            user = User(
+                email=email,
+                mobile=mobile,
+                username=username
+            )
+            user.set_password(password)
+            
+            db.session.add(user)
+            db.session.commit()
+            
+            # Send registration email if email service is configured
+            email_sent = False
+            if mail:
+                email_sent = EmailService.send_registration_email(mail, email, username, password)
+            
+            if email_sent:
+                flash('Registration successful! Please check your email for login credentials.', 'success')
+            else:
+                flash(f'Registration successful! Your username is: {username}', 'success')
+                flash('You can now login with your email and password', 'info')
+            
+            return redirect(url_for('login'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash('Registration failed. Please try again.', 'error')
+            print(f"Registration error: {e}")
+    
+    return render_template('auth/register.html')
+
+
+def handle_logout():
+    """Handle user logout"""
+    logout_user()
+    flash('You have been logged out', 'info')
+    return redirect(url_for('login'))
+
+
+# API endpoints for AJAX requests
+def login_api():
+    """API endpoint for login via AJAX"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip()
+        password = data.get('password', '').strip()
+        
+        if not email or not password:
+            return jsonify({'success': False, 'message': 'Email and password are required'}), 400
+        
+        user = User.query.filter_by(email=email).first()
+        
+        if user and user.check_password(password):
+            login_user(user)
+            return jsonify({
+                'success': True, 
+                'message': f'Welcome back, {user.username}!',
+                'redirect_url': url_for('portfolio')
+            })
+        else:
+            return jsonify({'success': False, 'message': 'Invalid email or password'}), 401
+            
+    except Exception as e:
+        print(f"Login API error: {e}")
+        return jsonify({'success': False, 'message': 'Login failed. Please try again.'}), 500
+
+
+def register_api(mail=None):
+    """API endpoint for registration via AJAX"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip()
+        mobile = data.get('mobile', '').strip()
+        password = data.get('password', '').strip()
+        confirm_password = data.get('confirm_password', '').strip()
+        
+        # Validate inputs
+        if not all([email, mobile, password, confirm_password]):
+            return jsonify({'success': False, 'message': 'All fields are required'}), 400
+        
+        if password != confirm_password:
+            return jsonify({'success': False, 'message': 'Passwords do not match'}), 400
+        
+        if len(password) < 6:
+            return jsonify({'success': False, 'message': 'Password must be at least 6 characters long'}), 400
+        
+        # Check if user already exists
+        if User.query.filter_by(email=email).first():
+            return jsonify({'success': False, 'message': 'Email already registered'}), 409
+        
+        if User.query.filter_by(mobile=mobile).first():
+            return jsonify({'success': False, 'message': 'Mobile number already registered'}), 409
+        
+        # Create new user
+        username = User.generate_username(email)
+        
+        user = User(
+            email=email,
+            mobile=mobile,
+            username=username
+        )
+        user.set_password(password)
+        
+        db.session.add(user)
+        db.session.commit()
+        
+        # Send registration email if email service is configured
+        email_sent = False
+        if mail:
+            email_sent = EmailService.send_registration_email(mail, email, username, password)
+        
+        message = 'Registration successful! Please check your email for login credentials.' if email_sent else f'Registration successful! Your username is: {username}'
+        
+        return jsonify({
+            'success': True,
+            'message': message,
+            'username': username,
+            'redirect_url': url_for('login')
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Registration API error: {e}")
+        return jsonify({'success': False, 'message': 'Registration failed. Please try again.'}), 500
+
+
+def check_user_status():
+    """API endpoint to check if user is authenticated"""
+    return jsonify({
+        'authenticated': current_user.is_authenticated,
+        'username': current_user.username if current_user.is_authenticated else None
+    })
