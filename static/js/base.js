@@ -209,6 +209,22 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
+// Password visibility toggle function
+function togglePassword(fieldId) {
+    const passwordField = document.getElementById(fieldId);
+    const eyeIcon = document.getElementById(fieldId + '-eye');
+    
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        eyeIcon.classList.remove('fa-eye');
+        eyeIcon.classList.add('fa-eye-slash');
+    } else {
+        passwordField.type = 'password';
+        eyeIcon.classList.remove('fa-eye-slash');
+        eyeIcon.classList.add('fa-eye');
+    }
+}
+
 // Page loader utility (if needed)
 function showPageLoader() {
     const loader = document.createElement("div");
