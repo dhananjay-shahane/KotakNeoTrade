@@ -86,8 +86,10 @@ def login():
                         }
                     }
 
-                    # Store user data in database
+                    # Store user data in database (optional - login still works without DB)
                     try:
+                        from Scripts.user_manager import UserManager
+                        user_manager = UserManager()
                         db_user = user_manager.create_or_update_user(login_response)
                         user_session = user_manager.create_user_session(db_user.id, login_response)
                         
@@ -96,10 +98,12 @@ def login():
                         
                         logging.info(f"User data stored in database for UCC: {ucc}")
                     except Exception as db_error:
-                        logging.error(f"Failed to store user data in database: {db_error}")
+                        logging.warning(f"Database storage skipped: {db_error}")
+                        # Continue with login even if DB storage fails
 
                     flash('Successfully authenticated with TOTP!', 'success')
-                    return redirect(url_for('main_routes.dashboard'))
+                    logging.info(f"Login successful for UCC: {ucc}, redirecting to dashboard")
+                    return redirect('/kotak/dashboard')
                 else:
                     flash('Invalid client data received', 'error')
             else:

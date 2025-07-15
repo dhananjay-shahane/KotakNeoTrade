@@ -23,6 +23,18 @@ template_loader = jinja2.ChoiceLoader([
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 app.jinja_loader = template_loader
+app.secret_key = os.environ.get("SESSION_SECRET", "demo-secret-key-2025")
+
+# Configure for production
+app.config['WTF_CSRF_ENABLED'] = False  # Disable CSRF for API endpoints
+app.config['DEBUG'] = True
+
+# Configure database for Kotak Neo integration
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///./trading_platform.db")
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_recycle": 300,
+    "pool_pre_ping": True,
+}
 
 # Add static file routes for Kotak Neo project
 @app.route('/kotak/static/<path:filename>')
@@ -31,11 +43,6 @@ def kotak_static(filename):
     import os
     from flask import send_from_directory
     return send_from_directory(os.path.join('kotak_neo_project', 'static'), filename)
-app.secret_key = os.environ.get("SESSION_SECRET", "demo-secret-key-2025")
-
-# Configure for production
-app.config['WTF_CSRF_ENABLED'] = False  # Disable CSRF for API endpoints
-app.config['DEBUG'] = True
 
 @app.route('/')
 def index():
@@ -75,13 +82,24 @@ def register_kotak_neo_blueprints():
         if kotak_path not in sys.path:
             sys.path.insert(0, kotak_path)
         
-        # Import the auth blueprint directly
+        # Import blueprints first to avoid database conflicts
         from kotak_neo_project.routes.auth_routes import auth_bp
         from kotak_neo_project.routes.main_routes import main_bp
         
         # Register blueprints with URL prefix
         app.register_blueprint(auth_bp, url_prefix='/kotak')
         app.register_blueprint(main_bp, url_prefix='/kotak')
+        
+        # Initialize database after blueprints are registered
+        try:
+            from kotak_neo_project.core.database import db as kotak_db
+            kotak_db.init_app(app)
+            
+            with app.app_context():
+                kotak_db.create_all()
+                print("Kotak Neo database initialized successfully")
+        except Exception as e:
+            print(f"Database initialization optional: {e}")
         
         # Add redirect routes
         @app.route('/kotak')
