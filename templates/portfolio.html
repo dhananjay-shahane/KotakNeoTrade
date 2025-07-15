@@ -67,116 +67,18 @@
         background: rgba(239, 68, 68, 0.2);
         color: var(--danger-color);
     }
-
-    .trading-accounts-section {
-        background: var(--card-bg);
-        border-radius: 0.75rem;
-        padding: 1.5rem;
-    }
-
-    .account-status {
-        border: 1px solid var(--border-color);
-        border-radius: 0.5rem;
-    }
-
-    .trading-status {
-        text-align: right;
-    }
-
-    .features-preview {
-        background: rgba(37, 99, 235, 0.05);
-        border-radius: 0.5rem;
-        padding: 1rem;
-    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid">
-    <!-- Trading Account Status Check -->
-    {% if not session.get('authenticated') or not session.get('access_token') %}
-    <div class="row justify-content-center">
-        <div class="col-lg-6 col-md-8">
-            <div class="card border-0 shadow-lg">
-                <div class="card-body text-center p-5">
-                    <div class="mb-4">
-                        <i class="fas fa-chart-line fa-4x text-primary mb-3"></i>
-                        <h2 class="h3 text-primary mb-3">Trading Account Required</h2>
-                        <p class="text-muted mb-4">
-                            Please login to your trading account first to view your portfolio and access trading features.
-                        </p>
-                    </div>
-                    
-                    <div class="trading-accounts-section mb-4">
-                        <h5 class="text-secondary mb-3">
-                            <i class="fas fa-building me-2"></i>TRADING ACCOUNTS
-                        </h5>
-                        
-                        <div class="account-status mb-3">
-                            <div class="d-flex align-items-center justify-content-between p-3 bg-light rounded">
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-user-circle text-success me-2"></i>
-                                    <span class="text-muted">Logged in as {{ current_user.username if current_user.is_authenticated else 'Guest' }}</span>
-                                </div>
-                                <span class="badge bg-success">Platform User</span>
-                            </div>
-                        </div>
-                        
-                        <div class="trading-login-section">
-                            <a href="/kotak/login" class="btn btn-primary btn-lg w-100 mb-3">
-                                <i class="fas fa-chart-bar me-2"></i>
-                                Login to Kotak Neo Trading Platform
-                            </a>
-                            <p class="text-muted small">
-                                Access live trading, portfolio tracking, and market data
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <div class="features-preview">
-                        <h6 class="text-secondary mb-3">Available after trading login:</h6>
-                        <div class="row text-start">
-                            <div class="col-6">
-                                <ul class="list-unstyled text-muted small">
-                                    <li><i class="fas fa-check text-success me-2"></i>Live Portfolio</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>Real-time P&L</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>Holdings & Positions</li>
-                                </ul>
-                            </div>
-                            <div class="col-6">
-                                <ul class="list-unstyled text-muted small">
-                                    <li><i class="fas fa-check text-success me-2"></i>Live Trading</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>Market Data</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>Order Management</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% else %}
     <!-- Page Header -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="h3 text-primary">
-                        <i class="fas fa-briefcase me-2"></i>Portfolio Overview
-                    </h1>
-                    <p class="text-muted">Real-time portfolio performance and holdings</p>
-                </div>
-                <div class="trading-status">
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-circle text-success me-2" style="font-size: 0.7rem;"></i>
-                        <span class="text-success small fw-bold">Trading Account Connected</span>
-                    </div>
-                    <div class="text-muted small">
-                        {{ session.get('greeting_name', session.get('ucc', 'Trader')) }}
-                    </div>
-                </div>
-            </div>
+            <h1 class="h3 text-primary">
+                <i class="fas fa-briefcase me-2"></i>Portfolio Overview
+            </h1>
+            <p class="text-muted">Real-time portfolio performance and holdings</p>
         </div>
     </div>
 
@@ -329,7 +231,6 @@
             </div>
         </div>
     </div>
-    {% endif %}
 </div>
 {% endblock %}
 
