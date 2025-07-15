@@ -32,8 +32,35 @@ def deals():
 
 @app.route('/kotak_neo_project/login')
 def kotak_neo_project_login():
-    """Redirect to the actual Kotak Neo project login page"""
-    return redirect('http://0.0.0.0:5001/login')
+    """Start Kotak Neo project and redirect to its login page"""
+    import subprocess
+    import time
+    import requests
+    
+    try:
+        # Check if Kotak Neo project is already running
+        try:
+            response = requests.get('http://0.0.0.0:5001/health', timeout=3)
+            if response.status_code == 200:
+                # Project is running, redirect to it
+                return redirect('http://0.0.0.0:5001/login')
+        except:
+            pass
+        
+        # Start the Kotak Neo project in background
+        subprocess.Popen([
+            'python', 'kotak_neo_project/main.py'
+        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+        # Wait a moment for startup
+        time.sleep(3)
+        
+        # Redirect to the project
+        return redirect('http://0.0.0.0:5001/login')
+        
+    except Exception as e:
+        flash(f'Error starting Kotak Neo project: {str(e)}', 'error')
+        return redirect(url_for('portfolio'))
 
 # API endpoints for ETF signals and deals functionality
 @app.route('/api/etf-signals-data')

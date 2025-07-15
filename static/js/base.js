@@ -288,8 +288,8 @@ function redirectToKotakNeoLogin() {
         modal.hide();
     }
 
-    // Redirect to the actual Kotak Neo project login page
-    window.location.href = 'http://0.0.0.0:5001/login';
+    // Redirect to the Kotak Neo project (will start it if needed)
+    window.open('/kotak_neo_project/login', '_blank');
 }
 
 function redirectToUpstoxLogin() {
@@ -298,21 +298,16 @@ function redirectToUpstoxLogin() {
         modal.hide();
     }
 
-    // For demo purposes, show an alert
     alert('Upstox integration coming soon!');
 }
 
 function redirectToAngelLogin() {
     const modal = bootstrap.Modal.getInstance(document.getElementById('loginAccountModal'));
-    modal.hide();
+    if (modal) {
+        modal.hide();
+    }
 
-    Swal.fire({
-        icon: 'info',
-        title: 'Coming Soon',
-        text: 'Angel One integration is under development',
-        background: 'var(--card-bg)',
-        color: 'var(--text-primary)'
-    });
+    alert('Angel One integration coming soon!');
 }
 
 function redirectToZerodhaLogin() {
