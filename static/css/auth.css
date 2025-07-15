@@ -155,16 +155,23 @@ body, html {
     position: relative;
 }
 
+.form-floating {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
 .form-control {
     width: 100%;
-    padding: 1rem 1rem 1rem 3rem;
-    border: 1px solid var(--gray-300);
+    padding: 1rem 1rem 1rem 1rem;
+    border: 2px solid var(--gray-300);
     border-radius: 12px;
     font-size: 1rem;
-    background: var(--gray-100) !important;
+    background: white !important;
     color: var(--gray-800) !important;
     transition: all 0.3s ease;
-    height: 60px;
+    height: 56px;
+    position: relative;
+    z-index: 1;
 }
 
 .form-control:focus {
@@ -176,30 +183,25 @@ body, html {
 }
 
 .form-control::placeholder {
-    color: var(--gray-500) !important;
-    font-size: 0.9rem;
-}
-
-.form-floating {
-    position: relative;
-    margin-bottom: 1.5rem;
+    color: transparent !important;
 }
 
 .form-floating label {
     position: absolute;
-    top: 50%;
+    top: 1rem;
     left: 1rem;
     color: var(--gray-600);
-    font-size: 0.9rem;
+    font-size: 1rem;
     pointer-events: none;
     transition: all 0.3s ease;
-    background: transparent;
-    padding: 0;
+    background: white;
+    padding: 0 0.5rem;
     z-index: 2;
-    transform: translateY(-50%);
+    transform-origin: left center;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    line-height: 1;
 }
 
 .form-control:focus + label,
@@ -210,8 +212,8 @@ body, html {
     font-size: 0.75rem;
     color: var(--primary-blue);
     background: white;
-    padding: 0 0.25rem;
-    transform: translateY(0);
+    padding: 0 0.5rem;
+    transform: scale(1);
 }
 
 .form-floating label i {
@@ -229,15 +231,29 @@ body, html {
 /* Fix autofill styling */
 .form-control:-webkit-autofill,
 .form-control:-webkit-autofill:hover,
-.form-control:-webkit-autofill:focus {
-    -webkit-box-shadow: 0 0 0 1000px var(--gray-100) inset !important;
+.form-control:-webkit-autofill:focus,
+.form-control:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px white inset !important;
     -webkit-text-fill-color: var(--gray-800) !important;
-    border: 1px solid var(--gray-300) !important;
+    border: 2px solid var(--gray-300) !important;
+    background: white !important;
+    transition: all 0.3s ease !important;
 }
 
 .form-control:-webkit-autofill:focus {
     -webkit-box-shadow: 0 0 0 1000px white inset !important;
     border-color: var(--primary-blue) !important;
+    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1) !important;
+}
+
+/* Remove autofill dropdown arrow */
+.form-control::-webkit-credentials-auto-fill-button {
+    visibility: hidden;
+    display: none !important;
+    pointer-events: none;
+    height: 0;
+    width: 0;
+    margin: 0;
 }
 
 .form-text {

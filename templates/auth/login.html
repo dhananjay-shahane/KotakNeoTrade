@@ -26,13 +26,13 @@
         <form method="POST" action="{{ url_for('login') }}" id="loginForm">
             <div class="form-floating">
                 <input type="email" class="form-control" id="email" name="email" 
-                       placeholder="Enter your email address" required>
+                       placeholder=" " required autocomplete="email">
                 <label for="email"><i class="fas fa-envelope"></i>Email Address</label>
             </div>
 
             <div class="form-floating">
                 <input type="password" class="form-control" id="password" name="password" 
-                       placeholder="Enter your password" required>
+                       placeholder=" " required autocomplete="current-password">
                 <label for="password"><i class="fas fa-lock"></i>Password</label>
             </div>
 
