@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}Portfolio - Kotak Neo Trading{% endblock %}
+
+{% block head %}
+<style>
+    .portfolio-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .portfolio-card:hover {
+        border-color: var(--primary-color);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(37, 99, 235, 0.15);
+    }
+
+    .metric-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .metric-label {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .change-positive {
+        color: var(--success-color);
+    }
+
+    .change-negative {
+        color: var(--danger-color);
+    }
+
+    .portfolio-table {
+        background: var(--card-bg);
+        border-radius: 0.75rem;
+        overflow: hidden;
+    }
+
+    .table-dark {
+        --bs-table-bg: var(--card-bg);
+        --bs-table-color: var(--text-primary);
+        --bs-table-border-color: var(--border-color);
+    }
+
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .status-active {
+        background: rgba(16, 185, 129, 0.2);
+        color: var(--success-color);
+    }
+
+    .status-inactive {
+        background: rgba(239, 68, 68, 0.2);
+        color: var(--danger-color);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 text-primary">
+                <i class="fas fa-briefcase me-2"></i>Portfolio Overview
+            </h1>
+            <p class="text-muted">Real-time portfolio performance and holdings</p>
+        </div>
+    </div>
+
+    <!-- Portfolio Metrics -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="portfolio-card">
+                <div class="metric-label">Total Portfolio Value</div>
+                <div class="metric-value">₹2,45,680</div>
+                <div class="d-flex align-items-center mt-2">
+                    <i class="fas fa-arrow-up text-success me-1"></i>
+                    <span class="change-positive">+₹12,450 (5.34%)</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="portfolio-card">
+                <div class="metric-label">Today's P&L</div>
+                <div class="metric-value">₹3,240</div>
+                <div class="d-flex align-items-center mt-2">
+                    <i class="fas fa-arrow-up text-success me-1"></i>
+                    <span class="change-positive">+1.34%</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="portfolio-card">
+                <div class="metric-label">Total Holdings</div>
+                <div class="metric-value">18</div>
+                <div class="d-flex align-items-center mt-2">
+                    <span class="text-muted">Active positions</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="portfolio-card">
+                <div class="metric-label">Available Margin</div>
+                <div class="metric-value">₹85,320</div>
+                <div class="d-flex align-items-center mt-2">
+                    <span class="text-info">Ready to trade</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Holdings Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="portfolio-table">
+                <div class="card-header border-0 bg-transparent">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>Current Holdings
+                    </h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-dark table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Quantity</th>
+                                <th>Avg Price</th>
+                                <th>Current Price</th>
+                                <th>P&L</th>
+                                <th>P&L %</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <strong>RELIANCE</strong>
+                                    <br><small class="text-muted">Reliance Industries</small>
+                                </td>
+                                <td>50</td>
+                                <td>₹2,450.00</td>
+                                <td>₹2,580.50</td>
+                                <td class="change-positive">+₹6,525</td>
+                                <td class="change-positive">+5.33%</td>
+                                <td><span class="status-badge status-active">Active</span></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>TCS</strong>
+                                    <br><small class="text-muted">Tata Consultancy Services</small>
+                                </td>
+                                <td>25</td>
+                                <td>₹3,680.00</td>
+                                <td>₹3,725.75</td>
+                                <td class="change-positive">+₹1,144</td>
+                                <td class="change-positive">+1.24%</td>
+                                <td><span class="status-badge status-active">Active</span></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>HDFC BANK</strong>
+                                    <br><small class="text-muted">HDFC Bank Limited</small>
+                                </td>
+                                <td>40</td>
+                                <td>₹1,650.00</td>
+                                <td>₹1,620.25</td>
+                                <td class="change-negative">-₹1,190</td>
+                                <td class="change-negative">-1.80%</td>
+                                <td><span class="status-badge status-active">Active</span></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>INFY</strong>
+                                    <br><small class="text-muted">Infosys Limited</small>
+                                </td>
+                                <td>60</td>
+                                <td>₹1,580.00</td>
+                                <td>₹1,612.30</td>
+                                <td class="change-positive">+₹1,938</td>
+                                <td class="change-positive">+2.04%</td>
+                                <td><span class="status-badge status-active">Active</span></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>ITC</strong>
+                                    <br><small class="text-muted">ITC Limited</small>
+                                </td>
+                                <td>100</td>
+                                <td>₹465.00</td>
+                                <td>₹478.25</td>
+                                <td class="change-positive">+₹1,325</td>
+                                <td class="change-positive">+2.85%</td>
+                                <td><span class="status-badge status-active">Active</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="portfolio-card">
+                <h5 class="text-primary mb-3">
+                    <i class="fas fa-chart-area me-2"></i>Portfolio Performance
+                </h5>
+                <div style="height: 300px;" class="d-flex align-items-center justify-content-center bg-dark rounded">
+                    <div class="text-center text-muted">
+                        <i class="fas fa-chart-line fa-3x mb-3 opacity-50"></i>
+                        <p>Portfolio chart will be displayed here</p>
+                        <small>Real-time performance tracking</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Portfolio page specific JavaScript
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set portfolio nav link as active
+        const portfolioLink = document.querySelector('a[href="#"]:has(.fa-briefcase)');
+        if (portfolioLink) {
+            // Remove active from all nav links first
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            // Add active to portfolio link
+            portfolioLink.classList.add('active');
+        }
+        
+        // Add auto-refresh functionality (every 30 seconds)
+        setInterval(function() {
+            console.log('Auto-refreshing portfolio data...');
+            // Here you would typically make an AJAX call to refresh data
+        }, 30000);
+        
+        // Add click handlers for table rows
+        const tableRows = document.querySelectorAll('tbody tr');
+        tableRows.forEach(row => {
+            row.style.cursor = 'pointer';
+            row.addEventListener('click', function() {
+                const symbol = this.querySelector('strong').textContent;
+                console.log('Clicked on symbol:', symbol);
+                // Here you could show more details or navigate to symbol page
+            });
+        });
+    });
+</script>
+{% endblock %}

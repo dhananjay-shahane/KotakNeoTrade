@@ -1,0 +1,591 @@
+{% extends "base.html" %}
+
+{% block title %}Deals - Kotak Neo Trading{% endblock %}
+
+{% block head %}
+<style>
+    .deal-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .deal-card:hover {
+        border-color: var(--primary-color);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(37, 99, 235, 0.15);
+    }
+
+    .deal-status {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+
+    .deal-status.active {
+        background: rgba(16, 185, 129, 0.2);
+        color: var(--success-color);
+        border: 1px solid var(--success-color);
+    }
+
+    .deal-status.completed {
+        background: rgba(37, 99, 235, 0.2);
+        color: var(--primary-color);
+        border: 1px solid var(--primary-color);
+    }
+
+    .deal-status.cancelled {
+        background: rgba(239, 68, 68, 0.2);
+        color: var(--danger-color);
+        border: 1px solid var(--danger-color);
+    }
+
+    .deal-profit {
+        font-size: 1.25rem;
+        font-weight: 700;
+    }
+
+    .deal-profit.positive {
+        color: var(--success-color);
+    }
+
+    .deal-profit.negative {
+        color: var(--danger-color);
+    }
+
+    .deal-profit.neutral {
+        color: var(--text-secondary);
+    }
+
+    .deal-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .deal-metric {
+        background: rgba(37, 99, 235, 0.1);
+        border: 1px solid rgba(37, 99, 235, 0.3);
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        text-align: center;
+        flex: 1;
+    }
+
+    .deal-metric-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .deal-metric-label {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-top: 0.25rem;
+    }
+
+    .performance-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .summary-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        text-align: center;
+    }
+
+    .summary-number {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .summary-label {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+    }
+
+    .deal-timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+
+    .deal-timeline::before {
+        content: '';
+        position: absolute;
+        left: 0.5rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--border-color);
+    }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -1.5rem;
+        top: 0.25rem;
+        width: 0.75rem;
+        height: 0.75rem;
+        background: var(--primary-color);
+        border-radius: 50%;
+        border: 2px solid var(--card-bg);
+    }
+
+    .timeline-time {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+    }
+
+    .timeline-content {
+        margin-top: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 text-primary">
+                <i class="fas fa-handshake me-2"></i>Deals Management
+            </h1>
+            <p class="text-muted">Track and manage your trading deals and performance</p>
+        </div>
+    </div>
+
+    <!-- Performance Summary -->
+    <div class="performance-summary">
+        <div class="summary-card">
+            <div class="summary-number text-primary">₹1,24,680</div>
+            <div class="summary-label">Total Profit</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-number text-success">45</div>
+            <div class="summary-label">Successful Deals</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-number text-warning">12</div>
+            <div class="summary-label">Active Deals</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-number text-info">89.2%</div>
+            <div class="summary-label">Win Rate</div>
+        </div>
+    </div>
+
+    <!-- Filter Controls -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Filter Deals</h6>
+                    <div class="row">
+                        <div class="col-6">
+                            <select class="form-select form-select-sm">
+                                <option>All Status</option>
+                                <option>Active</option>
+                                <option>Completed</option>
+                                <option>Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <select class="form-select form-select-sm">
+                                <option>All Symbols</option>
+                                <option>RELIANCE</option>
+                                <option>TCS</option>
+                                <option>HDFC BANK</option>
+                                <option>INFY</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Quick Actions</h6>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary btn-sm flex-fill">
+                            <i class="fas fa-plus me-1"></i>New Deal
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm flex-fill">
+                            <i class="fas fa-download me-1"></i>Export
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Deals -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="deal-card">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h4 class="mb-1">RELIANCE</h4>
+                        <p class="text-muted mb-0">Long Position • 50 Shares</p>
+                    </div>
+                    <span class="deal-status active">Active</span>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-4">
+                        <div class="deal-metric">
+                            <div class="deal-metric-value">₹2,450</div>
+                            <div class="deal-metric-label">Entry Price</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="deal-metric">
+                            <div class="deal-metric-value">₹2,580</div>
+                            <div class="deal-metric-label">Current Price</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="deal-metric">
+                            <div class="deal-metric-value">₹2,650</div>
+                            <div class="deal-metric-label">Target</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted">Current P&L:</span>
+                    <span class="deal-profit positive">+₹6,500 (+5.31%)</span>
+                </div>
+
+                <div class="deal-actions">
+                    <button class="btn btn-success btn-sm flex-fill">
+                        <i class="fas fa-chart-line me-1"></i>Sell
+                    </button>
+                    <button class="btn btn-primary btn-sm flex-fill">
+                        <i class="fas fa-plus me-1"></i>Add More
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="deal-card">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h4 class="mb-1">TCS</h4>
+                        <p class="text-muted mb-0">Long Position • 25 Shares</p>
+                    </div>
+                    <span class="deal-status active">Active</span>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-4">
+                        <div class="deal-metric">
+                            <div class="deal-metric-value">₹3,680</div>
+                            <div class="deal-metric-label">Entry Price</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="deal-metric">
+                            <div class="deal-metric-value">₹3,726</div>
+                            <div class="deal-metric-label">Current Price</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="deal-metric">
+                            <div class="deal-metric-value">₹3,850</div>
+                            <div class="deal-metric-label">Target</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted">Current P&L:</span>
+                    <span class="deal-profit positive">+₹1,150 (+1.25%)</span>
+                </div>
+
+                <div class="deal-actions">
+                    <button class="btn btn-success btn-sm flex-fill">
+                        <i class="fas fa-chart-line me-1"></i>Sell
+                    </button>
+                    <button class="btn btn-primary btn-sm flex-fill">
+                        <i class="fas fa-plus me-1"></i>Add More
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="deal-card">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h4 class="mb-1">HDFC BANK</h4>
+                        <p class="text-muted mb-0">Short Position • 40 Shares</p>
+                    </div>
+                    <span class="deal-status completed">Completed</span>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-4">
+                        <div class="deal-metric">
+                            <div class="deal-metric-value">₹1,680</div>
+                            <div class="deal-metric-label">Entry Price</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="deal-metric">
+                            <div class="deal-metric-value">₹1,620</div>
+                            <div class="deal-metric-label">Exit Price</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="deal-metric">
+                            <div class="deal-metric-value">2 days</div>
+                            <div class="deal-metric-label">Duration</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted">Final P&L:</span>
+                    <span class="deal-profit positive">+₹2,400 (+3.57%)</span>
+                </div>
+
+                <div class="deal-timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-time">2 days ago</div>
+                        <div class="timeline-content">Opened short position at ₹1,680</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-time">Yesterday</div>
+                        <div class="timeline-content">Price dropped to ₹1,645</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-time">Today</div>
+                        <div class="timeline-content">Closed position at ₹1,620</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="deal-card">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h4 class="mb-1">INFY</h4>
+                        <p class="text-muted mb-0">Long Position • 60 Shares</p>
+                    </div>
+                    <span class="deal-status active">Active</span>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-4">
+                        <div class="deal-metric">
+                            <div class="deal-metric-value">₹1,580</div>
+                            <div class="deal-metric-label">Entry Price</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="deal-metric">
+                            <div class="deal-metric-value">₹1,612</div>
+                            <div class="deal-metric-label">Current Price</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="deal-metric">
+                            <div class="deal-metric-value">₹1,750</div>
+                            <div class="deal-metric-label">Target</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted">Current P&L:</span>
+                    <span class="deal-profit positive">+₹1,920 (+2.03%)</span>
+                </div>
+
+                <div class="deal-actions">
+                    <button class="btn btn-success btn-sm flex-fill">
+                        <i class="fas fa-chart-line me-1"></i>Sell
+                    </button>
+                    <button class="btn btn-primary btn-sm flex-fill">
+                        <i class="fas fa-plus me-1"></i>Add More
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>Recent Activity
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Symbol</th>
+                                    <th>Action</th>
+                                    <th>Quantity</th>
+                                    <th>Price</th>
+                                    <th>P&L</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Today, 2:30 PM</td>
+                                    <td><strong>HDFC BANK</strong></td>
+                                    <td><span class="text-danger">SELL</span></td>
+                                    <td>40</td>
+                                    <td>₹1,620.00</td>
+                                    <td class="text-success">+₹2,400</td>
+                                    <td><span class="deal-status completed">Completed</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Today, 10:15 AM</td>
+                                    <td><strong>INFY</strong></td>
+                                    <td><span class="text-success">BUY</span></td>
+                                    <td>60</td>
+                                    <td>₹1,580.00</td>
+                                    <td class="text-success">+₹1,920</td>
+                                    <td><span class="deal-status active">Active</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Yesterday, 3:45 PM</td>
+                                    <td><strong>TCS</strong></td>
+                                    <td><span class="text-success">BUY</span></td>
+                                    <td>25</td>
+                                    <td>₹3,680.00</td>
+                                    <td class="text-success">+₹1,150</td>
+                                    <td><span class="deal-status active">Active</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set deals nav link as active
+        const dealsLink = document.querySelector('a[href="#"]:has(.fa-handshake)');
+        if (dealsLink) {
+            // Remove active from all nav links first
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            // Add active to deals link
+            dealsLink.classList.add('active');
+        }
+        
+        // Add click handlers for deal action buttons
+        document.querySelectorAll('.deal-actions .btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const action = this.textContent.trim();
+                const dealCard = this.closest('.deal-card');
+                const symbol = dealCard.querySelector('h4').textContent;
+                
+                if (action.includes('Sell')) {
+                    console.log(`Selling ${symbol}`);
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Confirm Sale',
+                            text: `Are you sure you want to sell your ${symbol} position?`,
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonColor: '#10b981',
+                            cancelButtonColor: '#6b7280',
+                            confirmButtonText: 'Yes, sell position'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                Swal.fire('Position Sold!', `${symbol} position has been sold successfully`, 'success');
+                            }
+                        });
+                    }
+                } else if (action.includes('Add More')) {
+                    console.log(`Adding more ${symbol}`);
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Add to Position',
+                            text: `How many more shares of ${symbol} would you like to buy?`,
+                            input: 'number',
+                            inputAttributes: {
+                                autocapitalize: 'off',
+                                min: 1,
+                                step: 1
+                            },
+                            showCancelButton: true,
+                            confirmButtonText: 'Add shares',
+                            showLoaderOnConfirm: true,
+                            preConfirm: (quantity) => {
+                                if (!quantity || quantity < 1) {
+                                    Swal.showValidationMessage('Please enter a valid quantity');
+                                }
+                                return quantity;
+                            }
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                Swal.fire('Order Placed!', `Added ${result.value} more shares of ${symbol}`, 'success');
+                            }
+                        });
+                    }
+                }
+            });
+        });
+        
+        // Auto-refresh deals every 30 seconds
+        setInterval(function() {
+            console.log('Auto-refreshing deals data...');
+            // Here you would typically make an AJAX call to refresh deals
+        }, 30000);
+        
+        // Add filter functionality
+        document.querySelectorAll('.form-select').forEach(select => {
+            select.addEventListener('change', function() {
+                console.log('Filter changed:', this.value);
+                // Here you would implement filtering logic
+            });
+        });
+    });
+</script>
+{% endblock %}
