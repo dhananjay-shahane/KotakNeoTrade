@@ -451,7 +451,8 @@
                                         <!-- Kotak Neo Card -->
                                         <div class="col-12">
                                             <div
-                                                class="broker-card"
+                                                class="broker-card active"
+                                                id="kotakCard"
                                                 onclick="showKotakLoginForm()"
                                             >
                                                 <div class="broker-icon">
@@ -546,7 +547,7 @@
                             <!-- Right Side - Login Form -->
                             <div class="col-md-6 login-form-side">
                                 <!-- Default Welcome Screen -->
-                                <div id="welcomeScreen" class="login-welcome-screen">
+                                <div id="welcomeScreen" class="login-welcome-screen" style="display: none;">
                                     <div class="welcome-content text-center">
                                         <i class="fas fa-chart-line welcome-icon mb-4"></i>
                                         <h3 class="mb-3">Welcome to Trading Platform</h3>
@@ -571,7 +572,7 @@
                                 </div>
 
                                 <!-- Kotak Neo Login Form -->
-                                <div id="kotakLoginForm" class="kotak-login-form" style="display: none;">
+                                <div id="kotakLoginForm" class="kotak-login-form">
                                     <div class="login-form-content">
                                         <div class="form-header text-center mb-4">
                                             <div class="broker-logo mb-3">

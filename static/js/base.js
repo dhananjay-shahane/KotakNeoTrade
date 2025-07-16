@@ -325,11 +325,24 @@ function showLoginModal() {
 
 // Broker redirect functions
 function showKotakLoginForm() {
+    // Remove active class from all broker cards
+    document.querySelectorAll('.broker-card').forEach(card => {
+        card.classList.remove('active');
+    });
+    
+    // Add active class to Kotak card
+    document.getElementById('kotakCard').classList.add('active');
+    
     document.getElementById('welcomeScreen').style.display = 'none';
     document.getElementById('kotakLoginForm').style.display = 'block';
 }
 
 function goBackToBrokerSelection() {
+    // Remove active class from all broker cards
+    document.querySelectorAll('.broker-card').forEach(card => {
+        card.classList.remove('active');
+    });
+    
     document.getElementById('kotakLoginForm').style.display = 'none';
     document.getElementById('welcomeScreen').style.display = 'block';
 }
@@ -388,14 +401,34 @@ function handleKotakLogin(event) {
 
 // Reset modal when it's closed
 document.getElementById('loginAccountModal').addEventListener('hidden.bs.modal', function () {
-    document.getElementById('kotakLoginForm').style.display = 'none';
-    document.getElementById('welcomeScreen').style.display = 'block';
+    // Reset to default state - Kotak Neo selected
+    document.getElementById('welcomeScreen').style.display = 'none';
+    document.getElementById('kotakLoginForm').style.display = 'block';
+    
+    // Remove active class from all broker cards
+    document.querySelectorAll('.broker-card').forEach(card => {
+        card.classList.remove('active');
+    });
+    
+    // Add active class to Kotak card
+    document.getElementById('kotakCard').classList.add('active');
 
     // Reset form
     const form = document.getElementById('kotakLoginFormElement');
     if (form) {
         form.reset();
     }
+});
+
+// Initialize modal with Kotak Neo selected when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Ensure Kotak Neo is selected by default
+    setTimeout(() => {
+        const kotakCard = document.getElementById('kotakCard');
+        if (kotakCard) {
+            kotakCard.classList.add('active');
+        }
+    }, 100);
 });
 
 // Alias for backward compatibility
