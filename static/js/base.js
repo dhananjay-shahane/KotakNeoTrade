@@ -1,4 +1,4 @@
-// Mobile sidebar toggle
+// Mobile sidebar toggle with improved touch handling
 function toggleSidebar() {
     var sidebar = document.getElementById("sidebar");
     var overlay = document.getElementById("sidebarOverlay");
@@ -8,11 +8,49 @@ function toggleSidebar() {
         sidebar.classList.remove("show");
         overlay.classList.remove("show");
         document.body.style.overflow = "";
+        // Remove touch event listeners when closing
+        document.removeEventListener('touchstart', handleTouchStart, { passive: false });
+        document.removeEventListener('touchmove', handleTouchMove, { passive: false });
     } else {
         sidebar.classList.add("show");
         overlay.classList.add("show");
         document.body.style.overflow = "hidden";
+        // Add touch event listeners for swipe to close
+        document.addEventListener('touchstart', handleTouchStart, { passive: false });
+        document.addEventListener('touchmove', handleTouchMove, { passive: false });
     }
+}
+
+// Touch handling for mobile sidebar
+let touchStartX = 0;
+let touchStartY = 0;
+
+function handleTouchStart(event) {
+    touchStartX = event.touches[0].clientX;
+    touchStartY = event.touches[0].clientY;
+}
+
+function handleTouchMove(event) {
+    if (!touchStartX || !touchStartY) return;
+    
+    var touchEndX = event.touches[0].clientX;
+    var touchEndY = event.touches[0].clientY;
+    var diffX = touchStartX - touchEndX;
+    var diffY = touchStartY - touchEndY;
+    
+    // Only handle horizontal swipes
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+        // Swipe left to close sidebar
+        if (diffX > 50) {
+            var sidebar = document.getElementById("sidebar");
+            if (sidebar && sidebar.classList.contains("show")) {
+                toggleSidebar();
+            }
+        }
+    }
+    
+    touchStartX = 0;
+    touchStartY = 0;
 }
 
 // Close sidebar when clicking outside on mobile

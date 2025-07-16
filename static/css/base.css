@@ -237,6 +237,15 @@ body {
     transition: transform 0.3s ease;
 }
 
+/* Main Content Area */
+.main-content {
+    margin-left: var(--sidebar-width);
+    margin-top: var(--header-height);
+    padding: 1.5rem;
+    transition: margin-left 0.3s ease;
+    min-height: calc(100vh - var(--header-height));
+}
+
 .sidebar-nav {
     padding: 1rem 0;
 }
@@ -467,6 +476,10 @@ body {
     transition: all 0.2s ease;
     cursor: pointer;
     z-index: 1001;
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
 }
 
 .mobile-toggle:hover {
@@ -579,6 +592,8 @@ body {
     .sidebar {
         transform: translateX(-100%);
         box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        width: 280px;
+        max-width: 80vw;
     }
 
     .sidebar.show {
@@ -591,6 +606,7 @@ body {
 
     .main-content {
         margin-left: 0;
+        padding: 1rem;
     }
 
     .user-info {
@@ -599,6 +615,10 @@ body {
 
     .header-brand span {
         display: none;
+    }
+
+    .header-right {
+        gap: 0.5rem;
     }
 
     /* Overlay when sidebar is open */
@@ -616,15 +636,306 @@ body {
     .sidebar-overlay.show {
         display: block;
     }
+
+    /* Better mobile header */
+    .main-header {
+        padding: 0 0.75rem;
+    }
+
+    .mobile-toggle {
+        padding: 0.5rem;
+        margin-right: 0.5rem;
+    }
+
+    .notification-btn {
+        padding: 0.375rem;
+        font-size: 1rem;
+    }
+
+    .user-profile {
+        min-width: auto;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 0.875rem;
+    }
 }
 
 @media (max-width: 768px) {
+    :root {
+        --sidebar-width: 260px;
+    }
+
     .header-brand span {
         display: none;
     }
 
     .theme-toggle {
-        margin-right: 0.5rem;
+        margin-right: 0.25rem;
+        transform: scale(0.9);
+    }
+
+    .main-content {
+        padding: 0.75rem;
+    }
+
+    .card {
+        margin-bottom: 1rem;
+        border-radius: 0.5rem;
+    }
+
+    .sidebar {
+        width: var(--sidebar-width);
+        max-width: 75vw;
+    }
+
+    .sidebar-nav {
+        padding: 1rem 0;
+    }
+
+    .nav-link {
+        padding: 0.875rem 1.5rem;
+        font-size: 0.95rem;
+    }
+
+    .nav-icon {
+        width: 18px;
+        font-size: 1rem;
+    }
+
+    .trading-accounts-section {
+        padding: 1rem 1.5rem;
+    }
+
+    .btn-login-account {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    /* Modal improvements for mobile */
+    .modal-dialog {
+        margin: 0.5rem;
+        max-width: calc(100vw - 1rem);
+    }
+
+    .modal-fullscreen {
+        width: 100vw;
+        height: 100vh;
+        max-width: none;
+        margin: 0;
+    }
+
+    .modal-fullscreen .modal-content {
+        height: 100vh;
+        border-radius: 0;
+    }
+
+    /* Notification dropdown mobile */
+    .notification-inbox {
+        width: 280px;
+        max-width: 90vw;
+        right: 0;
+        left: auto;
+    }
+
+    .user-menu {
+        width: 200px;
+        max-width: 90vw;
+        right: 0;
+        left: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    :root {
+        --sidebar-width: 240px;
+        --header-height: 56px;
+    }
+
+    .main-header {
+        padding: 0 0.5rem;
+        height: var(--header-height);
+    }
+
+    .header-brand {
+        font-size: 1.1rem;
+    }
+
+    .mobile-toggle {
+        padding: 0.4rem;
+        margin-right: 0.25rem;
+    }
+
+    .theme-toggle {
+        transform: scale(0.8);
+        margin-right: 0.125rem;
+    }
+
+    .notification-btn {
+        padding: 0.3rem;
+        font-size: 0.9rem;
+    }
+
+    .user-profile {
+        padding: 0.25rem;
+    }
+
+    .user-avatar {
+        width: 28px;
+        height: 28px;
+        font-size: 0.75rem;
+    }
+
+    .sidebar {
+        width: var(--sidebar-width);
+        max-width: 85vw;
+    }
+
+    .main-content {
+        padding: 0.5rem;
+        margin-top: var(--header-height);
+    }
+
+    .card {
+        border-radius: 0.375rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .nav-link {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .nav-icon {
+        width: 16px;
+        font-size: 0.9rem;
+    }
+
+    .trading-accounts-section {
+        padding: 0.75rem 1rem;
+    }
+
+    .btn-login-account {
+        padding: 0.625rem 0.75rem;
+        font-size: 0.85rem;
+    }
+
+    /* Ultra-compact notification dropdown */
+    .notification-inbox {
+        width: 260px;
+        max-width: 95vw;
+        right: 0;
+        left: auto;
+    }
+
+    .notification-header {
+        padding: 0.75rem;
+    }
+
+    .notification-header h6 {
+        font-size: 0.9rem;
+    }
+
+    .user-menu {
+        width: 180px;
+        max-width: 95vw;
+        right: 0;
+        left: auto;
+    }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+    .nav-link {
+        padding: 1rem 1.5rem;
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+    }
+
+    .mobile-toggle {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .notification-btn {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .theme-toggle-label {
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .user-profile {
+        min-height: 44px;
+        padding: 0.5rem;
+    }
+
+    .btn-login-account {
+        min-height: 44px;
+        padding: 0.75rem 1rem;
+    }
+}
+
+/* Additional mobile UX improvements */
+@media (max-width: 768px) {
+    /* Better tap targets */
+    .dropdown-item {
+        padding: 0.75rem 1rem;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+    
+    /* Improved form elements */
+    .form-control {
+        padding: 0.875rem 1rem;
+        font-size: 16px; /* Prevents zoom on iOS */
+        min-height: 44px;
+    }
+    
+    .btn {
+        padding: 0.875rem 1.5rem;
+        min-height: 44px;
+        font-size: 1rem;
+    }
+    
+    /* Better spacing for mobile */
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .card-header {
+        padding: 0.875rem 1rem;
+    }
+}
+
+/* Prevent horizontal scrolling on mobile */
+@media (max-width: 768px) {
+    body {
+        overflow-x: hidden;
+    }
+    
+    .container-fluid {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+    
+    .row {
+        margin-left: -0.75rem;
+        margin-right: -0.75rem;
+    }
+    
+    .col, .col-auto, .col-1, .col-2, .col-3, .col-4, .col-5, .col-6, .col-7, .col-8, .col-9, .col-10, .col-11, .col-12 {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
     }
 }
 
