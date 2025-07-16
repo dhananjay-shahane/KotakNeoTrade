@@ -1,280 +1,757 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Trading Platform{% endblock %}</title>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <title>{% block title %}Kotak Neo Trading{% endblock %}</title>
 
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome Icons -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+        <!-- Theme and Font Size persistence script -->
+        <script>
+            (function () {
+                var savedTheme = localStorage.getItem("theme") || "dark";
+                document.documentElement.setAttribute("data-theme", savedTheme);
 
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+                var savedFontSize =
+                    localStorage.getItem("website-font-size") || "14";
+                document.documentElement.style.setProperty(
+                    "--global-font-size",
+                    savedFontSize + "px",
+                );
+            })();
+        </script>
 
-    <style>
-        :root {
-            --header-height: 60px;
-            --sidebar-width: 250px;
-            --primary-color: #2c3e50;
-            --accent-color: #3498db;
-            --bg-primary: #1a1a1a;
-            --bg-secondary: #2d2d2d;
-            --text-primary: #ffffff;
-            --text-secondary: #b0b0b0;
-        }
+        <!-- Bootstrap 5 CSS -->
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <!-- Font Awesome Icons -->
+        <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+            rel="stylesheet"
+        />
+        <!-- SweetAlert2 CSS -->
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"
+        />
 
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
-        }
+        <!-- Custom CSS -->
+        <link
+            rel="stylesheet"
+            href="{{ url_for('static', filename='css/base.css') }}"
+        />
 
-        .main-header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: var(--header-height);
-            background: var(--bg-secondary);
-            border-bottom: 1px solid #444;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 1rem;
-            z-index: 1000;
-        }
-
-        .header-brand {
-            color: var(--text-primary);
-            text-decoration: none;
-            font-size: 1.2rem;
-            font-weight: bold;
-        }
-
-        .sidebar {
-            position: fixed;
-            top: var(--header-height);
-            left: 0;
-            width: var(--sidebar-width);
-            height: calc(100vh - var(--header-height));
-            background: var(--bg-secondary);
-            border-right: 1px solid #444;
-            overflow-y: auto;
-            z-index: 999;
-        }
-
-        .sidebar-nav {
-            padding: 1rem 0;
-        }
-
-        .nav-item {
-            margin-bottom: 0.5rem;
-        }
-
-        .nav-link {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem 1rem;
-            color: var(--text-secondary);
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-
-        .nav-link:hover,
-        .nav-link.active {
-            background-color: var(--accent-color);
-            color: var(--text-primary);
-        }
-
-        .nav-icon {
-            margin-right: 0.75rem;
-            width: 20px;
-        }
-
-        .main-content {
-            margin-left: var(--sidebar-width);
-            margin-top: var(--header-height);
-            padding: 2rem;
-            min-height: calc(100vh - var(--header-height));
-        }
-
-        .user-profile {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 0.5rem;
-            transition: background-color 0.3s ease;
-        }
-
-        .user-profile:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background-color: var(--accent-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 0.5rem;
-            font-weight: bold;
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-            }
-
-            .sidebar.show {
-                transform: translateX(0);
-            }
-
-            .main-content {
-                margin-left: 0;
-            }
-
-            .mobile-toggle {
-                display: block;
-                background: none;
-                border: none;
-                color: var(--text-primary);
-                font-size: 1.2rem;
-            }
-        }
-
-        .mobile-toggle {
-            display: none;
-        }
-    </style>
-
-    {% block head %}{% endblock %}
-</head>
-<body>
-    {% if current_user and current_user.is_authenticated %}
-    <!-- Fixed Header -->
-    <header class="main-header">
-        <div class="d-flex align-items-center">
-            <button class="mobile-toggle me-3" onclick="toggleSidebar()">
-                <i class="fas fa-bars"></i>
-            </button>
-            <a href="{{ url_for('portfolio') }}" class="header-brand">
-                <i class="fas fa-chart-line me-2"></i>
-                Trading Platform
-            </a>
-        </div>
-
-        <div class="user-profile" onclick="toggleUserMenu()">
-            <div class="user-avatar">
-                {{ current_user.username[0].upper() if current_user.username else 'U' }}
-            </div>
-            <span>{{ current_user.username or 'User' }}</span>
-            <i class="fas fa-chevron-down ms-2"></i>
-        </div>
-    </header>
-
-    <!-- Fixed Sidebar -->
-    <nav class="sidebar" id="sidebar">
-        <div class="sidebar-nav">
-            <div class="nav-item">
-                <a href="{{ url_for('portfolio') }}" class="nav-link {% if request.endpoint == 'portfolio' %}active{% endif %}">
-                    <i class="fas fa-tachometer-alt nav-icon"></i>
-                    <span>Portfolio</span>
+        {% block head %}{% endblock %}
+    </head>
+    <body>
+        <!-- Fixed Header -->
+        <header class="main-header">
+            <div class="header-left">
+                <button class="mobile-toggle me-3" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <a href="{{ url_for('portfolio') }}" class="header-brand">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Neo Trading</span>
                 </a>
             </div>
-            <div class="nav-item">
-                <a href="{{ url_for('trading_signals') }}" class="nav-link {% if request.endpoint == 'trading_signals' %}active{% endif %}">
-                    <i class="fas fa-chart-bar nav-icon"></i>
-                    <span>Trading Signals</span>
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="{{ url_for('deals') }}" class="nav-link {% if request.endpoint == 'deals' %}active{% endif %}">
-                    <i class="fas fa-handshake nav-icon"></i>
-                    <span>Deals</span>
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="{{ url_for('charts') }}" class="nav-link {% if request.endpoint == 'charts' %}active{% endif %}">
-                    <i class="fas fa-chart-area nav-icon"></i>
-                    <span>Charts</span>
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="{{ url_for('orders') }}" class="nav-link {% if request.endpoint == 'orders' %}active{% endif %}">
-                    <i class="fas fa-list-alt nav-icon"></i>
-                    <span>Orders</span>
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="{{ url_for('positions') }}" class="nav-link {% if request.endpoint == 'positions' %}active{% endif %}">
-                    <i class="fas fa-chart-pie nav-icon"></i>
-                    <span>Positions</span>
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="{{ url_for('holdings') }}" class="nav-link {% if request.endpoint == 'holdings' %}active{% endif %}">
-                    <i class="fas fa-hands-helping nav-icon"></i>
-                    <span>Holdings</span>
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="{{ url_for('logout') }}" class="nav-link">
-                    <i class="fas fa-sign-out-alt nav-icon"></i>
-                    <span>Logout</span>
-                </a>
-            </div>
-        </div>
-    </nav>
-    {% endif %}
 
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="{% if current_user and current_user.is_authenticated %}main-content{% else %}container{% endif %}" style="padding-top: 1rem;">
-                {% for category, message in messages %}
-                    {% set alert_class = 'alert-success' if category == 'success' else 'alert-danger' %}
-                    <div class="alert {{ alert_class }} alert-dismissible fade show" role="alert">
-                        <i class="fas fa-{% if category == 'success' %}check-circle{% else %}exclamation-triangle{% endif %} me-2"></i>
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <div class="header-right">
+                <!-- Settings Button -->
+                <button
+                    class="settings-btn me-3"
+                    onclick="showSettingsModal()"
+                    title="Application Settings"
+                >
+                    <i class="fas fa-cog"></i>
+                </button>
+
+                <!-- Theme Toggle Switch -->
+                <div class="theme-toggle">
+                    <input
+                        type="checkbox"
+                        id="themeToggle"
+                        class="theme-toggle-input"
+                    />
+                    <label for="themeToggle" class="theme-toggle-label">
+                        <i class="fas fa-sun theme-icon-light"></i>
+                        <i class="fas fa-moon theme-icon-dark"></i>
+                        <span class="theme-toggle-slider"></span>
+                    </label>
+                </div>
+
+                <!-- Notification Container -->
+                <div class="notification-container">
+                    <button
+                        class="notification-btn"
+                        onclick="toggleNotificationInbox()"
+                    >
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge" id="notificationCount"
+                            >0</span
+                        >
+                    </button>
+
+                    <!-- Notification Inbox Dropdown -->
+                    <div
+                        class="notification-inbox"
+                        id="notificationInbox"
+                        style="display: none"
+                    >
+                        <div
+                            class="notification-header flex justify-content-between align-items-center"
+                        >
+                            <h6>
+                                <i class="fas fa-inbox me-2"></i>Notifications
+                            </h6>
+                            <button
+                                class="btn-close-inbox"
+                                onclick="closeNotificationInbox()"
+                            >
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="notification-list" id="notificationList">
+                            <div class="no-notifications">
+                                <i class="fas fa-bell-slash"></i>
+                                <p>No new notifications</p>
+                            </div>
+                        </div>
                     </div>
-                {% endfor %}
+                </div>
+
+                <!-- User Profile -->
+                <div class="user-profile" onclick="toggleUserMenu()">
+                    <div class="user-avatar text-white">
+                        {% if current_user.is_authenticated %} {{
+                        current_user.username[0].upper() }} {% else %} G {%
+                        endif %}
+                    </div>
+                    <div class="user-info">
+                        <h6>
+                            {% if current_user.is_authenticated %} {{
+                            current_user.username }} {% else %} Guest User {%
+                            endif %}
+                        </h6>
+                        <small>Trading Account</small>
+                    </div>
+                    <i
+                        class="fas fa-chevron-down"
+                        style="font-size: 0.75rem; color: var(--text-secondary)"
+                    ></i>
+                </div>
             </div>
-        {% endif %}
-    {% endwith %}
+        </header>
 
-    <!-- Main Content -->
-    <main class="{% if current_user and current_user.is_authenticated %}main-content{% else %}container-fluid{% endif %}">
-        {% block content %}
-        <div class="text-center">
-            <h1>Welcome to Trading Platform</h1>
-            <p>Please select a page from the sidebar to continue.</p>
+        <!-- Sidebar Overlay for Mobile -->
+        <div
+            class="sidebar-overlay"
+            id="sidebarOverlay"
+            onclick="toggleSidebar()"
+        ></div>
+
+        <!-- Fixed Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-nav">
+                <div class="nav-item">
+                    <a href="{{ url_for('portfolio') }}" class="nav-link">
+                        <i class="fas fa-briefcase nav-icon"></i>
+                        <span>Portfolio</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ url_for('trading_signals') }}" class="nav-link">
+                        <i class="fas fa-chart-bar nav-icon"></i>
+                        <span>Trading Signals</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ url_for('deals') }}" class="nav-link">
+                        <i class="fas fa-handshake nav-icon"></i>
+                        <span>Deals</span>
+                    </a>
+                </div>
+                <!-- <div class="nav-item">
+                <a href="/kotak" class="nav-link">
+                    <i class="fas fa-chart-line nav-icon"></i>
+                    <span>Kotak Neo Platform</span>
+                </a>
+            </div> -->
+            </div>
+
+            <!-- Kotak Neo Trading Section (shown after login) -->
+            <div class="kotak-neo-section" id="kotakNeoSection" style="display: none;">
+                <div class="section-header">
+                    <h6>
+                        <i class="fas fa-chart-line me-2"></i>Kotak Neo Account
+                    </h6>
+                    <div class="account-info" id="kotakAccountInfo">
+                        <small class="text-muted">UCC: <span id="kotakUCC">-</span></small>
+                    </div>
+                </div>
+                
+                <div class="nav-items">
+                    <div class="nav-item">
+                        <a href="/kotak/orders" class="nav-link">
+                            <i class="fas fa-list-alt nav-icon"></i>
+                            <span>Orders</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/kotak/positions" class="nav-link">
+                            <i class="fas fa-chart-bar nav-icon"></i>
+                            <span>Positions</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/kotak/holdings" class="nav-link">
+                            <i class="fas fa-briefcase nav-icon"></i>
+                            <span>Holdings</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trading Accounts Section -->
+            <div class="trading-accounts-section">
+                <div class="accounts-header">
+                    <h6>
+                        <i class="fas fa-university me-2"></i>Trading Accounts
+                    </h6>
+                </div>
+                
+                <!-- Logged-in Accounts -->
+                <div class="logged-accounts" id="loggedAccounts" style="display: none;">
+                    <!-- Accounts will be populated by JavaScript -->
+                </div>
+                
+                <!-- Login Button (shown when no accounts logged in) -->
+                <div class="account-login" id="accountLogin">
+                    <button class="btn-login-account" onclick="showLoginModal()">
+                        <i class="fas fa-sign-in-alt me-2"></i>Login Account
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- User Dropdown Menu -->
+        <div
+            class="dropdown-menu position-absolute"
+            id="userMenu"
+            style="
+                display: none;
+                top: var(--header-height);
+                right: 1rem;
+                min-width: 200px;
+            "
+        >
+            <h6 class="dropdown-header">
+                <i class="fas fa-user me-2"></i>Account Details
+            </h6>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="#" onclick="showUserProfile()">
+                <i class="fas fa-id-card me-2"></i>View Profile
+            </a>
+            <div class="dropdown-divider"></div>
+            {% if current_user.is_authenticated %}
+            <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                <i class="fas fa-sign-out-alt me-2"></i>Logout
+            </a>
+            {% else %}
+            <a class="dropdown-item text-primary" href="{{ url_for('login') }}">
+                <i class="fas fa-sign-in-alt me-2"></i>Login
+            </a>
+            <a
+                class="dropdown-item text-success"
+                href="{{ url_for('register') }}"
+            >
+                <i class="fas fa-user-plus me-2"></i>Register
+            </a>
+            {% endif %}
         </div>
-        {% endblock %}
-    </main>
 
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- User Profile Modal -->
+        <div class="modal fade" id="userProfileModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header border-bottom border-secondary">
+                        <h5 class="modal-title">
+                            <i class="fas fa-user-circle me-2"></i>User Profile
+                        </h5>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-4 text-center mb-4">
+                                <div class="user-profile-avatar mb-3">
+                                    <i
+                                        class="fas fa-user-circle fa-5x text-primary"
+                                    ></i>
+                                </div>
+                                <h4 class="text-muted">User Name</h4>
+                                <span class="badge bg-success"
+                                    >Active Trader</span
+                                >
+                            </div>
+                            <div class="col-md-8">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-info-circle me-2"></i
+                                    >Account Information
+                                </h6>
+                                <div class="row">
+                                    <div class="col-sm-6 mb-3">
+                                        <label class="form-label text-muted"
+                                            >UCC (User Code)</label
+                                        >
+                                        <div
+                                            class="form-control bg-secondary text-muted border-0"
+                                        >
+                                            DEMO001
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 mb-3">
+                                        <label class="form-label text-muted"
+                                            >Account Status</label
+                                        >
+                                        <div
+                                            class="form-control bg-success text-muted border-0"
+                                        >
+                                            <span class="text-muted"
+                                                ><i
+                                                    class="fas fa-check-circle me-1"
+                                                ></i
+                                                >Active & Authenticated</span
+                                            >
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-6 mb-3">
+                                        <label class="form-label text-muted"
+                                            >Login Time</label
+                                        >
+                                        <div
+                                            class="form-control bg-secondary text-muted border-0"
+                                        >
+                                            <span id="loginTime">Today</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 mb-3">
+                                        <label class="form-label text-muted"
+                                            >Client Code</label
+                                        >
+                                        <div
+                                            class="form-control bg-secondary text-muted border-0"
+                                        >
+                                            NEO001
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-    <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('show');
-        }
+                        <hr class="border-secondary" />
 
-        function toggleUserMenu() {
-            // User menu functionality can be added here
-            console.log('User menu clicked');
-        }
-    </script>
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-shield-alt me-2"></i>Security &
+                            Settings
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="list-group list-group-flush">
+                                    <div
+                                        class="list-group-item bg-transparent text-muted border-secondary"
+                                    >
+                                        <i
+                                            class="fas fa-key me-2 text-success"
+                                        ></i>
+                                        Two-Factor Authentication:
+                                        <span class="text-success"
+                                            >Enabled</span
+                                        >
+                                    </div>
+                                    <div
+                                        class="list-group-item bg-transparent text-muted border-secondary"
+                                    >
+                                        <i
+                                            class="fas fa-clock me-2 text-info"
+                                        ></i>
+                                        Session Timeout:
+                                        <span class="text-info">24HR</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="list-group list-group-flush">
+                                    <div
+                                        class="list-group-item bg-transparent text-muted border-secondary"
+                                    >
+                                        <i
+                                            class="fas fa-chart-line me-2 text-warning"
+                                        ></i>
+                                        Trading Status:
+                                        <span class="text-success">Active</span>
+                                    </div>
+                                    <div
+                                        class="list-group-item bg-transparent text-muted border-secondary"
+                                    >
+                                        <i
+                                            class="fas fa-database me-2 text-primary"
+                                        ></i>
+                                        Data Refresh:
+                                        <span class="text-info">Real-time</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    {% block scripts %}{% endblock %}
-</body>
+        <!-- Settings Modal -->
+        <div class="modal fade" id="settingsModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header border-bottom border-secondary">
+                        <h5 class="modal-title">
+                            <i class="fas fa-cog me-2"></i>Application Settings
+                        </h5>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Font Size Settings -->
+                        <div class="settings-section">
+                            <h6>
+                                <i class="fas fa-text-height"></i>
+                                Font Size Settings
+                            </h6>
+                            <div class="settings-control-group">
+                                <label for="fontSizeSelect">Font Size:</label>
+                                <select id="fontSizeSelect" class="form-select">
+                                    <option value="10">10px (Minimum)</option>
+                                    <option value="11">11px</option>
+                                    <option value="12">12px</option>
+                                    <option value="13">13px</option>
+                                    <option value="14" selected>
+                                        14px (Default)
+                                    </option>
+                                    <option value="15">15px</option>
+                                    <option value="16">16px</option>
+                                    <option value="17">17px</option>
+                                    <option value="18">18px</option>
+                                    <option value="19">19px</option>
+                                    <option value="20">20px (Maximum)</option>
+                                </select>
+                            </div>
+                            <div class="font-size-preview">
+                                <p>
+                                    This is a preview of the selected font size.
+                                    Your entire application will use this size.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Full Screen Broker Selection Modal -->
+        <div class="modal fade" id="loginAccountModal" tabindex="-1">
+            <div class="modal-dialog modal-fullscreen">
+                <div class="modal-content">
+                    <div class="modal-header border-bottom border-secondary">
+                        <h5 class="modal-title">
+                            <i class="fas fa-university me-2"></i>Trading Account Login
+                        </h5>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                        ></button>
+                    </div>
+                    <div class="modal-body p-0">
+                        <div class="row g-0 h-100">
+                            <!-- Left Side - Broker Cards -->
+                            <div class="col-md-6 broker-selection-side p-4">
+                                <div class="broker-selection-content">
+                                    <h4 class="mb-4">
+                                        <i class="fas fa-university me-2"></i>Choose Your Broker
+                                    </h4>
+                                    <div class="row g-3">
+                                        <!-- Kotak Neo Card -->
+                                        <div class="col-12">
+                                            <div
+                                                class="broker-card active"
+                                                id="kotakCard"
+                                                onclick="showKotakLoginForm()"
+                                            >
+                                                <div class="broker-icon">
+                                                    <i class="fas fa-chart-line"></i>
+                                                </div>
+                                                <div class="broker-info">
+                                                    <h6 class="broker-name">Kotak Neo</h6>
+                                                    <p class="broker-description">
+                                                        Advanced trading platform with real-time data
+                                                    </p>
+                                                    <div class="broker-features">
+                                                        <span class="feature-tag">TOTP Auth</span>
+                                                        <span class="feature-tag">Real-time</span>
+                                                    </div>
+                                                </div>
+                                                <i class="fas fa-chevron-right broker-arrow"></i>
+                                            </div>
+                                        </div>
+
+                                        <!-- Upstox Card -->
+                                        <div class="col-12">
+                                            <div
+                                                class="broker-card disabled"
+                                                onclick="showComingSoon('Upstox')"
+                                            >
+                                                <div class="broker-icon upstox">
+                                                    <i class="fas fa-rocket"></i>
+                                                </div>
+                                                <div class="broker-info">
+                                                    <h6 class="broker-name">Upstox</h6>
+                                                    <p class="broker-description">
+                                                        Fast and reliable trading experience
+                                                    </p>
+                                                    <div class="broker-features">
+                                                        <span class="feature-tag">API Access</span>
+                                                        <span class="feature-tag">Mobile First</span>
+                                                    </div>
+                                                </div>
+                                                <span class="coming-soon-badge">Coming Soon</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Angel One Card -->
+                                        <div class="col-12">
+                                            <div
+                                                class="broker-card disabled"
+                                                onclick="showComingSoon('Angel One')"
+                                            >
+                                                <div class="broker-icon angel">
+                                                    <i class="fas fa-feather-alt"></i>
+                                                </div>
+                                                <div class="broker-info">
+                                                    <h6 class="broker-name">Angel One</h6>
+                                                    <p class="broker-description">
+                                                        Comprehensive trading and investment platform
+                                                    </p>
+                                                    <div class="broker-features">
+                                                        <span class="feature-tag">SmartAPI</span>
+                                                        <span class="feature-tag">Research</span>
+                                                    </div>
+                                                </div>
+                                                <span class="coming-soon-badge">Coming Soon</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Zerodha Card -->
+                                        <div class="col-12">
+                                            <div
+                                                class="broker-card disabled"
+                                                onclick="showComingSoon('Zerodha')"
+                                            >
+                                                <div class="broker-icon zerodha">
+                                                    <i class="fas fa-bolt"></i>
+                                                </div>
+                                                <div class="broker-info">
+                                                    <h6 class="broker-name">Zerodha</h6>
+                                                    <p class="broker-description">
+                                                        India's largest discount broker platform
+                                                    </p>
+                                                    <div class="broker-features">
+                                                        <span class="feature-tag">Kite API</span>
+                                                        <span class="feature-tag">Low Cost</span>
+                                                    </div>
+                                                </div>
+                                                <span class="coming-soon-badge">Coming Soon</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Side - Login Form -->
+                            <div class="col-md-6 login-form-side">
+                                <!-- Default Welcome Screen -->
+                                <div id="welcomeScreen" class="login-welcome-screen" style="display: none;">
+                                    <div class="welcome-content text-center">
+                                        <i class="fas fa-chart-line welcome-icon mb-4"></i>
+                                        <h3 class="mb-3">Welcome to Trading Platform</h3>
+                                        <p class="text-muted mb-4">
+                                            Select a broker from the left panel to begin your trading journey
+                                        </p>
+                                        <div class="welcome-features">
+                                            <div class="feature-item">
+                                                <i class="fas fa-shield-alt text-success"></i>
+                                                <span>Secure Authentication</span>
+                                            </div>
+                                            <div class="feature-item">
+                                                <i class="fas fa-chart-bar text-primary"></i>
+                                                <span>Real-time Data</span>
+                                            </div>
+                                            <div class="feature-item">
+                                                <i class="fas fa-mobile-alt text-info"></i>
+                                                <span>Mobile Friendly</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Kotak Neo Login Form -->
+                                <div id="kotakLoginForm" class="kotak-login-form">
+                                    <div class="login-form-content">
+                                        <div class="form-header text-center mb-4">
+                                            <div class="broker-logo mb-3">
+                                                <i class="fas fa-chart-line"></i>
+                                            </div>
+                                            <h4>Kotak Neo Login</h4>
+                                            <p class="text-muted">Enter your Kotak Neo credentials</p>
+                                        </div>
+
+                                        <form id="kotakLoginFormElement" onsubmit="handleKotakLogin(event)">
+                                            <div class="form-group mb-3">
+                                                <label class="form-label">
+                                                    <i class="fas fa-mobile-alt me-2"></i>Mobile Number
+                                                </label>
+                                                <input
+                                                    type="tel"
+                                                    class="form-control"
+                                                    name="mobile_number"
+                                                    placeholder="Enter registered mobile number"
+                                                    pattern="[0-9]{10}"
+                                                    maxlength="10"
+                                                    required
+                                                />
+                                                <small class="form-text text-muted">
+                                                    Enter your 10-digit mobile number registered with Kotak Neo
+                                                </small>
+                                            </div>
+
+                                            <div class="form-group mb-3">
+                                                <label class="form-label">
+                                                    <i class="fas fa-user me-2"></i>UCC (User Client Code)
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    class="form-control"
+                                                    name="ucc"
+                                                    placeholder="Enter your UCC"
+                                                    maxlength="6"
+                                                    required
+                                                />
+                                                <small class="form-text text-muted">
+                                                    Enter your 5-6 character alphanumeric UCC from Kotak Neo
+                                                </small>
+                                            </div>
+
+                                            <div class="form-group mb-3">
+                                                <label class="form-label">
+                                                    <i class="fas fa-key me-2"></i>MPIN
+                                                </label>
+                                                <div class="password-input-wrapper">
+                                                    <input
+                                                        type="password"
+                                                        class="form-control"
+                                                        name="mpin"
+                                                        placeholder="••••••"
+                                                        pattern="[0-9]{6}"
+                                                        maxlength="6"
+                                                        required
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        class="password-toggle"
+                                                        onclick="togglePasswordVisibility(this)"
+                                                    >
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                </div>
+                                                <small class="form-text text-muted">
+                                                    Enter your 6-digit MPIN
+                                                </small>
+                                            </div>
+
+                                            <div class="form-group mb-4">
+                                                <label class="form-label">
+                                                    <i class="fas fa-shield-alt me-2"></i>TOTP Code
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    class="form-control"
+                                                    name="totp_code"
+                                                    placeholder="000000"
+                                                    pattern="[0-9]{6}"
+                                                    maxlength="6"
+                                                    required
+                                                />
+                                                <small class="form-text text-muted">
+                                                    Enter the current 6-digit TOTP code from your authenticator app (Google Authenticator, Authy, etc.)
+                                                </small>
+                                            </div>
+
+                                            <div class="form-group mb-4">
+                                                <a href="#" class="text-primary" onclick="showForgotPassword()">
+                                                    <i class="fas fa-question-circle me-1"></i>
+                                                    Forgot password?
+                                                </a>
+                                            </div>
+
+                                            <button type="submit" class="btn btn-primary w-100 mb-3">
+                                                <i class="fas fa-sign-in-alt me-2"></i>
+                                                Login to Kotak Neo
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-outline-secondary w-100"
+                                                onclick="goBackToBrokerSelection()"
+                                            >
+                                                <i class="fas fa-arrow-left me-2"></i>
+                                                Back to Broker Selection
+                                            </button>
+                                        </form>
+
+                                        <div class="login-help mt-4">
+                                            <div class="alert alert-info">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                <strong>Need Help?</strong><br>
+                                                Make sure you have your Kotak Neo credentials ready. 
+                                                After successful login, you'll be redirected to the trading platform.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content">{% block content %}{% endblock %}</main>
+
+        <!-- Bootstrap 5 JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- SweetAlert2 JS -->
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <!-- Custom JS -->
+        <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+
+        {% block scripts %}{% endblock %}
+    </body>
 </html>
