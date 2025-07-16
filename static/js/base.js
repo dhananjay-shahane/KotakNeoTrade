@@ -51,13 +51,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Set initial theme
     document.documentElement.setAttribute("data-theme", currentTheme);
-    themeToggle.checked = currentTheme === "light";
+    if (themeToggle) {
+        themeToggle.checked = currentTheme === "light";
 
-    themeToggle.addEventListener("change", function () {
-        const newTheme = this.checked ? "light" : "dark";
-        document.documentElement.setAttribute("data-theme", newTheme);
-        localStorage.setItem("theme", newTheme);
-    });
+        themeToggle.addEventListener("change", function () {
+            const newTheme = this.checked ? "light" : "dark";
+            document.documentElement.setAttribute("data-theme", newTheme);
+            localStorage.setItem("theme", newTheme);
+        });
+    }
 });
 
 // User menu toggle
@@ -400,23 +402,32 @@ function handleKotakLogin(event) {
 }
 
 // Reset modal when it's closed
-document.getElementById('loginAccountModal').addEventListener('hidden.bs.modal', function () {
-    // Reset to default state - Kotak Neo selected
-    document.getElementById('welcomeScreen').style.display = 'none';
-    document.getElementById('kotakLoginForm').style.display = 'block';
-    
-    // Remove active class from all broker cards
-    document.querySelectorAll('.broker-card').forEach(card => {
-        card.classList.remove('active');
-    });
-    
-    // Add active class to Kotak card
-    document.getElementById('kotakCard').classList.add('active');
+document.addEventListener('DOMContentLoaded', function() {
+    const loginModal = document.getElementById('loginAccountModal');
+    if (loginModal) {
+        loginModal.addEventListener('hidden.bs.modal', function () {
+            // Reset to default state - Kotak Neo selected
+            const welcomeScreen = document.getElementById('welcomeScreen');
+            const kotakLoginForm = document.getElementById('kotakLoginForm');
+            
+            if (welcomeScreen) welcomeScreen.style.display = 'none';
+            if (kotakLoginForm) kotakLoginForm.style.display = 'block';
+            
+            // Remove active class from all broker cards
+            document.querySelectorAll('.broker-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            
+            // Add active class to Kotak card
+            const kotakCard = document.getElementById('kotakCard');
+            if (kotakCard) kotakCard.classList.add('active');
 
-    // Reset form
-    const form = document.getElementById('kotakLoginFormElement');
-    if (form) {
-        form.reset();
+            // Reset form
+            const form = document.getElementById('kotakLoginFormElement');
+            if (form) {
+                form.reset();
+            }
+        });
     }
 });
 
@@ -425,9 +436,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Ensure Kotak Neo is selected by default
     setTimeout(() => {
         const kotakCard = document.getElementById('kotakCard');
+        const welcomeScreen = document.getElementById('welcomeScreen');
+        const kotakLoginForm = document.getElementById('kotakLoginForm');
+        
         if (kotakCard) {
             kotakCard.classList.add('active');
         }
+        
+        // Ensure correct initial state
+        if (welcomeScreen) welcomeScreen.style.display = 'none';
+        if (kotakLoginForm) kotakLoginForm.style.display = 'block';
     }, 100);
 });
 
