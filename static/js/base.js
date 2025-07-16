@@ -213,7 +213,7 @@ document.addEventListener("DOMContentLoaded", function () {
 function togglePassword(fieldId) {
     const passwordField = document.getElementById(fieldId);
     const eyeIcon = document.getElementById(fieldId + '-eye');
-    
+
     if (passwordField.type === 'password') {
         passwordField.type = 'text';
         eyeIcon.classList.remove('fa-eye');
@@ -324,6 +324,85 @@ function showLoginModal() {
 }
 
 // Broker redirect functions
+function showKotakLoginForm() {
+    document.getElementById('welcomeScreen').style.display = 'none';
+    document.getElementById('kotakLoginForm').style.display = 'block';
+}
+
+function goBackToBrokerSelection() {
+    document.getElementById('kotakLoginForm').style.display = 'none';
+    document.getElementById('welcomeScreen').style.display = 'block';
+}
+
+function showComingSoon(brokerName) {
+    Swal.fire({
+        icon: "info",
+        title: "Coming Soon",
+        text: `${brokerName} integration is under development`,
+        background: "var(--card-bg)",
+        color: "var(--text-primary)",
+    });
+}
+
+function togglePasswordVisibility(button) {
+    const input = button.previousElementSibling;
+    const icon = button.querySelector('i');
+
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
+function handleKotakLogin(event) {
+    event.preventDefault();
+
+    const formData = new FormData(event.target);
+    const loginData = {
+        user_id: formData.get('user_id'),
+        password: formData.get('password'),
+        mobile_pin: formData.get('mobile_pin')
+    };
+
+    // Show loading state
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Logging in...';
+    submitBtn.disabled = true;
+
+    // Simulate login process - replace with actual API call
+    setTimeout(() => {
+        // Reset button
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+
+        // For now, just redirect to kotak project
+        window.location.href = '/kotak';
+    }, 2000);
+}
+
+// Reset modal when it's closed
+document.getElementById('loginAccountModal').addEventListener('hidden.bs.modal', function () {
+    document.getElementById('kotakLoginForm').style.display = 'none';
+    document.getElementById('welcomeScreen').style.display = 'block';
+
+    // Reset form
+    const form = document.getElementById('kotakLoginFormElement');
+    if (form) {
+        form.reset();
+    }
+});
+
+// Alias for backward compatibility
+function redirectToKotakLogin() {
+    redirectToKotakNeoLogin();
+}
+
 function redirectToKotakNeoLogin() {
     const modal = bootstrap.Modal.getInstance(
         document.getElementById("loginAccountModal"),
@@ -334,11 +413,6 @@ function redirectToKotakNeoLogin() {
 
     // Redirect to the Kotak Neo project (will start it if needed)
     window.open("/kotak/login", "_blank");
-}
-
-// Alias for backward compatibility
-function redirectToKotakLogin() {
-    redirectToKotakNeoLogin();
 }
 
 function redirectToUpstoxLogin() {

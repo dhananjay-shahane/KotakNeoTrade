@@ -188,7 +188,7 @@
                     </h6>
                 </div>
                 <div class="account-login">
-                    <button class="btn-login-account">
+                    <button class="btn-login-account" onclick="showLoginModal()">
                         <i class="fas fa-sign-in-alt me-2"></i>Login Account
                     </button>
                 </div>
@@ -425,14 +425,13 @@
             </div>
         </div>
 
-        <!-- Broker Selection Modal -->
+        <!-- Full Screen Broker Selection Modal -->
         <div class="modal fade" id="loginAccountModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
+            <div class="modal-dialog modal-fullscreen">
                 <div class="modal-content">
                     <div class="modal-header border-bottom border-secondary">
                         <h5 class="modal-title">
-                            <i class="fas fa-university me-2"></i>Choose Your
-                            Broker
+                            <i class="fas fa-university me-2"></i>Trading Account Login
                         </h5>
                         <button
                             type="button"
@@ -440,102 +439,220 @@
                             data-bs-dismiss="modal"
                         ></button>
                     </div>
-                    <div class="modal-body p-4">
-                        <div class="row g-4">
-                            <!-- Kotak Neo Card -->
-                            <div class="col-md-6">
-                                <div
-                                    class="broker-card"
-                                    onclick="redirectToKotakLogin()"
-                                >
-                                    <div class="broker-icon">
-                                        <i class="fas fa-chart-line"></i>
-                                    </div>
-                                    <h6 class="broker-name">Kotak Neo</h6>
-                                    <p class="broker-description">
-                                        Advanced trading platform with real-time
-                                        data
-                                    </p>
-                                    <div class="broker-features">
-                                        <span class="feature-tag"
-                                            >TOTP Auth</span
-                                        >
-                                        <span class="feature-tag"
-                                            >Real-time</span
-                                        >
+                    <div class="modal-body p-0">
+                        <div class="row g-0 h-100">
+                            <!-- Left Side - Broker Cards -->
+                            <div class="col-md-6 broker-selection-side p-4">
+                                <div class="broker-selection-content">
+                                    <h4 class="mb-4">
+                                        <i class="fas fa-university me-2"></i>Choose Your Broker
+                                    </h4>
+                                    <div class="row g-3">
+                                        <!-- Kotak Neo Card -->
+                                        <div class="col-12">
+                                            <div
+                                                class="broker-card"
+                                                onclick="showKotakLoginForm()"
+                                            >
+                                                <div class="broker-icon">
+                                                    <i class="fas fa-chart-line"></i>
+                                                </div>
+                                                <div class="broker-info">
+                                                    <h6 class="broker-name">Kotak Neo</h6>
+                                                    <p class="broker-description">
+                                                        Advanced trading platform with real-time data
+                                                    </p>
+                                                    <div class="broker-features">
+                                                        <span class="feature-tag">TOTP Auth</span>
+                                                        <span class="feature-tag">Real-time</span>
+                                                    </div>
+                                                </div>
+                                                <i class="fas fa-chevron-right broker-arrow"></i>
+                                            </div>
+                                        </div>
+
+                                        <!-- Upstox Card -->
+                                        <div class="col-12">
+                                            <div
+                                                class="broker-card disabled"
+                                                onclick="showComingSoon('Upstox')"
+                                            >
+                                                <div class="broker-icon upstox">
+                                                    <i class="fas fa-rocket"></i>
+                                                </div>
+                                                <div class="broker-info">
+                                                    <h6 class="broker-name">Upstox</h6>
+                                                    <p class="broker-description">
+                                                        Fast and reliable trading experience
+                                                    </p>
+                                                    <div class="broker-features">
+                                                        <span class="feature-tag">API Access</span>
+                                                        <span class="feature-tag">Mobile First</span>
+                                                    </div>
+                                                </div>
+                                                <span class="coming-soon-badge">Coming Soon</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Angel One Card -->
+                                        <div class="col-12">
+                                            <div
+                                                class="broker-card disabled"
+                                                onclick="showComingSoon('Angel One')"
+                                            >
+                                                <div class="broker-icon angel">
+                                                    <i class="fas fa-feather-alt"></i>
+                                                </div>
+                                                <div class="broker-info">
+                                                    <h6 class="broker-name">Angel One</h6>
+                                                    <p class="broker-description">
+                                                        Comprehensive trading and investment platform
+                                                    </p>
+                                                    <div class="broker-features">
+                                                        <span class="feature-tag">SmartAPI</span>
+                                                        <span class="feature-tag">Research</span>
+                                                    </div>
+                                                </div>
+                                                <span class="coming-soon-badge">Coming Soon</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Zerodha Card -->
+                                        <div class="col-12">
+                                            <div
+                                                class="broker-card disabled"
+                                                onclick="showComingSoon('Zerodha')"
+                                            >
+                                                <div class="broker-icon zerodha">
+                                                    <i class="fas fa-bolt"></i>
+                                                </div>
+                                                <div class="broker-info">
+                                                    <h6 class="broker-name">Zerodha</h6>
+                                                    <p class="broker-description">
+                                                        India's largest discount broker platform
+                                                    </p>
+                                                    <div class="broker-features">
+                                                        <span class="feature-tag">Kite API</span>
+                                                        <span class="feature-tag">Low Cost</span>
+                                                    </div>
+                                                </div>
+                                                <span class="coming-soon-badge">Coming Soon</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Upstox Card -->
-                            <div class="col-md-6">
-                                <div
-                                    class="broker-card"
-                                    onclick="redirectToUpstoxLogin()"
-                                >
-                                    <div class="broker-icon upstox">
-                                        <i class="fas fa-rocket"></i>
-                                    </div>
-                                    <h6 class="broker-name">Upstox</h6>
-                                    <p class="broker-description">
-                                        Fast and reliable trading experience
-                                    </p>
-                                    <div class="broker-features">
-                                        <span class="feature-tag"
-                                            >API Access</span
-                                        >
-                                        <span class="feature-tag"
-                                            >Mobile First</span
-                                        >
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Angel One Card -->
-                            <div class="col-md-6">
-                                <div
-                                    class="broker-card"
-                                    onclick="redirectToAngelLogin()"
-                                >
-                                    <div class="broker-icon angel">
-                                        <i class="fas fa-feather-alt"></i>
-                                    </div>
-                                    <h6 class="broker-name">Angel One</h6>
-                                    <p class="broker-description">
-                                        Comprehensive trading and investment
-                                        platform
-                                    </p>
-                                    <div class="broker-features">
-                                        <span class="feature-tag"
-                                            >SmartAPI</span
-                                        >
-                                        <span class="feature-tag"
-                                            >Research</span
-                                        >
+                            <!-- Right Side - Login Form -->
+                            <div class="col-md-6 login-form-side">
+                                <!-- Default Welcome Screen -->
+                                <div id="welcomeScreen" class="login-welcome-screen">
+                                    <div class="welcome-content text-center">
+                                        <i class="fas fa-chart-line welcome-icon mb-4"></i>
+                                        <h3 class="mb-3">Welcome to Trading Platform</h3>
+                                        <p class="text-muted mb-4">
+                                            Select a broker from the left panel to begin your trading journey
+                                        </p>
+                                        <div class="welcome-features">
+                                            <div class="feature-item">
+                                                <i class="fas fa-shield-alt text-success"></i>
+                                                <span>Secure Authentication</span>
+                                            </div>
+                                            <div class="feature-item">
+                                                <i class="fas fa-chart-bar text-primary"></i>
+                                                <span>Real-time Data</span>
+                                            </div>
+                                            <div class="feature-item">
+                                                <i class="fas fa-mobile-alt text-info"></i>
+                                                <span>Mobile Friendly</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- Zerodha Card -->
-                            <div class="col-md-6">
-                                <div
-                                    class="broker-card"
-                                    onclick="redirectToZerodhaLogin()"
-                                >
-                                    <div class="broker-icon zerodha">
-                                        <i class="fas fa-bolt"></i>
-                                    </div>
-                                    <h6 class="broker-name">Zerodha</h6>
-                                    <p class="broker-description">
-                                        India's largest discount broker platform
-                                    </p>
-                                    <div class="broker-features">
-                                        <span class="feature-tag"
-                                            >Kite API</span
-                                        >
-                                        <span class="feature-tag"
-                                            >Low Cost</span
-                                        >
+                                <!-- Kotak Neo Login Form -->
+                                <div id="kotakLoginForm" class="kotak-login-form" style="display: none;">
+                                    <div class="login-form-content">
+                                        <div class="form-header text-center mb-4">
+                                            <div class="broker-logo mb-3">
+                                                <i class="fas fa-chart-line"></i>
+                                            </div>
+                                            <h4>Kotak Neo Login</h4>
+                                            <p class="text-muted">Enter your Kotak Neo credentials</p>
+                                        </div>
+
+                                        <form id="kotakLoginFormElement" onsubmit="handleKotakLogin(event)">
+                                            <div class="form-group mb-3">
+                                                <label class="form-label">
+                                                    <i class="fas fa-user me-2"></i>User ID
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    class="form-control"
+                                                    name="user_id"
+                                                    placeholder="Enter your User ID"
+                                                    required
+                                                />
+                                            </div>
+
+                                            <div class="form-group mb-3">
+                                                <label class="form-label">
+                                                    <i class="fas fa-lock me-2"></i>Password
+                                                </label>
+                                                <div class="password-input-wrapper">
+                                                    <input
+                                                        type="password"
+                                                        class="form-control"
+                                                        name="password"
+                                                        placeholder="Enter your password"
+                                                        required
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        class="password-toggle"
+                                                        onclick="togglePasswordVisibility(this)"
+                                                    >
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div class="form-group mb-4">
+                                                <label class="form-label">
+                                                    <i class="fas fa-mobile-alt me-2"></i>Mobile PIN
+                                                </label>
+                                                <input
+                                                    type="password"
+                                                    class="form-control"
+                                                    name="mobile_pin"
+                                                    placeholder="Enter your mobile PIN"
+                                                    required
+                                                />
+                                            </div>
+
+                                            <button type="submit" class="btn btn-primary w-100 mb-3">
+                                                <i class="fas fa-sign-in-alt me-2"></i>
+                                                Login to Kotak Neo
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-outline-secondary w-100"
+                                                onclick="goBackToBrokerSelection()"
+                                            >
+                                                <i class="fas fa-arrow-left me-2"></i>
+                                                Back to Broker Selection
+                                            </button>
+                                        </form>
+
+                                        <div class="login-help mt-4">
+                                            <div class="alert alert-info">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                <strong>Need Help?</strong><br>
+                                                Make sure you have your Kotak Neo credentials ready. 
+                                                After successful login, you'll be redirected to the trading platform.
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
