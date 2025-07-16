@@ -1,539 +1,310 @@
+"""
+Unified Flask application combining root template and Kotak Neo Trading Platform
+Shows the portfolio page by default with professional sidebar and header
+Includes full Kotak Neo project integration on same port
+"""
 
-"""
-Unified Kotak Neo Trading Platform
-Main application that handles all routes and dynamic content loading
-"""
 import os
 import sys
-import logging
-from datetime import datetime
-from flask import Flask, render_template, session, redirect, url_for, jsonify, request, flash
-from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, render_template, redirect, url_for, request, flash
 
-# Add kotak_neo_project to path
-sys.path.append(os.path.join(os.path.dirname(__file__), 'kotak_neo_project'))
+# Add kotak_neo_project to Python path for imports - but prioritize root level imports
+root_path = os.path.dirname(__file__)
+kotak_path = os.path.join(root_path, 'kotak_neo_project')
+if root_path not in sys.path:
+    sys.path.insert(0, root_path)
+if kotak_path not in sys.path:
+    sys.path.append(kotak_path)  # Append instead of insert to prioritize root
 
-# Import all the necessary modules from kotak_neo_project
-try:
-    from Scripts.trading_functions import TradingFunctions
-    from Scripts.neo_client import NeoClient
-    from core.auth import require_auth, validate_current_session
-    from core.database import get_db_connection
-except ImportError as e:
-    print(f"Warning: Could not import some modules: {e}")
-    # Create fallback classes
-    class TradingFunctions:
-        def get_dashboard_data(self, client): return {}
-        def get_positions(self, client): return []
-        def get_holdings(self, client): return []
-        def get_orders(self, client): return []
-    
-    class NeoClient:
-        def login(self, **kwargs): return {'success': False, 'message': 'Service unavailable'}
-        def validate_session(self, client): return False
-    
-    def require_auth(f): return f
-    def validate_current_session(): return session.get('authenticated', False)
-    def get_db_connection(): return None
+# Create Flask app with multiple template folders
+from flask import Flask
+import jinja2
 
-# Initialize Flask app
-app = Flask(__name__, 
-           template_folder='kotak_neo_project/templates',
-           static_folder='kotak_neo_project/static',
-           static_url_path='/static')
+# Configure template loader for multiple directories
+template_loader = jinja2.ChoiceLoader([
+    jinja2.FileSystemLoader('templates'),
+    jinja2.FileSystemLoader('kotak_neo_project/templates'),
+])
 
-app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')
+app = Flask(__name__, template_folder='templates', static_folder='static')
+app.jinja_loader = template_loader
+app.secret_key = os.environ.get("SESSION_SECRET", "demo-secret-key-2025")
 
-# Database configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///kotak_neo_project/instance/trading_platform.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Configure for production
+app.config['WTF_CSRF_ENABLED'] = False  # Disable CSRF for API endpoints
+app.config['DEBUG'] = True
 
-# Initialize extensions
-db = SQLAlchemy(app)
-trading_functions = TradingFunctions()
-neo_client = NeoClient()
+# Configure Flask-Mail
+app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER')
+app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
+app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
+app.config['MAIL_USE_SSL'] = os.environ.get('MAIL_USE_SSL', 'False').lower() == 'true'
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER') or os.environ.get('MAIL_USERNAME')
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Configure database for both root app and Kotak Neo integration
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///./trading_platform.db")
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_recycle": 300,
+    "pool_pre_ping": True,
+}
 
-# Authentication decorator
-def login_required(f):
-    def decorated_function(*args, **kwargs):
-        if not session.get('authenticated'):
-            return redirect(url_for('login'))
-        return f(*args, **kwargs)
-    decorated_function.__name__ = f.__name__
-    return decorated_function
+# Initialize Flask-Login
+from flask_login import LoginManager
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+login_manager.login_message = 'Please log in to access this page.'
+
+# Initialize Flask-Mail
+from flask_mail import Mail
+mail = Mail(app)
+
+# Initialize database for root app
+from models import db, User, init_db
+from kotak_models import KotakAccount, TradingSession
+init_db(app)
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+# Add static file routes for Kotak Neo project
+@app.route('/kotak/static/<path:filename>')
+def kotak_static(filename):
+    """Serve static files for Kotak Neo project"""
+    import os
+    from flask import send_from_directory
+    return send_from_directory(os.path.join('kotak_neo_project', 'static'), filename)
 
 @app.route('/')
 def index():
-    """Root route - redirect to dashboard if authenticated, else login"""
-    if session.get('authenticated'):
-        return redirect(url_for('dashboard'))
-    return redirect(url_for('login'))
+    """Home page - check if user is logged in"""
+    from flask_login import current_user
+    if current_user.is_authenticated:
+        return redirect(url_for('portfolio'))
+    else:
+        return redirect(url_for('login'))
+
+@app.route('/portfolio')
+def portfolio():
+    """Portfolio page - requires login"""
+    from flask_login import login_required, current_user
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+    return render_template('portfolio.html')
+
+@app.route('/trading-signals')
+def trading_signals():
+    """Trading Signals page - requires login"""
+    from flask_login import current_user
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+    return render_template('trading_signals.html')
+
+@app.route('/deals')
+def deals():
+    """Deals page - requires login"""
+    from flask_login import current_user
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+    return render_template('deals.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Login page"""
-    if request.method == 'POST':
-        # Handle login logic here
-        data = request.get_json() if request.is_json else request.form
-        
-        try:
-            # Use your existing neo_client login logic
-            login_result = neo_client.login(
-                user_id=data.get('user_id'),
-                password=data.get('password'),
-                neo_fin_key=data.get('neo_fin_key'),
-                consumer_key=data.get('consumer_key'),
-                consumer_secret=data.get('consumer_secret')
-            )
-            
-            if login_result and login_result.get('success'):
-                session['authenticated'] = True
-                session['client'] = login_result.get('client')
-                session['ucc'] = data.get('user_id')
-                session['login_time'] = datetime.now().strftime('%B %d, %Y at %I:%M:%S %p')
-                
-                if request.is_json:
-                    return jsonify({'success': True, 'redirect_url': url_for('dashboard')})
-                return redirect(url_for('dashboard'))
-            else:
-                error_msg = login_result.get('message', 'Login failed')
-                if request.is_json:
-                    return jsonify({'success': False, 'message': error_msg})
-                flash(error_msg, 'error')
-                
-        except Exception as e:
-            error_msg = f'Login error: {str(e)}'
-            logger.error(error_msg)
-            if request.is_json:
-                return jsonify({'success': False, 'message': error_msg})
-            flash(error_msg, 'error')
-    
-    return render_template('login.html')
+    """User login page"""
+    from api.auth_api import handle_login
+    return handle_login()
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    """User registration page"""
+    from api.auth_api import handle_register, EmailService
+
+    # Configure email service if credentials are available
+    mail = None
+    try:
+        if os.environ.get('MAIL_USERNAME'):
+            mail = EmailService.configure_mail(app)
+    except Exception as e:
+        print(f"Email configuration failed: {e}")
+
+    return handle_register(mail)
 
 @app.route('/logout')
 def logout():
-    """Logout and clear session"""
-    session.clear()
-    flash('You have been logged out successfully', 'success')
-    return redirect(url_for('login'))
+    """User logout"""
+    from api.auth_api import handle_logout
+    return handle_logout()
 
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    """Main dashboard with all content loading capability"""
+# Setup library paths for Kotak Neo project compatibility
+def setup_library_paths():
+    """Configure library paths for pandas/numpy dependencies"""
+    library_path = '/nix/store/xvzz97yk73hw03v5dhhz3j47ggwf1yq1-gcc-13.2.0-lib/lib:/nix/store/026hln0aq1hyshaxsdvhg0kmcm6yf45r-zlib-1.2.13/lib'
+    os.environ['LD_LIBRARY_PATH'] = library_path
+
+# Setup environment before importing Kotak Neo modules
+setup_library_paths()
+
+# Import and register Kotak Neo blueprints
+def register_kotak_neo_blueprints():
+    """Register Kotak Neo project blueprints"""
     try:
-        client = session.get('client')
-        if not client:
-            flash('Session expired. Please login again.', 'error')
-            return redirect(url_for('login'))
+        # Add Kotak Neo project paths for proper imports
+        kotak_path = os.path.join(os.path.dirname(__file__), 'kotak_neo_project')
+        if kotak_path not in sys.path:
+            sys.path.insert(0, kotak_path)
 
-        # Get dashboard data
-        dashboard_data = {}
+        # Import blueprints first to avoid database conflicts
+        from kotak_neo_project.routes.auth_routes import auth_bp
+        from kotak_neo_project.routes.main_routes import main_bp
+
+        # Register blueprints with URL prefix
+        app.register_blueprint(auth_bp, url_prefix='/kotak')
+        app.register_blueprint(main_bp, url_prefix='/kotak')
+
+        # Initialize database after blueprints are registered
         try:
-            raw_dashboard_data = trading_functions.get_dashboard_data(client)
-            
-            if isinstance(raw_dashboard_data, dict):
-                dashboard_data = raw_dashboard_data
-            elif isinstance(raw_dashboard_data, list):
-                dashboard_data = {
-                    'positions': raw_dashboard_data,
-                    'holdings': [],
-                    'limits': {},
-                    'recent_orders': []
-                }
-            else:
-                dashboard_data = {
-                    'positions': [],
-                    'holdings': [],
-                    'limits': {},
-                    'recent_orders': []
-                }
+            from kotak_neo_project.core.database import db as kotak_db
+            kotak_db.init_app(app)
 
-            # Ensure all required keys exist
-            dashboard_data.setdefault('positions', [])
-            dashboard_data.setdefault('holdings', [])
-            dashboard_data.setdefault('limits', {})
-            dashboard_data.setdefault('recent_orders', [])
-            dashboard_data.setdefault('total_positions', len(dashboard_data['positions']))
-            dashboard_data.setdefault('total_holdings', len(dashboard_data['holdings']))
-            dashboard_data.setdefault('total_orders', len(dashboard_data['recent_orders']))
-
+            with app.app_context():
+                kotak_db.create_all()
+                print("Kotak Neo database initialized successfully")
         except Exception as e:
-            logger.error(f"Dashboard data fetch failed: {e}")
-            dashboard_data = {
-                'positions': [],
-                'holdings': [],
-                'limits': {},
-                'recent_orders': [],
-                'total_positions': 0,
-                'total_holdings': 0,
-                'total_orders': 0
-            }
+            print(f"Database initialization optional: {e}")
 
-        return render_template('dashboard.html', data=dashboard_data)
+        # Add redirect routes
+        @app.route('/kotak')
+        @app.route('/kotak/')
+        def kotak_neo_index():
+            """Redirect to Kotak Neo login"""
+            return redirect('/kotak/login')
+
+        print("Successfully registered Kotak Neo blueprints")
 
     except Exception as e:
-        logger.error(f"Dashboard error: {str(e)}")
-        flash(f'Error loading dashboard: {str(e)}', 'error')
-        return render_template('dashboard.html', data={})
+        print(f"Error registering Kotak Neo blueprints: {e}")
+        # Fallback to simple redirect
+        @app.route('/kotak')
+        @app.route('/kotak/')
+        def kotak_neo_index():
+            """Simple redirect to Kotak Neo project"""
+            flash('Kotak Neo project integration is being configured. Please check back shortly.', 'info')
+            return redirect(url_for('portfolio'))
 
-# Main page routes for navigation
-@app.route('/positions')
-@login_required
-def positions():
-    """Positions page"""
-    return render_template('positions.html')
+# Register the blueprints
+register_kotak_neo_blueprints()
 
-@app.route('/holdings')
-@login_required
-def holdings():
-    """Holdings page"""
-    return render_template('holdings.html')
+# API endpoints for authentication
+@app.route('/api/auth/login', methods=['POST'])
+def api_auth_login():
+    """API endpoint for login via AJAX"""
+    from api.auth_api import login_api
+    return login_api()
 
-@app.route('/orders')
-@login_required
-def orders():
-    """Orders page"""
-    return render_template('orders.html')
+@app.route('/api/auth/register', methods=['POST'])
+def api_auth_register():
+    """API endpoint for registration via AJAX"""
+    from api.auth_api import register_api
+    return register_api(mail)
 
-@app.route('/charts')
-@login_required
-def charts():
-    """Charts page for trading analysis"""
-    return render_template('charts.html')
+@app.route('/api/auth/status')
+def api_auth_status():
+    """API endpoint to check authentication status"""
+    from api.auth_api import check_user_status
+    return check_user_status()
 
-@app.route('/etf-signals')
-@login_required
-def etf_signals():
-    """ETF signals page"""
-    return render_template('etf_signals.html')
-
-@app.route('/deals')
-@login_required
-def deals():
-    """Deals page"""
-    return render_template('deals.html')
-
-@app.route('/basic-signals')
-@login_required
-def basic_signals():
-    """Basic signals page"""
-    return render_template('basic_etf_signals.html')
-
-@app.route('/portfolio')
-@login_required
-def portfolio():
-    """Portfolio overview page - redirect to dashboard"""
-    return redirect(url_for('dashboard'))
-
-# Content loading routes for SPA behavior
-@app.route('/content/portfolio')
-@login_required
-def content_portfolio():
-    """Return portfolio content HTML"""
-    return redirect(url_for('dashboard'))
-
-@app.route('/content/positions')
-@login_required
-def content_positions():
-    """Return positions content HTML"""
-    return render_template('positions.html')
-
-@app.route('/content/holdings')
-@login_required
-def content_holdings():
-    """Return holdings content HTML"""
-    return render_template('holdings.html')
-
-@app.route('/content/orders')
-@login_required
-def content_orders():
-    """Return orders content HTML"""
-    return render_template('orders.html')
-
-@app.route('/content/charts')
-@login_required
-def content_charts():
-    """Return charts content HTML"""
-    return render_template('charts.html')
-
-@app.route('/content/etf-signals')
-@login_required
-def content_etf_signals():
-    """Return ETF signals content HTML"""
-    return render_template('etf_signals.html')
-
-@app.route('/content/deals')
-@login_required
-def content_deals():
-    """Return deals content HTML"""
-    return render_template('deals.html')
-
-@app.route('/content/basic-signals')
-@login_required
-def content_basic_signals():
-    """Return basic signals content HTML"""
-    return render_template('basic_etf_signals.html')
-
-# API Routes for dynamic content loading
-@app.route('/api/positions')
-@login_required
-def api_positions():
-    """API endpoint for positions data"""
-    try:
-        client = session.get('client')
-        if not client:
-            return jsonify({'success': False, 'message': 'Session expired'}), 401
-
-        positions_data = trading_functions.get_positions(client)
-        
-        if isinstance(positions_data, dict) and 'error' in positions_data:
-            return jsonify({
-                'success': False,
-                'message': positions_data['error'],
-                'positions': []
-            }), 400
-
-        if not isinstance(positions_data, list):
-            positions_data = []
-
-        # Calculate summary
-        total_pnl = 0.0
-        long_positions = 0
-        short_positions = 0
-
-        for position in positions_data:
-            pnl = float(position.get('urPnl') or position.get('pnl') or 0)
-            total_pnl += pnl
-            
-            buy_qty = float(position.get('flBuyQty') or position.get('buyQty') or 0)
-            sell_qty = float(position.get('flSellQty') or position.get('sellQty') or 0)
-            net_qty = buy_qty - sell_qty
-            
-            if net_qty > 0:
-                long_positions += 1
-            elif net_qty < 0:
-                short_positions += 1
-
-        return jsonify({
-            'success': True,
-            'positions': positions_data,
-            'summary': {
-                'total_pnl': total_pnl,
-                'long_positions': long_positions,
-                'short_positions': short_positions,
-                'total_positions': len(positions_data)
-            }
-        })
-
-    except Exception as e:
-        logger.error(f"API positions error: {e}")
-        return jsonify({
-            'success': False,
-            'message': str(e),
-            'positions': []
-        }), 500
-
-@app.route('/api/holdings')
-@login_required
-def api_holdings():
-    """API endpoint for holdings data"""
-    try:
-        client = session.get('client')
-        if not client:
-            return jsonify({'success': False, 'message': 'Session expired'}), 401
-
-        holdings_data = trading_functions.get_holdings(client)
-        
-        if isinstance(holdings_data, dict) and 'error' in holdings_data:
-            return jsonify({
-                'success': False,
-                'message': holdings_data['error'],
-                'holdings': []
-            }), 400
-
-        if not isinstance(holdings_data, list):
-            holdings_data = []
-
-        # Calculate summary
-        total_invested = sum(float(h.get('holdingCost', 0) or 0) for h in holdings_data)
-        current_value = sum(float(h.get('mktValue', 0) or 0) for h in holdings_data)
-
-        return jsonify({
-            'success': True,
-            'holdings': holdings_data,
-            'summary': {
-                'total_holdings': len(holdings_data),
-                'total_invested': total_invested,
-                'current_value': current_value,
-                'total_pnl': current_value - total_invested
-            }
-        })
-
-    except Exception as e:
-        logger.error(f"API holdings error: {e}")
-        return jsonify({
-            'success': False,
-            'message': str(e),
-            'holdings': []
-        }), 500
-
-@app.route('/api/orders')
-@login_required
-def api_orders():
-    """API endpoint for orders data"""
-    try:
-        client = session.get('client')
-        if not client:
-            return jsonify({'success': False, 'message': 'Session expired'}), 401
-
-        orders_data = trading_functions.get_orders(client)
-        
-        if not isinstance(orders_data, list):
-            orders_data = []
-
-        return jsonify({
-            'success': True,
-            'orders': orders_data,
-            'total_orders': len(orders_data)
-        })
-
-    except Exception as e:
-        logger.error(f"API orders error: {e}")
-        return jsonify({
-            'success': False,
-            'message': str(e),
-            'orders': []
-        }), 500
-
-@app.route('/api/etf-signals')
-@login_required
-def api_etf_signals():
+# API endpoints for ETF signals and deals functionality
+@app.route('/api/etf-signals-data')
+def api_etf_signals_data():
     """API endpoint for ETF signals data"""
-    try:
-        try:
-            from Scripts.external_db_service import get_etf_signals_from_external_db
-            signals = get_etf_signals_from_external_db()
-        except ImportError:
-            signals = []
-        
-        if not signals:
-            signals = []
+    from api.signals_api import get_etf_signals_data
+    return get_etf_signals_data()
 
-        return jsonify({
-            'success': True,
-            'signals': signals,
-            'total_signals': len(signals)
-        })
+@app.route('/api/deals/create-from-signal', methods=['POST'])
+def api_create_deal_from_signal():
+    """API endpoint to create deal from signal"""
+    from api.signals_api import create_deal_from_signal
+    return create_deal_from_signal()
 
-    except Exception as e:
-        logger.error(f"API ETF signals error: {e}")
-        return jsonify({
-            'success': False,
-            'message': str(e),
-            'signals': []
-        }), 500
-
-@app.route('/api/deals')
-@login_required
-def api_deals():
+@app.route('/api/deals-data')
+def api_deals_data():
     """API endpoint for deals data"""
-    try:
-        conn = get_db_connection()
-        if not conn:
-            return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+    from api.deals_api import get_deals_data
+    return get_deals_data()
 
-        with conn.cursor() as cursor:
-            cursor.execute("""
-                SELECT * FROM user_deals 
-                ORDER BY created_at DESC
-            """)
-            deals = cursor.fetchall()
-            
-            # Convert to list of dicts
-            columns = [desc[0] for desc in cursor.description]
-            deals_list = [dict(zip(columns, deal)) for deal in deals]
+@app.route('/api/deals/update', methods=['POST'])
+def api_update_deal():
+    """API endpoint to update deal"""
+    from api.deals_api import update_deal
+    return update_deal()
 
-        conn.close()
+@app.route('/api/deals/close', methods=['POST'])
+def api_close_deal():
+    """API endpoint to close deal"""
+    from api.deals_api import close_deal
+    return close_deal()
 
-        return jsonify({
-            'success': True,
-            'deals': deals_list,
-            'total_deals': len(deals_list)
-        })
+# Register Kotak API blueprint
+from api.kotak_api import kotak_api
+app.register_blueprint(kotak_api)
 
-    except Exception as e:
-        logger.error(f"API deals error: {e}")
-        return jsonify({
-            'success': False,
-            'message': str(e),
-            'deals': []
-        }), 500
+# Kotak Neo Trading Routes
+@app.route('/kotak/orders')
+def kotak_orders():
+    """Orders page from Kotak Neo project"""
+    from flask_login import login_required, current_user
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+    return render_template('kotak_orders.html')
 
-@app.route('/api/user_profile')
-@login_required
-def api_user_profile():
-    """API endpoint for user profile"""
-    try:
-        profile_data = {
-            'greeting_name': session.get('greeting_name', session.get('ucc', 'User')),
-            'ucc': session.get('ucc', 'N/A'),
-            'login_time': session.get('login_time', 'N/A'),
-            'authenticated': session.get('authenticated', False),
-            'client_code': session.get('client_code', 'N/A')
-        }
+@app.route('/kotak/positions')
+def kotak_positions():
+    """Positions page from Kotak Neo project"""
+    from flask_login import login_required, current_user
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+    return render_template('kotak_positions.html')
 
-        return jsonify({'success': True, 'profile': profile_data})
+@app.route('/kotak/holdings')
+def kotak_holdings():
+    """Holdings page from Kotak Neo project"""
+    from flask_login import login_required, current_user
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+    return render_template('kotak_holdings.html')
 
-    except Exception as e:
-        logger.error(f"User profile API error: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-# Health check route
-@app.route('/health')
-def health():
-    """Health check endpoint"""
-    return jsonify({
-        'status': 'healthy',
-        'message': 'Kotak Neo Trading Platform is running',
-        'timestamp': datetime.now().isoformat()
-    })
-
-# Test route
-@app.route('/test')
-def test():
-    """Simple test route"""
-    return '<h1>Kotak Neo Trading Platform</h1><p>Application is running successfully!</p>'
-
-# Error handlers
 @app.errorhandler(404)
-def not_found_error(error):
-    """Handle 404 errors"""
-    if request.path.startswith('/api/'):
-        return jsonify({'success': False, 'message': 'API endpoint not found'}), 404
-    
-    # For regular page requests, redirect to dashboard if authenticated
-    if session.get('authenticated'):
-        return redirect(url_for('dashboard'))
-    else:
-        return redirect(url_for('login'))
+def page_not_found(error):
+    """Custom 404 error page"""
+    return render_template('base.html'), 404
 
-@app.errorhandler(500)
-def internal_error(error):
-    """Handle 500 errors"""
-    logger.error(f"Internal server error: {error}")
-    if request.path.startswith('/api/'):
-        return jsonify({'success': False, 'message': 'Internal server error'}), 500
-    
-    flash('An internal error occurred. Please try again.', 'error')
-    if session.get('authenticated'):
-        return redirect(url_for('dashboard'))
-    else:
-        return redirect(url_for('login'))
-
+# Modified the main block to initialize the external database table
 if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
+        print("Database tables created successfully")
+
+    # Initialize external database table
+    from api.auth_api import create_external_users_table
+    if create_external_users_table():
+        print("External users table created successfully")
+    else:
+        print("Failed to create external users table")
+
+    # Configure email service
+    from api.auth_api import EmailService
+    mail = EmailService.configure_mail(app)
+
+    # Register blueprints
+    from api.auth_api import auth_blueprint
+    from api.signals_api import signals_blueprint
+    from api.deals_api import deals_blueprint
+    app.register_blueprint(auth_blueprint)
+    app.register_blueprint(signals_blueprint)
+    app.register_blueprint(deals_blueprint)
+
+    print("Application started successfully")
     app.run(host='0.0.0.0', port=5000, debug=True)
