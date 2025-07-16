@@ -293,6 +293,90 @@ body {
     font-size: 1rem;
 }
 
+/* Kotak Neo Section */
+.kotak-neo-section {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: rgba(37, 99, 235, 0.05);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    border-radius: 0.5rem;
+    position: relative;
+}
+
+.kotak-neo-section .section-header {
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(37, 99, 235, 0.2);
+}
+
+.kotak-neo-section .section-header h6 {
+    color: var(--primary-color);
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+}
+
+.kotak-neo-section .account-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.kotak-neo-section .account-info small {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.kotak-neo-section .nav-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.kotak-neo-section .nav-item {
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+.kotak-neo-section .nav-link {
+    padding: 0.75rem 1rem;
+    color: var(--text-primary);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.2s ease;
+    background: rgba(37, 99, 235, 0.05);
+    border: 1px solid rgba(37, 99, 235, 0.1);
+    margin-bottom: 0.25rem;
+    border-radius: 0.375rem;
+}
+
+.kotak-neo-section .nav-link:hover {
+    background: rgba(37, 99, 235, 0.1);
+    border-color: rgba(37, 99, 235, 0.3);
+    color: var(--primary-color);
+    transform: translateX(4px);
+}
+
+.kotak-neo-section .nav-link.active {
+    background: rgba(37, 99, 235, 0.15);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.kotak-neo-section .nav-icon {
+    width: 16px;
+    height: 16px;
+    opacity: 0.8;
+}
+
+.kotak-neo-section .nav-link:hover .nav-icon {
+    opacity: 1;
+}
+
 /* Trading Accounts Section */
 .trading-accounts-section {
     position: absolute;

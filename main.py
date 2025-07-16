@@ -251,6 +251,31 @@ def api_close_deal():
 from api.kotak_api import kotak_api
 app.register_blueprint(kotak_api)
 
+# Kotak Neo Trading Routes
+@app.route('/kotak/orders')
+def kotak_orders():
+    """Orders page from Kotak Neo project"""
+    from flask_login import login_required, current_user
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+    return render_template('kotak_orders.html')
+
+@app.route('/kotak/positions')
+def kotak_positions():
+    """Positions page from Kotak Neo project"""
+    from flask_login import login_required, current_user
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+    return render_template('kotak_positions.html')
+
+@app.route('/kotak/holdings')
+def kotak_holdings():
+    """Holdings page from Kotak Neo project"""
+    from flask_login import login_required, current_user
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+    return render_template('kotak_holdings.html')
+
 @app.errorhandler(404)
 def page_not_found(error):
     """Custom 404 error page"""

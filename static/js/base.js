@@ -750,6 +750,9 @@ async function handleKotakLogin(event) {
             // Update sidebar with account info
             updateSidebarWithAccounts();
             
+            // Show Kotak Neo section
+            showKotakNeoSection(data.account);
+            
             // Reset form
             form.reset();
             
@@ -1007,8 +1010,108 @@ function formatDate(dateString) {
     }
 }
 
+// Show Kotak Neo section after successful login
+function showKotakNeoSection(account) {
+    const kotakNeoSection = document.getElementById('kotakNeoSection');
+    const kotakUCC = document.getElementById('kotakUCC');
+    
+    if (kotakNeoSection && kotakUCC) {
+        kotakNeoSection.style.display = 'block';
+        kotakUCC.textContent = account.ucc || 'N/A';
+        
+        // Update active navigation link based on current page
+        updateActiveNavLink();
+    }
+}
+
+// Hide Kotak Neo section when no accounts are logged in
+function hideKotakNeoSection() {
+    const kotakNeoSection = document.getElementById('kotakNeoSection');
+    
+    if (kotakNeoSection) {
+        kotakNeoSection.style.display = 'none';
+    }
+}
+
+// Update active navigation link
+function updateActiveNavLink() {
+    const currentPath = window.location.pathname;
+    const navLinks = document.querySelectorAll('.kotak-neo-section .nav-link');
+    
+    navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === currentPath) {
+            link.classList.add('active');
+        }
+    });
+}
+
+// Update sidebar with logged-in accounts (modified to show/hide Kotak section)
+async function updateSidebarWithAccountsEnhanced() {
+    try {
+        const response = await fetch('/api/kotak/accounts');
+        const data = await response.json();
+        
+        if (data.success && data.accounts.length > 0) {
+            const loggedAccountsContainer = document.getElementById('loggedAccounts');
+            const accountLoginContainer = document.getElementById('accountLogin');
+            
+            if (loggedAccountsContainer && accountLoginContainer) {
+                // Hide login button and show accounts
+                accountLoginContainer.style.display = 'none';
+                loggedAccountsContainer.style.display = 'block';
+                
+                // Clear existing accounts
+                loggedAccountsContainer.innerHTML = '';
+                
+                // Add each account
+                data.accounts.forEach(account => {
+                    const accountElement = createAccountElement(account);
+                    loggedAccountsContainer.appendChild(accountElement);
+                });
+                
+                // Add "Add Account" button
+                const addAccountBtn = document.createElement('button');
+                addAccountBtn.className = 'btn-add-account';
+                addAccountBtn.innerHTML = '<i class="fas fa-plus me-2"></i>Add Another Account';
+                addAccountBtn.onclick = () => showLoginModal();
+                loggedAccountsContainer.appendChild(addAccountBtn);
+                
+                // Show Kotak Neo section with active account
+                const activeAccount = data.accounts.find(acc => acc.is_logged_in) || data.accounts[0];
+                showKotakNeoSection(activeAccount);
+            }
+            
+        } else {
+            // Show login button if no accounts
+            const loggedAccountsContainer = document.getElementById('loggedAccounts');
+            const accountLoginContainer = document.getElementById('accountLogin');
+            
+            if (loggedAccountsContainer && accountLoginContainer) {
+                loggedAccountsContainer.style.display = 'none';
+                accountLoginContainer.style.display = 'block';
+                
+                // Hide Kotak Neo section
+                hideKotakNeoSection();
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error updating sidebar:', error);
+        hideKotakNeoSection();
+    }
+}
+
+// Replace the original updateSidebarWithAccounts function
+async function updateSidebarWithAccounts() {
+    return updateSidebarWithAccountsEnhanced();
+}
+
 // Initialize account display on page load
 document.addEventListener('DOMContentLoaded', function() {
     // Update sidebar with accounts if user is logged in
     updateSidebarWithAccounts();
+    
+    // Update active navigation link
+    updateActiveNavLink();
 });
