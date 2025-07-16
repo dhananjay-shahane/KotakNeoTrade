@@ -63,6 +63,7 @@ mail = Mail(app)
 
 # Initialize database for root app
 from models import db, User, init_db
+from kotak_models import KotakAccount, TradingSession
 init_db(app)
 
 @login_manager.user_loader
@@ -245,6 +246,10 @@ def api_close_deal():
     """API endpoint to close deal"""
     from api.deals_api import close_deal
     return close_deal()
+
+# Register Kotak API blueprint
+from api.kotak_api import kotak_api
+app.register_blueprint(kotak_api)
 
 @app.errorhandler(404)
 def page_not_found(error):

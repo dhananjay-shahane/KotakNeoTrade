@@ -939,6 +939,157 @@ body {
     }
 }
 
+/* Logged-in Accounts Display */
+.logged-accounts {
+    margin-bottom: 0.75rem;
+}
+
+.kotak-account-item {
+    background: rgba(37, 99, 235, 0.1);
+    border: 1px solid rgba(37, 99, 235, 0.3);
+    border-radius: 0.5rem;
+    padding: 0.875rem;
+    margin-bottom: 0.5rem;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.kotak-account-item:hover {
+    background: rgba(37, 99, 235, 0.15);
+    border-color: rgba(37, 99, 235, 0.5);
+}
+
+.kotak-account-item.active {
+    background: rgba(37, 99, 235, 0.2);
+    border-color: var(--primary-color);
+}
+
+.account-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.account-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.account-status {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--success-color);
+}
+
+.account-status.offline {
+    color: var(--text-secondary);
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--success-color);
+}
+
+.status-dot.offline {
+    background: var(--text-secondary);
+}
+
+.account-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.account-detail {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+}
+
+.account-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.account-value {
+    color: var(--text-primary);
+    font-family: monospace;
+    font-size: 0.8rem;
+}
+
+.account-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.btn-account-action {
+    padding: 0.375rem 0.75rem;
+    border: none;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.btn-account-switch {
+    background: var(--primary-color);
+    color: white;
+    flex: 1;
+}
+
+.btn-account-switch:hover {
+    background: #1d4ed8;
+}
+
+.btn-account-logout {
+    background: var(--danger-color);
+    color: white;
+    padding: 0.375rem 0.5rem;
+}
+
+.btn-account-logout:hover {
+    background: #dc2626;
+}
+
+/* Add Account Button */
+.btn-add-account {
+    width: 100%;
+    padding: 0.625rem;
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary-color);
+    border: 1px dashed rgba(37, 99, 235, 0.3);
+    border-radius: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.btn-add-account:hover {
+    background: rgba(37, 99, 235, 0.15);
+    border-color: rgba(37, 99, 235, 0.5);
+}
+
 @media (min-width: 993px) {
     .mobile-toggle {
         display: none !important;

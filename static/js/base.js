@@ -701,3 +701,314 @@ if (typeof toggleSidebar !== "function") {
         }
     };
 }
+
+// Kotak Neo Login Functionality
+async function handleKotakLogin(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    // Show loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Logging in...';
+    
+    try {
+        const response = await fetch('/api/kotak/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                mobile_number: formData.get('mobile_number'),
+                ucc: formData.get('ucc'),
+                mpin: formData.get('mpin'),
+                totp_code: formData.get('totp_code')
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Show success message
+            Swal.fire({
+                icon: 'success',
+                title: 'Login Successful!',
+                text: data.message,
+                timer: 2000,
+                showConfirmButton: false
+            });
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+            if (modal) {
+                modal.hide();
+            }
+            
+            // Update sidebar with account info
+            updateSidebarWithAccounts();
+            
+            // Reset form
+            form.reset();
+            
+        } else {
+            // Show error message
+            Swal.fire({
+                icon: 'error',
+                title: 'Login Failed',
+                text: data.error,
+                confirmButtonText: 'Try Again'
+            });
+        }
+        
+    } catch (error) {
+        console.error('Login error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Connection Error',
+            text: 'Unable to connect to the server. Please try again.',
+            confirmButtonText: 'OK'
+        });
+    } finally {
+        // Reset button state
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    }
+}
+
+// Update sidebar with logged-in accounts
+async function updateSidebarWithAccounts() {
+    try {
+        const response = await fetch('/api/kotak/accounts');
+        const data = await response.json();
+        
+        if (data.success && data.accounts.length > 0) {
+            const loggedAccountsContainer = document.getElementById('loggedAccounts');
+            const accountLoginContainer = document.getElementById('accountLogin');
+            
+            if (loggedAccountsContainer && accountLoginContainer) {
+                // Hide login button and show accounts
+                accountLoginContainer.style.display = 'none';
+                loggedAccountsContainer.style.display = 'block';
+                
+                // Clear existing accounts
+                loggedAccountsContainer.innerHTML = '';
+                
+                // Add each account
+                data.accounts.forEach(account => {
+                    const accountElement = createAccountElement(account);
+                    loggedAccountsContainer.appendChild(accountElement);
+                });
+                
+                // Add "Add Account" button
+                const addAccountBtn = document.createElement('button');
+                addAccountBtn.className = 'btn-add-account';
+                addAccountBtn.innerHTML = '<i class="fas fa-plus me-2"></i>Add Another Account';
+                addAccountBtn.onclick = () => showLoginModal();
+                loggedAccountsContainer.appendChild(addAccountBtn);
+            }
+            
+        } else {
+            // Show login button if no accounts
+            const loggedAccountsContainer = document.getElementById('loggedAccounts');
+            const accountLoginContainer = document.getElementById('accountLogin');
+            
+            if (loggedAccountsContainer && accountLoginContainer) {
+                loggedAccountsContainer.style.display = 'none';
+                accountLoginContainer.style.display = 'block';
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error updating sidebar:', error);
+    }
+}
+
+// Create account element for sidebar
+function createAccountElement(account) {
+    const accountDiv = document.createElement('div');
+    accountDiv.className = `kotak-account-item ${account.is_logged_in ? 'active' : ''}`;
+    
+    const statusClass = account.is_logged_in ? '' : 'offline';
+    const statusText = account.is_logged_in ? 'Online' : 'Offline';
+    
+    accountDiv.innerHTML = `
+        <div class="account-header">
+            <div class="account-title">
+                <i class="fas fa-chart-line"></i>
+                <span>Kotak Neo</span>
+            </div>
+            <div class="account-status ${statusClass}">
+                <span class="status-dot ${statusClass}"></span>
+                <span>${statusText}</span>
+            </div>
+        </div>
+        
+        <div class="account-details">
+            <div class="account-detail">
+                <span class="account-label">UCC:</span>
+                <span class="account-value">${account.ucc}</span>
+            </div>
+            <div class="account-detail">
+                <span class="account-label">Mobile:</span>
+                <span class="account-value">${account.mobile_number}</span>
+            </div>
+            ${account.last_login ? `
+                <div class="account-detail">
+                    <span class="account-label">Last Login:</span>
+                    <span class="account-value">${formatDate(account.last_login)}</span>
+                </div>
+            ` : ''}
+        </div>
+        
+        <div class="account-actions">
+            ${account.is_logged_in ? `
+                <button class="btn-account-action btn-account-switch" onclick="switchAccount(${account.id})">
+                    <i class="fas fa-exchange-alt"></i>
+                    Switch
+                </button>
+            ` : `
+                <button class="btn-account-action btn-account-switch" onclick="reconnectAccount(${account.id})">
+                    <i class="fas fa-plug"></i>
+                    Reconnect
+                </button>
+            `}
+            <button class="btn-account-action btn-account-logout" onclick="logoutAccount(${account.id})" title="Logout">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </div>
+    `;
+    
+    return accountDiv;
+}
+
+// Switch to different account
+async function switchAccount(accountId) {
+    try {
+        const response = await fetch(`/api/kotak/account/${accountId}/switch`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Account Switched!',
+                text: data.message,
+                timer: 1500,
+                showConfirmButton: false
+            });
+            
+            // Update sidebar
+            updateSidebarWithAccounts();
+            
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Switch Failed',
+                text: data.error,
+                confirmButtonText: 'OK'
+            });
+        }
+        
+    } catch (error) {
+        console.error('Switch error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Connection Error',
+            text: 'Unable to switch account. Please try again.',
+            confirmButtonText: 'OK'
+        });
+    }
+}
+
+// Logout from account
+async function logoutAccount(accountId) {
+    try {
+        const result = await Swal.fire({
+            title: 'Logout Account?',
+            text: 'Are you sure you want to logout from this Kotak Neo account?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Yes, logout',
+            cancelButtonText: 'Cancel'
+        });
+        
+        if (result.isConfirmed) {
+            const response = await fetch(`/api/kotak/logout/${accountId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Logged Out!',
+                    text: data.message,
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                
+                // Update sidebar
+                updateSidebarWithAccounts();
+                
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Logout Failed',
+                    text: data.error,
+                    confirmButtonText: 'OK'
+                });
+            }
+        }
+        
+    } catch (error) {
+        console.error('Logout error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Connection Error',
+            text: 'Unable to logout. Please try again.',
+            confirmButtonText: 'OK'
+        });
+    }
+}
+
+// Format date for display
+function formatDate(dateString) {
+    if (!dateString) return 'Never';
+    
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now - date;
+    
+    // If less than 24 hours ago
+    if (diff < 24 * 60 * 60 * 1000) {
+        if (diff < 60 * 60 * 1000) {
+            const minutes = Math.floor(diff / (60 * 1000));
+            return `${minutes}m ago`;
+        } else {
+            const hours = Math.floor(diff / (60 * 60 * 1000));
+            return `${hours}h ago`;
+        }
+    } else {
+        return date.toLocaleDateString();
+    }
+}
+
+// Initialize account display on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Update sidebar with accounts if user is logged in
+    updateSidebarWithAccounts();
+});

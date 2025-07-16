@@ -187,7 +187,14 @@
                         <i class="fas fa-university me-2"></i>Trading Accounts
                     </h6>
                 </div>
-                <div class="account-login">
+                
+                <!-- Logged-in Accounts -->
+                <div class="logged-accounts" id="loggedAccounts" style="display: none;">
+                    <!-- Accounts will be populated by JavaScript -->
+                </div>
+                
+                <!-- Login Button (shown when no accounts logged in) -->
+                <div class="account-login" id="accountLogin">
                     <button class="btn-login-account" onclick="showLoginModal()">
                         <i class="fas fa-sign-in-alt me-2"></i>Login Account
                     </button>
@@ -585,27 +592,51 @@
                                         <form id="kotakLoginFormElement" onsubmit="handleKotakLogin(event)">
                                             <div class="form-group mb-3">
                                                 <label class="form-label">
-                                                    <i class="fas fa-user me-2"></i>User ID
+                                                    <i class="fas fa-mobile-alt me-2"></i>Mobile Number
                                                 </label>
                                                 <input
-                                                    type="text"
+                                                    type="tel"
                                                     class="form-control"
-                                                    name="user_id"
-                                                    placeholder="Enter your User ID"
+                                                    name="mobile_number"
+                                                    placeholder="Enter registered mobile number"
+                                                    pattern="[0-9]{10}"
+                                                    maxlength="10"
                                                     required
                                                 />
+                                                <small class="form-text text-muted">
+                                                    Enter your 10-digit mobile number registered with Kotak Neo
+                                                </small>
                                             </div>
 
                                             <div class="form-group mb-3">
                                                 <label class="form-label">
-                                                    <i class="fas fa-lock me-2"></i>Password
+                                                    <i class="fas fa-user me-2"></i>UCC (User Client Code)
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    class="form-control"
+                                                    name="ucc"
+                                                    placeholder="Enter your UCC"
+                                                    maxlength="6"
+                                                    required
+                                                />
+                                                <small class="form-text text-muted">
+                                                    Enter your 5-6 character alphanumeric UCC from Kotak Neo
+                                                </small>
+                                            </div>
+
+                                            <div class="form-group mb-3">
+                                                <label class="form-label">
+                                                    <i class="fas fa-key me-2"></i>MPIN
                                                 </label>
                                                 <div class="password-input-wrapper">
                                                     <input
                                                         type="password"
                                                         class="form-control"
-                                                        name="password"
-                                                        placeholder="Enter your password"
+                                                        name="mpin"
+                                                        placeholder="••••••"
+                                                        pattern="[0-9]{6}"
+                                                        maxlength="6"
                                                         required
                                                     />
                                                     <button
@@ -616,19 +647,34 @@
                                                         <i class="fas fa-eye"></i>
                                                     </button>
                                                 </div>
+                                                <small class="form-text text-muted">
+                                                    Enter your 6-digit MPIN
+                                                </small>
                                             </div>
 
                                             <div class="form-group mb-4">
                                                 <label class="form-label">
-                                                    <i class="fas fa-mobile-alt me-2"></i>Mobile PIN
+                                                    <i class="fas fa-shield-alt me-2"></i>TOTP Code
                                                 </label>
                                                 <input
-                                                    type="password"
+                                                    type="text"
                                                     class="form-control"
-                                                    name="mobile_pin"
-                                                    placeholder="Enter your mobile PIN"
+                                                    name="totp_code"
+                                                    placeholder="000000"
+                                                    pattern="[0-9]{6}"
+                                                    maxlength="6"
                                                     required
                                                 />
+                                                <small class="form-text text-muted">
+                                                    Enter the current 6-digit TOTP code from your authenticator app (Google Authenticator, Authy, etc.)
+                                                </small>
+                                            </div>
+
+                                            <div class="form-group mb-4">
+                                                <a href="#" class="text-primary" onclick="showForgotPassword()">
+                                                    <i class="fas fa-question-circle me-1"></i>
+                                                    Forgot password?
+                                                </a>
                                             </div>
 
                                             <button type="submit" class="btn btn-primary w-100 mb-3">
