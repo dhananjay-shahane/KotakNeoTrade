@@ -14,16 +14,33 @@ from flask_sqlalchemy import SQLAlchemy
 sys.path.append(os.path.join(os.path.dirname(__file__), 'kotak_neo_project'))
 
 # Import all the necessary modules from kotak_neo_project
-from Scripts.trading_functions import TradingFunctions
-from Scripts.neo_client import NeoClient
-from core.auth import require_auth, validate_current_session
-from core.database import get_db_connection
+try:
+    from Scripts.trading_functions import TradingFunctions
+    from Scripts.neo_client import NeoClient
+    from core.auth import require_auth, validate_current_session
+    from core.database import get_db_connection
+except ImportError as e:
+    print(f"Warning: Could not import some modules: {e}")
+    # Create fallback classes
+    class TradingFunctions:
+        def get_dashboard_data(self, client): return {}
+        def get_positions(self, client): return []
+        def get_holdings(self, client): return []
+        def get_orders(self, client): return []
+    
+    class NeoClient:
+        def login(self, **kwargs): return {'success': False, 'message': 'Service unavailable'}
+        def validate_session(self, client): return False
+    
+    def require_auth(f): return f
+    def validate_current_session(): return session.get('authenticated', False)
+    def get_db_connection(): return None
 
 # Initialize Flask app
 app = Flask(__name__, 
            template_folder='kotak_neo_project/templates',
            static_folder='kotak_neo_project/static',
-           static_url_path='/kotak/static')
+           static_url_path='/static')
 
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')
 
@@ -164,6 +181,104 @@ def dashboard():
         flash(f'Error loading dashboard: {str(e)}', 'error')
         return render_template('dashboard.html', data={})
 
+# Main page routes for navigation
+@app.route('/positions')
+@login_required
+def positions():
+    """Positions page"""
+    return render_template('positions.html')
+
+@app.route('/holdings')
+@login_required
+def holdings():
+    """Holdings page"""
+    return render_template('holdings.html')
+
+@app.route('/orders')
+@login_required
+def orders():
+    """Orders page"""
+    return render_template('orders.html')
+
+@app.route('/charts')
+@login_required
+def charts():
+    """Charts page for trading analysis"""
+    return render_template('charts.html')
+
+@app.route('/etf-signals')
+@login_required
+def etf_signals():
+    """ETF signals page"""
+    return render_template('etf_signals.html')
+
+@app.route('/deals')
+@login_required
+def deals():
+    """Deals page"""
+    return render_template('deals.html')
+
+@app.route('/basic-signals')
+@login_required
+def basic_signals():
+    """Basic signals page"""
+    return render_template('basic_etf_signals.html')
+
+@app.route('/portfolio')
+@login_required
+def portfolio():
+    """Portfolio overview page - redirect to dashboard"""
+    return redirect(url_for('dashboard'))
+
+# Content loading routes for SPA behavior
+@app.route('/content/portfolio')
+@login_required
+def content_portfolio():
+    """Return portfolio content HTML"""
+    return redirect(url_for('dashboard'))
+
+@app.route('/content/positions')
+@login_required
+def content_positions():
+    """Return positions content HTML"""
+    return render_template('positions.html')
+
+@app.route('/content/holdings')
+@login_required
+def content_holdings():
+    """Return holdings content HTML"""
+    return render_template('holdings.html')
+
+@app.route('/content/orders')
+@login_required
+def content_orders():
+    """Return orders content HTML"""
+    return render_template('orders.html')
+
+@app.route('/content/charts')
+@login_required
+def content_charts():
+    """Return charts content HTML"""
+    return render_template('charts.html')
+
+@app.route('/content/etf-signals')
+@login_required
+def content_etf_signals():
+    """Return ETF signals content HTML"""
+    return render_template('etf_signals.html')
+
+@app.route('/content/deals')
+@login_required
+def content_deals():
+    """Return deals content HTML"""
+    return render_template('deals.html')
+
+@app.route('/content/basic-signals')
+@login_required
+def content_basic_signals():
+    """Return basic signals content HTML"""
+    return render_template('basic_etf_signals.html')
+
 # API Routes for dynamic content loading
 @app.route('/api/positions')
 @login_required
@@ -300,9 +415,12 @@ def api_orders():
 def api_etf_signals():
     """API endpoint for ETF signals data"""
     try:
-        from Scripts.external_db_service import get_etf_signals_from_external_db
+        try:
+            from Scripts.external_db_service import get_etf_signals_from_external_db
+            signals = get_etf_signals_from_external_db()
+        except ImportError:
+            signals = []
         
-        signals = get_etf_signals_from_external_db()
         if not signals:
             signals = []
 
@@ -375,48 +493,47 @@ def api_user_profile():
         logger.error(f"User profile API error: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
-# Content loading routes (for SPA-like behavior)
-@app.route('/content/positions')
-@login_required
-def content_positions():
-    """Return positions content HTML"""
-    return render_template('positions.html')
+# Health check route
+@app.route('/health')
+def health():
+    """Health check endpoint"""
+    return jsonify({
+        'status': 'healthy',
+        'message': 'Kotak Neo Trading Platform is running',
+        'timestamp': datetime.now().isoformat()
+    })
 
-@app.route('/content/holdings')
-@login_required
-def content_holdings():
-    """Return holdings content HTML"""
-    return render_template('holdings.html')
+# Test route
+@app.route('/test')
+def test():
+    """Simple test route"""
+    return '<h1>Kotak Neo Trading Platform</h1><p>Application is running successfully!</p>'
 
-@app.route('/content/orders')
-@login_required
-def content_orders():
-    """Return orders content HTML"""
-    return render_template('orders.html')
+# Error handlers
+@app.errorhandler(404)
+def not_found_error(error):
+    """Handle 404 errors"""
+    if request.path.startswith('/api/'):
+        return jsonify({'success': False, 'message': 'API endpoint not found'}), 404
+    
+    # For regular page requests, redirect to dashboard if authenticated
+    if session.get('authenticated'):
+        return redirect(url_for('dashboard'))
+    else:
+        return redirect(url_for('login'))
 
-@app.route('/content/charts')
-@login_required
-def content_charts():
-    """Return charts content HTML"""
-    return render_template('charts.html')
-
-@app.route('/content/etf-signals')
-@login_required
-def content_etf_signals():
-    """Return ETF signals content HTML"""
-    return render_template('etf_signals.html')
-
-@app.route('/content/deals')
-@login_required
-def content_deals():
-    """Return deals content HTML"""
-    return render_template('deals.html')
-
-@app.route('/content/basic-signals')
-@login_required
-def content_basic_signals():
-    """Return basic signals content HTML"""
-    return render_template('basic_etf_signals.html')
+@app.errorhandler(500)
+def internal_error(error):
+    """Handle 500 errors"""
+    logger.error(f"Internal server error: {error}")
+    if request.path.startswith('/api/'):
+        return jsonify({'success': False, 'message': 'Internal server error'}), 500
+    
+    flash('An internal error occurred. Please try again.', 'error')
+    if session.get('authenticated'):
+        return redirect(url_for('dashboard'))
+    else:
+        return redirect(url_for('login'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

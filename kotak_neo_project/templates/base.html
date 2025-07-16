@@ -398,7 +398,7 @@
     // Dynamic content loading functionality
     function loadContent(page, title) {
         console.log(`Loading content: ${page}`);
-        
+
         // Show loading state
         const mainContent = document.querySelector('.main-content');
         if (mainContent) {
@@ -415,7 +415,7 @@
 
         // Update active navigation
         updateActiveNav(page);
-        
+
         // Load content
         fetch(`/content/${page}`)
             .then(response => {
@@ -427,7 +427,7 @@
             .then(html => {
                 if (mainContent) {
                     mainContent.innerHTML = html;
-                    
+
                     // Execute any scripts in the loaded content
                     const scripts = mainContent.querySelectorAll('script');
                     scripts.forEach(script => {
@@ -439,10 +439,10 @@
                         }
                         document.head.appendChild(newScript);
                     });
-                    
+
                     // Update page title
                     document.title = `${title} - Kotak Neo Trading`;
-                    
+
                     console.log(`✓ Content loaded: ${page}`);
                 }
             })
@@ -468,7 +468,7 @@
         document.querySelectorAll('.nav-link').forEach(link => {
             link.classList.remove('active');
         });
-        
+
         // Add active class to current page
         const pageMap = {
             'positions': 'main_routes.show_positions',
@@ -479,7 +479,7 @@
             'deals': 'main_routes.deals',
             'basic-signals': 'main_routes.basic_trade_signals'
         };
-        
+
         const endpoint = pageMap[page];
         if (endpoint) {
             const activeLink = document.querySelector(`a[href*="${endpoint}"]`);
@@ -525,6 +525,44 @@
 
     <!-- Custom JavaScript -->
     <script src="{{ "/kotak/static/js/base.js" }}"></script>
+
+    <script>
+        // Dynamic content loading function
+        function loadContent(page) {
+            // Handle navigation to different pages
+            const pageRoutes = {
+                'dashboard': '/dashboard',
+                'portfolio': '/dashboard',
+                'positions': '/positions',
+                'holdings': '/holdings', 
+                'orders': '/orders',
+                'charts': '/charts',
+                'etf-signals': '/etf-signals',
+                'deals': '/deals',
+                'basic-signals': '/basic-signals'
+            };
+
+            const route = pageRoutes[page];
+            if (route) {
+                window.location.href = route;
+            }
+        }
+
+        // Set active navigation based on current path
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                const href = link.getAttribute('href');
+                if (href && (href === currentPath || (currentPath === '/' && href === '/dashboard'))) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+
     <script src="{{ "/kotak/static/js/websocket.js" }}"></script>
     {% endif %}
 
