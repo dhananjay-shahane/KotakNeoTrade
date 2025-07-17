@@ -2186,7 +2186,7 @@ body {
 
 .login-form-content {
     width: 100%;
-    max-width: 420px;
+    max-width: 480px;
     background: var(--card-bg);
     border-radius: 12px;
     padding: 2rem;
@@ -2255,12 +2255,12 @@ body {
     width: 100%;
 }
 
-.form-control:focus {
+/* .form-control:focus {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
     background: var(--card-bg);
     outline: none;
-}
+} */
 
 .form-control::placeholder {
     color: var(--text-secondary);

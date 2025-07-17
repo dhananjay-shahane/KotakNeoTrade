@@ -582,31 +582,33 @@ function showLoginModal() {
 }
 
 // Broker redirect functions
-function showKotakLoginForm() {
-    // Remove active class from all broker cards (both desktop and mobile)
-    document.querySelectorAll(".broker-card, .broker-card-mobile").forEach((card) => {
-        card.classList.remove("active");
-    });
+// function showKotakLoginForm() {
+//     // Remove active class from all broker cards (both desktop and mobile)
+//     document.querySelectorAll(".broker-card, .broker-card-mobile").forEach((card) => {
+//         card.classList.remove("active");
+//     });
 
-    // Add active class to Kotak cards (both desktop and mobile)
-    const kotakCard = document.getElementById("kotakCard");
-    const kotakCardDesktop = document.getElementById("kotakCardDesktop");
-    if (kotakCard) kotakCard.classList.add("active");
-    if (kotakCardDesktop) kotakCardDesktop.classList.add("active");
+//     // Add active class to Kotak cards (both desktop and mobile)
+//     const kotakCard = document.getElementById("kotakCard");
+//     const kotakCardDesktop = document.getElementById("kotakCardDesktop");
+//     if (kotakCard) kotakCard.classList.add("active");
+//     if (kotakCardDesktop) kotakCardDesktop.classList.add("active");
 
-    document.getElementById("welcomeScreen").style.display = "none";
-    document.getElementById("kotakLoginForm").style.display = "block";
-}
+//     document.getElementById("welcomeScreen").style.display = "none";
+//     document.getElementById("kotakLoginForm").style.display = "block";
+// }
 
-function goBackToBrokerSelection() {
-    // Remove active class from all broker cards (both desktop and mobile)
-    document.querySelectorAll(".broker-card, .broker-card-mobile").forEach((card) => {
-        card.classList.remove("active");
-    });
+// function goBackToBrokerSelection() {
+//     // Remove active class from all broker cards (both desktop and mobile)
+//     document
+//         .querySelectorAll(".broker-card, .broker-card-mobile")
+//         .forEach((card) => {
+//             card.classList.remove("active");
+//         });
 
-    document.getElementById("kotakLoginForm").style.display = "none";
-    document.getElementById("welcomeScreen").style.display = "block";
-}
+//     document.getElementById("kotakLoginForm").style.display = "none";
+//     document.getElementById("welcomeScreen").style.display = "block";
+// }
 
 function showComingSoon(brokerName) {
     Swal.fire({
@@ -670,8 +672,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const welcomeScreen = document.getElementById("welcomeScreen");
             const kotakLoginForm = document.getElementById("kotakLoginForm");
 
-            if (welcomeScreen) welcomeScreen.style.display = "none";
-            if (kotakLoginForm) kotakLoginForm.style.display = "block";
+            // if (kotakLoginForm) kotakLoginForm.style.display = "block";
 
             // Remove active class from all broker cards
             document.querySelectorAll(".broker-card").forEach((card) => {
@@ -705,7 +706,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Ensure correct initial state
         if (welcomeScreen) welcomeScreen.style.display = "none";
-        if (kotakLoginForm) kotakLoginForm.style.display = "block";
+        // if (kotakLoginForm) kotakLoginForm.style.display = "block";
     }, 100);
 });
 
