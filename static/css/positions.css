@@ -1,0 +1,87 @@
+
+/* Positions Page Styling */
+.positions-skeleton {
+    padding: 20px;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.positions-content {
+    animation: slideIn 0.5s ease-out;
+}
+
+.position-summary-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
+    color: white;
+    margin-bottom: 1.5rem;
+}
+
+.position-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.summary-item {
+    text-align: center;
+}
+
+.summary-item h6 {
+    font-size: 0.875rem;
+    opacity: 0.9;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.summary-item .value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.text-profit {
+    color: #10b981 !important;
+}
+
+.text-loss {
+    color: #ef4444 !important;
+}
+
+.position-row {
+    transition: all 0.3s ease;
+}
+
+.position-row:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateY(-1px);
+}
+
+.pnl-positive {
+    color: #10b981;
+    font-weight: 600;
+}
+
+.pnl-negative {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+.quantity-long {
+    color: #10b981;
+}
+
+.quantity-short {
+    color: #ef4444;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}

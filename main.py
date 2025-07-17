@@ -402,37 +402,145 @@ def generate_orders_content():
     <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h1 class="h3 mb-1">Orders</h1>
-                <p class="text-muted mb-0">View and manage your trading orders</p>
+                <h1 class="h3 mb-1">Order Book</h1>
+                <p class="text-muted mb-0">Manage and track your trading orders</p>
             </div>
-            <div>
-                <button class="btn btn-primary" onclick="loadOrdersData()">
-                    <i class="fas fa-sync me-1"></i>Refresh
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" onclick="refreshOrdersTable()">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh
                 </button>
             </div>
         </div>
-        
-        <div class="card">
-            <div class="card-header">
-                <h6 class="mb-0">Order History</h6>
+
+        <!-- Available Margin Card -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card bg-gradient-primary text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="card-body text-center p-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title mb-1 text-uppercase">AVAILABLE MARGIN</h6>
+                                <h3 class="mb-0 fw-bold" id="availableMarginAmount">₹0.00</h3>
+                                <small class="text-white-50">
+                                    <i class="fas fa-coins me-1"></i>Ready for trading
+                                </small>
+                            </div>
+                            <div class="stats-icon">
+                                <div class="bg-white bg-opacity-20 rounded-circle p-3">
+                                    <i class="fas fa-wallet fa-2x text-warning"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="row mb-4" id="ordersSummary">
+            <div class="col-md-2 mb-3">
+                <div class="card bg-primary text-white filter-card" data-filter="all" style="cursor: pointer;" onclick="setOrdersFilter('all')">
+                    <div class="card-body text-center p-3">
+                        <h6 class="card-title mb-1">TOTAL ORDERS</h6>
+                        <h4 class="mb-0" id="totalOrdersCount">0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2 mb-3">
+                <div class="card bg-success text-white filter-card" data-filter="completed" style="cursor: pointer;" onclick="setOrdersFilter('completed')">
+                    <div class="card-body text-center p-3">
+                        <h6 class="card-title mb-1">COMPLETED</h6>
+                        <h4 class="mb-0" id="completedOrdersCount">0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2 mb-3">
+                <div class="card bg-warning text-white filter-card" data-filter="pending" style="cursor: pointer;" onclick="setOrdersFilter('pending')">
+                    <div class="card-body text-center p-3">
+                        <h6 class="card-title mb-1">PENDING</h6>
+                        <h4 class="mb-0" id="pendingOrdersCount">0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2 mb-3">
+                <div class="card bg-danger text-white filter-card" data-filter="rejected" style="cursor: pointer;" onclick="setOrdersFilter('rejected')">
+                    <div class="card-body text-center p-3">
+                        <h6 class="card-title mb-1">REJECTED</h6>
+                        <h4 class="mb-0" id="rejectedOrdersCount">0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2 mb-3">
+                <div class="card bg-secondary text-white filter-card" data-filter="cancelled" style="cursor: pointer;" onclick="setOrdersFilter('cancelled')">
+                    <div class="card-body text-center p-3">
+                        <h6 class="card-title mb-1">CANCELLED</h6>
+                        <h4 class="mb-0" id="cancelledOrdersCount">0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2 mb-3">
+                <div class="card bg-info text-white filter-card" data-filter="buy" style="cursor: pointer;" onclick="setOrdersFilter('buy')">
+                    <div class="card-body text-center p-3">
+                        <h6 class="card-title mb-1">BUY ORDERS</h6>
+                        <h4 class="mb-0" id="buyOrdersCount">0</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders Table -->
+        <div class="card bg-secondary border-0 shadow-lg">
+            <div class="card-header bg-dark border-0">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-light">
+                        <i class="fas fa-list-alt me-2 text-primary"></i>Live Order Book
+                        <span class="badge bg-primary ms-2" id="ordersTableCount">0</span>
+                    </h5>
+                </div>
+            </div>
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-striped" id="ordersTable">
-                        <thead>
+                    <table class="table table-dark table-hover mb-0" id="ordersTable">
+                        <thead class="table-primary">
                             <tr>
-                                <th>Order ID</th>
-                                <th>Symbol</th>
-                                <th>Type</th>
-                                <th>Quantity</th>
-                                <th>Price</th>
-                                <th>Status</th>
-                                <th>Time</th>
+                                <th class="sortable" style="cursor: pointer;" onclick="sortTable('time')">
+                                    TIME <i class="fas fa-sort ms-1" id="sort-time"></i>
+                                </th>
+                                <th class="sortable" style="cursor: pointer;" onclick="sortTable('orderid')">
+                                    ORDER ID <i class="fas fa-sort ms-1" id="sort-orderid"></i>
+                                </th>
+                                <th class="sortable" style="cursor: pointer;" onclick="sortTable('symbol')">
+                                    SYMBOL <i class="fas fa-sort ms-1" id="sort-symbol"></i>
+                                </th>
+                                <th class="sortable" style="cursor: pointer;" onclick="sortTable('type')">
+                                    TYPE <i class="fas fa-sort ms-1" id="sort-type"></i>
+                                </th>
+                                <th class="sortable" style="cursor: pointer;" onclick="sortTable('quantity')">
+                                    QUANTITY <i class="fas fa-sort ms-1" id="sort-quantity"></i>
+                                </th>
+                                <th class="sortable" style="cursor: pointer;" onclick="sortTable('price')">
+                                    PRICE <i class="fas fa-sort ms-1" id="sort-price"></i>
+                                </th>
+                                <th class="sortable" style="cursor: pointer;" onclick="sortTable('status')">
+                                    STATUS <i class="fas fa-sort ms-1" id="sort-status"></i>
+                                </th>
+                                <th class="sortable" style="cursor: pointer;" onclick="sortTable('product')">
+                                    PRODUCT <i class="fas fa-sort ms-1" id="sort-product"></i>
+                                </th>
+                                <th class="sortable" style="cursor: pointer;" onclick="sortTable('exchange')">
+                                    EXCHANGE <i class="fas fa-sort ms-1" id="sort-exchange"></i>
+                                </th>
+                                <th>ACTIONS</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="ordersTableBody">
                             <tr>
-                                <td colspan="7" class="text-center">Loading orders...</td>
+                                <td colspan="10" class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading orders...</span>
+                                    </div>
+                                    <p class="mt-2 mb-0 text-muted">Loading live orders data...</p>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -452,29 +560,45 @@ def generate_positions_content():
                 <p class="text-muted mb-0">Current trading positions and P&L</p>
             </div>
             <div>
-                <button class="btn btn-primary" onclick="loadPositionsData()">
+                <button class="btn btn-primary" onclick="refreshPositionsTable()">
                     <i class="fas fa-sync me-1"></i>Refresh
                 </button>
             </div>
         </div>
         
-        <div class="card mb-4">
-            <div class="card-header">
-                <h6 class="mb-0">Positions Summary</h6>
-            </div>
-            <div class="card-body" id="positionsSummary">
-                <div class="text-center">Loading summary...</div>
+        <!-- Positions Summary Card -->
+        <div class="position-summary-card mb-4">
+            <div class="position-summary-grid">
+                <div class="summary-item">
+                    <h6>Total Positions</h6>
+                    <p class="value" id="totalPositionsCount">0</p>
+                </div>
+                <div class="summary-item">
+                    <h6>Total P&L</h6>
+                    <p class="value" id="totalPnlAmount">₹0.00</p>
+                </div>
+                <div class="summary-item">
+                    <h6>Long Positions</h6>
+                    <p class="value" id="longPositionsCount">0</p>
+                </div>
+                <div class="summary-item">
+                    <h6>Short Positions</h6>
+                    <p class="value" id="shortPositionsCount">0</p>
+                </div>
             </div>
         </div>
         
-        <div class="card">
-            <div class="card-header">
-                <h6 class="mb-0">Active Positions</h6>
+        <!-- Positions Table -->
+        <div class="card bg-secondary border-0 shadow-lg">
+            <div class="card-header bg-dark border-0">
+                <h5 class="mb-0 text-light">
+                    <i class="fas fa-chart-bar me-2 text-primary"></i>Active Positions
+                </h5>
             </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-striped" id="positionsTable">
-                        <thead>
+                    <table class="table table-dark table-hover mb-0" id="positionsTable">
+                        <thead class="table-primary">
                             <tr>
                                 <th>Symbol</th>
                                 <th>Qty</th>
@@ -482,11 +606,18 @@ def generate_positions_content():
                                 <th>LTP</th>
                                 <th>P&L</th>
                                 <th>P&L %</th>
+                                <th>Exchange</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="positionsTableBody">
                             <tr>
-                                <td colspan="6" class="text-center">Loading positions...</td>
+                                <td colspan="8" class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading positions...</span>
+                                    </div>
+                                    <p class="mt-2 mb-0 text-muted">Loading live positions data...</p>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -506,29 +637,45 @@ def generate_holdings_content():
                 <p class="text-muted mb-0">Long-term investment portfolio</p>
             </div>
             <div>
-                <button class="btn btn-primary" onclick="loadHoldingsData()">
+                <button class="btn btn-primary" onclick="refreshHoldingsTable()">
                     <i class="fas fa-sync me-1"></i>Refresh
                 </button>
             </div>
         </div>
         
-        <div class="card mb-4">
-            <div class="card-header">
-                <h6 class="mb-0">Portfolio Summary</h6>
-            </div>
-            <div class="card-body" id="holdingsSummary">
-                <div class="text-center">Loading summary...</div>
+        <!-- Portfolio Summary Card -->
+        <div class="portfolio-summary-card mb-4">
+            <div class="portfolio-summary-grid">
+                <div class="portfolio-item">
+                    <h6>Total Holdings</h6>
+                    <p class="value" id="totalHoldingsCount">0</p>
+                </div>
+                <div class="portfolio-item">
+                    <h6>Invested Value</h6>
+                    <p class="value" id="totalInvestedAmount">₹0.00</p>
+                </div>
+                <div class="portfolio-item">
+                    <h6>Current Value</h6>
+                    <p class="value" id="currentPortfolioValue">₹0.00</p>
+                </div>
+                <div class="portfolio-item">
+                    <h6>Total P&L</h6>
+                    <p class="value" id="totalHoldingsPnl">₹0.00</p>
+                </div>
             </div>
         </div>
         
-        <div class="card">
-            <div class="card-header">
-                <h6 class="mb-0">Holdings Details</h6>
+        <!-- Holdings Table -->
+        <div class="card bg-secondary border-0 shadow-lg">
+            <div class="card-header bg-dark border-0">
+                <h5 class="mb-0 text-light">
+                    <i class="fas fa-briefcase me-2 text-primary"></i>Investment Portfolio
+                </h5>
             </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-striped" id="holdingsTable">
-                        <thead>
+                    <table class="table table-dark table-hover mb-0" id="holdingsTable">
+                        <thead class="table-primary">
                             <tr>
                                 <th>Symbol</th>
                                 <th>Quantity</th>
@@ -537,11 +684,17 @@ def generate_holdings_content():
                                 <th>Invested</th>
                                 <th>Current Value</th>
                                 <th>P&L</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="holdingsTableBody">
                             <tr>
-                                <td colspan="7" class="text-center">Loading holdings...</td>
+                                <td colspan="8" class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading holdings...</span>
+                                    </div>
+                                    <p class="mt-2 mb-0 text-muted">Loading portfolio data...</p>
+                                </td>
                             </tr>
                         </tbody>
                     </table>

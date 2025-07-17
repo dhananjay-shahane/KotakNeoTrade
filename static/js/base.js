@@ -115,8 +115,85 @@ function loadKotakPage(pageType, event) {
     });
     event.target.closest('.nav-link').classList.add('active');
 
-    // Redirect to the appropriate Kotak page
-    window.location.href = `/kotak/${pageType}`;
+    // Clear any existing intervals
+    cleanupCurrentPage();
+
+    // Load the appropriate content
+    fetch(`/api/kotak/${pageType}/content`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Get main content area
+                const mainContent = document.querySelector('.main-content') || document.querySelector('.content');
+                if (mainContent) {
+                    mainContent.innerHTML = data.content;
+                    
+                    // Load CSS for the page
+                    loadPageCSS(pageType);
+                    
+                    // Initialize page-specific functionality
+                    setTimeout(() => {
+                        if (pageType === 'orders' && typeof initializeOrdersPage === 'function') {
+                            initializeOrdersPage();
+                        } else if (pageType === 'positions' && typeof initializePositionsPage === 'function') {
+                            initializePositionsPage();
+                        } else if (pageType === 'holdings' && typeof initializeHoldingsPage === 'function') {
+                            initializeHoldingsPage();
+                        }
+                    }, 100);
+                }
+            } else {
+                console.error('Failed to load page content:', data.message);
+                showPageError(pageType);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading page:', error);
+            showPageError(pageType);
+        });
+}
+
+// Cleanup function for current page
+function cleanupCurrentPage() {
+    // Clean up any existing intervals
+    if (typeof cleanupOrdersPage === 'function') cleanupOrdersPage();
+    if (typeof cleanupPositionsPage === 'function') cleanupPositionsPage();
+    if (typeof cleanupHoldingsPage === 'function') cleanupHoldingsPage();
+}
+
+// Load page-specific CSS
+function loadPageCSS(pageType) {
+    // Remove existing page CSS
+    const existingPageCSS = document.querySelectorAll('link[data-page-css]');
+    existingPageCSS.forEach(link => link.remove());
+    
+    // Add new page CSS
+    const cssLink = document.createElement('link');
+    cssLink.rel = 'stylesheet';
+    cssLink.href = `/static/css/${pageType}.css`;
+    cssLink.setAttribute('data-page-css', pageType);
+    document.head.appendChild(cssLink);
+}
+
+// Show error message
+function showPageError(pageType) {
+    const mainContent = document.querySelector('.main-content') || document.querySelector('.content');
+    if (mainContent) {
+        mainContent.innerHTML = `
+            <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <div class="col-md-6 text-center py-5">
+                        <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                        <h3>Error Loading ${pageType.charAt(0).toUpperCase() + pageType.slice(1)}</h3>
+                        <p class="text-muted">Unable to load ${pageType} content. Please try again.</p>
+                        <button class="btn btn-primary" onclick="loadKotakPage('${pageType}', {preventDefault: () => {}})">
+                            <i class="fas fa-refresh me-2"></i>Retry
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 }
 
 // Initialize page-specific functionality
