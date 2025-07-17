@@ -7,17 +7,17 @@ import json
 from datetime import datetime
 
 def get_deals_data():
-    """Get real user deals data from external database"""
+    """API endpoint for deals data - only real trading deals from database"""
     try:
         # Import user deals service for real data
         from scripts.user_deals_service import UserDealsService
-        
+
         # Initialize user deals service
         deals_service = UserDealsService()
-        
+
         # Get real user deals data with CMP from symbols schema
         deals_data = deals_service.get_user_deals_with_cmp()
-        
+
         if deals_data:
             # Calculate summary statistics
             total_investment = sum(float(deal.get('investment', 0)) for deal in deals_data if deal.get('investment'))
@@ -25,7 +25,7 @@ def get_deals_data():
             total_pnl = current_value - total_investment
             total_pnl_percent = (total_pnl / total_investment * 100) if total_investment > 0 else 0
             profitable_deals = len([deal for deal in deals_data if float(deal.get('pnl', 0)) > 0])
-            
+
             summary = {
                 "total_investment": f"{total_investment:.2f}",
                 "current_value": f"{current_value:.2f}",
@@ -34,7 +34,7 @@ def get_deals_data():
                 "active_deals": len(deals_data),
                 "profitable_deals": profitable_deals
             }
-            
+
             return jsonify({
                 "status": "success",
                 "data": deals_data,
@@ -56,7 +56,7 @@ def get_deals_data():
                     "profitable_deals": 0
                 }
             })
-    
+
     except Exception as e:
         print(f"Error getting user deals data: {e}")
         return jsonify({
@@ -70,21 +70,18 @@ def update_deal():
     try:
         deal_data = request.get_json()
         deal_id = deal_data.get("deal_id")
-        
-        # Sample update logic
-        updated_deal = {
-            "deal_id": deal_id,
-            "status": "updated",
-            "timestamp": datetime.now().isoformat(),
-            "message": f"Deal {deal_id} updated successfully"
-        }
-        
+
+        # Here, you would typically interact with your database
+        # to update the deal with the given deal_id.
+        # The specifics of this interaction will depend on your
+        # database setup and schema.
+
+        # Placeholder response to indicate success
         return jsonify({
             "status": "success",
-            "message": "Deal updated successfully",
-            "deal": updated_deal
+            "message": "Deal update logic to be implemented"
         })
-    
+
     except Exception as e:
         return jsonify({
             "status": "error",
@@ -96,21 +93,17 @@ def close_deal():
     try:
         deal_data = request.get_json()
         deal_id = deal_data.get("deal_id")
-        
-        # Sample close logic
-        closed_deal = {
-            "deal_id": deal_id,
-            "status": "closed",
-            "close_timestamp": datetime.now().isoformat(),
-            "message": f"Deal {deal_id} closed successfully"
-        }
-        
+
+        # Here, you would typically interact with your database
+        # to close the deal with the given deal_id.
+        # The specifics of this interaction will depend on your
+        # database setup and schema.
+
         return jsonify({
             "status": "success",
-            "message": "Deal closed successfully",
-            "deal": closed_deal
+            "message": "Deal close logic to be implemented"
         })
-    
+
     except Exception as e:
         return jsonify({
             "status": "error",

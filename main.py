@@ -342,29 +342,14 @@ def api_kotak_orders_data():
         return jsonify({'success': False, 'message': 'Authentication required'}), 401
     
     try:
-        # Mock data for now - replace with actual Kotak API integration
-        orders = [
-            {
-                'orderId': 'ORD001',
-                'tradingSymbol': 'RELIANCE',
-                'transactionType': 'BUY',
-                'quantity': 100,
-                'price': 2500.50,
-                'status': 'COMPLETE',
-                'orderTime': '2024-01-15 10:30:00'
-            },
-            {
-                'orderId': 'ORD002',
-                'tradingSymbol': 'TCS',
-                'transactionType': 'SELL',
-                'quantity': 50,
-                'price': 3200.75,
-                'status': 'PENDING',
-                'orderTime': '2024-01-15 11:45:00'
-            }
-        ]
+        # Get real orders data from Kotak Neo API
+        from api.kotak_api import get_user_orders
+        orders_data = get_user_orders(current_user.id)
         
-        return jsonify({'success': True, 'orders': orders})
+        if orders_data['success']:
+            return jsonify({'success': True, 'orders': orders_data['orders']})
+        else:
+            return jsonify({'success': False, 'message': 'No orders data available'}), 200
     
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -378,34 +363,14 @@ def api_kotak_positions_data():
         return jsonify({'success': False, 'message': 'Authentication required'}), 401
     
     try:
-        # Mock data for now - replace with actual Kotak API integration
-        positions = [
-            {
-                'tradingSymbol': 'RELIANCE',
-                'netQty': 100,
-                'avgPrice': 2500.50,
-                'ltp': 2550.25,
-                'pnl': 4975.00,
-                'pnlPercent': 1.99
-            },
-            {
-                'tradingSymbol': 'TCS',
-                'netQty': -50,
-                'avgPrice': 3200.75,
-                'ltp': 3180.50,
-                'pnl': 1012.50,
-                'pnlPercent': 0.63
-            }
-        ]
+        # Get real positions data from Kotak Neo API
+        from api.kotak_api import get_user_positions
+        positions_data = get_user_positions(current_user.id)
         
-        summary = {
-            'total_positions': len(positions),
-            'total_pnl': sum(p['pnl'] for p in positions),
-            'long_positions': sum(1 for p in positions if p['netQty'] > 0),
-            'short_positions': sum(1 for p in positions if p['netQty'] < 0)
-        }
-        
-        return jsonify({'success': True, 'positions': positions, 'summary': summary})
+        if positions_data['success']:
+            return jsonify({'success': True, 'positions': positions_data['positions'], 'summary': positions_data['summary']})
+        else:
+            return jsonify({'success': False, 'message': 'No positions data available'}), 200
     
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -419,36 +384,14 @@ def api_kotak_holdings_data():
         return jsonify({'success': False, 'message': 'Authentication required'}), 401
     
     try:
-        # Mock data for now - replace with actual Kotak API integration
-        holdings = [
-            {
-                'tradingSymbol': 'INFY',
-                'quantity': 200,
-                'avgPrice': 1500.00,
-                'ltp': 1580.50,
-                'investedValue': 300000.00,
-                'currentValue': 316100.00,
-                'pnl': 16100.00
-            },
-            {
-                'tradingSymbol': 'HDFC',
-                'quantity': 150,
-                'avgPrice': 2800.00,
-                'ltp': 2750.25,
-                'investedValue': 420000.00,
-                'currentValue': 412537.50,
-                'pnl': -7462.50
-            }
-        ]
+        # Get real holdings data from Kotak Neo API
+        from api.kotak_api import get_user_holdings
+        holdings_data = get_user_holdings(current_user.id)
         
-        summary = {
-            'total_holdings': len(holdings),
-            'total_invested': sum(h['investedValue'] for h in holdings),
-            'current_value': sum(h['currentValue'] for h in holdings),
-            'total_pnl': sum(h['pnl'] for h in holdings)
-        }
-        
-        return jsonify({'success': True, 'holdings': holdings, 'summary': summary})
+        if holdings_data['success']:
+            return jsonify({'success': True, 'holdings': holdings_data['holdings'], 'summary': holdings_data['summary']})
+        else:
+            return jsonify({'success': False, 'message': 'No holdings data available'}), 200
     
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
