@@ -1,211 +1,43 @@
-
 {% extends "base.html" %}
 
 {% block title %}Holdings - Kotak Neo Trading{% endblock %}
 
 {% block head %}
-<style>
-/* Enhanced Holdings Page Styling */
-.holdings-skeleton {
-    padding: 20px;
-    animation: fadeIn 0.3s ease-in;
-}
-
-.skeleton-header {
-    margin-bottom: 2rem;
-}
-
-.skeleton-title {
-    height: 32px;
-    width: 250px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 6px;
-    margin-bottom: 8px;
-}
-
-.skeleton-cards-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2rem;
-}
-
-.skeleton-card {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 1.5rem;
-    backdrop-filter: blur(10px);
-}
-
-.skeleton-card-title {
-    height: 16px;
-    width: 120px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 4px;
-    margin-bottom: 8px;
-}
-
-.skeleton-card-value {
-    height: 28px;
-    width: 80px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.2) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 6px;
-}
-
-.skeleton-table-container {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.skeleton-table-row {
-    height: 60px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 8px;
-    margin-bottom: 0.5rem;
-}
-
-@keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.holdings-content {
-    animation: slideIn 0.5s ease-out;
-}
-
-@keyframes slideIn {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/holdings.css') }}">
 {% endblock %}
 
 {% block content %}
-<!-- Holdings Skeleton Loader -->
-<div class="holdings-skeleton" id="holdingsSkeleton">
-    <div class="skeleton-header">
-        <div class="skeleton-title"></div>
-        <div class="skeleton-subtitle"></div>
-    </div>
-
-    <div class="skeleton-cards-grid">
-        <div class="skeleton-card">
-            <div class="skeleton-card-title"></div>
-            <div class="skeleton-card-value"></div>
-        </div>
-        <div class="skeleton-card">
-            <div class="skeleton-card-title"></div>
-            <div class="skeleton-card-value"></div>
-        </div>
-        <div class="skeleton-card">
-            <div class="skeleton-card-title"></div>
-            <div class="skeleton-card-value"></div>
-        </div>
-        <div class="skeleton-card">
-            <div class="skeleton-card-title"></div>
-            <div class="skeleton-card-value"></div>
-        </div>
-    </div>
-
-    <div class="skeleton-table-container">
-        <div class="skeleton-table-body p-3">
-            <div class="skeleton-table-row"></div>
-            <div class="skeleton-table-row"></div>
-            <div class="skeleton-table-row"></div>
-            <div class="skeleton-table-row"></div>
-        </div>
-    </div>
-</div>
-
-<!-- Actual Holdings Content -->
-<div class="holdings-content" id="holdingsContent" style="display: none;">
+<div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="h3 mb-1">Portfolio Holdings</h1>
-            <p class="text-muted mb-0">Long-term investment portfolio overview</p>
+            <h1 class="h3 mb-1">Holdings</h1>
+            <p class="text-muted mb-0">Long-term investment portfolio</p>
         </div>
-        <div class="d-flex gap-2">
-            <button class="btn btn-outline-secondary" onclick="refreshHoldings()">
-                <i class="fas fa-sync-alt me-1"></i>Refresh
+        <div>
+            <button class="btn btn-primary" onclick="refreshHoldingsTable()">
+                <i class="fas fa-sync me-1"></i>Refresh
             </button>
-            <div class="dropdown">
-                <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    <i class="fas fa-sort me-1"></i>Sort By
-                </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#" onclick="sortHoldings('symbol')">Symbol A-Z</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="sortHoldings('value')">Market Value</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="sortHoldings('pnl')">P&L</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="sortHoldings('percentage')">P&L %</a></li>
-                </ul>
-            </div>
         </div>
     </div>
 
-    <!-- Portfolio Summary Cards -->
-    <div class="row mb-4" id="portfolioSummary">
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card bg-dark border-0 shadow">
-                <div class="card-body text-center">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <i class="fas fa-briefcase text-primary fs-4"></i>
-                        <span class="badge bg-secondary" id="totalHoldingsCount">0</span>
-                    </div>
-                    <h4 class="text-light mb-1">Holdings</h4>
-                    <p class="text-muted mb-0 small">Total securities</p>
-                </div>
+    <!-- Portfolio Summary Card -->
+    <div class="portfolio-summary-card mb-4">
+        <div class="portfolio-summary-grid">
+            <div class="portfolio-item">
+                <h6>Total Holdings</h6>
+                <p class="value" id="totalHoldingsCount">0</p>
             </div>
-        </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card bg-dark border-0 shadow">
-                <div class="card-body text-center">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <i class="fas fa-coins text-warning fs-4"></i>
-                        <span class="badge bg-info">INV</span>
-                    </div>
-                    <h4 class="text-warning mb-1" id="totalInvestedValue">₹0.00</h4>
-                    <p class="text-muted mb-0 small">Total Invested</p>
-                </div>
+            <div class="portfolio-item">
+                <h6>Invested Value</h6>
+                <p class="value" id="totalInvestedAmount">₹0.00</p>
             </div>
-        </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card bg-dark border-0 shadow">
-                <div class="card-body text-center">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <i class="fas fa-chart-area text-info fs-4"></i>
-                        <span class="badge bg-success">CUR</span>
-                    </div>
-                    <h4 class="text-info mb-1" id="totalCurrentValue">₹0.00</h4>
-                    <p class="text-muted mb-0 small">Current Value</p>
-                </div>
+            <div class="portfolio-item">
+                <h6>Current Value</h6>
+                <p class="value" id="currentPortfolioValue">₹0.00</p>
             </div>
-        </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card bg-dark border-0 shadow">
-                <div class="card-body text-center">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <i class="fas fa-chart-line text-success fs-4"></i>
-                        <span class="badge" id="portfolioPnlBadge">0%</span>
-                    </div>
-                    <h4 class="mb-1" id="totalPortfolioPnl">₹0.00</h4>
-                    <p class="text-muted mb-0 small">Total P&L</p>
-                </div>
+            <div class="portfolio-item">
+                <h6>Total P&L</h6>
+                <p class="value" id="totalHoldingsPnl">₹0.00</p>
             </div>
         </div>
     </div>
@@ -213,56 +45,28 @@
     <!-- Holdings Table -->
     <div class="card bg-secondary border-0 shadow-lg">
         <div class="card-header bg-dark border-0">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 text-light">
-                    <i class="fas fa-table me-2 text-primary"></i>Holdings Details
-                    <span class="badge bg-primary ms-2" id="holdingsTableCount">0</span>
-                </h5>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-primary" onclick="exportHoldings()" title="Export Holdings">
-                        <i class="fas fa-download me-1"></i>Export
-                    </button>
-                    <button class="btn btn-sm btn-outline-success" onclick="viewPortfolioAnalysis()" title="Portfolio Analysis">
-                        <i class="fas fa-chart-pie me-1"></i>Analysis
-                    </button>
-                </div>
-            </div>
+            <h5 class="mb-0 text-light">
+                <i class="fas fa-briefcase me-2 text-primary"></i>Investment Portfolio
+            </h5>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-dark table-hover mb-0 table-sm" id="holdingsTable">
+                <table class="table table-dark table-hover mb-0" id="holdingsTable">
                     <thead class="table-primary">
                         <tr>
-                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('symbol')">
-                                SYMBOL <i class="fas fa-sort ms-1 text-muted"></i>
-                            </th>
-                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('exchange')">
-                                EXCHANGE <i class="fas fa-sort ms-1 text-muted"></i>
-                            </th>
-                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('quantity')">
-                                QTY <i class="fas fa-sort ms-1 text-muted"></i>
-                            </th>
-                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('avgPrice')">
-                                AVG PRICE <i class="fas fa-sort ms-1 text-muted"></i>
-                            </th>
-                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('ltp')">
-                                LTP <i class="fas fa-sort ms-1 text-muted"></i>
-                            </th>
-                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('invested')">
-                                INVESTED <i class="fas fa-sort ms-1 text-muted"></i>
-                            </th>
-                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('marketValue')">
-                                CURRENT VALUE <i class="fas fa-sort ms-1 text-muted"></i>
-                            </th>
-                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('pnl')">
-                                P&L <i class="fas fa-sort ms-1 text-muted"></i>
-                            </th>
-                            <th>ACTIONS</th>
+                            <th>Symbol</th>
+                            <th>Quantity</th>
+                            <th>Avg Price</th>
+                            <th>LTP</th>
+                            <th>Invested</th>
+                            <th>Current Value</th>
+                            <th>P&L</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="holdingsTableBody">
                         <tr>
-                            <td colspan="9" class="text-center py-4">
+                            <td colspan="8" class="text-center py-4">
                                 <div class="spinner-border text-primary" role="status">
                                     <span class="visually-hidden">Loading holdings...</span>
                                 </div>
@@ -278,253 +82,14 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/holdings.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Holdings page loaded, initializing...');
-    showHoldingsSkeleton();
-    
-    // Hide skeleton after realistic loading time
-    setTimeout(function() {
-        hideHoldingsSkeleton();
-        loadHoldingsData();
-    }, 2500);
+    initializeHoldingsPage();
 });
 
-function showHoldingsSkeleton() {
-    const skeleton = document.getElementById('holdingsSkeleton');
-    const content = document.getElementById('holdingsContent');
-    
-    if (skeleton && content) {
-        skeleton.style.display = 'block';
-        content.style.display = 'none';
-    }
-}
-
-function hideHoldingsSkeleton() {
-    const skeleton = document.getElementById('holdingsSkeleton');
-    const content = document.getElementById('holdingsContent');
-
-    if (skeleton && content) {
-        skeleton.style.transition = 'opacity 0.5s ease-out';
-        skeleton.style.opacity = '0';
-
-        setTimeout(function() {
-            skeleton.style.display = 'none';
-            content.style.display = 'block';
-            content.style.opacity = '0';
-            content.style.transition = 'opacity 0.5s ease-in';
-
-            setTimeout(function() {
-                content.style.opacity = '1';
-            }, 50);
-        }, 500);
-    }
-}
-
-function loadHoldingsData() {
-    console.log('Loading holdings data...');
-    
-    fetch('/api/kotak/holdings')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                populateHoldingsTable(data.holdings);
-                updatePortfolioSummary(data.holdings, data.summary);
-            } else {
-                showNoHoldingsMessage();
-            }
-        })
-        .catch(error => {
-            console.error('Error loading holdings:', error);
-            showErrorMessage();
-        });
-}
-
-function populateHoldingsTable(holdings) {
-    const tbody = document.getElementById('holdingsTableBody');
-    if (!tbody) return;
-
-    if (!holdings || holdings.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="9" class="text-center py-4">
-                    <i class="fas fa-briefcase fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">No holdings found in your portfolio</p>
-                    <button class="btn btn-primary btn-sm" onclick="window.location.href='/portfolio'">Start Investing</button>
-                </td>
-            </tr>
-        `;
-        return;
-    }
-
-    let html = '';
-    holdings.forEach(holding => {
-        const investedValue = calculateInvestedValue(holding);
-        const marketValue = calculateMarketValue(holding);
-        const pnl = marketValue - investedValue;
-        const pnlPercentage = investedValue > 0 ? (pnl / investedValue * 100) : 0;
-        const pnlClass = pnl >= 0 ? 'text-success' : 'text-danger';
-        
-        html += `
-            <tr>
-                <td>
-                    <div>
-                        <strong class="text-white">${holding.symbol || holding.displaySymbol || 'N/A'}</strong>
-                        ${holding.instrumentName ? `<br><small class="text-muted">${holding.instrumentName.substring(0, 25)}...</small>` : ''}
-                    </div>
-                </td>
-                <td><span class="badge bg-info">${holding.exchange || holding.exchangeSegment || 'N/A'}</span></td>
-                <td class="text-info fw-semibold">${holding.quantity || 0}</td>
-                <td class="text-light">₹${formatNumber(holding.averagePrice || holding.avgPrice || 0)}</td>
-                <td class="text-warning fw-semibold">₹${formatNumber(holding.ltp || holding.closingPrice || 0)}</td>
-                <td class="text-info">₹${formatNumber(investedValue)}</td>
-                <td class="text-warning fw-semibold">₹${formatNumber(marketValue)}</td>
-                <td>
-                    <span class="fw-bold ${pnlClass}">
-                        ${pnl >= 0 ? '+' : ''}₹${formatNumber(Math.abs(pnl))}
-                        <br><small class="${pnlClass}">
-                            (${pnl >= 0 ? '+' : ''}${pnlPercentage.toFixed(2)}%)
-                        </small>
-                    </span>
-                </td>
-                <td>
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-success btn-sm" onclick="buyHolding('${holding.symbol}')">
-                            <i class="fas fa-plus"></i> Buy
-                        </button>
-                        <button class="btn btn-danger btn-sm" onclick="sellHolding('${holding.symbol}', '${holding.quantity}')">
-                            <i class="fas fa-minus"></i> Sell
-                        </button>
-                        <button class="btn btn-info btn-sm" onclick="viewHoldingDetails('${holding.symbol}')">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
-    });
-
-    tbody.innerHTML = html;
-    document.getElementById('holdingsTableCount').textContent = holdings.length;
-}
-
-function updatePortfolioSummary(holdings, summary) {
-    if (!holdings) return;
-
-    let totalInvested = 0;
-    let totalCurrent = 0;
-    
-    holdings.forEach(holding => {
-        totalInvested += calculateInvestedValue(holding);
-        totalCurrent += calculateMarketValue(holding);
-    });
-
-    const totalPnL = totalCurrent - totalInvested;
-    const pnlPercentage = totalInvested > 0 ? (totalPnL / totalInvested * 100) : 0;
-
-    document.getElementById('totalHoldingsCount').textContent = holdings.length;
-    document.getElementById('totalInvestedValue').textContent = `₹${formatNumber(totalInvested)}`;
-    document.getElementById('totalCurrentValue').textContent = `₹${formatNumber(totalCurrent)}`;
-    document.getElementById('totalPortfolioPnl').textContent = `₹${formatNumber(Math.abs(totalPnL))}`;
-    
-    const pnlElement = document.getElementById('totalPortfolioPnl');
-    const pnlBadge = document.getElementById('portfolioPnlBadge');
-    
-    pnlElement.className = `mb-1 ${totalPnL >= 0 ? 'text-success' : 'text-danger'}`;
-    pnlElement.textContent = `${totalPnL >= 0 ? '+' : ''}₹${formatNumber(Math.abs(totalPnL))}`;
-    
-    pnlBadge.textContent = `${pnlPercentage >= 0 ? '+' : ''}${pnlPercentage.toFixed(2)}%`;
-    pnlBadge.className = `badge ${pnlPercentage >= 0 ? 'bg-success' : 'bg-danger'}`;
-}
-
-function calculateInvestedValue(holding) {
-    return (holding.quantity || 0) * (holding.averagePrice || holding.avgPrice || 0);
-}
-
-function calculateMarketValue(holding) {
-    return (holding.quantity || 0) * (holding.ltp || holding.closingPrice || 0);
-}
-
-function formatNumber(num) {
-    return Number(num).toLocaleString('en-IN', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
-}
-
-function refreshHoldings() {
-    showHoldingsSkeleton();
-    setTimeout(() => {
-        hideHoldingsSkeleton();
-        loadHoldingsData();
-    }, 1000);
-}
-
-function sortHoldings(criterion) {
-    console.log('Sorting holdings by:', criterion);
-    // Implement sorting logic here
-}
-
-function sortTable(column) {
-    console.log('Sorting table by:', column);
-    // Implement table sorting logic here
-}
-
-function buyHolding(symbol) {
-    console.log('Buying more of:', symbol);
-    // Implement buy functionality
-}
-
-function sellHolding(symbol, quantity) {
-    if (confirm(`Are you sure you want to sell ${symbol}?`)) {
-        console.log('Selling holding:', symbol, 'Quantity:', quantity);
-        // Implement sell functionality
-    }
-}
-
-function viewHoldingDetails(symbol) {
-    console.log('Viewing details for:', symbol);
-    // Implement holding details modal
-}
-
-function exportHoldings() {
-    console.log('Exporting holdings data...');
-    // Implement export functionality
-}
-
-function viewPortfolioAnalysis() {
-    console.log('Opening portfolio analysis...');
-    // Implement portfolio analysis modal
-}
-
-function showNoHoldingsMessage() {
-    const tbody = document.getElementById('holdingsTableBody');
-    if (tbody) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="9" class="text-center py-4">
-                    <i class="fas fa-briefcase fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">No holdings found in your portfolio</p>
-                    <button class="btn btn-primary btn-sm" onclick="window.location.href='/portfolio'">Start Investing</button>
-                </td>
-            </tr>
-        `;
-    }
-}
-
-function showErrorMessage() {
-    const tbody = document.getElementById('holdingsTableBody');
-    if (tbody) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="9" class="text-center py-4">
-                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
-                    <p class="text-muted">Error loading holdings data</p>
-                    <button class="btn btn-primary btn-sm" onclick="loadHoldingsData()">Retry</button>
-                </td>
-            </tr>
-        `;
-    }
-}
+window.addEventListener('beforeunload', function() {
+    cleanupHoldingsPage();
+});
 </script>
 {% endblock %}

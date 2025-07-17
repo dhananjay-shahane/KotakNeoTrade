@@ -1,284 +1,72 @@
-
 {% extends "base.html" %}
 
 {% block title %}Positions - Kotak Neo Trading{% endblock %}
 
 {% block head %}
-<style>
-/* Enhanced Positions Page Styling */
-.positions-skeleton {
-    padding: 20px;
-    animation: fadeIn 0.3s ease-in;
-}
-
-.skeleton-header {
-    margin-bottom: 2rem;
-}
-
-.skeleton-title {
-    height: 32px;
-    width: 250px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 6px;
-    margin-bottom: 8px;
-}
-
-.skeleton-stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2rem;
-}
-
-.skeleton-stats-card {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 1.5rem;
-    backdrop-filter: blur(10px);
-}
-
-.skeleton-card-icon {
-    height: 40px;
-    width: 40px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 50%;
-    margin-bottom: 1rem;
-}
-
-.skeleton-card-title {
-    height: 16px;
-    width: 120px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 4px;
-    margin-bottom: 8px;
-}
-
-.skeleton-card-value {
-    height: 28px;
-    width: 80px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.2) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 6px;
-}
-
-.skeleton-table-container {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.skeleton-table-row {
-    height: 60px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 8px;
-    margin-bottom: 0.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-@keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.positions-content {
-    animation: slideIn 0.5s ease-out;
-}
-
-@keyframes slideIn {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.position-filter-card:hover {
-    transform: translateY(-2px);
-    transition: all 0.3s ease;
-}
-
-.position-filter-card.active {
-    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
-    border: 2px solid #007bff;
-}
-</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/positions.css') }}">
 {% endblock %}
 
 {% block content %}
-<!-- Positions Skeleton Loader -->
-<div class="positions-skeleton" id="positionsSkeleton">
-    <div class="skeleton-header">
-        <div class="skeleton-title"></div>
-        <div class="skeleton-subtitle"></div>
-    </div>
-
-    <div class="skeleton-stats-grid">
-        <div class="skeleton-stats-card">
-            <div class="skeleton-card-icon"></div>
-            <div class="skeleton-card-title"></div>
-            <div class="skeleton-card-value"></div>
-        </div>
-        <div class="skeleton-stats-card">
-            <div class="skeleton-card-icon"></div>
-            <div class="skeleton-card-title"></div>
-            <div class="skeleton-card-value"></div>
-        </div>
-        <div class="skeleton-stats-card">
-            <div class="skeleton-card-icon"></div>
-            <div class="skeleton-card-title"></div>
-            <div class="skeleton-card-value"></div>
-        </div>
-        <div class="skeleton-stats-card">
-            <div class="skeleton-card-icon"></div>
-            <div class="skeleton-card-title"></div>
-            <div class="skeleton-card-value"></div>
-        </div>
-    </div>
-
-    <div class="skeleton-table-container">
-        <div class="skeleton-table-body p-3">
-            <div class="skeleton-table-row"></div>
-            <div class="skeleton-table-row"></div>
-            <div class="skeleton-table-row"></div>
-            <div class="skeleton-table-row"></div>
-            <div class="skeleton-table-row"></div>
-            <div class="skeleton-table-row"></div>
-        </div>
-    </div>
-</div>
-
-<!-- Actual Positions Content -->
-<div class="positions-content" id="positionsContent" style="display: none;">
+<div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="h3 mb-1">Live Positions</h1>
-            <p class="text-muted mb-0">Real-time position tracking with comprehensive P&L analysis</p>
+            <h1 class="h3 mb-1">Positions</h1>
+            <p class="text-muted mb-0">Current trading positions and P&L</p>
         </div>
-        <div class="d-flex gap-2">
-            <button class="btn btn-outline-secondary" onclick="refreshPositions()">
-                <i class="fas fa-sync-alt me-1"></i>Refresh
+        <div>
+            <button class="btn btn-primary" onclick="refreshPositionsTable()">
+                <i class="fas fa-sync me-1"></i>Refresh
             </button>
-            <div class="dropdown">
-                <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    <i class="fas fa-clock me-1"></i>Auto Refresh: <span id="refreshInterval">30s</span>
-                </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#" onclick="setAutoRefresh(10)">10 seconds</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="setAutoRefresh(30)">30 seconds</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="setAutoRefresh(60)">1 minute</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="setAutoRefresh(0)">Disable</a></li>
-                </ul>
+        </div>
+    </div>
+
+    <!-- Positions Summary Card -->
+    <div class="position-summary-card mb-4">
+        <div class="position-summary-grid">
+            <div class="summary-item">
+                <h6>Total Positions</h6>
+                <p class="value" id="totalPositionsCount">0</p>
+            </div>
+            <div class="summary-item">
+                <h6>Total P&L</h6>
+                <p class="value" id="totalPnlAmount">₹0.00</p>
+            </div>
+            <div class="summary-item">
+                <h6>Long Positions</h6>
+                <p class="value" id="longPositionsCount">0</p>
+            </div>
+            <div class="summary-item">
+                <h6>Short Positions</h6>
+                <p class="value" id="shortPositionsCount">0</p>
             </div>
         </div>
     </div>
 
-    <!-- P&L Summary Cards -->
-    <div class="row mb-4" id="pnlSummary">
-        <div class="col-md-3">
-            <div class="card bg-dark border-0 shadow position-filter-card total-positions-card">
-                <div class="card-body text-center">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <i class="fas fa-chart-pie text-primary fs-4"></i>
-                        <span class="badge bg-secondary" id="totalPositionsCount">0</span>
-                    </div>
-                    <h4 class="text-light mb-1">Total Positions</h4>
-                    <p class="text-muted mb-0 small">Active trading positions</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-dark border-0 shadow position-filter-card long-positions-card">
-                <div class="card-body text-center">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <i class="fas fa-chart-line text-success fs-4"></i>
-                        <span class="badge bg-success" id="longPositionsCount">0</span>
-                    </div>
-                    <h4 class="text-success mb-1" id="longPositionsValue">₹0.00</h4>
-                    <p class="text-muted mb-0 small">Long Positions</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-dark border-0 shadow position-filter-card short-positions-card">
-                <div class="card-body text-center">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <i class="fas fa-chart-line-down text-danger fs-4"></i>
-                        <span class="badge bg-danger" id="shortPositionsCount">0</span>
-                    </div>
-                    <h4 class="text-danger mb-1" id="shortPositionsValue">₹0.00</h4>
-                    <p class="text-muted mb-0 small">Short Positions</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-dark border-0 shadow">
-                <div class="card-body text-center">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <i class="fas fa-calculator text-warning fs-4"></i>
-                        <span class="badge" id="pnlBadge">0%</span>
-                    </div>
-                    <h4 class="mb-1" id="totalPnlValue">₹0.00</h4>
-                    <p class="text-muted mb-0 small">Total P&L</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Live Positions Table -->
+    <!-- Positions Table -->
     <div class="card bg-secondary border-0 shadow-lg">
         <div class="card-header bg-dark border-0">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 text-light">
-                    <i class="fas fa-table me-2 text-primary"></i>Live Trading Positions
-                    <span class="badge bg-primary ms-2" id="positionsTableCount">0</span>
-                </h5>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-primary" onclick="filterPositionsByType('ALL')" title="Show All Positions">
-                        <i class="fas fa-list me-1"></i>All
-                    </button>
-                    <button class="btn btn-sm btn-outline-success" onclick="filterPositionsByType('LONG')" title="Show Long Positions">
-                        <i class="fas fa-arrow-up me-1"></i>Long
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="filterPositionsByType('SHORT')" title="Show Short Positions">
-                        <i class="fas fa-arrow-down me-1"></i>Short
-                    </button>
-                </div>
-            </div>
+            <h5 class="mb-0 text-light">
+                <i class="fas fa-chart-bar me-2 text-primary"></i>Active Positions
+            </h5>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table mb-0" id="positionsTable">
+                <table class="table table-dark table-hover mb-0" id="positionsTable">
                     <thead class="table-primary">
                         <tr>
-                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('symbol')">SYMBOL <i class="fas fa-sort ms-1 text-muted"></i></th>
-                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('product')">PRODUCT <i class="fas fa-sort ms-1 text-muted"></i></th>
-                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('exchange')">EXCHANGE <i class="fas fa-sort ms-1 text-muted"></i></th>
-                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('buyQty')">BUY QTY <i class="fas fa-sort ms-1 text-muted"></i></th>
-                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('sellQty')">SELL QTY <i class="fas fa-sort ms-1 text-muted"></i></th>
-                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('netQty')">NET QTY <i class="fas fa-sort ms-1 text-muted"></i></th>
-                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('buyAmt')">BUY AMOUNT <i class="fas fa-sort ms-1 text-muted"></i></th>
-                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('sellAmt')">SELL AMOUNT <i class="fas fa-sort ms-1 text-muted"></i></th>
-                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('pnl')">P&L <i class="fas fa-sort ms-1 text-muted"></i></th>
-                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('position')">POSITION <i class="fas fa-sort ms-1 text-muted"></i></th>
-                            <th>ACTIONS</th>
+                            <th>Symbol</th>
+                            <th>Qty</th>
+                            <th>Avg Price</th>
+                            <th>LTP</th>
+                            <th>P&L</th>
+                            <th>P&L %</th>
+                            <th>Exchange</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="positionsTableBody">
                         <tr>
-                            <td colspan="11" class="text-center py-4">
+                            <td colspan="8" class="text-center py-4">
                                 <div class="spinner-border text-primary" role="status">
                                     <span class="visually-hidden">Loading positions...</span>
                                 </div>
@@ -294,273 +82,14 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/positions.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Positions page loaded, initializing...');
-    showPositionsSkeleton();
-    
-    // Hide skeleton after realistic loading time
-    setTimeout(function() {
-        hidePositionsSkeleton();
-        loadPositionsData();
-    }, 2500);
+    initializePositionsPage();
 });
 
-function showPositionsSkeleton() {
-    const skeleton = document.getElementById('positionsSkeleton');
-    const content = document.getElementById('positionsContent');
-    
-    if (skeleton && content) {
-        skeleton.style.display = 'block';
-        content.style.display = 'none';
-    }
-}
-
-function hidePositionsSkeleton() {
-    const skeleton = document.getElementById('positionsSkeleton');
-    const content = document.getElementById('positionsContent');
-
-    if (skeleton && content) {
-        skeleton.style.transition = 'opacity 0.5s ease-out';
-        skeleton.style.opacity = '0';
-
-        setTimeout(function() {
-            skeleton.style.display = 'none';
-            content.style.display = 'block';
-            content.style.opacity = '0';
-            content.style.transition = 'opacity 0.5s ease-in';
-
-            setTimeout(function() {
-                content.style.opacity = '1';
-            }, 50);
-        }, 500);
-    }
-}
-
-function loadPositionsData() {
-    console.log('Loading positions data...');
-    
-    fetch('/api/kotak/positions')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                populatePositionsTable(data.positions);
-                updatePositionsSummary(data.positions, data.summary);
-            } else {
-                showNoPositionsMessage();
-            }
-        })
-        .catch(error => {
-            console.error('Error loading positions:', error);
-            showErrorMessage();
-        });
-}
-
-function populatePositionsTable(positions) {
-    const tbody = document.getElementById('positionsTableBody');
-    if (!tbody) return;
-
-    if (!positions || positions.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="11" class="text-center py-4">
-                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">No active positions found</p>
-                </td>
-            </tr>
-        `;
-        return;
-    }
-
-    let html = '';
-    positions.forEach(position => {
-        const pnl = calculatePnL(position);
-        const pnlClass = pnl >= 0 ? 'text-success' : 'text-danger';
-        const positionType = getPositionType(position);
-        const positionClass = positionType === 'LONG' ? 'text-success' : 'text-danger';
-        
-        html += `
-            <tr>
-                <td>
-                    <strong>${position.symbol || position.trading_symbol}</strong>
-                    ${position.instrument_name ? `<br><small class="text-muted">${position.instrument_name}</small>` : ''}
-                </td>
-                <td><span class="badge bg-info">${position.product || 'N/A'}</span></td>
-                <td><span class="badge bg-secondary">${position.exchange || position.exchange_segment}</span></td>
-                <td class="text-success">${position.buy_qty || position.buyQty || 0}</td>
-                <td class="text-danger">${position.sell_qty || position.sellQty || 0}</td>
-                <td class="text-warning"><strong>${position.net_qty || position.netQty || 0}</strong></td>
-                <td>₹${formatNumber(position.buy_amt || position.buyAmt || 0)}</td>
-                <td>₹${formatNumber(position.sell_amt || position.sellAmt || 0)}</td>
-                <td>
-                    <span class="${pnlClass} fw-bold">
-                        ${pnl >= 0 ? '+' : ''}₹${formatNumber(Math.abs(pnl))}
-                    </span>
-                </td>
-                <td>
-                    <span class="badge ${positionClass.includes('success') ? 'bg-success' : 'bg-danger'}">
-                        ${positionType}
-                    </span>
-                </td>
-                <td>
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-success btn-sm" onclick="squareOffPosition('${position.symbol}', '${position.net_qty}')">
-                            Square Off
-                        </button>
-                        <button class="btn btn-info btn-sm" onclick="viewPositionDetails('${position.symbol}')">
-                            Details
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
-    });
-
-    tbody.innerHTML = html;
-    document.getElementById('positionsTableCount').textContent = positions.length;
-}
-
-function updatePositionsSummary(positions, summary) {
-    if (!positions) return;
-
-    const stats = calculatePositionsStats(positions);
-    
-    document.getElementById('totalPositionsCount').textContent = stats.total;
-    document.getElementById('longPositionsCount').textContent = stats.longCount;
-    document.getElementById('shortPositionsCount').textContent = stats.shortCount;
-    document.getElementById('longPositionsValue').textContent = `₹${formatNumber(stats.longValue)}`;
-    document.getElementById('shortPositionsValue').textContent = `₹${formatNumber(stats.shortValue)}`;
-    document.getElementById('totalPnlValue').textContent = `₹${formatNumber(stats.totalPnL)}`;
-    
-    const pnlBadge = document.getElementById('pnlBadge');
-    const pnlPercentage = stats.totalInvested > 0 ? (stats.totalPnL / stats.totalInvested * 100) : 0;
-    pnlBadge.textContent = `${pnlPercentage >= 0 ? '+' : ''}${pnlPercentage.toFixed(2)}%`;
-    pnlBadge.className = `badge ${pnlPercentage >= 0 ? 'bg-success' : 'bg-danger'}`;
-}
-
-function calculatePositionsStats(positions) {
-    let stats = {
-        total: positions.length,
-        longCount: 0,
-        shortCount: 0,
-        longValue: 0,
-        shortValue: 0,
-        totalPnL: 0,
-        totalInvested: 0
-    };
-
-    positions.forEach(position => {
-        const netQty = position.net_qty || position.netQty || 0;
-        const pnl = calculatePnL(position);
-        const value = Math.abs((position.buy_amt || position.buyAmt || 0) - (position.sell_amt || position.sellAmt || 0));
-        
-        stats.totalPnL += pnl;
-        stats.totalInvested += value;
-        
-        if (netQty > 0) {
-            stats.longCount++;
-            stats.longValue += value;
-        } else if (netQty < 0) {
-            stats.shortCount++;
-            stats.shortValue += value;
-        }
-    });
-
-    return stats;
-}
-
-function calculatePnL(position) {
-    const buyAmt = position.buy_amt || position.buyAmt || 0;
-    const sellAmt = position.sell_amt || position.sellAmt || 0;
-    const unrealized = position.unrealized_pnl || position.unrealizedPnL || 0;
-    const realized = position.realized_pnl || position.realizedPnL || 0;
-    
-    return unrealized + realized || (sellAmt - buyAmt);
-}
-
-function getPositionType(position) {
-    const netQty = position.net_qty || position.netQty || 0;
-    return netQty > 0 ? 'LONG' : netQty < 0 ? 'SHORT' : 'FLAT';
-}
-
-function formatNumber(num) {
-    return Number(num).toLocaleString('en-IN', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
-}
-
-function refreshPositions() {
-    showPositionsSkeleton();
-    setTimeout(() => {
-        hidePositionsSkeleton();
-        loadPositionsData();
-    }, 1000);
-}
-
-function filterPositionsByType(type) {
-    console.log('Filtering positions by:', type);
-    // Implement filter logic here
-}
-
-function sortTable(column) {
-    console.log('Sorting by:', column);
-    // Implement sorting logic here
-}
-
-function setAutoRefresh(seconds) {
-    document.getElementById('refreshInterval').textContent = seconds > 0 ? `${seconds}s` : 'Off';
-    
-    // Clear existing interval
-    if (window.positionsRefreshInterval) {
-        clearInterval(window.positionsRefreshInterval);
-    }
-    
-    // Set new interval if seconds > 0
-    if (seconds > 0) {
-        window.positionsRefreshInterval = setInterval(loadPositionsData, seconds * 1000);
-    }
-}
-
-function squareOffPosition(symbol, netQty) {
-    if (confirm(`Are you sure you want to square off position for ${symbol}?`)) {
-        console.log('Squaring off position:', symbol, netQty);
-        // Implement square off logic here
-    }
-}
-
-function viewPositionDetails(symbol) {
-    console.log('Viewing position details for:', symbol);
-    // Implement position details modal
-}
-
-function showNoPositionsMessage() {
-    const tbody = document.getElementById('positionsTableBody');
-    if (tbody) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="11" class="text-center py-4">
-                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">No active positions found</p>
-                </td>
-            </tr>
-        `;
-    }
-}
-
-function showErrorMessage() {
-    const tbody = document.getElementById('positionsTableBody');
-    if (tbody) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="11" class="text-center py-4">
-                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
-                    <p class="text-muted">Error loading positions data</p>
-                    <button class="btn btn-primary btn-sm" onclick="loadPositionsData()">Retry</button>
-                </td>
-            </tr>
-        `;
-    }
-}
+window.addEventListener('beforeunload', function() {
+    cleanupPositionsPage();
+});
 </script>
 {% endblock %}

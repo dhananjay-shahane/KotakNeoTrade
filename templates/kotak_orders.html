@@ -1,150 +1,13 @@
-
 {% extends "base.html" %}
 
 {% block title %}Orders - Kotak Neo Trading{% endblock %}
 
 {% block head %}
-<style>
-/* Enhanced Orders Page Styling */
-.orders-skeleton {
-    padding: 20px;
-    animation: fadeIn 0.3s ease-in;
-}
-
-.skeleton-header {
-    margin-bottom: 2rem;
-}
-
-.skeleton-title {
-    height: 32px;
-    width: 250px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 6px;
-    margin-bottom: 8px;
-}
-
-.skeleton-cards-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2rem;
-}
-
-.skeleton-card {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 1.5rem;
-    backdrop-filter: blur(10px);
-}
-
-.skeleton-card-title {
-    height: 16px;
-    width: 120px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 4px;
-    margin-bottom: 8px;
-}
-
-.skeleton-card-value {
-    height: 28px;
-    width: 60px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.2) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 6px;
-}
-
-.skeleton-table-container {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.skeleton-table-row {
-    height: 60px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 8px;
-    margin-bottom: 0.5rem;
-}
-
-@keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.orders-content {
-    animation: slideIn 0.5s ease-out;
-}
-
-@keyframes slideIn {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.filter-card:hover {
-    transform: translateY(-2px);
-    transition: all 0.3s ease;
-}
-
-.filter-card.active {
-    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
-    border: 2px solid #007bff;
-}
-</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/orders.css') }}">
 {% endblock %}
 
 {% block content %}
-<!-- Orders Skeleton Loader -->
-<div class="orders-skeleton" id="ordersSkeleton">
-    <div class="skeleton-header">
-        <div class="skeleton-title"></div>
-        <div class="skeleton-subtitle"></div>
-    </div>
-
-    <div class="skeleton-cards-grid">
-        <div class="skeleton-card">
-            <div class="skeleton-card-title"></div>
-            <div class="skeleton-card-value"></div>
-        </div>
-        <div class="skeleton-card">
-            <div class="skeleton-card-title"></div>
-            <div class="skeleton-card-value"></div>
-        </div>
-        <div class="skeleton-card">
-            <div class="skeleton-card-title"></div>
-            <div class="skeleton-card-value"></div>
-        </div>
-        <div class="skeleton-card">
-            <div class="skeleton-card-title"></div>
-            <div class="skeleton-card-value"></div>
-        </div>
-    </div>
-
-    <div class="skeleton-table-container">
-        <div class="skeleton-table-body p-3">
-            <div class="skeleton-table-row"></div>
-            <div class="skeleton-table-row"></div>
-            <div class="skeleton-table-row"></div>
-            <div class="skeleton-table-row"></div>
-        </div>
-    </div>
-</div>
-
-<!-- Actual Orders Content -->
-<div class="orders-content" id="ordersContent" style="display: none;">
+<div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1 class="h3 mb-1">Order Book</h1>
@@ -154,17 +17,6 @@
             <button class="btn btn-outline-secondary" onclick="refreshOrdersTable()">
                 <i class="fas fa-sync-alt me-1"></i>Refresh
             </button>
-            <div class="dropdown">
-                <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    <i class="fas fa-filter me-1"></i>Filter
-                </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#" onclick="filterOrders('ALL')">All Orders</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="filterOrders('COMPLETED')">Completed</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="filterOrders('PENDING')">Pending</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="filterOrders('REJECTED')">Rejected</a></li>
-                </ul>
-            </div>
         </div>
     </div>
 
@@ -195,7 +47,7 @@
     <!-- Summary Cards -->
     <div class="row mb-4" id="ordersSummary">
         <div class="col-md-2 mb-3">
-            <div class="card bg-primary text-white filter-card" data-filter="all" style="cursor: pointer;" onclick="filterOrders('ALL')">
+            <div class="card bg-primary text-white filter-card" data-filter="all" style="cursor: pointer;" onclick="setOrdersFilter('all')">
                 <div class="card-body text-center p-3">
                     <h6 class="card-title mb-1">TOTAL ORDERS</h6>
                     <h4 class="mb-0" id="totalOrdersCount">0</h4>
@@ -203,7 +55,7 @@
             </div>
         </div>
         <div class="col-md-2 mb-3">
-            <div class="card bg-success text-white filter-card" data-filter="completed" style="cursor: pointer;" onclick="filterOrders('COMPLETED')">
+            <div class="card bg-success text-white filter-card" data-filter="completed" style="cursor: pointer;" onclick="setOrdersFilter('completed')">
                 <div class="card-body text-center p-3">
                     <h6 class="card-title mb-1">COMPLETED</h6>
                     <h4 class="mb-0" id="completedOrdersCount">0</h4>
@@ -211,7 +63,7 @@
             </div>
         </div>
         <div class="col-md-2 mb-3">
-            <div class="card bg-warning text-white filter-card" data-filter="pending" style="cursor: pointer;" onclick="filterOrders('PENDING')">
+            <div class="card bg-warning text-white filter-card" data-filter="pending" style="cursor: pointer;" onclick="setOrdersFilter('pending')">
                 <div class="card-body text-center p-3">
                     <h6 class="card-title mb-1">PENDING</h6>
                     <h4 class="mb-0" id="pendingOrdersCount">0</h4>
@@ -219,7 +71,7 @@
             </div>
         </div>
         <div class="col-md-2 mb-3">
-            <div class="card bg-danger text-white filter-card" data-filter="rejected" style="cursor: pointer;" onclick="filterOrders('REJECTED')">
+            <div class="card bg-danger text-white filter-card" data-filter="rejected" style="cursor: pointer;" onclick="setOrdersFilter('rejected')">
                 <div class="card-body text-center p-3">
                     <h6 class="card-title mb-1">REJECTED</h6>
                     <h4 class="mb-0" id="rejectedOrdersCount">0</h4>
@@ -227,7 +79,7 @@
             </div>
         </div>
         <div class="col-md-2 mb-3">
-            <div class="card bg-secondary text-white filter-card" data-filter="cancelled" style="cursor: pointer;" onclick="filterOrders('CANCELLED')">
+            <div class="card bg-secondary text-white filter-card" data-filter="cancelled" style="cursor: pointer;" onclick="setOrdersFilter('cancelled')">
                 <div class="card-body text-center p-3">
                     <h6 class="card-title mb-1">CANCELLED</h6>
                     <h4 class="mb-0" id="cancelledOrdersCount">0</h4>
@@ -235,7 +87,7 @@
             </div>
         </div>
         <div class="col-md-2 mb-3">
-            <div class="card bg-info text-white filter-card" data-filter="buy" style="cursor: pointer;" onclick="filterOrders('BUY')">
+            <div class="card bg-info text-white filter-card" data-filter="buy" style="cursor: pointer;" onclick="setOrdersFilter('buy')">
                 <div class="card-body text-center p-3">
                     <h6 class="card-title mb-1">BUY ORDERS</h6>
                     <h4 class="mb-0" id="buyOrdersCount">0</h4>
@@ -252,14 +104,6 @@
                     <i class="fas fa-list-alt me-2 text-primary"></i>Live Order Book
                     <span class="badge bg-primary ms-2" id="ordersTableCount">0</span>
                 </h5>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-primary" onclick="sortTable('time')" title="Sort by Time">
-                        <i class="fas fa-clock me-1"></i>Time
-                    </button>
-                    <button class="btn btn-sm btn-outline-success" onclick="sortTable('status')" title="Sort by Status">
-                        <i class="fas fa-info-circle me-1"></i>Status
-                    </button>
-                </div>
             </div>
         </div>
         <div class="card-body p-0">
@@ -315,242 +159,14 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/orders.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Orders page loaded, initializing...');
-    showOrdersSkeleton();
-    
-    // Hide skeleton after realistic loading time
-    setTimeout(function() {
-        hideOrdersSkeleton();
-        loadOrdersData();
-    }, 2500);
+    initializeOrdersPage();
 });
 
-function showOrdersSkeleton() {
-    const skeleton = document.getElementById('ordersSkeleton');
-    const content = document.getElementById('ordersContent');
-    
-    if (skeleton && content) {
-        skeleton.style.display = 'block';
-        content.style.display = 'none';
-    }
-}
-
-function hideOrdersSkeleton() {
-    const skeleton = document.getElementById('ordersSkeleton');
-    const content = document.getElementById('ordersContent');
-
-    if (skeleton && content) {
-        skeleton.style.transition = 'opacity 0.5s ease-out';
-        skeleton.style.opacity = '0';
-
-        setTimeout(function() {
-            skeleton.style.display = 'none';
-            content.style.display = 'block';
-            content.style.opacity = '0';
-            content.style.transition = 'opacity 0.5s ease-in';
-
-            setTimeout(function() {
-                content.style.opacity = '1';
-            }, 50);
-        }, 500);
-    }
-}
-
-function loadOrdersData() {
-    console.log('Loading orders data...');
-    
-    fetch('/api/kotak/orders')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                populateOrdersTable(data.orders);
-                updateOrdersSummary(data.orders);
-            } else {
-                showNoOrdersMessage();
-            }
-        })
-        .catch(error => {
-            console.error('Error loading orders:', error);
-            showErrorMessage();
-        });
-}
-
-function populateOrdersTable(orders) {
-    const tbody = document.getElementById('ordersTableBody');
-    if (!tbody) return;
-
-    if (!orders || orders.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="10" class="text-center py-4">
-                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">No orders found</p>
-                </td>
-            </tr>
-        `;
-        return;
-    }
-
-    let html = '';
-    orders.forEach(order => {
-        const statusClass = getStatusClass(order.status);
-        const typeClass = order.transaction_type === 'BUY' ? 'text-success' : 'text-danger';
-        
-        html += `
-            <tr>
-                <td>${formatDateTime(order.order_time || order.created_at)}</td>
-                <td><span class="font-monospace">${order.order_id || order.id}</span></td>
-                <td>
-                    <strong>${order.symbol || order.trading_symbol}</strong>
-                    ${order.instrument_name ? `<br><small class="text-muted">${order.instrument_name}</small>` : ''}
-                </td>
-                <td>
-                    <span class="badge ${typeClass}">
-                        ${order.transaction_type || order.type}
-                    </span>
-                </td>
-                <td>${order.quantity || 0}</td>
-                <td>₹${formatNumber(order.price || 0)}</td>
-                <td>
-                    <span class="badge ${statusClass}">
-                        ${order.status}
-                    </span>
-                </td>
-                <td><span class="badge bg-info">${order.product || 'N/A'}</span></td>
-                <td><span class="badge bg-secondary">${order.exchange || order.exchange_segment}</span></td>
-                <td>
-                    <div class="btn-group btn-group-sm">
-                        ${order.status === 'PENDING' ? `
-                            <button class="btn btn-warning btn-sm" onclick="modifyOrder('${order.order_id}')">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-danger btn-sm" onclick="cancelOrder('${order.order_id}')">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        ` : `
-                            <button class="btn btn-info btn-sm" onclick="viewOrderDetails('${order.order_id}')">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        `}
-                    </div>
-                </td>
-            </tr>
-        `;
-    });
-
-    tbody.innerHTML = html;
-    document.getElementById('ordersTableCount').textContent = orders.length;
-}
-
-function updateOrdersSummary(orders) {
-    if (!orders) return;
-
-    const summary = {
-        total: orders.length,
-        completed: orders.filter(o => o.status === 'COMPLETED' || o.status === 'EXECUTED').length,
-        pending: orders.filter(o => o.status === 'PENDING' || o.status === 'OPEN').length,
-        rejected: orders.filter(o => o.status === 'REJECTED').length,
-        cancelled: orders.filter(o => o.status === 'CANCELLED').length,
-        buy: orders.filter(o => o.transaction_type === 'BUY').length
-    };
-
-    document.getElementById('totalOrdersCount').textContent = summary.total;
-    document.getElementById('completedOrdersCount').textContent = summary.completed;
-    document.getElementById('pendingOrdersCount').textContent = summary.pending;
-    document.getElementById('rejectedOrdersCount').textContent = summary.rejected;
-    document.getElementById('cancelledOrdersCount').textContent = summary.cancelled;
-    document.getElementById('buyOrdersCount').textContent = summary.buy;
-}
-
-function getStatusClass(status) {
-    switch (status?.toUpperCase()) {
-        case 'COMPLETED':
-        case 'EXECUTED':
-            return 'bg-success';
-        case 'PENDING':
-        case 'OPEN':
-            return 'bg-warning';
-        case 'REJECTED':
-            return 'bg-danger';
-        case 'CANCELLED':
-            return 'bg-secondary';
-        default:
-            return 'bg-info';
-    }
-}
-
-function formatDateTime(dateString) {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleString('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
-
-function formatNumber(num) {
-    return Number(num).toLocaleString('en-IN', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
-}
-
-function refreshOrdersTable() {
-    showOrdersSkeleton();
-    setTimeout(() => {
-        hideOrdersSkeleton();
-        loadOrdersData();
-    }, 1000);
-}
-
-function filterOrders(type) {
-    // Update active filter card
-    document.querySelectorAll('.filter-card').forEach(card => {
-        card.classList.remove('active');
-    });
-    
-    event.target.closest('.filter-card').classList.add('active');
-    
-    // Implement filter logic here
-    console.log('Filtering orders by:', type);
-}
-
-function sortTable(column) {
-    console.log('Sorting by:', column);
-    // Implement sorting logic here
-}
-
-function showNoOrdersMessage() {
-    const tbody = document.getElementById('ordersTableBody');
-    if (tbody) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="10" class="text-center py-4">
-                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">No orders found</p>
-                </td>
-            </tr>
-        `;
-    }
-}
-
-function showErrorMessage() {
-    const tbody = document.getElementById('ordersTableBody');
-    if (tbody) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="10" class="text-center py-4">
-                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
-                    <p class="text-muted">Error loading orders data</p>
-                    <button class="btn btn-primary btn-sm" onclick="loadOrdersData()">Retry</button>
-                </td>
-            </tr>
-        `;
-    }
-}
+window.addEventListener('beforeunload', function() {
+    cleanupOrdersPage();
+});
 </script>
 {% endblock %}

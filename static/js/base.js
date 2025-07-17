@@ -118,39 +118,8 @@ function loadKotakPage(pageType, event) {
     // Clear any existing intervals
     cleanupCurrentPage();
 
-    // Load the appropriate content
-    fetch(`/api/kotak/${pageType}/content`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Get main content area
-                const mainContent = document.querySelector('.main-content') || document.querySelector('.content');
-                if (mainContent) {
-                    mainContent.innerHTML = data.content;
-                    
-                    // Load CSS for the page
-                    loadPageCSS(pageType);
-                    
-                    // Initialize page-specific functionality
-                    setTimeout(() => {
-                        if (pageType === 'orders' && typeof initializeOrdersPage === 'function') {
-                            initializeOrdersPage();
-                        } else if (pageType === 'positions' && typeof initializePositionsPage === 'function') {
-                            initializePositionsPage();
-                        } else if (pageType === 'holdings' && typeof initializeHoldingsPage === 'function') {
-                            initializeHoldingsPage();
-                        }
-                    }, 100);
-                }
-            } else {
-                console.error('Failed to load page content:', data.message);
-                showPageError(pageType);
-            }
-        })
-        .catch(error => {
-            console.error('Error loading page:', error);
-            showPageError(pageType);
-        });
+    // Redirect to the appropriate Kotak page
+    window.location.href = `/kotak/${pageType}`;
 }
 
 // Cleanup function for current page
