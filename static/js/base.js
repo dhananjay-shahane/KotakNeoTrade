@@ -17,15 +17,23 @@ function toggleSidebar() {
         overlay.classList.remove("show");
         document.body.style.overflow = "";
         // Remove touch event listeners when closing
-        document.removeEventListener('touchstart', handleTouchStart, { passive: false });
-        document.removeEventListener('touchmove', handleTouchMove, { passive: false });
+        document.removeEventListener("touchstart", handleTouchStart, {
+            passive: false,
+        });
+        document.removeEventListener("touchmove", handleTouchMove, {
+            passive: false,
+        });
     } else {
         sidebar.classList.add("show");
         overlay.classList.add("show");
         document.body.style.overflow = "hidden";
         // Add touch event listeners for swipe to close
-        document.addEventListener('touchstart', handleTouchStart, { passive: false });
-        document.addEventListener('touchmove', handleTouchMove, { passive: false });
+        document.addEventListener("touchstart", handleTouchStart, {
+            passive: false,
+        });
+        document.addEventListener("touchmove", handleTouchMove, {
+            passive: false,
+        });
     }
 }
 
@@ -92,61 +100,24 @@ window.addEventListener("resize", function () {
 
 // Theme toggle functionality
 function toggleTheme() {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    const currentTheme = document.documentElement.getAttribute("data-theme");
+    const newTheme = currentTheme === "light" ? "dark" : "light";
 
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
+    document.documentElement.setAttribute("data-theme", newTheme);
+    localStorage.setItem("theme", newTheme);
 
     // Update toggle state
-    const themeToggle = document.getElementById('themeToggle');
+    const themeToggle = document.getElementById("themeToggle");
     if (themeToggle) {
-        themeToggle.checked = newTheme === 'light';
+        themeToggle.checked = newTheme === "light";
     }
-}
-
-// Dynamic Kotak page loading
-function loadKotakPage(pageType, event) {
-    event.preventDefault();
-
-    // Update active nav item
-    document.querySelectorAll('.kotak-neo-section .nav-link').forEach(link => {
-        link.classList.remove('active');
-    });
-    event.target.closest('.nav-link').classList.add('active');
-
-    // Clear any existing intervals
-    cleanupCurrentPage();
-
-    // Redirect to the appropriate Kotak page
-    window.location.href = `/kotak/${pageType}`;
-}
-
-// Cleanup function for current page
-function cleanupCurrentPage() {
-    // Clean up any existing intervals
-    if (typeof cleanupOrdersPage === 'function') cleanupOrdersPage();
-    if (typeof cleanupPositionsPage === 'function') cleanupPositionsPage();
-    if (typeof cleanupHoldingsPage === 'function') cleanupHoldingsPage();
-}
-
-// Load page-specific CSS
-function loadPageCSS(pageType) {
-    // Remove existing page CSS
-    const existingPageCSS = document.querySelectorAll('link[data-page-css]');
-    existingPageCSS.forEach(link => link.remove());
-    
-    // Add new page CSS
-    const cssLink = document.createElement('link');
-    cssLink.rel = 'stylesheet';
-    cssLink.href = `/static/css/${pageType}.css`;
-    cssLink.setAttribute('data-page-css', pageType);
-    document.head.appendChild(cssLink);
 }
 
 // Show error message
 function showPageError(pageType) {
-    const mainContent = document.querySelector('.main-content') || document.querySelector('.content');
+    const mainContent =
+        document.querySelector(".main-content") ||
+        document.querySelector(".content");
     if (mainContent) {
         mainContent.innerHTML = `
             <div class="container-fluid">
@@ -199,112 +170,92 @@ function initializeHoldingsPage() {
     window.holdingsRefreshInterval = setInterval(loadHoldingsData, 30000);
 }
 
-// Data loading functions
-function loadOrdersData() {
-    fetch('/api/kotak/orders')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                updateOrdersTable(data.orders);
-            }
-        })
-        .catch(error => console.error('Error loading orders:', error));
-}
-
-function loadPositionsData() {
-    fetch('/api/kotak/positions')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                updatePositionsTable(data.positions);
-                updatePositionsSummary(data.summary);
-            }
-        })
-        .catch(error => console.error('Error loading positions:', error));
-}
-
-function loadHoldingsData() {
-    fetch('/api/kotak/holdings')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                updateHoldingsTable(data.holdings);
-                updateHoldingsSummary(data.summary);
-            }
-        })
-        .catch(error => console.error('Error loading holdings:', error));
-}
-
 // Table update functions
 function updateOrdersTable(orders) {
-    const tableBody = document.querySelector('#ordersTable tbody');
+    const tableBody = document.querySelector("#ordersTable tbody");
     if (!tableBody) return;
 
-    tableBody.innerHTML = orders.map(order => `
+    tableBody.innerHTML = orders
+        .map(
+            (order) => `
         <tr>
-            <td>${order.orderId || '-'}</td>
-            <td>${order.tradingSymbol || '-'}</td>
-            <td>${order.transactionType || '-'}</td>
-            <td>${order.quantity || '-'}</td>
-            <td>₹${order.price || '0'}</td>
-            <td><span class="badge ${getOrderStatusClass(order.status)}">${order.status || '-'}</span></td>
-            <td>${order.orderTime || '-'}</td>
+            <td>${order.orderId || "-"}</td>
+            <td>${order.tradingSymbol || "-"}</td>
+            <td>${order.transactionType || "-"}</td>
+            <td>${order.quantity || "-"}</td>
+            <td>₹${order.price || "0"}</td>
+            <td><span class="badge ${getOrderStatusClass(order.status)}">${order.status || "-"}</span></td>
+            <td>${order.orderTime || "-"}</td>
         </tr>
-    `).join('');
+    `,
+        )
+        .join("");
 }
 
 function updatePositionsTable(positions) {
-    const tableBody = document.querySelector('#positionsTable tbody');
+    const tableBody = document.querySelector("#positionsTable tbody");
     if (!tableBody) return;
 
-    tableBody.innerHTML = positions.map(position => `
+    tableBody.innerHTML = positions
+        .map(
+            (position) => `
         <tr>
-            <td>${position.tradingSymbol || '-'}</td>
-            <td>${position.netQty || '0'}</td>
-            <td>₹${position.avgPrice || '0'}</td>
-            <td>₹${position.ltp || '0'}</td>
-            <td class="${getPnlClass(position.pnl)}">₹${position.pnl || '0'}</td>
-            <td class="${getPnlClass(position.pnlPercent)}">${position.pnlPercent || '0'}%</td>
+            <td>${position.tradingSymbol || "-"}</td>
+            <td>${position.netQty || "0"}</td>
+            <td>₹${position.avgPrice || "0"}</td>
+            <td>₹${position.ltp || "0"}</td>
+            <td class="${getPnlClass(position.pnl)}">₹${position.pnl || "0"}</td>
+            <td class="${getPnlClass(position.pnlPercent)}">${position.pnlPercent || "0"}%</td>
         </tr>
-    `).join('');
+    `,
+        )
+        .join("");
 }
 
 function updateHoldingsTable(holdings) {
-    const tableBody = document.querySelector('#holdingsTable tbody');
+    const tableBody = document.querySelector("#holdingsTable tbody");
     if (!tableBody) return;
 
-    tableBody.innerHTML = holdings.map(holding => `
+    tableBody.innerHTML = holdings
+        .map(
+            (holding) => `
         <tr>
-            <td>${holding.tradingSymbol || '-'}</td>
-            <td>${holding.quantity || '0'}</td>
-            <td>₹${holding.avgPrice || '0'}</td>
-            <td>₹${holding.ltp || '0'}</td>
-            <td>₹${holding.investedValue || '0'}</td>
-            <td>₹${holding.currentValue || '0'}</td>
-            <td class="${getPnlClass(holding.pnl)}">₹${holding.pnl || '0'}</td>
+            <td>${holding.tradingSymbol || "-"}</td>
+            <td>${holding.quantity || "0"}</td>
+            <td>₹${holding.avgPrice || "0"}</td>
+            <td>₹${holding.ltp || "0"}</td>
+            <td>₹${holding.investedValue || "0"}</td>
+            <td>₹${holding.currentValue || "0"}</td>
+            <td class="${getPnlClass(holding.pnl)}">₹${holding.pnl || "0"}</td>
         </tr>
-    `).join('');
+    `,
+        )
+        .join("");
 }
 
 // Helper functions
 function getOrderStatusClass(status) {
-    switch(status?.toLowerCase()) {
-        case 'complete': return 'bg-success';
-        case 'pending': return 'bg-warning';
-        case 'cancelled': return 'bg-danger';
-        default: return 'bg-secondary';
+    switch (status?.toLowerCase()) {
+        case "complete":
+            return "bg-success";
+        case "pending":
+            return "bg-warning";
+        case "cancelled":
+            return "bg-danger";
+        default:
+            return "bg-secondary";
     }
 }
 
 function getPnlClass(value) {
     const numValue = parseFloat(value) || 0;
-    return numValue >= 0 ? 'text-success' : 'text-danger';
+    return numValue >= 0 ? "text-success" : "text-danger";
 }
 
 function updatePositionsSummary(summary) {
     if (!summary) return;
 
-    const summaryElement = document.querySelector('#positionsSummary');
+    const summaryElement = document.querySelector("#positionsSummary");
     if (summaryElement) {
         summaryElement.innerHTML = `
             <div class="row">
@@ -340,7 +291,7 @@ function updatePositionsSummary(summary) {
 function updateHoldingsSummary(summary) {
     if (!summary) return;
 
-    const summaryElement = document.querySelector('#holdingsSummary');
+    const summaryElement = document.querySelector("#holdingsSummary");
     if (summaryElement) {
         summaryElement.innerHTML = `
             <div class="row">
@@ -519,16 +470,16 @@ document.addEventListener("DOMContentLoaded", function () {
 // Password visibility toggle function
 function togglePassword(fieldId) {
     const passwordField = document.getElementById(fieldId);
-    const eyeIcon = document.getElementById(fieldId + '-eye');
+    const eyeIcon = document.getElementById(fieldId + "-eye");
 
-    if (passwordField.type === 'password') {
-        passwordField.type = 'text';
-        eyeIcon.classList.remove('fa-eye');
-        eyeIcon.classList.add('fa-eye-slash');
+    if (passwordField.type === "password") {
+        passwordField.type = "text";
+        eyeIcon.classList.remove("fa-eye");
+        eyeIcon.classList.add("fa-eye-slash");
     } else {
-        passwordField.type = 'password';
-        eyeIcon.classList.remove('fa-eye-slash');
-        eyeIcon.classList.add('fa-eye');
+        passwordField.type = "password";
+        eyeIcon.classList.remove("fa-eye-slash");
+        eyeIcon.classList.add("fa-eye");
     }
 }
 
@@ -633,25 +584,25 @@ function showLoginModal() {
 // Broker redirect functions
 function showKotakLoginForm() {
     // Remove active class from all broker cards
-    document.querySelectorAll('.broker-card').forEach(card => {
-        card.classList.remove('active');
+    document.querySelectorAll(".broker-card").forEach((card) => {
+        card.classList.remove("active");
     });
 
     // Add active class to Kotak card
-    document.getElementById('kotakCard').classList.add('active');
+    document.getElementById("kotakCard").classList.add("active");
 
-    document.getElementById('welcomeScreen').style.display = 'none';
-    document.getElementById('kotakLoginForm').style.display = 'block';
+    document.getElementById("welcomeScreen").style.display = "none";
+    document.getElementById("kotakLoginForm").style.display = "block";
 }
 
 function goBackToBrokerSelection() {
     // Remove active class from all broker cards
-    document.querySelectorAll('.broker-card').forEach(card => {
-        card.classList.remove('active');
+    document.querySelectorAll(".broker-card").forEach((card) => {
+        card.classList.remove("active");
     });
 
-    document.getElementById('kotakLoginForm').style.display = 'none';
-    document.getElementById('welcomeScreen').style.display = 'block';
+    document.getElementById("kotakLoginForm").style.display = "none";
+    document.getElementById("welcomeScreen").style.display = "block";
 }
 
 function showComingSoon(brokerName) {
@@ -666,16 +617,16 @@ function showComingSoon(brokerName) {
 
 function togglePasswordVisibility(button) {
     const input = button.previousElementSibling;
-    const icon = button.querySelector('i');
+    const icon = button.querySelector("i");
 
-    if (input.type === 'password') {
-        input.type = 'text';
-        icon.classList.remove('fa-eye');
-        icon.classList.add('fa-eye-slash');
+    if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
     } else {
-        input.type = 'password';
-        icon.classList.remove('fa-eye-slash');
-        icon.classList.add('fa-eye');
+        input.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
     }
 }
 
@@ -684,15 +635,16 @@ function handleKotakLogin(event) {
 
     const formData = new FormData(event.target);
     const loginData = {
-        user_id: formData.get('user_id'),
-        password: formData.get('password'),
-        mobile_pin: formData.get('mobile_pin')
+        user_id: formData.get("user_id"),
+        password: formData.get("password"),
+        mobile_pin: formData.get("mobile_pin"),
     };
 
     // Show loading state
     const submitBtn = event.target.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Logging in...';
+    submitBtn.innerHTML =
+        '<i class="fas fa-spinner fa-spin me-2"></i>Logging in...';
     submitBtn.disabled = true;
 
     // Simulate login process - replace with actual API call
@@ -702,33 +654,33 @@ function handleKotakLogin(event) {
         submitBtn.disabled = false;
 
         // For now, just redirect to kotak project
-        window.location.href = '/kotak';
+        window.location.href = "/kotak";
     }, 2000);
 }
 
 // Reset modal when it's closed
-document.addEventListener('DOMContentLoaded', function() {
-    const loginModal = document.getElementById('loginAccountModal');
+document.addEventListener("DOMContentLoaded", function () {
+    const loginModal = document.getElementById("loginAccountModal");
     if (loginModal) {
-        loginModal.addEventListener('hidden.bs.modal', function () {
+        loginModal.addEventListener("hidden.bs.modal", function () {
             // Reset to default state - Kotak Neo selected
-            const welcomeScreen = document.getElementById('welcomeScreen');
-            const kotakLoginForm = document.getElementById('kotakLoginForm');
+            const welcomeScreen = document.getElementById("welcomeScreen");
+            const kotakLoginForm = document.getElementById("kotakLoginForm");
 
-            if (welcomeScreen) welcomeScreen.style.display = 'none';
-            if (kotakLoginForm) kotakLoginForm.style.display = 'block';
+            if (welcomeScreen) welcomeScreen.style.display = "none";
+            if (kotakLoginForm) kotakLoginForm.style.display = "block";
 
             // Remove active class from all broker cards
-            document.querySelectorAll('.broker-card').forEach(card => {
-                card.classList.remove('active');
+            document.querySelectorAll(".broker-card").forEach((card) => {
+                card.classList.remove("active");
             });
 
             // Add active class to Kotak card
-            const kotakCard = document.getElementById('kotakCard');
-            if (kotakCard) kotakCard.classList.add('active');
+            const kotakCard = document.getElementById("kotakCard");
+            if (kotakCard) kotakCard.classList.add("active");
 
             // Reset form
-            const form = document.getElementById('kotakLoginFormElement');
+            const form = document.getElementById("kotakLoginFormElement");
             if (form) {
                 form.reset();
             }
@@ -737,20 +689,20 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Initialize modal with Kotak Neo selected when page loads
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", function () {
     // Ensure Kotak Neo is selected by default
     setTimeout(() => {
-        const kotakCard = document.getElementById('kotakCard');
-        const welcomeScreen = document.getElementById('welcomeScreen');
-        const kotakLoginForm = document.getElementById('kotakLoginForm');
+        const kotakCard = document.getElementById("kotakCard");
+        const welcomeScreen = document.getElementById("welcomeScreen");
+        const kotakLoginForm = document.getElementById("kotakLoginForm");
 
         if (kotakCard) {
-            kotakCard.classList.add('active');
+            kotakCard.classList.add("active");
         }
 
         // Ensure correct initial state
-        if (welcomeScreen) welcomeScreen.style.display = 'none';
-        if (kotakLoginForm) kotakLoginForm.style.display = 'block';
+        if (welcomeScreen) welcomeScreen.style.display = "none";
+        if (kotakLoginForm) kotakLoginForm.style.display = "block";
     }, 100);
 });
 
@@ -963,20 +915,21 @@ async function handleKotakLogin(event) {
 
     // Show loading state
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Logging in...';
+    submitBtn.innerHTML =
+        '<i class="fas fa-spinner fa-spin me-2"></i>Logging in...';
 
     try {
-        const response = await fetch('/api/kotak/login', {
-            method: 'POST',
+        const response = await fetch("/api/kotak/login", {
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json',
+                "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                mobile_number: formData.get('mobile_number'),
-                ucc: formData.get('ucc'),
-                mpin: formData.get('mpin'),
-                totp_code: formData.get('totp_code')
-            })
+                mobile_number: formData.get("mobile_number"),
+                ucc: formData.get("ucc"),
+                mpin: formData.get("mpin"),
+                totp_code: formData.get("totp_code"),
+            }),
         });
 
         const data = await response.json();
@@ -984,15 +937,17 @@ async function handleKotakLogin(event) {
         if (data.success) {
             // Show success message
             Swal.fire({
-                icon: 'success',
-                title: 'Login Successful!',
+                icon: "success",
+                title: "Login Successful!",
                 text: data.message,
                 timer: 2000,
-                showConfirmButton: false
+                showConfirmButton: false,
             });
 
             // Close modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+            const modal = bootstrap.Modal.getInstance(
+                document.getElementById("loginModal"),
+            );
             if (modal) {
                 modal.hide();
             }
@@ -1005,24 +960,22 @@ async function handleKotakLogin(event) {
 
             // Reset form
             form.reset();
-
         } else {
             // Show error message
             Swal.fire({
-                icon: 'error',
-                title: 'Login Failed',
+                icon: "error",
+                title: "Login Failed",
                 text: data.error,
-                confirmButtonText: 'Try Again'
+                confirmButtonText: "Try Again",
             });
         }
-
     } catch (error) {
-        console.error('Login error:', error);
+        console.error("Login error:", error);
         Swal.fire({
-            icon: 'error',
-            title: 'Connection Error',
-            text: 'Unable to connect to the server. Please try again.',
-            confirmButtonText: 'OK'
+            icon: "error",
+            title: "Connection Error",
+            text: "Unable to connect to the server. Please try again.",
+            confirmButtonText: "OK",
         });
     } finally {
         // Reset button state
@@ -1034,58 +987,61 @@ async function handleKotakLogin(event) {
 // Update sidebar with logged-in accounts
 async function updateSidebarWithAccounts() {
     try {
-        const response = await fetch('/api/kotak/accounts');
+        const response = await fetch("/api/kotak/accounts");
         const data = await response.json();
 
         if (data.success && data.accounts.length > 0) {
-            const loggedAccountsContainer = document.getElementById('loggedAccounts');
-            const accountLoginContainer = document.getElementById('accountLogin');
+            const loggedAccountsContainer =
+                document.getElementById("loggedAccounts");
+            const accountLoginContainer =
+                document.getElementById("accountLogin");
 
             if (loggedAccountsContainer && accountLoginContainer) {
                 // Hide login button and show accounts
-                accountLoginContainer.style.display = 'none';
-                loggedAccountsContainer.style.display = 'block';
+                accountLoginContainer.style.display = "none";
+                loggedAccountsContainer.style.display = "block";
 
                 // Clear existing accounts
-                loggedAccountsContainer.innerHTML = '';
+                loggedAccountsContainer.innerHTML = "";
 
                 // Add each account
-                data.accounts.forEach(account => {
+                data.accounts.forEach((account) => {
                     const accountElement = createAccountElement(account);
                     loggedAccountsContainer.appendChild(accountElement);
                 });
 
                 // Add "Add Account" button
-                const addAccountBtn = document.createElement('button');
-                addAccountBtn.className = 'btn-add-account';
-                addAccountBtn.innerHTML = '<i class="fas fa-plus me-2"></i>Add Another Account';
+                const addAccountBtn = document.createElement("button");
+                addAccountBtn.className = "btn-add-account";
+                addAccountBtn.innerHTML =
+                    '<i class="fas fa-plus me-2"></i>Add Another Account';
                 addAccountBtn.onclick = () => showLoginModal();
                 loggedAccountsContainer.appendChild(addAccountBtn);
             }
-
         } else {
             // Show login button if no accounts
-            const loggedAccountsContainer = document.getElementById('loggedAccounts');
-            const accountLoginContainer = document.getElementById('accountLogin');
+            const loggedAccountsContainer =
+                document.getElementById("loggedAccounts");
+            const accountLoginContainer =
+                document.getElementById("accountLogin");
 
             if (loggedAccountsContainer && accountLoginContainer) {
-                loggedAccountsContainer.style.display = 'none';
-                accountLoginContainer.style.display = 'block';
+                loggedAccountsContainer.style.display = "none";
+                accountLoginContainer.style.display = "block";
             }
         }
-
     } catch (error) {
-        console.error('Error updating sidebar:', error);
+        console.error("Error updating sidebar:", error);
     }
 }
 
 // Create account element for sidebar
 function createAccountElement(account) {
-    const accountDiv = document.createElement('div');
-    accountDiv.className = `kotak-account-item ${account.is_logged_in ? 'active' : ''}`;
+    const accountDiv = document.createElement("div");
+    accountDiv.className = `kotak-account-item ${account.is_logged_in ? "active" : ""}`;
 
-    const statusClass = account.is_logged_in ? '' : 'offline';
-    const statusText = account.is_logged_in ? 'Online' : 'Offline';
+    const statusClass = account.is_logged_in ? "" : "offline";
+    const statusText = account.is_logged_in ? "Online" : "Offline";
 
     accountDiv.innerHTML = `
         <div class="account-header">
@@ -1108,26 +1064,34 @@ function createAccountElement(account) {
                 <span class="account-label">Mobile:</span>
                 <span class="account-value">${account.mobile_number}</span>
             </div>
-            ${account.last_login ? `
+            ${
+                account.last_login
+                    ? `
                 <div class="account-detail">
                     <span class="account-label">Last Login:</span>
                     <span class="account-value">${formatDate(account.last_login)}</span>
                 </div>
-            ` : ''}
+            `
+                    : ""
+            }
         </div>
 
         <div class="account-actions">
-            ${account.is_logged_in ? `
+            ${
+                account.is_logged_in
+                    ? `
                 <button class="btn-account-action btn-account-switch" onclick="switchAccount(${account.id})">
                     <i class="fas fa-exchange-alt"></i>
                     Switch
                 </button>
-            ` : `
+            `
+                    : `
                 <button class="btn-account-action btn-account-switch" onclick="reconnectAccount(${account.id})">
                     <i class="fas fa-plug"></i>
                     Reconnect
                 </button>
-            `}
+            `
+            }
             <button class="btn-account-action btn-account-logout" onclick="logoutAccount(${account.id})" title="Logout">
                 <i class="fas fa-sign-out-alt"></i>
             </button>
@@ -1141,42 +1105,40 @@ function createAccountElement(account) {
 async function switchAccount(accountId) {
     try {
         const response = await fetch(`/api/kotak/account/${accountId}/switch`, {
-            method: 'POST',
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json',
-            }
+                "Content-Type": "application/json",
+            },
         });
 
         const data = await response.json();
 
         if (data.success) {
             Swal.fire({
-                icon: 'success',
-                title: 'Account Switched!',
+                icon: "success",
+                title: "Account Switched!",
                 text: data.message,
                 timer: 1500,
-                showConfirmButton: false
+                showConfirmButton: false,
             });
 
             // Update sidebar
             updateSidebarWithAccounts();
-
         } else {
             Swal.fire({
-                icon: 'error',
-                title: 'Switch Failed',
+                icon: "error",
+                title: "Switch Failed",
                 text: data.error,
-                confirmButtonText: 'OK'
+                confirmButtonText: "OK",
             });
         }
-
     } catch (error) {
-        console.error('Switch error:', error);
+        console.error("Switch error:", error);
         Swal.fire({
-            icon: 'error',
-            title: 'Connection Error',
-            text: 'Unable to switch account. Please try again.',
-            confirmButtonText: 'OK'
+            icon: "error",
+            title: "Connection Error",
+            text: "Unable to switch account. Please try again.",
+            confirmButtonText: "OK",
         });
     }
 }
@@ -1185,62 +1147,60 @@ async function switchAccount(accountId) {
 async function logoutAccount(accountId) {
     try {
         const result = await Swal.fire({
-            title: 'Logout Account?',
-            text: 'Are you sure you want to logout from this Kotak Neo account?',
-            icon: 'warning',
+            title: "Logout Account?",
+            text: "Are you sure you want to logout from this Kotak Neo account?",
+            icon: "warning",
             showCancelButton: true,
-            confirmButtonColor: '#dc2626',
-            cancelButtonColor: '#6b7280',
-            confirmButtonText: 'Yes, logout',
-            cancelButtonText: 'Cancel'
+            confirmButtonColor: "#dc2626",
+            cancelButtonColor: "#6b7280",
+            confirmButtonText: "Yes, logout",
+            cancelButtonText: "Cancel",
         });
 
         if (result.isConfirmed) {
             const response = await fetch(`/api/kotak/logout/${accountId}`, {
-                method: 'POST',
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
-                }
+                    "Content-Type": "application/json",
+                },
             });
 
             const data = await response.json();
 
             if (data.success) {
                 Swal.fire({
-                    icon: 'success',
-                    title: 'Logged Out!',
+                    icon: "success",
+                    title: "Logged Out!",
                     text: data.message,
                     timer: 1500,
-                    showConfirmButton: false
+                    showConfirmButton: false,
                 });
 
                 // Update sidebar
                 updateSidebarWithAccounts();
-
             } else {
                 Swal.fire({
-                    icon: 'error',
-                    title: 'Logout Failed',
+                    icon: "error",
+                    title: "Logout Failed",
                     text: data.error,
-                    confirmButtonText: 'OK'
+                    confirmButtonText: "OK",
                 });
             }
         }
-
     } catch (error) {
-        console.error('Logout error:', error);
+        console.error("Logout error:", error);
         Swal.fire({
-            icon: 'error',
-            title: 'Connection Error',
-            text: 'Unable to logout. Please try again.',
-            confirmButtonText: 'OK'
+            icon: "error",
+            title: "Connection Error",
+            text: "Unable to logout. Please try again.",
+            confirmButtonText: "OK",
         });
     }
 }
 
 // Format date for display
 function formatDate(dateString) {
-    if (!dateString) return 'Never';
+    if (!dateString) return "Never";
 
     const date = new Date(dateString);
     const now = new Date();
@@ -1262,12 +1222,12 @@ function formatDate(dateString) {
 
 // Show Kotak Neo section after successful login
 function showKotakNeoSection(account) {
-    const kotakNeoSection = document.getElementById('kotakNeoSection');
-    const kotakUCC = document.getElementById('kotakUCC');
+    const kotakNeoSection = document.getElementById("kotakNeoSection");
+    const kotakUCC = document.getElementById("kotakUCC");
 
     if (kotakNeoSection && kotakUCC) {
-        kotakNeoSection.style.display = 'block';
-        kotakUCC.textContent = account.ucc || 'N/A';
+        kotakNeoSection.style.display = "block";
+        kotakUCC.textContent = account.ucc || "N/A";
 
         // Update active navigation link based on current page
         updateActiveNavLink();
@@ -1276,22 +1236,22 @@ function showKotakNeoSection(account) {
 
 // Hide Kotak Neo section when no accounts are logged in
 function hideKotakNeoSection() {
-    const kotakNeoSection = document.getElementById('kotakNeoSection');
+    const kotakNeoSection = document.getElementById("kotakNeoSection");
 
     if (kotakNeoSection) {
-        kotakNeoSection.style.display = 'none';
+        kotakNeoSection.style.display = "none";
     }
 }
 
 // Update active navigation link
 function updateActiveNavLink() {
     const currentPath = window.location.pathname;
-    const navLinks = document.querySelectorAll('.kotak-neo-section .nav-link');
+    const navLinks = document.querySelectorAll(".kotak-neo-section .nav-link");
 
-    navLinks.forEach(link => {
-        link.classList.remove('active');
-        if (link.getAttribute('href') === currentPath) {
-            link.classList.add('active');
+    navLinks.forEach((link) => {
+        link.classList.remove("active");
+        if (link.getAttribute("href") === currentPath) {
+            link.classList.add("active");
         }
     });
 }
@@ -1299,55 +1259,60 @@ function updateActiveNavLink() {
 // Update sidebar with logged-in accounts (modified to show/hide Kotak section)
 async function updateSidebarWithAccountsEnhanced() {
     try {
-        const response = await fetch('/api/kotak/accounts');
+        const response = await fetch("/api/kotak/accounts");
         const data = await response.json();
 
         if (data.success && data.accounts.length > 0) {
-            const loggedAccountsContainer = document.getElementById('loggedAccounts');
-            const accountLoginContainer = document.getElementById('accountLogin');
+            const loggedAccountsContainer =
+                document.getElementById("loggedAccounts");
+            const accountLoginContainer =
+                document.getElementById("accountLogin");
 
             if (loggedAccountsContainer && accountLoginContainer) {
                 // Hide login button and show accounts
-                accountLoginContainer.style.display = 'none';
-                loggedAccountsContainer.style.display = 'block';
+                accountLoginContainer.style.display = "none";
+                loggedAccountsContainer.style.display = "block";
 
                 // Clear existing accounts
-                loggedAccountsContainer.innerHTML = '';
+                loggedAccountsContainer.innerHTML = "";
 
                 // Add each account
-                data.accounts.forEach(account => {
+                data.accounts.forEach((account) => {
                     const accountElement = createAccountElement(account);
                     loggedAccountsContainer.appendChild(accountElement);
                 });
 
                 // Add "Add Account" button
-                const addAccountBtn = document.createElement('button');
-                addAccountBtn.className = 'btn-add-account';
-                addAccountBtn.innerHTML = '<i class="fas fa-plus me-2"></i>Add Another Account';
+                const addAccountBtn = document.createElement("button");
+                addAccountBtn.className = "btn-add-account";
+                addAccountBtn.innerHTML =
+                    '<i class="fas fa-plus me-2"></i>Add Another Account';
                 addAccountBtn.onclick = () => showLoginModal();
                 loggedAccountsContainer.appendChild(addAccountBtn);
 
                 // Show Kotak Neo section with active account
-                const activeAccount = data.accounts.find(acc => acc.is_logged_in) || data.accounts[0];
+                const activeAccount =
+                    data.accounts.find((acc) => acc.is_logged_in) ||
+                    data.accounts[0];
                 showKotakNeoSection(activeAccount);
             }
-
         } else {
             // Show login button if no accounts
-            const loggedAccountsContainer = document.getElementById('loggedAccounts');
-            const accountLoginContainer = document.getElementById('accountLogin');
+            const loggedAccountsContainer =
+                document.getElementById("loggedAccounts");
+            const accountLoginContainer =
+                document.getElementById("accountLogin");
 
             if (loggedAccountsContainer && accountLoginContainer) {
-                loggedAccountsContainer.style.display = 'none';
-                accountLoginContainer.style.display = 'block';
+                loggedAccountsContainer.style.display = "none";
+                accountLoginContainer.style.display = "block";
 
                 // Hide Kotak Neo section
                 hideKotakNeoSection();
             }
         }
-
     } catch (error) {
-        console.error('Error updating sidebar:', error);
+        console.error("Error updating sidebar:", error);
         hideKotakNeoSection();
     }
 }
@@ -1358,7 +1323,7 @@ async function updateSidebarWithAccounts() {
 }
 
 // Initialize account display on page load
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", function () {
     // Update sidebar with accounts if user is logged in
     updateSidebarWithAccounts();
 
