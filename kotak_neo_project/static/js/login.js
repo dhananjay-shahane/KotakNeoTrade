@@ -40,9 +40,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // Auto-focus first input
             document.getElementById("mobile_number").focus();
-            
-            // Broker card selection functionality
-            setupBrokerCardSelection();
         });
 // UCC Validation
 document.addEventListener('DOMContentLoaded', function() {
