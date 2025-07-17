@@ -583,21 +583,24 @@ function showLoginModal() {
 
 // Broker redirect functions
 function showKotakLoginForm() {
-    // Remove active class from all broker cards
-    document.querySelectorAll(".broker-card").forEach((card) => {
+    // Remove active class from all broker cards (both desktop and mobile)
+    document.querySelectorAll(".broker-card, .broker-card-mobile").forEach((card) => {
         card.classList.remove("active");
     });
 
-    // Add active class to Kotak card
-    document.getElementById("kotakCard").classList.add("active");
+    // Add active class to Kotak cards (both desktop and mobile)
+    const kotakCard = document.getElementById("kotakCard");
+    const kotakCardDesktop = document.getElementById("kotakCardDesktop");
+    if (kotakCard) kotakCard.classList.add("active");
+    if (kotakCardDesktop) kotakCardDesktop.classList.add("active");
 
     document.getElementById("welcomeScreen").style.display = "none";
     document.getElementById("kotakLoginForm").style.display = "block";
 }
 
 function goBackToBrokerSelection() {
-    // Remove active class from all broker cards
-    document.querySelectorAll(".broker-card").forEach((card) => {
+    // Remove active class from all broker cards (both desktop and mobile)
+    document.querySelectorAll(".broker-card, .broker-card-mobile").forEach((card) => {
         card.classList.remove("active");
     });
 
