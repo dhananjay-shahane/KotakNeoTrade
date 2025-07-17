@@ -507,122 +507,177 @@
                         class="modal-body p-0"
                         style="background: var(--card-bg)"
                     >
-                        <div class="d-flex flex-wrap g-5 h-100">
-                            <!-- Left Side - Broker Cards -->
-                            <div class="broker-selection-side p-4">
-                                <div class="broker-selection-content">
-                                    <h4 class="mb-4">
-                                        <i class="fas fa-university me-2"></i
-                                        >Choose Your Broker
-                                    </h4>
-                                    <!-- Mobile Horizontal Scrollable Container -->
-                                    <div class="broker-cards-mobile-container">
-                                        <div class="broker-cards-scroll">
+                        <div class="row g-0 h-100">
+                            <!-- Left Side - Broker Cards (50% width) -->
+                            <div class="col-lg-6 col-md-12">
+                                <div class="broker-selection-side">
+                                    <div class="broker-selection-content">
+                                        <h4 class="mb-4">
+                                            <i class="fas fa-university me-2"></i>Choose Your Broker
+                                        </h4>
+                                        
+                                        <!-- Desktop Broker Cards -->
+                                        <div class="d-none d-md-block">
                                             <!-- Kotak Neo Card -->
                                             <div
-                                                class="broker-card-mobile active"
+                                                class="broker-card active mb-3"
                                                 id="kotakCard"
                                                 onclick="showKotakLoginForm()"
                                             >
                                                 <div class="broker-icon">
-                                                    <i
-                                                        class="fas fa-chart-line"
-                                                    ></i>
+                                                    <i class="fas fa-chart-line"></i>
                                                 </div>
                                                 <div class="broker-info">
-                                                    <h6 class="broker-name">
-                                                        Kotak Neo
-                                                    </h6>
-                                                    <p
-                                                        class="broker-description"
-                                                    >
-                                                        Advanced trading
-                                                        platform with real-time
-                                                        data
+                                                    <h6 class="broker-name">Kotak Neo</h6>
+                                                    <p class="broker-description">
+                                                        Advanced trading platform with real-time data
                                                     </p>
-                                                    <span class="feature-badge"
-                                                        >HOW TO USE</span
-                                                    >
+                                                    <div class="broker-features">
+                                                        <span class="feature-tag">HOW TO USE</span>
+                                                    </div>
+                                                </div>
+                                                <div class="broker-arrow">
+                                                    <i class="fas fa-chevron-right"></i>
                                                 </div>
                                             </div>
 
                                             <!-- Upstox Card -->
                                             <div
-                                                class="broker-card-mobile disabled"
+                                                class="broker-card disabled mb-3"
                                                 onclick="showComingSoon('Upstox')"
                                             >
                                                 <div class="broker-icon upstox">
-                                                    <i
-                                                        class="fas fa-rocket"
-                                                    ></i>
+                                                    <i class="fas fa-rocket"></i>
                                                 </div>
                                                 <div class="broker-info">
-                                                    <h6 class="broker-name">
-                                                        Upstox
-                                                    </h6>
-                                                    <p
-                                                        class="broker-description"
-                                                    >
-                                                        Fast and reliable
-                                                        trading experience
+                                                    <h6 class="broker-name">Upstox</h6>
+                                                    <p class="broker-description">
+                                                        Fast and reliable trading experience
                                                     </p>
-                                                    <span
-                                                        class="feature-badge coming-soon"
-                                                        >COMING SOON</span
-                                                    >
+                                                    <div class="broker-features">
+                                                        <span class="feature-tag">COMING SOON</span>
+                                                    </div>
+                                                </div>
+                                                <div class="broker-arrow">
+                                                    <i class="fas fa-chevron-right"></i>
                                                 </div>
                                             </div>
 
                                             <!-- Angel One Card -->
                                             <div
-                                                class="broker-card-mobile disabled"
+                                                class="broker-card disabled mb-3"
                                                 onclick="showComingSoon('Angel One')"
                                             >
                                                 <div class="broker-icon angel">
-                                                    <i
-                                                        class="fas fa-feather-alt"
-                                                    ></i>
+                                                    <i class="fas fa-feather-alt"></i>
                                                 </div>
                                                 <div class="broker-info">
-                                                    <h6 class="broker-name">
-                                                        Angel One
-                                                    </h6>
-                                                    <p
-                                                        class="broker-description"
-                                                    >
-                                                        Comprehensive trading
-                                                        platform
+                                                    <h6 class="broker-name">Angel One</h6>
+                                                    <p class="broker-description">
+                                                        Comprehensive trading platform
                                                     </p>
-                                                    <span
-                                                        class="feature-badge coming-soon"
-                                                        >COMING SOON</span
-                                                    >
+                                                    <div class="broker-features">
+                                                        <span class="feature-tag">COMING SOON</span>
+                                                    </div>
+                                                </div>
+                                                <div class="broker-arrow">
+                                                    <i class="fas fa-chevron-right"></i>
                                                 </div>
                                             </div>
 
                                             <!-- Zerodha Card -->
                                             <div
-                                                class="broker-card-mobile disabled"
+                                                class="broker-card disabled mb-3"
                                                 onclick="showComingSoon('Zerodha')"
                                             >
-                                                <div
-                                                    class="broker-icon zerodha"
-                                                >
+                                                <div class="broker-icon zerodha">
                                                     <i class="fas fa-bolt"></i>
                                                 </div>
                                                 <div class="broker-info">
-                                                    <h6 class="broker-name">
-                                                        Zerodha
-                                                    </h6>
-                                                    <p
-                                                        class="broker-description"
-                                                    >
-                                                        India's largest discount
-                                                        broker
+                                                    <h6 class="broker-name">Zerodha</h6>
+                                                    <p class="broker-description">
+                                                        India's largest discount broker
                                                     </p>
-                                                    <span class="feature-badge"
-                                                        >HOW TO USE</span
-                                                    >
+                                                    <div class="broker-features">
+                                                        <span class="feature-tag">HOW TO USE</span>
+                                                    </div>
+                                                </div>
+                                                <div class="broker-arrow">
+                                                    <i class="fas fa-chevron-right"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Mobile Horizontal Scrollable Container -->
+                                        <div class="d-block d-md-none">
+                                            <div class="broker-cards-scroll">
+                                                <!-- Kotak Neo Card -->
+                                                <div
+                                                    class="broker-card-mobile active"
+                                                    id="kotakCardMobile"
+                                                    onclick="showKotakLoginForm()"
+                                                >
+                                                    <div class="broker-icon">
+                                                        <i class="fas fa-chart-line"></i>
+                                                    </div>
+                                                    <div class="broker-info">
+                                                        <h6 class="broker-name">Kotak Neo</h6>
+                                                        <p class="broker-description">
+                                                            Advanced trading platform with real-time data
+                                                        </p>
+                                                        <span class="feature-badge">HOW TO USE</span>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Upstox Card -->
+                                                <div
+                                                    class="broker-card-mobile disabled"
+                                                    onclick="showComingSoon('Upstox')"
+                                                >
+                                                    <div class="broker-icon upstox">
+                                                        <i class="fas fa-rocket"></i>
+                                                    </div>
+                                                    <div class="broker-info">
+                                                        <h6 class="broker-name">Upstox</h6>
+                                                        <p class="broker-description">
+                                                            Fast and reliable trading experience
+                                                        </p>
+                                                        <span class="feature-badge coming-soon">COMING SOON</span>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Angel One Card -->
+                                                <div
+                                                    class="broker-card-mobile disabled"
+                                                    onclick="showComingSoon('Angel One')"
+                                                >
+                                                    <div class="broker-icon angel">
+                                                        <i class="fas fa-feather-alt"></i>
+                                                    </div>
+                                                    <div class="broker-info">
+                                                        <h6 class="broker-name">Angel One</h6>
+                                                        <p class="broker-description">
+                                                            Comprehensive trading platform
+                                                        </p>
+                                                        <span class="feature-badge coming-soon">COMING SOON</span>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Zerodha Card -->
+                                                <div
+                                                    class="broker-card-mobile disabled"
+                                                    onclick="showComingSoon('Zerodha')"
+                                                >
+                                                    <div class="broker-icon zerodha">
+                                                        <i class="fas fa-bolt"></i>
+                                                    </div>
+                                                    <div class="broker-info">
+                                                        <h6 class="broker-name">Zerodha</h6>
+                                                        <p class="broker-description">
+                                                            India's largest discount broker
+                                                        </p>
+                                                        <span class="feature-badge">HOW TO USE</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -630,190 +685,126 @@
                                 </div>
                             </div>
 
-                            <!-- Right Side - Login Form -->
-                         <div class="d-flex flex-column justify-content-center align-items-center"">
-                             <div
-                                 class="login-form-side justify-center align-items-center p-4"
-                             >
-                                 <!-- Kotak Neo Login Form -->
-                                 <div
-                                     id="kotakLoginForm"
-                                     class="kotak-login-form"
-                                 >
-                                     <div class="login-form-content">
-                                         <div
-                                             class="form-header text-center mb-4"
-                                         >
-                                             <div class="broker-logo mb-3">
-                                                 <i
-                                                     class="fas fa-chart-line"
-                                                 ></i>
-                                             </div>
-                                             <h4>Kotak Neo Login</h4>
-                                             <p class="text-muted">
-                                                 Enter your Kotak Neo credentials
-                                             </p>
-                                         </div>
+                            <!-- Right Side - Login Form (50% width) -->
+                            <div class="col-lg-6 col-md-12">
+                                <div class="login-form-side">
+                                    <!-- Kotak Neo Login Form -->
+                                    <div id="kotakLoginForm" class="kotak-login-form">
+                                        <div class="login-form-content">
+                                            <div class="form-header text-center mb-4">
+                                                <div class="broker-logo mb-3">
+                                                    <i class="fas fa-chart-line"></i>
+                                                </div>
+                                                <h4>Kotak Neo Login</h4>
+                                                <p class="text-muted">Enter your Kotak Neo credentials</p>
+                                            </div>
 
-                                         <form
-                                             id="kotakLoginFormElement"
-                                             onsubmit="handleKotakLogin(event)"
-                                         >
-                                             <div class="form-group mb-3">
-                                                 <label class="form-label">
-                                                     <i
-                                                         class="fas fa-mobile-alt me-2"
-                                                     ></i
-                                                     >Mobile Number
-                                                 </label>
-                                                 <input
-                                                     type="tel"
-                                                     class="form-control"
-                                                     name="mobile_number"
-                                                     placeholder="Enter registered mobile number"
-                                                     pattern="[0-9]{10}"
-                                                     maxlength="10"
-                                                     required
-                                                 />
-                                                 <small
-                                                     class="form-text text-muted"
-                                                 >
-                                                     Enter your 10-digit mobile
-                                                     number registered with Kotak
-                                                     Neo
-                                                 </small>
-                                             </div>
+                                            <form id="kotakLoginFormElement" onsubmit="handleKotakLogin(event)">
+                                                <div class="form-group mb-3">
+                                                    <label class="form-label">
+                                                        <i class="fas fa-mobile-alt me-2"></i>Mobile Number
+                                                    </label>
+                                                    <input
+                                                        type="tel"
+                                                        class="form-control"
+                                                        name="mobile_number"
+                                                        placeholder="Enter registered mobile number"
+                                                        pattern="[0-9]{10}"
+                                                        maxlength="10"
+                                                        required
+                                                    />
+                                                    <small class="form-text text-muted">
+                                                        Enter your 10-digit mobile number registered with Kotak Neo
+                                                    </small>
+                                                </div>
 
-                                             <div class="form-group mb-3">
-                                                 <label class="form-label">
-                                                     <i
-                                                         class="fas fa-user me-2"
-                                                     ></i
-                                                     >UCC (User Client Code)
-                                                 </label>
-                                                 <input
-                                                     type="text"
-                                                     class="form-control"
-                                                     name="ucc"
-                                                     placeholder="Enter your UCC"
-                                                     maxlength="6"
-                                                     required
-                                                 />
-                                                 <small
-                                                     class="form-text text-muted"
-                                                 >
-                                                     Enter your 5-6 character
-                                                     alphanumeric UCC from Kotak
-                                                     Neo
-                                                 </small>
-                                             </div>
+                                                <div class="form-group mb-3">
+                                                    <label class="form-label">
+                                                        <i class="fas fa-user me-2"></i>UCC (User Client Code)
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        class="form-control"
+                                                        name="ucc"
+                                                        placeholder="Enter your UCC"
+                                                        maxlength="6"
+                                                        required
+                                                    />
+                                                    <small class="form-text text-muted">
+                                                        Enter your 5-6 character alphanumeric UCC from Kotak Neo
+                                                    </small>
+                                                </div>
 
-                                             <div class="form-group mb-3">
-                                                 <label class="form-label">
-                                                     <i
-                                                         class="fas fa-key me-2"
-                                                     ></i
-                                                     >MPIN
-                                                 </label>
-                                                 <div
-                                                     class="password-input-wrapper"
-                                                 >
-                                                     <input
-                                                         type="password"
-                                                         class="form-control"
-                                                         name="mpin"
-                                                         placeholder="••••••"
-                                                         pattern="[0-9]{6}"
-                                                         maxlength="6"
-                                                         autocomplete="current-password"
-                                                         required
-                                                     />
-                                                     <button
-                                                         type="button"
-                                                         class="password-toggle"
-                                                         onclick="togglePasswordVisibility(this)"
-                                                     >
-                                                         <i
-                                                             class="fas fa-eye"
-                                                         ></i>
-                                                     </button>
-                                                 </div>
-                                                 <small
-                                                     class="form-text text-muted"
-                                                 >
-                                                     Enter your 6-digit MPIN
-                                                 </small>
-                                             </div>
+                                                <div class="form-group mb-3">
+                                                    <label class="form-label">
+                                                        <i class="fas fa-key me-2"></i>MPIN
+                                                    </label>
+                                                    <div class="password-input-wrapper">
+                                                        <input
+                                                            type="password"
+                                                            class="form-control"
+                                                            name="mpin"
+                                                            placeholder="••••••"
+                                                            pattern="[0-9]{6}"
+                                                            maxlength="6"
+                                                            autocomplete="current-password"
+                                                            required
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            class="password-toggle"
+                                                            onclick="togglePasswordVisibility(this)"
+                                                        >
+                                                            <i class="fas fa-eye"></i>
+                                                        </button>
+                                                    </div>
+                                                    <small class="form-text text-muted">
+                                                        Enter your 6-digit MPIN
+                                                    </small>
+                                                </div>
 
-                                             <div class="form-group mb-4">
-                                                 <label class="form-label">
-                                                     <i
-                                                         class="fas fa-shield-alt me-2"
-                                                     ></i
-                                                     >TOTP Code
-                                                 </label>
-                                                 <input
-                                                     type="text"
-                                                     class="form-control"
-                                                     name="totp_code"
-                                                     placeholder="000000"
-                                                     pattern="[0-9]{6}"
-                                                     maxlength="6"
-                                                     required
-                                                 />
-                                                 <small
-                                                     class="form-text text-muted"
-                                                 >
-                                                     Enter the current 6-digit
-                                                     TOTP code from your
-                                                     authenticator app (Google
-                                                     Authenticator, Authy, etc.)
-                                                 </small>
-                                             </div>
+                                                <div class="form-group mb-4">
+                                                    <label class="form-label">
+                                                        <i class="fas fa-shield-alt me-2"></i>TOTP Code
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        class="form-control"
+                                                        name="totp_code"
+                                                        placeholder="000000"
+                                                        pattern="[0-9]{6}"
+                                                        maxlength="6"
+                                                        required
+                                                    />
+                                                    <small class="form-text text-muted">
+                                                        Enter the current 6-digit TOTP code from your authenticator app (Google Authenticator, Authy, etc.)
+                                                    </small>
+                                                </div>
 
-                                             <div class="form-group mb-4">
-                                                 <a
-                                                     href="#"
-                                                     class="text-primary"
-                                                     onclick="showForgotPassword()"
-                                                 >
-                                                     <i
-                                                         class="fas fa-question-circle me-1"
-                                                     ></i>
-                                                     Forgot password?
-                                                 </a>
-                                             </div>
+                                                <div class="form-group mb-4">
+                                                    <a href="#" class="text-primary" onclick="showForgotPassword()">
+                                                        <i class="fas fa-question-circle me-1"></i>
+                                                        Forgot password?
+                                                    </a>
+                                                </div>
 
-                                             <button
-                                                 type="submit"
-                                                 class="btn btn-primary w-100 mb-3"
-                                             >
-                                                 <i
-                                                     class="fas fa-sign-in-alt me-2"
-                                                 ></i>
-                                                 Login to Kotak Neo
-                                             </button>
-                                         </form>
+                                                <button type="submit" class="btn btn-primary w-100 mb-3">
+                                                    <i class="fas fa-sign-in-alt me-2"></i>
+                                                    Login to Kotak Neo
+                                                </button>
+                                            </form>
 
-                                         <div class="login-help mt-4">
-                                             <div class="alert alert-info">
-                                                 <i
-                                                     class="fas fa-info-circle me-2"
-                                                 ></i>
-                                                 <strong>Need Help?</strong
-                                                 ><br />
-                                                 Make sure you have your Kotak
-                                                 Neo credentials ready. After
-                                                 successful login, you'll be
-                                                 redirected to the trading
-                                                 platform.
-                                             </div>
-                                         </div>
-                                     </div>
-                                 </div>
-                             </div>
-                         </div>
-                            
+                                            <div class="login-help mt-4">
+                                                <div class="alert alert-info">
+                                                    <i class="fas fa-info-circle me-2"></i>
+                                                    <strong>Need Help?</strong><br />
+                                                    Make sure you have your Kotak Neo credentials ready. After successful login, you'll be redirected to the trading platform.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
