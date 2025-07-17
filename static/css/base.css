@@ -1729,7 +1729,15 @@ body {
     .modal-fullscreen .col-md-6 {
         flex: none;
         padding: 0;
-        width: 100%;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    /* Force full width columns on small screens */
+    .modal-fullscreen .col-sm-12,
+    .modal-fullscreen .col-12 {
+        flex: 0 0 100%;
+        max-width: 100%;
     }
     
     .broker-selection-side {
@@ -1741,6 +1749,7 @@ body {
         max-height: none;
         overflow-y: visible;
         background: var(--card-bg);
+        width: 100% !important;
     }
     
     .broker-selection-content {
@@ -1761,6 +1770,7 @@ body {
         display: flex;
         align-items: flex-start;
         justify-content: center;
+        width: 100% !important;
     }
     
     .kotak-login-form {
@@ -1783,11 +1793,22 @@ body {
     
     .broker-selection-side {
         padding: 0.75rem;
+        width: 100% !important;
+        max-width: 100% !important;
     }
     
     .login-form-side {
         padding: 0.75rem;
         min-height: 60vh;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    /* Ensure all modal columns are full width */
+    .modal-fullscreen [class*="col-"] {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+        width: 100% !important;
     }
     
     .broker-selection-content h4 {
