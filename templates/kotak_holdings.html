@@ -1,395 +1,77 @@
+
 {% extends "base.html" %}
 
 {% block title %}Holdings - Kotak Neo Trading{% endblock %}
 
-{% block content %}
-<div class="row mb-2">
-    <div class="col">
-        <h4 class="mb-1">Portfolio Holdings</h4>
-        <small class="text-muted">Long-term investment portfolio overview</small>
-    </div>
-    <div class="col-auto">
-        <button class="btn btn-sm btn-primary" onclick="refreshHoldings()">Refresh</button>
-    </div>
-</div>
-
-{% if holdings %}
-<!-- Calculate totals for cards -->
-{% set total_invested = 0.0 %}
-{% set total_current = 0.0 %}
-{% for holding in holdings %}
-    {% if holding.holdingCost %}
-        {% set invested = holding.holdingCost|float %}
-        {% set total_invested = total_invested + invested %}
-    {% endif %}
-    {% if holding.mktValue %}
-        {% set current = holding.mktValue|float %}
-        {% set total_current = total_current + current %}
-    {% endif %}
-{% endfor %}
-{% set total_pnl = total_current - total_invested %}
-{% set pnl_percentage = (total_pnl / total_invested * 100) if total_invested > 0 else 0 %}
-
-<!-- Compact Summary Cards -->
-<div class="row mb-2">
-    <div class="col-lg-3 col-md-6 mb-1">
-        <div class="card bg-secondary border-0" style="height: 60px;">
-            <div class="card-body p-2 d-flex align-items-center justify-content-between">
-                <div>
-                    <small class="text-muted">Holdings</small>
-                    <div class="fw-bold text-white">{{ holdings|length if holdings else 0 }}</div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6 mb-1">
-        <div class="card bg-secondary border-0" style="height: 60px;">
-            <div class="card-body p-2 d-flex align-items-center justify-content-between">
-                <div>
-                    <small class="text-muted">Invested</small>
-                    <div class="fw-bold text-white">₹{{ "{:,.0f}".format(total_invested) }}</div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6 mb-1">
-        <div class="card bg-secondary border-0" style="height: 60px;">
-            <div class="card-body p-2 d-flex align-items-center justify-content-between">
-                <div>
-                    <small class="text-muted">Current Value</small>
-                    <div class="fw-bold text-white">₹{{ "{:,.0f}".format(total_current) }}</div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6 mb-1">
-        <div class="card bg-secondary border-0" style="height: 60px;">
-            <div class="card-body p-2 d-flex align-items-center justify-content-between">
-                <div>
-                    <small class="text-muted">P&L</small>
-                    <div class="fw-bold {% if total_pnl >= 0 %}text-success{% else %}text-danger{% endif %}">
-                        {% if total_pnl > 0 %}+{% endif %}₹{{ "{:,.0f}".format(total_pnl) }}
-                        <small>({% if total_pnl > 0 %}+{% endif %}{{ "{:.1f}".format(pnl_percentage) }}%)</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="card bg-secondary border-0">
-    <div class="card-header bg-dark d-flex justify-content-between align-items-center py-2">
-        <small class="mb-0 text-white fw-bold">Holdings Details</small>
-        <div class="d-flex gap-1">
-            <button class="btn btn-sm btn-outline-light" onclick="sortTable('symbol')" id="sortSymbolBtn">Sort A-Z</button>
-            <button class="btn btn-sm btn-outline-light" onclick="refreshHoldings()">Refresh</button>
-        </div>
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-dark table-hover mb-0 table-sm" id="holdingsTable">
-                <thead class="bg-dark">
-                    <tr style="font-size: 0.85rem;">
-                        <th class="sortable border-0 py-2" onclick="sortTable('symbol')" style="cursor: pointer;">
-                            SYMBOL
-                        </th>
-                        <th class="sortable border-0 py-2" onclick="sortTable('exchange')" style="cursor: pointer;">
-                            EXCHANGE
-                        </th>
-                        <th class="sortable border-0 py-2" onclick="sortTable('quantity')" style="cursor: pointer;">
-                            QTY
-                        </th>
-                        <th class="sortable border-0 py-2" onclick="sortTable('avgPrice')" style="cursor: pointer;">
-                            AVG PRICE
-                        </th>
-                        <th class="sortable border-0 py-2" onclick="sortTable('ltp')" style="cursor: pointer;">
-                            LTP
-                        </th>
-                        <th class="sortable border-0 py-2" onclick="sortTable('marketValue')" style="cursor: pointer;">
-                            MARKET VALUE
-                        </th>
-                        <th class="sortable border-0 py-2" onclick="sortTable('pnl')" style="cursor: pointer;">
-                            P&L
-                        </th>
-                        <th class="sortable border-0 py-2" onclick="sortTable('dayChange')" style="cursor: pointer;">
-                            DAY CHANGE
-                        </th>
-                        <th class="border-0 py-2">ACTIONS</th>
-                    </tr>
-                </thead>
-                <tbody id="holdingsTableBody">
-                    {% for holding in holdings %}
-                    {% set invested_value = holding.holdingCost|float if holding.holdingCost else 0.0 %}
-                    {% set market_value = holding.mktValue|float if holding.mktValue else 0.0 %}
-                    {% set pnl = market_value - invested_value %}
-                    {% set avg_price = holding.averagePrice|float if holding.averagePrice else 0.0 %}
-                    {% set ltp = holding.closingPrice|float if holding.closingPrice else 0.0 %}
-                    {% set day_change_pct = ((ltp - avg_price) / avg_price * 100) if avg_price > 0 else 0 %}
-
-                    <tr class="border-0" 
-                        data-symbol="{{ holding.displaySymbol or holding.symbol or 'N/A' }}"
-                        data-exchange="{{ holding.exchangeSegment or 'N/A' }}"
-                        data-quantity="{{ holding.quantity or 0 }}"
-                        data-avg-price="{{ avg_price }}"
-                        data-ltp="{{ ltp }}"
-                        data-market-value="{{ market_value }}"
-                        data-pnl="{{ pnl }}"
-                        data-day-change="{{ day_change_pct }}">
-
-                        <td class="border-0 py-2">
-                            <div>
-                                <strong class="text-white">{{ holding.displaySymbol or holding.symbol or 'N/A' }}</strong>
-                                {% if holding.instrumentName %}
-                                    <br><small class="text-muted">{{ holding.instrumentName[:25] }}...</small>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td class="border-0 py-2">
-                            <span class="badge bg-info">{{ holding.exchangeSegment or 'N/A' }}</span>
-                        </td>
-                        <td class="border-0 py-2 text-info fw-semibold">
-                            {{ holding.quantity or '0' }}
-                        </td>
-                        <td class="border-0 py-2 text-light">₹{{ "{:,.2f}".format(avg_price) }}</td>
-                        <td class="border-0 py-2 text-warning fw-semibold">₹{{ "{:,.2f}".format(ltp) }}</td>
-                        <td class="border-0 py-2 text-info fw-semibold">
-                            ₹{{ "{:,.2f}".format(market_value) }}
-                        </td>
-                        <td class="border-0 py-2">
-                            <span class="fw-bold {% if pnl > 0 %}text-success{% elif pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                {% if pnl > 0 %}+{% endif %}₹{{ "{:,.2f}".format(pnl) }}
-                                {% if invested_value > 0 %}
-                                    <br><small class="{% if pnl > 0 %}text-success{% elif pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                        ({% if pnl > 0 %}+{% endif %}{{ "{:.2f}".format((pnl/invested_value)*100) }}%)
-                                    </small>
-                                {% endif %}
-                            </span>
-                        </td>
-                        <td class="border-0 py-2">
-                            <span class="fw-semibold {% if day_change_pct > 0 %}text-success{% elif day_change_pct < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                {% if day_change_pct != 0 %}
-                                    {% if day_change_pct > 0 %}+{% endif %}{{ "{:.2f}".format(day_change_pct) }}%
-                                {% else %}
-                                    N/A
-                                {% endif %}
-                            </span>
-                        </td>
-                        <td class="border-0 py-2">
-                            <div class="btn-group btn-group-sm">
-                                <button class="btn btn-success btn-sm px-2" onclick="buyHolding('{{ holding.displaySymbol or holding.symbol }}')">
-                                    Buy
-                                </button>
-                                <button class="btn btn-danger btn-sm px-2" onclick="sellHolding('{{ holding.displaySymbol or holding.symbol }}', '{{ holding.sellableQuantity or holding.quantity or 0 }}')">
-                                    Sell
-                                </button>
-                                <button class="btn btn-outline-light btn-sm px-2" onclick="getQuote('{{ holding.instrumentToken }}', '{{ holding.exchangeSegment }}')">
-                                    Quote
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-{% else %}
-<div class="card bg-secondary">
-    <div class="card-body text-center py-4">
-        <h5 class="text-muted">No Holdings Found</h5>
-        <p class="text-muted">You don't have any holdings in your portfolio.</p>
-        <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Start Investing</a>
-    </div>
-</div>
-{% endif %}
-
-<!-- Advanced Holdings Trade Modal -->
-<div class="modal fade" id="holdingActionModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content bg-dark text-light">
-            <div class="modal-header bg-primary border-0">
-                <h5 class="modal-title text-white fw-bold" id="holdingActionTitle">
-                    <i class="fas fa-chart-line me-2"></i>Buy Holdings
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body bg-dark p-4">
-                <form id="advancedHoldingForm">
-                    <!-- Symbol -->
-                    <div class="mb-3">
-                        <label class="form-label text-light fw-semibold">Symbol</label>
-                        <input type="text" class="form-control bg-secondary text-light border-0 py-2" 
-                               id="actionSymbol" readonly style="font-size: 1rem;">
-                    </div>
-
-                    <!-- Transaction Type -->
-                    <div class="mb-3">
-                        <label class="form-label text-light fw-semibold">Transaction Type</label>
-                        <input type="text" class="form-control bg-secondary text-light border-0 py-2" 
-                               id="actionType" readonly style="font-size: 1rem;">
-                    </div>
-
-                    <!-- Order Type and Product -->
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label text-light fw-semibold">Order Type</label>
-                            <select class="form-select bg-secondary text-light border-0 py-2" 
-                                    id="orderType" onchange="toggleHoldingPriceFields()" style="font-size: 1rem;">
-                                <option value="MKT">Market</option>
-                                <option value="L">Limit</option>
-                                <option value="SL">Stop Loss</option>
-                                <option value="SL-M">Stop Loss Market</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-light fw-semibold">Product</label>
-                            <select class="form-select bg-secondary text-light border-0 py-2" 
-                                    id="productType" style="font-size: 1rem;">
-                                <option value="CNC">CNC (Cash & Carry)</option>
-                                <option value="MIS">MIS (Intraday)</option>
-                                <option value="NRML">NRML (Normal)</option>
-                                <option value="CO">CO (Cover Order)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Price and Quantity -->
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label text-light fw-semibold">Price</label>
-                            <input type="number" class="form-control bg-secondary text-light border-0 py-2" 
-                                   id="actionPrice" step="0.01" style="font-size: 1rem;">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-light fw-semibold">Quantity</label>
-                            <input type="number" class="form-control bg-secondary text-light border-0 py-2" 
-                                   id="actionQuantity" min="1" value="1" style="font-size: 1rem;">
-                            <small class="text-muted" id="maxQuantityText"></small>
-                        </div>
-                    </div>
-
-                    <!-- Validity and Trigger Price -->
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label text-light fw-semibold">Validity</label>
-                            <select class="form-select bg-secondary text-light border-0 py-2" 
-                                    id="validityType" style="font-size: 1rem;">
-                                <option value="DAY">DAY</option>
-                                <option value="IOC">IOC (Immediate or Cancel)</option>
-                                <option value="GTC">GTC (Good Till Cancel)</option>
-                                <option value="EOS">EOS (End of Session)</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-light fw-semibold">Trigger Price</label>
-                            <input type="number" class="form-control bg-secondary text-light border-0 py-2" 
-                                   id="triggerPrice" step="0.01" value="0" style="font-size: 1rem;" disabled>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer bg-dark border-0 pt-0">
-                <button type="button" class="btn btn-secondary px-4 py-2" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary px-4 py-2 fw-semibold" onclick="submitAdvancedHoldingAction()">
-                    <i class="fas fa-chart-line me-2"></i>Place Trade
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
+{% block head %}
 <style>
-/* Holdings Skeleton CSS */
+/* Enhanced Holdings Page Styling */
 .holdings-skeleton {
+    padding: 20px;
     animation: fadeIn 0.3s ease-in;
 }
 
+.skeleton-header {
+    margin-bottom: 2rem;
+}
+
 .skeleton-title {
-    height: 28px;
-    width: 200px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 4px;
-}
-
-.skeleton-subtitle {
-    height: 16px;
-    width: 300px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 4px;
-}
-
-.skeleton-button {
-    height: 40px;
-    width: 120px;
+    height: 32px;
+    width: 250px;
     background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
     border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.skeleton-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.skeleton-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    backdrop-filter: blur(10px);
 }
 
 .skeleton-card-title {
-    height: 14px;
-    width: 100px;
+    height: 16px;
+    width: 120px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.skeleton-card-value {
+    height: 28px;
+    width: 80px;
     background: linear-gradient(90deg, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.2) 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
-    border-radius: 3px;
+    border-radius: 6px;
 }
 
-.skeleton-card-number {
-    height: 32px;
-    width: 80px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.25) 25%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.25) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 4px;
-}
-
-.skeleton-card-subtitle {
-    height: 12px;
-    width: 120px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 3px;
-}
-
-.skeleton-card-icon {
-    height: 60px;
-    width: 60px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 50%;
-}
-
-.skeleton-table-header {
-    height: 20px;
-    width: 120px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 4px;
-}
-
-.skeleton-table {
-    padding: 1rem;
+.skeleton-table-container {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
 }
 
 .skeleton-table-row {
-    height: 50px;
-    width: 100%;
-    background: linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 75%);
+    height: 60px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
-    border-radius: 6px;
+    border-radius: 8px;
     margin-bottom: 0.5rem;
 }
 
@@ -399,24 +81,224 @@
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.holdings-content {
+    animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 </style>
+{% endblock %}
+
+{% block content %}
+<!-- Holdings Skeleton Loader -->
+<div class="holdings-skeleton" id="holdingsSkeleton">
+    <div class="skeleton-header">
+        <div class="skeleton-title"></div>
+        <div class="skeleton-subtitle"></div>
+    </div>
+
+    <div class="skeleton-cards-grid">
+        <div class="skeleton-card">
+            <div class="skeleton-card-title"></div>
+            <div class="skeleton-card-value"></div>
+        </div>
+        <div class="skeleton-card">
+            <div class="skeleton-card-title"></div>
+            <div class="skeleton-card-value"></div>
+        </div>
+        <div class="skeleton-card">
+            <div class="skeleton-card-title"></div>
+            <div class="skeleton-card-value"></div>
+        </div>
+        <div class="skeleton-card">
+            <div class="skeleton-card-title"></div>
+            <div class="skeleton-card-value"></div>
+        </div>
+    </div>
+
+    <div class="skeleton-table-container">
+        <div class="skeleton-table-body p-3">
+            <div class="skeleton-table-row"></div>
+            <div class="skeleton-table-row"></div>
+            <div class="skeleton-table-row"></div>
+            <div class="skeleton-table-row"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Actual Holdings Content -->
+<div class="holdings-content" id="holdingsContent" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">Portfolio Holdings</h1>
+            <p class="text-muted mb-0">Long-term investment portfolio overview</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary" onclick="refreshHoldings()">
+                <i class="fas fa-sync-alt me-1"></i>Refresh
+            </button>
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-sort me-1"></i>Sort By
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="sortHoldings('symbol')">Symbol A-Z</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="sortHoldings('value')">Market Value</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="sortHoldings('pnl')">P&L</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="sortHoldings('percentage')">P&L %</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Portfolio Summary Cards -->
+    <div class="row mb-4" id="portfolioSummary">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-dark border-0 shadow">
+                <div class="card-body text-center">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <i class="fas fa-briefcase text-primary fs-4"></i>
+                        <span class="badge bg-secondary" id="totalHoldingsCount">0</span>
+                    </div>
+                    <h4 class="text-light mb-1">Holdings</h4>
+                    <p class="text-muted mb-0 small">Total securities</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-dark border-0 shadow">
+                <div class="card-body text-center">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <i class="fas fa-coins text-warning fs-4"></i>
+                        <span class="badge bg-info">INV</span>
+                    </div>
+                    <h4 class="text-warning mb-1" id="totalInvestedValue">₹0.00</h4>
+                    <p class="text-muted mb-0 small">Total Invested</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-dark border-0 shadow">
+                <div class="card-body text-center">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <i class="fas fa-chart-area text-info fs-4"></i>
+                        <span class="badge bg-success">CUR</span>
+                    </div>
+                    <h4 class="text-info mb-1" id="totalCurrentValue">₹0.00</h4>
+                    <p class="text-muted mb-0 small">Current Value</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-dark border-0 shadow">
+                <div class="card-body text-center">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <i class="fas fa-chart-line text-success fs-4"></i>
+                        <span class="badge" id="portfolioPnlBadge">0%</span>
+                    </div>
+                    <h4 class="mb-1" id="totalPortfolioPnl">₹0.00</h4>
+                    <p class="text-muted mb-0 small">Total P&L</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Holdings Table -->
+    <div class="card bg-secondary border-0 shadow-lg">
+        <div class="card-header bg-dark border-0">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-light">
+                    <i class="fas fa-table me-2 text-primary"></i>Holdings Details
+                    <span class="badge bg-primary ms-2" id="holdingsTableCount">0</span>
+                </h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-primary" onclick="exportHoldings()" title="Export Holdings">
+                        <i class="fas fa-download me-1"></i>Export
+                    </button>
+                    <button class="btn btn-sm btn-outline-success" onclick="viewPortfolioAnalysis()" title="Portfolio Analysis">
+                        <i class="fas fa-chart-pie me-1"></i>Analysis
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0 table-sm" id="holdingsTable">
+                    <thead class="table-primary">
+                        <tr>
+                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('symbol')">
+                                SYMBOL <i class="fas fa-sort ms-1 text-muted"></i>
+                            </th>
+                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('exchange')">
+                                EXCHANGE <i class="fas fa-sort ms-1 text-muted"></i>
+                            </th>
+                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('quantity')">
+                                QTY <i class="fas fa-sort ms-1 text-muted"></i>
+                            </th>
+                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('avgPrice')">
+                                AVG PRICE <i class="fas fa-sort ms-1 text-muted"></i>
+                            </th>
+                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('ltp')">
+                                LTP <i class="fas fa-sort ms-1 text-muted"></i>
+                            </th>
+                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('invested')">
+                                INVESTED <i class="fas fa-sort ms-1 text-muted"></i>
+                            </th>
+                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('marketValue')">
+                                CURRENT VALUE <i class="fas fa-sort ms-1 text-muted"></i>
+                            </th>
+                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('pnl')">
+                                P&L <i class="fas fa-sort ms-1 text-muted"></i>
+                            </th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="holdingsTableBody">
+                        <tr>
+                            <td colspan="9" class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading holdings...</span>
+                                </div>
+                                <p class="mt-2 mb-0 text-muted">Loading portfolio data...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
 {% block scripts %}
-<script src="{{"/kotak/static/js/holdings.js"}}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Show skeleton initially
-    document.getElementById('holdingsSkeleton').style.display = 'block';
-    document.getElementById('holdingsContent').style.display = 'none';
-
-    // Hide skeleton after content loads
+    console.log('Holdings page loaded, initializing...');
+    showHoldingsSkeleton();
+    
+    // Hide skeleton after realistic loading time
     setTimeout(function() {
         hideHoldingsSkeleton();
-    }, 2000);
+        loadHoldingsData();
+    }, 2500);
 });
+
+function showHoldingsSkeleton() {
+    const skeleton = document.getElementById('holdingsSkeleton');
+    const content = document.getElementById('holdingsContent');
+    
+    if (skeleton && content) {
+        skeleton.style.display = 'block';
+        content.style.display = 'none';
+    }
+}
 
 function hideHoldingsSkeleton() {
     const skeleton = document.getElementById('holdingsSkeleton');
@@ -436,6 +318,212 @@ function hideHoldingsSkeleton() {
                 content.style.opacity = '1';
             }, 50);
         }, 500);
+    }
+}
+
+function loadHoldingsData() {
+    console.log('Loading holdings data...');
+    
+    fetch('/api/kotak/holdings')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                populateHoldingsTable(data.holdings);
+                updatePortfolioSummary(data.holdings, data.summary);
+            } else {
+                showNoHoldingsMessage();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading holdings:', error);
+            showErrorMessage();
+        });
+}
+
+function populateHoldingsTable(holdings) {
+    const tbody = document.getElementById('holdingsTableBody');
+    if (!tbody) return;
+
+    if (!holdings || holdings.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center py-4">
+                    <i class="fas fa-briefcase fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No holdings found in your portfolio</p>
+                    <button class="btn btn-primary btn-sm" onclick="window.location.href='/portfolio'">Start Investing</button>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    let html = '';
+    holdings.forEach(holding => {
+        const investedValue = calculateInvestedValue(holding);
+        const marketValue = calculateMarketValue(holding);
+        const pnl = marketValue - investedValue;
+        const pnlPercentage = investedValue > 0 ? (pnl / investedValue * 100) : 0;
+        const pnlClass = pnl >= 0 ? 'text-success' : 'text-danger';
+        
+        html += `
+            <tr>
+                <td>
+                    <div>
+                        <strong class="text-white">${holding.symbol || holding.displaySymbol || 'N/A'}</strong>
+                        ${holding.instrumentName ? `<br><small class="text-muted">${holding.instrumentName.substring(0, 25)}...</small>` : ''}
+                    </div>
+                </td>
+                <td><span class="badge bg-info">${holding.exchange || holding.exchangeSegment || 'N/A'}</span></td>
+                <td class="text-info fw-semibold">${holding.quantity || 0}</td>
+                <td class="text-light">₹${formatNumber(holding.averagePrice || holding.avgPrice || 0)}</td>
+                <td class="text-warning fw-semibold">₹${formatNumber(holding.ltp || holding.closingPrice || 0)}</td>
+                <td class="text-info">₹${formatNumber(investedValue)}</td>
+                <td class="text-warning fw-semibold">₹${formatNumber(marketValue)}</td>
+                <td>
+                    <span class="fw-bold ${pnlClass}">
+                        ${pnl >= 0 ? '+' : ''}₹${formatNumber(Math.abs(pnl))}
+                        <br><small class="${pnlClass}">
+                            (${pnl >= 0 ? '+' : ''}${pnlPercentage.toFixed(2)}%)
+                        </small>
+                    </span>
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-success btn-sm" onclick="buyHolding('${holding.symbol}')">
+                            <i class="fas fa-plus"></i> Buy
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="sellHolding('${holding.symbol}', '${holding.quantity}')">
+                            <i class="fas fa-minus"></i> Sell
+                        </button>
+                        <button class="btn btn-info btn-sm" onclick="viewHoldingDetails('${holding.symbol}')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = html;
+    document.getElementById('holdingsTableCount').textContent = holdings.length;
+}
+
+function updatePortfolioSummary(holdings, summary) {
+    if (!holdings) return;
+
+    let totalInvested = 0;
+    let totalCurrent = 0;
+    
+    holdings.forEach(holding => {
+        totalInvested += calculateInvestedValue(holding);
+        totalCurrent += calculateMarketValue(holding);
+    });
+
+    const totalPnL = totalCurrent - totalInvested;
+    const pnlPercentage = totalInvested > 0 ? (totalPnL / totalInvested * 100) : 0;
+
+    document.getElementById('totalHoldingsCount').textContent = holdings.length;
+    document.getElementById('totalInvestedValue').textContent = `₹${formatNumber(totalInvested)}`;
+    document.getElementById('totalCurrentValue').textContent = `₹${formatNumber(totalCurrent)}`;
+    document.getElementById('totalPortfolioPnl').textContent = `₹${formatNumber(Math.abs(totalPnL))}`;
+    
+    const pnlElement = document.getElementById('totalPortfolioPnl');
+    const pnlBadge = document.getElementById('portfolioPnlBadge');
+    
+    pnlElement.className = `mb-1 ${totalPnL >= 0 ? 'text-success' : 'text-danger'}`;
+    pnlElement.textContent = `${totalPnL >= 0 ? '+' : ''}₹${formatNumber(Math.abs(totalPnL))}`;
+    
+    pnlBadge.textContent = `${pnlPercentage >= 0 ? '+' : ''}${pnlPercentage.toFixed(2)}%`;
+    pnlBadge.className = `badge ${pnlPercentage >= 0 ? 'bg-success' : 'bg-danger'}`;
+}
+
+function calculateInvestedValue(holding) {
+    return (holding.quantity || 0) * (holding.averagePrice || holding.avgPrice || 0);
+}
+
+function calculateMarketValue(holding) {
+    return (holding.quantity || 0) * (holding.ltp || holding.closingPrice || 0);
+}
+
+function formatNumber(num) {
+    return Number(num).toLocaleString('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+function refreshHoldings() {
+    showHoldingsSkeleton();
+    setTimeout(() => {
+        hideHoldingsSkeleton();
+        loadHoldingsData();
+    }, 1000);
+}
+
+function sortHoldings(criterion) {
+    console.log('Sorting holdings by:', criterion);
+    // Implement sorting logic here
+}
+
+function sortTable(column) {
+    console.log('Sorting table by:', column);
+    // Implement table sorting logic here
+}
+
+function buyHolding(symbol) {
+    console.log('Buying more of:', symbol);
+    // Implement buy functionality
+}
+
+function sellHolding(symbol, quantity) {
+    if (confirm(`Are you sure you want to sell ${symbol}?`)) {
+        console.log('Selling holding:', symbol, 'Quantity:', quantity);
+        // Implement sell functionality
+    }
+}
+
+function viewHoldingDetails(symbol) {
+    console.log('Viewing details for:', symbol);
+    // Implement holding details modal
+}
+
+function exportHoldings() {
+    console.log('Exporting holdings data...');
+    // Implement export functionality
+}
+
+function viewPortfolioAnalysis() {
+    console.log('Opening portfolio analysis...');
+    // Implement portfolio analysis modal
+}
+
+function showNoHoldingsMessage() {
+    const tbody = document.getElementById('holdingsTableBody');
+    if (tbody) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center py-4">
+                    <i class="fas fa-briefcase fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No holdings found in your portfolio</p>
+                    <button class="btn btn-primary btn-sm" onclick="window.location.href='/portfolio'">Start Investing</button>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+function showErrorMessage() {
+    const tbody = document.getElementById('holdingsTableBody');
+    if (tbody) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center py-4">
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <p class="text-muted">Error loading holdings data</p>
+                    <button class="btn btn-primary btn-sm" onclick="loadHoldingsData()">Retry</button>
+                </td>
+            </tr>
+        `;
     }
 }
 </script>

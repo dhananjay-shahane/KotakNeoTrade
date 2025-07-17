@@ -4,7 +4,7 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <title>{% block title %}Kotak Neo Trading{% endblock %}</title>
-        
+
         <!-- Favicon -->
         <link rel="icon" type="image/x-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiMyNTYzZWIiLz4KPHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAxOCAxOCIgZmlsbD0ibm9uZSIgeD0iNyIgeT0iNyI+CjxwYXRoIGQ9Im0xIDkgNCA0TDE3IDEiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPHN2Zz4KPC9zdmc+">
 
@@ -193,22 +193,22 @@
                         <small class="text-muted">UCC: <span id="kotakUCC">-</span></small>
                     </div>
                 </div>
-                
+
                 <div class="nav-items">
                     <div class="nav-item">
-                        <a href="#" class="nav-link" onclick="loadKotakPage('orders', event)">
+                        <a href="/kotak/orders" class="nav-link">
                             <i class="fas fa-list-alt nav-icon"></i>
                             <span>Orders</span>
                         </a>
                     </div>
                     <div class="nav-item">
-                        <a href="#" class="nav-link" onclick="loadKotakPage('positions', event)">
+                        <a href="/kotak/positions" class="nav-link">
                             <i class="fas fa-chart-bar nav-icon"></i>
                             <span>Positions</span>
                         </a>
                     </div>
                     <div class="nav-item">
-                        <a href="#" class="nav-link" onclick="loadKotakPage('holdings', event)">
+                        <a href="/kotak/holdings" class="nav-link">
                             <i class="fas fa-briefcase nav-icon"></i>
                             <span>Holdings</span>
                         </a>
@@ -223,12 +223,12 @@
                         <i class="fas fa-university me-2"></i>Trading Accounts
                     </h6>
                 </div>
-                
+
                 <!-- Logged-in Accounts -->
                 <div class="logged-accounts" id="loggedAccounts" style="display: none;">
                     <!-- Accounts will be populated by JavaScript -->
                 </div>
-                
+
                 <!-- Login Button (shown when no accounts logged in) -->
                 <div class="account-login" id="accountLogin">
                     <button class="btn-login-account" onclick="showLoginModal()">

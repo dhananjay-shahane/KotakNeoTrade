@@ -109,41 +109,15 @@ function toggleTheme() {
 function loadKotakPage(pageType, event) {
     event.preventDefault();
 
-    // Show loading in main content
-    const mainContent = document.querySelector('.main-content');
-    if (!mainContent) return;
-
-    // Show loading spinner
-    mainContent.innerHTML = `
-        <div class="d-flex justify-content-center align-items-center" style="height: 50vh;">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-            <span class="ms-3">Loading ${pageType.charAt(0).toUpperCase() + pageType.slice(1)}...</span>
-        </div>
-    `;
-
     // Update active nav item
     document.querySelectorAll('.kotak-neo-section .nav-link').forEach(link => {
         link.classList.remove('active');
     });
     event.target.closest('.nav-link').classList.add('active');
 
-    // Fetch page content
-    fetch(`/api/kotak/${pageType}/content`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                mainContent.innerHTML = data.content;
-
-                // Initialize page-specific functionality
-                if (pageType === 'orders') {
-                    initializeOrdersPage();
-                } else if (pageType === 'positions') {
-                    initializePositionsPage();
-                } else if (pageType === 'holdings') {
-                    initializeHoldingsPage();
-                }
+    // Redirect to the appropriate Kotak page
+    window.location.href = `/kotak/${pageType}`;
+}
 
                 // Update browser history
                 history.pushState({page: pageType}, '', `#kotak-${pageType}`);

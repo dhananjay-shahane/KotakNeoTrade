@@ -4,9 +4,8 @@
 {% block title %}Positions - Kotak Neo Trading{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
 <style>
-/* Enhanced Positions Skeleton Loader */
+/* Enhanced Positions Page Styling */
 .positions-skeleton {
     padding: 20px;
     animation: fadeIn 0.3s ease-in;
@@ -24,15 +23,6 @@
     animation: shimmer 1.5s infinite;
     border-radius: 6px;
     margin-bottom: 8px;
-}
-
-.skeleton-subtitle {
-    height: 18px;
-    width: 350px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 4px;
 }
 
 .skeleton-stats-grid {
@@ -86,25 +76,6 @@
     overflow: hidden;
 }
 
-.skeleton-table-header {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.skeleton-table-title {
-    height: 24px;
-    width: 200px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.2) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 6px;
-}
-
-.skeleton-table-body {
-    padding: 1rem;
-}
-
 .skeleton-table-row {
     height: 60px;
     background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
@@ -133,19 +104,27 @@
     from { opacity: 0; transform: translateY(30px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+.position-filter-card:hover {
+    transform: translateY(-2px);
+    transition: all 0.3s ease;
+}
+
+.position-filter-card.active {
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+    border: 2px solid #007bff;
+}
 </style>
 {% endblock %}
 
 {% block content %}
 <!-- Positions Skeleton Loader -->
 <div class="positions-skeleton" id="positionsSkeleton">
-    <!-- Header Skeleton -->
     <div class="skeleton-header">
         <div class="skeleton-title"></div>
         <div class="skeleton-subtitle"></div>
     </div>
 
-    <!-- Stats Cards Skeleton -->
     <div class="skeleton-stats-grid">
         <div class="skeleton-stats-card">
             <div class="skeleton-card-icon"></div>
@@ -169,12 +148,8 @@
         </div>
     </div>
 
-    <!-- Table Skeleton -->
     <div class="skeleton-table-container">
-        <div class="skeleton-table-header">
-            <div class="skeleton-table-title"></div>
-        </div>
-        <div class="skeleton-table-body">
+        <div class="skeleton-table-body p-3">
             <div class="skeleton-table-row"></div>
             <div class="skeleton-table-row"></div>
             <div class="skeleton-table-row"></div>
@@ -288,24 +263,22 @@
                 <table class="table mb-0" id="positionsTable">
                     <thead class="table-primary">
                         <tr>
-                            <th class="sortable" style="cursor: pointer;" title="Click to sort A-Z" onclick="sortTable('symbol')">SYMBOL <i class="fas fa-sort ms-1 text-muted"></i></th>
-                            <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('product')">PRODUCT <i class="fas fa-sort ms-1 text-muted"></i></th>
-                            <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('exchange')">EXCHANGE <i class="fas fa-sort ms-1 text-muted"></i></th>
-                            <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('buyQty')">BUY QTY <i class="fas fa-sort ms-1 text-muted"></i></th>
-                            <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('sellQty')">SELL QTY <i class="fas fa-sort ms-1 text-muted"></i></th>
-                            <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('netQty')">NET QTY <i class="fas fa-sort ms-1 text-muted"></i></th>
-                            <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('buyAmt')">BUY AMOUNT <i class="fas fa-sort ms-1 text-muted"></i></th>
-                            <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('sellAmt')">SELL AMOUNT <i class="fas fa-sort ms-1 text-muted"></i></th>
-                            <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('pnl')">P&L <i class="fas fa-sort ms-1 text-muted"></i></th>
-                            <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('position')">POSITION <i class="fas fa-sort ms-1 text-muted"></i></th>
-                            <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('expiry')">EXPIRY <i class="fas fa-sort ms-1 text-muted"></i></th>
-                            <th class="sortable" style="cursor: pointer;" title="Click to sort" onclick="sortTable('lastUpdated')">LAST UPDATED <i class="fas fa-sort ms-1 text-muted"></i></th>
+                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('symbol')">SYMBOL <i class="fas fa-sort ms-1 text-muted"></i></th>
+                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('product')">PRODUCT <i class="fas fa-sort ms-1 text-muted"></i></th>
+                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('exchange')">EXCHANGE <i class="fas fa-sort ms-1 text-muted"></i></th>
+                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('buyQty')">BUY QTY <i class="fas fa-sort ms-1 text-muted"></i></th>
+                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('sellQty')">SELL QTY <i class="fas fa-sort ms-1 text-muted"></i></th>
+                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('netQty')">NET QTY <i class="fas fa-sort ms-1 text-muted"></i></th>
+                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('buyAmt')">BUY AMOUNT <i class="fas fa-sort ms-1 text-muted"></i></th>
+                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('sellAmt')">SELL AMOUNT <i class="fas fa-sort ms-1 text-muted"></i></th>
+                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('pnl')">P&L <i class="fas fa-sort ms-1 text-muted"></i></th>
+                            <th class="sortable" style="cursor: pointer;" onclick="sortTable('position')">POSITION <i class="fas fa-sort ms-1 text-muted"></i></th>
                             <th>ACTIONS</th>
                         </tr>
                     </thead>
                     <tbody id="positionsTableBody">
                         <tr>
-                            <td colspan="13" class="text-center py-4">
+                            <td colspan="11" class="text-center py-4">
                                 <div class="spinner-border text-primary" role="status">
                                     <span class="visually-hidden">Loading positions...</span>
                                 </div>
@@ -317,118 +290,37 @@
             </div>
         </div>
     </div>
-
-    <!-- Place Order Modal -->
-    <div class="modal fade" id="placeOrderModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content bg-dark">
-                <div class="modal-header border-bottom border-secondary">
-                    <h5 class="modal-title text-light" id="placeOrderModalLabel">
-                        <i class="fas fa-shopping-cart me-2"></i>Place Order
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="placeOrderForm">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">Symbol</label>
-                                <input type="text" class="form-control bg-secondary text-light" id="orderSymbol" readonly>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">Transaction Type</label>
-                                <select class="form-select bg-secondary text-light" id="orderTransactionType">
-                                    <option value="BUY">BUY</option>
-                                    <option value="SELL">SELL</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">Exchange</label>
-                                <input type="text" class="form-control bg-secondary text-light" id="orderExchange" readonly>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">Product</label>
-                                <select class="form-select bg-secondary text-light" id="orderProduct">
-                                    <option value="CNC">CNC</option>
-                                    <option value="MIS">MIS</option>
-                                    <option value="NRML">NRML</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">Order Type</label>
-                                <select class="form-select bg-secondary text-light" id="orderType" onchange="handleOrderTypeChange()">
-                                    <option value="MKT">Market</option>
-                                    <option value="L">Limit</option>
-                                    <option value="SL">Stop Loss</option>
-                                    <option value="SL-M">Stop Loss Market</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">Quantity</label>
-                                <input type="number" class="form-control bg-secondary text-light" id="orderQuantity" min="1" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">Price</label>
-                                <input type="number" class="form-control bg-secondary text-light" id="orderPrice" step="0.01">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">Trigger Price</label>
-                                <input type="number" class="form-control bg-secondary text-light" id="orderTriggerPrice" step="0.01">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">Validity</label>
-                                <select class="form-select bg-secondary text-light" id="orderValidity">
-                                    <option value="DAY">DAY</option>
-                                    <option value="IOC">IOC</option>
-                                    <option value="GTT">GTT</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">Disclosed Quantity</label>
-                                <input type="number" class="form-control bg-secondary text-light" id="orderDisclosedQuantity" min="0" value="0">
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer border-top border-secondary">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="submitPlaceOrder()">Place Order</button>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Positions page loaded, initializing skeleton...');
+    console.log('Positions page loaded, initializing...');
+    showPositionsSkeleton();
     
-    // Show skeleton initially
+    // Hide skeleton after realistic loading time
+    setTimeout(function() {
+        hidePositionsSkeleton();
+        loadPositionsData();
+    }, 2500);
+});
+
+function showPositionsSkeleton() {
     const skeleton = document.getElementById('positionsSkeleton');
     const content = document.getElementById('positionsContent');
     
     if (skeleton && content) {
         skeleton.style.display = 'block';
         content.style.display = 'none';
-        
-        console.log('Skeleton displayed, content hidden');
-        
-        // Hide skeleton after a realistic loading time
-        setTimeout(function() {
-            hidePositionsSkeleton();
-        }, 2500);
     }
-});
+}
 
 function hidePositionsSkeleton() {
     const skeleton = document.getElementById('positionsSkeleton');
     const content = document.getElementById('positionsContent');
 
     if (skeleton && content) {
-        console.log('Hiding skeleton, showing content...');
-        
         skeleton.style.transition = 'opacity 0.5s ease-out';
         skeleton.style.opacity = '0';
 
@@ -440,26 +332,235 @@ function hidePositionsSkeleton() {
 
             setTimeout(function() {
                 content.style.opacity = '1';
-                console.log('Content fully visible');
             }, 50);
         }, 500);
     }
 }
 
-// Manual function to show skeleton (for testing)
-function showPositionsSkeleton() {
-    const skeleton = document.getElementById('positionsSkeleton');
-    const content = document.getElementById('positionsContent');
+function loadPositionsData() {
+    console.log('Loading positions data...');
     
-    if (skeleton && content) {
-        content.style.display = 'none';
-        skeleton.style.display = 'block';
-        skeleton.style.opacity = '1';
+    fetch('/api/kotak/positions')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                populatePositionsTable(data.positions);
+                updatePositionsSummary(data.positions, data.summary);
+            } else {
+                showNoPositionsMessage();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading positions:', error);
+            showErrorMessage();
+        });
+}
+
+function populatePositionsTable(positions) {
+    const tbody = document.getElementById('positionsTableBody');
+    if (!tbody) return;
+
+    if (!positions || positions.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="11" class="text-center py-4">
+                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No active positions found</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    let html = '';
+    positions.forEach(position => {
+        const pnl = calculatePnL(position);
+        const pnlClass = pnl >= 0 ? 'text-success' : 'text-danger';
+        const positionType = getPositionType(position);
+        const positionClass = positionType === 'LONG' ? 'text-success' : 'text-danger';
+        
+        html += `
+            <tr>
+                <td>
+                    <strong>${position.symbol || position.trading_symbol}</strong>
+                    ${position.instrument_name ? `<br><small class="text-muted">${position.instrument_name}</small>` : ''}
+                </td>
+                <td><span class="badge bg-info">${position.product || 'N/A'}</span></td>
+                <td><span class="badge bg-secondary">${position.exchange || position.exchange_segment}</span></td>
+                <td class="text-success">${position.buy_qty || position.buyQty || 0}</td>
+                <td class="text-danger">${position.sell_qty || position.sellQty || 0}</td>
+                <td class="text-warning"><strong>${position.net_qty || position.netQty || 0}</strong></td>
+                <td>₹${formatNumber(position.buy_amt || position.buyAmt || 0)}</td>
+                <td>₹${formatNumber(position.sell_amt || position.sellAmt || 0)}</td>
+                <td>
+                    <span class="${pnlClass} fw-bold">
+                        ${pnl >= 0 ? '+' : ''}₹${formatNumber(Math.abs(pnl))}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge ${positionClass.includes('success') ? 'bg-success' : 'bg-danger'}">
+                        ${positionType}
+                    </span>
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-success btn-sm" onclick="squareOffPosition('${position.symbol}', '${position.net_qty}')">
+                            Square Off
+                        </button>
+                        <button class="btn btn-info btn-sm" onclick="viewPositionDetails('${position.symbol}')">
+                            Details
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = html;
+    document.getElementById('positionsTableCount').textContent = positions.length;
+}
+
+function updatePositionsSummary(positions, summary) {
+    if (!positions) return;
+
+    const stats = calculatePositionsStats(positions);
+    
+    document.getElementById('totalPositionsCount').textContent = stats.total;
+    document.getElementById('longPositionsCount').textContent = stats.longCount;
+    document.getElementById('shortPositionsCount').textContent = stats.shortCount;
+    document.getElementById('longPositionsValue').textContent = `₹${formatNumber(stats.longValue)}`;
+    document.getElementById('shortPositionsValue').textContent = `₹${formatNumber(stats.shortValue)}`;
+    document.getElementById('totalPnlValue').textContent = `₹${formatNumber(stats.totalPnL)}`;
+    
+    const pnlBadge = document.getElementById('pnlBadge');
+    const pnlPercentage = stats.totalInvested > 0 ? (stats.totalPnL / stats.totalInvested * 100) : 0;
+    pnlBadge.textContent = `${pnlPercentage >= 0 ? '+' : ''}${pnlPercentage.toFixed(2)}%`;
+    pnlBadge.className = `badge ${pnlPercentage >= 0 ? 'bg-success' : 'bg-danger'}`;
+}
+
+function calculatePositionsStats(positions) {
+    let stats = {
+        total: positions.length,
+        longCount: 0,
+        shortCount: 0,
+        longValue: 0,
+        shortValue: 0,
+        totalPnL: 0,
+        totalInvested: 0
+    };
+
+    positions.forEach(position => {
+        const netQty = position.net_qty || position.netQty || 0;
+        const pnl = calculatePnL(position);
+        const value = Math.abs((position.buy_amt || position.buyAmt || 0) - (position.sell_amt || position.sellAmt || 0));
+        
+        stats.totalPnL += pnl;
+        stats.totalInvested += value;
+        
+        if (netQty > 0) {
+            stats.longCount++;
+            stats.longValue += value;
+        } else if (netQty < 0) {
+            stats.shortCount++;
+            stats.shortValue += value;
+        }
+    });
+
+    return stats;
+}
+
+function calculatePnL(position) {
+    const buyAmt = position.buy_amt || position.buyAmt || 0;
+    const sellAmt = position.sell_amt || position.sellAmt || 0;
+    const unrealized = position.unrealized_pnl || position.unrealizedPnL || 0;
+    const realized = position.realized_pnl || position.realizedPnL || 0;
+    
+    return unrealized + realized || (sellAmt - buyAmt);
+}
+
+function getPositionType(position) {
+    const netQty = position.net_qty || position.netQty || 0;
+    return netQty > 0 ? 'LONG' : netQty < 0 ? 'SHORT' : 'FLAT';
+}
+
+function formatNumber(num) {
+    return Number(num).toLocaleString('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+function refreshPositions() {
+    showPositionsSkeleton();
+    setTimeout(() => {
+        hidePositionsSkeleton();
+        loadPositionsData();
+    }, 1000);
+}
+
+function filterPositionsByType(type) {
+    console.log('Filtering positions by:', type);
+    // Implement filter logic here
+}
+
+function sortTable(column) {
+    console.log('Sorting by:', column);
+    // Implement sorting logic here
+}
+
+function setAutoRefresh(seconds) {
+    document.getElementById('refreshInterval').textContent = seconds > 0 ? `${seconds}s` : 'Off';
+    
+    // Clear existing interval
+    if (window.positionsRefreshInterval) {
+        clearInterval(window.positionsRefreshInterval);
+    }
+    
+    // Set new interval if seconds > 0
+    if (seconds > 0) {
+        window.positionsRefreshInterval = setInterval(loadPositionsData, seconds * 1000);
     }
 }
 
-// Make hidePositionsSkeleton globally available
-window.hidePositionsSkeleton = hidePositionsSkeleton;
+function squareOffPosition(symbol, netQty) {
+    if (confirm(`Are you sure you want to square off position for ${symbol}?`)) {
+        console.log('Squaring off position:', symbol, netQty);
+        // Implement square off logic here
+    }
+}
+
+function viewPositionDetails(symbol) {
+    console.log('Viewing position details for:', symbol);
+    // Implement position details modal
+}
+
+function showNoPositionsMessage() {
+    const tbody = document.getElementById('positionsTableBody');
+    if (tbody) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="11" class="text-center py-4">
+                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No active positions found</p>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+function showErrorMessage() {
+    const tbody = document.getElementById('positionsTableBody');
+    if (tbody) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="11" class="text-center py-4">
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <p class="text-muted">Error loading positions data</p>
+                    <button class="btn btn-primary btn-sm" onclick="loadPositionsData()">Retry</button>
+                </td>
+            </tr>
+        `;
+    }
+}
 </script>
-<script src="{{ "/kotak/static/js/positions.js" }}"></script>
 {% endblock %}
