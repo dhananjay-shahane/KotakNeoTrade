@@ -308,3 +308,303 @@ if __name__ == '__main__':
 
     print("Application started successfully")
     app.run(host='0.0.0.0', port=5000, debug=True)
+
+# API endpoints for dynamic Kotak page content
+@app.route('/api/kotak/<page_type>/content')
+def api_kotak_page_content(page_type):
+    """API endpoint to get dynamic content for Kotak pages"""
+    from flask_login import current_user
+    
+    if not current_user.is_authenticated:
+        return jsonify({'success': False, 'message': 'Authentication required'}), 401
+    
+    try:
+        if page_type == 'orders':
+            content = generate_orders_content()
+        elif page_type == 'positions':
+            content = generate_positions_content()
+        elif page_type == 'holdings':
+            content = generate_holdings_content()
+        else:
+            return jsonify({'success': False, 'message': 'Invalid page type'}), 400
+        
+        return jsonify({'success': True, 'content': content})
+    
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/kotak/orders')
+def api_kotak_orders_data():
+    """API endpoint for orders data"""
+    from flask_login import current_user
+    
+    if not current_user.is_authenticated:
+        return jsonify({'success': False, 'message': 'Authentication required'}), 401
+    
+    try:
+        # Mock data for now - replace with actual Kotak API integration
+        orders = [
+            {
+                'orderId': 'ORD001',
+                'tradingSymbol': 'RELIANCE',
+                'transactionType': 'BUY',
+                'quantity': 100,
+                'price': 2500.50,
+                'status': 'COMPLETE',
+                'orderTime': '2024-01-15 10:30:00'
+            },
+            {
+                'orderId': 'ORD002',
+                'tradingSymbol': 'TCS',
+                'transactionType': 'SELL',
+                'quantity': 50,
+                'price': 3200.75,
+                'status': 'PENDING',
+                'orderTime': '2024-01-15 11:45:00'
+            }
+        ]
+        
+        return jsonify({'success': True, 'orders': orders})
+    
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/kotak/positions')
+def api_kotak_positions_data():
+    """API endpoint for positions data"""
+    from flask_login import current_user
+    
+    if not current_user.is_authenticated:
+        return jsonify({'success': False, 'message': 'Authentication required'}), 401
+    
+    try:
+        # Mock data for now - replace with actual Kotak API integration
+        positions = [
+            {
+                'tradingSymbol': 'RELIANCE',
+                'netQty': 100,
+                'avgPrice': 2500.50,
+                'ltp': 2550.25,
+                'pnl': 4975.00,
+                'pnlPercent': 1.99
+            },
+            {
+                'tradingSymbol': 'TCS',
+                'netQty': -50,
+                'avgPrice': 3200.75,
+                'ltp': 3180.50,
+                'pnl': 1012.50,
+                'pnlPercent': 0.63
+            }
+        ]
+        
+        summary = {
+            'total_positions': len(positions),
+            'total_pnl': sum(p['pnl'] for p in positions),
+            'long_positions': sum(1 for p in positions if p['netQty'] > 0),
+            'short_positions': sum(1 for p in positions if p['netQty'] < 0)
+        }
+        
+        return jsonify({'success': True, 'positions': positions, 'summary': summary})
+    
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/kotak/holdings')
+def api_kotak_holdings_data():
+    """API endpoint for holdings data"""
+    from flask_login import current_user
+    
+    if not current_user.is_authenticated:
+        return jsonify({'success': False, 'message': 'Authentication required'}), 401
+    
+    try:
+        # Mock data for now - replace with actual Kotak API integration
+        holdings = [
+            {
+                'tradingSymbol': 'INFY',
+                'quantity': 200,
+                'avgPrice': 1500.00,
+                'ltp': 1580.50,
+                'investedValue': 300000.00,
+                'currentValue': 316100.00,
+                'pnl': 16100.00
+            },
+            {
+                'tradingSymbol': 'HDFC',
+                'quantity': 150,
+                'avgPrice': 2800.00,
+                'ltp': 2750.25,
+                'investedValue': 420000.00,
+                'currentValue': 412537.50,
+                'pnl': -7462.50
+            }
+        ]
+        
+        summary = {
+            'total_holdings': len(holdings),
+            'total_invested': sum(h['investedValue'] for h in holdings),
+            'current_value': sum(h['currentValue'] for h in holdings),
+            'total_pnl': sum(h['pnl'] for h in holdings)
+        }
+        
+        return jsonify({'success': True, 'holdings': holdings, 'summary': summary})
+    
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+def generate_orders_content():
+    """Generate HTML content for orders page"""
+    return """
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-1">Orders</h1>
+                <p class="text-muted mb-0">View and manage your trading orders</p>
+            </div>
+            <div>
+                <button class="btn btn-primary" onclick="loadOrdersData()">
+                    <i class="fas fa-sync me-1"></i>Refresh
+                </button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Order History</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped" id="ordersTable">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Symbol</th>
+                                <th>Type</th>
+                                <th>Quantity</th>
+                                <th>Price</th>
+                                <th>Status</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="7" class="text-center">Loading orders...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    """
+
+def generate_positions_content():
+    """Generate HTML content for positions page"""
+    return """
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-1">Positions</h1>
+                <p class="text-muted mb-0">Current trading positions and P&L</p>
+            </div>
+            <div>
+                <button class="btn btn-primary" onclick="loadPositionsData()">
+                    <i class="fas fa-sync me-1"></i>Refresh
+                </button>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">Positions Summary</h6>
+            </div>
+            <div class="card-body" id="positionsSummary">
+                <div class="text-center">Loading summary...</div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Active Positions</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped" id="positionsTable">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Qty</th>
+                                <th>Avg Price</th>
+                                <th>LTP</th>
+                                <th>P&L</th>
+                                <th>P&L %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="6" class="text-center">Loading positions...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    """
+
+def generate_holdings_content():
+    """Generate HTML content for holdings page"""
+    return """
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-1">Holdings</h1>
+                <p class="text-muted mb-0">Long-term investment portfolio</p>
+            </div>
+            <div>
+                <button class="btn btn-primary" onclick="loadHoldingsData()">
+                    <i class="fas fa-sync me-1"></i>Refresh
+                </button>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">Portfolio Summary</h6>
+            </div>
+            <div class="card-body" id="holdingsSummary">
+                <div class="text-center">Loading summary...</div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Holdings Details</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped" id="holdingsTable">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Quantity</th>
+                                <th>Avg Price</th>
+                                <th>LTP</th>
+                                <th>Invested</th>
+                                <th>Current Value</th>
+                                <th>P&L</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="7" class="text-center">Loading holdings...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    """
+

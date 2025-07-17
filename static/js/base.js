@@ -32,12 +32,12 @@ function handleTouchStart(event) {
 
 function handleTouchMove(event) {
     if (!touchStartX || !touchStartY) return;
-    
+
     var touchEndX = event.touches[0].clientX;
     var touchEndY = event.touches[0].clientY;
     var diffX = touchStartX - touchEndX;
     var diffY = touchStartY - touchEndY;
-    
+
     // Only handle horizontal swipes
     if (Math.abs(diffX) > Math.abs(diffY)) {
         // Swipe left to close sidebar
@@ -48,7 +48,7 @@ function handleTouchMove(event) {
             }
         }
     }
-    
+
     touchStartX = 0;
     touchStartY = 0;
 }
@@ -83,22 +83,283 @@ window.addEventListener("resize", function () {
 });
 
 // Theme toggle functionality
-document.addEventListener("DOMContentLoaded", function () {
-    const themeToggle = document.getElementById("themeToggle");
-    const currentTheme = localStorage.getItem("theme") || "dark";
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
 
-    // Set initial theme
-    document.documentElement.setAttribute("data-theme", currentTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+
+    // Update toggle state
+    const themeToggle = document.getElementById('themeToggle');
     if (themeToggle) {
-        themeToggle.checked = currentTheme === "light";
-
-        themeToggle.addEventListener("change", function () {
-            const newTheme = this.checked ? "light" : "dark";
-            document.documentElement.setAttribute("data-theme", newTheme);
-            localStorage.setItem("theme", newTheme);
-        });
+        themeToggle.checked = newTheme === 'light';
     }
-});
+}
+
+// Dynamic Kotak page loading
+function loadKotakPage(pageType, event) {
+    event.preventDefault();
+
+    // Show loading in main content
+    const mainContent = document.querySelector('.main-content');
+    if (!mainContent) return;
+
+    // Show loading spinner
+    mainContent.innerHTML = `
+        <div class="d-flex justify-content-center align-items-center" style="height: 50vh;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <span class="ms-3">Loading ${pageType.charAt(0).toUpperCase() + pageType.slice(1)}...</span>
+        </div>
+    `;
+
+    // Update active nav item
+    document.querySelectorAll('.kotak-neo-section .nav-link').forEach(link => {
+        link.classList.remove('active');
+    });
+    event.target.closest('.nav-link').classList.add('active');
+
+    // Fetch page content
+    fetch(`/api/kotak/${pageType}/content`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                mainContent.innerHTML = data.content;
+
+                // Initialize page-specific functionality
+                if (pageType === 'orders') {
+                    initializeOrdersPage();
+                } else if (pageType === 'positions') {
+                    initializePositionsPage();
+                } else if (pageType === 'holdings') {
+                    initializeHoldingsPage();
+                }
+
+                // Update browser history
+                history.pushState({page: pageType}, '', `#kotak-${pageType}`);
+            } else {
+                mainContent.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error loading ${pageType}: ${data.message}
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading page:', error);
+            mainContent.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Failed to load ${pageType}. Please try again.
+                </div>
+            `;
+        });
+}
+
+// Initialize page-specific functionality
+function initializeOrdersPage() {
+    // Load orders data
+    loadOrdersData();
+
+    // Set up auto-refresh
+    if (window.ordersRefreshInterval) {
+        clearInterval(window.ordersRefreshInterval);
+    }
+    window.ordersRefreshInterval = setInterval(loadOrdersData, 30000);
+}
+
+function initializePositionsPage() {
+    // Load positions data
+    loadPositionsData();
+
+    // Set up auto-refresh
+    if (window.positionsRefreshInterval) {
+        clearInterval(window.positionsRefreshInterval);
+    }
+    window.positionsRefreshInterval = setInterval(loadPositionsData, 30000);
+}
+
+function initializeHoldingsPage() {
+    // Load holdings data
+    loadHoldingsData();
+
+    // Set up auto-refresh
+    if (window.holdingsRefreshInterval) {
+        clearInterval(window.holdingsRefreshInterval);
+    }
+    window.holdingsRefreshInterval = setInterval(loadHoldingsData, 30000);
+}
+
+// Data loading functions
+function loadOrdersData() {
+    fetch('/api/kotak/orders')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateOrdersTable(data.orders);
+            }
+        })
+        .catch(error => console.error('Error loading orders:', error));
+}
+
+function loadPositionsData() {
+    fetch('/api/kotak/positions')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updatePositionsTable(data.positions);
+                updatePositionsSummary(data.summary);
+            }
+        })
+        .catch(error => console.error('Error loading positions:', error));
+}
+
+function loadHoldingsData() {
+    fetch('/api/kotak/holdings')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateHoldingsTable(data.holdings);
+                updateHoldingsSummary(data.summary);
+            }
+        })
+        .catch(error => console.error('Error loading holdings:', error));
+}
+
+// Table update functions
+function updateOrdersTable(orders) {
+    const tableBody = document.querySelector('#ordersTable tbody');
+    if (!tableBody) return;
+
+    tableBody.innerHTML = orders.map(order => `
+        <tr>
+            <td>${order.orderId || '-'}</td>
+            <td>${order.tradingSymbol || '-'}</td>
+            <td>${order.transactionType || '-'}</td>
+            <td>${order.quantity || '-'}</td>
+            <td>₹${order.price || '0'}</td>
+            <td><span class="badge ${getOrderStatusClass(order.status)}">${order.status || '-'}</span></td>
+            <td>${order.orderTime || '-'}</td>
+        </tr>
+    `).join('');
+}
+
+function updatePositionsTable(positions) {
+    const tableBody = document.querySelector('#positionsTable tbody');
+    if (!tableBody) return;
+
+    tableBody.innerHTML = positions.map(position => `
+        <tr>
+            <td>${position.tradingSymbol || '-'}</td>
+            <td>${position.netQty || '0'}</td>
+            <td>₹${position.avgPrice || '0'}</td>
+            <td>₹${position.ltp || '0'}</td>
+            <td class="${getPnlClass(position.pnl)}">₹${position.pnl || '0'}</td>
+            <td class="${getPnlClass(position.pnlPercent)}">${position.pnlPercent || '0'}%</td>
+        </tr>
+    `).join('');
+}
+
+function updateHoldingsTable(holdings) {
+    const tableBody = document.querySelector('#holdingsTable tbody');
+    if (!tableBody) return;
+
+    tableBody.innerHTML = holdings.map(holding => `
+        <tr>
+            <td>${holding.tradingSymbol || '-'}</td>
+            <td>${holding.quantity || '0'}</td>
+            <td>₹${holding.avgPrice || '0'}</td>
+            <td>₹${holding.ltp || '0'}</td>
+            <td>₹${holding.investedValue || '0'}</td>
+            <td>₹${holding.currentValue || '0'}</td>
+            <td class="${getPnlClass(holding.pnl)}">₹${holding.pnl || '0'}</td>
+        </tr>
+    `).join('');
+}
+
+// Helper functions
+function getOrderStatusClass(status) {
+    switch(status?.toLowerCase()) {
+        case 'complete': return 'bg-success';
+        case 'pending': return 'bg-warning';
+        case 'cancelled': return 'bg-danger';
+        default: return 'bg-secondary';
+    }
+}
+
+function getPnlClass(value) {
+    const numValue = parseFloat(value) || 0;
+    return numValue >= 0 ? 'text-success' : 'text-danger';
+}
+
+function updatePositionsSummary(summary) {
+    if (!summary) return;
+
+    const summaryElement = document.querySelector('#positionsSummary');
+    if (summaryElement) {
+        summaryElement.innerHTML = `
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="summary-card">
+                        <h6>Total Positions</h6>
+                        <p>${summary.total_positions || 0}</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="summary-card">
+                        <h6>Total P&L</h6>
+                        <p class="${getPnlClass(summary.total_pnl)}">₹${summary.total_pnl || 0}</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="summary-card">
+                        <h6>Long Positions</h6>
+                        <p>${summary.long_positions || 0}</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="summary-card">
+                        <h6>Short Positions</h6>
+                        <p>${summary.short_positions || 0}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function updateHoldingsSummary(summary) {
+    if (!summary) return;
+
+    const summaryElement = document.querySelector('#holdingsSummary');
+    if (summaryElement) {
+        summaryElement.innerHTML = `
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="summary-card">
+                        <h6>Total Holdings</h6>
+                        <p>${summary.total_holdings || 0}</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="summary-card">
+                        <h6>Invested Value</h6>
+                        <p>₹${summary.total_invested || 0}</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="summary-card">
+                        <h6>Current Value</h6>
+                        <p>₹${summary.current_value || 0}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+}
 
 // User menu toggle
 function toggleUserMenu() {
@@ -369,10 +630,10 @@ function showKotakLoginForm() {
     document.querySelectorAll('.broker-card').forEach(card => {
         card.classList.remove('active');
     });
-    
+
     // Add active class to Kotak card
     document.getElementById('kotakCard').classList.add('active');
-    
+
     document.getElementById('welcomeScreen').style.display = 'none';
     document.getElementById('kotakLoginForm').style.display = 'block';
 }
@@ -382,7 +643,7 @@ function goBackToBrokerSelection() {
     document.querySelectorAll('.broker-card').forEach(card => {
         card.classList.remove('active');
     });
-    
+
     document.getElementById('kotakLoginForm').style.display = 'none';
     document.getElementById('welcomeScreen').style.display = 'block';
 }
@@ -447,15 +708,15 @@ document.addEventListener('DOMContentLoaded', function() {
             // Reset to default state - Kotak Neo selected
             const welcomeScreen = document.getElementById('welcomeScreen');
             const kotakLoginForm = document.getElementById('kotakLoginForm');
-            
+
             if (welcomeScreen) welcomeScreen.style.display = 'none';
             if (kotakLoginForm) kotakLoginForm.style.display = 'block';
-            
+
             // Remove active class from all broker cards
             document.querySelectorAll('.broker-card').forEach(card => {
                 card.classList.remove('active');
             });
-            
+
             // Add active class to Kotak card
             const kotakCard = document.getElementById('kotakCard');
             if (kotakCard) kotakCard.classList.add('active');
@@ -476,11 +737,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const kotakCard = document.getElementById('kotakCard');
         const welcomeScreen = document.getElementById('welcomeScreen');
         const kotakLoginForm = document.getElementById('kotakLoginForm');
-        
+
         if (kotakCard) {
             kotakCard.classList.add('active');
         }
-        
+
         // Ensure correct initial state
         if (welcomeScreen) welcomeScreen.style.display = 'none';
         if (kotakLoginForm) kotakLoginForm.style.display = 'block';
@@ -705,16 +966,16 @@ if (typeof toggleSidebar !== "function") {
 // Kotak Neo Login Functionality
 async function handleKotakLogin(event) {
     event.preventDefault();
-    
+
     const form = event.target;
     const formData = new FormData(form);
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
-    
+
     // Show loading state
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Logging in...';
-    
+
     try {
         const response = await fetch('/api/kotak/login', {
             method: 'POST',
@@ -728,9 +989,9 @@ async function handleKotakLogin(event) {
                 totp_code: formData.get('totp_code')
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             // Show success message
             Swal.fire({
@@ -740,22 +1001,22 @@ async function handleKotakLogin(event) {
                 timer: 2000,
                 showConfirmButton: false
             });
-            
+
             // Close modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
             if (modal) {
                 modal.hide();
             }
-            
+
             // Update sidebar with account info
             updateSidebarWithAccounts();
-            
+
             // Show Kotak Neo section
             showKotakNeoSection(data.account);
-            
+
             // Reset form
             form.reset();
-            
+
         } else {
             // Show error message
             Swal.fire({
@@ -765,7 +1026,7 @@ async function handleKotakLogin(event) {
                 confirmButtonText: 'Try Again'
             });
         }
-        
+
     } catch (error) {
         console.error('Login error:', error);
         Swal.fire({
@@ -785,26 +1046,27 @@ async function handleKotakLogin(event) {
 async function updateSidebarWithAccounts() {
     try {
         const response = await fetch('/api/kotak/accounts');
-        const data = await response.json();
-        
+        const data = await previous generation.
+response.json();
+
         if (data.success && data.accounts.length > 0) {
             const loggedAccountsContainer = document.getElementById('loggedAccounts');
             const accountLoginContainer = document.getElementById('accountLogin');
-            
+
             if (loggedAccountsContainer && accountLoginContainer) {
                 // Hide login button and show accounts
                 accountLoginContainer.style.display = 'none';
                 loggedAccountsContainer.style.display = 'block';
-                
+
                 // Clear existing accounts
                 loggedAccountsContainer.innerHTML = '';
-                
+
                 // Add each account
                 data.accounts.forEach(account => {
                     const accountElement = createAccountElement(account);
                     loggedAccountsContainer.appendChild(accountElement);
                 });
-                
+
                 // Add "Add Account" button
                 const addAccountBtn = document.createElement('button');
                 addAccountBtn.className = 'btn-add-account';
@@ -812,18 +1074,18 @@ async function updateSidebarWithAccounts() {
                 addAccountBtn.onclick = () => showLoginModal();
                 loggedAccountsContainer.appendChild(addAccountBtn);
             }
-            
+
         } else {
             // Show login button if no accounts
             const loggedAccountsContainer = document.getElementById('loggedAccounts');
             const accountLoginContainer = document.getElementById('accountLogin');
-            
+
             if (loggedAccountsContainer && accountLoginContainer) {
                 loggedAccountsContainer.style.display = 'none';
                 accountLoginContainer.style.display = 'block';
             }
         }
-        
+
     } catch (error) {
         console.error('Error updating sidebar:', error);
     }
@@ -833,10 +1095,10 @@ async function updateSidebarWithAccounts() {
 function createAccountElement(account) {
     const accountDiv = document.createElement('div');
     accountDiv.className = `kotak-account-item ${account.is_logged_in ? 'active' : ''}`;
-    
+
     const statusClass = account.is_logged_in ? '' : 'offline';
     const statusText = account.is_logged_in ? 'Online' : 'Offline';
-    
+
     accountDiv.innerHTML = `
         <div class="account-header">
             <div class="account-title">
@@ -848,7 +1110,7 @@ function createAccountElement(account) {
                 <span>${statusText}</span>
             </div>
         </div>
-        
+
         <div class="account-details">
             <div class="account-detail">
                 <span class="account-label">UCC:</span>
@@ -865,7 +1127,7 @@ function createAccountElement(account) {
                 </div>
             ` : ''}
         </div>
-        
+
         <div class="account-actions">
             ${account.is_logged_in ? `
                 <button class="btn-account-action btn-account-switch" onclick="switchAccount(${account.id})">
@@ -883,7 +1145,7 @@ function createAccountElement(account) {
             </button>
         </div>
     `;
-    
+
     return accountDiv;
 }
 
@@ -896,9 +1158,9 @@ async function switchAccount(accountId) {
                 'Content-Type': 'application/json',
             }
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             Swal.fire({
                 icon: 'success',
@@ -907,10 +1169,10 @@ async function switchAccount(accountId) {
                 timer: 1500,
                 showConfirmButton: false
             });
-            
+
             // Update sidebar
             updateSidebarWithAccounts();
-            
+
         } else {
             Swal.fire({
                 icon: 'error',
@@ -919,7 +1181,7 @@ async function switchAccount(accountId) {
                 confirmButtonText: 'OK'
             });
         }
-        
+
     } catch (error) {
         console.error('Switch error:', error);
         Swal.fire({
@@ -944,7 +1206,7 @@ async function logoutAccount(accountId) {
             confirmButtonText: 'Yes, logout',
             cancelButtonText: 'Cancel'
         });
-        
+
         if (result.isConfirmed) {
             const response = await fetch(`/api/kotak/logout/${accountId}`, {
                 method: 'POST',
@@ -952,9 +1214,9 @@ async function logoutAccount(accountId) {
                     'Content-Type': 'application/json',
                 }
             });
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 Swal.fire({
                     icon: 'success',
@@ -963,10 +1225,10 @@ async function logoutAccount(accountId) {
                     timer: 1500,
                     showConfirmButton: false
                 });
-                
+
                 // Update sidebar
                 updateSidebarWithAccounts();
-                
+
             } else {
                 Swal.fire({
                     icon: 'error',
@@ -976,7 +1238,7 @@ async function logoutAccount(accountId) {
                 });
             }
         }
-        
+
     } catch (error) {
         console.error('Logout error:', error);
         Swal.fire({
@@ -991,11 +1253,11 @@ async function logoutAccount(accountId) {
 // Format date for display
 function formatDate(dateString) {
     if (!dateString) return 'Never';
-    
+
     const date = new Date(dateString);
     const now = new Date();
     const diff = now - date;
-    
+
     // If less than 24 hours ago
     if (diff < 24 * 60 * 60 * 1000) {
         if (diff < 60 * 60 * 1000) {
@@ -1014,11 +1276,11 @@ function formatDate(dateString) {
 function showKotakNeoSection(account) {
     const kotakNeoSection = document.getElementById('kotakNeoSection');
     const kotakUCC = document.getElementById('kotakUCC');
-    
+
     if (kotakNeoSection && kotakUCC) {
         kotakNeoSection.style.display = 'block';
         kotakUCC.textContent = account.ucc || 'N/A';
-        
+
         // Update active navigation link based on current page
         updateActiveNavLink();
     }
@@ -1027,7 +1289,7 @@ function showKotakNeoSection(account) {
 // Hide Kotak Neo section when no accounts are logged in
 function hideKotakNeoSection() {
     const kotakNeoSection = document.getElementById('kotakNeoSection');
-    
+
     if (kotakNeoSection) {
         kotakNeoSection.style.display = 'none';
     }
@@ -1037,7 +1299,7 @@ function hideKotakNeoSection() {
 function updateActiveNavLink() {
     const currentPath = window.location.pathname;
     const navLinks = document.querySelectorAll('.kotak-neo-section .nav-link');
-    
+
     navLinks.forEach(link => {
         link.classList.remove('active');
         if (link.getAttribute('href') === currentPath) {
@@ -1051,51 +1313,51 @@ async function updateSidebarWithAccountsEnhanced() {
     try {
         const response = await fetch('/api/kotak/accounts');
         const data = await response.json();
-        
+
         if (data.success && data.accounts.length > 0) {
             const loggedAccountsContainer = document.getElementById('loggedAccounts');
             const accountLoginContainer = document.getElementById('accountLogin');
-            
+
             if (loggedAccountsContainer && accountLoginContainer) {
                 // Hide login button and show accounts
                 accountLoginContainer.style.display = 'none';
                 loggedAccountsContainer.style.display = 'block';
-                
+
                 // Clear existing accounts
                 loggedAccountsContainer.innerHTML = '';
-                
+
                 // Add each account
                 data.accounts.forEach(account => {
                     const accountElement = createAccountElement(account);
                     loggedAccountsContainer.appendChild(accountElement);
                 });
-                
+
                 // Add "Add Account" button
                 const addAccountBtn = document.createElement('button');
                 addAccountBtn.className = 'btn-add-account';
                 addAccountBtn.innerHTML = '<i class="fas fa-plus me-2"></i>Add Another Account';
                 addAccountBtn.onclick = () => showLoginModal();
                 loggedAccountsContainer.appendChild(addAccountBtn);
-                
+
                 // Show Kotak Neo section with active account
                 const activeAccount = data.accounts.find(acc => acc.is_logged_in) || data.accounts[0];
                 showKotakNeoSection(activeAccount);
             }
-            
+
         } else {
             // Show login button if no accounts
             const loggedAccountsContainer = document.getElementById('loggedAccounts');
             const accountLoginContainer = document.getElementById('accountLogin');
-            
+
             if (loggedAccountsContainer && accountLoginContainer) {
                 loggedAccountsContainer.style.display = 'none';
                 accountLoginContainer.style.display = 'block';
-                
+
                 // Hide Kotak Neo section
                 hideKotakNeoSection();
             }
         }
-        
+
     } catch (error) {
         console.error('Error updating sidebar:', error);
         hideKotakNeoSection();
@@ -1111,7 +1373,7 @@ async function updateSidebarWithAccounts() {
 document.addEventListener('DOMContentLoaded', function() {
     // Update sidebar with accounts if user is logged in
     updateSidebarWithAccounts();
-    
+
     // Update active navigation link
     updateActiveNavLink();
 });
