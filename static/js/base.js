@@ -119,28 +119,6 @@ function loadKotakPage(pageType, event) {
     window.location.href = `/kotak/${pageType}`;
 }
 
-                // Update browser history
-                history.pushState({page: pageType}, '', `#kotak-${pageType}`);
-            } else {
-                mainContent.innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Error loading ${pageType}: ${data.message}
-                    </div>
-                `;
-            }
-        })
-        .catch(error => {
-            console.error('Error loading page:', error);
-            mainContent.innerHTML = `
-                <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    Failed to load ${pageType}. Please try again.
-                </div>
-            `;
-        });
-}
-
 // Initialize page-specific functionality
 function initializeOrdersPage() {
     // Load orders data
