@@ -1711,7 +1711,7 @@ body {
 }
 
 /* Mobile adjustments for broker selection */
-@media (max-width: 768px) {
+@media (max-width: 991px) {
     .modal-fullscreen .modal-body {
         height: 100vh;
         padding: 0;
@@ -1726,18 +1726,12 @@ body {
         margin: 0;
     }
     
-    .modal-fullscreen .col-md-6 {
-        flex: none;
-        padding: 0;
-        width: 100% !important;
-        max-width: 100% !important;
-    }
-    
-    /* Force full width columns on small screens */
-    .modal-fullscreen .col-sm-12,
+    .modal-fullscreen .col-lg-6,
+    .modal-fullscreen .col-md-6,
     .modal-fullscreen .col-12 {
-        flex: 0 0 100%;
-        max-width: 100%;
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+        width: 100% !important;
     }
     
     .broker-selection-side {
@@ -1783,6 +1777,32 @@ body {
         padding: 1.5rem;
         width: 100%;
         max-width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .modal-fullscreen .modal-body {
+        height: auto;
+        min-height: 100vh;
+    }
+    
+    .broker-selection-side {
+        padding: 0.75rem;
+    }
+    
+    .login-form-side {
+        padding: 0.75rem;
+        min-height: 50vh;
+    }
+    
+    .broker-selection-content h4 {
+        font-size: 1rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .login-form-content {
+        padding: 1rem;
+        border-radius: 8px;
     }
 }
 
