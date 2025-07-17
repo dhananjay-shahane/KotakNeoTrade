@@ -6,7 +6,7 @@ Includes full Kotak Neo project integration on same port
 
 import os
 import sys
-from flask import Flask, render_template, redirect, url_for, request, flash
+from flask import Flask, render_template, redirect, url_for, request, flash, jsonify
 
 # Add kotak_neo_project to Python path for imports - but prioritize root level imports
 root_path = os.path.dirname(__file__)

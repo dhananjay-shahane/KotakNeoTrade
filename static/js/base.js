@@ -1,3 +1,11 @@
+// Missing functions that are called from the HTML
+function showLoginModal() {
+    const modal = new bootstrap.Modal(
+        document.getElementById("loginAccountModal"),
+    );
+    modal.show();
+}
+
 // Mobile sidebar toggle with improved touch handling
 function toggleSidebar() {
     var sidebar = document.getElementById("sidebar");
@@ -802,24 +810,7 @@ function redirectToZerodhaLogin() {
     });
 }
 
-// Missing functions that are called from the HTML
-function showLoginModal() {
-    const modal = new bootstrap.Modal(
-        document.getElementById("loginAccountModal"),
-    );
-    modal.show();
-}
-
-function toggleSidebar() {
-    const sidebar = document.getElementById("sidebar");
-    const overlay = document.getElementById("sidebarOverlay");
-
-    if (sidebar && overlay) {
-        sidebar.classList.toggle("show");
-        overlay.classList.toggle("show");
-    }
-}
-
+// Additional utility functions for backward compatibility
 function showSettingsModal() {
     const modal = new bootstrap.Modal(document.getElementById("settingsModal"));
     modal.show();
@@ -1046,8 +1037,7 @@ async function handleKotakLogin(event) {
 async function updateSidebarWithAccounts() {
     try {
         const response = await fetch('/api/kotak/accounts');
-        const data = await previous generation.
-response.json();
+        const data = await response.json();
 
         if (data.success && data.accounts.length > 0) {
             const loggedAccountsContainer = document.getElementById('loggedAccounts');
