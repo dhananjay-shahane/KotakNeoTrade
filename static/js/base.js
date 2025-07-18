@@ -1272,17 +1272,153 @@ async function updateSidebarWithAccountsEnhanced() {
             if (kotakNeoSection) {
                 kotakNeoSection.style.display = "block";
             }
+
+            // Show Kotak account box and populate data
+            showKotakAccountBox(data);
         } else {
             // Hide the Kotak Neo section if not authenticated
             const kotakNeoSection = document.getElementById("kotakNeoSection");
             if (kotakNeoSection) {
                 kotakNeoSection.style.display = "none";
             }
+
+            // Hide Kotak account box
+            hideKotakAccountBox();
         }
     } catch (error) {
         console.error("Error updating sidebar:", error);
         hideKotakNeoSection();
+        hideKotakAccountBox();
     }
+}
+
+// Show Kotak account box with account data
+function showKotakAccountBox(accountData) {
+    const kotakAccountBox = document.getElementById("kotakAccountBox");
+    const accountLogin = document.getElementById("accountLogin");
+    const addAccountSection = document.getElementById("addAccountSection");
+    
+    if (kotakAccountBox && accountLogin) {
+        // Hide login button and show account box
+        accountLogin.style.display = "none";
+        kotakAccountBox.style.display = "block";
+        
+        // Show add account section
+        if (addAccountSection) {
+            addAccountSection.style.display = "block";
+        }
+
+        // Populate account data
+        const kotakUCCDisplay = document.getElementById("kotakUCCDisplay");
+        const kotakMobileDisplay = document.getElementById("kotakMobileDisplay");
+        const kotakLastLogin = document.getElementById("kotakLastLogin");
+
+        if (kotakUCCDisplay && accountData.ucc) {
+            kotakUCCDisplay.textContent = accountData.ucc;
+        }
+
+        if (kotakMobileDisplay && accountData.mobile) {
+            kotakMobileDisplay.textContent = accountData.mobile;
+        }
+
+        if (kotakLastLogin) {
+            kotakLastLogin.textContent = formatLoginTime();
+        }
+    }
+}
+
+// Hide Kotak account box
+function hideKotakAccountBox() {
+    const kotakAccountBox = document.getElementById("kotakAccountBox");
+    const accountLogin = document.getElementById("accountLogin");
+    const addAccountSection = document.getElementById("addAccountSection");
+    
+    if (kotakAccountBox && accountLogin) {
+        // Show login button and hide account box
+        kotakAccountBox.style.display = "none";
+        accountLogin.style.display = "block";
+        
+        // Hide add account section
+        if (addAccountSection) {
+            addAccountSection.style.display = "none";
+        }
+    }
+}
+
+// Switch to Kotak dashboard
+function switchToKotakDashboard() {
+    window.location.href = "/kotak/dashboard";
+}
+
+// Logout from Kotak account
+async function logoutKotakAccount() {
+    try {
+        const result = await Swal.fire({
+            title: 'Logout Confirmation',
+            text: 'Are you sure you want to logout from Kotak Neo?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, Logout',
+            cancelButtonText: 'Cancel',
+            background: 'var(--card-bg)',
+            color: 'var(--text-primary)',
+            confirmButtonColor: 'var(--danger-color)',
+            cancelButtonColor: 'var(--secondary-color)',
+        });
+
+        if (result.isConfirmed) {
+            const response = await fetch('/kotak/api/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response.ok) {
+                // Hide account box and show login button
+                hideKotakAccountBox();
+                
+                // Hide Kotak Neo section
+                const kotakNeoSection = document.getElementById("kotakNeoSection");
+                if (kotakNeoSection) {
+                    kotakNeoSection.style.display = "none";
+                }
+
+                // Show success message
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Logged Out',
+                    text: 'Successfully logged out from Kotak Neo.',
+                    background: 'var(--card-bg)',
+                    color: 'var(--text-primary)',
+                    timer: 2000,
+                    showConfirmButton: false,
+                });
+            } else {
+                throw new Error('Logout failed');
+            }
+        }
+    } catch (error) {
+        console.error('Logout error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Logout Error',
+            text: 'Failed to logout. Please try again.',
+            background: 'var(--card-bg)',
+            color: 'var(--text-primary)',
+        });
+    }
+}
+
+// Format login time for display
+function formatLoginTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+    });
+    return timeString;
 }
 
 // Use the enhanced function as the main one

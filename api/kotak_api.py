@@ -77,6 +77,22 @@ def dashboard():
     
     return render_template('dashboard.html', data=dashboard_data, ucc=ucc, mobile=mobile)
 
+@kotak_api.route('/api/logout', methods=['POST'])
+@login_required
+def api_logout():
+    """API endpoint for Kotak logout"""
+    try:
+        # Clear Kotak session data
+        session.pop('kotak_authenticated', None)
+        session.pop('kotak_ucc', None)
+        session.pop('kotak_mobile', None)
+        session.pop('kotak_session', None)
+        
+        return jsonify({'success': True, 'message': 'Successfully logged out'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @kotak_api.route('/logout')
 @login_required
 def logout():

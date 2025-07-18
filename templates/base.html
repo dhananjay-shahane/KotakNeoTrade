@@ -197,15 +197,6 @@
                 id="kotakNeoSection"
                 style="display: none"
             >
-                <div class="section-header">
-                    <h6>
-                        <i class="fas fa-chart-line me-2"></i>Kotak Neo Account
-                    </h6>
-                    <div class="account-info" id="kotakAccountInfo">
-                        <small class="text-muted" id="kotakUCC">-</small>
-                    </div>
-                </div>
-
                 <div class="nav-items">
                     <div class="nav-item">
                         <a href="{{ url_for('kotak_api.orders') }}" class="nav-link">
@@ -238,13 +229,54 @@
                     </h6>
                 </div>
 
-                <!-- Logged-in Accounts -->
-                <div
-                    class="logged-accounts"
-                    id="loggedAccounts"
-                    style="display: none"
-                >
-                    <!-- Accounts will be populated by JavaScript -->
+                <!-- Kotak Neo Account Box (shown after login) -->
+                <div class="kotak-account-box" id="kotakAccountBox" style="display: none">
+                    <div class="account-card">
+                        <div class="account-header">
+                            <div class="account-info">
+                                <div class="account-title">
+                                    <i class="fas fa-chart-line me-2"></i>
+                                    <span>Kotak Neo</span>
+                                    <span class="status-indicator online">
+                                        <i class="fas fa-circle"></i>
+                                        <span>Online</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="account-details">
+                            <div class="detail-row">
+                                <span class="label">UCC</span>
+                                <span class="value" id="kotakUCCDisplay">-</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="label">MOBILE</span>
+                                <span class="value" id="kotakMobileDisplay">-</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="label">Last Login</span>
+                                <span class="value" id="kotakLastLogin">Just Now</span>
+                            </div>
+                        </div>
+
+                        <div class="account-actions">
+                            <button class="btn-switch-account" onclick="switchToKotakDashboard()">
+                                <i class="fas fa-external-link-alt me-1"></i>
+                                Switch
+                            </button>
+                            <button class="btn-logout-account" onclick="logoutKotakAccount()">
+                                <i class="fas fa-sign-out-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add Another Account Button (shown when logged in) -->
+                <div class="add-account-section" id="addAccountSection" style="display: none">
+                    <button class="btn-add-account" onclick="showLoginModal()">
+                        <i class="fas fa-plus me-2"></i>Add Another Account
+                    </button>
                 </div>
 
                 <!-- Login Button (shown when no accounts logged in) -->
