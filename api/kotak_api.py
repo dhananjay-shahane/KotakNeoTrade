@@ -61,7 +61,7 @@ def dashboard():
     ucc = session.get('kotak_ucc')
     mobile = session.get('kotak_mobile')
     
-    return render_template('kotak_dashboard.html', ucc=ucc, mobile=mobile)
+    return render_template('dashboard.html', ucc=ucc, mobile=mobile)
 
 @kotak_api.route('/logout')
 @login_required
