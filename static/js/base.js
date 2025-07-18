@@ -1,4 +1,3 @@
-
 // Toaster notification system
 function showToaster(title, message, type = 'info', duration = 3000) {
     // Create toaster container if it doesn't exist
@@ -13,7 +12,7 @@ function showToaster(title, message, type = 'info', duration = 3000) {
     // Create toaster element
     const toaster = document.createElement('div');
     toaster.className = 'toaster';
-    
+
     const iconClass = {
         success: 'fas fa-check',
         error: 'fas fa-times',
@@ -171,7 +170,7 @@ function toggleTheme() {
 document.addEventListener('DOMContentLoaded', function() {
     const savedTheme = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
-    
+
     const themeToggle = document.getElementById('themeToggle');
     if (themeToggle) {
         themeToggle.checked = savedTheme === 'light';
@@ -429,44 +428,47 @@ function showSettingsModal() {
 }
 
 // Font size functionality
-document.addEventListener("DOMContentLoaded", function () {
-    // Initialize font size
-    const savedFontSize = localStorage.getItem("website-font-size") || "14";
-    document.documentElement.style.setProperty("--global-font-size", savedFontSize + "px");
+function updateFontSize() {
+    const fontSize = document.getElementById('fontSizeSlider').value;
+    document.documentElement.style.setProperty('--global-font-size', fontSize + 'px');
 
-    const fontSizeSelect = document.getElementById("fontSizeSelect");
-    const preview = document.querySelector(".font-size-preview");
+    // Update all elements with font size
+    const elements = document.querySelectorAll('body, .card, .table, .form-control, .form-select, .nav-link, .dropdown-item, .modal-body, .card-body, .card-header, .alert, p, span, div');
+    elements.forEach(el => {
+        el.style.fontSize = fontSize + 'px';
+    });
 
-    if (fontSizeSelect) {
-        fontSizeSelect.value = savedFontSize;
-        
-        // Update preview
-        if (preview) {
-            preview.style.fontSize = savedFontSize + "px";
-        }
+    // Update preview
+    const preview = document.querySelector('.font-size-preview');
+    if (preview) {
+        preview.style.fontSize = fontSize + 'px';
+    }
 
-        fontSizeSelect.addEventListener("change", function () {
-            const fontSize = this.value;
-            document.documentElement.style.setProperty("--global-font-size", fontSize + "px");
-            localStorage.setItem("website-font-size", fontSize);
+    // Store in localStorage
+    localStorage.setItem('globalFontSize', fontSize);
+}
 
-            // Update preview
-            if (preview) {
-                preview.style.fontSize = fontSize + "px";
-            }
+// Load saved font size on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const savedFontSize = localStorage.getItem('globalFontSize') || '14';
+    document.documentElement.style.setProperty('--global-font-size', savedFontSize + 'px');
 
-            // Show feedback
-            if (typeof showToaster === 'function') {
-                showToaster('Font Size Updated', `Changed to ${fontSize}px`, 'success');
-            }
-        });
+    // Apply to all elements immediately
+    const elements = document.querySelectorAll('body, .card, .table, .form-control, .form-select, .nav-link, .dropdown-item, .modal-body, .card-body, .card-header, .alert, p, span, div');
+    elements.forEach(el => {
+        el.style.fontSize = savedFontSize + 'px';
+    });
+
+    const slider = document.getElementById('fontSizeSlider');
+    if (slider) {
+        slider.value = savedFontSize;
     }
 });
 
 // Settings modal functionality
 function applySettings() {
     const fontSizeSelect = document.getElementById('fontSizeSelect');
-    
+
     if (fontSizeSelect) {
         const newFontSize = fontSizeSelect.value;
         document.documentElement.style.setProperty('--global-font-size', newFontSize + 'px');
@@ -488,7 +490,7 @@ function applySettings() {
 // Settings modal functionality
 function applySettings() {
     const fontSizeSelect = document.getElementById('fontSizeSelect');
-    
+
     if (fontSizeSelect) {
         const newFontSize = fontSizeSelect.value;
         document.documentElement.style.setProperty('--global-font-size', newFontSize + 'px');
@@ -785,7 +787,7 @@ function handleKotakLogin(event) {
             if (modal) {
                 modal.hide();
             }
-            
+
             // Show success message
             Swal.fire({
                 icon: 'success',
@@ -796,7 +798,7 @@ function handleKotakLogin(event) {
                 timer: 2000,
                 showConfirmButton: false
             });
-            
+
             // Redirect to Kotak dashboard
             setTimeout(() => {
                 window.location.href = "/kotak/dashboard";
@@ -817,7 +819,7 @@ function handleKotakLogin(event) {
         // Reset button
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
-        
+
         // Show error message
         Swal.fire({
             icon: 'error',
@@ -1191,7 +1193,7 @@ async function checkAuthStatus() {
     try {
         const response = await fetch("/kotak/api/status");
         const data = await response.json();
-        
+
         if (data.authenticated) {
             updateSidebarWithAccounts();
         }
