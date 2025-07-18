@@ -485,6 +485,28 @@ function applySettings() {
     }
 }
 
+// Settings modal functionality
+function applySettings() {
+    const fontSizeSelect = document.getElementById('fontSizeSelect');
+    
+    if (fontSizeSelect) {
+        const newFontSize = fontSizeSelect.value;
+        document.documentElement.style.setProperty('--global-font-size', newFontSize + 'px');
+        localStorage.setItem('website-font-size', newFontSize);
+    }
+
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
+    if (modal) {
+        modal.hide();
+    }
+
+    // Show success message
+    if (typeof showToaster === 'function') {
+        showToaster('Settings Applied', 'Your preferences have been saved', 'success');
+    }
+}
+
 // Notification functionality
 function toggleNotificationInbox() {
     const inbox = document.getElementById("notificationInbox");
