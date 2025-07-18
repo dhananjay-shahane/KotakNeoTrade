@@ -1,261 +1,172 @@
 """
-Kotak Neo API endpoints for authentication and account management
+Kotak Neo API Blueprint
+Handles Kotak Neo authentication and trading operations
 """
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, request, jsonify, session, render_template, redirect, url_for, flash
 from flask_login import login_required, current_user
-
-def get_user_orders(user_id):
-    """Get real orders data from Kotak Neo API or database"""
-    try:
-        # Connect to Kotak Neo API session for this user
-        from kotak_models import KotakAccount, TradingSession
-        account = KotakAccount.query.filter_by(user_id=user_id, is_active=True).first()
-
-        if not account:
-            return {'success': False, 'message': 'No active Kotak account found'}
-
-        # Get orders from actual API or database
-        session = TradingSession.query.filter_by(account_id=account.id, is_active=True).first()
-        if session and session.access_token:
-            # Use real Kotak Neo API to fetch orders
-            from kotak_neo_project.Scripts.trading_functions import TradingFunctions
-            trading_functions = TradingFunctions()
-            orders = trading_functions.get_orders(session.client_data)
-            return {'success': True, 'orders': orders}
-        else:
-            return {'success': False, 'message': 'No active trading session'}
-
-    except Exception as e:
-        return {'success': False, 'message': str(e)}
-
-def get_user_positions(user_id):
-    """Get real positions data from Kotak Neo API or database"""
-    try:
-        from kotak_models import KotakAccount, TradingSession
-        account = KotakAccount.query.filter_by(user_id=user_id, is_active=True).first()
-
-        if not account:
-            return {'success': False, 'message': 'No active Kotak account found'}
-
-        session = TradingSession.query.filter_by(account_id=account.id, is_active=True).first()
-        if session and session.access_token:
-            from kotak_neo_project.Scripts.trading_functions import TradingFunctions
-            trading_functions = TradingFunctions()
-            positions_data = trading_functions.get_positions(session.client_data)
-            return {'success': True, 'positions': positions_data.get('positions', []), 'summary': positions_data.get('summary', {})}
-        else:
-            return {'success': False, 'message': 'No active trading session'}
-
-    except Exception as e:
-        return {'success': False, 'message': str(e)}
-
-def get_user_holdings(user_id):
-    """Get real holdings data from Kotak Neo API or database"""
-    try:
-        from kotak_models import KotakAccount, TradingSession
-        account = KotakAccount.query.filter_by(user_id=user_id, is_active=True).first()
-
-        if not account:
-            return {'success': False, 'message': 'No active Kotak account found'}
-
-        session = TradingSession.query.filter_by(account_id=account.id, is_active=True).first()
-        if session and session.access_token:
-            from kotak_neo_project.Scripts.trading_functions import TradingFunctions
-            trading_functions = TradingFunctions()
-            holdings_data = trading_functions.get_holdings(session.client_data)
-            return {'success': True, 'holdings': holdings_data.get('holdings', []), 'summary': holdings_data.get('summary', {})}
-        else:
-            return {'success': False, 'message': 'No active trading session'}
-
-    except Exception as e:
-        return {'success': False, 'message': str(e)}
-
-from flask import Blueprint, request, jsonify, session
-from flask_login import login_required, current_user
-from datetime import datetime
-from kotak_models import db, KotakAccount, TradingSession
 from kotak_auth_service import KotakAuthService
+from kotak_models import KotakAccount, TradingSession, db
 
-kotak_api = Blueprint('kotak_api', __name__)
+# Create blueprint
+kotak_api = Blueprint('kotak_api', __name__, url_prefix='/kotak')
+
+# Initialize auth service
 auth_service = KotakAuthService()
 
-@kotak_api.route('/api/kotak/login', methods=['POST'])
+@kotak_api.route('/login', methods=['GET', 'POST'])
 @login_required
 def kotak_login():
-    """Handle Kotak Neo login"""
+    """Kotak Neo login page and authentication"""
+    if request.method == 'POST':
+        try:
+            # Get form data
+            mobile_number = request.form.get('mobile_number', '').strip()
+            ucc = request.form.get('ucc', '').strip()
+            mpin = request.form.get('mpin', '').strip()
+            totp_code = request.form.get('totp_code', '').strip()
+            
+            # Authenticate with Kotak Neo
+            auth_result = auth_service.authenticate_user(
+                mobile_number=mobile_number,
+                ucc=ucc,
+                mpin=mpin,
+                totp_code=totp_code
+            )
+            
+            if auth_result['success']:
+                # Store session data
+                session['kotak_authenticated'] = True
+                session['kotak_ucc'] = ucc
+                session['kotak_mobile'] = mobile_number
+                
+                flash('Successfully logged in to Kotak Neo!', 'success')
+                return redirect(url_for('kotak_api.dashboard'))
+            else:
+                flash(f'Login failed: {auth_result["error"]}', 'error')
+                
+        except Exception as e:
+            flash(f'Login error: {str(e)}', 'error')
+    
+    return render_template('kotak_login.html')
+
+@kotak_api.route('/dashboard')
+@login_required
+def dashboard():
+    """Kotak Neo dashboard"""
+    if not session.get('kotak_authenticated'):
+        flash('Please log in to Kotak Neo first', 'warning')
+        return redirect(url_for('kotak_api.kotak_login'))
+    
+    # Get account info
+    ucc = session.get('kotak_ucc')
+    mobile = session.get('kotak_mobile')
+    
+    return render_template('kotak_dashboard.html', ucc=ucc, mobile=mobile)
+
+@kotak_api.route('/logout')
+@login_required
+def logout():
+    """Logout from Kotak Neo"""
+    # Clear Kotak session data
+    session.pop('kotak_authenticated', None)
+    session.pop('kotak_ucc', None)
+    session.pop('kotak_mobile', None)
+    
+    flash('Logged out from Kotak Neo', 'info')
+    return redirect(url_for('portfolio'))
+
+@kotak_api.route('/orders')
+@login_required
+def orders():
+    """Orders page"""
+    if not session.get('kotak_authenticated'):
+        flash('Please log in to Kotak Neo first', 'warning')
+        return redirect(url_for('kotak_api.kotak_login'))
+    
+    return render_template('kotak_orders.html')
+
+@kotak_api.route('/positions')
+@login_required
+def positions():
+    """Positions page"""
+    if not session.get('kotak_authenticated'):
+        flash('Please log in to Kotak Neo first', 'warning')
+        return redirect(url_for('kotak_api.kotak_login'))
+    
+    return render_template('kotak_positions.html')
+
+@kotak_api.route('/holdings')
+@login_required
+def holdings():
+    """Holdings page"""
+    if not session.get('kotak_authenticated'):
+        flash('Please log in to Kotak Neo first', 'warning')
+        return redirect(url_for('kotak_api.kotak_login'))
+    
+    return render_template('kotak_holdings.html')
+
+# API endpoints
+@kotak_api.route('/api/authenticate', methods=['POST'])
+@login_required
+def api_authenticate():
+    """API endpoint for Kotak authentication"""
     try:
         data = request.get_json()
-
+        
         if not data:
-            return jsonify({
-                'success': False,
-                'error': 'No data provided'
-            }), 400
-
-        # Extract credentials
-        mobile_number = data.get('mobile_number', '').strip()
-        ucc = data.get('ucc', '').strip().upper()
-        mpin = data.get('mpin', '').strip()
-        totp_code = data.get('totp_code', '').strip()
-
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+        
         # Authenticate with Kotak Neo
-        result = auth_service.authenticate_user(
-            mobile_number=mobile_number,
-            ucc=ucc,
-            mpin=mpin,
-            totp_code=totp_code
+        auth_result = auth_service.authenticate_user(
+            mobile_number=data.get('mobile_number'),
+            ucc=data.get('ucc'),
+            mpin=data.get('mpin'),
+            totp_code=data.get('totp_code')
         )
-
-        if result['success']:
-            return jsonify({
-                'success': True,
-                'message': 'Successfully logged in to Kotak Neo',
-                'account': result['account'],
-                'redirect': '/portfolio'
-            }), 200
-        else:
-            return jsonify({
-                'success': False,
-                'error': result['error']
-            }), 400
-
+        
+        if auth_result['success']:
+            # Store session data
+            session['kotak_authenticated'] = True
+            session['kotak_ucc'] = data.get('ucc')
+            session['kotak_mobile'] = data.get('mobile_number')
+        
+        return jsonify(auth_result)
+        
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': f'Login failed: {str(e)}'
-        }), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-@kotak_api.route('/api/kotak/logout/<int:account_id>', methods=['POST'])
+@kotak_api.route('/api/status')
 @login_required
-def kotak_logout(account_id):
-    """Handle Kotak Neo logout"""
+def api_status():
+    """Get Kotak authentication status"""
     try:
-        result = auth_service.logout_account(account_id)
-
-        if result['success']:
-            return jsonify({
-                'success': True,
-                'message': 'Successfully logged out from Kotak Neo'
-            }), 200
-        else:
-            return jsonify({
-                'success': False,
-                'error': result['error']
-            }), 400
-
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': f'Logout failed: {str(e)}'
-        }), 500
-
-@kotak_api.route('/api/kotak/accounts', methods=['GET'])
-@login_required
-def get_kotak_accounts():
-    """Get all Kotak accounts for current user"""
-    try:
-        accounts = auth_service.get_user_accounts()
-        return jsonify({
-            'success': True,
-            'accounts': accounts
-        }), 200
-
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': f'Failed to fetch accounts: {str(e)}'
-        }), 500
-
-@kotak_api.route('/api/kotak/account/<int:account_id>/switch', methods=['POST'])
-@login_required
-def switch_account(account_id):
-    """Switch to different Kotak account"""
-    try:
-        account = KotakAccount.query.filter_by(
-            id=account_id,
-            user_id=current_user.id,
-            is_active=True
-        ).first()
-
-        if not account:
-            return jsonify({
-                'success': False,
-                'error': 'Account not found'
-            }), 404
-
-        # Check if session is valid
-        if not auth_service.is_session_valid(account_id):
-            return jsonify({
-                'success': False,
-                'error': 'Session expired. Please login again.'
-            }), 401
-
-        # Update session
-        session['kotak_session'] = {
-            'account_id': account.id,
-            'ucc': account.ucc,
-            'mobile_number': account.mobile_number,
-            'session_token': account.session_token,
-            'switched_at': datetime.utcnow().isoformat()
+        status = {
+            'authenticated': session.get('kotak_authenticated', False),
+            'ucc': session.get('kotak_ucc'),
+            'mobile': session.get('kotak_mobile')
         }
-
-        return jsonify({
-            'success': True,
-            'message': f'Switched to account {account.ucc}',
-            'account': account.to_dict()
-        }), 200
-
+        return jsonify(status)
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': f'Failed to switch account: {str(e)}'
-        }), 500
+        return jsonify({'error': str(e)}), 500
 
-@kotak_api.route('/api/kotak/session/status', methods=['GET'])
+@kotak_api.route('/api/account-info')
 @login_required
-def get_session_status():
-    """Get current Kotak session status"""
+def api_account_info():
+    """Get account information"""
     try:
-        current_session = auth_service.get_current_session()
-        accounts = auth_service.get_user_accounts()
-
-        return jsonify({
-            'success': True,
-            'session': current_session,
-            'accounts': accounts,
-            'has_active_session': current_session is not None
-        }), 200
-
+        if not session.get('kotak_authenticated'):
+            return jsonify({'error': 'Not authenticated with Kotak Neo'}), 401
+        
+        # Get account info from database
+        kotak_account = KotakAccount.query.filter_by(
+            user_id=current_user.id,
+            ucc=session.get('kotak_ucc')
+        ).first()
+        
+        if kotak_account:
+            return jsonify(kotak_account.to_dict())
+        else:
+            return jsonify({'error': 'Account not found'}), 404
+            
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': f'Failed to get session status: {str(e)}'
-        }), 500
-
-@kotak_api.route('/api/kotak/session/validate', methods=['POST'])
-@login_required
-def validate_session():
-    """Validate current session"""
-    try:
-        data = request.get_json()
-        account_id = data.get('account_id')
-
-        if not account_id:
-            return jsonify({
-                'success': False,
-                'error': 'Account ID required'
-            }), 400
-
-        is_valid = auth_service.is_session_valid(account_id)
-
-        return jsonify({
-            'success': True,
-            'is_valid': is_valid,
-            'message': 'Session is valid' if is_valid else 'Session expired'
-        }), 200
-
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': f'Session validation failed: {str(e)}'
-        }), 500
+        return jsonify({'error': str(e)}), 500
