@@ -640,9 +640,10 @@ function handleKotakLogin(event) {
 
     const formData = new FormData(event.target);
     const loginData = {
-        user_id: formData.get("user_id"),
-        password: formData.get("password"),
-        mobile_pin: formData.get("mobile_pin"),
+        mobile_number: formData.get("mobile_number"),
+        ucc: formData.get("ucc"),
+        mpin: formData.get("mpin"),
+        totp_code: formData.get("totp_code"),
     };
 
     // Show loading state
@@ -652,15 +653,68 @@ function handleKotakLogin(event) {
         '<i class="fas fa-spinner fa-spin me-2"></i>Logging in...';
     submitBtn.disabled = true;
 
-    // Simulate login process - replace with actual API call
-    setTimeout(() => {
+    // Make actual API call to Kotak Neo authentication
+    fetch('/kotak/api/authenticate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(loginData)
+    })
+    .then(response => response.json())
+    .then(data => {
         // Reset button
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
 
-        // For now, just redirect to kotak project
-        window.location.href = "/kotak";
-    }, 2000);
+        if (data.success) {
+            // Close modal and redirect to Kotak dashboard
+            const modal = bootstrap.Modal.getInstance(document.getElementById("loginAccountModal"));
+            if (modal) {
+                modal.hide();
+            }
+            
+            // Show success message
+            Swal.fire({
+                icon: 'success',
+                title: 'Login Successful',
+                text: 'Successfully logged in to Kotak Neo!',
+                background: 'var(--card-bg)',
+                color: 'var(--text-primary)',
+                timer: 2000,
+                showConfirmButton: false
+            });
+            
+            // Redirect to Kotak dashboard
+            setTimeout(() => {
+                window.location.href = "/kotak/dashboard";
+            }, 2000);
+        } else {
+            // Show error message
+            Swal.fire({
+                icon: 'error',
+                title: 'Login Failed',
+                text: data.error || 'Authentication failed. Please check your credentials.',
+                background: 'var(--card-bg)',
+                color: 'var(--text-primary)',
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Reset button
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        
+        // Show error message
+        Swal.fire({
+            icon: 'error',
+            title: 'Connection Error',
+            text: 'Unable to connect to authentication service. Please try again.',
+            background: 'var(--card-bg)',
+            color: 'var(--text-primary)',
+        });
+    });
 }
 
 // Reset modal when it's closed
