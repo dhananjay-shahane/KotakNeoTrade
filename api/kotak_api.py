@@ -61,7 +61,21 @@ def dashboard():
     ucc = session.get('kotak_ucc')
     mobile = session.get('kotak_mobile')
     
-    return render_template('dashboard.html', ucc=ucc, mobile=mobile)
+    # Create default dashboard data structure
+    dashboard_data = {
+        'positions': [],
+        'holdings': [],
+        'limits': {},
+        'recent_orders': [],
+        'total_positions': 0,
+        'total_holdings': 0,
+        'total_orders': 0
+    }
+    
+    # TODO: Integrate with actual Kotak Neo API to fetch real data
+    # For now, we'll use the empty structure to prevent template errors
+    
+    return render_template('dashboard.html', data=dashboard_data, ucc=ucc, mobile=mobile)
 
 @kotak_api.route('/logout')
 @login_required
