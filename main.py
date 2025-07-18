@@ -89,11 +89,28 @@ def index():
 
 @app.route('/portfolio')
 def portfolio():
-    """Portfolio page - requires login"""
+    """Portfolio page - requires login and Kotak Neo authentication"""
     from flask_login import login_required, current_user
+    from flask import session
+    
+    # Check if user is logged in to the main app
     if not current_user.is_authenticated:
         return redirect(url_for('login'))
-    return render_template('portfolio.html')
+    
+    # Check if user is logged in to Kotak Neo
+    if not session.get('kotak_authenticated'):
+        flash('Please log in to Kotak Neo to view your portfolio', 'warning')
+        return redirect(url_for('login'))
+    
+    # Get Kotak account info for the dashboard
+    ucc = session.get('kotak_ucc')
+    mobile = session.get('kotak_mobile')
+    
+    # Render portfolio page with Kotak dashboard content
+    return render_template('portfolio.html', 
+                         show_kotak_dashboard=True,
+                         ucc=ucc, 
+                         mobile=mobile)
 
 @app.route('/trading-signals')
 def trading_signals():

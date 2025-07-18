@@ -22,6 +22,8 @@ A comprehensive trading platform integrated with Kotak Neo API for real-time por
 - **Data Sources**: All data must come from live Kotak Neo API
 
 ## Recent Changes  
+- **2025-07-18**: ✅ **Portfolio Dashboard Integration** - Modified portfolio page to show Kotak Neo dashboard UI only when user is authenticated with Kotak Neo, includes account info and quick access to Orders, Positions, and Holdings
+- **2025-07-18**: ✅ **Sidebar Navigation Fixed** - Fixed sidebar navigation links to use existing templates (orders.html, positions.html, holdings.html) and corrected template route references
 - **2025-07-18**: ✅ **Kotak Neo Login Modal Fixed** - Resolved connection error in login modal by removing @login_required decorator from authentication API endpoint and fixing JavaScript field name mapping
 - **2025-07-18**: ✅ **Complete Replit Agent Migration** - Successfully migrated from Replit Agent to standard Replit environment, fixed import errors, created missing api/kotak_api.py blueprint, and ensured all workflows run without errors
 - **2025-07-17**: ✅ **Responsive Login Modal with Broker Selection** - Successfully implemented responsive broker selection cards in loginAccountModal with horizontal scrolling for mobile devices and proper desktop layout
