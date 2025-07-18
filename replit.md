@@ -22,6 +22,7 @@ A comprehensive trading platform integrated with Kotak Neo API for real-time por
 - **Data Sources**: All data must come from live Kotak Neo API
 
 ## Recent Changes  
+- **2025-07-18**: ✅ **Kotak Neo Login Modal Fixed** - Resolved connection error in login modal by removing @login_required decorator from authentication API endpoint and fixing JavaScript field name mapping
 - **2025-07-18**: ✅ **Complete Replit Agent Migration** - Successfully migrated from Replit Agent to standard Replit environment, fixed import errors, created missing api/kotak_api.py blueprint, and ensured all workflows run without errors
 - **2025-07-17**: ✅ **Responsive Login Modal with Broker Selection** - Successfully implemented responsive broker selection cards in loginAccountModal with horizontal scrolling for mobile devices and proper desktop layout
 - **2025-07-17**: ✅ **Mobile-First Design Enhancement** - Added mobile-responsive broker cards container with touch-friendly scrolling, proper sizing, and interactive card selection functionality

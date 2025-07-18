@@ -107,7 +107,6 @@ def holdings():
 
 # API endpoints
 @kotak_api.route('/api/authenticate', methods=['POST'])
-@login_required
 def api_authenticate():
     """API endpoint for Kotak authentication"""
     try:
