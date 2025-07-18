@@ -1384,24 +1384,15 @@ async function logoutKotakAccount() {
                     kotakNeoSection.style.display = "none";
                 }
 
-                // Ensure main navigation is visible and accessible
-                const mainNavigation = document.querySelector('.sidebar-nav');
-                if (mainNavigation) {
-                    mainNavigation.style.display = 'block';
-                }
-
-                // Show success message and redirect to portfolio
+                // Show success message
                 Swal.fire({
                     icon: 'success',
                     title: 'Logged Out',
-                    text: 'Successfully logged out from Kotak Neo. Redirecting to portfolio...',
+                    text: 'Successfully logged out from Kotak Neo.',
                     background: 'var(--card-bg)',
                     color: 'var(--text-primary)',
                     timer: 2000,
                     showConfirmButton: false,
-                }).then(() => {
-                    // Redirect to portfolio page to show main content
-                    window.location.href = '/portfolio';
                 });
             } else {
                 throw new Error('Logout failed');
@@ -1440,28 +1431,4 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Update active navigation link
     updateActiveNavLink();
-    
-    // Ensure main navigation is always visible
-    ensureMainNavigationVisible();
 });
-
-// Ensure main navigation is always accessible
-function ensureMainNavigationVisible() {
-    const mainNavigation = document.querySelector('.main-navigation');
-    const sidebarNav = document.querySelector('.sidebar-nav');
-    
-    if (mainNavigation) {
-        mainNavigation.style.display = 'block';
-    }
-    
-    if (sidebarNav) {
-        sidebarNav.style.display = 'block';
-    }
-    
-    // Ensure navigation links are clickable
-    const navLinks = document.querySelectorAll('.main-navigation .nav-link');
-    navLinks.forEach(link => {
-        link.style.pointerEvents = 'auto';
-        link.style.opacity = '1';
-    });
-}

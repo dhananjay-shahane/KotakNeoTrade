@@ -356,33 +356,8 @@ body {
     min-height: calc(100vh - var(--header-height));
 }
 
-/* Sidebar Navigation */
 .sidebar-nav {
     padding: 1rem 0;
-}
-
-/* Navigation Sections */
-.main-navigation {
-    border-bottom: 1px solid var(--border-color);
-    margin-bottom: 1rem;
-    padding-bottom: 1rem;
-}
-
-.nav-section-header {
-    padding: 0.5rem 1rem;
-    margin-bottom: 0.5rem;
-}
-
-.nav-section-header h6 {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin: 0;
-    font-weight: 600;
-}
-
-.kotak-neo-section {
-    margin-top: 1rem;
 }
 
 .nav-item {
@@ -1048,7 +1023,7 @@ body {
     z-index: 1001;
     min-width: 44px;
     min-height: 44px;
-    align-items: center;```text
+    align-items: center;
     justify-content: center;
 }
 
@@ -2982,6 +2957,7 @@ body {
 
     .broker-description {
         font-size: 0.75rem;
+        line-height: 1.2;
     }
 
     .feature-tag {

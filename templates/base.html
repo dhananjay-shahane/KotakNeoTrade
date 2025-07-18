@@ -164,33 +164,31 @@
 
         <!-- Fixed Sidebar -->
         <nav class="sidebar" id="sidebar">
-            <!-- Main Navigation - Always Visible -->
-            <div class="main-navigation">
-                <div class="nav-section-header">
-                    <h6 class="text-muted">
-                        <i class="fas fa-tachometer-alt me-2"></i>Main Dashboard
-                    </h6>
+            <div class="sidebar-nav">
+                <div class="nav-item">
+                    <a href="{{ url_for('portfolio') }}" class="nav-link">
+                        <i class="fas fa-briefcase nav-icon"></i>
+                        <span>Portfolio</span>
+                    </a>
                 </div>
-                <div class="sidebar-nav">
-                    <div class="nav-item">
-                        <a href="{{ url_for('portfolio') }}" class="nav-link">
-                            <i class="fas fa-briefcase nav-icon"></i>
-                            <span>Portfolio</span>
-                        </a>
-                    </div>
-                    <div class="nav-item">
-                        <a href="{{ url_for('trading_signals') }}" class="nav-link">
-                            <i class="fas fa-chart-bar nav-icon"></i>
-                            <span>Trading Signals</span>
-                        </a>
-                    </div>
-                    <div class="nav-item">
-                        <a href="{{ url_for('deals') }}" class="nav-link">
-                            <i class="fas fa-handshake nav-icon"></i>
-                            <span>Deals</span>
-                        </a>
-                    </div>
+                <div class="nav-item">
+                    <a href="{{ url_for('trading_signals') }}" class="nav-link">
+                        <i class="fas fa-chart-bar nav-icon"></i>
+                        <span>Trading Signals</span>
+                    </a>
                 </div>
+                <div class="nav-item">
+                    <a href="{{ url_for('deals') }}" class="nav-link">
+                        <i class="fas fa-handshake nav-icon"></i>
+                        <span>Deals</span>
+                    </a>
+                </div>
+                <!-- <div class="nav-item">
+                <a href="/kotak" class="nav-link">
+                    <i class="fas fa-chart-line nav-icon"></i>
+                    <span>Kotak Neo Platform</span>
+                </a>
+            </div> -->
             </div>
 
             <!-- Kotak Neo Trading Section (shown after login) -->
@@ -199,30 +197,21 @@
                 id="kotakNeoSection"
                 style="display: none"
             >
-                <div class="nav-section-header">
-                    <h6 class="text-muted">
-                        <i class="fas fa-chart-line me-2"></i>Kotak Neo Platform
-                    </h6>
-                </div>
                 <div class="nav-items">
-                    <div class="nav-item">
-                        <a href="{{ url_for('kotak_api.dashboard') }}" class="nav-link">
-                            <i class="fas fa-tachometer-alt nav-icon"></i>
-                            <span>Dashboard</span>
-                        </a>
-                    </div>
                     <div class="nav-item">
                         <a href="{{ url_for('kotak_api.orders') }}" class="nav-link">
                             <i class="fas fa-list-alt nav-icon"></i>
                             <span>Orders</span>
                         </a>
                     </div>
+
                     <div class="nav-item">
                         <a href="{{ url_for('kotak_api.positions') }}" class="nav-link">
                             <i class="fas fa-chart-bar nav-icon"></i>
                             <span>Positions</span>
                         </a>
                     </div>
+
                     <div class="nav-item">
                         <a href="{{ url_for('kotak_api.holdings') }}" class="nav-link">
                             <i class="fas fa-briefcase nav-icon"></i>
@@ -536,7 +525,7 @@
 
         <!-- Broker Selection Modal -->
         <div class="modal fade" id="loginAccountModal" tabindex="-1">
-            <div class="modal-dialog modal-fullscreen">
+            <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header border-bottom border-secondary">
                         <h5 class="modal-title">
