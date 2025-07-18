@@ -977,7 +977,7 @@ async function handleKotakLogin(event) {
         '<i class="fas fa-spinner fa-spin me-2"></i>Logging in...';
 
     try {
-        const response = await fetch("/api/kotak/login", {
+        const response = await fetch("/kotak/api/authenticate", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -1045,47 +1045,20 @@ async function handleKotakLogin(event) {
 // Update sidebar with logged-in accounts
 async function updateSidebarWithAccounts() {
     try {
-        const response = await fetch("/api/kotak/accounts");
+        const response = await fetch("/kotak/api/status");
         const data = await response.json();
 
-        if (data.success && data.accounts.length > 0) {
-            const loggedAccountsContainer =
-                document.getElementById("loggedAccounts");
-            const accountLoginContainer =
-                document.getElementById("accountLogin");
-
-            if (loggedAccountsContainer && accountLoginContainer) {
-                // Hide login button and show accounts
-                accountLoginContainer.style.display = "none";
-                loggedAccountsContainer.style.display = "block";
-
-                // Clear existing accounts
-                loggedAccountsContainer.innerHTML = "";
-
-                // Add each account
-                data.accounts.forEach((account) => {
-                    const accountElement = createAccountElement(account);
-                    loggedAccountsContainer.appendChild(accountElement);
-                });
-
-                // Add "Add Account" button
-                const addAccountBtn = document.createElement("button");
-                addAccountBtn.className = "btn-add-account";
-                addAccountBtn.innerHTML =
-                    '<i class="fas fa-plus me-2"></i>Add Another Account';
-                addAccountBtn.onclick = () => showLoginModal();
-                loggedAccountsContainer.appendChild(addAccountBtn);
+        if (data.authenticated) {
+            // Show the Kotak Neo section if authenticated
+            const kotakNeoSection = document.getElementById("kotakNeoSection");
+            if (kotakNeoSection) {
+                kotakNeoSection.style.display = "block";
             }
         } else {
-            // Show login button if no accounts
-            const loggedAccountsContainer =
-                document.getElementById("loggedAccounts");
-            const accountLoginContainer =
-                document.getElementById("accountLogin");
-
-            if (loggedAccountsContainer && accountLoginContainer) {
-                loggedAccountsContainer.style.display = "none";
-                accountLoginContainer.style.display = "block";
+            // Hide the Kotak Neo section if not authenticated
+            const kotakNeoSection = document.getElementById("kotakNeoSection");
+            if (kotakNeoSection) {
+                kotakNeoSection.style.display = "none";
             }
         }
     } catch (error) {
@@ -1093,166 +1066,25 @@ async function updateSidebarWithAccounts() {
     }
 }
 
-// Create account element for sidebar
-function createAccountElement(account) {
-    const accountDiv = document.createElement("div");
-    accountDiv.className = `kotak-account-item ${account.is_logged_in ? "active" : ""}`;
-
-    const statusClass = account.is_logged_in ? "" : "offline";
-    const statusText = account.is_logged_in ? "Online" : "Offline";
-
-    accountDiv.innerHTML = `
-        <div class="account-header">
-            <div class="account-title">
-                <i class="fas fa-chart-line"></i>
-                <span>Kotak Neo</span>
-            </div>
-            <div class="account-status ${statusClass}">
-                <span class="status-dot ${statusClass}"></span>
-                <span>${statusText}</span>
-            </div>
-        </div>
-
-        <div class="account-details">
-            <div class="account-detail">
-                <span class="account-label">UCC:</span>
-                <span class="account-value">${account.ucc}</span>
-            </div>
-            <div class="account-detail">
-                <span class="account-label">Mobile:</span>
-                <span class="account-value">${account.mobile_number}</span>
-            </div>
-            ${
-                account.last_login
-                    ? `
-                <div class="account-detail">
-                    <span class="account-label">Last Login:</span>
-                    <span class="account-value">${formatDate(account.last_login)}</span>
-                </div>
-            `
-                    : ""
-            }
-        </div>
-
-        <div class="account-actions">
-            ${
-                account.is_logged_in
-                    ? `
-                <button class="btn-account-action btn-account-switch" onclick="switchAccount(${account.id})">
-                    <i class="fas fa-exchange-alt"></i>
-                    Switch
-                </button>
-            `
-                    : `
-                <button class="btn-account-action btn-account-switch" onclick="reconnectAccount(${account.id})">
-                    <i class="fas fa-plug"></i>
-                    Reconnect
-                </button>
-            `
-            }
-            <button class="btn-account-action btn-account-logout" onclick="logoutAccount(${account.id})" title="Logout">
-                <i class="fas fa-sign-out-alt"></i>
-            </button>
-        </div>
-    `;
-
-    return accountDiv;
+// Simple function to check if user is authenticated
+function isKotakAuthenticated() {
+    return fetch("/kotak/api/status")
+        .then(response => response.json())
+        .then(data => data.authenticated)
+        .catch(() => false);
 }
 
-// Switch to different account
-async function switchAccount(accountId) {
+// Check authentication status and update UI accordingly
+async function checkAuthStatus() {
     try {
-        const response = await fetch(`/api/kotak/account/${accountId}/switch`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
-
+        const response = await fetch("/kotak/api/status");
         const data = await response.json();
-
-        if (data.success) {
-            Swal.fire({
-                icon: "success",
-                title: "Account Switched!",
-                text: data.message,
-                timer: 1500,
-                showConfirmButton: false,
-            });
-
-            // Update sidebar
+        
+        if (data.authenticated) {
             updateSidebarWithAccounts();
-        } else {
-            Swal.fire({
-                icon: "error",
-                title: "Switch Failed",
-                text: data.error,
-                confirmButtonText: "OK",
-            });
         }
     } catch (error) {
-        console.error("Switch error:", error);
-        Swal.fire({
-            icon: "error",
-            title: "Connection Error",
-            text: "Unable to switch account. Please try again.",
-            confirmButtonText: "OK",
-        });
-    }
-}
-
-// Logout from account
-async function logoutAccount(accountId) {
-    try {
-        const result = await Swal.fire({
-            title: "Logout Account?",
-            text: "Are you sure you want to logout from this Kotak Neo account?",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#dc2626",
-            cancelButtonColor: "#6b7280",
-            confirmButtonText: "Yes, logout",
-            cancelButtonText: "Cancel",
-        });
-
-        if (result.isConfirmed) {
-            const response = await fetch(`/api/kotak/logout/${accountId}`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                Swal.fire({
-                    icon: "success",
-                    title: "Logged Out!",
-                    text: data.message,
-                    timer: 1500,
-                    showConfirmButton: false,
-                });
-
-                // Update sidebar
-                updateSidebarWithAccounts();
-            } else {
-                Swal.fire({
-                    icon: "error",
-                    title: "Logout Failed",
-                    text: data.error,
-                    confirmButtonText: "OK",
-                });
-            }
-        }
-    } catch (error) {
-        console.error("Logout error:", error);
-        Swal.fire({
-            icon: "error",
-            title: "Connection Error",
-            text: "Unable to logout. Please try again.",
-            confirmButtonText: "OK",
-        });
+        console.error("Auth check error:", error);
     }
 }
 
@@ -1317,56 +1149,20 @@ function updateActiveNavLink() {
 // Update sidebar with logged-in accounts (modified to show/hide Kotak section)
 async function updateSidebarWithAccountsEnhanced() {
     try {
-        const response = await fetch("/api/kotak/accounts");
+        const response = await fetch("/kotak/api/status");
         const data = await response.json();
 
-        if (data.success && data.accounts.length > 0) {
-            const loggedAccountsContainer =
-                document.getElementById("loggedAccounts");
-            const accountLoginContainer =
-                document.getElementById("accountLogin");
-
-            if (loggedAccountsContainer && accountLoginContainer) {
-                // Hide login button and show accounts
-                accountLoginContainer.style.display = "none";
-                loggedAccountsContainer.style.display = "block";
-
-                // Clear existing accounts
-                loggedAccountsContainer.innerHTML = "";
-
-                // Add each account
-                data.accounts.forEach((account) => {
-                    const accountElement = createAccountElement(account);
-                    loggedAccountsContainer.appendChild(accountElement);
-                });
-
-                // Add "Add Account" button
-                const addAccountBtn = document.createElement("button");
-                addAccountBtn.className = "btn-add-account";
-                addAccountBtn.innerHTML =
-                    '<i class="fas fa-plus me-2"></i>Add Another Account';
-                addAccountBtn.onclick = () => showLoginModal();
-                loggedAccountsContainer.appendChild(addAccountBtn);
-
-                // Show Kotak Neo section with active account
-                const activeAccount =
-                    data.accounts.find((acc) => acc.is_logged_in) ||
-                    data.accounts[0];
-                showKotakNeoSection(activeAccount);
+        if (data.authenticated) {
+            // Show the Kotak Neo section if authenticated
+            const kotakNeoSection = document.getElementById("kotakNeoSection");
+            if (kotakNeoSection) {
+                kotakNeoSection.style.display = "block";
             }
         } else {
-            // Show login button if no accounts
-            const loggedAccountsContainer =
-                document.getElementById("loggedAccounts");
-            const accountLoginContainer =
-                document.getElementById("accountLogin");
-
-            if (loggedAccountsContainer && accountLoginContainer) {
-                loggedAccountsContainer.style.display = "none";
-                accountLoginContainer.style.display = "block";
-
-                // Hide Kotak Neo section
-                hideKotakNeoSection();
+            // Hide the Kotak Neo section if not authenticated
+            const kotakNeoSection = document.getElementById("kotakNeoSection");
+            if (kotakNeoSection) {
+                kotakNeoSection.style.display = "none";
             }
         }
     } catch (error) {
@@ -1375,10 +1171,8 @@ async function updateSidebarWithAccountsEnhanced() {
     }
 }
 
-// Replace the original updateSidebarWithAccounts function
-async function updateSidebarWithAccounts() {
-    return updateSidebarWithAccountsEnhanced();
-}
+// Use the enhanced function as the main one
+updateSidebarWithAccounts = updateSidebarWithAccountsEnhanced;
 
 // Initialize account display on page load
 document.addEventListener("DOMContentLoaded", function () {
