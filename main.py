@@ -83,13 +83,13 @@ def index():
     """Home page - check if user is logged in"""
     from flask_login import current_user
     if current_user.is_authenticated:
-        return redirect(url_for('portfolio'))
+        return render_template('portfolio.html')
     else:
         return redirect(url_for('login'))
 
 @app.route('/portfolio')
 def portfolio():
-    """Portfolio page - redirects to Kotak Neo dashboard"""
+    """Portfolio page - shows portfolio template"""
     from flask_login import current_user
     from flask import session
     
@@ -97,13 +97,8 @@ def portfolio():
     if not current_user.is_authenticated:
         return redirect(url_for('login'))
     
-    # Check if user is logged in to Kotak Neo
-    if not session.get('kotak_authenticated'):
-        flash('Please log in to Kotak Neo to view your portfolio', 'warning')
-        return redirect(url_for('login'))
-    
-    # Redirect to Kotak Neo dashboard
-    return redirect(url_for('kotak_api.dashboard'))
+    # Render the portfolio template directly instead of redirecting
+    return render_template('portfolio.html')
 
 @app.route('/trading-signals')
 def trading_signals():
@@ -289,7 +284,11 @@ def kotak_holdings():
 @app.errorhandler(404)
 def page_not_found(error):
     """Custom 404 error page"""
-    return render_template('base.html'), 404
+    from flask_login import current_user
+    if current_user.is_authenticated:
+        return render_template('portfolio.html'), 404
+    else:
+        return render_template('auth/login.html'), 404
 
 # Modified the main block to initialize the external database table
 if __name__ == '__main__':
