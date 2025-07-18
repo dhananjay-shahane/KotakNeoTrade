@@ -1037,6 +1037,17 @@ body {
     background: rgba(255, 255, 255, 0.1);
 }
 
+.mobile-toggle:active {
+    transform: scale(0.95);
+}
+
+/* Ensure mobile toggle is visible on mobile devices */
+@media (max-width: 992px) {
+    .mobile-toggle {
+        display: flex !important;
+    }
+}
+
 /* Settings Button */
 .settings-btn {
     background: none;
@@ -1184,6 +1195,25 @@ body {
     color: #e2e8f0;
 }
 
+/* Sidebar Overlay */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 998;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.show {
+    display: block;
+    opacity: 1;
+}
+
 /* Mobile Responsiveness */
 @media (max-width: 992px) {
     .mobile-toggle {
@@ -1197,6 +1227,7 @@ body {
         box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
         width: 280px;
         max-width: 80vw;
+        z-index: 999;
     }
 
     .sidebar.show {
@@ -1223,22 +1254,7 @@ body {
     .header-right {
         gap: 0.5rem;
     }
-
-    /* Overlay when sidebar is open */
-    .sidebar-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 998;
-    }
-
-    .sidebar-overlay.show {
-        display: block;
-    }
+}
 
     /* Better mobile header */
     .main-header {

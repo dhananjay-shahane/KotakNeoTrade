@@ -58,6 +58,12 @@ function showLoginModal() {
 function toggleSidebar() {
     var sidebar = document.getElementById("sidebar");
     var overlay = document.getElementById("sidebarOverlay");
+    
+    if (!sidebar || !overlay) {
+        console.error("Sidebar or overlay element not found");
+        return;
+    }
+    
     var isOpen = sidebar.classList.contains("show");
 
     if (isOpen) {
@@ -200,6 +206,26 @@ function showPageError(pageType) {
         `;
     }
 }
+
+// Debug function for sidebar toggle
+function debugSidebarToggle() {
+    console.log('Debugging sidebar toggle...');
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("sidebarOverlay");
+    const toggle = document.querySelector(".mobile-toggle");
+    
+    console.log('Sidebar element:', sidebar);
+    console.log('Overlay element:', overlay);
+    console.log('Toggle button:', toggle);
+    
+    if (sidebar) {
+        console.log('Sidebar classes:', sidebar.className);
+        console.log('Sidebar transform:', getComputedStyle(sidebar).transform);
+    }
+}
+
+// Make debug function available globally
+window.debugSidebarToggle = debugSidebarToggle;
 
 // Initialize page-specific functionality
 function initializeOrdersPage() {
@@ -1047,34 +1073,8 @@ function handleAccountLogout() {
 }
 document.addEventListener("DOMContentLoaded", updateTimestamps);
 
-function toggleSidebar() {
-    const sidebar = document.querySelector(".sidebar");
-    const content = document.querySelector(".content");
-
-    if (sidebar && content) {
-        sidebar.classList.toggle("collapsed");
-        content.classList.toggle("expanded");
-    }
-}
-
-// Ensure all functions are properly defined
-if (typeof toggleSidebar !== "function") {
-    window.toggleSidebar = function () {
-        const sidebar = document.getElementById("sidebar");
-        const overlay = document.getElementById("sidebarOverlay");
-        const isOpen = sidebar && sidebar.classList.contains("show");
-
-        if (isOpen) {
-            sidebar.classList.remove("show");
-            overlay && overlay.classList.remove("show");
-            document.body.style.overflow = "";
-        } else {
-            sidebar && sidebar.classList.add("show");
-            overlay && overlay.classList.add("show");
-            document.body.style.overflow = "hidden";
-        }
-    };
-}
+// Ensure toggleSidebar is available globally
+window.toggleSidebar = toggleSidebar;
 
 // Kotak Neo Login Functionality
 async function handleKotakLogin(event) {
