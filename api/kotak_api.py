@@ -83,7 +83,7 @@ def orders():
         flash('Please log in to Kotak Neo first', 'warning')
         return redirect(url_for('kotak_api.kotak_login'))
     
-    return render_template('kotak_orders.html')
+    return render_template('orders.html')
 
 @kotak_api.route('/positions')
 @login_required
@@ -93,7 +93,7 @@ def positions():
         flash('Please log in to Kotak Neo first', 'warning')
         return redirect(url_for('kotak_api.kotak_login'))
     
-    return render_template('kotak_positions.html')
+    return render_template('positions.html')
 
 @kotak_api.route('/holdings')
 @login_required
@@ -103,7 +103,7 @@ def holdings():
         flash('Please log in to Kotak Neo first', 'warning')
         return redirect(url_for('kotak_api.kotak_login'))
     
-    return render_template('kotak_holdings.html')
+    return render_template('holdings.html')
 
 # API endpoints
 @kotak_api.route('/api/authenticate', methods=['POST'])
