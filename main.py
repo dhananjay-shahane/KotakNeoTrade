@@ -166,14 +166,13 @@ def register_kotak_neo_blueprints():
         if kotak_path not in sys.path:
             sys.path.insert(0, kotak_path)
 
-        # Import blueprints first to avoid database conflicts
-        # Note: Using the new api/kotak_api.py instead of missing routes
-        # from kotak_neo_project.routes.auth_routes import auth_bp
-        # from kotak_neo_project.routes.main_routes import main_bp
+        # Import and register the routes
+        from routes.auth_routes import auth_bp
+        from routes.main_routes import main_bp
 
-        # Register blueprints with URL prefix
-        # app.register_blueprint(auth_bp, url_prefix='/kotak')
-        # app.register_blueprint(main_bp, url_prefix='/kotak')
+        # Register blueprints with proper names
+        app.register_blueprint(auth_bp, name='auth')
+        app.register_blueprint(main_bp, name='main')
 
         # Initialize database after blueprints are registered
         try:
