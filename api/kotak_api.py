@@ -47,7 +47,7 @@ def kotak_login():
         except Exception as e:
             flash(f'Login error: {str(e)}', 'error')
     
-    return render_template('kotak_login.html')
+    return render_template('login.html')
 
 @kotak_api.route('/dashboard')
 @login_required
