@@ -84,7 +84,7 @@
                         id="themeToggle"
                         class="theme-toggle-input"
                     />
-                    <label for="themeToggle" class="theme-toggle-label">
+                    <label for="themeToggle" class="theme-toggle-label" title="Toggle theme">
                         <i class="fas fa-sun theme-icon-light"></i>
                         <i class="fas fa-moon theme-icon-dark"></i>
                         <span class="theme-toggle-slider"></span>
@@ -454,20 +454,18 @@
                     <div class="modal-body">
                         <!-- Font Size Settings -->
                         <div class="settings-section">
-                            <h6>
-                                <i class="fas fa-text-height"></i>
+                            <h6 class="mb-3">
+                                <i class="fas fa-text-height me-2"></i>
                                 Font Size Settings
                             </h6>
-                            <div class="settings-control-group">
-                                <label for="fontSizeSelect">Font Size:</label>
+                            <div class="mb-3">
+                                <label for="fontSizeSelect" class="form-label">Choose Font Size:</label>
                                 <select id="fontSizeSelect" class="form-select">
                                     <option value="10">10px (Minimum)</option>
                                     <option value="11">11px</option>
                                     <option value="12">12px</option>
                                     <option value="13">13px</option>
-                                    <option value="14" selected>
-                                        14px (Default)
-                                    </option>
+                                    <option value="14" selected>14px (Default)</option>
                                     <option value="15">15px</option>
                                     <option value="16">16px</option>
                                     <option value="17">17px</option>
@@ -476,13 +474,17 @@
                                     <option value="20">20px (Maximum)</option>
                                 </select>
                             </div>
-                            <div class="font-size-preview">
-                                <p>
+                            <div class="font-size-preview p-3 border rounded" style="background: var(--dark-bg);">
+                                <p class="mb-0">
                                     This is a preview of the selected font size.
                                     Your entire application will use this size.
                                 </p>
                             </div>
                         </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="applySettings()">Apply Settings</button>
                     </div>
                 </div>
             </div>

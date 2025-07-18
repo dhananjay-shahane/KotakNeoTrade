@@ -1,3 +1,52 @@
+
+// Toaster notification system
+function showToaster(title, message, type = 'info', duration = 3000) {
+    // Create toaster container if it doesn't exist
+    let container = document.getElementById('toasterContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toasterContainer';
+        container.className = 'toaster-container';
+        document.body.appendChild(container);
+    }
+
+    // Create toaster element
+    const toaster = document.createElement('div');
+    toaster.className = 'toaster';
+    
+    const iconClass = {
+        success: 'fas fa-check',
+        error: 'fas fa-times',
+        warning: 'fas fa-exclamation-triangle',
+        info: 'fas fa-info-circle'
+    }[type] || 'fas fa-info-circle';
+
+    toaster.innerHTML = `
+        <div class="toaster-icon ${type}">
+            <i class="${iconClass}"></i>
+        </div>
+        <div class="toaster-content">
+            <div class="toaster-title">${title}</div>
+            <div class="toaster-message">${message}</div>
+        </div>
+        <button class="toaster-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+
+    container.appendChild(toaster);
+
+    // Trigger animation
+    setTimeout(() => toaster.classList.add('show'), 10);
+
+    // Auto remove
+    setTimeout(() => {
+        toaster.classList.remove('show');
+        setTimeout(() => toaster.remove(), 300);
+    }, duration);
+}
+
+
 // Missing functions that are called from the HTML
 function showLoginModal() {
     const modal = new bootstrap.Modal(
@@ -100,7 +149,7 @@ window.addEventListener("resize", function () {
 
 // Theme toggle functionality
 function toggleTheme() {
-    const currentTheme = document.documentElement.getAttribute("data-theme");
+    const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
     const newTheme = currentTheme === "light" ? "dark" : "light";
 
     document.documentElement.setAttribute("data-theme", newTheme);
@@ -111,7 +160,24 @@ function toggleTheme() {
     if (themeToggle) {
         themeToggle.checked = newTheme === "light";
     }
+
+    // Show feedback
+    if (typeof showToaster === 'function') {
+        showToaster('Theme Changed', `Switched to ${newTheme} mode`, 'success');
+    }
 }
+
+// Initialize theme on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        themeToggle.checked = savedTheme === 'light';
+        themeToggle.addEventListener('change', toggleTheme);
+    }
+});
 
 // Show error message
 function showPageError(pageType) {
@@ -364,36 +430,60 @@ function showSettingsModal() {
 
 // Font size functionality
 document.addEventListener("DOMContentLoaded", function () {
+    // Initialize font size
+    const savedFontSize = localStorage.getItem("website-font-size") || "14";
+    document.documentElement.style.setProperty("--global-font-size", savedFontSize + "px");
+
     const fontSizeSelect = document.getElementById("fontSizeSelect");
     const preview = document.querySelector(".font-size-preview");
 
-    // Load saved font size
-    const savedFontSize = localStorage.getItem("website-font-size") || "14";
-    fontSizeSelect.value = savedFontSize;
-    document.documentElement.style.setProperty(
-        "--global-font-size",
-        savedFontSize + "px",
-    );
-
-    // Update preview
-    if (preview) {
-        preview.style.fontSize = savedFontSize + "px";
-    }
-
-    fontSizeSelect.addEventListener("change", function () {
-        const fontSize = this.value;
-        document.documentElement.style.setProperty(
-            "--global-font-size",
-            fontSize + "px",
-        );
-        localStorage.setItem("website-font-size", fontSize);
-
+    if (fontSizeSelect) {
+        fontSizeSelect.value = savedFontSize;
+        
         // Update preview
         if (preview) {
-            preview.style.fontSize = fontSize + "px";
+            preview.style.fontSize = savedFontSize + "px";
         }
-    });
+
+        fontSizeSelect.addEventListener("change", function () {
+            const fontSize = this.value;
+            document.documentElement.style.setProperty("--global-font-size", fontSize + "px");
+            localStorage.setItem("website-font-size", fontSize);
+
+            // Update preview
+            if (preview) {
+                preview.style.fontSize = fontSize + "px";
+            }
+
+            // Show feedback
+            if (typeof showToaster === 'function') {
+                showToaster('Font Size Updated', `Changed to ${fontSize}px`, 'success');
+            }
+        });
+    }
 });
+
+// Settings modal functionality
+function applySettings() {
+    const fontSizeSelect = document.getElementById('fontSizeSelect');
+    
+    if (fontSizeSelect) {
+        const newFontSize = fontSizeSelect.value;
+        document.documentElement.style.setProperty('--global-font-size', newFontSize + 'px');
+        localStorage.setItem('website-font-size', newFontSize);
+    }
+
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
+    if (modal) {
+        modal.hide();
+    }
+
+    // Show success message
+    if (typeof showToaster === 'function') {
+        showToaster('Settings Applied', 'Your preferences have been saved', 'success');
+    }
+}
 
 // Notification functionality
 function toggleNotificationInbox() {
