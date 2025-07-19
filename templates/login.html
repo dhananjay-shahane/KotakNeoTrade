@@ -3,25 +3,426 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Kotak Neo Trading</title>
+    <title>Choose Your Broker - Kotak Neo Trading</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1c2e 0%, #2d3561 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .main-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .broker-selection-panel {
+            background: rgba(20, 25, 45, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            min-height: 600px;
+        }
+        
+        .left-panel {
+            flex: 1;
+            padding: 40px;
+            background: rgba(30, 35, 55, 0.8);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .right-panel {
+            flex: 1;
+            padding: 40px;
+            background: rgba(25, 30, 50, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .panel-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .panel-icon {
+            width: 40px;
+            height: 40px;
+            background: #4285f4;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+        
+        .panel-title {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .broker-card {
+            background: rgba(40, 45, 65, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .broker-card:hover {
+            background: rgba(66, 133, 244, 0.1);
+            border-color: #4285f4;
+            transform: translateY(-2px);
+        }
+        
+        .broker-card.selected {
+            background: rgba(66, 133, 244, 0.2);
+            border-color: #4285f4;
+        }
+        
+        .broker-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .broker-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .broker-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: white;
+            font-size: 1.2rem;
+        }
+        
+        .kotak-icon {
+            background: #4285f4;
+        }
+        
+        .upstox-icon {
+            background: #ff6b35;
+        }
+        
+        .angel-icon {
+            background: #e91e63;
+        }
+        
+        .zerodha-icon {
+            background: #387cff;
+        }
+        
+        .broker-name {
+            color: white;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .broker-description {
+            color: #8892b0;
+            font-size: 0.9rem;
+            margin: 5px 0 0 0;
+        }
+        
+        .coming-soon-badge {
+            background: #ffa726;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        
+        .login-form {
+            margin-top: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            color: #8892b0;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .form-label i {
+            margin-right: 8px;
+            color: #4285f4;
+        }
+        
+        .form-control {
+            background: rgba(40, 45, 65, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            padding: 12px 15px;
+            font-size: 0.95rem;
+        }
+        
+        .form-control:focus {
+            background: rgba(40, 45, 65, 0.9);
+            border-color: #4285f4;
+            box-shadow: 0 0 0 0.2rem rgba(66, 133, 244, 0.25);
+            color: white;
+        }
+        
+        .form-control::placeholder {
+            color: #64748b;
+        }
+        
+        .btn-login {
+            background: #4285f4;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            padding: 12px 24px;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-login:hover {
+            background: #3367d6;
+            transform: translateY(-1px);
+        }
+        
+        .forgot-link {
+            color: #4285f4;
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            margin-top: 15px;
+        }
+        
+        .forgot-link:hover {
+            color: #3367d6;
+        }
+        
+        .back-link {
+            color: #8892b0;
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            margin-top: 20px;
+        }
+        
+        .back-link:hover {
+            color: white;
+        }
+        
+        .help-section {
+            background: rgba(40, 45, 65, 0.6);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+        
+        .help-title {
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .help-title i {
+            margin-right: 8px;
+            color: #4285f4;
+        }
+        
+        .help-text {
+            color: #8892b0;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+        
+        .alert {
+            border: none;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-info {
+            background: rgba(66, 133, 244, 0.1);
+            color: #4285f4;
+            border: 1px solid rgba(66, 133, 244, 0.2);
+        }
+        
+        .alert-warning {
+            background: rgba(255, 167, 38, 0.1);
+            color: #ffa726;
+            border: 1px solid rgba(255, 167, 38, 0.2);
+        }
+        
+        .alert-danger {
+            background: rgba(244, 67, 54, 0.1);
+            color: #f44336;
+            border: 1px solid rgba(244, 67, 54, 0.2);
+        }
+        
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .broker-selection-panel {
+                flex-direction: column;
+                max-width: 100%;
+                margin: 0;
+                border-radius: 0;
+                min-height: 100vh;
+            }
+            
+            .left-panel, .right-panel {
+                padding: 20px;
+            }
+            
+            .left-panel {
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            
+            .main-container {
+                padding: 0;
+            }
+            
+            .panel-title {
+                font-size: 1.3rem;
+            }
+            
+            .broker-card {
+                padding: 15px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .panel-header {
+                margin-bottom: 20px;
+            }
+            
+            .broker-card {
+                padding: 12px;
+                margin-bottom: 10px;
+            }
+            
+            .broker-name {
+                font-size: 0.9rem;
+            }
+            
+            .broker-description {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="login-container">
-        <!-- Left Side - Login Form -->
-        <div class="login-form-section">
-            <div class="form-container">
-
-                <div class="brand-logo">
-                  <i class="fas fa-shield-alt"></i>
-                   <h3 class="text-muted">Kotak Neo</h3>
-                 </div>
-                <!-- Brand Header -->
-                <div class="brand-header">
-                    <h1 class="welcome-title">Welcome back</h1>
-                    <p class="welcome-subtitle">Please enter your details</p>
+    <div class="main-container">
+        <div class="broker-selection-panel">
+            <!-- Left Panel - Broker Selection -->
+            <div class="left-panel">
+                <div class="panel-header">
+                    <div class="panel-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <h2 class="panel-title">Choose Your Broker</h2>
+                </div>
+                
+                <div class="broker-card selected" data-broker="kotak">
+                    <div class="broker-header">
+                        <div class="broker-info">
+                            <div class="broker-icon kotak-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div>
+                                <h4 class="broker-name">Kotak Neo</h4>
+                                <p class="broker-description">Advanced trading platform with real-time data</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="broker-card" data-broker="upstox">
+                    <div class="broker-header">
+                        <div class="broker-info">
+                            <div class="broker-icon upstox-icon">
+                                <i class="fas fa-chart-area"></i>
+                            </div>
+                            <div>
+                                <h4 class="broker-name">Upstox</h4>
+                                <p class="broker-description">Fast and reliable trading experience</p>
+                            </div>
+                        </div>
+                        <span class="coming-soon-badge">Coming Soon</span>
+                    </div>
+                </div>
+                
+                <div class="broker-card" data-broker="angel">
+                    <div class="broker-header">
+                        <div class="broker-info">
+                            <div class="broker-icon angel-icon">
+                                <i class="fas fa-wing"></i>
+                            </div>
+                            <div>
+                                <h4 class="broker-name">Angel One</h4>
+                                <p class="broker-description">Comprehensive trading and investment platform</p>
+                            </div>
+                        </div>
+                        <span class="coming-soon-badge">Coming Soon</span>
+                    </div>
+                </div>
+                
+                <div class="broker-card" data-broker="zerodha">
+                    <div class="broker-header">
+                        <div class="broker-info">
+                            <div class="broker-icon zerodha-icon">
+                                <i class="fas fa-infinity"></i>
+                            </div>
+                            <div>
+                                <h4 class="broker-name">Zerodha</h4>
+                                <p class="broker-description">India's largest discount broker platform</p>
+                            </div>
+                        </div>
+                        <span class="coming-soon-badge">Coming Soon</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Panel - Login Form -->
+            <div class="right-panel">
+                <div class="panel-header">
+                    <div class="panel-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h2 class="panel-title">Kotak Neo Login</h2>
                 </div>
 
                 <!-- Flash Messages -->
@@ -46,17 +447,14 @@
                 </div>
                 {% endif %}
 
-                <!-- TOTP Info Alert -->
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <strong>TOTP Authentication Required:</strong> Use your authenticator app to get the TOTP code
-                </div>
-
                 <!-- Login Form -->
-                <form method="POST" action="{{ url_for('auth_routes.login') }}" id="totpForm">
+                <form method="POST" action="{{ url_for('auth_routes.login') }}" id="totpForm" class="login-form">
                     <!-- Mobile Number -->
                     <div class="form-group">
-                        <label for="mobile_number" class="form-label">Mobile Number</label>
+                        <label for="mobile_number" class="form-label">
+                            <i class="fas fa-mobile-alt"></i>
+                            Mobile Number
+                        </label>
                         <input
                             type="tel"
                             class="form-control"
@@ -67,12 +465,14 @@
                             maxlength="10"
                             required
                         />
-                        <div class="form-text">Enter your 10-digit mobile number registered with Kotak Neo</div>
                     </div>
 
                     <!-- UCC -->
                     <div class="form-group">
-                        <label for="ucc" class="form-label">UCC (User Client Code)</label>
+                        <label for="ucc" class="form-label">
+                            <i class="fas fa-user"></i>
+                            UCC (User Client Code)
+                        </label>
                         <input
                             type="text"
                             class="form-control"
@@ -85,15 +485,17 @@
                             title="UCC should be 5-6 alphanumeric characters"
                             required
                         />
-                        <div class="form-text">Enter your 5-6 character alphanumeric UCC from Kotak Neo</div>
                     </div>
 
                     <!-- MPIN -->
                     <div class="form-group">
-                        <label for="mpin" class="form-label">MPIN</label>
+                        <label for="mpin" class="form-label">
+                            <i class="fas fa-key"></i>
+                            MPIN
+                        </label>
                         <input
                             type="password"
-                            class="form-control totp-input"
+                            class="form-control"
                             id="mpin"
                             name="mpin"
                             placeholder="••••••"
@@ -102,15 +504,17 @@
                             autocomplete="current-password"
                             required
                         />
-                        <div class="form-text">Enter your 6-digit MPIN</div>
                     </div>
 
                     <!-- TOTP Code -->
                     <div class="form-group">
-                        <label for="totp" class="form-label">TOTP Code</label>
+                        <label for="totp" class="form-label">
+                            <i class="fas fa-shield-alt"></i>
+                            TOTP Code
+                        </label>
                         <input
                             type="text"
-                            class="form-control totp-input"
+                            class="form-control"
                             id="totp"
                             name="totp"
                             placeholder="000000"
@@ -118,27 +522,107 @@
                             pattern="[0-9]{6}"
                             required
                         />
-                        <div class="form-text">Enter the current 6-digit TOTP code from your authenticator app (Google Authenticator, Authy, etc.)</div>
                     </div>
 
                     <!-- Forgot Password Link -->
-                    <div class="form-group">
-                        <a href="#" class="forgot-password">Forgot password?</a>
-                    </div>
+                    <a href="#" class="forgot-link">
+                        <i class="fas fa-question-circle me-1"></i>
+                        Forgot password?
+                    </a>
 
                     <!-- Submit Button -->
-                    <button type="submit" class="btn btn-primary" id="totpSubmit">
-                        <i class="fas fa-sign-in-alt me-2"></i>Sign in
+                    <button type="submit" class="btn btn-login" id="totpSubmit">
+                        <i class="fas fa-sign-in-alt me-2"></i>Login to Kotak Neo
                     </button>
                 </form>
+                
+                <!-- Back to Broker Selection -->
+                <a href="#" class="back-link" onclick="showBrokerSelection()">
+                    <i class="fas fa-arrow-left me-1"></i>
+                    Back to Broker Selection
+                </a>
+                
+                <!-- Help Section -->
+                <div class="help-section">
+                    <div class="help-title">
+                        <i class="fas fa-info-circle"></i>
+                        Need Help?
+                    </div>
+                    <p class="help-text">
+                        Make sure you have your Kotak Neo credentials ready. After successful login, you'll be redirected to the trading platform.
+                    </p>
+                </div>
             </div>
         </div>
-
-        <!-- Right Side - Illustration -->
-        <div class="illustration-section">
-        </div>
     </div>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    <script src="{{url_for('static',filename="js/login.js")}}"></script>
+    <script>
+        // Broker selection functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const brokerCards = document.querySelectorAll('.broker-card');
+            
+            brokerCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    if (this.querySelector('.coming-soon-badge')) {
+                        return; // Don't allow selection of coming soon brokers
+                    }
+                    
+                    // Remove selected class from all cards
+                    brokerCards.forEach(c => c.classList.remove('selected'));
+                    
+                    // Add selected class to clicked card
+                    this.classList.add('selected');
+                    
+                    // Update right panel based on selection
+                    const brokerType = this.dataset.broker;
+                    updateRightPanel(brokerType);
+                });
+            });
+        });
+        
+        function updateRightPanel(broker) {
+            // For now, only Kotak Neo is implemented
+            // This can be extended for other brokers later
+        }
+        
+        function showBrokerSelection() {
+            // This could scroll to broker selection or show it on mobile
+            const leftPanel = document.querySelector('.left-panel');
+            leftPanel.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Form validation and submission
+        document.getElementById('totpForm').addEventListener('submit', function(e) {
+            const mobileNumber = document.getElementById('mobile_number').value;
+            const ucc = document.getElementById('ucc').value;
+            const mpin = document.getElementById('mpin').value;
+            const totp = document.getElementById('totp').value;
+            
+            if (!mobileNumber || !ucc || !mpin || !totp) {
+                e.preventDefault();
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            if (mobileNumber.length !== 10) {
+                e.preventDefault();
+                alert('Mobile number must be 10 digits');
+                return;
+            }
+            
+            if (mpin.length !== 6) {
+                e.preventDefault();
+                alert('MPIN must be 6 digits');
+                return;
+            }
+            
+            if (totp.length !== 6) {
+                e.preventDefault();
+                alert('TOTP code must be 6 digits');
+                return;
+            }
+        });
+    </script>
 </body>
 </html>

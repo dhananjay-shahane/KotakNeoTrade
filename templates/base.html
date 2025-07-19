@@ -138,34 +138,19 @@
                 <!-- User Profile -->
                 <div class="user-profile" onclick="toggleUserMenu()">
                     <div class="user-avatar text-white">
-                        {% if session.get('kotak_logged_in') and session.get('greeting_name') %}
-                            {{ session.get('greeting_name')[0].upper() }}
-                        {% elif session.get('authenticated') %}
-                            U
-                        {% else %}
-                            G
-                        {% endif %}
+                        {% if session.get('authenticated') %} U {% else %} G {%
+                        endif %}
                     </div>
                     <div class="user-info">
                         <h6>
-                            {% if session.get('authenticated') and session.get('user_id') %}
-                                {{ session.get('user_id') }}
-                            {% elif session.get('kotak_logged_in') and session.get('greeting_name') %}
-                                {{ session.get('greeting_name') }}
-                            {% elif session.get('authenticated') %}
-                                User
-                            {% else %}
-                                Guest
-                            {% endif %}
+                            {% if session.get('authenticated') and
+                            session.get('user_id') %} {{ session.get('user_id')
+                            }} {% elif session.get('authenticated') %} User {%
+                            else %} Guest {% endif %}
                         </h6>
                         <small>
-                            {% if session.get('kotak_logged_in') %}
-                                Kotak Neo Account
-                            {% elif session.get('authenticated') %}
-                                Trading Account
-                            {% else %}
-                                Guest User
-                            {% endif %}
+                            {% if session.get('authenticated') %} Trading
+                            Account {% else %} Guest User {% endif %}
                         </small>
                     </div>
                     <i
@@ -208,8 +193,13 @@
             </div>
 
             <!-- Kotak Neo Trading Section (shown only after Kotak login) -->
-            {% if session.get('kotak_logged_in') and session.get('login_type') == 'kotak_neo' %}
-            <div class="kotak-neo-section" id="kotakNeoSection" style="display: block;">
+            {% if session.get('kotak_logged_in') and session.get('login_type')
+            == 'kotak_neo' %}
+            <div
+                class="kotak-neo-section"
+                id="kotakNeoSection"
+                style="display: block"
+            >
                 <div class="nav-items">
                     <div class="nav-item">
                         <a href="{{ url_for('show_orders') }}" class="nav-link">
@@ -250,8 +240,13 @@
                 </div>
 
                 <!-- Kotak Neo Account Box (shown only after Kotak login) -->
-                {% if session.get('kotak_logged_in') and session.get('login_type') == 'kotak_neo' %}
-                <div class="kotak-account-box" id="kotakAccountBox" style="display: block;">
+                {% if session.get('kotak_logged_in') and
+                session.get('login_type') == 'kotak_neo' %}
+                <div
+                    class="kotak-account-box"
+                    id="kotakAccountBox"
+                    style="display: block"
+                >
                     <div class="account-card">
                         <div class="account-header">
                             <div class="account-info">
@@ -269,11 +264,16 @@
                         <div class="account-details">
                             <div class="detail-row">
                                 <span class="label">UCC</span>
-                                <span class="value">{{ session.get('ucc', 'N/A') }}</span>
+                                <span class="value"
+                                    >{{ session.get('ucc', 'N/A') }}</span
+                                >
                             </div>
                             <div class="detail-row">
                                 <span class="label">MOBILE</span>
-                                <span class="value">{{ session.get('mobile_number', 'N/A') }}</span>
+                                <span class="value"
+                                    >{{ session.get('mobile_number', 'N/A')
+                                    }}</span
+                                >
                             </div>
                             <div class="detail-row">
                                 <span class="label">Last Login</span>
@@ -313,7 +313,8 @@
                 </div>
 
                 <!-- Login Button (shown when no Kotak account logged in) -->
-                {% if not (session.get('kotak_logged_in') and session.get('login_type') == 'kotak_neo') %}
+                {% if not (session.get('kotak_logged_in') and
+                session.get('login_type') == 'kotak_neo') %}
                 <div class="account-login" id="accountLogin">
                     <a
                         href="{{ url_for('auth_routes.login') }}"
@@ -345,12 +346,19 @@
                 <i class="fas fa-id-card me-2"></i>View Profile
             </a>
             <div class="dropdown-divider"></div>
-            {% if session.get('authenticated') or session.get('kotak_logged_in') %}
-            <a class="dropdown-item text-danger" href="{{ url_for('auth_routes.logout') }}">
+            {% if session.get('authenticated') or session.get('kotak_logged_in')
+            %}
+            <a
+                class="dropdown-item text-danger"
+                href="{{ url_for('auth_routes.logout') }}"
+            >
                 <i class="fas fa-sign-out-alt me-2"></i>Logout
             </a>
             {% else %}
-            <a class="dropdown-item text-primary" href="{{ url_for('auth_routes.trading_account_login') }}">
+            <a
+                class="dropdown-item text-primary"
+                href="{{ url_for('auth_routes.trading_account_login') }}"
+            >
                 <i class="fas fa-sign-in-alt me-2"></i>Login
             </a>
             {% endif %}
