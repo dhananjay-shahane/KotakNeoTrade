@@ -20,7 +20,7 @@ window.addEventListener('beforeunload', function() {
 
 async function loadOrdersData() {
     try {
-        var response = await fetch('/api/orders');
+        var response = await fetch('/api/trading/orders');
         var data = await response.json();
 
         if (data.success) {
@@ -321,7 +321,7 @@ async function refreshOrdersTable() {
     var originalHtml = button.innerHTML;
 
     button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...';
-    button.disabled = true;
+    button.disabled = true;e;
 
     try {
         await loadOrdersData();

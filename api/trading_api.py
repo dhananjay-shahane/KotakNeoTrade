@@ -197,7 +197,7 @@ def quick_sell():
         }), 500
 
 
-@trading_bp.route('/orders')
+@trading_bp.route('/orders', methods=['GET'])
 def get_orders_api():
     try:
         # Get orders data using the trading functions
