@@ -138,26 +138,22 @@
                 <!-- User Profile -->
                 <div class="user-profile" onclick="toggleUserMenu()">
                     <div class="user-avatar text-white">
-                        {% if session.get('kotak_logged_in') and session.get('greeting_name') %} 
-                            {{ session.greeting_name[0].upper() }}
-                        {% elif session.authenticated and session.user_id %} 
+                        {% if session.authenticated and session.user_id and session.get('login_type') == 'trading_account' %}
                             {{ session.user_id[0].upper() }}
-                        {% elif current_user.is_authenticated %} 
-                            {{ current_user.username[0].upper() }} 
-                        {% else %} 
-                            G 
+                        {% elif current_user.is_authenticated %}
+                            {{ current_user.username[0].upper() }}
+                        {% else %}
+                            G
                         {% endif %}
                     </div>
                     <div class="user-info">
                         <h6>
-                            {% if session.get('kotak_logged_in') and session.get('greeting_name') %} 
-                                {{ session.greeting_name }}
-                            {% elif session.authenticated and session.user_id %} 
+                            {% if session.authenticated and session.user_id and session.get('login_type') == 'trading_account' %}
                                 {{ session.user_id }}
-                            {% elif current_user.is_authenticated %} 
-                                {{ current_user.username }} 
-                            {% else %} 
-                                Guest User 
+                            {% elif current_user.is_authenticated %}
+                                {{ current_user.username }}
+                            {% else %}
+                                Guest User
                             {% endif %}
                         </h6>
                         <small>Trading Account</small>
@@ -203,16 +199,10 @@
 
             <!-- Kotak Neo Trading Section (shown after login) -->
             {% if kotak_account %}
-            <div
-                class="kotak-neo-section"
-                id="kotakNeoSection"
-            >
+            <div class="kotak-neo-section" id="kotakNeoSection">
                 <div class="nav-items">
                     <div class="nav-item">
-                        <a
-                            href="{{ url_for('show_orders') }}"
-                            class="nav-link"
-                        >
+                        <a href="{{ url_for('show_orders') }}" class="nav-link">
                             <i class="fas fa-list-alt nav-icon"></i>
                             <span>Orders</span>
                         </a>
@@ -269,15 +259,21 @@
                         <div class="account-details">
                             <div class="detail-row">
                                 <span class="label">UCC</span>
-                                <span class="value">{{ kotak_account.ucc }}</span>
+                                <span class="value"
+                                    >{{ kotak_account.ucc }}</span
+                                >
                             </div>
                             <div class="detail-row">
                                 <span class="label">MOBILE</span>
-                                <span class="value">{{ kotak_account.mobile }}</span>
+                                <span class="value"
+                                    >{{ kotak_account.mobile }}</span
+                                >
                             </div>
                             <div class="detail-row">
                                 <span class="label">Last Login</span>
-                                <span class="value">{{ kotak_account.last_login }}</span>
+                                <span class="value"
+                                    >{{ kotak_account.last_login }}</span
+                                >
                             </div>
                         </div>
 
@@ -289,7 +285,10 @@
                                 <i class="fas fa-external-link-alt me-1"></i>
                                 Switch
                             </button>
-                            <a href="{{ url_for('auth_routes.logout') }}" class="btn-logout-account">
+                            <a
+                                href="{{ url_for('auth_routes.logout') }}"
+                                class="btn-logout-account"
+                            >
                                 <i class="fas fa-sign-out-alt"></i>
                             </a>
                         </div>
@@ -311,7 +310,10 @@
                 <!-- Login Button (shown when no accounts logged in) -->
                 {% if not kotak_account %}
                 <div class="account-login" id="accountLogin">
-                    <a href="{{ url_for('auth_routes.login') }}" class="btn-login-account">
+                    <a
+                        href="{{ url_for('auth_routes.login') }}"
+                        class="btn-login-account"
+                    >
                         <i class="fas fa-sign-in-alt me-2"></i>Login Account
                     </a>
                 </div>
@@ -345,12 +347,6 @@
             {% else %}
             <a class="dropdown-item text-primary" href="{{ url_for('login') }}">
                 <i class="fas fa-sign-in-alt me-2"></i>Login
-            </a>
-            <a
-                class="dropdown-item text-success"
-                href="{{ url_for('register') }}"
-            >
-                <i class="fas fa-user-plus me-2"></i>Register
             </a>
             {% endif %}
         </div>

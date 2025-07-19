@@ -359,8 +359,11 @@ def deals():
 
 
 @app.route('/positions')
-@require_auth
 def show_positions():
+    # Check if user is authenticated with Kotak Neo
+    if not session.get('kotak_logged_in'):
+        return redirect(url_for('auth_routes.login'))
+    
     # Prepare Kotak account data for sidebar if logged in
     kotak_account_data = None
     if session.get('kotak_logged_in'):
@@ -379,8 +382,11 @@ def show_positions():
 
 
 @app.route('/holdings')
-@require_auth
 def show_holdings():
+    # Check if user is authenticated with Kotak Neo
+    if not session.get('kotak_logged_in'):
+        return redirect(url_for('auth_routes.login'))
+    
     # Prepare Kotak account data for sidebar if logged in
     kotak_account_data = None
     if session.get('kotak_logged_in'):
@@ -399,12 +405,26 @@ def show_holdings():
 
 
 @app.route('/orders')
-@require_auth
 def show_orders():
+    # Check if user is authenticated with Kotak Neo
+    if not session.get('kotak_logged_in'):
+        return redirect(url_for('auth_routes.login'))
+    
+    # Prepare Kotak account data for sidebar if logged in
+    kotak_account_data = None
+    if session.get('kotak_logged_in'):
+        kotak_account_data = {
+            'ucc': session.get('ucc', '-'),
+            'mobile': session.get('mobile_number', '-'),
+            'greeting_name': session.get('greeting_name', 'User'),
+            'last_login': 'Just Now',
+            'status': 'Online'
+        }
+    
     try:
         return orders()
     except:
-        return render_template('orders.html')
+        return render_template('orders.html', kotak_account=kotak_account_data)
 
 
 @app.route('/charts')

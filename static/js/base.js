@@ -1,24 +1,25 @@
 // Toaster notification system
-function showToaster(title, message, type = 'info', duration = 3000) {
+function showToaster(title, message, type = "info", duration = 3000) {
     // Create toaster container if it doesn't exist
-    let container = document.getElementById('toasterContainer');
+    let container = document.getElementById("toasterContainer");
     if (!container) {
-        container = document.createElement('div');
-        container.id = 'toasterContainer';
-        container.className = 'toaster-container';
+        container = document.createElement("div");
+        container.id = "toasterContainer";
+        container.className = "toaster-container";
         document.body.appendChild(container);
     }
 
     // Create toaster element
-    const toaster = document.createElement('div');
-    toaster.className = 'toaster';
+    const toaster = document.createElement("div");
+    toaster.className = "toaster";
 
-    const iconClass = {
-        success: 'fas fa-check',
-        error: 'fas fa-times',
-        warning: 'fas fa-exclamation-triangle',
-        info: 'fas fa-info-circle'
-    }[type] || 'fas fa-info-circle';
+    const iconClass =
+        {
+            success: "fas fa-check",
+            error: "fas fa-times",
+            warning: "fas fa-exclamation-triangle",
+            info: "fas fa-info-circle",
+        }[type] || "fas fa-info-circle";
 
     toaster.innerHTML = `
         <div class="toaster-icon ${type}">
@@ -36,15 +37,14 @@ function showToaster(title, message, type = 'info', duration = 3000) {
     container.appendChild(toaster);
 
     // Trigger animation
-    setTimeout(() => toaster.classList.add('show'), 10);
+    setTimeout(() => toaster.classList.add("show"), 10);
 
     // Auto remove
     setTimeout(() => {
-        toaster.classList.remove('show');
+        toaster.classList.remove("show");
         setTimeout(() => toaster.remove(), 300);
     }, duration);
 }
-
 
 // Missing functions that are called from the HTML
 function showLoginModal() {
@@ -58,12 +58,12 @@ function showLoginModal() {
 function toggleSidebar() {
     var sidebar = document.getElementById("sidebar");
     var overlay = document.getElementById("sidebarOverlay");
-    
+
     if (!sidebar || !overlay) {
         console.error("Sidebar or overlay element not found");
         return;
     }
-    
+
     var isOpen = sidebar.classList.contains("show");
 
     if (isOpen) {
@@ -154,7 +154,8 @@ window.addEventListener("resize", function () {
 
 // Theme toggle functionality
 function toggleTheme() {
-    const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
+    const currentTheme =
+        document.documentElement.getAttribute("data-theme") || "dark";
     const newTheme = currentTheme === "light" ? "dark" : "light";
 
     document.documentElement.setAttribute("data-theme", newTheme);
@@ -167,20 +168,20 @@ function toggleTheme() {
     }
 
     // Show feedback
-    if (typeof showToaster === 'function') {
-        showToaster('Theme Changed', `Switched to ${newTheme} mode`, 'success');
+    if (typeof showToaster === "function") {
+        showToaster("Theme Changed", `Switched to ${newTheme} mode`, "success");
     }
 }
 
 // Initialize theme on page load
-document.addEventListener('DOMContentLoaded', function() {
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', savedTheme);
+document.addEventListener("DOMContentLoaded", function () {
+    const savedTheme = localStorage.getItem("theme") || "dark";
+    document.documentElement.setAttribute("data-theme", savedTheme);
 
-    const themeToggle = document.getElementById('themeToggle');
+    const themeToggle = document.getElementById("themeToggle");
     if (themeToggle) {
-        themeToggle.checked = savedTheme === 'light';
-        themeToggle.addEventListener('change', toggleTheme);
+        themeToggle.checked = savedTheme === "light";
+        themeToggle.addEventListener("change", toggleTheme);
     }
 });
 
@@ -209,18 +210,18 @@ function showPageError(pageType) {
 
 // Debug function for sidebar toggle
 function debugSidebarToggle() {
-    console.log('Debugging sidebar toggle...');
+    console.log("Debugging sidebar toggle...");
     const sidebar = document.getElementById("sidebar");
     const overlay = document.getElementById("sidebarOverlay");
     const toggle = document.querySelector(".mobile-toggle");
-    
-    console.log('Sidebar element:', sidebar);
-    console.log('Overlay element:', overlay);
-    console.log('Toggle button:', toggle);
-    
+
+    console.log("Sidebar element:", sidebar);
+    console.log("Overlay element:", overlay);
+    console.log("Toggle button:", toggle);
+
     if (sidebar) {
-        console.log('Sidebar classes:', sidebar.className);
-        console.log('Sidebar transform:', getComputedStyle(sidebar).transform);
+        console.log("Sidebar classes:", sidebar.className);
+        console.log("Sidebar transform:", getComputedStyle(sidebar).transform);
     }
 }
 
@@ -455,37 +456,47 @@ function showSettingsModal() {
 
 // Font size functionality
 function updateFontSize() {
-    const fontSize = document.getElementById('fontSizeSlider').value;
-    document.documentElement.style.setProperty('--global-font-size', fontSize + 'px');
+    const fontSize = document.getElementById("fontSizeSlider").value;
+    document.documentElement.style.setProperty(
+        "--global-font-size",
+        fontSize + "px",
+    );
 
     // Update all elements with font size
-    const elements = document.querySelectorAll('body, .card, .table, .form-control, .form-select, .nav-link, .dropdown-item, .modal-body, .card-body, .card-header, .alert, p, span, div');
-    elements.forEach(el => {
-        el.style.fontSize = fontSize + 'px';
+    const elements = document.querySelectorAll(
+        "body, .card, .table, .form-control, .form-select, .nav-link, .dropdown-item, .modal-body, .card-body, .card-header, .alert, p, span, div",
+    );
+    elements.forEach((el) => {
+        el.style.fontSize = fontSize + "px";
     });
 
     // Update preview
-    const preview = document.querySelector('.font-size-preview');
+    const preview = document.querySelector(".font-size-preview");
     if (preview) {
-        preview.style.fontSize = fontSize + 'px';
+        preview.style.fontSize = fontSize + "px";
     }
 
     // Store in localStorage
-    localStorage.setItem('globalFontSize', fontSize);
+    localStorage.setItem("globalFontSize", fontSize);
 }
 
 // Load saved font size on page load
-document.addEventListener('DOMContentLoaded', function() {
-    const savedFontSize = localStorage.getItem('globalFontSize') || '14';
-    document.documentElement.style.setProperty('--global-font-size', savedFontSize + 'px');
+document.addEventListener("DOMContentLoaded", function () {
+    const savedFontSize = localStorage.getItem("globalFontSize") || "14";
+    document.documentElement.style.setProperty(
+        "--global-font-size",
+        savedFontSize + "px",
+    );
 
     // Apply to all elements immediately
-    const elements = document.querySelectorAll('body, .card, .table, .form-control, .form-select, .nav-link, .dropdown-item, .modal-body, .card-body, .card-header, .alert, p, span, div');
-    elements.forEach(el => {
-        el.style.fontSize = savedFontSize + 'px';
+    const elements = document.querySelectorAll(
+        "body, .card, .table, .form-control, .form-select, .nav-link, .dropdown-item, .modal-body, .card-body, .card-header, .alert, p, span, div",
+    );
+    elements.forEach((el) => {
+        el.style.fontSize = savedFontSize + "px";
     });
 
-    const slider = document.getElementById('fontSizeSlider');
+    const slider = document.getElementById("fontSizeSlider");
     if (slider) {
         slider.value = savedFontSize;
     }
@@ -493,45 +504,63 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Settings modal functionality
 function applySettings() {
-    const fontSizeSelect = document.getElementById('fontSizeSelect');
+    const fontSizeSelect = document.getElementById("fontSizeSelect");
 
     if (fontSizeSelect) {
         const newFontSize = fontSizeSelect.value;
-        document.documentElement.style.setProperty('--global-font-size', newFontSize + 'px');
-        localStorage.setItem('website-font-size', newFontSize);
+        document.documentElement.style.setProperty(
+            "--global-font-size",
+            newFontSize + "px",
+        );
+        localStorage.setItem("website-font-size", newFontSize);
     }
 
     // Close modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
+    const modal = bootstrap.Modal.getInstance(
+        document.getElementById("settingsModal"),
+    );
     if (modal) {
         modal.hide();
     }
 
     // Show success message
-    if (typeof showToaster === 'function') {
-        showToaster('Settings Applied', 'Your preferences have been saved', 'success');
+    if (typeof showToaster === "function") {
+        showToaster(
+            "Settings Applied",
+            "Your preferences have been saved",
+            "success",
+        );
     }
 }
 
 // Settings modal functionality
 function applySettings() {
-    const fontSizeSelect = document.getElementById('fontSizeSelect');
+    const fontSizeSelect = document.getElementById("fontSizeSelect");
 
     if (fontSizeSelect) {
         const newFontSize = fontSizeSelect.value;
-        document.documentElement.style.setProperty('--global-font-size', newFontSize + 'px');
-        localStorage.setItem('website-font-size', newFontSize);
+        document.documentElement.style.setProperty(
+            "--global-font-size",
+            newFontSize + "px",
+        );
+        localStorage.setItem("website-font-size", newFontSize);
     }
 
     // Close modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
+    const modal = bootstrap.Modal.getInstance(
+        document.getElementById("settingsModal"),
+    );
     if (modal) {
         modal.hide();
     }
 
     // Show success message
-    if (typeof showToaster === 'function') {
-        showToaster('Settings Applied', 'Your preferences have been saved', 'success');
+    if (typeof showToaster === "function") {
+        showToaster(
+            "Settings Applied",
+            "Your preferences have been saved",
+            "success",
+        );
     }
 }
 
@@ -794,67 +823,71 @@ function handleKotakLogin(event) {
     submitBtn.disabled = true;
 
     // Make actual API call to Kotak Neo authentication
-    fetch('/kotak/api/authenticate', {
-        method: 'POST',
+    fetch("/kotak/api/authenticate", {
+        method: "POST",
         headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
         },
-        body: JSON.stringify(loginData)
+        body: JSON.stringify(loginData),
     })
-    .then(response => response.json())
-    .then(data => {
-        // Reset button
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
+        .then((response) => response.json())
+        .then((data) => {
+            // Reset button
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
 
-        if (data.success) {
-            // Close modal and redirect to Kotak dashboard
-            const modal = bootstrap.Modal.getInstance(document.getElementById("loginAccountModal"));
-            if (modal) {
-                modal.hide();
+            if (data.success) {
+                // Close modal and redirect to Kotak dashboard
+                const modal = bootstrap.Modal.getInstance(
+                    document.getElementById("loginAccountModal"),
+                );
+                if (modal) {
+                    modal.hide();
+                }
+
+                // Show success message
+                Swal.fire({
+                    icon: "success",
+                    title: "Login Successful",
+                    text: "Successfully logged in to Kotak Neo!",
+                    background: "var(--card-bg)",
+                    color: "var(--text-primary)",
+                    timer: 2000,
+                    showConfirmButton: false,
+                });
+
+                // Redirect to Kotak dashboard
+                setTimeout(() => {
+                    window.location.href = "/kotak/dashboard";
+                }, 2000);
+            } else {
+                // Show error message
+                Swal.fire({
+                    icon: "error",
+                    title: "Login Failed",
+                    text:
+                        data.error ||
+                        "Authentication failed. Please check your credentials.",
+                    background: "var(--card-bg)",
+                    color: "var(--text-primary)",
+                });
             }
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+            // Reset button
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
 
-            // Show success message
-            Swal.fire({
-                icon: 'success',
-                title: 'Login Successful',
-                text: 'Successfully logged in to Kotak Neo!',
-                background: 'var(--card-bg)',
-                color: 'var(--text-primary)',
-                timer: 2000,
-                showConfirmButton: false
-            });
-
-            // Redirect to Kotak dashboard
-            setTimeout(() => {
-                window.location.href = "/kotak/dashboard";
-            }, 2000);
-        } else {
             // Show error message
             Swal.fire({
-                icon: 'error',
-                title: 'Login Failed',
-                text: data.error || 'Authentication failed. Please check your credentials.',
-                background: 'var(--card-bg)',
-                color: 'var(--text-primary)',
+                icon: "error",
+                title: "Connection Error",
+                text: "Unable to connect to authentication service. Please try again.",
+                background: "var(--card-bg)",
+                color: "var(--text-primary)",
             });
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        // Reset button
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-
-        // Show error message
-        Swal.fire({
-            icon: 'error',
-            title: 'Connection Error',
-            text: 'Unable to connect to authentication service. Please try again.',
-            background: 'var(--card-bg)',
-            color: 'var(--text-primary)',
         });
-    });
 }
 
 // Reset modal when it's closed
@@ -1077,114 +1110,14 @@ document.addEventListener("DOMContentLoaded", updateTimestamps);
 window.toggleSidebar = toggleSidebar;
 
 // Kotak Neo Login Functionality
-async function handleKotakLogin(event) {
-    event.preventDefault();
-
-    const form = event.target;
-    const formData = new FormData(form);
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-
-    // Show loading state
-    submitBtn.disabled = true;
-    submitBtn.innerHTML =
-        '<i class="fas fa-spinner fa-spin me-2"></i>Logging in...';
-
-    try {
-        const response = await fetch("/kotak/api/authenticate", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                mobile_number: formData.get("mobile_number"),
-                ucc: formData.get("ucc"),
-                mpin: formData.get("mpin"),
-                totp_code: formData.get("totp_code"),
-            }),
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            // Show success message
-            Swal.fire({
-                icon: "success",
-                title: "Login Successful!",
-                text: data.message,
-                timer: 2000,
-                showConfirmButton: false,
-            });
-
-            // Close modal
-            const modal = bootstrap.Modal.getInstance(
-                document.getElementById("loginModal"),
-            );
-            if (modal) {
-                modal.hide();
-            }
-
-            // Update sidebar with account info
-            updateSidebarWithAccounts();
-
-            // Show Kotak Neo section
-            showKotakNeoSection(data.account);
-
-            // Reset form
-            form.reset();
-        } else {
-            // Show error message
-            Swal.fire({
-                icon: "error",
-                title: "Login Failed",
-                text: data.error,
-                confirmButtonText: "Try Again",
-            });
-        }
-    } catch (error) {
-        console.error("Login error:", error);
-        Swal.fire({
-            icon: "error",
-            title: "Connection Error",
-            text: "Unable to connect to the server. Please try again.",
-            confirmButtonText: "OK",
-        });
-    } finally {
-        // Reset button state
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalText;
-    }
-}
 
 // Update sidebar with logged-in accounts
-async function updateSidebarWithAccounts() {
-    try {
-        const response = await fetch("/kotak/api/status");
-        const data = await response.json();
-
-        if (data.authenticated) {
-            // Show the Kotak Neo section if authenticated
-            const kotakNeoSection = document.getElementById("kotakNeoSection");
-            if (kotakNeoSection) {
-                kotakNeoSection.style.display = "block";
-            }
-        } else {
-            // Hide the Kotak Neo section if not authenticated
-            const kotakNeoSection = document.getElementById("kotakNeoSection");
-            if (kotakNeoSection) {
-                kotakNeoSection.style.display = "none";
-            }
-        }
-    } catch (error) {
-        console.error("Error updating sidebar:", error);
-    }
-}
 
 // Simple function to check if user is authenticated
 function isKotakAuthenticated() {
     return fetch("/kotak/api/status")
-        .then(response => response.json())
-        .then(data => data.authenticated)
+        .then((response) => response.json())
+        .then((data) => data.authenticated)
         .catch(() => false);
 }
 
@@ -1224,29 +1157,6 @@ function formatDate(dateString) {
     }
 }
 
-// Show Kotak Neo section after successful login
-function showKotakNeoSection(account) {
-    const kotakNeoSection = document.getElementById("kotakNeoSection");
-    const kotakUCC = document.getElementById("kotakUCC");
-
-    if (kotakNeoSection && kotakUCC) {
-        kotakNeoSection.style.display = "block";
-        kotakUCC.textContent = account.ucc || "N/A";
-
-        // Update active navigation link based on current page
-        updateActiveNavLink();
-    }
-}
-
-// Hide Kotak Neo section when no accounts are logged in
-function hideKotakNeoSection() {
-    const kotakNeoSection = document.getElementById("kotakNeoSection");
-
-    if (kotakNeoSection) {
-        kotakNeoSection.style.display = "none";
-    }
-}
-
 // Update active navigation link
 function updateActiveNavLink() {
     const currentPath = window.location.pathname;
@@ -1260,49 +1170,17 @@ function updateActiveNavLink() {
     });
 }
 
-// Update sidebar with logged-in accounts (modified to show/hide Kotak section)
-async function updateSidebarWithAccountsEnhanced() {
-    try {
-        const response = await fetch("/kotak/api/status");
-        const data = await response.json();
-
-        if (data.authenticated) {
-            // Show the Kotak Neo section if authenticated
-            const kotakNeoSection = document.getElementById("kotakNeoSection");
-            if (kotakNeoSection) {
-                kotakNeoSection.style.display = "block";
-            }
-
-            // Show Kotak account box and populate data
-            showKotakAccountBox(data);
-        } else {
-            // Hide the Kotak Neo section if not authenticated
-            const kotakNeoSection = document.getElementById("kotakNeoSection");
-            if (kotakNeoSection) {
-                kotakNeoSection.style.display = "none";
-            }
-
-            // Hide Kotak account box
-            hideKotakAccountBox();
-        }
-    } catch (error) {
-        console.error("Error updating sidebar:", error);
-        hideKotakNeoSection();
-        hideKotakAccountBox();
-    }
-}
-
 // Show Kotak account box with account data
 function showKotakAccountBox(accountData) {
     const kotakAccountBox = document.getElementById("kotakAccountBox");
     const accountLogin = document.getElementById("accountLogin");
     const addAccountSection = document.getElementById("addAccountSection");
-    
+
     if (kotakAccountBox && accountLogin) {
         // Hide login button and show account box
         accountLogin.style.display = "none";
         kotakAccountBox.style.display = "block";
-        
+
         // Show add account section
         if (addAccountSection) {
             addAccountSection.style.display = "block";
@@ -1310,7 +1188,8 @@ function showKotakAccountBox(accountData) {
 
         // Populate account data
         const kotakUCCDisplay = document.getElementById("kotakUCCDisplay");
-        const kotakMobileDisplay = document.getElementById("kotakMobileDisplay");
+        const kotakMobileDisplay =
+            document.getElementById("kotakMobileDisplay");
         const kotakLastLogin = document.getElementById("kotakLastLogin");
 
         if (kotakUCCDisplay && accountData.ucc) {
@@ -1332,12 +1211,12 @@ function hideKotakAccountBox() {
     const kotakAccountBox = document.getElementById("kotakAccountBox");
     const accountLogin = document.getElementById("accountLogin");
     const addAccountSection = document.getElementById("addAccountSection");
-    
+
     if (kotakAccountBox && accountLogin) {
         // Show login button and hide account box
         kotakAccountBox.style.display = "none";
         accountLogin.style.display = "block";
-        
+
         // Hide add account section
         if (addAccountSection) {
             addAccountSection.style.display = "none";
@@ -1350,73 +1229,13 @@ function switchToKotakDashboard() {
     window.location.href = "/kotak/dashboard";
 }
 
-// Logout from Kotak account
-async function logoutKotakAccount() {
-    try {
-        const result = await Swal.fire({
-            title: 'Logout Confirmation',
-            text: 'Are you sure you want to logout from Kotak Neo?',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, Logout',
-            cancelButtonText: 'Cancel',
-            background: 'var(--card-bg)',
-            color: 'var(--text-primary)',
-            confirmButtonColor: 'var(--danger-color)',
-            cancelButtonColor: 'var(--secondary-color)',
-        });
-
-        if (result.isConfirmed) {
-            const response = await fetch('/kotak/api/logout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-
-            if (response.ok) {
-                // Hide account box and show login button
-                hideKotakAccountBox();
-                
-                // Hide Kotak Neo section
-                const kotakNeoSection = document.getElementById("kotakNeoSection");
-                if (kotakNeoSection) {
-                    kotakNeoSection.style.display = "none";
-                }
-
-                // Show success message
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Logged Out',
-                    text: 'Successfully logged out from Kotak Neo.',
-                    background: 'var(--card-bg)',
-                    color: 'var(--text-primary)',
-                    timer: 2000,
-                    showConfirmButton: false,
-                });
-            } else {
-                throw new Error('Logout failed');
-            }
-        }
-    } catch (error) {
-        console.error('Logout error:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Logout Error',
-            text: 'Failed to logout. Please try again.',
-            background: 'var(--card-bg)',
-            color: 'var(--text-primary)',
-        });
-    }
-}
-
 // Format login time for display
 function formatLoginTime() {
     const now = new Date();
-    const timeString = now.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: true 
+    const timeString = now.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
     });
     return timeString;
 }
