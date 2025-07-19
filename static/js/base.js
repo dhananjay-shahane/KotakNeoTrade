@@ -54,6 +54,37 @@ function showLoginModal() {
     modal.show();
 }
 
+// Handle Kotak-only logout
+function logoutKotakOnly(event) {
+    event.preventDefault();
+    
+    // Make AJAX request to logout only from Kotak
+    fetch('/logout-kotak', {
+        method: 'GET',
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (response.ok) {
+            // Hide Kotak sections immediately without full page reload
+            const kotakAccountBox = document.getElementById('kotakAccountBox');
+            const kotakNeoSection = document.getElementById('kotakNeoSection');
+            const accountLogin = document.getElementById('accountLogin');
+            
+            if (kotakAccountBox) kotakAccountBox.style.display = 'none';
+            if (kotakNeoSection) kotakNeoSection.style.display = 'none';
+            if (accountLogin) accountLogin.style.display = 'block';
+            
+            showToaster('Success', 'Logged out from Kotak Neo successfully', 'success');
+        } else {
+            showToaster('Error', 'Failed to logout from Kotak', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Logout error:', error);
+        showToaster('Error', 'An error occurred during logout', 'error');
+    });
+}
+
 // Mobile sidebar toggle with improved touch handling
 function toggleSidebar() {
     var sidebar = document.getElementById("sidebar");

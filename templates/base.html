@@ -290,8 +290,9 @@
                                 Switch
                             </button>
                             <a
-                                href="{{ url_for('auth_routes.logout_kotak') }}"
+                                href="{{ url_for('auth_routes.logout') }}"
                                 class="btn-logout-account"
+                                onclick="logoutKotakOnly(event)"
                             >
                                 <i class="fas fa-sign-out-alt"></i>
                             </a>

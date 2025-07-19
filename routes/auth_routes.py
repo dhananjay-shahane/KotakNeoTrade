@@ -186,10 +186,14 @@ def logout():
 @auth_bp.route('/logout-kotak')
 def logout_kotak():
     """Logout only from Kotak account while keeping trading account session"""
-    # Clear only Kotak-specific session data
-    kotak_keys = ['kotak_logged_in', 'client', 'mobile_number', 'ucc', 'mpin', 'totp']
+    # Clear only Kotak-specific session data but preserve trading account data
+    kotak_keys = ['kotak_logged_in', 'client', 'mobile_number', 'mpin', 'totp']
     for key in kotak_keys:
         session.pop(key, None)
+    
+    # If this was a Kotak login, preserve the UCC for trading account functionality
+    if session.get('login_type') == 'kotak_neo':
+        session['login_type'] = 'trading_account'
     
     flash('Logged out from Kotak Neo successfully', 'info')
     return redirect(url_for('main_routes.dashboard'))
