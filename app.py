@@ -311,7 +311,7 @@ def portfolio():
             'status': 'Online'
         }
     
-    return render_template('portfolio_dashboard.html', 
+    return render_template('dashboard.html', 
                          data=default_data, 
                          kotak_account=kotak_account_data)
 
