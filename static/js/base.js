@@ -214,7 +214,161 @@ document.addEventListener("DOMContentLoaded", function () {
         themeToggle.checked = savedTheme === "light";
         themeToggle.addEventListener("change", toggleTheme);
     }
+    
+    // Initialize font size
+    const savedFontSize = localStorage.getItem('website-font-size') || '14';
+    document.documentElement.style.setProperty('--global-font-size', savedFontSize + 'px');
+    
+    // Initialize settings modal
+    initializeSettingsModal();
+    
+    // Initialize notification system
+    initializeNotifications();
 });
+
+// Settings Modal functionality
+function showSettingsModal() {
+    const modal = new bootstrap.Modal(document.getElementById('settingsModal'));
+    modal.show();
+}
+
+// Notification functionality
+function toggleNotificationInbox() {
+    const inbox = document.getElementById('notificationInbox');
+    if (inbox) {
+        inbox.style.display = inbox.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+function closeNotificationInbox() {
+    const inbox = document.getElementById('notificationInbox');
+    if (inbox) {
+        inbox.style.display = 'none';
+    }
+}
+
+// Font size adjustment
+function adjustFontSize(action) {
+    const root = document.documentElement;
+    const currentSize = parseInt(getComputedStyle(root).getPropertyValue('--global-font-size')) || 14;
+    let newSize = currentSize;
+    
+    if (action === 'increase' && currentSize < 20) {
+        newSize = currentSize + 1;
+    } else if (action === 'decrease' && currentSize > 10) {
+        newSize = currentSize - 1;
+    } else if (action === 'reset') {
+        newSize = 14;
+    }
+    
+    root.style.setProperty('--global-font-size', newSize + 'px');
+    localStorage.setItem('website-font-size', newSize);
+    
+    // Update display
+    const fontSizeDisplay = document.getElementById('fontSizeDisplay');
+    if (fontSizeDisplay) {
+        fontSizeDisplay.textContent = newSize + 'px';
+    }
+    
+    if (typeof showToaster === 'function') {
+        showToaster('Font Size', `Font size set to ${newSize}px`, 'success');
+    }
+}
+
+// User profile dropdown
+function toggleUserProfile() {
+    const dropdown = document.getElementById('userProfileDropdown');
+    if (dropdown) {
+        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+// Apply settings from modal
+function applySettings() {
+    const fontSizeSelect = document.getElementById('fontSizeSelect');
+    if (fontSizeSelect) {
+        const newSize = parseInt(fontSizeSelect.value);
+        document.documentElement.style.setProperty('--global-font-size', newSize + 'px');
+        localStorage.setItem('website-font-size', newSize);
+        
+        if (typeof showToaster === 'function') {
+            showToaster('Settings Applied', `Font size set to ${newSize}px`, 'success');
+        }
+    }
+    
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
+    if (modal) {
+        modal.hide();
+    }
+}
+
+// Initialize font size in settings modal
+function initializeSettingsModal() {
+    const savedFontSize = localStorage.getItem('website-font-size') || '14';
+    const fontSizeSelect = document.getElementById('fontSizeSelect');
+    if (fontSizeSelect) {
+        fontSizeSelect.value = savedFontSize;
+        
+        // Add event listener for live preview
+        fontSizeSelect.addEventListener('change', function() {
+            const preview = document.querySelector('.font-size-preview');
+            if (preview) {
+                preview.style.fontSize = this.value + 'px';
+            }
+        });
+    }
+}
+
+// Broker selection functions
+function showKotakLoginForm() {
+    // Highlight selected broker
+    document.querySelectorAll('.broker-card-mobile').forEach(card => {
+        card.classList.remove('active');
+    });
+    document.getElementById('kotakCard')?.classList.add('active');
+    
+    // Show Kotak login form
+    const loginForm = document.getElementById('kotakLoginForm');
+    if (loginForm) {
+        loginForm.style.display = 'block';
+    }
+}
+
+// Initialize notifications
+function initializeNotifications() {
+    // Set initial notification count
+    const notificationCount = document.getElementById('notificationCount');
+    if (notificationCount) {
+        notificationCount.textContent = '0';
+    }
+    
+    // Close notification inbox when clicking outside
+    document.addEventListener('click', function(event) {
+        const inbox = document.getElementById('notificationInbox');
+        const notificationBtn = document.querySelector('.notification-btn');
+        
+        if (inbox && notificationBtn && 
+            !inbox.contains(event.target) && 
+            !notificationBtn.contains(event.target) &&
+            inbox.style.display === 'block') {
+            closeNotificationInbox();
+        }
+    });
+}
+
+// Fix common global functions that might be called from templates
+window.toggleSidebar = toggleSidebar;
+window.showSettingsModal = showSettingsModal;
+window.toggleNotificationInbox = toggleNotificationInbox;
+window.closeNotificationInbox = closeNotificationInbox;
+window.adjustFontSize = adjustFontSize;
+window.applySettings = applySettings;
+window.showKotakLoginForm = showKotakLoginForm;
+window.toggleUserProfile = toggleUserProfile;
+window.logoutKotakOnly = logoutKotakOnly;
+window.showLoginModal = showLoginModal;
+window.toggleTheme = toggleTheme;
 
 // Show error message
 function showPageError(pageType) {
