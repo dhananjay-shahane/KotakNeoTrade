@@ -1,3 +1,29 @@
+// CRITICAL: Define toggleSidebar function first and expose it immediately
+function toggleSidebar() {
+    var sidebar = document.getElementById("sidebar");
+    var overlay = document.getElementById("sidebarOverlay");
+
+    if (!sidebar || !overlay) {
+        console.error("Sidebar or overlay element not found");
+        return;
+    }
+
+    var isOpen = sidebar.classList.contains("show");
+
+    if (isOpen) {
+        sidebar.classList.remove("show");
+        overlay.classList.remove("show");
+        document.body.style.overflow = "";
+    } else {
+        sidebar.classList.add("show");
+        overlay.classList.add("show");
+        document.body.style.overflow = "hidden";
+    }
+}
+
+// Immediately expose toggleSidebar to global scope
+window.toggleSidebar = toggleSidebar;
+
 // Toaster notification system
 function showToaster(title, message, type = "info", duration = 3000) {
     // Create toaster container if it doesn't exist
@@ -85,8 +111,8 @@ function logoutKotakOnly(event) {
     });
 }
 
-// Mobile sidebar toggle with improved touch handling
-function toggleSidebar() {
+// Enhanced mobile sidebar toggle with touch handling
+function toggleSidebarEnhanced() {
     var sidebar = document.getElementById("sidebar");
     var overlay = document.getElementById("sidebarOverlay");
 
@@ -121,9 +147,6 @@ function toggleSidebar() {
         });
     }
 }
-
-// Ensure toggleSidebar is available globally
-window.toggleSidebar = toggleSidebar;
 
 // Touch handling for mobile sidebar
 let touchStartX = 0;
@@ -207,31 +230,8 @@ function toggleTheme() {
     }
 }
 
-// Immediately expose global functions before DOMContentLoaded
-// Ensure critical functions are available immediately
+// Expose other global functions (toggleSidebar already exposed above)
 if (typeof window !== 'undefined') {
-    window.toggleSidebar = function() {
-        var sidebar = document.getElementById("sidebar");
-        var overlay = document.getElementById("sidebarOverlay");
-
-        if (!sidebar || !overlay) {
-            console.error("Sidebar or overlay element not found");
-            return;
-        }
-
-        var isOpen = sidebar.classList.contains("show");
-
-        if (isOpen) {
-            sidebar.classList.remove("show");
-            overlay.classList.remove("show");
-            document.body.style.overflow = "";
-        } else {
-            sidebar.classList.add("show");
-            overlay.classList.add("show");
-            document.body.style.overflow = "hidden";
-        }
-    };
-    
     window.showSettingsModal = showSettingsModal;
     window.toggleNotificationInbox = toggleNotificationInbox;
     window.closeNotificationInbox = closeNotificationInbox;
