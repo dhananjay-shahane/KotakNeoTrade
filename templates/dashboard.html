@@ -3,6 +3,32 @@
 {% block title %}Dashboard - Kotak Neo Trading{% endblock %}
 
 {% block content %}
+{% if not session.get('authenticated') and not session.get('kotak_logged_in') %}
+<!-- Not Logged In Message -->
+<div class="container-fluid mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <div class="card-body p-5 text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-user-slash" style="font-size: 4rem; opacity: 0.7;"></i>
+                    </div>
+                    <h2 class="mb-3">Welcome to Trading Platform</h2>
+                    <p class="lead mb-4">Please login first to access your portfolio and trading features.</p>
+                    <div class="d-flex flex-column flex-md-row gap-3 justify-content-center">
+                        <a href="{{ url_for('auth_routes.login') }}" class="btn btn-light btn-lg">
+                            <i class="fas fa-chart-line me-2"></i>Login with Kotak Neo
+                        </a>
+                        <a href="{{ url_for('auth_routes.trading_account_login') }}" class="btn btn-outline-light btn-lg">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login with Trading Account
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
 <!-- Dashboard Skeleton Loader -->
 <div class="dashboard-skeleton" id="dashboardSkeleton">
     <!-- Header Skeleton -->
@@ -718,4 +744,5 @@ function hideDashboardSkeleton() {
 // Call this function when dashboard data is actually loaded
 window.hideDashboardSkeleton = hideDashboardSkeleton;
 </script>
+{% endif %}
 {% endblock %}

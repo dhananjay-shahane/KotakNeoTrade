@@ -101,9 +101,15 @@ def login():
                         logging.warning(f"Database storage skipped: {db_error}")
                         # Continue with login even if DB storage fails
 
+                    # Store essential session data for sidebar and header
+                    session['ucc'] = client_data.get('ucc', '')
+                    session['greeting_name'] = client_data.get('greetingName', '')
+                    session['mobile_number'] = mobile_number
+                    session['user_id'] = client_data.get('greetingName', 'User')  # Use greeting name as user ID
+                    session['kotak_logged_in'] = True  # Flag for sidebar visibility
+                    
                     flash('Successfully authenticated with TOTP!', 'success')
                     logging.info(f"Login successful for UCC: {ucc}, redirecting to dashboard")
-                    session['kotak_logged_in'] = True  # Flag for sidebar visibility
                     return redirect(url_for('portfolio'))
                 else:
                     flash('Invalid client data received', 'error')

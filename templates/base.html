@@ -138,7 +138,9 @@
                 <!-- User Profile -->
                 <div class="user-profile" onclick="toggleUserMenu()">
                     <div class="user-avatar text-white">
-                        {% if session.authenticated and session.user_id %} 
+                        {% if session.get('kotak_logged_in') and session.get('greeting_name') %} 
+                            {{ session.greeting_name[0].upper() }}
+                        {% elif session.authenticated and session.user_id %} 
                             {{ session.user_id[0].upper() }}
                         {% elif current_user.is_authenticated %} 
                             {{ current_user.username[0].upper() }} 
@@ -148,7 +150,9 @@
                     </div>
                     <div class="user-info">
                         <h6>
-                            {% if session.authenticated and session.user_id %} 
+                            {% if session.get('kotak_logged_in') and session.get('greeting_name') %} 
+                                {{ session.greeting_name }}
+                            {% elif session.authenticated and session.user_id %} 
                                 {{ session.user_id }}
                             {% elif current_user.is_authenticated %} 
                                 {{ current_user.username }} 
