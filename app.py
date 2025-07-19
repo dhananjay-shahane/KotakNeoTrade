@@ -27,6 +27,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 # Add current directory to Python path for module imports
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Load environment variables from .env file
@@ -81,7 +82,8 @@ if not session_secret:
     session_secret = "replit-kotak-neo-trading-platform-secret-key-2025"
     print("Using fallback session secret for development")
 app.secret_key = session_secret
-app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)  # Enable HTTPS URL generation
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1,
+                        x_host=1)  # Enable HTTPS URL generation
 
 # Database configuration with fallback
 database_url = os.environ.get("DATABASE_URL")
@@ -183,7 +185,7 @@ with app.app_context():
         print("Database tables created successfully")
     except ImportError as e:
         print(f"Database initialization optional: {e}")
-    
+
     db.create_all()
 
 # Configure session for persistent storage
@@ -204,7 +206,7 @@ try:
     from Scripts.user_manager import UserManager
     from Scripts.session_helper import SessionHelper
     from Scripts.websocket_handler import WebSocketHandler
-    
+
     neo_client = NeoClient()
     trading_functions = TradingFunctions()
     user_manager = UserManager()
@@ -243,6 +245,7 @@ def require_auth(f):
 
     return decorated_function
 
+
 # ========================================
 # TRADING PLATFORM ROUTES
 # ========================================
@@ -257,25 +260,42 @@ try:
 except ImportError as e:
     print(f"Trading functions optional: {e}")
 
+
 @app.route('/')
 def index():
     """Home page - redirect to portfolio"""
     return redirect(url_for('portfolio'))
 
+
 @app.route('/portfolio')
 def portfolio():
     """Portfolio page"""
-    return render_template('portfolio.html')
+    # Provide default data context for dashboard template
+    default_data = {
+        'total_positions': 0,
+        'total_holdings': 0,
+        'total_orders': 0,
+        'account_balance': 0,
+        'day_pnl': 0,
+        'total_pnl': 0,
+        'positions': [],
+        'holdings': [],
+        'orders': []
+    }
+    return render_template('dashboard.html', data=default_data)
+
 
 @app.route('/trading-signals')
 def trading_signals():
     """Trading Signals page"""
     return render_template('trading_signals.html')
 
+
 @app.route('/deals')
 def deals():
     """Deals page"""
     return render_template('deals.html')
+
 
 @app.route('/positions')
 @require_auth
@@ -285,6 +305,7 @@ def show_positions():
     except:
         return render_template('positions.html')
 
+
 @app.route('/holdings')
 @require_auth
 def show_holdings():
@@ -292,6 +313,7 @@ def show_holdings():
         return holdings()
     except:
         return render_template('holdings.html')
+
 
 @app.route('/orders')
 @require_auth
@@ -301,35 +323,13 @@ def show_orders():
     except:
         return render_template('orders.html')
 
+
 @app.route('/charts')
 @require_auth
 def charts():
     """Charts page for trading analysis"""
     return render_template('charts.html')
 
-@app.route('/etf-signals-advanced')
-@require_auth
-def etf_signals_advanced():
-    """Advanced ETF Trading Signals page with datatable"""
-    return render_template('etf_signals_datatable.html')
-
-@app.route('/admin-signals-datatable')
-@require_auth
-def admin_signals_datatable():
-    """Admin Trade Signals Datatable with Kotak Neo integration"""
-    return render_template('admin_signals_datatable.html')
-
-@app.route('/admin-signals')
-@require_auth
-def admin_signals():
-    """Admin Panel for managing trading signals with advanced datatable"""
-    return render_template('admin_signals_datatable.html')
-
-@app.route('/admin-signals-basic')
-@require_auth
-def admin_signals_basic():
-    """Basic Admin Panel for sending trading signals"""
-    return render_template('admin_signals.html')
 
 @app.route('/basic-trade-signals')
 @require_auth
@@ -337,9 +337,11 @@ def basic_trade_signals():
     """Basic Trade Signals page"""
     return render_template('basic_etf_signals.html')
 
+
 # ========================================
 # API ENDPOINTS
 # ========================================
+
 
 @app.route('/api/dashboard-data')
 def get_dashboard_data_api():
@@ -358,6 +360,7 @@ def get_dashboard_data_api():
         logging.error(f"Dashboard data error: {e}")
         return jsonify({'error': str(e)}), 500
 
+
 @app.route('/api/positions')
 def get_positions_api():
     """API endpoint to get positions"""
@@ -374,6 +377,7 @@ def get_positions_api():
     except Exception as e:
         logging.error(f"Positions API error: {e}")
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/holdings')
 def get_holdings_api():
@@ -392,6 +396,7 @@ def get_holdings_api():
         logging.error(f"Holdings API error: {e}")
         return jsonify({'error': str(e)}), 500
 
+
 @app.route('/api/etf-signals-data')
 def get_etf_signals_data():
     """API endpoint to get ETF signals data from external database with pagination"""
@@ -399,42 +404,57 @@ def get_etf_signals_data():
         # Get pagination parameters
         page = int(request.args.get('page', 1))
         page_size = int(request.args.get('page_size', 10))
-        
+
         # Check if database credentials are available first
         import os
         db_host = os.getenv('DB_HOST')
         database_url = os.getenv('DATABASE_URL')
-        
+
         if not database_url and not db_host:
             # No credentials configured
             return jsonify({
-                'success': False,
+                'success':
+                False,
                 'data': [],
-                'recordsTotal': 0,
-                'recordsFiltered': 0,
-                'page': page,
-                'has_more': False,
-                'error': 'Database credentials not configured',
-                'message': 'Please configure database credentials (DATABASE_URL or DB_HOST, DB_NAME, DB_USER, DB_PASSWORD) to access trading data.'
+                'recordsTotal':
+                0,
+                'recordsFiltered':
+                0,
+                'page':
+                page,
+                'has_more':
+                False,
+                'error':
+                'Database credentials not configured',
+                'message':
+                'Please configure database credentials (DATABASE_URL or DB_HOST, DB_NAME, DB_USER, DB_PASSWORD) to access trading data.'
             }), 200
-        
+
         # Try to get real data from external database with pagination
         from Scripts.external_db_service import get_etf_signals_data_json
         result = get_etf_signals_data_json(page, page_size)
         return jsonify(result)
-            
+
     except Exception as e:
         logging.error(f"ETF signals API error: {e}")
         return jsonify({
-            'success': False,
+            'success':
+            False,
             'data': [],
-            'recordsTotal': 0,
-            'recordsFiltered': 0,
-            'page': 1,
-            'has_more': False,
-            'error': f'Database connection failed: {str(e)}',
-            'message': 'Cannot connect to trading database. Please verify your database credentials are correct.'
+            'recordsTotal':
+            0,
+            'recordsFiltered':
+            0,
+            'page':
+            1,
+            'has_more':
+            False,
+            'error':
+            f'Database connection failed: {str(e)}',
+            'message':
+            'Cannot connect to trading database. Please verify your database credentials are correct.'
         }), 200
+
 
 @app.route('/api/basic-trade-signals-data')
 def get_basic_trade_signals_data():
@@ -446,6 +466,7 @@ def get_basic_trade_signals_data():
         logging.error(f"Basic trade signals API error: {e}")
         return jsonify({'error': str(e)}), 500
 
+
 @app.route('/api/sync-default-deals', methods=['POST'])
 def sync_default_deals_endpoint():
     """API endpoint to sync all admin_trade_signals to default_deals table"""
@@ -455,13 +476,15 @@ def sync_default_deals_endpoint():
 
         return jsonify({
             'success': True,
-            'message': f'Successfully synced {synced_count} admin signals to default deals',
+            'message':
+            f'Successfully synced {synced_count} admin signals to default deals',
             'synced_count': synced_count
         })
 
     except Exception as e:
         logging.error(f"Error in sync default deals endpoint: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/api/default-deals-data')
 def get_default_deals_data():
@@ -473,6 +496,7 @@ def get_default_deals_data():
         logging.error(f"Default deals API error: {e}")
         return jsonify({'error': str(e)}), 500
 
+
 @app.route('/api/initialize-auto-sync', methods=['POST'])
 def initialize_auto_sync_endpoint():
     """API endpoint to initialize automatic synchronization system"""
@@ -481,14 +505,19 @@ def initialize_auto_sync_endpoint():
         result = initialize_auto_sync_system()
 
         return jsonify({
-            'success': result['success'],
-            'message': 'Auto-sync system initialized successfully' if result['success'] else 'Failed to initialize auto-sync system',
-            'details': result
+            'success':
+            result['success'],
+            'message':
+            'Auto-sync system initialized successfully'
+            if result['success'] else 'Failed to initialize auto-sync system',
+            'details':
+            result
         })
 
     except Exception as e:
         logging.error(f"Error initializing auto-sync: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/api/place-order', methods=['POST'])
 @require_auth
@@ -504,6 +533,7 @@ def place_order():
         logging.error(f"Place order API error: {e}")
         return jsonify({'error': str(e)}), 500
 
+
 # ========================================
 # BLUEPRINT REGISTRATION
 # ========================================
@@ -514,7 +544,7 @@ try:
     from routes.main_routes import main_bp as main_routes_bp
     from api.dashboard import dashboard_api
     from api.trading import trading_api
-    
+
     # Register blueprints with consistent naming
     app.register_blueprint(auth_routes_bp)
     app.register_blueprint(main_routes_bp)
@@ -541,7 +571,7 @@ try:
     from api.signals_datatable import datatable_bp
     from api.enhanced_etf_signals import enhanced_etf_bp
     from api.admin_signals_api import admin_signals_bp
-    
+
     # Register ETF signals blueprint
     app.register_blueprint(etf_bp, url_prefix='/api')
     print("✓ Additional blueprints available")
@@ -580,17 +610,15 @@ except Exception as e:
 # Register Kotak Neo blueprints
 try:
     from kotak_neo_project.app import app as kotak_app
-    
+
     # Copy routes from Kotak Neo app to main app
     for rule in kotak_app.url_map.iter_rules():
         if rule.endpoint not in app.view_functions:
-            app.add_url_rule(
-                f"/kotak{rule.rule}",
-                endpoint=f"kotak_{rule.endpoint}",
-                view_func=kotak_app.view_functions[rule.endpoint],
-                methods=rule.methods
-            )
-    
+            app.add_url_rule(f"/kotak{rule.rule}",
+                             endpoint=f"kotak_{rule.endpoint}",
+                             view_func=kotak_app.view_functions[rule.endpoint],
+                             methods=rule.methods)
+
     print("Successfully registered Kotak Neo blueprints")
 except Exception as e:
     print(f"Kotak Neo integration optional: {e}")
@@ -616,6 +644,7 @@ except Exception as e:
 
 # Define User model for login functionality
 try:
+
     class User(UserMixin, db.Model):
         id = db.Column(db.Integer, primary_key=True)
         email = db.Column(db.String(100), unique=True, nullable=False)
@@ -633,7 +662,7 @@ try:
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
-    
+
     print("✓ User model defined")
 except Exception as e:
     print(f"User model optional: {e}")
@@ -643,12 +672,16 @@ try:
     app.config['MAIL_SERVER'] = 'smtp.gmail.com'
     app.config['MAIL_PORT'] = 587
     app.config['MAIL_USE_TLS'] = True
-    app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'your-email@gmail.com')
-    app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'your-app-password')
-    app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'your-email@gmail.com')
+    app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME',
+                                                 'your-email@gmail.com')
+    app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD',
+                                                 'your-app-password')
+    app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER',
+                                                       'your-email@gmail.com')
     print("✓ Email configuration loaded")
 except Exception as e:
     print(f"Email configuration optional: {e}")
+
 
 def send_registration_email(user_email, username, password):
     """Send registration confirmation email with credentials"""
@@ -656,8 +689,7 @@ def send_registration_email(user_email, username, password):
         msg = Message(
             subject="Welcome to Trading Platform - Your Account Details",
             sender=app.config['MAIL_DEFAULT_SENDER'],
-            recipients=[user_email]
-        )
+            recipients=[user_email])
 
         # Email content (simplified for brevity)
         msg.html = f"""
@@ -688,6 +720,7 @@ def send_registration_email(user_email, username, password):
         print(f"Error sending email: {e}")
         return False
 
+
 # Registration and login routes preserved from original code
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -710,11 +743,7 @@ def register():
                 return render_template('auth/register.html')
 
             # Create new user
-            user = User(
-                email=email,
-                mobile=mobile,
-                username=username
-            )
+            user = User(email=email, mobile=mobile, username=username)
             user.set_password(password)
 
             db.session.add(user)
@@ -724,9 +753,13 @@ def register():
             email_sent = send_registration_email(email, username, password)
 
             if email_sent:
-                flash('Registration successful! Please check your email for login credentials.', 'success')
+                flash(
+                    'Registration successful! Please check your email for login credentials.',
+                    'success')
             else:
-                flash('Registration successful! However, we couldn\'t send the confirmation email. Please note your credentials.', 'warning')
+                flash(
+                    'Registration successful! However, we couldn\'t send the confirmation email. Please note your credentials.',
+                    'warning')
 
             return redirect(url_for('login'))
         except Exception as e:
@@ -735,6 +768,7 @@ def register():
             return render_template('auth/register.html')
 
     return render_template('auth/register.html')
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -758,12 +792,14 @@ def login():
 
     return render_template('auth/login.html')
 
+
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
     flash('Logged out successfully!', 'info')
     return redirect(url_for('index'))
+
 
 # ========================================
 # APPLICATION INITIALIZATION
@@ -783,16 +819,20 @@ if __name__ == '__main__':
 
     # Initialize admin signals scheduler for comprehensive Kotak Neo data updates
     try:
-        logging.info("Starting admin signals scheduler with Kotak Neo integration...")
+        logging.info(
+            "Starting admin signals scheduler with Kotak Neo integration...")
         from Scripts.admin_signals_scheduler import start_admin_signals_scheduler
         start_admin_signals_scheduler()
-        logging.info("✅ Admin signals scheduler started - automatic updates every 5 minutes")
+        logging.info(
+            "✅ Admin signals scheduler started - automatic updates every 5 minutes"
+        )
     except Exception as e:
         logging.error(f"❌ Failed to start admin signals scheduler: {e}")
 
     # Ensure the instance folder exists for SQLite fallback
     try:
-        os.makedirs(os.path.dirname('instance/trading_platform.db'), exist_ok=True)
+        os.makedirs(os.path.dirname('instance/trading_platform.db'),
+                    exist_ok=True)
     except Exception as e:
         pass
 
