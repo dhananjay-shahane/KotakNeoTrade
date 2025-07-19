@@ -276,17 +276,13 @@ except ImportError as e:
 
 @app.route('/')
 def index():
-    """Home page - check authentication and redirect accordingly"""
-    if not validate_current_session():
-        return redirect(url_for('auth_routes.trading_account_login'))
-    return redirect(url_for('main_routes.dashboard'))
+    """Home page - redirect to portfolio"""
+    return redirect(url_for('portfolio'))
 
 
 @app.route('/portfolio')
 def portfolio():
-    """Portfolio page - check authentication and redirect accordingly"""
-    if not validate_current_session():
-        return redirect(url_for('auth_routes.trading_account_login'))
+    """Portfolio page - redirect to main dashboard"""
     return redirect(url_for('main_routes.dashboard'))
 
 

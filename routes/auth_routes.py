@@ -145,15 +145,11 @@ def trading_account_login():
             # For demo purposes, create a simple authentication
             # In production, this would validate against your user database
             if username and password:
-                # Store user session with all required fields
+                # Store user session
                 session['authenticated'] = True
                 session['username'] = username
-                session['user_id'] = username  # Use username as user ID for header display
                 session['login_type'] = 'trading_account'
                 session['access_token'] = 'demo_token_' + username  # Demo token for validation
-                session['ucc'] = username  # Use username as UCC for trading account
-                session['greeting_name'] = username
-                session['kotak_logged_in'] = True  # Mark as logged in to prevent repeated prompts
                 session.permanent = True
                 
                 logging.info(f"Trading account login successful for: {username}")
@@ -181,4 +177,4 @@ def logout():
     # Clear all session data
     session.clear()
     flash('Logged out successfully', 'info')
-    return redirect(url_for('auth_routes.trading_account_login'))
+    return redirect(url_for('auth_routes.login'))
