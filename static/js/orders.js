@@ -39,11 +39,11 @@ async function loadOrdersData() {
 
 function filterOrders(orders, filter) {
     if (filter === 'all') return orders;
-    
+
     return orders.filter(function(order) {
         var status = (order.ordSt || order.status || '').toLowerCase();
         var transType = order.transType || order.transactionType || '';
-        
+
         switch(filter) {
             case 'completed':
                 return status.includes('complete') || status.includes('executed');
@@ -68,21 +68,21 @@ function sortTable(column) {
         currentSortColumn = column;
         currentSortDirection = 'asc';
     }
-    
+
     // Update sort icons
     document.querySelectorAll('#ordersTable th i[id^="sort-"]').forEach(function(icon) {
         icon.className = 'fas fa-sort ms-1';
     });
-    
+
     var sortIcon = document.getElementById('sort-' + column);
     if (sortIcon) {
         sortIcon.className = 'fas fa-sort-' + (currentSortDirection === 'asc' ? 'up' : 'down') + ' ms-1';
     }
-    
+
     // Sort the data
     ordersData.sort(function(a, b) {
         var aVal, bVal;
-        
+
         switch(column) {
             case 'symbol':
                 aVal = (a.trdSym || a.sym || '').toLowerCase();
@@ -123,14 +123,14 @@ function sortTable(column) {
             default:
                 return 0;
         }
-        
+
         if (typeof aVal === 'string' && typeof bVal === 'string') {
             return currentSortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
         } else {
             return currentSortDirection === 'asc' ? aVal - bVal : bVal - aVal;
         }
     });
-    
+
     updateOrdersTable(ordersData);
 }
 
@@ -158,7 +158,7 @@ function updateOrdersTable(orders) {
         var product = order.prod || order.product || 'N/A';
         var exchange = order.exSeg || order.exchange || order.exchangeSegment || 'N/A';
         var rejectionReason = order.rejRsn || order.rejectionReason || '';
-        
+
         // Clean up long RMS error messages
         if (rejectionReason.includes('RMS:Margin Exceeds')) {
             rejectionReason = 'RMS: Margin Exceeds';
@@ -284,7 +284,7 @@ function updateOrdersSummary(orders) {
     document.getElementById('rejectedOrdersCount').textContent = rejected;
     document.getElementById('cancelledOrdersCount').textContent = cancelled;
     document.getElementById('buyOrdersCount').textContent = buyOrders;
-    
+
     // Update available margin
     updateAvailableMargin();
 }
@@ -311,7 +311,7 @@ function showNoOrdersMessage() {
     document.getElementById('rejectedOrdersCount').textContent = '0';
     document.getElementById('cancelledOrdersCount').textContent = '0';
     document.getElementById('buyOrdersCount').textContent = '0';
-    
+
     // Update available margin even when no orders
     updateAvailableMargin();
 }
@@ -511,7 +511,7 @@ async function updateAvailableMargin() {
     try {
         var response = await fetch('/api/dashboard-data');
         var data = await response.json();
-        
+
         if (data && data.limits) {
             // Try different possible field names for available margin from API
             var availableMargin = parseFloat(
@@ -522,7 +522,7 @@ async function updateAvailableMargin() {
                 data.limits.available_cash ||
                 0
             );
-            
+
             var marginElement = document.getElementById('availableMarginAmount');
             if (marginElement) {
                 marginElement.textContent = '₹' + availableMargin.toLocaleString('en-IN', {
@@ -552,15 +552,15 @@ document.addEventListener('DOMContentLoaded', function() {
         card.addEventListener('click', function() {
             var filter = this.getAttribute('data-filter');
             currentFilter = filter;
-            
+
             // Remove active class from all cards
             document.querySelectorAll('.filter-card').forEach(function(c) {
                 c.style.opacity = '0.7';
             });
-            
+
             // Add active class to clicked card
             this.style.opacity = '1';
-            
+
             // Update table with filtered data
             updateOrdersTable(ordersData);
         });
