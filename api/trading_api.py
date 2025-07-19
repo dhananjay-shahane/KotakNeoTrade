@@ -195,3 +195,87 @@ def quick_sell():
             'success': False,
             'message': f'Quick sell failed: {str(e)}'
         }), 500
+
+
+@trading_bp.route('/orders')
+def get_orders_api():
+    try:
+        # Get orders data using the trading functions
+        client = session.get('client')
+        if not client:
+            return jsonify({
+                'success': False,
+                'message': 'Not authenticated',
+                'orders': []
+            }), 401
+
+        orders_data = trading_functions.get_orders(client)
+
+        return jsonify({
+            'success': True,
+            'orders': orders_data or []
+        })
+
+    except Exception as e:
+        logging.error(f"Error fetching orders: {e}")
+        return jsonify({
+            'success': False,
+            'message': str(e),
+            'orders': []
+        }), 500
+
+
+@trading_bp.route('/holdings')
+def get_holdings_api():
+    try:
+        # Get holdings data using the trading functions
+        client = session.get('client')
+        if not client:
+            return jsonify({
+                'success': False,
+                'message': 'Not authenticated',
+                'holdings': []
+            }), 401
+
+        holdings_data = trading_functions.get_holdings(client)
+
+        return jsonify({
+            'success': True,
+            'holdings': holdings_data or []
+        })
+
+    except Exception as e:
+        logging.error(f"Error fetching holdings: {e}")
+        return jsonify({
+            'success': False,
+            'message': str(e),
+            'holdings': []
+        }), 500
+
+
+@trading_bp.route('/positions')
+def get_positions_api():
+    try:
+        # Get positions data using the trading functions
+        client = session.get('client')
+        if not client:
+            return jsonify({
+                'success': False,
+                'message': 'Not authenticated',
+                'positions': []
+            }), 401
+
+        positions_data = trading_functions.get_positions(client)
+
+        return jsonify({
+            'success': True,
+            'positions': positions_data or []
+        })
+
+    except Exception as e:
+        logging.error(f"Error fetching positions: {e}")
+        return jsonify({
+            'success': False,
+            'message': str(e),
+            'positions': []
+        }), 500
