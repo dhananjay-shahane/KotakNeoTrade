@@ -198,10 +198,10 @@
             </div>
 
             <!-- Kotak Neo Trading Section (shown after login) -->
+            {% if kotak_account %}
             <div
                 class="kotak-neo-section"
                 id="kotakNeoSection"
-                {% if not session.kotak_logged_in %}style="display: none"{% endif %}
             >
                 <div class="nav-items">
                     <div class="nav-item">
@@ -235,6 +235,7 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
 
             <!-- Trading Accounts Section -->
             <div class="trading-accounts-section">

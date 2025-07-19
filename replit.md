@@ -22,6 +22,7 @@ A comprehensive trading platform integrated with Kotak Neo API for real-time por
 - **Data Sources**: All data must come from live Kotak Neo API
 
 ## Recent Changes  
+- **2025-07-19**: ✅ **Dynamic Kotak Authentication & Sidebar System** - Implemented complete authentication flow with dynamic sidebar visibility. Fixed kotakNeoSection and kotakAccountBox to show/hide based on session.kotak_logged_in flag. Created portfolio_dashboard.html with "first login account" message for unauthenticated users and proper data display for logged-in users. Python-based dynamic sidebar data population with UCC, mobile, and status information.
 - **2025-07-19**: ✅ **Complete Kotak-App Integration** - Successfully merged all code from kotak-app.py into app.py while preserving existing login functionality and email registration system. Added comprehensive trading platform routes, API endpoints, and blueprint registration for full Kotak Neo functionality
 - **2025-07-18**: ✅ **Portfolio Route Redirect** - Modified portfolio route to redirect directly to Kotak Neo dashboard.html page when user is authenticated with Kotak Neo, ensuring seamless access to dashboard interface
 - **2025-07-18**: ✅ **Sidebar Navigation Fixed** - Fixed sidebar navigation links to use existing templates (orders.html, positions.html, holdings.html) and corrected template route references
