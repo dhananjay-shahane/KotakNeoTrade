@@ -19,7 +19,7 @@ user_manager = UserManager()
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    """Login page with TOTP authentication"""
+    """Kotak Neo login page with TOTP authentication"""
     if request.method == 'POST':
         try:
             # Get form data
@@ -116,6 +116,49 @@ def login():
             flash(f'Login failed: {str(e)}', 'error')
 
     return render_template('login.html')
+
+
+@auth_bp.route('/trading-account/login', methods=['GET', 'POST'])
+def trading_account_login():
+    """Default trading account login using auth folder templates"""
+    if request.method == 'POST':
+        try:
+            # Get form data
+            username = request.form.get('email', '').strip()  # Form uses 'email' field for username
+            password = request.form.get('password', '').strip()
+
+            # Validate inputs
+            if not username or not password:
+                flash('Username and password are required', 'error')
+                return render_template('auth/login.html')
+
+            # For demo purposes, create a simple authentication
+            # In production, this would validate against your user database
+            if username and password:
+                # Store user session
+                session['authenticated'] = True
+                session['username'] = username
+                session['user_id'] = username  # Use username as user ID for header display
+                session['login_type'] = 'trading_account'
+                session.permanent = True
+                
+                logging.info(f"Trading account login successful for: {username}")
+                flash('Login successful!', 'success')
+                
+                # Redirect to portfolio dashboard
+                return redirect(url_for('portfolio'))
+            else:
+                flash('Invalid username or password', 'error')
+
+        except Exception as e:
+            logging.error(f"Trading account login error: {str(e)}")
+            flash('An error occurred during login. Please try again.', 'error')
+
+    # Redirect authenticated users to dashboard
+    if validate_current_session():
+        return redirect(url_for('portfolio'))
+    
+    return render_template('auth/login.html')
 
 
 @auth_bp.route('/logout')

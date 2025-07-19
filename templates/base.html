@@ -138,15 +138,23 @@
                 <!-- User Profile -->
                 <div class="user-profile" onclick="toggleUserMenu()">
                     <div class="user-avatar text-white">
-                        {% if current_user.is_authenticated %} {{
-                        current_user.username[0].upper() }} {% else %} G {%
-                        endif %}
+                        {% if session.authenticated and session.user_id %} 
+                            {{ session.user_id[0].upper() }}
+                        {% elif current_user.is_authenticated %} 
+                            {{ current_user.username[0].upper() }} 
+                        {% else %} 
+                            G 
+                        {% endif %}
                     </div>
                     <div class="user-info">
                         <h6>
-                            {% if current_user.is_authenticated %} {{
-                            current_user.username }} {% else %} Guest User {%
-                            endif %}
+                            {% if session.authenticated and session.user_id %} 
+                                {{ session.user_id }}
+                            {% elif current_user.is_authenticated %} 
+                                {{ current_user.username }} 
+                            {% else %} 
+                                Guest User 
+                            {% endif %}
                         </h6>
                         <small>Trading Account</small>
                     </div>
@@ -314,12 +322,9 @@
 
                 <!-- Login Button (shown when no accounts logged in) -->
                 <div class="account-login" id="accountLogin">
-                    <button
-                        class="btn-login-account"
-                        onclick="showLoginModal()"
-                    >
+                    <a href="{{ url_for('auth_routes.login') }}" class="btn-login-account">
                         <i class="fas fa-sign-in-alt me-2"></i>Login Account
-                    </button>
+                    </a>
                 </div>
             </div>
         </nav>
