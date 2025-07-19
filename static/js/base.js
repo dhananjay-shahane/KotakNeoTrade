@@ -1051,8 +1051,7 @@ function updateLoginState(isLoggedIn, broker, userId) {
         loginButton.innerHTML =
             '<i class="fas fa-sign-in-alt me-2"></i>Login Account';
         loginButton.onclick = showLoginModal;
-        ```
-loginButton.classList.remove("btn-logout");
+        loginButton.classList.remove("btn-logout");
 
         // Reset header
         accountsHeader.innerHTML =

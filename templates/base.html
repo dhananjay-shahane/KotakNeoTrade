@@ -138,20 +138,20 @@
                 <!-- User Profile -->
                 <div class="user-profile" onclick="toggleUserMenu()">
                     <div class="user-avatar text-white">
-                        {% if session.authenticated and session.user_id and session.get('login_type') == 'trading_account' %}
-                            {{ session.user_id[0].upper() }}
-                        {% elif session.get('kotak_logged_in') and session.get('greeting_name') %}
+                        {% if session.get('kotak_logged_in') and session.get('greeting_name') %}
                             {{ session.get('greeting_name')[0].upper() }}
+                        {% elif session.get('authenticated') %}
+                            U
                         {% else %}
                             G
                         {% endif %}
                     </div>
                     <div class="user-info">
                         <h6>
-                            {% if session.authenticated and session.user_id and session.get('login_type') == 'trading_account' %}
-                                {{ session.user_id }}
-                            {% elif session.get('kotak_logged_in') and session.get('greeting_name') %}
+                            {% if session.get('kotak_logged_in') and session.get('greeting_name') %}
                                 {{ session.get('greeting_name') }}
+                            {% elif session.get('authenticated') %}
+                                User
                             {% else %}
                                 Guest
                             {% endif %}
@@ -159,7 +159,7 @@
                         <small>
                             {% if session.get('kotak_logged_in') %}
                                 Kotak Neo Account
-                            {% elif session.authenticated %}
+                            {% elif session.get('authenticated') %}
                                 Trading Account
                             {% else %}
                                 Guest User
@@ -206,8 +206,8 @@
             </div>
 
             <!-- Kotak Neo Trading Section (shown after login) -->
-            {% if kotak_account %}
-            <div class="kotak-neo-section" id="kotakNeoSection">
+            {% if session.get('kotak_logged_in') or session.get('authenticated') %}
+            <div class="kotak-neo-section" id="kotakNeoSection" style="display: block;">
                 <div class="nav-items">
                     <div class="nav-item">
                         <a href="{{ url_for('show_orders') }}" class="nav-link">
@@ -248,8 +248,8 @@
                 </div>
 
                 <!-- Kotak Neo Account Box (shown after login) -->
-                {% if kotak_account %}
-                <div class="kotak-account-box" id="kotakAccountBox">
+                {% if session.get('kotak_logged_in') or session.get('authenticated') %}
+                <div class="kotak-account-box" id="kotakAccountBox" style="display: block;">
                     <div class="account-card">
                         <div class="account-header">
                             <div class="account-info">
@@ -258,7 +258,7 @@
                                     <span>Kotak Neo</span>
                                     <span class="status-indicator online">
                                         <i class="fas fa-circle"></i>
-                                        <span>{{ kotak_account.status }}</span>
+                                        <span>Online</span>
                                     </span>
                                 </div>
                             </div>
@@ -267,21 +267,15 @@
                         <div class="account-details">
                             <div class="detail-row">
                                 <span class="label">UCC</span>
-                                <span class="value"
-                                    >{{ kotak_account.ucc }}</span
-                                >
+                                <span class="value">{{ session.get('ucc', 'N/A') }}</span>
                             </div>
                             <div class="detail-row">
                                 <span class="label">MOBILE</span>
-                                <span class="value"
-                                    >{{ kotak_account.mobile }}</span
-                                >
+                                <span class="value">{{ session.get('mobile_number', 'N/A') }}</span>
                             </div>
                             <div class="detail-row">
                                 <span class="label">Last Login</span>
-                                <span class="value"
-                                    >{{ kotak_account.last_login }}</span
-                                >
+                                <span class="value">Just Now</span>
                             </div>
                         </div>
 
@@ -316,7 +310,7 @@
                 </div>
 
                 <!-- Login Button (shown when no accounts logged in) -->
-                {% if not kotak_account %}
+                {% if not session.get('kotak_logged_in') and not session.get('authenticated') %}
                 <div class="account-login" id="accountLogin">
                     <a
                         href="{{ url_for('auth_routes.login') }}"
