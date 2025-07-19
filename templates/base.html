@@ -148,7 +148,9 @@
                     </div>
                     <div class="user-info">
                         <h6>
-                            {% if session.get('kotak_logged_in') and session.get('greeting_name') %}
+                            {% if session.get('authenticated') and session.get('user_id') %}
+                                {{ session.get('user_id') }}
+                            {% elif session.get('kotak_logged_in') and session.get('greeting_name') %}
                                 {{ session.get('greeting_name') }}
                             {% elif session.get('authenticated') %}
                                 User
@@ -342,12 +344,12 @@
                 <i class="fas fa-id-card me-2"></i>View Profile
             </a>
             <div class="dropdown-divider"></div>
-            {% if current_user.is_authenticated %}
-            <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+            {% if session.get('authenticated') or session.get('kotak_logged_in') %}
+            <a class="dropdown-item text-danger" href="{{ url_for('auth_routes.logout') }}">
                 <i class="fas fa-sign-out-alt me-2"></i>Logout
             </a>
             {% else %}
-            <a class="dropdown-item text-primary" href="{{ url_for('login') }}">
+            <a class="dropdown-item text-primary" href="{{ url_for('auth_routes.trading_account_login') }}">
                 <i class="fas fa-sign-in-alt me-2"></i>Login
             </a>
             {% endif %}
