@@ -122,6 +122,9 @@ function toggleSidebar() {
     }
 }
 
+// Ensure toggleSidebar is available globally
+window.toggleSidebar = toggleSidebar;
+
 // Touch handling for mobile sidebar
 let touchStartX = 0;
 let touchStartY = 0;
@@ -205,19 +208,43 @@ function toggleTheme() {
 }
 
 // Immediately expose global functions before DOMContentLoaded
-window.toggleSidebar = toggleSidebar;
-window.showSettingsModal = showSettingsModal;
-window.toggleNotificationInbox = toggleNotificationInbox;
-window.closeNotificationInbox = closeNotificationInbox;
-window.adjustFontSize = adjustFontSize;
-window.applySettings = applySettings;
-window.showKotakLoginForm = showKotakLoginForm;
-window.toggleUserProfile = toggleUserProfile;
-window.toggleUserMenu = toggleUserMenu;
-window.showUserProfile = showUserProfile;
-window.logoutKotakOnly = logoutKotakOnly;
-window.showLoginModal = showLoginModal;
-window.toggleTheme = toggleTheme;
+// Ensure critical functions are available immediately
+if (typeof window !== 'undefined') {
+    window.toggleSidebar = function() {
+        var sidebar = document.getElementById("sidebar");
+        var overlay = document.getElementById("sidebarOverlay");
+
+        if (!sidebar || !overlay) {
+            console.error("Sidebar or overlay element not found");
+            return;
+        }
+
+        var isOpen = sidebar.classList.contains("show");
+
+        if (isOpen) {
+            sidebar.classList.remove("show");
+            overlay.classList.remove("show");
+            document.body.style.overflow = "";
+        } else {
+            sidebar.classList.add("show");
+            overlay.classList.add("show");
+            document.body.style.overflow = "hidden";
+        }
+    };
+    
+    window.showSettingsModal = showSettingsModal;
+    window.toggleNotificationInbox = toggleNotificationInbox;
+    window.closeNotificationInbox = closeNotificationInbox;
+    window.adjustFontSize = adjustFontSize;
+    window.applySettings = applySettings;
+    window.showKotakLoginForm = showKotakLoginForm;
+    window.toggleUserProfile = toggleUserProfile;
+    window.toggleUserMenu = toggleUserMenu;
+    window.showUserProfile = showUserProfile;
+    window.logoutKotakOnly = logoutKotakOnly;
+    window.showLoginModal = showLoginModal;
+    window.toggleTheme = toggleTheme;
+}
 
 // Initialize theme on page load
 document.addEventListener("DOMContentLoaded", function () {
