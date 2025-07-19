@@ -282,38 +282,8 @@ def index():
 
 @app.route('/portfolio')
 def portfolio():
-    """Portfolio page"""
-    # Check if user is authenticated
-    if not session.get('authenticated') and not session.get('kotak_logged_in'):
-        return redirect(url_for('auth_routes.trading_account_login'))
-    
-    # Provide default data context for dashboard template
-    default_data = {
-        'total_positions': 0,
-        'total_holdings': 0,
-        'total_orders': 0,
-        'account_balance': 0,
-        'day_pnl': 0,
-        'total_pnl': 0,
-        'positions': [],
-        'holdings': [],
-        'orders': []
-    }
-    
-    # Prepare Kotak account data for sidebar if logged in
-    kotak_account_data = None
-    if session.get('kotak_logged_in'):
-        kotak_account_data = {
-            'ucc': session.get('ucc', '-'),
-            'mobile': session.get('mobile_number', '-'),
-            'greeting_name': session.get('greeting_name', 'User'),
-            'last_login': 'Just Now',
-            'status': 'Online'
-        }
-    
-    return render_template('dashboard.html', 
-                         data=default_data, 
-                         kotak_account=kotak_account_data)
+    """Portfolio page - redirect to main dashboard"""
+    return redirect(url_for('main_routes.dashboard'))
 
 
 @app.route('/trading-signals')
@@ -322,7 +292,7 @@ def trading_signals():
     # Check if user is authenticated
     if not session.get('authenticated') and not session.get('kotak_logged_in'):
         return redirect(url_for('auth_routes.trading_account_login'))
-    
+
     # Prepare Kotak account data for sidebar if logged in
     kotak_account_data = None
     if session.get('kotak_logged_in'):
@@ -333,7 +303,7 @@ def trading_signals():
             'last_login': 'Just Now',
             'status': 'Online'
         }
-    
+
     return render_template('trading_signals.html', kotak_account=kotak_account_data)
 
 
@@ -343,7 +313,7 @@ def deals():
     # Check if user is authenticated
     if not session.get('authenticated') and not session.get('kotak_logged_in'):
         return redirect(url_for('auth_routes.trading_account_login'))
-    
+
     # Prepare Kotak account data for sidebar if logged in
     kotak_account_data = None
     if session.get('kotak_logged_in'):
@@ -354,7 +324,7 @@ def deals():
             'last_login': 'Just Now',
             'status': 'Online'
         }
-    
+
     return render_template('deals.html', kotak_account=kotak_account_data)
 
 
@@ -363,7 +333,7 @@ def show_positions():
     # Check if user is authenticated with any login method
     if not (session.get('authenticated') or session.get('kotak_logged_in')):
         return redirect(url_for('auth_routes.trading_account_login'))
-    
+
     # Prepare account data for sidebar if logged in
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
@@ -374,7 +344,7 @@ def show_positions():
             'last_login': 'Just Now',
             'status': 'Online'
         }
-    
+
     try:
         return positions()
     except:
@@ -386,7 +356,7 @@ def show_holdings():
     # Check if user is authenticated with any login method
     if not (session.get('authenticated') or session.get('kotak_logged_in')):
         return redirect(url_for('auth_routes.trading_account_login'))
-    
+
     # Prepare account data for sidebar if logged in
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
@@ -397,7 +367,7 @@ def show_holdings():
             'last_login': 'Just Now',
             'status': 'Online'
         }
-    
+
     try:
         return holdings()
     except:
@@ -409,7 +379,7 @@ def show_orders():
     # Check if user is authenticated with any login method
     if not (session.get('authenticated') or session.get('kotak_logged_in')):
         return redirect(url_for('auth_routes.trading_account_login'))
-    
+
     # Prepare account data for sidebar if logged in
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
@@ -420,7 +390,7 @@ def show_orders():
             'last_login': 'Just Now',
             'status': 'Online'
         }
-    
+
     try:
         return orders()
     except:
@@ -432,7 +402,7 @@ def show_charts():
     # Check if user is authenticated with any login method
     if not (session.get('authenticated') or session.get('kotak_logged_in')):
         return redirect(url_for('auth_routes.trading_account_login'))
-    
+
     # Prepare account data for sidebar if logged in
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
@@ -443,7 +413,7 @@ def show_charts():
             'last_login': 'Just Now',
             'status': 'Online'
         }
-    
+
     try:
         return render_template('charts.html', kotak_account=kotak_account_data)
     except:
@@ -827,12 +797,12 @@ def send_registration_email(user_email, username, password):
 
         msg.body = f"""
         Welcome to Trading Platform!
-        
+
         Login Credentials:
         Username: {username}
         Password: {password}
         Email: {user_email}
-        
+
         Please keep these credentials safe and secure.
         """
 

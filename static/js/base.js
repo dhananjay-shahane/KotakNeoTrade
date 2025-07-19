@@ -1051,7 +1051,8 @@ function updateLoginState(isLoggedIn, broker, userId) {
         loginButton.innerHTML =
             '<i class="fas fa-sign-in-alt me-2"></i>Login Account';
         loginButton.onclick = showLoginModal;
-        loginButton.classList.remove("btn-logout");
+        ```
+loginButton.classList.remove("btn-logout");
 
         // Reset header
         accountsHeader.innerHTML =
@@ -1293,11 +1294,11 @@ if (typeof updateSidebar !== 'function') {
             // Update sidebar elements if they exist
             const kotakSection = document.getElementById('kotakNeoSection');
             const kotakAccountBox = document.getElementById('kotakAccountBox');
-            
+
             if (kotakSection && accountData.ucc) {
                 kotakSection.style.display = 'block';
             }
-            
+
             if (kotakAccountBox && accountData.greeting_name) {
                 kotakAccountBox.style.display = 'block';
             }
@@ -1313,3 +1314,133 @@ document.addEventListener("DOMContentLoaded", function () {
     // Update active navigation link
     updateActiveNavLink();
 });
+</script>
+<script>
+// Function to fetch the authentication status from the server
+async function fetchAuthenticationStatus() {
+    try {
+        const response = await fetch('/kotak/api/status'); // Endpoint to check authentication status
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const data = await response.json();
+        return data.authenticated; // Returns true or false based on the authentication status
+    } catch (error) {
+        console.error('Failed to fetch authentication status:', error);
+        return false; // Assume not authenticated in case of an error
+    }
+}
+
+// Function to handle the display of content based on authentication status
+async function handleContentDisplay() {
+    const isAuthenticated = await fetchAuthenticationStatus();
+    const ordersLink = document.getElementById('ordersLink');
+    const positionsLink = document.getElementById('positionsLink');
+    const holdingsLink = document.getElementById('holdingsLink');
+
+    if (ordersLink) {
+        ordersLink.addEventListener('click', function(event) {
+            if (!isAuthenticated) {
+                event.preventDefault(); // Prevent navigation
+                window.location.href = '/kotak/login'; // Redirect to login page
+            }
+        });
+    }
+
+    if (positionsLink) {
+        positionsLink.addEventListener('click', function(event) {
+            if (!isAuthenticated) {
+                event.preventDefault(); // Prevent navigation
+                window.location.href = '/kotak/login'; // Redirect to login page
+            }
+        });
+    }
+
+    if (holdingsLink) {
+        holdingsLink.addEventListener('click', function(event) {
+            if (!isAuthenticated) {
+                event.preventDefault(); // Prevent navigation
+                window.location.href = '/kotak/login'; // Redirect to login page
+            }
+        });
+    }
+}
+
+// Execute the function to handle content display
+document.addEventListener('DOMContentLoaded', handleContentDisplay);
+</script>
+<script>
+// Function to update sidebar content based on authentication status
+async function updateSidebarContent() {
+    try {
+        const response = await fetch('/kotak/api/status');
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const data = await response.json();
+
+        // Update Kotak account info in sidebar
+        if (data.kotak_account) {
+            const kotakSection = document.getElementById('kotakNeoSection');
+            const kotakAccountBox = document.getElementById('kotakAccountBox');
+
+            if (kotakSection) {
+                kotakSection.style.display = 'block';
+
+                // Update UCC
+                const uccElement = kotakSection.querySelector('[data-ucc]');
+                if (uccElement) {
+                    uccElement.textContent = data.kotak_account.ucc || '-';
+                }
+
+                // Update mobile
+                const mobileElement = kotakSection.querySelector('[data-mobile]');
+                if (mobileElement) {
+                    mobileElement.textContent = data.kotak_account.mobile || '-';
+                }
+
+                // Update greeting name
+                const greetingElement = kotakSection.querySelector('[data-greeting]');
+                if (greetingElement) {
+                    greetingElement.textContent = data.kotak_account.greeting_name || 'User';
+                }
+            }
+
+            if (kotakAccountBox) {
+                kotakAccountBox.style.display = 'block';
+
+                // Update account box info - show UCC instead of user_id
+                const userIdElement = kotakAccountBox.querySelector('[data-user-id]');
+                if (userIdElement) {
+                    userIdElement.textContent = data.kotak_account.ucc || '-';
+                }
+
+                // Update greeting name in account box
+                const greetingElement = kotakAccountBox.querySelector('[data-greeting-name]');
+                if (greetingElement) {
+                    greetingElement.textContent = data.kotak_account.greeting_name || 'User';
+                }
+
+                const lastLoginElement = kotakAccountBox.querySelector('[data-last-login]');
+                if (lastLoginElement) {
+                    lastLoginElement.textContent = data.kotak_account.last_login || 'Just Now';
+                }
+
+                const statusElement = kotakAccountBox.querySelector('[data-status]');
+                if (statusElement) {
+                    statusElement.textContent = data.kotak_account.status || 'Online';
+                    statusElement.className = 'badge badge-sm bg-success';
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching account details:', error);
+    }
+}
+
+// Call this function when the page loads
+document.addEventListener('DOMContentLoaded', updateSidebarContent);
+</script>
+</body>
+
+</html>

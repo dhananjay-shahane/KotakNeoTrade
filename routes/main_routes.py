@@ -116,21 +116,51 @@ def dashboard():
 @require_auth
 def show_positions():
     """Show positions page"""
-    return render_template('positions.html')
+    # Prepare account data for sidebar
+    kotak_account_data = None
+    if session.get('kotak_logged_in') or session.get('authenticated'):
+        kotak_account_data = {
+            'ucc': session.get('ucc', session.get('username', '-')),
+            'mobile': session.get('mobile_number', '-'),
+            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
+            'last_login': 'Just Now',
+            'status': 'Online'
+        }
+    return render_template('positions.html', kotak_account=kotak_account_data)
 
 
 @main_bp.route('/holdings')
 @require_auth
 def show_holdings():
     """Show holdings page"""
-    return render_template('holdings.html')
+    # Prepare account data for sidebar
+    kotak_account_data = None
+    if session.get('kotak_logged_in') or session.get('authenticated'):
+        kotak_account_data = {
+            'ucc': session.get('ucc', session.get('username', '-')),
+            'mobile': session.get('mobile_number', '-'),
+            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
+            'last_login': 'Just Now',
+            'status': 'Online'
+        }
+    return render_template('holdings.html', kotak_account=kotak_account_data)
 
 
 @main_bp.route('/orders')
 @require_auth
 def show_orders():
     """Show orders page"""
-    return render_template('orders.html')
+    # Prepare account data for sidebar
+    kotak_account_data = None
+    if session.get('kotak_logged_in') or session.get('authenticated'):
+        kotak_account_data = {
+            'ucc': session.get('ucc', session.get('username', '-')),
+            'mobile': session.get('mobile_number', '-'),
+            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
+            'last_login': 'Just Now',
+            'status': 'Online'
+        }
+    return render_template('orders.html', kotak_account=kotak_account_data)
 
 
 @main_bp.route('/charts')

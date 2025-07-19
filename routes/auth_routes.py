@@ -113,7 +113,7 @@ def login():
                     
                     flash('Successfully authenticated with TOTP!', 'success')
                     logging.info(f"Login successful for UCC: {ucc}, redirecting to dashboard")
-                    return redirect(url_for('portfolio'))
+                    return redirect(url_for('main_routes.dashboard'))
                 else:
                     flash('Invalid client data received', 'error')
             else:
@@ -159,8 +159,8 @@ def trading_account_login():
                 logging.info(f"Trading account login successful for: {username}")
                 flash('Login successful!', 'success')
                 
-                # Redirect to portfolio dashboard
-                return redirect(url_for('portfolio'))
+                # Redirect to dashboard
+                return redirect(url_for('main_routes.dashboard'))
             else:
                 flash('Invalid username or password', 'error')
 
@@ -170,7 +170,7 @@ def trading_account_login():
 
     # Redirect authenticated users to dashboard
     if validate_current_session():
-        return redirect(url_for('portfolio'))
+        return redirect(url_for('main_routes.dashboard'))
     
     return render_template('auth/login.html')
 

@@ -18,13 +18,13 @@ session_helper = SessionHelper()
 def validate_current_session():
     """Validate current session and check expiration"""
     try:
-        # Check if user is authenticated first
-        if not session.get('authenticated'):
+        # Check if user is authenticated with either method
+        if not (session.get('authenticated') or session.get('kotak_logged_in')):
             logging.debug("Session not authenticated")
             return False
             
         # Check for required session fields directly in Flask session
-        required_fields = ['access_token', 'session_token', 'ucc']
+        required_fields = ['access_token', 'ucc']
         for field in required_fields:
             if not session.get(field):
                 logging.debug(f"Missing required session field: {field}")
@@ -32,7 +32,7 @@ def validate_current_session():
 
         # Additional validation for token format
         access_token = session.get('access_token')
-        if not access_token or len(access_token) < 50:
+        if not access_token or len(access_token) < 10:
             logging.debug("Invalid access token format")
             return False
 
