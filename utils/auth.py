@@ -16,8 +16,8 @@ def login_required(f):
 def validate_current_session():
     """Validate current session with expiration check"""
     try:
-        # Check if user is authenticated
-        if not session.get('authenticated'):
+        # Check if user is authenticated with either method
+        if not (session.get('authenticated') or session.get('kotak_logged_in')):
             logging.debug("Session validation failed: Not authenticated")
             return False
             

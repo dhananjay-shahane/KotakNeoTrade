@@ -360,9 +360,9 @@ def deals():
 
 @app.route('/positions')
 def show_positions():
-    # Check if user is authenticated with Kotak Neo or trading account
-    if not session.get('authenticated') and not session.get('kotak_logged_in'):
-        return redirect(url_for('auth_routes.login'))
+    # Check if user is authenticated with any login method
+    if not (session.get('authenticated') or session.get('kotak_logged_in')):
+        return redirect(url_for('auth_routes.trading_account_login'))
     
     # Prepare account data for sidebar if logged in
     kotak_account_data = None
@@ -383,9 +383,9 @@ def show_positions():
 
 @app.route('/holdings')
 def show_holdings():
-    # Check if user is authenticated with Kotak Neo or trading account
-    if not session.get('authenticated') and not session.get('kotak_logged_in'):
-        return redirect(url_for('auth_routes.login'))
+    # Check if user is authenticated with any login method
+    if not (session.get('authenticated') or session.get('kotak_logged_in')):
+        return redirect(url_for('auth_routes.trading_account_login'))
     
     # Prepare account data for sidebar if logged in
     kotak_account_data = None
@@ -406,9 +406,9 @@ def show_holdings():
 
 @app.route('/orders')
 def show_orders():
-    # Check if user is authenticated with Kotak Neo or trading account
-    if not session.get('authenticated') and not session.get('kotak_logged_in'):
-        return redirect(url_for('auth_routes.login'))
+    # Check if user is authenticated with any login method
+    if not (session.get('authenticated') or session.get('kotak_logged_in')):
+        return redirect(url_for('auth_routes.trading_account_login'))
     
     # Prepare account data for sidebar if logged in
     kotak_account_data = None
@@ -429,9 +429,9 @@ def show_orders():
 
 @app.route('/charts')
 def show_charts():
-    # Check if user is authenticated with Kotak Neo or trading account
-    if not session.get('authenticated') and not session.get('kotak_logged_in'):
-        return redirect(url_for('auth_routes.login'))
+    # Check if user is authenticated with any login method
+    if not (session.get('authenticated') or session.get('kotak_logged_in')):
+        return redirect(url_for('auth_routes.trading_account_login'))
     
     # Prepare account data for sidebar if logged in
     kotak_account_data = None

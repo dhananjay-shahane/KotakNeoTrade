@@ -1272,8 +1272,13 @@ function updateSidebar(accountData) {
     }
 }
 
+// Enhanced function for account updates
+function updateSidebarWithAccountsEnhanced(accountData) {
+    updateSidebar(accountData);
+}
+
 // Use the enhanced function as the main one
-updateSidebarWithAccounts = updateSidebarWithAccountsEnhanced;
+var updateSidebarWithAccounts = updateSidebarWithAccountsEnhanced;
 
 // Initialize account display on page load
 document.addEventListener("DOMContentLoaded", function () {

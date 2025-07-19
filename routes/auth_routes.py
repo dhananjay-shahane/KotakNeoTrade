@@ -153,6 +153,7 @@ def trading_account_login():
                 session['access_token'] = 'demo_token_' + username  # Demo token for validation
                 session['ucc'] = username  # Use username as UCC for trading account
                 session['greeting_name'] = username
+                session['kotak_logged_in'] = True  # Mark as logged in to prevent repeated prompts
                 session.permanent = True
                 
                 logging.info(f"Trading account login successful for: {username}")
