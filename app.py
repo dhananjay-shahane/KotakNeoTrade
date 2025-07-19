@@ -246,6 +246,19 @@ def require_auth(f):
     return decorated_function
 
 
+def get_kotak_account_data():
+    """Get Kotak account data for sidebar if user is logged in"""
+    if session.get('kotak_logged_in'):
+        return {
+            'ucc': session.get('ucc', '-'),
+            'mobile': session.get('mobile_number', '-'),
+            'greeting_name': session.get('greeting_name', 'User'),
+            'last_login': 'Just Now',
+            'status': 'Online'
+        }
+    return None
+
+
 # ========================================
 # TRADING PLATFORM ROUTES
 # ========================================
@@ -270,6 +283,10 @@ def index():
 @app.route('/portfolio')
 def portfolio():
     """Portfolio page"""
+    # Check if user is authenticated
+    if not session.get('authenticated') and not session.get('kotak_logged_in'):
+        return redirect(url_for('auth_routes.trading_account_login'))
+    
     # Provide default data context for dashboard template
     default_data = {
         'total_positions': 0,
@@ -282,37 +299,103 @@ def portfolio():
         'holdings': [],
         'orders': []
     }
-    return render_template('dashboard.html', data=default_data)
+    
+    # Prepare Kotak account data for sidebar if logged in
+    kotak_account_data = None
+    if session.get('kotak_logged_in'):
+        kotak_account_data = {
+            'ucc': session.get('ucc', '-'),
+            'mobile': session.get('mobile_number', '-'),
+            'greeting_name': session.get('greeting_name', 'User'),
+            'last_login': 'Just Now',
+            'status': 'Online'
+        }
+    
+    return render_template('dashboard.html', 
+                         data=default_data, 
+                         kotak_account=kotak_account_data)
 
 
 @app.route('/trading-signals')
 def trading_signals():
     """Trading Signals page"""
-    return render_template('trading_signals.html')
+    # Check if user is authenticated
+    if not session.get('authenticated') and not session.get('kotak_logged_in'):
+        return redirect(url_for('auth_routes.trading_account_login'))
+    
+    # Prepare Kotak account data for sidebar if logged in
+    kotak_account_data = None
+    if session.get('kotak_logged_in'):
+        kotak_account_data = {
+            'ucc': session.get('ucc', '-'),
+            'mobile': session.get('mobile_number', '-'),
+            'greeting_name': session.get('greeting_name', 'User'),
+            'last_login': 'Just Now',
+            'status': 'Online'
+        }
+    
+    return render_template('trading_signals.html', kotak_account=kotak_account_data)
 
 
 @app.route('/deals')
 def deals():
     """Deals page"""
-    return render_template('deals.html')
+    # Check if user is authenticated
+    if not session.get('authenticated') and not session.get('kotak_logged_in'):
+        return redirect(url_for('auth_routes.trading_account_login'))
+    
+    # Prepare Kotak account data for sidebar if logged in
+    kotak_account_data = None
+    if session.get('kotak_logged_in'):
+        kotak_account_data = {
+            'ucc': session.get('ucc', '-'),
+            'mobile': session.get('mobile_number', '-'),
+            'greeting_name': session.get('greeting_name', 'User'),
+            'last_login': 'Just Now',
+            'status': 'Online'
+        }
+    
+    return render_template('deals.html', kotak_account=kotak_account_data)
 
 
 @app.route('/positions')
 @require_auth
 def show_positions():
+    # Prepare Kotak account data for sidebar if logged in
+    kotak_account_data = None
+    if session.get('kotak_logged_in'):
+        kotak_account_data = {
+            'ucc': session.get('ucc', '-'),
+            'mobile': session.get('mobile_number', '-'),
+            'greeting_name': session.get('greeting_name', 'User'),
+            'last_login': 'Just Now',
+            'status': 'Online'
+        }
+    
     try:
         return positions()
     except:
-        return render_template('positions.html')
+        return render_template('positions.html', kotak_account=kotak_account_data)
 
 
 @app.route('/holdings')
 @require_auth
 def show_holdings():
+    # Prepare Kotak account data for sidebar if logged in
+    kotak_account_data = None
+    if session.get('kotak_logged_in'):
+        kotak_account_data = {
+            'ucc': session.get('ucc', '-'),
+            'mobile': session.get('mobile_number', '-'),
+            'greeting_name': session.get('greeting_name', 'User'),
+            'last_login': 'Just Now',
+            'status': 'Online'
+        }
+    
     try:
         return holdings()
     except:
-        return render_template('holdings.html')
+        return render_template('holdings.html', kotak_account=kotak_account_data)
 
 
 @app.route('/orders')

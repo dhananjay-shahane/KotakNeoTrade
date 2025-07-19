@@ -103,7 +103,8 @@ def login():
 
                     flash('Successfully authenticated with TOTP!', 'success')
                     logging.info(f"Login successful for UCC: {ucc}, redirecting to dashboard")
-                    return redirect('/kotak/dashboard')
+                    session['kotak_logged_in'] = True  # Flag for sidebar visibility
+                    return redirect(url_for('portfolio'))
                 else:
                     flash('Invalid client data received', 'error')
             else:
@@ -164,8 +165,7 @@ def trading_account_login():
 @auth_bp.route('/logout')
 def logout():
     """Logout and clear session"""
-    if logout_user():
-        flash('Logged out successfully', 'info')
-    else:
-        flash('Logout failed', 'error')
-    return redirect(url_for('auth_routes.login'))
+    # Clear all session data
+    session.clear()
+    flash('Logged out successfully', 'info')
+    return redirect(url_for('auth_routes.trading_account_login'))

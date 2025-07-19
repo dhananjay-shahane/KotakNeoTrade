@@ -195,19 +195,13 @@
                         <span>Deals</span>
                     </a>
                 </div>
-                <!-- <div class="nav-item">
-                <a href="/kotak" class="nav-link">
-                    <i class="fas fa-chart-line nav-icon"></i>
-                    <span>Kotak Neo Platform</span>
-                </a>
-            </div> -->
             </div>
 
             <!-- Kotak Neo Trading Section (shown after login) -->
             <div
                 class="kotak-neo-section"
                 id="kotakNeoSection"
-                style="display: none"
+                {% if not session.kotak_logged_in %}style="display: none"{% endif %}
             >
                 <div class="nav-items">
                     <div class="nav-item">
@@ -251,11 +245,8 @@
                 </div>
 
                 <!-- Kotak Neo Account Box (shown after login) -->
-                <div
-                    class="kotak-account-box"
-                    id="kotakAccountBox"
-                    style="display: none"
-                >
+                {% if kotak_account %}
+                <div class="kotak-account-box" id="kotakAccountBox">
                     <div class="account-card">
                         <div class="account-header">
                             <div class="account-info">
@@ -264,7 +255,7 @@
                                     <span>Kotak Neo</span>
                                     <span class="status-indicator online">
                                         <i class="fas fa-circle"></i>
-                                        <span>Online</span>
+                                        <span>{{ kotak_account.status }}</span>
                                     </span>
                                 </div>
                             </div>
@@ -273,21 +264,15 @@
                         <div class="account-details">
                             <div class="detail-row">
                                 <span class="label">UCC</span>
-                                <span class="value" id="kotakUCCDisplay"
-                                    >-</span
-                                >
+                                <span class="value">{{ kotak_account.ucc }}</span>
                             </div>
                             <div class="detail-row">
                                 <span class="label">MOBILE</span>
-                                <span class="value" id="kotakMobileDisplay"
-                                    >-</span
-                                >
+                                <span class="value">{{ kotak_account.mobile }}</span>
                             </div>
                             <div class="detail-row">
                                 <span class="label">Last Login</span>
-                                <span class="value" id="kotakLastLogin"
-                                    >Just Now</span
-                                >
+                                <span class="value">{{ kotak_account.last_login }}</span>
                             </div>
                         </div>
 
@@ -299,15 +284,13 @@
                                 <i class="fas fa-external-link-alt me-1"></i>
                                 Switch
                             </button>
-                            <button
-                                class="btn-logout-account"
-                                onclick="logoutKotakAccount()"
-                            >
+                            <a href="{{ url_for('auth_routes.logout') }}" class="btn-logout-account">
                                 <i class="fas fa-sign-out-alt"></i>
-                            </button>
+                            </a>
                         </div>
                     </div>
                 </div>
+                {% endif %}
 
                 <!-- Add Another Account Button (shown when logged in) -->
                 <div
@@ -321,11 +304,13 @@
                 </div>
 
                 <!-- Login Button (shown when no accounts logged in) -->
+                {% if not kotak_account %}
                 <div class="account-login" id="accountLogin">
                     <a href="{{ url_for('auth_routes.login') }}" class="btn-login-account">
                         <i class="fas fa-sign-in-alt me-2"></i>Login Account
                     </a>
                 </div>
+                {% endif %}
             </div>
         </nav>
 
