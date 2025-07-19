@@ -23,12 +23,20 @@ def validate_current_session():
             logging.debug("Session not authenticated")
             return False
             
-        # Check for required session fields directly in Flask session
-        required_fields = ['access_token', 'ucc']
-        for field in required_fields:
-            if not session.get(field):
-                logging.debug(f"Missing required session field: {field}")
-                return False
+        # For trading account login, check different required fields
+        if session.get('login_type') == 'trading_account' and session.get('authenticated'):
+            required_fields = ['access_token', 'username']
+            for field in required_fields:
+                if not session.get(field):
+                    logging.debug(f"Missing required session field for trading account: {field}")
+                    return False
+        else:
+            # For Kotak Neo login, check original required fields
+            required_fields = ['access_token', 'ucc']
+            for field in required_fields:
+                if not session.get(field):
+                    logging.debug(f"Missing required session field: {field}")
+                    return False
 
         # Additional validation for token format
         access_token = session.get('access_token')
@@ -52,7 +60,7 @@ def require_auth(f):
             if request.is_json:
                 return jsonify({'error': 'Authentication required'}), 401
             flash('Please login to access this page', 'error')
-            return redirect(url_for('auth_routes.login'))
+            return redirect(url_for('auth_routes.trading_account_login'))
         return f(*args, **kwargs)
     return decorated_function
 

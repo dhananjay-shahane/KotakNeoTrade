@@ -19,7 +19,7 @@ def index():
     """Root route - redirect to dashboard if authenticated, else login"""
     if validate_current_session():
         return redirect(url_for('main_routes.dashboard'))
-    return redirect(url_for('auth_routes.login'))
+    return redirect(url_for('auth_routes.trading_account_login'))
 
 
 @main_bp.route('/dashboard')
@@ -27,6 +27,21 @@ def index():
 def dashboard():
     """Main dashboard with portfolio overview"""
     try:
+        # For trading account login, client is not required
+        if session.get('login_type') == 'trading_account':
+            # Render dashboard with empty data for trading account users
+            dashboard_data = {
+                'positions': [],
+                'holdings': [],
+                'limits': {},
+                'recent_orders': [],
+                'total_positions': 0,
+                'total_holdings': 0,
+                'total_orders': 0
+            }
+            return render_template('dashboard.html', data=dashboard_data)
+        
+        # For Kotak Neo login, require client
         client = session.get('client')
         if not client:
             flash('Session expired. Please login again.', 'error')
