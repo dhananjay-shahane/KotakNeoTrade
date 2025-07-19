@@ -428,33 +428,29 @@ def show_orders():
 
 
 @app.route('/charts')
-def show_orders():
-    # Check if user is authenticated with Kotak Neo
-    if not session.get('kotak_logged_in'):
+def show_charts():
+    # Check if user is authenticated with Kotak Neo or trading account
+    if not session.get('authenticated') and not session.get('kotak_logged_in'):
         return redirect(url_for('auth_routes.login'))
     
-    # Prepare Kotak account data for sidebar if logged in
+    # Prepare account data for sidebar if logged in
     kotak_account_data = None
-    if session.get('kotak_logged_in'):
+    if session.get('kotak_logged_in') or session.get('authenticated'):
         kotak_account_data = {
-            'ucc': session.get('ucc', '-'),
+            'ucc': session.get('ucc', session.get('username', '-')),
             'mobile': session.get('mobile_number', '-'),
-            'greeting_name': session.get('greeting_name', 'User'),
+            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
             'last_login': 'Just Now',
             'status': 'Online'
         }
     
     try:
-        return orders()
+        return render_template('charts.html', kotak_account=kotak_account_data)
     except:
-        return render_template('orders.html', kotak_account=kotak_account_data)
+        return render_template('charts.html', kotak_account=kotak_account_data)
 
 
-@app.route('/charts')
-@require_auth
-def charts():
-    """Charts page for trading analysis"""
-    return render_template('charts.html')
+
 
 
 @app.route('/basic-trade-signals')

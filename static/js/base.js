@@ -1240,6 +1240,38 @@ function formatLoginTime() {
     return timeString;
 }
 
+function updateSidebar(accountData) {
+    console.log('Updating sidebar with data:', accountData);
+
+    if (!accountData) {
+        console.log('No account data provided');
+        return;
+    }
+
+    try {
+        // Update Kotak account section visibility
+        const kotakSection = document.querySelector('.kotak-account-section');
+        if (kotakSection) {
+            kotakSection.style.display = accountData ? 'block' : 'none';
+        }
+
+        // Update account info elements if they exist
+        const ucc = document.getElementById('sidebar-ucc');
+        const mobile = document.getElementById('sidebar-mobile'); 
+        const greeting = document.getElementById('sidebar-greeting');
+        const status = document.getElementById('sidebar-status');
+
+        if (ucc && accountData.ucc) ucc.textContent = accountData.ucc;
+        if (mobile && accountData.mobile) mobile.textContent = accountData.mobile;
+        if (greeting && accountData.greeting_name) greeting.textContent = accountData.greeting_name;
+        if (status && accountData.status) status.textContent = accountData.status;
+
+        console.log('Sidebar updated successfully');
+    } catch (error) {
+        console.error('Error updating sidebar:', error);
+    }
+}
+
 // Use the enhanced function as the main one
 updateSidebarWithAccounts = updateSidebarWithAccountsEnhanced;
 
