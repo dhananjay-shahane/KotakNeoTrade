@@ -19,7 +19,7 @@ def index():
     """Root route - redirect to dashboard if authenticated, else login"""
     if validate_current_session():
         return redirect(url_for('main_routes.dashboard'))
-    return redirect(url_for('auth.login'))
+    return redirect(url_for('auth_routes.login'))
 
 
 @main_bp.route('/dashboard')
@@ -30,7 +30,7 @@ def dashboard():
         client = session.get('client')
         if not client:
             flash('Session expired. Please login again.', 'error')
-            return redirect(url_for('auth.login'))
+            return redirect(url_for('auth_routes.login'))
 
         # Fetch dashboard data with error handling
         dashboard_data = {}

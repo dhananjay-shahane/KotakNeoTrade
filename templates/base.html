@@ -207,8 +207,8 @@
                 </div>
             </div>
 
-            <!-- Kotak Neo Trading Section (shown after login) -->
-            {% if session.get('kotak_logged_in') or session.get('authenticated') %}
+            <!-- Kotak Neo Trading Section (shown only after Kotak login) -->
+            {% if session.get('kotak_logged_in') and session.get('login_type') == 'kotak_neo' %}
             <div class="kotak-neo-section" id="kotakNeoSection" style="display: block;">
                 <div class="nav-items">
                     <div class="nav-item">
@@ -249,8 +249,8 @@
                     </h6>
                 </div>
 
-                <!-- Kotak Neo Account Box (shown after login) -->
-                {% if session.get('kotak_logged_in') or session.get('authenticated') %}
+                <!-- Kotak Neo Account Box (shown only after Kotak login) -->
+                {% if session.get('kotak_logged_in') and session.get('login_type') == 'kotak_neo' %}
                 <div class="kotak-account-box" id="kotakAccountBox" style="display: block;">
                     <div class="account-card">
                         <div class="account-header">
@@ -311,8 +311,8 @@
                     </button>
                 </div>
 
-                <!-- Login Button (shown when no accounts logged in) -->
-                {% if not session.get('kotak_logged_in') and not session.get('authenticated') %}
+                <!-- Login Button (shown when no Kotak account logged in) -->
+                {% if not (session.get('kotak_logged_in') and session.get('login_type') == 'kotak_neo') %}
                 <div class="account-login" id="accountLogin">
                     <a
                         href="{{ url_for('auth_routes.login') }}"

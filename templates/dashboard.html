@@ -223,7 +223,7 @@
                                 <i class="fas fa-user-circle fa-3x text-white"></i>
                             </div>
                             <div>
-                                <h3 class="text-white mb-1">Welcome back, {{ session.get('greeting_name', session.get('ucc', 'Trader')) }}!</h3>
+                                <h3 class="text-white mb-1">Welcome back, {{ session.get('user_id', session.get('greeting_name', session.get('ucc', 'Trader'))) }}!</h3>
                                 <p class="text-white-50 mb-0">
                                     <i class="fas fa-clock me-1"></i>
                                     Last login: <span id="lastLoginTime">{{ session.get('login_time', 'Today') }}</span>

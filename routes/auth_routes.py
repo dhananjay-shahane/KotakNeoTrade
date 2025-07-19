@@ -153,7 +153,7 @@ def trading_account_login():
                 session['access_token'] = 'demo_token_' + username  # Demo token for validation
                 session['ucc'] = username  # Required field for dashboard
                 session['greeting_name'] = username  # Display name
-                session['kotak_logged_in'] = True  # Required for sidebar visibility
+                # Don't set kotak_logged_in for trading account login
                 session.permanent = True
                 
                 logging.info(f"Trading account login successful for: {username}")
