@@ -26,12 +26,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Import main Flask application
 from app import app
-from api.deals_api import deals_api
-from api.trading_api import trading_bp
+from flask import session, jsonify
+import logging
 from Scripts.trading_functions import TradingFunctions
-
-app.register_blueprint(deals_api)
-app.register_blueprint(trading_bp)
 
 # Direct API endpoints for compatibility
 trading_functions = TradingFunctions()
