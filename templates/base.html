@@ -138,17 +138,33 @@
                 <!-- User Profile -->
                 <div class="user-profile" onclick="toggleUserMenu()">
                     <div class="user-avatar text-white">
-                        {% if session.authenticated and session.user_id and
-                        session.get('login_type') == 'trading_account' %} {{
-                        session.user_id[0].upper() }}
+                        {% if session.authenticated and session.user_id and session.get('login_type') == 'trading_account' %}
+                            {{ session.user_id[0].upper() }}
+                        {% elif session.get('kotak_logged_in') and session.get('greeting_name') %}
+                            {{ session.get('greeting_name')[0].upper() }}
+                        {% else %}
+                            G
+                        {% endif %}
                     </div>
                     <div class="user-info">
                         <h6>
-                            {% if session.authenticated and session.user_id and
-                            session.get('login_type') == 'trading_account' %} {{
-                            session.user_id }}
+                            {% if session.authenticated and session.user_id and session.get('login_type') == 'trading_account' %}
+                                {{ session.user_id }}
+                            {% elif session.get('kotak_logged_in') and session.get('greeting_name') %}
+                                {{ session.get('greeting_name') }}
+                            {% else %}
+                                Guest
+                            {% endif %}
                         </h6>
-                        <small>Trading Account</small>
+                        <small>
+                            {% if session.get('kotak_logged_in') %}
+                                Kotak Neo Account
+                            {% elif session.authenticated %}
+                                Trading Account
+                            {% else %}
+                                Guest User
+                            {% endif %}
+                        </small>
                     </div>
                     <i
                         class="fas fa-chevron-down"

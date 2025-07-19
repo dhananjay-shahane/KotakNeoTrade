@@ -1274,11 +1274,36 @@ function updateSidebar(accountData) {
 
 // Enhanced function for account updates
 function updateSidebarWithAccountsEnhanced(accountData) {
-    updateSidebar(accountData);
+    try {
+        updateSidebar(accountData);
+    } catch (error) {
+        console.error('Error updating sidebar:', error);
+    }
 }
 
 // Use the enhanced function as the main one
-var updateSidebarWithAccounts = updateSidebarWithAccountsEnhanced;
+window.updateSidebarWithAccounts = updateSidebarWithAccountsEnhanced;
+
+// Fallback updateSidebar function if not already defined
+if (typeof updateSidebar !== 'function') {
+    function updateSidebar(accountData) {
+        console.log('updateSidebar called with:', accountData);
+        // Basic sidebar update logic
+        if (accountData && typeof accountData === 'object') {
+            // Update sidebar elements if they exist
+            const kotakSection = document.getElementById('kotakNeoSection');
+            const kotakAccountBox = document.getElementById('kotakAccountBox');
+            
+            if (kotakSection && accountData.ucc) {
+                kotakSection.style.display = 'block';
+            }
+            
+            if (kotakAccountBox && accountData.greeting_name) {
+                kotakAccountBox.style.display = 'block';
+            }
+        }
+    }
+}
 
 // Initialize account display on page load
 document.addEventListener("DOMContentLoaded", function () {
