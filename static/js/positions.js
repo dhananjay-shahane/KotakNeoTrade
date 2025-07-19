@@ -20,13 +20,13 @@ PositionsManager.prototype.initialize = function() {
 
 PositionsManager.prototype.loadPositions = function() {
     console.log('Loading positions data...');
+    var self = this; // Store reference to this
 
-    // Hide skeleton and show loading in table first
-    setTimeout(function() {
-        if (document.getElementById('positionsSkeleton')) {
-            hidePositionsSkeleton();
-        }
-    }, 1000);
+    // Show loading in table
+    var tbody = document.getElementById('positionsTableBody');
+    if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="13" class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading positions...</span></div><p class="mt-2 mb-0 text-muted">Loading live positions data...</p></td></tr>';
+    }
 
     var xhr = new XMLHttpRequest();
     xhr.open('GET', '/api/positions', true);
@@ -42,28 +42,28 @@ PositionsManager.prototype.loadPositions = function() {
                     // Handle different response formats with better logging
                     if (response.success && response.positions && Array.isArray(response.positions)) {
                         console.log('✅ Using wrapped API format with', response.positions.length, 'positions');
-                        this.positions = response.positions;
+                        self.positions = response.positions;
                     } else if (response.stat === 'Ok' && response.data && Array.isArray(response.data)) {
                         console.log('✅ Using direct Kotak Neo API format with', response.data.length, 'positions');
-                        this.positions = response.data;
+                        self.positions = response.data;
                     } else if (Array.isArray(response)) {
                         console.log('✅ Using direct array format with', response.length, 'positions');
-                        this.positions = response;
+                        self.positions = response;
                     } else if (response.success === false && response.message) {
                         console.error('❌ API returned error:', response.message);
-                        this.showError(response.message);
+                        self.showError(response.message);
                         return;
                     } else {
                         console.error('❌ Invalid positions response format:', response);
                         console.log('Available keys:', Object.keys(response));
-                        this.showError('Invalid data format received from server');
+                        self.showError('Invalid data format received from server');
                         return;
                     }
 
                     // Display positions and update UI
-                    console.log('📊 Processing', this.positions.length, 'positions...');
-                    this.displayPositions();
-                    this.updateSummaryCards();
+                    console.log('📊 Processing', self.positions.length, 'positions...');
+                    self.displayPositions();
+                    self.updateSummaryCards();
                     
                     // Log success
                     console.log('✅ Positions loaded and displayed successfully!');
@@ -71,20 +71,20 @@ PositionsManager.prototype.loadPositions = function() {
                 } catch (e) {
                     console.error('❌ Failed to parse positions response:', e);
                     console.log('Raw response:', xhr.responseText);
-                    this.showError('Failed to parse server response');
+                    self.showError('Failed to parse server response');
                 }
             } else {
                 console.error('❌ Positions API request failed with status:', xhr.status);
                 console.log('Response text:', xhr.responseText);
-                this.showError('Failed to load positions data (Status: ' + xhr.status + ')');
+                self.showError('Failed to load positions data (Status: ' + xhr.status + ')');
             }
         }
-    }.bind(this);
+    };
     
     xhr.onerror = function() {
         console.error('❌ Network error while loading positions');
-        this.showError('Network error - please check your connection');
-    }.bind(this);
+        self.showError('Network error - please check your connection');
+    };
     
     xhr.send();
 };
