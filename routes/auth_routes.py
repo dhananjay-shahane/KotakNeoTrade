@@ -102,8 +102,8 @@ def login():
                         # Continue with login even if DB storage fails
 
                     # Store essential session data for sidebar and header
-                    session['ucc'] = client_data.get('ucc', '')
-                    session['greeting_name'] = client_data.get('greetingName', '')
+                    session['ucc'] = ucc
+                    session['greeting_name'] = session_data.get('greetingName', '')
                     session['mobile_number'] = mobile_number
                     session['kotak_logged_in'] = True  # Flag for sidebar visibility
                     session['authenticated'] = True  # General authentication flag
