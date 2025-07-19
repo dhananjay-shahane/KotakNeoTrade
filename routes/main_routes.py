@@ -232,10 +232,6 @@ def basic_trade_signals():
 def deals():
     """Deals page for user deals from user_deals table"""
     return render_template('deals.html')
-```"""
-
-This commit addresses the identified errors by ensuring correct template rendering and AJAX data loading.
-"""
 import logging
 from flask import Blueprint, render_template, session, flash, redirect, url_for
 from core.auth import require_auth, validate_current_session
