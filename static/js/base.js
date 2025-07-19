@@ -204,6 +204,21 @@ function toggleTheme() {
     }
 }
 
+// Immediately expose global functions before DOMContentLoaded
+window.toggleSidebar = toggleSidebar;
+window.showSettingsModal = showSettingsModal;
+window.toggleNotificationInbox = toggleNotificationInbox;
+window.closeNotificationInbox = closeNotificationInbox;
+window.adjustFontSize = adjustFontSize;
+window.applySettings = applySettings;
+window.showKotakLoginForm = showKotakLoginForm;
+window.toggleUserProfile = toggleUserProfile;
+window.toggleUserMenu = toggleUserMenu;
+window.showUserProfile = showUserProfile;
+window.logoutKotakOnly = logoutKotakOnly;
+window.showLoginModal = showLoginModal;
+window.toggleTheme = toggleTheme;
+
 // Initialize theme on page load
 document.addEventListener("DOMContentLoaded", function () {
     const savedTheme = localStorage.getItem("theme") || "dark";
@@ -357,18 +372,27 @@ function initializeNotifications() {
     });
 }
 
-// Fix common global functions that might be called from templates
-window.toggleSidebar = toggleSidebar;
-window.showSettingsModal = showSettingsModal;
-window.toggleNotificationInbox = toggleNotificationInbox;
-window.closeNotificationInbox = closeNotificationInbox;
-window.adjustFontSize = adjustFontSize;
-window.applySettings = applySettings;
-window.showKotakLoginForm = showKotakLoginForm;
-window.toggleUserProfile = toggleUserProfile;
-window.logoutKotakOnly = logoutKotakOnly;
-window.showLoginModal = showLoginModal;
-window.toggleTheme = toggleTheme;
+// User menu toggle function
+function toggleUserMenu() {
+    const userMenu = document.getElementById('userMenu');
+    if (userMenu) {
+        userMenu.style.display = userMenu.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+// Show user profile modal
+function showUserProfile() {
+    const modal = new bootstrap.Modal(document.getElementById('userProfileModal'));
+    modal.show();
+}
+
+// Show login modal
+function showLoginModal() {
+    const modal = new bootstrap.Modal(document.getElementById('loginAccountModal'));
+    modal.show();
+}
+
+// Functions are already exposed above before DOMContentLoaded
 
 // Show error message
 function showPageError(pageType) {
