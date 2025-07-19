@@ -63,12 +63,15 @@ def login():
                     session['sid'] = session_data.get('sid')
                     session['ucc'] = ucc
                     session['mobile_number'] = mobile_number
-                    session['greeting_name'] = session_data.get('greetingName')
-                    session['user_id'] = session_data.get('user_id')
+                    session['greeting_name'] = session_data.get('greetingName', ucc)
+                    session['user_id'] = session_data.get('user_id', ucc)
                     session['client_code'] = session_data.get('client_code')
+                    session['kotak_logged_in'] = True
+                    session['login_type'] = 'kotak_neo'
+                    session['client'] = client  # Store the client object for API calls
                     session.permanent = True
                     
-                    # Note: Do not store the client object as it's not JSON serializable
+                    # Note: Client object stored for trading functionality
 
                     # Prepare login response for database storage
                     login_response = {
@@ -142,11 +145,14 @@ def trading_account_login():
             # For demo purposes, create a simple authentication
             # In production, this would validate against your user database
             if username and password:
-                # Store user session
+                # Store user session with all required fields
                 session['authenticated'] = True
                 session['username'] = username
                 session['user_id'] = username  # Use username as user ID for header display
                 session['login_type'] = 'trading_account'
+                session['access_token'] = 'demo_token_' + username  # Demo token for validation
+                session['ucc'] = username  # Use username as UCC for trading account
+                session['greeting_name'] = username
                 session.permanent = True
                 
                 logging.info(f"Trading account login successful for: {username}")

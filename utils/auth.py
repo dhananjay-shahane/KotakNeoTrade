@@ -24,7 +24,6 @@ def validate_current_session():
         # Check if session has expired
         if is_session_expired():
             logging.info("Session has expired")
-            clear_session()
             return False
             
         # Check if required session data exists
@@ -32,7 +31,6 @@ def validate_current_session():
         for field in required_fields:
             if not session.get(field):
                 logging.warning(f"Missing session field: {field}")
-                clear_session()
                 return False
                 
         # Additional validation - check if tokens are not empty
@@ -40,13 +38,11 @@ def validate_current_session():
         
         if not access_token:
             logging.warning("Empty access token")
-            clear_session()
             return False
             
         # Basic token validation (check it's not obviously invalid)
         if len(access_token) < 10:
             logging.warning("Invalid access token format - token too short")
-            clear_session()
             return False
             
         # Check for session_token or sid (at least one should be present)
@@ -55,20 +51,17 @@ def validate_current_session():
         
         if not session_token and not sid:
             logging.warning("Missing session identifiers")
-            clear_session()
             return False
             
         # Validate UCC format
         ucc = session.get('ucc')
         if not ucc or len(ucc) < 5 or len(ucc) > 6 or not ucc.isalnum():
             logging.warning("Invalid UCC format in session")
-            clear_session()
             return False
                 
         return True
     except Exception as e:
         logging.error(f"Session validation error: {str(e)}")
-        clear_session()
         return False
 
 def clear_session():
