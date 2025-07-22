@@ -530,9 +530,16 @@ def api_orders():
 
 @main_bp.route('/charts')
 @login_required
-def show_charts():
-    """Charts page with interactive trading charts using Dash"""
-    return redirect('/dash-charts/')
+def charts():
+    """Charts page with Dash integration"""
+    try:
+        # Check if Dash app is available
+        from dash_charts_app import dash_app
+        # Redirect to Dash app
+        return render_template('charts.html', dash_url='/dash-charts/')
+    except ImportError:
+        # Fallback to basic charts page
+        return render_template('charts.html', dash_url=None)
 
 
 @main_bp.route('/portfolio')

@@ -50,15 +50,8 @@ def create_app():
         app.secret_key = secrets.token_hex(32)
         logger.warning("Using fallback session secret for development")
     
-    # Configure database URI first
-    db_uri = os.environ.get('DATABASE_URL')
-    if not db_uri:
-        db_uri = 'sqlite:///instance/trading_platform.db'
-    
-    # Configure app settings
+    # Configure app settings first
     app.config.update(
-        SQLALCHEMY_DATABASE_URI=db_uri,
-        SQLALCHEMY_TRACK_MODIFICATIONS=False,
         SESSION_COOKIE_SECURE=False,  # Set to True in production with HTTPS
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE='Lax',
@@ -190,6 +183,8 @@ def create_app():
             '/dash-charts': dash_app.server
         })
         logger.info("✓ Dash charts app integrated")
+    except ImportError as e:
+        logger.warning(f"Dash not available: {e}")
     except Exception as e:
         logger.warning(f"Could not integrate Dash app: {e}")
     

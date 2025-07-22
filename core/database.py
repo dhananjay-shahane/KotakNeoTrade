@@ -33,8 +33,12 @@ def init_db(app):
         # Set database URI before initializing
         db_uri = os.environ.get('DATABASE_URL')
         if not db_uri:
+            # Ensure instance directory exists
+            import os
+            instance_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'instance')
+            os.makedirs(instance_dir, exist_ok=True)
             # Fallback to SQLite for development
-            db_uri = 'sqlite:///instance/trading_platform.db'
+            db_uri = f'sqlite:///{os.path.join(instance_dir, "trading_platform.db")}'
 
         app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -42,11 +46,10 @@ def init_db(app):
         # Only initialize if not already done
         if not hasattr(app, 'extensions') or 'sqlalchemy' not in app.extensions:
             db.init_app(app)
-        elif 'sqlalchemy' in app.extensions:
-            # Already initialized, just update config
-            app.extensions['sqlalchemy'].db = db
+            logging.info("Database initialized successfully")
+        else:
+            logging.info("Database already initialized")
 
-        logging.info("Database initialized successfully")
         return True
     except Exception as e:
         logging.error(f"Database initialization failed: {e}")

@@ -748,3 +748,319 @@ def update_active_button(selected_period):
 
 if __name__ == '__main__':
     app.run_server(debug=True, host='0.0.0.0', port=8050)
+import dash
+from dash import dcc, html, Input, Output, State, callback
+import plotly.graph_objects as go
+import pandas as pd
+import logging
+from datetime import datetime, timedelta
+import sqlite3
+import os
+
+# Initialize Dash app
+dash_app = dash.Dash(__name__, url_base_pathname='/dash-charts/')
+dash_app.title = "Stock Analysis Dashboard"
+
+# Logging configuration
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler()]
+)
+logger = logging.getLogger(__name__)
+
+# App layout
+dash_app.layout = html.Div([
+    html.Div([
+        html.Div([
+            dcc.Input(
+                id='symbol-input',
+                type='text',
+                placeholder='Enter symbol',
+                className='symbol-input',
+                value='RELIANCE'  # Default value
+            ),
+            html.Button('Submit', id='submit-button', n_clicks=0, className='submit-button'),
+        ], className='input-container'),
+    ], className="header"),
+    
+    html.Div([
+        html.Button('1D', id='period-1d', className='period-button', n_clicks=0),
+        html.Button('1W', id='period-1w', className='period-button', n_clicks=0),
+        html.Button('1M', id='period-1m', className='period-button', n_clicks=0),
+        html.Button('3M', id='period-3m', className='period-button', n_clicks=0),
+    ], className='period-buttons'),
+    
+    html.Div([
+        dcc.Graph(id='candlestick-chart')
+    ], className='chart-container'),
+    
+], className='dashboard')
+
+def get_sample_data(symbol='RELIANCE', period='1D'):
+    """Generate sample OHLC data for demonstration"""
+    try:
+        # Generate sample data based on period
+        if period == '1D':
+            periods = 24
+            freq = 'H'
+        elif period == '1W':
+            periods = 7
+            freq = 'D'
+        elif period == '1M':
+            periods = 30
+            freq = 'D'
+        else:  # 3M
+            periods = 90
+            freq = 'D'
+        
+        # Create sample dates
+        end_date = datetime.now()
+        dates = pd.date_range(end=end_date, periods=periods, freq=freq)
+        
+        # Generate sample OHLC data
+        import numpy as np
+        np.random.seed(42)  # For consistent demo data
+        
+        base_price = 2500  # Sample base price
+        
+        # Generate price movements
+        price_changes = np.random.normal(0, 20, periods)
+        prices = base_price + np.cumsum(price_changes)
+        
+        # Generate OHLC data
+        data = []
+        for i, date in enumerate(dates):
+            open_price = prices[i] if i == 0 else data[i-1]['close']
+            close_price = prices[i]
+            high_price = max(open_price, close_price) + abs(np.random.normal(0, 10))
+            low_price = min(open_price, close_price) - abs(np.random.normal(0, 10))
+            
+            data.append({
+                'date': date,
+                'open': round(open_price, 2),
+                'high': round(high_price, 2),
+                'low': round(low_price, 2),
+                'close': round(close_price, 2),
+                'volume': np.random.randint(100000, 1000000)
+            })
+        
+        df = pd.DataFrame(data)
+        logger.info(f"Generated sample data for {symbol} with {len(df)} records")
+        return df
+        
+    except Exception as e:
+        logger.error(f"Error generating sample data: {e}")
+        return pd.DataFrame()
+
+def get_historical_data(symbol, period='1D'):
+    """
+    Get historical data for the symbol from database or fallback to sample data
+    """
+    try:
+        # Try to get data from database first
+        db_path = os.path.join('instance', 'trading_platform.db')
+        if os.path.exists(db_path):
+            conn = sqlite3.connect(db_path)
+            
+            # Try to get data from _daily table if it exists
+            query = f"""
+            SELECT date, open, high, low, close, volume 
+            FROM _daily 
+            WHERE symbol = ? 
+            ORDER BY date DESC 
+            LIMIT 100
+            """
+            
+            try:
+                df = pd.read_sql_query(query, conn, params=[symbol])
+                conn.close()
+                
+                if not df.empty:
+                    df['date'] = pd.to_datetime(df['date'])
+                    logger.info(f"Retrieved {len(df)} records from database for {symbol}")
+                    return df
+            except Exception as db_error:
+                logger.warning(f"Database query failed: {db_error}")
+                conn.close()
+        
+        # Fallback to sample data
+        logger.info(f"Using sample data for {symbol}")
+        return get_sample_data(symbol, period)
+        
+    except Exception as e:
+        logger.error(f"Error getting historical data: {e}")
+        return get_sample_data(symbol, period)
+
+@dash_app.callback(
+    Output('candlestick-chart', 'figure'),
+    [Input('submit-button', 'n_clicks'),
+     Input('period-1d', 'n_clicks'),
+     Input('period-1w', 'n_clicks'),
+     Input('period-1m', 'n_clicks'),
+     Input('period-3m', 'n_clicks')],
+    [State('symbol-input', 'value')]
+)
+def update_chart(submit_clicks, period_1d, period_1w, period_1m, period_3m, symbol):
+    """Update candlestick chart based on symbol and period"""
+    try:
+        # Determine which period was clicked
+        ctx = dash.callback_context
+        if ctx.triggered:
+            button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+            if 'period-1d' in button_id:
+                period = '1D'
+            elif 'period-1w' in button_id:
+                period = '1W'
+            elif 'period-1m' in button_id:
+                period = '1M'
+            elif 'period-3m' in button_id:
+                period = '3M'
+            else:
+                period = '1D'
+        else:
+            period = '1D'
+        
+        if not symbol:
+            symbol = 'RELIANCE'
+            
+        # Get historical data
+        df = get_historical_data(symbol, period)
+        
+        if df.empty:
+            # Return empty chart if no data
+            fig = go.Figure()
+            fig.add_annotation(
+                text="No data available",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, xanchor='center', yanchor='middle',
+                showarrow=False, font=dict(size=16)
+            )
+            return fig
+        
+        # Create candlestick chart
+        fig = go.Figure(data=go.Candlestick(
+            x=df['date'],
+            open=df['open'],
+            high=df['high'],
+            low=df['low'],
+            close=df['close'],
+            name=symbol,
+            increasing_line_color='#00ff88',
+            decreasing_line_color='#ff4444'
+        ))
+        
+        # Update layout
+        fig.update_layout(
+            title=f'{symbol} - {period} Candlestick Chart',
+            xaxis_title='Date',
+            yaxis_title='Price (₹)',
+            template='plotly_dark',
+            height=600,
+            xaxis_rangeslider_visible=False,
+            showlegend=False
+        )
+        
+        logger.info(f"Updated chart for {symbol} with {len(df)} data points")
+        return fig
+        
+    except Exception as e:
+        logger.error(f"Error updating chart: {e}")
+        # Return error chart
+        fig = go.Figure()
+        fig.add_annotation(
+            text=f"Error loading chart: {str(e)}",
+            xref="paper", yref="paper",
+            x=0.5, y=0.5, xanchor='center', yanchor='middle',
+            showarrow=False, font=dict(size=16, color='red')
+        )
+        return fig
+
+# Add CSS styling
+dash_app.index_string = '''
+<!DOCTYPE html>
+<html>
+    <head>
+        {%metas%}
+        <title>{%title%}</title>
+        {%favicon%}
+        {%css%}
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #1e1e1e;
+                color: white;
+                margin: 0;
+                padding: 20px;
+            }
+            .dashboard {
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+            .header {
+                text-align: center;
+                margin-bottom: 20px;
+            }
+            .input-container {
+                display: flex;
+                justify-content: center;
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+            .symbol-input {
+                padding: 10px;
+                border: 1px solid #444;
+                border-radius: 5px;
+                background-color: #333;
+                color: white;
+                font-size: 16px;
+            }
+            .submit-button {
+                padding: 10px 20px;
+                background-color: #007bff;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 16px;
+            }
+            .submit-button:hover {
+                background-color: #0056b3;
+            }
+            .period-buttons {
+                display: flex;
+                justify-content: center;
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+            .period-button {
+                padding: 8px 16px;
+                background-color: #333;
+                color: white;
+                border: 1px solid #555;
+                border-radius: 5px;
+                cursor: pointer;
+            }
+            .period-button:hover {
+                background-color: #555;
+            }
+            .chart-container {
+                background-color: #2a2a2a;
+                border-radius: 10px;
+                padding: 20px;
+            }
+        </style>
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+        </footer>
+    </body>
+</html>
+'''
+
+if __name__ == '__main__':
+    dash_app.run_server(debug=True, host='0.0.0.0', port=8050)
