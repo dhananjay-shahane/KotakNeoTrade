@@ -273,6 +273,28 @@ try:
 except ImportError as e:
     print(f"Trading functions optional: {e}")
 
+# Add Kotak Neo dashboard route
+@app.route('/dashboard')
+def show_dashboard():
+    """Kotak Neo dashboard route"""
+    return redirect(url_for('main_routes.dashboard'))
+
+# Add missing Kotak Neo routes that are referenced in the sidebar - use different names to avoid conflicts
+@app.route('/orders')
+def orders_redirect():
+    """Kotak Neo orders route"""
+    return redirect(url_for('main_routes.show_orders'))
+
+@app.route('/positions')  
+def positions_redirect():
+    """Kotak Neo positions route"""  
+    return redirect(url_for('main_routes.show_positions'))
+
+@app.route('/holdings')
+def holdings_redirect():
+    """Kotak Neo holdings route"""
+    return redirect(url_for('main_routes.show_holdings'))
+
 
 @app.route('/')
 def index():
@@ -282,8 +304,23 @@ def index():
 
 @app.route('/portfolio')
 def portfolio():
-    """Portfolio page - redirect to main dashboard"""
-    return redirect(url_for('main_routes.dashboard'))
+    """Portfolio page - show portfolio.html template"""
+    # Check if user is authenticated
+    if not session.get('authenticated') and not session.get('kotak_logged_in'):
+        return redirect(url_for('auth_routes.trading_account_login'))
+    
+    # Prepare Kotak account data for sidebar if logged in
+    kotak_account_data = None
+    if session.get('kotak_logged_in') or session.get('authenticated'):
+        kotak_account_data = {
+            'ucc': session.get('ucc', session.get('username', '-')),
+            'mobile': session.get('mobile_number', '-'),
+            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
+            'last_login': 'Just Now',
+            'status': 'Online'
+        }
+    
+    return render_template('portfolio.html', kotak_account=kotak_account_data)
 
 
 @app.route('/trading-signals')
@@ -304,7 +341,8 @@ def trading_signals():
             'status': 'Online'
         }
 
-    return render_template('trading_signals.html', kotak_account=kotak_account_data)
+    return render_template('trading_signals.html',
+                           kotak_account=kotak_account_data)
 
 
 @app.route('/deals')
@@ -338,17 +376,23 @@ def show_positions():
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
         kotak_account_data = {
-            'ucc': session.get('ucc', session.get('username', '-')),
-            'mobile': session.get('mobile_number', '-'),
-            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
-            'last_login': 'Just Now',
-            'status': 'Online'
+            'ucc':
+            session.get('ucc', session.get('username', '-')),
+            'mobile':
+            session.get('mobile_number', '-'),
+            'greeting_name':
+            session.get('greeting_name', session.get('username', 'User')),
+            'last_login':
+            'Just Now',
+            'status':
+            'Online'
         }
 
     try:
         return positions()
     except:
-        return render_template('positions.html', kotak_account=kotak_account_data)
+        return render_template('positions.html',
+                               kotak_account=kotak_account_data)
 
 
 @app.route('/holdings')
@@ -361,17 +405,23 @@ def show_holdings():
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
         kotak_account_data = {
-            'ucc': session.get('ucc', session.get('username', '-')),
-            'mobile': session.get('mobile_number', '-'),
-            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
-            'last_login': 'Just Now',
-            'status': 'Online'
+            'ucc':
+            session.get('ucc', session.get('username', '-')),
+            'mobile':
+            session.get('mobile_number', '-'),
+            'greeting_name':
+            session.get('greeting_name', session.get('username', 'User')),
+            'last_login':
+            'Just Now',
+            'status':
+            'Online'
         }
 
     try:
         return holdings()
     except:
-        return render_template('holdings.html', kotak_account=kotak_account_data)
+        return render_template('holdings.html',
+                               kotak_account=kotak_account_data)
 
 
 @app.route('/orders')
@@ -384,11 +434,16 @@ def show_orders():
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
         kotak_account_data = {
-            'ucc': session.get('ucc', session.get('username', '-')),
-            'mobile': session.get('mobile_number', '-'),
-            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
-            'last_login': 'Just Now',
-            'status': 'Online'
+            'ucc':
+            session.get('ucc', session.get('username', '-')),
+            'mobile':
+            session.get('mobile_number', '-'),
+            'greeting_name':
+            session.get('greeting_name', session.get('username', 'User')),
+            'last_login':
+            'Just Now',
+            'status':
+            'Online'
         }
 
     try:
@@ -407,20 +462,22 @@ def show_charts():
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
         kotak_account_data = {
-            'ucc': session.get('ucc', session.get('username', '-')),
-            'mobile': session.get('mobile_number', '-'),
-            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
-            'last_login': 'Just Now',
-            'status': 'Online'
+            'ucc':
+            session.get('ucc', session.get('username', '-')),
+            'mobile':
+            session.get('mobile_number', '-'),
+            'greeting_name':
+            session.get('greeting_name', session.get('username', 'User')),
+            'last_login':
+            'Just Now',
+            'status':
+            'Online'
         }
 
     try:
         return render_template('charts.html', kotak_account=kotak_account_data)
     except:
         return render_template('charts.html', kotak_account=kotak_account_data)
-
-
-
 
 
 @app.route('/basic-trade-signals')
