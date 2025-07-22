@@ -346,40 +346,7 @@ def positions_redirect():
     
     return render_template('positions.html', kotak_account=kotak_account_data, page_title="Positions")
 
-@app.route('/holdings')
-def holdings_redirect():
-    """Kotak Neo holdings route"""
-    # Check if user is authenticated
-    if not session.get('authenticated') and not session.get('kotak_logged_in'):
-        return redirect(url_for('auth_routes.trading_account_login'))
-    
-    # Prepare account data for sidebar
-    kotak_account_data = None
-    if session.get('kotak_logged_in') or session.get('authenticated'):
-        kotak_account_data = {
-            'ucc': session.get('ucc', session.get('username', '-')),
-            'mobile': session.get('mobile_number', '-'),
-            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
-            'last_login': 'Just Now',
-            'status': 'Online'
-        }
-    
-    # Try to get holdings data from API client if available
-    holdings_data = []
-    try:
-        client = session.get('client')
-        if client:
-            from Scripts import trading_functions
-            holdings_response = trading_functions.get_holdings(client)
-            if isinstance(holdings_response, list):
-                holdings_data = holdings_response
-            elif isinstance(holdings_response, dict) and 'holdings' in holdings_response:
-                holdings_data = holdings_response['holdings']
-            logging.info(f"Holdings data fetched for template: {len(holdings_data)} items")
-    except Exception as e:
-        logging.error(f"Error fetching holdings for template: {e}")
-    
-    return render_template('holdings.html', kotak_account=kotak_account_data, holdings=holdings_data)
+# Remove duplicate route - using show_holdings below instead
 
 
 @app.route('/')
@@ -508,12 +475,15 @@ def show_holdings():
     try:
         client = session.get('client')
         if client:
-            from Scripts import trading_functions
-            holdings_response = trading_functions.get_holdings(client)
+            from Scripts.trading_functions import TradingFunctions
+            trading_funcs = TradingFunctions()
+            holdings_response = trading_funcs.get_holdings(client)
             if isinstance(holdings_response, list):
                 holdings_data = holdings_response
             elif isinstance(holdings_response, dict) and 'holdings' in holdings_response:
                 holdings_data = holdings_response['holdings']
+            elif isinstance(holdings_response, dict) and 'error' in holdings_response:
+                logging.error(f"Holdings API error: {holdings_response['error']}")
             logging.info(f"Holdings data fetched for template: {len(holdings_data)} items")
     except Exception as e:
         logging.error(f"Error fetching holdings for template: {e}")
