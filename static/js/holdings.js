@@ -251,7 +251,6 @@ function refreshHoldings() {
         // Server-side rendering - reload the page
         window.location.reload();
     }
-    });
 }
 
 function buyHolding(symbol) {
