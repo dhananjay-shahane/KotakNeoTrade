@@ -305,21 +305,66 @@ def show_dashboard():
     
     return render_template('dashboard.html', data=dashboard_data, kotak_account=kotak_account_data)
 
-# Add missing Kotak Neo routes that are referenced in the sidebar - use different names to avoid conflicts
+# Add missing Kotak Neo routes that are referenced in the sidebar - render directly to avoid redirect loops
 @app.route('/orders')
 def orders_redirect():
     """Kotak Neo orders route"""
-    return redirect(url_for('main_routes.show_orders'))
+    # Check if user is authenticated
+    if not session.get('authenticated') and not session.get('kotak_logged_in'):
+        return redirect(url_for('auth_routes.trading_account_login'))
+    
+    # Prepare account data for sidebar
+    kotak_account_data = None
+    if session.get('kotak_logged_in') or session.get('authenticated'):
+        kotak_account_data = {
+            'ucc': session.get('ucc', session.get('username', '-')),
+            'mobile': session.get('mobile_number', '-'),
+            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
+            'last_login': 'Just Now',
+            'status': 'Online'
+        }
+    
+    return render_template('orders.html', kotak_account=kotak_account_data, page_title="Orders")
 
 @app.route('/positions')  
 def positions_redirect():
     """Kotak Neo positions route"""  
-    return redirect(url_for('main_routes.show_positions'))
+    # Check if user is authenticated
+    if not session.get('authenticated') and not session.get('kotak_logged_in'):
+        return redirect(url_for('auth_routes.trading_account_login'))
+    
+    # Prepare account data for sidebar
+    kotak_account_data = None
+    if session.get('kotak_logged_in') or session.get('authenticated'):
+        kotak_account_data = {
+            'ucc': session.get('ucc', session.get('username', '-')),
+            'mobile': session.get('mobile_number', '-'),
+            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
+            'last_login': 'Just Now',
+            'status': 'Online'
+        }
+    
+    return render_template('positions.html', kotak_account=kotak_account_data, page_title="Positions")
 
 @app.route('/holdings')
 def holdings_redirect():
     """Kotak Neo holdings route"""
-    return redirect(url_for('main_routes.show_holdings'))
+    # Check if user is authenticated
+    if not session.get('authenticated') and not session.get('kotak_logged_in'):
+        return redirect(url_for('auth_routes.trading_account_login'))
+    
+    # Prepare account data for sidebar
+    kotak_account_data = None
+    if session.get('kotak_logged_in') or session.get('authenticated'):
+        kotak_account_data = {
+            'ucc': session.get('ucc', session.get('username', '-')),
+            'mobile': session.get('mobile_number', '-'),
+            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
+            'last_login': 'Just Now',
+            'status': 'Online'
+        }
+    
+    return render_template('holdings.html', kotak_account=kotak_account_data)
 
 
 @app.route('/')
