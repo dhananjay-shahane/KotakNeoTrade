@@ -61,7 +61,7 @@ function updatePositionsTable(positions) {
     }
 
     var tableHTML = '';
-    var displayPositions = filterPositionsByType(positions, currentFilter);
+    var displayPositions = currentFilter === 'ALL' ? positions : filterPositionsByType(positions, currentFilter);
 
     displayPositions.forEach(function(position) {
         console.log('Processing position:', position);
@@ -405,7 +405,9 @@ window.setAutoRefresh = setAutoRefresh;
 window.sortTable = sortTable;
 window.filterPositionsByType = function(type) {
     currentFilter = type;
-    updatePositionsTable(positionsData);
+    if (positionsData && positionsData.length > 0) {
+        updatePositionsTable(positionsData);
+    }
 };
 window.showPlaceOrderModal = showPlaceOrderModal;
 window.handleOrderTypeChange = handleOrderTypeChange;

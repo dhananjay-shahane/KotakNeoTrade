@@ -1,0 +1,97 @@
+/* Skeleton Animation CSS */
+.skeleton {
+    animation: skeleton-loading 1s linear infinite alternate;
+}
+
+.skeleton-text {
+    width: 100%;
+    height: 0.7rem;
+    margin-bottom: 0.25rem;
+    border-radius: 0.25rem;
+}
+
+.skeleton-text:last-child {
+    margin-bottom: 0;
+    width: 80%;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-color: hsl(200, 20%, 70%);
+    }
+    100% {
+        background-color: hsl(200, 20%, 95%);
+    }
+}
+
+.skeleton-wrapper {
+    margin: 20px auto;
+    width: 280px;
+}
+
+.skeleton-profile {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.skeleton-profile .skeleton-avatar {
+    flex-shrink: 0;
+    width: 4rem;
+    height: 4rem;
+    margin-right: 1rem;
+    border-radius: 50%;
+}
+
+.skeleton-profile .skeleton-details {
+    flex-grow: 1;
+}
+
+.skeleton-profile .skeleton-name {
+    width: 50%;
+    height: 0.75rem;
+    margin-bottom: 0.25rem;
+    border-radius: 0.25rem;
+}
+
+.skeleton-profile .skeleton-email {
+    width: 75%;
+    height: 0.75rem;
+    border-radius: 0.25rem;
+}
+
+.dark-theme .skeleton-text,
+.dark-theme .skeleton-avatar,
+.dark-theme .skeleton-name,
+.dark-theme .skeleton-email {
+    background-color: #444;
+}
+
+@keyframes skeleton-loading-dark {
+    0% {
+        background-color: #444;
+    }
+    100% {
+        background-color: #666;
+    }
+}
+
+.dark-theme .skeleton {
+    animation: skeleton-loading-dark 1s linear infinite alternate;
+}
+
+/* Loading spinner for table */
+.loading-spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
