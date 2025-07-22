@@ -1,47 +1,241 @@
+
 """
-Main entry point for the Kotak Neo Trading Platform
-Handles environment setup, library paths, and blueprint registration
+Kotak Neo Trading Platform - Main Application
+Enhanced trading platform with real-time data, charts, and signal management
 """
 import os
-from dotenv import load_dotenv
 import sys
+import logging
+from datetime import datetime, timedelta
+import secrets
 
-# Load environment variables from .env file
-load_dotenv()
+# Add the current directory to Python path for proper imports
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, current_dir)
 
-def setup_library_paths():
-    """
-    Configure library paths for pandas/numpy dependencies
-    Required for Replit environment compatibility
-    """
-    library_path = '/nix/store/xvzz97yk73hw03v5dhhz3j47ggwf1yq1-gcc-13.2.0-lib/lib:/nix/store/026hln0aq1hyshaxsdvhg0kmcm6yf45r-zlib-1.2.13/lib'
-    os.environ['LD_LIBRARY_PATH'] = library_path
-    print(f"Set LD_LIBRARY_PATH: {library_path}")
+# Flask imports
+from flask import Flask, session, render_template, redirect, url_for, request, jsonify, flash
 
-# Setup environment before importing Flask modules
-setup_library_paths()
+# Application imports
+from core.database import init_db, db
+from routes.main import main_bp
+from routes.auth_routes import auth_bp
+from api import dashboard, trading_api, deals_api, etf_signals, signals_api, admin_signals_api
+from utils.auth import login_required
 
-# Add current directory to Python path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler()]
+)
+logger = logging.getLogger(__name__)
 
-# Import main Flask application
-from app import app
+def create_app():
+    """Create and configure the Flask application"""
+    app = Flask(__name__)
+    
+    # Load session secret
+    session_secret_file = '.session_secret'
+    if os.path.exists(session_secret_file):
+        try:
+            with open(session_secret_file, 'r') as f:
+                app.secret_key = f.read().strip()
+            logger.info("✓ Loaded session secret from file")
+        except Exception as e:
+            logger.warning(f"Could not read session secret file: {e}")
+            app.secret_key = secrets.token_hex(32)
+            logger.info("✓ Generated new session secret")
+    else:
+        app.secret_key = secrets.token_hex(32)
+        logger.warning("Using fallback session secret for development")
+    
+    # Configure app settings
+    app.config.update(
+        SESSION_COOKIE_SECURE=False,  # Set to True in production with HTTPS
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE='Lax',
+        PERMANENT_SESSION_LIFETIME=timedelta(hours=8),
+        WTF_CSRF_ENABLED=False  # Disable CSRF for API endpoints
+    )
+    
+    # Initialize database
+    try:
+        init_db(app)
+        logger.info("✅ Database initialized successfully")
+    except Exception as e:
+        logger.error(f"❌ Database initialization failed: {e}")
+        # Continue with fallback database
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/trading_platform.db'
+        app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        db.init_app(app)
+        logger.info("Using SQLite fallback database for development")
+        
+        # Create tables
+        with app.app_context():
+            try:
+                db.create_all()
+                logger.info("Database tables created successfully")
+            except Exception as table_error:
+                logger.error(f"Failed to create tables: {table_error}")
+    
+    # Register blueprints
+    try:
+        app.register_blueprint(main_bp)
+        app.register_blueprint(auth_bp, url_prefix='/auth')
+        app.register_blueprint(auth_bp, url_prefix='/trading-account')
+        logger.info("✓ Core blueprints registered")
+        
+        # Register deals blueprint
+        app.register_blueprint(deals_api.deals_bp, url_prefix='/api')
+        logger.info("✓ Deals blueprint registered")
+        
+        # Register additional API blueprints
+        if hasattr(dashboard, 'dashboard_bp'):
+            app.register_blueprint(dashboard.dashboard_bp, url_prefix='/api')
+        if hasattr(trading_api, 'trading_bp'):
+            app.register_blueprint(trading_api.trading_bp, url_prefix='/api')
+        if hasattr(etf_signals, 'etf_bp'):
+            app.register_blueprint(etf_signals.etf_bp, url_prefix='/api')
+        if hasattr(signals_api, 'signals_bp'):
+            app.register_blueprint(signals_api.signals_bp, url_prefix='/api')
+        if hasattr(admin_signals_api, 'admin_bp'):
+            app.register_blueprint(admin_signals_api.admin_bp, url_prefix='/api/admin')
+        
+        logger.info("✓ Additional blueprints available")
+        
+    except Exception as e:
+        logger.error(f"Blueprint registration error: {e}")
+    
+    # Initialize additional services
+    try:
+        from Scripts.auto_sync_triggers import setup_auto_sync_triggers
+        setup_auto_sync_triggers()
+        logger.info("✓ Auto-sync triggers initialized")
+    except Exception as e:
+        logger.warning(f"Could not start auto-sync triggers: {e}")
+    
+    # Try to register deals_api blueprint directly if module import works
+    try:
+        from api.deals_api import deals_bp as direct_deals_bp
+        app.register_blueprint(direct_deals_bp, url_prefix='/api')
+        logger.info("✓ Registered deals_api blueprint directly")
+    except Exception as e:
+        logger.warning(f"Could not register deals_api directly: {e}")
+    
+    # Initialize quotes scheduler (optional)
+    try:
+        from Scripts.realtime_quotes_manager import start_quotes_scheduler
+        start_quotes_scheduler()
+        logger.info("✓ Quotes scheduler started")
+    except Exception as e:
+        logger.warning(f"Could not start quotes scheduler: {e}")
+    
+    # Try to initialize Kotak Neo integration
+    try:
+        from kotak_neo_project.app import app as kotak_app
+        logger.info("✓ Kotak Neo integration available")
+    except Exception as e:
+        logger.info(f"Kotak Neo integration optional: {e}")
+    
+    # Initialize email and user management
+    try:
+        from flask_mail import Mail
+        mail = Mail(app)
+        
+        from Scripts.models import User
+        logger.info("✓ Email and login extensions initialized")
+        logger.info("✓ User model defined")
+        
+        # Load email configuration
+        app.config.update(
+            MAIL_SERVER='smtp.gmail.com',
+            MAIL_PORT=587,
+            MAIL_USE_TLS=True,
+            MAIL_USERNAME=os.environ.get('EMAIL_USERNAME', ''),
+            MAIL_PASSWORD=os.environ.get('EMAIL_PASSWORD', ''),
+            MAIL_DEFAULT_SENDER=os.environ.get('EMAIL_USERNAME', 'noreply@kotakneo.com')
+        )
+        logger.info("✓ Email configuration loaded")
+        
+    except Exception as e:
+        logger.warning(f"Email/User management initialization: {e}")
+    
+    # Initialize Dash app for charts
+    try:
+        from dash_charts_app import dash_app
+        from werkzeug.middleware.dispatcher import DispatcherMiddleware
+        
+        # Integrate Dash app with Flask
+        app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
+            '/dash-charts': dash_app.server
+        })
+        logger.info("✓ Dash charts app integrated")
+    except Exception as e:
+        logger.warning(f"Could not integrate Dash app: {e}")
+    
+    # Add global template variables
+    @app.context_processor
+    def inject_globals():
+        return {
+            'current_user': session.get('greeting_name', 'User'),
+            'is_authenticated': session.get('authenticated', False),
+            'app_version': '2.0.0',
+            'current_year': datetime.now().year
+        }
+    
+    # Error handlers
+    @app.errorhandler(404)
+    def not_found_error(error):
+        return render_template('404.html'), 404
+    
+    @app.errorhandler(500)
+    def internal_error(error):
+        db.session.rollback()
+        return render_template('404.html'), 500
+    
+    # Health check endpoint
+    @app.route('/health')
+    def health_check():
+        return jsonify({
+            'status': 'healthy',
+            'timestamp': datetime.now().isoformat(),
+            'version': '2.0.0'
+        })
+    
+    return app
+
+# Create the application
+app = create_app()
+
+# Request logging middleware
+@app.before_request
+def log_request_info():
+    endpoint = request.endpoint
+    if endpoint:
+        url = request.url
+        logger.info(f"Request to {endpoint}: {url}")
 
 if __name__ == '__main__':
     try:
-        print("🚀 Starting Kotak Neo Trading Platform...")
-        # Configure server settings
-        port = int(os.environ.get('PORT', 5000))
-
-        print(f"🌐 Server starting on:")
-        print(f"   Local: http://0.0.0.0:{port}")
-        if os.environ.get('REPLIT_DOMAINS'):
-            print(f"   External: https://{os.environ.get('REPLIT_DOMAINS')}")
-
-        # Start Flask application server
-        app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
-
+        logger.info("🚀 Starting Kotak Neo Trading Platform...")
+        logger.info("=" * 60)
+        logger.info("📊 Platform Features:")
+        logger.info("  • Real-time trading dashboard")
+        logger.info("  • Interactive candlestick charts")  
+        logger.info("  • ETF trading signals")
+        logger.info("  • Portfolio management")
+        logger.info("  • Automated deal tracking")
+        logger.info("=" * 60)
+        
+        # Run the application
+        app.run(
+            host='0.0.0.0',
+            port=5000,
+            debug=True,
+            threaded=True
+        )
+        
     except Exception as e:
-        print(f"❌ Application startup failed: {str(e)}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"❌ Failed to start application: {e}")
+        sys.exit(1)
