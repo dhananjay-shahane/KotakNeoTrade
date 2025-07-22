@@ -1,6 +1,5 @@
-
 {% extends "base.html" %} 
-{% block title %}Portfolio - Kotak Neo Trading{% endblock %} 
+{% block title %}Portfolio - Trading Platform{% endblock %} 
 
 {% block head %}
 <link href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css" rel="stylesheet">
@@ -108,50 +107,21 @@
         color: var(--danger-color);
     }
 
-    .account-status-card {
+    .welcome-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         border: none;
-    }
-
-    .watchlist-item {
-        padding: 12px;
-        border-bottom: 1px solid var(--border-color);
-        transition: background-color 0.2s ease;
-    }
-
-    .watchlist-item:hover {
-        background-color: rgba(255, 255, 255, 0.05);
-    }
-
-    .price-movement {
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-    }
-
-    .price-up::before {
-        content: "▲";
-        margin-right: 4px;
-        color: var(--success-color);
-    }
-
-    .price-down::before {
-        content: "▼";
-        margin-right: 4px;
-        color: var(--danger-color);
+        border-radius: 0.75rem;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-{% if show_kotak_dashboard %}
-<!-- Kotak Neo Portfolio Dashboard -->
 <div class="container-fluid">
     <!-- Welcome Section -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card account-status-card">
+            <div class="card welcome-header">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-md-8">
@@ -160,24 +130,20 @@
                                     <i class="fas fa-user-circle fa-3x text-white"></i>
                                 </div>
                                 <div>
-                                    <h3 class="text-white mb-1">Welcome back, {{ ucc or 'Trader' }}!</h3>
+                                    <h3 class="text-white mb-1">Portfolio Dashboard</h3>
                                     <p class="text-white-50 mb-0">
                                         <i class="fas fa-clock me-1"></i>
                                         Last updated: <span id="lastUpdateTime">Just now</span>
-                                    </p>
-                                    <p class="text-white-50 mb-0">
-                                        <i class="fas fa-mobile-alt me-1"></i>
-                                        {{ mobile or 'Not provided' }}
                                     </p>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-4 text-end">
                             <div class="d-flex gap-2 justify-content-end">
-                                <a href="{{ url_for('kotak_api.positions') }}" class="btn btn-outline-light">
+                                <a href="/positions" class="btn btn-outline-light">
                                     <i class="fas fa-chart-line me-1"></i>Positions
                                 </a>
-                                <a href="{{ url_for('kotak_api.orders') }}" class="btn btn-outline-light">
+                                <a href="/orders" class="btn btn-outline-light">
                                     <i class="fas fa-list me-1"></i>Orders
                                 </a>
                             </div>
@@ -204,7 +170,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-3 mb-3">
             <div class="card border-0 h-100">
                 <div class="card-body text-center">
@@ -219,29 +185,29 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-3 mb-3">
             <div class="card border-0 h-100">
                 <div class="card-body text-center">
                     <div class="stats-icon bg-warning text-dark mx-auto mb-3">
                         <i class="fas fa-coins"></i>
                     </div>
-                    <h5 class="card-title">Available Margin</h5>
-                    <div class="metric-value text-warning" id="availableMargin">₹0.00</div>
-                    <div class="metric-label">Available for trading</div>
+                    <h5 class="card-title">Available Balance</h5>
+                    <div class="metric-value text-warning" id="availableBalance">₹0.00</div>
+                    <div class="metric-label">Cash available</div>
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-3 mb-3">
             <div class="card border-0 h-100">
                 <div class="card-body text-center">
                     <div class="stats-icon bg-info text-white mx-auto mb-3">
                         <i class="fas fa-exchange-alt"></i>
                     </div>
-                    <h5 class="card-title">Active Positions</h5>
-                    <div class="metric-value text-info" id="activePositions">0</div>
-                    <div class="metric-label">Open positions</div>
+                    <h5 class="card-title">Active Holdings</h5>
+                    <div class="metric-value text-info" id="activeHoldings">0</div>
+                    <div class="metric-label">Total stocks</div>
                 </div>
             </div>
         </div>
@@ -271,9 +237,9 @@
             </div>
         </div>
 
-        <!-- Quick Actions and Watchlist -->
+        <!-- Quick Actions -->
         <div class="col-md-4 mb-4">
-            <div class="card mb-3">
+            <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
                         <i class="fas fa-bolt me-2"></i>Quick Actions
@@ -281,14 +247,14 @@
                 </div>
                 <div class="card-body quick-actions">
                     <div class="d-grid gap-2">
-                        <a href="{{ url_for('kotak_api.orders') }}" class="btn btn-primary">
+                        <a href="/orders" class="btn btn-primary">
                             <i class="fas fa-plus me-2"></i>Place Order
                         </a>
-                        <a href="{{ url_for('kotak_api.holdings') }}" class="btn btn-success">
+                        <a href="/holdings" class="btn btn-success">
                             <i class="fas fa-eye me-2"></i>View Holdings
                         </a>
-                        <a href="{{ url_for('kotak_api.positions') }}" class="btn btn-info">
-                            <i class="fas fa-chart-pie me-2"></i>Manage Positions
+                        <a href="/positions" class="btn btn-info">
+                            <i class="fas fa-chart-pie me-2"></i>View Positions
                         </a>
                         <button class="btn btn-warning" onclick="refreshPortfolio()">
                             <i class="fas fa-sync me-2"></i>Refresh Data
@@ -296,65 +262,20 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Market Watchlist -->
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="fas fa-list me-2"></i>Watchlist
-                    </h5>
-                    <button class="btn btn-sm btn-outline-primary" onclick="addToWatchlist()">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>
-                <div class="card-body p-0" id="watchlistContainer">
-                    <div class="watchlist-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>NIFTY 50</strong>
-                            <br><small class="text-muted">NSE</small>
-                        </div>
-                        <div class="text-end">
-                            <div class="price-movement price-up">22,150.35</div>
-                            <small class="text-success">+1.25%</small>
-                        </div>
-                    </div>
-                    <div class="watchlist-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>BANKNIFTY</strong>
-                            <br><small class="text-muted">NSE</small>
-                        </div>
-                        <div class="text-end">
-                            <div class="price-movement price-down">48,920.40</div>
-                            <small class="text-danger">-0.85%</small>
-                        </div>
-                    </div>
-                    <div class="watchlist-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>SENSEX</strong>
-                            <br><small class="text-muted">BSE</small>
-                        </div>
-                        <div class="text-end">
-                            <div class="price-movement price-up">73,450.20</div>
-                            <small class="text-success">+0.65%</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
-    <!-- Holdings and Recent Transactions -->
+    <!-- Holdings Table -->
     <div class="row">
-        <!-- Top Holdings -->
-        <div class="col-md-8 mb-4">
+        <div class="col-12 mb-4">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="fas fa-briefcase me-2"></i>Top Holdings
+                        <i class="fas fa-briefcase me-2"></i>Current Holdings
                     </h5>
-                    <a href="{{ url_for('kotak_api.holdings') }}" class="btn btn-sm btn-outline-primary">
-                        View All Holdings
-                    </a>
+                    <button class="btn btn-sm btn-outline-primary" onclick="loadHoldings()">
+                        <i class="fas fa-sync me-1"></i>Refresh
+                    </button>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive holdings-table">
@@ -364,55 +285,19 @@
                                     <th>Symbol</th>
                                     <th>Quantity</th>
                                     <th>Avg Price</th>
-                                    <th>LTP</th>
+                                    <th>Current Price</th>
                                     <th>P&L</th>
                                     <th>Performance</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="holdingsTableBody">
                                 <tr>
-                                    <td>
-                                        <strong>RELIANCE</strong>
-                                        <br><small class="text-muted">NSE</small>
-                                    </td>
-                                    <td>100</td>
-                                    <td>₹2,450.50</td>
-                                    <td>₹2,525.75</td>
-                                    <td class="text-success">+₹7,525</td>
-                                    <td>
-                                        <span class="performance-indicator performance-positive">
-                                            +3.07%
-                                        </span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <strong>TCS</strong>
-                                        <br><small class="text-muted">NSE</small>
-                                    </td>
-                                    <td>50</td>
-                                    <td>₹3,620.00</td>
-                                    <td>₹3,595.25</td>
-                                    <td class="text-danger">-₹1,238</td>
-                                    <td>
-                                        <span class="performance-indicator performance-negative">
-                                            -0.68%
-                                        </span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <strong>HDFC BANK</strong>
-                                        <br><small class="text-muted">NSE</small>
-                                    </td>
-                                    <td>75</td>
-                                    <td>₹1,580.30</td>
-                                    <td>₹1,625.85</td>
-                                    <td class="text-success">+₹3,416</td>
-                                    <td>
-                                        <span class="performance-indicator performance-positive">
-                                            +2.88%
-                                        </span>
+                                    <td colspan="7" class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p class="mt-2 mb-0 text-muted">Loading portfolio data...</p>
                                     </td>
                                 </tr>
                             </tbody>
@@ -421,9 +306,11 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Recent Activity -->
-        <div class="col-md-4 mb-4">
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-12">
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
@@ -431,76 +318,10 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="timeline" id="recentActivity">
-                        <div class="timeline-item mb-3">
-                            <div class="d-flex">
-                                <div class="timeline-marker bg-success rounded-circle me-3" style="width: 12px; height: 12px; margin-top: 4px;"></div>
-                                <div class="flex-grow-1">
-                                    <small class="text-muted">2 hours ago</small>
-                                    <p class="mb-1">Bought 50 shares of <strong>INFY</strong></p>
-                                    <small class="text-success">₹1,750.25 each</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="timeline-item mb-3">
-                            <div class="d-flex">
-                                <div class="timeline-marker bg-danger rounded-circle me-3" style="width: 12px; height: 12px; margin-top: 4px;"></div>
-                                <div class="flex-grow-1">
-                                    <small class="text-muted">5 hours ago</small>
-                                    <p class="mb-1">Sold 25 shares of <strong>WIPRO</strong></p>
-                                    <small class="text-danger">₹425.50 each</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="timeline-item mb-3">
-                            <div class="d-flex">
-                                <div class="timeline-marker bg-info rounded-circle me-3" style="width: 12px; height: 12px; margin-top: 4px;"></div>
-                                <div class="flex-grow-1">
-                                    <small class="text-muted">1 day ago</small>
-                                    <p class="mb-1">Dividend received from <strong>ITC</strong></p>
-                                    <small class="text-info">₹2,350.00</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="text-center">
-                        <a href="{{ url_for('kotak_api.orders') }}" class="btn btn-sm btn-outline-primary">
-                            View All Orders
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Account Status -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-info-circle me-2"></i>Account Information
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6>Account Details:</h6>
-                            <ul class="list-unstyled">
-                                <li><strong>User Client Code:</strong> {{ ucc or 'Not provided' }}</li>
-                                <li><strong>Mobile Number:</strong> {{ mobile or 'Not provided' }}</li>
-                                <li><strong>Status:</strong> <span class="badge bg-success">Active</span></li>
-                                <li><strong>Connection:</strong> <span class="text-success">Connected</span></li>
-                            </ul>
-                        </div>
-                        <div class="col-md-6">
-                            <h6>Quick Links:</h6>
-                            <ul class="list-unstyled">
-                                <li><i class="fas fa-arrow-right me-2"></i><a href="{{ url_for('kotak_api.orders') }}">Place new orders</a></li>
-                                <li><i class="fas fa-arrow-right me-2"></i><a href="{{ url_for('kotak_api.positions') }}">Monitor live positions</a></li>
-                                <li><i class="fas fa-arrow-right me-2"></i><a href="{{ url_for('kotak_api.holdings') }}">View portfolio performance</a></li>
-                                <li><i class="fas fa-arrow-right me-2"></i><a href="{{ url_for('kotak_api.logout') }}" class="text-danger">Logout from Kotak Neo</a></li>
-                            </ul>
+                    <div id="recentActivity">
+                        <div class="text-center py-4">
+                            <i class="fas fa-clock fa-2x text-muted mb-3"></i>
+                            <p class="text-muted mb-0">No recent activity to display</p>
                         </div>
                     </div>
                 </div>
@@ -508,25 +329,6 @@
         </div>
     </div>
 </div>
-
-{% else %}
-<!-- Default Portfolio Content (Login Required) -->
-<div class="container-fluid">
-    <div class="row justify-content-center align-items-center min-vh-100">
-        <div class="col-md-6 text-center">
-            <div class="card">
-                <div class="card-body p-4">
-                    <h3 class="text-muted mb-3">Portfolio Access Required</h3>
-                    <p class="text-muted mb-4">Please login to view your portfolio data.</p>
-                    <a href="/trading-account/login" class="btn btn-primary">
-                        <i class="fas fa-sign-in-alt me-2"></i>Login
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
 {% endblock %}
 
 {% block scripts %}
@@ -544,12 +346,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Initialize portfolio chart
     initializePortfolioChart();
-    
+
     // Auto-refresh functionality
     setInterval(refreshPortfolioData, 30000);
-    
+
     // Initial data load
     refreshPortfolioData();
+    loadHoldings();
 });
 
 function initializePortfolioChart() {
@@ -561,7 +364,7 @@ function initializePortfolioChart() {
         labels: ['9:15', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '15:30'],
         datasets: [{
             label: 'Portfolio Value',
-            data: [500000, 502500, 498000, 505000, 507500, 503000, 510000, 512000],
+            data: [100000, 102500, 98000, 105000, 107500, 103000, 110000, 112000],
             borderColor: '#0d6efd',
             backgroundColor: 'rgba(13, 110, 253, 0.1)',
             borderWidth: 3,
@@ -613,7 +416,7 @@ function initializePortfolioChart() {
 function refreshPortfolioData() {
     // Update last refresh time
     document.getElementById('lastUpdateTime').textContent = new Date().toLocaleTimeString();
-    
+
     // Simulate real-time data updates
     updateMetrics();
 }
@@ -624,30 +427,109 @@ function updateMetrics() {
     const portfolioChange = document.getElementById('portfolioChange');
     const todayPnl = document.getElementById('todayPnl');
     const todayPnlPercent = document.getElementById('todayPnlPercent');
-    const availableMargin = document.getElementById('availableMargin');
-    const activePositions = document.getElementById('activePositions');
+    const availableBalance = document.getElementById('availableBalance');
+    const activeHoldings = document.getElementById('activeHoldings');
 
-    if (portfolioValue) portfolioValue.textContent = '₹5,12,450.75';
-    if (portfolioChange) portfolioChange.textContent = '+₹12,450.75 (+2.49%)';
-    if (todayPnl) todayPnl.textContent = '₹8,250.50';
-    if (todayPnlPercent) todayPnlPercent.textContent = '+1.64%';
-    if (availableMargin) availableMargin.textContent = '₹2,45,000.00';
-    if (activePositions) activePositions.textContent = '12';
+    if (portfolioValue) portfolioValue.textContent = '₹1,12,450.75';
+    if (portfolioChange) portfolioChange.textContent = '+₹2,450.75 (+2.23%)';
+    if (todayPnl) todayPnl.textContent = '₹1,250.50';
+    if (todayPnlPercent) todayPnlPercent.textContent = '+1.12%';
+    if (availableBalance) availableBalance.textContent = '₹45,000.00';
+    if (activeHoldings) activeHoldings.textContent = '8';
+}
+
+function loadHoldings() {
+    const tableBody = document.getElementById('holdingsTableBody');
+
+    // Show loading state
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="7" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 mb-0 text-muted">Loading holdings...</p>
+            </td>
+        </tr>
+    `;
+
+    // Simulate API call
+    setTimeout(() => {
+        const sampleHoldings = [
+            {
+                symbol: 'RELIANCE',
+                quantity: 10,
+                avgPrice: 2450.50,
+                currentPrice: 2525.75,
+                pnl: 752.50,
+                performance: 3.07
+            },
+            {
+                symbol: 'TCS',
+                quantity: 5,
+                avgPrice: 3620.00,
+                currentPrice: 3595.25,
+                pnl: -123.75,
+                performance: -0.68
+            },
+            {
+                symbol: 'INFY',
+                quantity: 15,
+                avgPrice: 1750.25,
+                currentPrice: 1825.40,
+                pnl: 1127.25,
+                performance: 4.29
+            }
+        ];
+
+        let html = '';
+        sampleHoldings.forEach(holding => {
+            const pnlClass = holding.pnl >= 0 ? 'text-success' : 'text-danger';
+            const perfClass = holding.performance >= 0 ? 'performance-positive' : 'performance-negative';
+            const perfSign = holding.performance >= 0 ? '+' : '';
+
+            html += `
+                <tr>
+                    <td><strong>${holding.symbol}</strong></td>
+                    <td>${holding.quantity}</td>
+                    <td>₹${holding.avgPrice.toFixed(2)}</td>
+                    <td>₹${holding.currentPrice.toFixed(2)}</td>
+                    <td class="${pnlClass}">₹${holding.pnl.toFixed(2)}</td>
+                    <td>
+                        <span class="performance-indicator ${perfClass}">
+                            ${perfSign}${holding.performance.toFixed(2)}%
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="viewDetails('${holding.symbol}')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="sellStock('${holding.symbol}')">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        tableBody.innerHTML = html;
+    }, 1000);
 }
 
 function refreshPortfolio() {
     const button = event.target;
     const originalText = button.innerHTML;
-    
+
     button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Refreshing...';
     button.disabled = true;
-    
+
     // Simulate API call
     setTimeout(() => {
         refreshPortfolioData();
+        loadHoldings();
         button.innerHTML = originalText;
         button.disabled = false;
-        
+
         // Show success message
         if (typeof showToaster === 'function') {
             showToaster('Portfolio Updated', 'Your portfolio data has been refreshed successfully', 'success');
@@ -655,13 +537,13 @@ function refreshPortfolio() {
     }, 2000);
 }
 
-function addToWatchlist() {
-    const symbol = prompt('Enter symbol to add to watchlist:');
-    if (symbol) {
-        // Add to watchlist logic here
-        if (typeof showToaster === 'function') {
-            showToaster('Watchlist Updated', `${symbol} has been added to your watchlist`, 'success');
-        }
+function viewDetails(symbol) {
+    alert(`Viewing details for ${symbol}`);
+}
+
+function sellStock(symbol) {
+    if (confirm(`Are you sure you want to sell ${symbol}?`)) {
+        alert(`Sell order placed for ${symbol}`);
     }
 }
 
@@ -670,7 +552,7 @@ document.querySelectorAll('[data-period]').forEach(button => {
     button.addEventListener('click', function() {
         document.querySelectorAll('[data-period]').forEach(btn => btn.classList.remove('active'));
         this.classList.add('active');
-        
+
         // Update chart with new period data
         const period = this.getAttribute('data-period');
         console.log('Loading data for period:', period);
