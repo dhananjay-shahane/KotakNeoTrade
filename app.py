@@ -276,8 +276,34 @@ except ImportError as e:
 # Add Kotak Neo dashboard route
 @app.route('/dashboard')
 def show_dashboard():
-    """Kotak Neo dashboard route"""
-    return redirect(url_for('main_routes.dashboard'))
+    """Kotak Neo dashboard route - render dashboard directly"""
+    # Check if user is authenticated
+    if not session.get('authenticated') and not session.get('kotak_logged_in'):
+        return redirect(url_for('auth_routes.trading_account_login'))
+    
+    # Prepare account data for sidebar
+    kotak_account_data = None
+    if session.get('kotak_logged_in') or session.get('authenticated'):
+        kotak_account_data = {
+            'ucc': session.get('ucc', session.get('username', '-')),
+            'mobile': session.get('mobile_number', '-'),
+            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
+            'last_login': 'Just Now',
+            'status': 'Online'
+        }
+    
+    # Render dashboard with empty data structure for now
+    dashboard_data = {
+        'positions': [],
+        'holdings': [],
+        'limits': {},
+        'recent_orders': [],
+        'total_positions': 0,
+        'total_holdings': 0,
+        'total_orders': 0
+    }
+    
+    return render_template('dashboard.html', data=dashboard_data, kotak_account=kotak_account_data)
 
 # Add missing Kotak Neo routes that are referenced in the sidebar - use different names to avoid conflicts
 @app.route('/orders')
