@@ -50,8 +50,15 @@ def create_app():
         app.secret_key = secrets.token_hex(32)
         logger.warning("Using fallback session secret for development")
     
+    # Configure database URI first
+    db_uri = os.environ.get('DATABASE_URL')
+    if not db_uri:
+        db_uri = 'sqlite:///instance/trading_platform.db'
+    
     # Configure app settings
     app.config.update(
+        SQLALCHEMY_DATABASE_URI=db_uri,
+        SQLALCHEMY_TRACK_MODIFICATIONS=False,
         SESSION_COOKIE_SECURE=False,  # Set to True in production with HTTPS
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE='Lax',
@@ -61,15 +68,9 @@ def create_app():
     
     # Initialize database
     try:
-        init_db(app)
-        logger.info("✅ Database initialized successfully")
-    except Exception as e:
-        logger.error(f"❌ Database initialization failed: {e}")
-        # Continue with fallback database
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/trading_platform.db'
-        app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        from core.database import db
         db.init_app(app)
-        logger.info("Using SQLite fallback database for development")
+        logger.info("✅ Database initialized successfully")
         
         # Create tables
         with app.app_context():
@@ -78,6 +79,9 @@ def create_app():
                 logger.info("Database tables created successfully")
             except Exception as table_error:
                 logger.error(f"Failed to create tables: {table_error}")
+                
+    except Exception as e:
+        logger.error(f"❌ Database initialization failed: {e}")
     
     # Register blueprints
     try:
@@ -87,22 +91,44 @@ def create_app():
         logger.info("✓ Core blueprints registered")
         
         # Register deals blueprint
-        app.register_blueprint(deals_api.deals_bp, url_prefix='/api')
-        logger.info("✓ Deals blueprint registered")
+        try:
+            app.register_blueprint(deals_api.deals_bp, url_prefix='/api')
+            logger.info("✓ Deals blueprint registered")
+        except Exception as deals_error:
+            logger.warning(f"Could not register deals blueprint: {deals_error}")
         
-        # Register additional API blueprints
-        if hasattr(dashboard, 'dashboard_bp'):
-            app.register_blueprint(dashboard.dashboard_bp, url_prefix='/api')
-        if hasattr(trading_api, 'trading_bp'):
-            app.register_blueprint(trading_api.trading_bp, url_prefix='/api')
-        if hasattr(etf_signals, 'etf_bp'):
-            app.register_blueprint(etf_signals.etf_bp, url_prefix='/api')
-        if hasattr(signals_api, 'signals_bp'):
-            app.register_blueprint(signals_api.signals_bp, url_prefix='/api')
-        if hasattr(admin_signals_api, 'admin_bp'):
-            app.register_blueprint(admin_signals_api.admin_bp, url_prefix='/api/admin')
+        # Register additional API blueprints with error handling
+        try:
+            if hasattr(dashboard, 'dashboard_bp'):
+                app.register_blueprint(dashboard.dashboard_bp, url_prefix='/api')
+        except Exception as e:
+            logger.warning(f"Could not register dashboard blueprint: {e}")
+            
+        try:
+            if hasattr(trading_api, 'trading_bp'):
+                app.register_blueprint(trading_api.trading_bp, url_prefix='/api')
+        except Exception as e:
+            logger.warning(f"Could not register trading blueprint: {e}")
+            
+        try:
+            if hasattr(etf_signals, 'etf_bp'):
+                app.register_blueprint(etf_signals.etf_bp, url_prefix='/api')
+        except Exception as e:
+            logger.warning(f"Could not register etf_signals blueprint: {e}")
+            
+        try:
+            if hasattr(signals_api, 'signals_bp'):
+                app.register_blueprint(signals_api.signals_bp, url_prefix='/api')
+        except Exception as e:
+            logger.warning(f"Could not register signals blueprint: {e}")
+            
+        try:
+            if hasattr(admin_signals_api, 'admin_bp'):
+                app.register_blueprint(admin_signals_api.admin_bp, url_prefix='/api/admin')
+        except Exception as e:
+            logger.warning(f"Could not register admin signals blueprint: {e}")
         
-        logger.info("✓ Additional blueprints available")
+        logger.info("✓ Blueprints registration completed")
         
     except Exception as e:
         logger.error(f"Blueprint registration error: {e}")
@@ -115,13 +141,7 @@ def create_app():
     except Exception as e:
         logger.warning(f"Could not start auto-sync triggers: {e}")
     
-    # Try to register deals_api blueprint directly if module import works
-    try:
-        from api.deals_api import deals_bp as direct_deals_bp
-        app.register_blueprint(direct_deals_bp, url_prefix='/api')
-        logger.info("✓ Registered deals_api blueprint directly")
-    except Exception as e:
-        logger.warning(f"Could not register deals_api directly: {e}")
+    
     
     # Initialize quotes scheduler (optional)
     try:
@@ -191,7 +211,11 @@ def create_app():
     
     @app.errorhandler(500)
     def internal_error(error):
-        db.session.rollback()
+        try:
+            from core.database import db
+            db.session.rollback()
+        except Exception:
+            pass
         return render_template('404.html'), 500
     
     # Health check endpoint
