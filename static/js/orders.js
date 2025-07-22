@@ -20,16 +20,31 @@ window.addEventListener('beforeunload', function() {
 
 async function loadOrdersData() {
     try {
-        var response = await fetch('/api/orders');
+        console.log('Fetching orders data...');
+        var response = await fetch('/api/orders', {
+            credentials: 'same-origin', // Include cookies
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        console.log('Orders response status:', response.status);
         var data = await response.json();
+        console.log('Orders response data:', data);
 
         if (data.success) {
             ordersData = data.orders || [];
+            console.log('Orders loaded:', ordersData.length, 'orders');
             updateOrdersTable(ordersData);
             updateOrdersSummary(ordersData);
         } else {
-            console.error('Failed to load orders:', data.message);
-            showNoOrdersMessage();
+            console.error('Failed to load orders:', data.error || data.message);
+            if (data.error && data.error.includes('Not authenticated')) {
+                console.log('User not authenticated, showing login message');
+                showAuthenticationErrorOrders();
+            } else {
+                showNoOrdersMessage();
+            }
         }
     } catch (error) {
         console.error('Error loading orders:', error);
@@ -299,6 +314,33 @@ function showNoOrdersMessage() {
                 <p class="text-muted">You haven't placed any orders yet.</p>
                 <button class="btn btn-primary" onclick="window.location.href='/dashboard'">
                     <i class="fas fa-plus me-1"></i>Place First Order
+                </button>
+            </td>
+        </tr>
+    `;
+
+    // Reset summary counts
+    document.getElementById('totalOrdersCount').textContent = '0';
+    document.getElementById('completedOrdersCount').textContent = '0';
+    document.getElementById('pendingOrdersCount').textContent = '0';
+    document.getElementById('rejectedOrdersCount').textContent = '0';
+    document.getElementById('cancelledOrdersCount').textContent = '0';
+    document.getElementById('buyOrdersCount').textContent = '0';
+
+    // Update available margin even when no orders
+    updateAvailableMargin();
+}
+
+function showAuthenticationErrorOrders() {
+    var tableBody = document.getElementById('ordersTableBody');
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="10" class="text-center py-5">
+                <i class="fas fa-lock fa-3x text-warning mb-3"></i>
+                <h4 class="text-warning">Authentication Required</h4>
+                <p class="text-muted">Please log in to your Kotak Neo account to view orders.</p>
+                <button class="btn btn-warning" onclick="window.location.href='/trading-account/login'">
+                    <i class="fas fa-sign-in-alt me-1"></i>Login to Kotak Neo
                 </button>
             </td>
         </tr>

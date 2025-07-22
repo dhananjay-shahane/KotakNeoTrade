@@ -20,16 +20,31 @@ window.addEventListener('beforeunload', function() {
 
 async function loadPositionsData() {
     try {
-        var response = await fetch('/api/positions');
+        console.log('Fetching positions data...');
+        var response = await fetch('/api/positions', {
+            credentials: 'same-origin', // Include cookies
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        console.log('Response status:', response.status);
         var data = await response.json();
+        console.log('Response data:', data);
 
         if (data.success) {
             positionsData = data.positions || [];
+            console.log('Positions loaded:', positionsData.length, 'positions');
             updatePositionsTable(positionsData);
             updatePositionsSummary(positionsData);
         } else {
-            console.error('Failed to load positions:', data.message);
-            showNoPositionsMessage();
+            console.error('Failed to load positions:', data.error || data.message);
+            if (data.error && data.error.includes('Not authenticated')) {
+                console.log('User not authenticated, showing login message');
+                showAuthenticationError();
+            } else {
+                showNoPositionsMessage();
+            }
         }
     } catch (error) {
         console.error('Error loading positions:', error);
@@ -170,6 +185,31 @@ function showNoPositionsMessage() {
                 <p class="text-muted">You don't have any open positions yet.</p>
                 <button class="btn btn-primary" onclick="window.location.href='/dashboard'">
                     <i class="fas fa-plus me-1"></i>Start Trading
+                </button>
+            </td>
+        </tr>
+    `;
+
+    // Reset summary counts
+    document.getElementById('totalPositionsCount').textContent = '0';
+    document.getElementById('longPositionsCount').textContent = '0';
+    document.getElementById('shortPositionsCount').textContent = '0';
+    document.getElementById('longPositionsValue').textContent = '₹0.00';
+    document.getElementById('shortPositionsValue').textContent = '₹0.00';
+    document.getElementById('totalPnlValue').textContent = '₹0.00';
+    document.getElementById('positionsTableCount').textContent = '0';
+}
+
+function showAuthenticationError() {
+    var tableBody = document.getElementById('positionsTableBody');
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="13" class="text-center py-5">
+                <i class="fas fa-lock fa-3x text-warning mb-3"></i>
+                <h4 class="text-warning">Authentication Required</h4>
+                <p class="text-muted">Please log in to your Kotak Neo account to view positions.</p>
+                <button class="btn btn-warning" onclick="window.location.href='/trading-account/login'">
+                    <i class="fas fa-sign-in-alt me-1"></i>Login to Kotak Neo
                 </button>
             </td>
         </tr>

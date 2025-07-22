@@ -1,40 +1,206 @@
-// function refreshHoldings() {
-//     var refreshBtn = document.querySelector('button[onclick="refreshHoldings()"]');
-//     if (refreshBtn) {
-//         refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...';
-//         refreshBtn.disabled = true;
-//     }
+var holdingsData = [];
+var refreshInterval = null;
+
+// Load holdings when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadHoldingsData();
+    // Auto-refresh every 30 seconds
+    refreshInterval = setInterval(loadHoldingsData, 30000);
+});
+
+// Clear interval when page unloads
+window.addEventListener('beforeunload', function() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
+});
+
+async function loadHoldingsData() {
+    try {
+        console.log('Fetching holdings data...');
+        var response = await fetch('/api/holdings', {
+            credentials: 'same-origin', // Include cookies
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        console.log('Holdings response status:', response.status);
+        var data = await response.json();
+        console.log('Holdings response data:', data);
+
+        if (data.success) {
+            holdingsData = data.holdings || [];
+            console.log('Holdings loaded:', holdingsData.length, 'holdings');
+            window.holdingsData = data; // Store for price lookup
+            updateHoldingsTable(holdingsData);
+            updateHoldingsSummary(holdingsData);
+        } else {
+            console.error('Failed to load holdings:', data.error || data.message);
+            if (data.error && data.error.includes('Not authenticated')) {
+                console.log('User not authenticated, showing login message');
+                showAuthenticationErrorHoldings();
+            } else {
+                showNoHoldingsMessage();
+            }
+        }
+    } catch (error) {
+        console.error('Error loading holdings:', error);
+        showNoHoldingsMessage();
+    }
+}
+
+function updateHoldingsTable(holdings) {
+    var tableBody = document.getElementById('holdingsTableBody');
     
-//     fetch('/api/holdings')
-//         .then(response => response.json())
-//         .then(function(data) {
-//             if (data.success) {
-//                 // Store holdings data globally for price lookup
-//                 window.holdingsData = data;
-//                 console.log('Holdings data stored globally:', data);
-//                 if (typeof updateHoldingsTable === 'function') {
-//                     updateHoldingsTable(data.holdings);
-//                 }
-//                 if (typeof updateHoldingsSummary === 'function') {
-//                     updateHoldingsSummary(data.summary);
-//                 }
-//                 setTimeout(calculateAndUpdateCards, 100);
-//                 showNotification('Holdings refreshed successfully', 'success');
-//             } else {
-//                 showNotification('Failed to refresh holdings: ' + data.message, 'error');
-//             }
-//         })
-//         .catch(function(error) {
-//             console.error('Error refreshing holdings:', error);
-//             showNotification('Error refreshing holdings', 'error');
-//         })
-//         .finally(function() {
-//             if (refreshBtn) {
-//                 refreshBtn.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
-//                 refreshBtn.disabled = false;
-//             }
-//         });
-// }
+    if (!holdings || holdings.length === 0) {
+        showNoHoldingsMessage();
+        return;
+    }
+    
+    var tableHTML = '';
+    
+    holdings.forEach(function(holding) {
+        var symbol = holding.displaySymbol || holding.symbol || holding.trdSym || 'N/A';
+        var quantity = holding.quantity || holding.qty || '0';
+        var avgPrice = holding.avgPrice || holding.averagePrice || holding.buyAvgPrc || '0';
+        var ltp = holding.ltp || holding.lastPrice || holding.closingPrice || '0';
+        var currentValue = parseFloat(quantity) * parseFloat(ltp);
+        var investedValue = parseFloat(quantity) * parseFloat(avgPrice);
+        var pnl = currentValue - investedValue;
+        var pnlPercentage = investedValue > 0 ? ((pnl / investedValue) * 100) : 0;
+        
+        // Format values
+        var formattedAvgPrice = parseFloat(avgPrice).toFixed(2);
+        var formattedLtp = parseFloat(ltp).toFixed(2);
+        var formattedCurrentValue = currentValue.toFixed(2);
+        var formattedInvestedValue = investedValue.toFixed(2);
+        var formattedPnl = pnl.toFixed(2);
+        var formattedPnlPercentage = pnlPercentage.toFixed(2);
+        
+        // P&L styling
+        var pnlClass = pnl >= 0 ? 'text-success' : 'text-danger';
+        var pnlSign = pnl >= 0 ? '+' : '';
+        
+        tableHTML += `
+            <tr data-holding-symbol="${symbol}">
+                <td><strong>${symbol}</strong></td>
+                <td>${quantity}</td>
+                <td>₹${formattedAvgPrice}</td>
+                <td>₹${formattedLtp}</td>
+                <td>₹${formattedCurrentValue}</td>
+                <td>₹${formattedInvestedValue}</td>
+                <td class="${pnlClass}">
+                    <strong>₹${pnlSign}${formattedPnl}</strong><br>
+                    <small>(${pnlSign}${formattedPnlPercentage}%)</small>
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-success btn-sm px-2" onclick="buyHolding('${symbol}')">Buy</button>
+                        <button class="btn btn-danger btn-sm px-2" onclick="sellHolding('${symbol}', '${quantity}')">Sell</button>
+                        <button class="btn btn-outline-light btn-sm px-2" onclick="getQuote('${symbol}')">Quote</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    
+    tableBody.innerHTML = tableHTML;
+    document.getElementById('holdingsCount').textContent = holdings.length;
+}
+
+function updateHoldingsSummary(holdings) {
+    var totalValue = 0;
+    var totalInvested = 0;
+    var totalPnl = 0;
+    
+    holdings.forEach(function(holding) {
+        var quantity = parseFloat(holding.quantity || holding.qty || 0);
+        var avgPrice = parseFloat(holding.avgPrice || holding.averagePrice || holding.buyAvgPrc || 0);
+        var ltp = parseFloat(holding.ltp || holding.lastPrice || holding.closingPrice || 0);
+        
+        var currentValue = quantity * ltp;
+        var investedValue = quantity * avgPrice;
+        
+        totalValue += currentValue;
+        totalInvested += investedValue;
+        totalPnl += (currentValue - investedValue);
+    });
+    
+    var totalPnlPercentage = totalInvested > 0 ? ((totalPnl / totalInvested) * 100) : 0;
+    
+    // Update summary elements if they exist
+    var totalValueElement = document.getElementById('totalHoldingsValue');
+    var totalInvestedElement = document.getElementById('totalInvestedValue'); 
+    var totalPnlElement = document.getElementById('totalHoldingsPnl');
+    var totalPnlPercentageElement = document.getElementById('totalHoldingsPnlPercentage');
+    
+    if (totalValueElement) totalValueElement.textContent = '₹' + totalValue.toFixed(2);
+    if (totalInvestedElement) totalInvestedElement.textContent = '₹' + totalInvested.toFixed(2);
+    if (totalPnlElement) {
+        totalPnlElement.textContent = '₹' + (totalPnl >= 0 ? '+' : '') + totalPnl.toFixed(2);
+        totalPnlElement.className = totalPnl >= 0 ? 'text-success' : 'text-danger';
+    }
+    if (totalPnlPercentageElement) {
+        totalPnlPercentageElement.textContent = (totalPnlPercentage >= 0 ? '+' : '') + totalPnlPercentage.toFixed(2) + '%';
+        totalPnlPercentageElement.className = totalPnlPercentage >= 0 ? 'text-success' : 'text-danger';
+    }
+}
+
+function showNoHoldingsMessage() {
+    var tableBody = document.getElementById('holdingsTableBody');
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="8" class="text-center py-5">
+                <i class="fas fa-briefcase fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">No Holdings Found</h4>
+                <p class="text-muted">You don't have any holdings in your portfolio.</p>
+                <button class="btn btn-primary" onclick="window.location.href='/dashboard'">
+                    <i class="fas fa-plus me-1"></i>Start Investing
+                </button>
+            </td>
+        </tr>
+    `;
+    
+    document.getElementById('holdingsCount').textContent = '0';
+}
+
+function showAuthenticationErrorHoldings() {
+    var tableBody = document.getElementById('holdingsTableBody');
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="8" class="text-center py-5">
+                <i class="fas fa-lock fa-3x text-warning mb-3"></i>
+                <h4 class="text-warning">Authentication Required</h4>
+                <p class="text-muted">Please log in to your Kotak Neo account to view holdings.</p>
+                <button class="btn btn-warning" onclick="window.location.href='/trading-account/login'">
+                    <i class="fas fa-sign-in-alt me-1"></i>Login to Kotak Neo
+                </button>
+            </td>
+        </tr>
+    `;
+    
+    document.getElementById('holdingsCount').textContent = '0';
+}
+
+function refreshHoldings() {
+    var refreshBtn = document.querySelector('button[onclick="refreshHoldings()"]');
+    if (refreshBtn) {
+        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...';
+        refreshBtn.disabled = true;
+    }
+    
+    loadHoldingsData().finally(function() {
+        if (refreshBtn) {
+            refreshBtn.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
+            refreshBtn.disabled = false;
+        }
+    });
+}
 
 function buyHolding(symbol) {
     showHoldingTradeModal(symbol, null, 'BUY');
