@@ -29,10 +29,10 @@ async function loadHoldingsData() {
         var data = await response.json();
         console.log('Holdings response data:', data);
 
-        if (data.success) {
-            holdingsData = data.holdings || [];
+        if (data.success && data.holdings) {
+            holdingsData = Array.isArray(data.holdings) ? data.holdings : [data.holdings];
             console.log('Holdings loaded:', holdingsData.length, 'holdings');
-            window.holdingsData = data; // Store for price lookup
+            window.holdingsData = holdingsData; // Store for price lookup
             updateHoldingsTable(holdingsData);
             updateHoldingsSummary(holdingsData);
         } else {
@@ -53,14 +53,27 @@ async function loadHoldingsData() {
 function updateHoldingsTable(holdings) {
     var tableBody = document.getElementById('holdingsTableBody');
     
-    if (!holdings || holdings.length === 0) {
+    console.log('updateHoldingsTable called with:', holdings);
+    
+    // Ensure holdings is an array
+    if (!holdings) {
+        console.log('No holdings data provided');
+        showNoHoldingsMessage();
+        return;
+    }
+    
+    // Convert to array if needed
+    var holdingsArray = Array.isArray(holdings) ? holdings : [holdings];
+    
+    if (holdingsArray.length === 0) {
+        console.log('Holdings array is empty');
         showNoHoldingsMessage();
         return;
     }
     
     var tableHTML = '';
     
-    holdings.forEach(function(holding) {
+    holdingsArray.forEach(function(holding) {
         console.log('Processing holding:', holding);
         
         var symbol = holding.displaySymbol || holding.symbol || holding.trdSym || 'N/A';
@@ -109,7 +122,12 @@ function updateHoldingsTable(holdings) {
     });
     
     tableBody.innerHTML = tableHTML;
-    document.getElementById('holdingsCount').textContent = holdings.length;
+    
+    // Update count if element exists (may not exist in this template)
+    var countElement = document.getElementById('holdingsCount');
+    if (countElement) {
+        countElement.textContent = holdingsArray.length;
+    }
 }
 
 function updateHoldingsSummary(holdings) {
@@ -117,7 +135,10 @@ function updateHoldingsSummary(holdings) {
     var totalInvested = 0;
     var totalPnl = 0;
     
-    holdings.forEach(function(holding) {
+    // Ensure holdings is an array
+    var holdingsArray = Array.isArray(holdings) ? holdings : [holdings];
+    
+    holdingsArray.forEach(function(holding) {
         var quantity = parseFloat(holding.quantity || holding.qty || 0);
         var avgPrice = parseFloat(holding.avgPrice || holding.averagePrice || holding.buyAvgPrc || 0);
         var ltp = parseFloat(holding.ltp || holding.lastPrice || holding.closingPrice || 0);
@@ -167,7 +188,10 @@ function showNoHoldingsMessage() {
         </tr>
     `;
     
-    document.getElementById('holdingsCount').textContent = '0';
+    var countElement = document.getElementById('holdingsCount');
+    if (countElement) {
+        countElement.textContent = '0';
+    }
 }
 
 function showAuthenticationErrorHoldings() {
@@ -187,7 +211,10 @@ function showAuthenticationErrorHoldings() {
         </tr>
     `;
     
-    document.getElementById('holdingsCount').textContent = '0';
+    var countElement = document.getElementById('holdingsCount');
+    if (countElement) {
+        countElement.textContent = '0';
+    }
 }
 
 function refreshHoldings() {
