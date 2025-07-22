@@ -1,18 +1,15 @@
-
 import dash
 from dash import dcc, html, Input, Output, State, callback
 import plotly.graph_objects as go
 import pandas as pd
 import logging
-from datetime import datetime, date
-from dateutil.relativedelta import relativedelta
-import psycopg2
-import psycopg2.extras
 from core.database import get_db_connection
+import datetime
+from dateutil.relativedelta import relativedelta
 
 # Initialize Dash app
-dash_app = dash.Dash(__name__, url_base_pathname='/dash-charts/')
-dash_app.title = "Stock Analysis Dashboard - Kotak Neo Trading"
+app = dash.Dash(__name__, url_base_pathname='/dash-charts/')
+app.title = "Stock Analysis Dashboard - Kotak Neo Trading"
 
 # Logging configuration
 logging.basicConfig(
@@ -23,7 +20,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # App layout
-dash_app.layout = html.Div([
+app.layout = html.Div([
     html.Div([
         html.Div([
             html.H1("📈 Interactive Charts", className="header-title"),
@@ -40,35 +37,35 @@ dash_app.layout = html.Div([
             html.Button('🔍 Load Chart', id='submit-button', n_clicks=0, className='submit-button'),
         ], className='input-container'),
     ], className="header"),
-    
+
     html.Div([
         html.Button('1D', id='period-1d', className='period-button', n_clicks=0),
         html.Button('5D', id='period-5d', className='period-button', n_clicks=0),
-        html.Button('1M', id='period-1m', className='period-button active', n_clicks=0),
+        html.Button('1M', id='period-1m', className='period-button', n_clicks=0),
         html.Button('6M', id='period-6m', className='period-button', n_clicks=0),
         html.Button('YTD', id='period-ytd', className='period-button', n_clicks=0),
         html.Button('1Y', id='period-1y', className='period-button', n_clicks=0),
         html.Button('5Y', id='period-5y', className='period-button', n_clicks=0),
         html.Button('MAX', id='period-max', className='period-button', n_clicks=0),
     ], className='period-selector'),
-    
+
     html.Div(id='metrics-container', className='metrics-container'),
-    
+
     dcc.Loading(
         id="loading-chart",
         type="circle",
         color="#2563eb",
         children=[dcc.Graph(id='candlestick-chart', className='chart')]
     ),
-    
+
     html.Div(id='status-message', className='status-message'),
-    
+
     dcc.Store(id='store-cmp-data'),
     dcc.Store(id='selected-period', data='1M')  # Default period
 ], className='container')
 
 # Custom CSS
-dash_app.index_string = '''
+app.index_string = '''
 <!DOCTYPE html>
 <html>
     <head>
@@ -353,6 +350,9 @@ def get_db_connector():
         logger.error(f"Database connection error: {e}")
         return None
 
+import psycopg2
+import psycopg2.extras
+
 def table_exists(conn, table_name):
     """Check if a table exists in the symbols schema"""
     try:
@@ -397,7 +397,7 @@ def get_ohlc_data(conn, symbol, period='1M'):
     intraday_table = f"{symbol.lower()}_5m"
     
     try:
-        today = date.today()
+        today = datetime.date.today()
         
         if period == '1D':
             # Intraday data for today
@@ -427,7 +427,7 @@ def get_ohlc_data(conn, symbol, period='1M'):
             elif period == '6M':
                 start_date = today - relativedelta(months=6)
             elif period == 'YTD':
-                start_date = date(today.year, 1, 1)
+                start_date = datetime.date(today.year, 1, 1)
             elif period == '1Y':
                 start_date = today - relativedelta(years=1)
             elif period == '5Y':
@@ -481,7 +481,7 @@ def get_historical_cmp(conn, symbol, offset):
         return None
 
 # Callback to update selected period
-@dash_app.callback(
+@app.callback(
     Output('selected-period', 'data'),
     [Input('period-1d', 'n_clicks'),
      Input('period-5d', 'n_clicks'),
@@ -513,7 +513,7 @@ def update_period(btn1, btn2, btn3, btn4, btn5, btn6, btn7, btn8, current_period
     return period_map.get(button_id, current_period)
 
 # Callback to update metrics and store data
-@dash_app.callback(
+@app.callback(
     [Output('metrics-container', 'children'),
      Output('store-cmp-data', 'data'),
      Output('status-message', 'children')],
@@ -598,7 +598,7 @@ def update_metrics(n_clicks, symbol):
             conn.close()
 
 # Callback to update candlestick chart
-@dash_app.callback(
+@app.callback(
     Output('candlestick-chart', 'figure'),
     [Input('store-cmp-data', 'data'),
      Input('selected-period', 'data')]
@@ -719,7 +719,7 @@ def update_chart(store_data, period):
             conn.close()
 
 # Callback to update active period button classes
-@dash_app.callback(
+@app.callback(
     [Output(f'period-{period}', 'className') for period in ['1d', '5d', '1m', '6m', 'ytd', '1y', '5y', 'max']],
     [Input('selected-period', 'data')]
 )
@@ -747,4 +747,4 @@ def update_active_button(selected_period):
     return class_names
 
 if __name__ == '__main__':
-    dash_app.run_server(debug=True, host='0.0.0.0', port=8050)
+    app.run_server(debug=True, host='0.0.0.0', port=8050)

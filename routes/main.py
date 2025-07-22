@@ -531,7 +531,7 @@ def api_orders():
 @main_bp.route('/charts')
 @login_required
 def show_charts():
-    """Charts page - redirect to Dash app"""
+    """Charts page with interactive trading charts using Dash"""
     return redirect('/dash-charts/')
 
 

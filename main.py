@@ -68,8 +68,7 @@ def create_app():
     
     # Initialize database
     try:
-        from core.database import db
-        db.init_app(app)
+        init_db(app)
         logger.info("✅ Database initialized successfully")
         
         # Create tables
@@ -86,8 +85,8 @@ def create_app():
     # Register blueprints
     try:
         app.register_blueprint(main_bp)
-        app.register_blueprint(auth_bp, url_prefix='/auth')
-        app.register_blueprint(auth_bp, url_prefix='/trading-account')
+        app.register_blueprint(auth_bp, url_prefix='/auth', name='auth')
+        app.register_blueprint(auth_bp, url_prefix='/trading-account', name='trading_account')
         logger.info("✓ Core blueprints registered")
         
         # Register deals blueprint

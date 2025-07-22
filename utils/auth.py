@@ -9,7 +9,7 @@ def login_required(f):
     def decorated_function(*args, **kwargs):
         if not session.get('authenticated'):
             flash('Please login to access this page', 'error')
-            return redirect(url_for('auth.login'))
+            return redirect(url_for('auth_routes.trading_account_login'))
         return f(*args, **kwargs)
     return decorated_function
 

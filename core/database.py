@@ -42,6 +42,9 @@ def init_db(app):
         # Only initialize if not already done
         if not hasattr(app, 'extensions') or 'sqlalchemy' not in app.extensions:
             db.init_app(app)
+        elif 'sqlalchemy' in app.extensions:
+            # Already initialized, just update config
+            app.extensions['sqlalchemy'].db = db
 
         logging.info("Database initialized successfully")
         return True
