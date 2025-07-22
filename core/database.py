@@ -43,12 +43,9 @@ def init_db(app):
         app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-        # Only initialize if not already done
-        if not hasattr(app, 'extensions') or 'sqlalchemy' not in app.extensions:
-            db.init_app(app)
-            logging.info("Database initialized successfully")
-        else:
-            logging.info("Database already initialized")
+        # Initialize database with app
+        db.init_app(app)
+        logging.info("Database initialized successfully")
 
         return True
     except Exception as e:
