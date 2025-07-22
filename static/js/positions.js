@@ -168,9 +168,9 @@ function showNoPositionsMessage() {
                 <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
                 <h4 class="text-muted">No Positions Found</h4>
                 <p class="text-muted">You don't have any open positions yet.</p>
-                <a href="/dashboard" class="btn btn-primary">
+                <button class="btn btn-primary" onclick="window.location.href='/dashboard'">
                     <i class="fas fa-plus me-1"></i>Start Trading
-                </a>
+                </button>
             </td>
         </tr>
     `;

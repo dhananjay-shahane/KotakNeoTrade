@@ -585,36 +585,92 @@ def get_dashboard_data_api():
 def get_positions_api():
     """API endpoint to get positions"""
     if not validate_current_session():
-        return jsonify({'error': 'Not authenticated'}), 401
+        return jsonify({'success': False, 'error': 'Not authenticated'}), 401
 
     try:
         client = session.get('client')
         if not client:
-            return jsonify({'error': 'No active client'}), 400
+            return jsonify({'success': False, 'error': 'No active client'}), 400
 
         positions = trading_functions.get_positions(client)
-        return jsonify(positions)
+        
+        # Ensure positions is always a list and return in expected format
+        if isinstance(positions, dict) and 'positions' in positions:
+            positions_list = positions['positions']
+        elif isinstance(positions, list):
+            positions_list = positions
+        else:
+            positions_list = []
+            
+        return jsonify({
+            'success': True,
+            'positions': positions_list,
+            'count': len(positions_list)
+        })
     except Exception as e:
         logging.error(f"Positions API error: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/api/holdings')
 def get_holdings_api():
     """API endpoint to get holdings"""
     if not validate_current_session():
-        return jsonify({'error': 'Not authenticated'}), 401
+        return jsonify({'success': False, 'error': 'Not authenticated'}), 401
 
     try:
         client = session.get('client')
         if not client:
-            return jsonify({'error': 'No active client'}), 400
+            return jsonify({'success': False, 'error': 'No active client'}), 400
 
         holdings = trading_functions.get_holdings(client)
-        return jsonify(holdings)
+        
+        # Ensure holdings is always a list and return in expected format
+        if isinstance(holdings, dict) and 'holdings' in holdings:
+            holdings_list = holdings['holdings']
+        elif isinstance(holdings, list):
+            holdings_list = holdings
+        else:
+            holdings_list = []
+            
+        return jsonify({
+            'success': True,
+            'holdings': holdings_list,
+            'count': len(holdings_list)
+        })
     except Exception as e:
         logging.error(f"Holdings API error: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/orders')
+def get_orders_api():
+    """API endpoint to get orders"""
+    if not validate_current_session():
+        return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+
+    try:
+        client = session.get('client')
+        if not client:
+            return jsonify({'success': False, 'error': 'No active client'}), 400
+
+        orders = trading_functions.get_orders(client)
+        
+        # Ensure orders is always a list and return in expected format
+        if isinstance(orders, dict) and 'orders' in orders:
+            orders_list = orders['orders']
+        elif isinstance(orders, list):
+            orders_list = orders
+        else:
+            orders_list = []
+            
+        return jsonify({
+            'success': True,
+            'orders': orders_list,
+            'count': len(orders_list)
+        })
+    except Exception as e:
+        logging.error(f"Orders API error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/api/etf-signals-data')

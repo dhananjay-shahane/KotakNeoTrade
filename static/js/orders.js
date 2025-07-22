@@ -297,9 +297,9 @@ function showNoOrdersMessage() {
                 <i class="fas fa-list-alt fa-3x text-muted mb-3"></i>
                 <h4 class="text-muted">No Orders Found</h4>
                 <p class="text-muted">You haven't placed any orders yet.</p>
-                <a href="/dashboard" class="btn btn-primary">
+                <button class="btn btn-primary" onclick="window.location.href='/dashboard'">
                     <i class="fas fa-plus me-1"></i>Place First Order
-                </a>
+                </button>
             </td>
         </tr>
     `;
