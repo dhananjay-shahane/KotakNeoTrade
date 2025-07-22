@@ -61,12 +61,15 @@ function updateHoldingsTable(holdings) {
     var tableHTML = '';
     
     holdings.forEach(function(holding) {
+        console.log('Processing holding:', holding);
+        
         var symbol = holding.displaySymbol || holding.symbol || holding.trdSym || 'N/A';
         var quantity = holding.quantity || holding.qty || '0';
-        var avgPrice = holding.avgPrice || holding.averagePrice || holding.buyAvgPrc || '0';
-        var ltp = holding.ltp || holding.lastPrice || holding.closingPrice || '0';
-        var currentValue = parseFloat(quantity) * parseFloat(ltp);
-        var investedValue = parseFloat(quantity) * parseFloat(avgPrice);
+        var avgPrice = holding.averagePrice || holding.avgPrice || holding.buyAvgPrc || '0';
+        var ltp = holding.closingPrice || holding.ltp || holding.lastPrice || '0';
+        
+        var currentValue = holding.mktValue || (parseFloat(quantity) * parseFloat(ltp)) || 0;
+        var investedValue = holding.holdingCost || (parseFloat(quantity) * parseFloat(avgPrice)) || 0;
         var pnl = currentValue - investedValue;
         var pnlPercentage = investedValue > 0 ? ((pnl / investedValue) * 100) : 0;
         

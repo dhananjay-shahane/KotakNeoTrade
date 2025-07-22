@@ -64,18 +64,27 @@ function updatePositionsTable(positions) {
     var displayPositions = filterPositionsByType(positions, currentFilter);
 
     displayPositions.forEach(function(position) {
+        console.log('Processing position:', position);
+        
         var symbol = position.trdSym || position.sym || position.tradingSymbol || 'N/A';
         var product = position.prod || position.product || 'N/A';
         var exchange = position.exSeg || position.exchange || 'N/A';
-        var buyQty = position.buyQty || position.flBuyQty || '0';
-        var sellQty = position.sellQty || position.flSellQty || '0';
-        var netQty = position.netQty || position.flNetQty || '0';
+        
+        // Handle quantity fields - Kotak Neo API uses specific field names
+        var buyQty = position.flBuyQty || position.buyQty || position.brdLtQty || '0';
+        var sellQty = position.flSellQty || position.sellQty || '0';
+        var netQty = position.flNetQty || position.netQty || (parseInt(buyQty) - parseInt(sellQty)) || '0';
+        
+        // Handle amount fields
         var buyAmt = position.buyAmt || position.flBuyAmt || '0';
         var sellAmt = position.sellAmt || position.flSellAmt || '0';
+        
+        // Calculate P&L - may need to be calculated from price differences
         var pnl = position.pnl || position.flPnl || '0';
+        
         var position_type = parseInt(netQty) > 0 ? 'LONG' : parseInt(netQty) < 0 ? 'SHORT' : 'FLAT';
-        var expiry = position.expiry || position.expDate || 'N/A';
-        var lastUpdated = position.lastUpdated || 'N/A';
+        var expiry = position.expDt || position.exp || position.expiry || position.expDate || 'N/A';
+        var lastUpdated = position.hsUpTm || position.updRecvTm || position.lastUpdated || 'N/A';
 
         // Format amounts
         var formattedBuyAmt = parseFloat(buyAmt) || 0;
