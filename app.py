@@ -364,7 +364,22 @@ def holdings_redirect():
             'status': 'Online'
         }
     
-    return render_template('holdings.html', kotak_account=kotak_account_data)
+    # Try to get holdings data from API client if available
+    holdings_data = []
+    try:
+        client = session.get('client')
+        if client:
+            from Scripts import trading_functions
+            holdings_response = trading_functions.get_holdings(client)
+            if isinstance(holdings_response, list):
+                holdings_data = holdings_response
+            elif isinstance(holdings_response, dict) and 'holdings' in holdings_response:
+                holdings_data = holdings_response['holdings']
+            logging.info(f"Holdings data fetched for template: {len(holdings_data)} items")
+    except Exception as e:
+        logging.error(f"Error fetching holdings for template: {e}")
+    
+    return render_template('holdings.html', kotak_account=kotak_account_data, holdings=holdings_data)
 
 
 @app.route('/')
@@ -488,11 +503,22 @@ def show_holdings():
             'Online'
         }
 
+    # Try to get holdings data from API client if available
+    holdings_data = []
     try:
-        return holdings()
-    except:
-        return render_template('holdings.html',
-                               kotak_account=kotak_account_data)
+        client = session.get('client')
+        if client:
+            from Scripts import trading_functions
+            holdings_response = trading_functions.get_holdings(client)
+            if isinstance(holdings_response, list):
+                holdings_data = holdings_response
+            elif isinstance(holdings_response, dict) and 'holdings' in holdings_response:
+                holdings_data = holdings_response['holdings']
+            logging.info(f"Holdings data fetched for template: {len(holdings_data)} items")
+    except Exception as e:
+        logging.error(f"Error fetching holdings for template: {e}")
+    
+    return render_template('holdings.html', kotak_account=kotak_account_data, holdings=holdings_data)
 
 
 @app.route('/orders')
