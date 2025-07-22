@@ -3,9 +3,16 @@ var refreshInterval = null;
 
 // Load holdings when page loads
 document.addEventListener('DOMContentLoaded', function() {
-    loadHoldingsData();
-    // Auto-refresh every 30 seconds
-    refreshInterval = setInterval(loadHoldingsData, 30000);
+    // Check if we have a holdings table body before starting
+    var tableBody = document.getElementById('holdingsTableBody');
+    if (tableBody) {
+        console.log('Holdings table found - starting JavaScript updates');
+        loadHoldingsData();
+        // Auto-refresh every 30 seconds
+        refreshInterval = setInterval(loadHoldingsData, 30000);
+    } else {
+        console.log('Holdings table not found - using server-side rendering only');
+    }
 });
 
 // Clear interval when page unloads
@@ -54,6 +61,13 @@ function updateHoldingsTable(holdings) {
     var tableBody = document.getElementById('holdingsTableBody');
     
     console.log('updateHoldingsTable called with:', holdings);
+    console.log('Table body element:', tableBody);
+    
+    // Check if table body exists
+    if (!tableBody) {
+        console.log('Holdings table body not found - page may use server-side rendering');
+        return;
+    }
     
     // Ensure holdings is an array
     if (!holdings) {
@@ -224,11 +238,19 @@ function refreshHoldings() {
         refreshBtn.disabled = true;
     }
     
-    loadHoldingsData().finally(function() {
-        if (refreshBtn) {
-            refreshBtn.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
-            refreshBtn.disabled = false;
-        }
+    // Check if we have JavaScript table updates or if we need to reload the page
+    var tableBody = document.getElementById('holdingsTableBody');
+    if (tableBody) {
+        loadHoldingsData().finally(function() {
+            if (refreshBtn) {
+                refreshBtn.innerHTML = '<i class="fas fa-sync me-1"></i>Refresh';
+                refreshBtn.disabled = false;
+            }
+        });
+    } else {
+        // Server-side rendering - reload the page
+        window.location.reload();
+    }
     });
 }
 
