@@ -23,7 +23,7 @@ endblock %} {% block content %}
         </div>
         {% endfor %} {% endif %} {% endwith %}
 
-        <form method="POST" action="{{ url_for('auth.trading_account_login') }}" id="loginForm">
+        <form method="POST" action="{{ url_for('auth_routes.trading_account_login') }}" id="loginForm">
             <div class="form-group">
                 <label for="email" class="form-label">
                     <i class="fas fa-user"></i>Username

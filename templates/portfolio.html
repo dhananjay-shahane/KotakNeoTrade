@@ -1,9 +1,9 @@
-{% extends "base.html" %} {% block title %}Portfolio - Trading Signals{%
-endblock %} {% block head %}
-<link
-    href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css"
-    rel="stylesheet"
-/>
+
+{% extends "base.html" %} 
+{% block title %}Portfolio - Trading Signals{% endblock %} 
+
+{% block head %}
+<link href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css" rel="stylesheet">
 <style>
     .portfolio-card {
         background: var(--card-bg);
@@ -41,11 +41,7 @@ endblock %} {% block head %}
     }
 
     .portfolio-summary-cards .card {
-        background: linear-gradient(
-            135deg,
-            var(--card-bg) 0%,
-            rgba(255, 255, 255, 0.05) 100%
-        );
+        background: linear-gradient(135deg, var(--card-bg) 0%, rgba(255, 255, 255, 0.05) 100%);
         border: 1px solid var(--border-color);
         transition: all 0.3s ease;
     }
@@ -129,7 +125,9 @@ endblock %} {% block head %}
         font-weight: 600;
     }
 </style>
-{% endblock %} {% block content %}
+{% endblock %}
+
+{% block content %}
 <div class="container-fluid">
     <!-- Welcome Section -->
     <div class="row mb-4">
@@ -140,35 +138,23 @@ endblock %} {% block head %}
                         <div class="col-md-8">
                             <div class="d-flex align-items-center">
                                 <div class="user-avatar-large me-3">
-                                    <i
-                                        class="fas fa-chart-line fa-3x text-white"
-                                    ></i>
+                                    <i class="fas fa-chart-line fa-3x text-white"></i>
                                 </div>
                                 <div>
-                                    <h3 class="text-white mb-1">Portfolio</h3>
+                                    <h3 class="text-white mb-1">Trading Signals Portfolio</h3>
                                     <p class="text-white-50 mb-0">
                                         <i class="fas fa-clock me-1"></i>
-                                        Last updated:
-                                        <span id="lastUpdateTime"
-                                            >Just now</span
-                                        >
+                                        Last updated: <span id="lastUpdateTime">Just now</span>
                                     </p>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-4 text-end">
                             <div class="d-flex gap-2 justify-content-end">
-                                <a
-                                    href="/trading-signals"
-                                    class="btn btn-outline-light"
-                                >
-                                    <i class="fas fa-signal me-1"></i>All
-                                    Signals
+                                <a href="/trading-signals" class="btn btn-outline-light">
+                                    <i class="fas fa-signal me-1"></i>All Signals
                                 </a>
-                                <button
-                                    class="btn btn-outline-light"
-                                    onclick="refreshSignals()"
-                                >
+                                <button class="btn btn-outline-light" onclick="refreshSignals()">
                                     <i class="fas fa-sync me-1"></i>Refresh
                                 </button>
                             </div>
@@ -188,13 +174,9 @@ endblock %} {% block head %}
                         <i class="fas fa-chart-line"></i>
                     </div>
                     <h5 class="card-title">Total Signals</h5>
-                    <div class="metric-value text-primary" id="totalSignals">
-                        0
-                    </div>
+                    <div class="metric-value text-primary" id="totalSignals">0</div>
                     <div class="metric-label">
-                        <span class="text-success" id="activeSignals"
-                            >0 Active</span
-                        >
+                        <span class="text-success" id="activeSignals">0 Active</span>
                     </div>
                 </div>
             </div>
@@ -207,13 +189,9 @@ endblock %} {% block head %}
                         <i class="fas fa-arrow-up"></i>
                     </div>
                     <h5 class="card-title">Total P&L</h5>
-                    <div class="metric-value text-success" id="totalPnl">
-                        ₹0.00
-                    </div>
+                    <div class="metric-value text-success" id="totalPnl">₹0.00</div>
                     <div class="metric-label">
-                        <span class="change-positive" id="totalPnlPercent"
-                            >+0.00%</span
-                        >
+                        <span class="change-positive" id="totalPnlPercent">+0.00%</span>
                     </div>
                 </div>
             </div>
@@ -226,9 +204,7 @@ endblock %} {% block head %}
                         <i class="fas fa-coins"></i>
                     </div>
                     <h5 class="card-title">Total Investment</h5>
-                    <div class="metric-value text-warning" id="totalInvestment">
-                        ₹0.00
-                    </div>
+                    <div class="metric-value text-warning" id="totalInvestment">₹0.00</div>
                     <div class="metric-label">Invested amount</div>
                 </div>
             </div>
@@ -253,38 +229,15 @@ endblock %} {% block head %}
         <!-- Portfolio Performance Chart -->
         <div class="col-md-8 mb-4">
             <div class="card">
-                <div
-                    class="card-header d-flex justify-content-between align-items-center"
-                >
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="fas fa-chart-area me-2"></i>Signals
-                        Performance
+                        <i class="fas fa-chart-area me-2"></i>Signals Performance
                     </h5>
                     <div class="btn-group btn-group-sm">
-                        <button
-                            class="btn btn-outline-primary active"
-                            data-period="1D"
-                        >
-                            1D
-                        </button>
-                        <button
-                            class="btn btn-outline-primary"
-                            data-period="1W"
-                        >
-                            1W
-                        </button>
-                        <button
-                            class="btn btn-outline-primary"
-                            data-period="1M"
-                        >
-                            1M
-                        </button>
-                        <button
-                            class="btn btn-outline-primary"
-                            data-period="3M"
-                        >
-                            3M
-                        </button>
+                        <button class="btn btn-outline-primary active" data-period="1D">1D</button>
+                        <button class="btn btn-outline-primary" data-period="1W">1W</button>
+                        <button class="btn btn-outline-primary" data-period="1M">1M</button>
+                        <button class="btn btn-outline-primary" data-period="3M">3M</button>
                     </div>
                 </div>
                 <div class="card-body">
@@ -311,17 +264,10 @@ endblock %} {% block head %}
                         <a href="/deals" class="btn btn-success">
                             <i class="fas fa-handshake me-2"></i>Active Deals
                         </a>
-                        <button
-                            class="btn btn-info"
-                            onclick="loadActiveSignals()"
-                        >
-                            <i class="fas fa-chart-pie me-2"></i>Active Signals
-                            Only
+                        <button class="btn btn-info" onclick="loadActiveSignals()">
+                            <i class="fas fa-chart-pie me-2"></i>Active Signals Only
                         </button>
-                        <button
-                            class="btn btn-warning"
-                            onclick="refreshSignals()"
-                        >
+                        <button class="btn btn-warning" onclick="refreshSignals()">
                             <i class="fas fa-sync me-2"></i>Refresh Data
                         </button>
                     </div>
@@ -334,35 +280,21 @@ endblock %} {% block head %}
     <div class="row">
         <div class="col-12 mb-4">
             <div class="card">
-                <div
-                    class="card-header d-flex justify-content-between align-items-center"
-                >
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
                         <i class="fas fa-signal me-2"></i>Active Trading Signals
                     </h5>
                     <div class="d-flex gap-2">
-                        <button
-                            class="btn btn-sm btn-outline-primary"
-                            onclick="filterSignals('ALL')"
-                        >
+                        <button class="btn btn-sm btn-outline-primary" onclick="filterSignals('ALL')">
                             <i class="fas fa-list me-1"></i>All
                         </button>
-                        <button
-                            class="btn btn-sm btn-outline-success"
-                            onclick="filterSignals('BUY')"
-                        >
+                        <button class="btn btn-sm btn-outline-success" onclick="filterSignals('BUY')">
                             <i class="fas fa-arrow-up me-1"></i>Buy
                         </button>
-                        <button
-                            class="btn btn-sm btn-outline-danger"
-                            onclick="filterSignals('SELL')"
-                        >
+                        <button class="btn btn-sm btn-outline-danger" onclick="filterSignals('SELL')">
                             <i class="fas fa-arrow-down me-1"></i>Sell
                         </button>
-                        <button
-                            class="btn btn-sm btn-outline-primary"
-                            onclick="loadSignals()"
-                        >
+                        <button class="btn btn-sm btn-outline-primary" onclick="loadSignals()">
                             <i class="fas fa-sync me-1"></i>Refresh
                         </button>
                     </div>
@@ -388,17 +320,10 @@ endblock %} {% block head %}
                             <tbody id="signalsTableBody">
                                 <tr>
                                     <td colspan="11" class="text-center py-4">
-                                        <div
-                                            class="spinner-border text-primary"
-                                            role="status"
-                                        >
-                                            <span class="visually-hidden"
-                                                >Loading...</span
-                                            >
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
                                         </div>
-                                        <p class="mt-2 mb-0 text-muted">
-                                            Loading trading signals...
-                                        </p>
+                                        <p class="mt-2 mb-0 text-muted">Loading trading signals...</p>
                                     </td>
                                 </tr>
                             </tbody>
@@ -415,17 +340,14 @@ endblock %} {% block head %}
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="fas fa-history me-2"></i>Recent Signal
-                        Activity
+                        <i class="fas fa-history me-2"></i>Recent Signal Activity
                     </h5>
                 </div>
                 <div class="card-body">
                     <div id="recentActivity">
                         <div class="text-center py-4">
                             <i class="fas fa-clock fa-2x text-muted mb-3"></i>
-                            <p class="text-muted mb-0">
-                                Loading recent signal activity...
-                            </p>
+                            <p class="text-muted mb-0">Loading recent signal activity...</p>
                         </div>
                     </div>
                 </div>
@@ -433,104 +355,95 @@ endblock %} {% block head %}
         </div>
     </div>
 </div>
-{% endblock %} {% block scripts %}
+{% endblock %}
+
+{% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        // Set portfolio nav link as active
-        const portfolioLink = document.querySelector('a[href*="portfolio"]');
-        if (portfolioLink) {
-            document.querySelectorAll(".nav-link").forEach((link) => {
-                link.classList.remove("active");
-            });
-            portfolioLink.classList.add("active");
-        }
-
-        // Initialize signals chart
-        initializeSignalsChart();
-
-        // Auto-refresh functionality
-        setInterval(refreshSignals, 30000);
-
-        // Initial data load
-        loadSignals();
-        loadRecentActivity();
-    });
-
-    function initializeSignalsChart() {
-        const ctx = document.getElementById("signalsChart");
-        if (!ctx) return;
-
-        // Sample data for signals performance
-        const chartData = {
-            labels: [
-                "9:15",
-                "10:00",
-                "11:00",
-                "12:00",
-                "13:00",
-                "14:00",
-                "15:00",
-                "15:30",
-            ],
-            datasets: [
-                {
-                    label: "Cumulative P&L",
-                    data: [0, 2500, -1000, 5000, 7500, 3000, 10000, 12000],
-                    borderColor: "#0d6efd",
-                    backgroundColor: "rgba(13, 110, 253, 0.1)",
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4,
-                },
-            ],
-        };
-
-        new Chart(ctx, {
-            type: "line",
-            data: chartData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false,
-                    },
-                },
-                scales: {
-                    x: {
-                        grid: {
-                            color: "rgba(255, 255, 255, 0.1)",
-                        },
-                        ticks: {
-                            color: "#adb5bd",
-                        },
-                    },
-                    y: {
-                        grid: {
-                            color: "rgba(255, 255, 255, 0.1)",
-                        },
-                        ticks: {
-                            color: "#adb5bd",
-                            callback: function (value) {
-                                return "₹" + value / 1000 + "K";
-                            },
-                        },
-                    },
-                },
-                interaction: {
-                    intersect: false,
-                    mode: "index",
-                },
-            },
+document.addEventListener("DOMContentLoaded", function () {
+    // Set portfolio nav link as active
+    const portfolioLink = document.querySelector('a[href*="portfolio"]');
+    if (portfolioLink) {
+        document.querySelectorAll(".nav-link").forEach((link) => {
+            link.classList.remove("active");
         });
+        portfolioLink.classList.add("active");
     }
 
-    function loadSignals() {
-        const tableBody = document.getElementById("signalsTableBody");
+    // Initialize signals chart
+    initializeSignalsChart();
 
-        // Show loading state
-        tableBody.innerHTML = `
+    // Auto-refresh functionality
+    setInterval(refreshSignals, 30000);
+
+    // Initial data load
+    loadSignals();
+    loadRecentActivity();
+});
+
+function initializeSignalsChart() {
+    const ctx = document.getElementById('signalsChart');
+    if (!ctx) return;
+
+    // Sample data for signals performance
+    const chartData = {
+        labels: ['9:15', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '15:30'],
+        datasets: [{
+            label: 'Cumulative P&L',
+            data: [0, 2500, -1000, 5000, 7500, 3000, 10000, 12000],
+            borderColor: '#0d6efd',
+            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4
+        }]
+    };
+
+    new Chart(ctx, {
+        type: 'line',
+        data: chartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        color: '#adb5bd'
+                    }
+                },
+                y: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        color: '#adb5bd',
+                        callback: function(value) {
+                            return '₹' + (value / 1000) + 'K';
+                        }
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            }
+        }
+    });
+}
+
+function loadSignals() {
+    const tableBody = document.getElementById('signalsTableBody');
+    
+    // Show loading state
+    tableBody.innerHTML = `
         <tr>
             <td colspan="11" class="text-center py-4">
                 <div class="spinner-border text-primary" role="status">
@@ -541,28 +454,28 @@ endblock %} {% block head %}
         </tr>
     `;
 
-        // Fetch signals from API
-        fetch("/api/etf-signals-data")
-            .then((response) => response.json())
-            .then((data) => {
-                if (data.success && data.data) {
-                    displaySignals(data.data);
-                    updateSummaryCards(data.data);
-                } else {
-                    showErrorState("Failed to load signals");
-                }
-            })
-            .catch((error) => {
-                console.error("Error loading signals:", error);
-                showErrorState("Error loading signals");
-            });
-    }
+    // Fetch signals from API
+    fetch('/api/etf-signals-data')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data) {
+                displaySignals(data.data);
+                updateSummaryCards(data.data);
+            } else {
+                showErrorState('Failed to load signals');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading signals:', error);
+            showErrorState('Error loading signals');
+        });
+}
 
-    function displaySignals(signals) {
-        const tableBody = document.getElementById("signalsTableBody");
-
-        if (!signals || signals.length === 0) {
-            tableBody.innerHTML = `
+function displaySignals(signals) {
+    const tableBody = document.getElementById('signalsTableBody');
+    
+    if (!signals || signals.length === 0) {
+        tableBody.innerHTML = `
             <tr>
                 <td colspan="11" class="text-center py-4">
                     <i class="fas fa-chart-line fa-2x text-muted mb-3"></i>
@@ -570,39 +483,34 @@ endblock %} {% block head %}
                 </td>
             </tr>
         `;
-            return;
-        }
+        return;
+    }
 
-        let html = "";
-        signals.slice(0, 10).forEach((signal) => {
-            const pnlClass =
-                signal.pl >= 0 ? "signal-pnl-positive" : "signal-pnl-negative";
-            const statusClass =
-                signal.status === "ACTIVE" ? "signal-active" : "signal-closed";
-            const signalTypeIcon =
-                signal.pos > 0
-                    ? "fa-arrow-up text-success"
-                    : "fa-arrow-down text-danger";
-
-            html += `
+    let html = '';
+    signals.slice(0, 10).forEach(signal => {
+        const pnlClass = signal.pl >= 0 ? 'signal-pnl-positive' : 'signal-pnl-negative';
+        const statusClass = signal.status === 'ACTIVE' ? 'signal-active' : 'signal-closed';
+        const signalTypeIcon = signal.pos > 0 ? 'fa-arrow-up text-success' : 'fa-arrow-down text-danger';
+        
+        html += `
             <tr>
-                <td><strong>${signal.symbol || "N/A"}</strong></td>
+                <td><strong>${signal.symbol || 'N/A'}</strong></td>
                 <td>
                     <i class="fas ${signalTypeIcon} me-1"></i>
-                    ${signal.pos > 0 ? "BUY" : "SELL"}
+                    ${signal.pos > 0 ? 'BUY' : 'SELL'}
                 </td>
                 <td>₹${(signal.ep || 0).toFixed(2)}</td>
                 <td>₹${(signal.cmp || 0).toFixed(2)}</td>
                 <td>${signal.qty || 0}</td>
                 <td>₹${(signal.inv || 0).toFixed(2)}</td>
                 <td class="${pnlClass}">₹${(signal.pl || 0).toFixed(2)}</td>
-                <td class="${pnlClass}">${signal.chan || "0.00%"}</td>
+                <td class="${pnlClass}">${signal.chan || '0.00%'}</td>
                 <td>
                     <span class="signal-status ${statusClass}">
-                        ${signal.status || "ACTIVE"}
+                        ${signal.status || 'ACTIVE'}
                     </span>
                 </td>
-                <td>${signal.date || "N/A"}</td>
+                <td>${signal.date || 'N/A'}</td>
                 <td>
                     <button class="btn btn-sm btn-outline-primary me-1" onclick="viewSignalDetails('${signal.id}')">
                         <i class="fas fa-eye"></i>
@@ -613,54 +521,42 @@ endblock %} {% block head %}
                 </td>
             </tr>
         `;
-        });
+    });
 
-        tableBody.innerHTML = html;
+    tableBody.innerHTML = html;
+}
+
+function updateSummaryCards(signals) {
+    const totalSignals = signals.length;
+    const activeSignals = signals.filter(s => s.status === 'ACTIVE').length;
+    const totalPnl = signals.reduce((sum, s) => sum + (s.pl || 0), 0);
+    const totalInvestment = signals.reduce((sum, s) => sum + (s.inv || 0), 0);
+    const totalPnlPercent = totalInvestment > 0 ? (totalPnl / totalInvestment * 100) : 0;
+    const winningSignals = signals.filter(s => (s.pl || 0) > 0).length;
+    const winRate = totalSignals > 0 ? (winningSignals / totalSignals * 100) : 0;
+
+    document.getElementById('totalSignals').textContent = totalSignals;
+    document.getElementById('activeSignals').textContent = `${activeSignals} Active`;
+    document.getElementById('totalPnl').textContent = `₹${totalPnl.toFixed(2)}`;
+    document.getElementById('totalPnlPercent').textContent = `${totalPnlPercent >= 0 ? '+' : ''}${totalPnlPercent.toFixed(2)}%`;
+    document.getElementById('totalInvestment').textContent = `₹${totalInvestment.toFixed(2)}`;
+    document.getElementById('winRate').textContent = `${winRate.toFixed(1)}%`;
+
+    // Update P&L color
+    const pnlElement = document.getElementById('totalPnl');
+    const pnlPercentElement = document.getElementById('totalPnlPercent');
+    if (totalPnl >= 0) {
+        pnlElement.className = 'metric-value text-success';
+        pnlPercentElement.className = 'metric-label change-positive';
+    } else {
+        pnlElement.className = 'metric-value text-danger';
+        pnlPercentElement.className = 'metric-label change-negative';
     }
+}
 
-    function updateSummaryCards(signals) {
-        const totalSignals = signals.length;
-        const activeSignals = signals.filter(
-            (s) => s.status === "ACTIVE",
-        ).length;
-        const totalPnl = signals.reduce((sum, s) => sum + (s.pl || 0), 0);
-        const totalInvestment = signals.reduce(
-            (sum, s) => sum + (s.inv || 0),
-            0,
-        );
-        const totalPnlPercent =
-            totalInvestment > 0 ? (totalPnl / totalInvestment) * 100 : 0;
-        const winningSignals = signals.filter((s) => (s.pl || 0) > 0).length;
-        const winRate =
-            totalSignals > 0 ? (winningSignals / totalSignals) * 100 : 0;
-
-        document.getElementById("totalSignals").textContent = totalSignals;
-        document.getElementById("activeSignals").textContent =
-            `${activeSignals} Active`;
-        document.getElementById("totalPnl").textContent =
-            `₹${totalPnl.toFixed(2)}`;
-        document.getElementById("totalPnlPercent").textContent =
-            `${totalPnlPercent >= 0 ? "+" : ""}${totalPnlPercent.toFixed(2)}%`;
-        document.getElementById("totalInvestment").textContent =
-            `₹${totalInvestment.toFixed(2)}`;
-        document.getElementById("winRate").textContent =
-            `${winRate.toFixed(1)}%`;
-
-        // Update P&L color
-        const pnlElement = document.getElementById("totalPnl");
-        const pnlPercentElement = document.getElementById("totalPnlPercent");
-        if (totalPnl >= 0) {
-            pnlElement.className = "metric-value text-success";
-            pnlPercentElement.className = "metric-label change-positive";
-        } else {
-            pnlElement.className = "metric-value text-danger";
-            pnlPercentElement.className = "metric-label change-negative";
-        }
-    }
-
-    function showErrorState(message) {
-        const tableBody = document.getElementById("signalsTableBody");
-        tableBody.innerHTML = `
+function showErrorState(message) {
+    const tableBody = document.getElementById('signalsTableBody');
+    tableBody.innerHTML = `
         <tr>
             <td colspan="11" class="text-center py-4">
                 <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>
@@ -668,56 +564,42 @@ endblock %} {% block head %}
             </td>
         </tr>
     `;
-    }
+}
 
-    function refreshSignals() {
-        document.getElementById("lastUpdateTime").textContent =
-            new Date().toLocaleTimeString();
-        loadSignals();
-        loadRecentActivity();
-    }
+function refreshSignals() {
+    document.getElementById('lastUpdateTime').textContent = new Date().toLocaleTimeString();
+    loadSignals();
+    loadRecentActivity();
+}
 
-    function filterSignals(type) {
-        // Implement signal filtering logic
-        console.log("Filtering signals by:", type);
-        // Reload signals with filter
-        loadSignals();
-    }
+function filterSignals(type) {
+    // Implement signal filtering logic
+    console.log('Filtering signals by:', type);
+    // Reload signals with filter
+    loadSignals();
+}
 
-    function loadActiveSignals() {
-        // Load only active signals
-        filterSignals("ACTIVE");
-    }
+function loadActiveSignals() {
+    // Load only active signals
+    filterSignals('ACTIVE');
+}
 
-    function loadRecentActivity() {
-        const activityContainer = document.getElementById("recentActivity");
+function loadRecentActivity() {
+    const activityContainer = document.getElementById('recentActivity');
+    
+    // Sample recent activity
+    const activities = [
+        { type: 'BUY', symbol: 'RELIANCE', time: '2 minutes ago', pnl: '+₹1,250' },
+        { type: 'SELL', symbol: 'TCS', time: '15 minutes ago', pnl: '-₹850' },
+        { type: 'BUY', symbol: 'INFY', time: '1 hour ago', pnl: '+₹2,100' }
+    ];
 
-        // Sample recent activity
-        const activities = [
-            {
-                type: "BUY",
-                symbol: "RELIANCE",
-                time: "2 minutes ago",
-                pnl: "+₹1,250",
-            },
-            {
-                type: "SELL",
-                symbol: "TCS",
-                time: "15 minutes ago",
-                pnl: "-₹850",
-            },
-            { type: "BUY", symbol: "INFY", time: "1 hour ago", pnl: "+₹2,100" },
-        ];
-
-        let html = "";
-        activities.forEach((activity) => {
-            const typeClass =
-                activity.type === "BUY" ? "text-success" : "text-danger";
-            const pnlClass = activity.pnl.startsWith("+")
-                ? "text-success"
-                : "text-danger";
-
-            html += `
+    let html = '';
+    activities.forEach(activity => {
+        const typeClass = activity.type === 'BUY' ? 'text-success' : 'text-danger';
+        const pnlClass = activity.pnl.startsWith('+') ? 'text-success' : 'text-danger';
+        
+        html += `
             <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
                 <div>
                     <span class="${typeClass} fw-bold">${activity.type}</span>
@@ -727,42 +609,38 @@ endblock %} {% block head %}
                 <span class="${pnlClass} fw-bold">${activity.pnl}</span>
             </div>
         `;
-        });
+    });
 
-        activityContainer.innerHTML =
-            html ||
-            `
+    activityContainer.innerHTML = html || `
         <div class="text-center py-4">
             <i class="fas fa-clock fa-2x text-muted mb-3"></i>
             <p class="text-muted mb-0">No recent activity to display</p>
         </div>
     `;
+}
+
+function viewSignalDetails(signalId) {
+    // Redirect to signal details or open modal
+    window.location.href = `/trading-signals?signal=${signalId}`;
+}
+
+function createDeal(signalId) {
+    // Create a deal from signal
+    if (confirm('Create a deal from this signal?')) {
+        window.location.href = `/deals?signal=${signalId}`;
     }
+}
 
-    function viewSignalDetails(signalId) {
-        // Redirect to signal details or open modal
-        window.location.href = `/trading-signals?signal=${signalId}`;
+// Chart period selection
+document.addEventListener('click', function(e) {
+    if (e.target.hasAttribute('data-period')) {
+        document.querySelectorAll('[data-period]').forEach(btn => btn.classList.remove('active'));
+        e.target.classList.add('active');
+        
+        const period = e.target.getAttribute('data-period');
+        console.log('Loading data for period:', period);
+        // Implement period-based data loading here
     }
-
-    function createDeal(signalId) {
-        // Create a deal from signal
-        if (confirm("Create a deal from this signal?")) {
-            window.location.href = `/deals?signal=${signalId}`;
-        }
-    }
-
-    // Chart period selection
-    document.addEventListener("click", function (e) {
-        if (e.target.hasAttribute("data-period")) {
-            document
-                .querySelectorAll("[data-period]")
-                .forEach((btn) => btn.classList.remove("active"));
-            e.target.classList.add("active");
-
-            const period = e.target.getAttribute("data-period");
-            console.log("Loading data for period:", period);
-            // Implement period-based data loading here
-        }
-    });
+});
 </script>
 {% endblock %}
