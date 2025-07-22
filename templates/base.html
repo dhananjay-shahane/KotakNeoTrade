@@ -143,10 +143,13 @@
                     </div>
                     <div class="user-info">
                         <h6>
-                            {% if session.get('authenticated') %} {{ session.get('user_id') }} {% else %} Guest {% endif %}
+                            {% if session.get('authenticated') %} {{
+                            session.get('user_id') }} {% else %} Guest {% endif
+                            %}
                         </h6>
                         <small>
-                            {% if session.get('authenticated') %} Trading Account {% else %} Not Logged In {% endif %}
+                            {% if session.get('authenticated') %} Trading
+                            Account {% else %} Not Logged In {% endif %}
                         </small>
                     </div>
                     <i
@@ -186,6 +189,12 @@
                         <span>Deals</span>
                     </a>
                 </div>
+                <div class="nav-item">
+                    <a href="{{ url_for('show_charts') }}" class="nav-link">
+                        <i class="fas fa-chart-line nav-icon"></i>
+                        <span>Charts</span>
+                    </a>
+                </div>
             </div>
 
             <!-- Kotak Neo Trading Section (shown only after Kotak login) -->
@@ -198,7 +207,10 @@
             >
                 <div class="nav-items">
                     <div class="nav-item">
-                        <a href="{{ url_for('show_dashboard') }}" class="nav-link">
+                        <a
+                            href="{{ url_for('show_dashboard') }}"
+                            class="nav-link"
+                        >
                             <i class="fas fa-list-alt nav-icon"></i>
                             <span>Dashboard</span>
                         </a>

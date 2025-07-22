@@ -1,5 +1,6 @@
+
 {% extends "base.html" %} 
-{% block title %}Portfolio - Trading Platform{% endblock %} 
+{% block title %}Portfolio - Trading Signals{% endblock %} 
 
 {% block head %}
 <link href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css" rel="stylesheet">
@@ -78,7 +79,7 @@
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     }
 
-    .holdings-table {
+    .signals-table {
         background: var(--card-bg);
         border-radius: 0.75rem;
         overflow: hidden;
@@ -90,19 +91,19 @@
         --bs-table-border-color: var(--border-color);
     }
 
-    .performance-indicator {
+    .signal-status {
         padding: 4px 8px;
         border-radius: 20px;
         font-size: 0.75rem;
         font-weight: 600;
     }
 
-    .performance-positive {
+    .signal-active {
         background: rgba(16, 185, 129, 0.2);
         color: var(--success-color);
     }
 
-    .performance-negative {
+    .signal-closed {
         background: rgba(239, 68, 68, 0.2);
         color: var(--danger-color);
     }
@@ -112,6 +113,16 @@
         color: white;
         border: none;
         border-radius: 0.75rem;
+    }
+
+    .signal-pnl-positive {
+        color: var(--success-color);
+        font-weight: 600;
+    }
+
+    .signal-pnl-negative {
+        color: var(--danger-color);
+        font-weight: 600;
     }
 </style>
 {% endblock %}
@@ -127,10 +138,10 @@
                         <div class="col-md-8">
                             <div class="d-flex align-items-center">
                                 <div class="user-avatar-large me-3">
-                                    <i class="fas fa-user-circle fa-3x text-white"></i>
+                                    <i class="fas fa-chart-line fa-3x text-white"></i>
                                 </div>
                                 <div>
-                                    <h3 class="text-white mb-1">Portfolio Dashboard</h3>
+                                    <h3 class="text-white mb-1">Trading Signals Portfolio</h3>
                                     <p class="text-white-50 mb-0">
                                         <i class="fas fa-clock me-1"></i>
                                         Last updated: <span id="lastUpdateTime">Just now</span>
@@ -140,12 +151,12 @@
                         </div>
                         <div class="col-md-4 text-end">
                             <div class="d-flex gap-2 justify-content-end">
-                                <a href="/positions" class="btn btn-outline-light">
-                                    <i class="fas fa-chart-line me-1"></i>Positions
+                                <a href="/trading-signals" class="btn btn-outline-light">
+                                    <i class="fas fa-signal me-1"></i>All Signals
                                 </a>
-                                <a href="/orders" class="btn btn-outline-light">
-                                    <i class="fas fa-list me-1"></i>Orders
-                                </a>
+                                <button class="btn btn-outline-light" onclick="refreshSignals()">
+                                    <i class="fas fa-sync me-1"></i>Refresh
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -154,18 +165,18 @@
         </div>
     </div>
 
-    <!-- Portfolio Summary Cards -->
+    <!-- Trading Signals Summary Cards -->
     <div class="row portfolio-summary-cards mb-4">
         <div class="col-md-3 mb-3">
             <div class="card border-0 h-100">
                 <div class="card-body text-center">
                     <div class="stats-icon bg-primary text-white mx-auto mb-3">
-                        <i class="fas fa-wallet"></i>
+                        <i class="fas fa-chart-line"></i>
                     </div>
-                    <h5 class="card-title">Portfolio Value</h5>
-                    <div class="metric-value text-primary" id="portfolioValue">₹0.00</div>
+                    <h5 class="card-title">Total Signals</h5>
+                    <div class="metric-value text-primary" id="totalSignals">0</div>
                     <div class="metric-label">
-                        <span class="change-positive" id="portfolioChange">+₹0.00 (0.00%)</span>
+                        <span class="text-success" id="activeSignals">0 Active</span>
                     </div>
                 </div>
             </div>
@@ -175,12 +186,12 @@
             <div class="card border-0 h-100">
                 <div class="card-body text-center">
                     <div class="stats-icon bg-success text-white mx-auto mb-3">
-                        <i class="fas fa-chart-line"></i>
+                        <i class="fas fa-arrow-up"></i>
                     </div>
-                    <h5 class="card-title">Today's P&L</h5>
-                    <div class="metric-value text-success" id="todayPnl">₹0.00</div>
+                    <h5 class="card-title">Total P&L</h5>
+                    <div class="metric-value text-success" id="totalPnl">₹0.00</div>
                     <div class="metric-label">
-                        <span class="change-positive" id="todayPnlPercent">+0.00%</span>
+                        <span class="change-positive" id="totalPnlPercent">+0.00%</span>
                     </div>
                 </div>
             </div>
@@ -192,9 +203,9 @@
                     <div class="stats-icon bg-warning text-dark mx-auto mb-3">
                         <i class="fas fa-coins"></i>
                     </div>
-                    <h5 class="card-title">Available Balance</h5>
-                    <div class="metric-value text-warning" id="availableBalance">₹0.00</div>
-                    <div class="metric-label">Cash available</div>
+                    <h5 class="card-title">Total Investment</h5>
+                    <div class="metric-value text-warning" id="totalInvestment">₹0.00</div>
+                    <div class="metric-label">Invested amount</div>
                 </div>
             </div>
         </div>
@@ -203,11 +214,11 @@
             <div class="card border-0 h-100">
                 <div class="card-body text-center">
                     <div class="stats-icon bg-info text-white mx-auto mb-3">
-                        <i class="fas fa-exchange-alt"></i>
+                        <i class="fas fa-trophy"></i>
                     </div>
-                    <h5 class="card-title">Active Holdings</h5>
-                    <div class="metric-value text-info" id="activeHoldings">0</div>
-                    <div class="metric-label">Total stocks</div>
+                    <h5 class="card-title">Win Rate</h5>
+                    <div class="metric-value text-info" id="winRate">0%</div>
+                    <div class="metric-label">Success ratio</div>
                 </div>
             </div>
         </div>
@@ -220,7 +231,7 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="fas fa-chart-area me-2"></i>Portfolio Performance
+                        <i class="fas fa-chart-area me-2"></i>Signals Performance
                     </h5>
                     <div class="btn-group btn-group-sm">
                         <button class="btn btn-outline-primary active" data-period="1D">1D</button>
@@ -231,7 +242,7 @@
                 </div>
                 <div class="card-body">
                     <div class="chart-container">
-                        <canvas id="portfolioChart"></canvas>
+                        <canvas id="signalsChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -242,21 +253,21 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                        <i class="fas fa-bolt me-2"></i>Signal Actions
                     </h5>
                 </div>
                 <div class="card-body quick-actions">
                     <div class="d-grid gap-2">
-                        <a href="/orders" class="btn btn-primary">
-                            <i class="fas fa-plus me-2"></i>Place Order
+                        <a href="/trading-signals" class="btn btn-primary">
+                            <i class="fas fa-signal me-2"></i>View All Signals
                         </a>
-                        <a href="/holdings" class="btn btn-success">
-                            <i class="fas fa-eye me-2"></i>View Holdings
+                        <a href="/deals" class="btn btn-success">
+                            <i class="fas fa-handshake me-2"></i>Active Deals
                         </a>
-                        <a href="/positions" class="btn btn-info">
-                            <i class="fas fa-chart-pie me-2"></i>View Positions
-                        </a>
-                        <button class="btn btn-warning" onclick="refreshPortfolio()">
+                        <button class="btn btn-info" onclick="loadActiveSignals()">
+                            <i class="fas fa-chart-pie me-2"></i>Active Signals Only
+                        </button>
+                        <button class="btn btn-warning" onclick="refreshSignals()">
                             <i class="fas fa-sync me-2"></i>Refresh Data
                         </button>
                     </div>
@@ -265,39 +276,54 @@
         </div>
     </div>
 
-    <!-- Holdings Table -->
+    <!-- Active Trading Signals Table -->
     <div class="row">
         <div class="col-12 mb-4">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="fas fa-briefcase me-2"></i>Current Holdings
+                        <i class="fas fa-signal me-2"></i>Active Trading Signals
                     </h5>
-                    <button class="btn btn-sm btn-outline-primary" onclick="loadHoldings()">
-                        <i class="fas fa-sync me-1"></i>Refresh
-                    </button>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-primary" onclick="filterSignals('ALL')">
+                            <i class="fas fa-list me-1"></i>All
+                        </button>
+                        <button class="btn btn-sm btn-outline-success" onclick="filterSignals('BUY')">
+                            <i class="fas fa-arrow-up me-1"></i>Buy
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="filterSignals('SELL')">
+                            <i class="fas fa-arrow-down me-1"></i>Sell
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary" onclick="loadSignals()">
+                            <i class="fas fa-sync me-1"></i>Refresh
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body p-0">
-                    <div class="table-responsive holdings-table">
-                        <table class="table table-dark mb-0" id="holdingsTable">
+                    <div class="table-responsive signals-table">
+                        <table class="table table-dark mb-0" id="signalsTable">
                             <thead>
                                 <tr>
                                     <th>Symbol</th>
-                                    <th>Quantity</th>
-                                    <th>Avg Price</th>
+                                    <th>Signal Type</th>
+                                    <th>Entry Price</th>
                                     <th>Current Price</th>
+                                    <th>Quantity</th>
+                                    <th>Investment</th>
                                     <th>P&L</th>
-                                    <th>Performance</th>
+                                    <th>P&L %</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="holdingsTableBody">
+                            <tbody id="signalsTableBody">
                                 <tr>
-                                    <td colspan="7" class="text-center py-4">
+                                    <td colspan="11" class="text-center py-4">
                                         <div class="spinner-border text-primary" role="status">
                                             <span class="visually-hidden">Loading...</span>
                                         </div>
-                                        <p class="mt-2 mb-0 text-muted">Loading portfolio data...</p>
+                                        <p class="mt-2 mb-0 text-muted">Loading trading signals...</p>
                                     </td>
                                 </tr>
                             </tbody>
@@ -308,20 +334,20 @@
         </div>
     </div>
 
-    <!-- Recent Activity -->
+    <!-- Recent Signal Activity -->
     <div class="row">
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="fas fa-history me-2"></i>Recent Activity
+                        <i class="fas fa-history me-2"></i>Recent Signal Activity
                     </h5>
                 </div>
                 <div class="card-body">
                     <div id="recentActivity">
                         <div class="text-center py-4">
                             <i class="fas fa-clock fa-2x text-muted mb-3"></i>
-                            <p class="text-muted mb-0">No recent activity to display</p>
+                            <p class="text-muted mb-0">Loading recent signal activity...</p>
                         </div>
                     </div>
                 </div>
@@ -344,27 +370,27 @@ document.addEventListener("DOMContentLoaded", function () {
         portfolioLink.classList.add("active");
     }
 
-    // Initialize portfolio chart
-    initializePortfolioChart();
+    // Initialize signals chart
+    initializeSignalsChart();
 
     // Auto-refresh functionality
-    setInterval(refreshPortfolioData, 30000);
+    setInterval(refreshSignals, 30000);
 
     // Initial data load
-    refreshPortfolioData();
-    loadHoldings();
+    loadSignals();
+    loadRecentActivity();
 });
 
-function initializePortfolioChart() {
-    const ctx = document.getElementById('portfolioChart');
+function initializeSignalsChart() {
+    const ctx = document.getElementById('signalsChart');
     if (!ctx) return;
 
-    // Sample data for portfolio performance
+    // Sample data for signals performance
     const chartData = {
         labels: ['9:15', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '15:30'],
         datasets: [{
-            label: 'Portfolio Value',
-            data: [100000, 102500, 98000, 105000, 107500, 103000, 110000, 112000],
+            label: 'Cumulative P&L',
+            data: [0, 2500, -1000, 5000, 7500, 3000, 10000, 12000],
             borderColor: '#0d6efd',
             backgroundColor: 'rgba(13, 110, 253, 0.1)',
             borderWidth: 3,
@@ -413,151 +439,208 @@ function initializePortfolioChart() {
     });
 }
 
-function refreshPortfolioData() {
-    // Update last refresh time
-    document.getElementById('lastUpdateTime').textContent = new Date().toLocaleTimeString();
-
-    // Simulate real-time data updates
-    updateMetrics();
-}
-
-function updateMetrics() {
-    // Sample data updates - replace with actual API calls
-    const portfolioValue = document.getElementById('portfolioValue');
-    const portfolioChange = document.getElementById('portfolioChange');
-    const todayPnl = document.getElementById('todayPnl');
-    const todayPnlPercent = document.getElementById('todayPnlPercent');
-    const availableBalance = document.getElementById('availableBalance');
-    const activeHoldings = document.getElementById('activeHoldings');
-
-    if (portfolioValue) portfolioValue.textContent = '₹1,12,450.75';
-    if (portfolioChange) portfolioChange.textContent = '+₹2,450.75 (+2.23%)';
-    if (todayPnl) todayPnl.textContent = '₹1,250.50';
-    if (todayPnlPercent) todayPnlPercent.textContent = '+1.12%';
-    if (availableBalance) availableBalance.textContent = '₹45,000.00';
-    if (activeHoldings) activeHoldings.textContent = '8';
-}
-
-function loadHoldings() {
-    const tableBody = document.getElementById('holdingsTableBody');
-
+function loadSignals() {
+    const tableBody = document.getElementById('signalsTableBody');
+    
     // Show loading state
     tableBody.innerHTML = `
         <tr>
-            <td colspan="7" class="text-center py-4">
+            <td colspan="11" class="text-center py-4">
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
-                <p class="mt-2 mb-0 text-muted">Loading holdings...</p>
+                <p class="mt-2 mb-0 text-muted">Loading signals...</p>
             </td>
         </tr>
     `;
 
-    // Simulate API call
-    setTimeout(() => {
-        const sampleHoldings = [
-            {
-                symbol: 'RELIANCE',
-                quantity: 10,
-                avgPrice: 2450.50,
-                currentPrice: 2525.75,
-                pnl: 752.50,
-                performance: 3.07
-            },
-            {
-                symbol: 'TCS',
-                quantity: 5,
-                avgPrice: 3620.00,
-                currentPrice: 3595.25,
-                pnl: -123.75,
-                performance: -0.68
-            },
-            {
-                symbol: 'INFY',
-                quantity: 15,
-                avgPrice: 1750.25,
-                currentPrice: 1825.40,
-                pnl: 1127.25,
-                performance: 4.29
+    // Fetch signals from API
+    fetch('/api/etf-signals-data')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data) {
+                displaySignals(data.data);
+                updateSummaryCards(data.data);
+            } else {
+                showErrorState('Failed to load signals');
             }
-        ];
-
-        let html = '';
-        sampleHoldings.forEach(holding => {
-            const pnlClass = holding.pnl >= 0 ? 'text-success' : 'text-danger';
-            const perfClass = holding.performance >= 0 ? 'performance-positive' : 'performance-negative';
-            const perfSign = holding.performance >= 0 ? '+' : '';
-
-            html += `
-                <tr>
-                    <td><strong>${holding.symbol}</strong></td>
-                    <td>${holding.quantity}</td>
-                    <td>₹${holding.avgPrice.toFixed(2)}</td>
-                    <td>₹${holding.currentPrice.toFixed(2)}</td>
-                    <td class="${pnlClass}">₹${holding.pnl.toFixed(2)}</td>
-                    <td>
-                        <span class="performance-indicator ${perfClass}">
-                            ${perfSign}${holding.performance.toFixed(2)}%
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary me-1" onclick="viewDetails('${holding.symbol}')">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="sellStock('${holding.symbol}')">
-                            <i class="fas fa-minus"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
+        })
+        .catch(error => {
+            console.error('Error loading signals:', error);
+            showErrorState('Error loading signals');
         });
-
-        tableBody.innerHTML = html;
-    }, 1000);
 }
 
-function refreshPortfolio() {
-    const button = event.target;
-    const originalText = button.innerHTML;
+function displaySignals(signals) {
+    const tableBody = document.getElementById('signalsTableBody');
+    
+    if (!signals || signals.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="11" class="text-center py-4">
+                    <i class="fas fa-chart-line fa-2x text-muted mb-3"></i>
+                    <p class="text-muted mb-0">No trading signals found</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
 
-    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Refreshing...';
-    button.disabled = true;
+    let html = '';
+    signals.slice(0, 10).forEach(signal => {
+        const pnlClass = signal.pl >= 0 ? 'signal-pnl-positive' : 'signal-pnl-negative';
+        const statusClass = signal.status === 'ACTIVE' ? 'signal-active' : 'signal-closed';
+        const signalTypeIcon = signal.pos > 0 ? 'fa-arrow-up text-success' : 'fa-arrow-down text-danger';
+        
+        html += `
+            <tr>
+                <td><strong>${signal.symbol || 'N/A'}</strong></td>
+                <td>
+                    <i class="fas ${signalTypeIcon} me-1"></i>
+                    ${signal.pos > 0 ? 'BUY' : 'SELL'}
+                </td>
+                <td>₹${(signal.ep || 0).toFixed(2)}</td>
+                <td>₹${(signal.cmp || 0).toFixed(2)}</td>
+                <td>${signal.qty || 0}</td>
+                <td>₹${(signal.inv || 0).toFixed(2)}</td>
+                <td class="${pnlClass}">₹${(signal.pl || 0).toFixed(2)}</td>
+                <td class="${pnlClass}">${signal.chan || '0.00%'}</td>
+                <td>
+                    <span class="signal-status ${statusClass}">
+                        ${signal.status || 'ACTIVE'}
+                    </span>
+                </td>
+                <td>${signal.date || 'N/A'}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="viewSignalDetails('${signal.id}')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-success" onclick="createDeal('${signal.id}')">
+                        <i class="fas fa-handshake"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
 
-    // Simulate API call
-    setTimeout(() => {
-        refreshPortfolioData();
-        loadHoldings();
-        button.innerHTML = originalText;
-        button.disabled = false;
-
-        // Show success message
-        if (typeof showToaster === 'function') {
-            showToaster('Portfolio Updated', 'Your portfolio data has been refreshed successfully', 'success');
-        }
-    }, 2000);
+    tableBody.innerHTML = html;
 }
 
-function viewDetails(symbol) {
-    alert(`Viewing details for ${symbol}`);
+function updateSummaryCards(signals) {
+    const totalSignals = signals.length;
+    const activeSignals = signals.filter(s => s.status === 'ACTIVE').length;
+    const totalPnl = signals.reduce((sum, s) => sum + (s.pl || 0), 0);
+    const totalInvestment = signals.reduce((sum, s) => sum + (s.inv || 0), 0);
+    const totalPnlPercent = totalInvestment > 0 ? (totalPnl / totalInvestment * 100) : 0;
+    const winningSignals = signals.filter(s => (s.pl || 0) > 0).length;
+    const winRate = totalSignals > 0 ? (winningSignals / totalSignals * 100) : 0;
+
+    document.getElementById('totalSignals').textContent = totalSignals;
+    document.getElementById('activeSignals').textContent = `${activeSignals} Active`;
+    document.getElementById('totalPnl').textContent = `₹${totalPnl.toFixed(2)}`;
+    document.getElementById('totalPnlPercent').textContent = `${totalPnlPercent >= 0 ? '+' : ''}${totalPnlPercent.toFixed(2)}%`;
+    document.getElementById('totalInvestment').textContent = `₹${totalInvestment.toFixed(2)}`;
+    document.getElementById('winRate').textContent = `${winRate.toFixed(1)}%`;
+
+    // Update P&L color
+    const pnlElement = document.getElementById('totalPnl');
+    const pnlPercentElement = document.getElementById('totalPnlPercent');
+    if (totalPnl >= 0) {
+        pnlElement.className = 'metric-value text-success';
+        pnlPercentElement.className = 'metric-label change-positive';
+    } else {
+        pnlElement.className = 'metric-value text-danger';
+        pnlPercentElement.className = 'metric-label change-negative';
+    }
 }
 
-function sellStock(symbol) {
-    if (confirm(`Are you sure you want to sell ${symbol}?`)) {
-        alert(`Sell order placed for ${symbol}`);
+function showErrorState(message) {
+    const tableBody = document.getElementById('signalsTableBody');
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="11" class="text-center py-4">
+                <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>
+                <p class="text-muted mb-0">${message}</p>
+            </td>
+        </tr>
+    `;
+}
+
+function refreshSignals() {
+    document.getElementById('lastUpdateTime').textContent = new Date().toLocaleTimeString();
+    loadSignals();
+    loadRecentActivity();
+}
+
+function filterSignals(type) {
+    // Implement signal filtering logic
+    console.log('Filtering signals by:', type);
+    // Reload signals with filter
+    loadSignals();
+}
+
+function loadActiveSignals() {
+    // Load only active signals
+    filterSignals('ACTIVE');
+}
+
+function loadRecentActivity() {
+    const activityContainer = document.getElementById('recentActivity');
+    
+    // Sample recent activity
+    const activities = [
+        { type: 'BUY', symbol: 'RELIANCE', time: '2 minutes ago', pnl: '+₹1,250' },
+        { type: 'SELL', symbol: 'TCS', time: '15 minutes ago', pnl: '-₹850' },
+        { type: 'BUY', symbol: 'INFY', time: '1 hour ago', pnl: '+₹2,100' }
+    ];
+
+    let html = '';
+    activities.forEach(activity => {
+        const typeClass = activity.type === 'BUY' ? 'text-success' : 'text-danger';
+        const pnlClass = activity.pnl.startsWith('+') ? 'text-success' : 'text-danger';
+        
+        html += `
+            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <div>
+                    <span class="${typeClass} fw-bold">${activity.type}</span>
+                    <strong class="ms-2">${activity.symbol}</strong>
+                    <small class="text-muted ms-2">${activity.time}</small>
+                </div>
+                <span class="${pnlClass} fw-bold">${activity.pnl}</span>
+            </div>
+        `;
+    });
+
+    activityContainer.innerHTML = html || `
+        <div class="text-center py-4">
+            <i class="fas fa-clock fa-2x text-muted mb-3"></i>
+            <p class="text-muted mb-0">No recent activity to display</p>
+        </div>
+    `;
+}
+
+function viewSignalDetails(signalId) {
+    // Redirect to signal details or open modal
+    window.location.href = `/trading-signals?signal=${signalId}`;
+}
+
+function createDeal(signalId) {
+    // Create a deal from signal
+    if (confirm('Create a deal from this signal?')) {
+        window.location.href = `/deals?signal=${signalId}`;
     }
 }
 
 // Chart period selection
-document.querySelectorAll('[data-period]').forEach(button => {
-    button.addEventListener('click', function() {
+document.addEventListener('click', function(e) {
+    if (e.target.hasAttribute('data-period')) {
         document.querySelectorAll('[data-period]').forEach(btn => btn.classList.remove('active'));
-        this.classList.add('active');
-
-        // Update chart with new period data
-        const period = this.getAttribute('data-period');
+        e.target.classList.add('active');
+        
+        const period = e.target.getAttribute('data-period');
         console.log('Loading data for period:', period);
         // Implement period-based data loading here
-    });
+    }
 });
 </script>
 {% endblock %}
