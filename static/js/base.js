@@ -72,6 +72,36 @@ function showToaster(title, message, type = "info", duration = 3000) {
     }, duration);
 }
 
+// Set active navigation item based on current page
+function setActiveNavigation() {
+    const currentPath = window.location.pathname;
+    const navLinks = document.querySelectorAll('.sidebar .nav-link');
+    
+    // Remove active class from all nav links
+    navLinks.forEach(link => {
+        link.classList.remove('active');
+        link.parentElement.classList.remove('active');
+    });
+    
+    // Add active class to current page link
+    navLinks.forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && (currentPath === href || currentPath.startsWith(href + '/'))) {
+            link.classList.add('active');
+            link.parentElement.classList.add('active');
+        }
+    });
+    
+    // Special handling for exact matches
+    if (currentPath === '/portfolio') {
+        const portfolioLink = document.querySelector('a[href="/portfolio"]');
+        if (portfolioLink) {
+            portfolioLink.classList.add('active');
+            portfolioLink.parentElement.classList.add('active');
+        }
+    }
+}
+
 // Missing functions that are called from the HTML
 function showLoginModal() {
     const modal = new bootstrap.Modal(
@@ -833,19 +863,9 @@ document.addEventListener("click", function (event) {
     }
 });
 
-// Navigation active state
+// Navigation active state - enhanced version
 document.addEventListener("DOMContentLoaded", function () {
-    const navLinks = document.querySelectorAll(".nav-link");
-    const currentPath = window.location.pathname;
-
-    navLinks.forEach((link) => {
-        const href = link.getAttribute("href");
-        if (href && (href === currentPath || currentPath.includes(href))) {
-            link.classList.add("active");
-        } else {
-            link.classList.remove("active");
-        }
-    });
+    setActiveNavigation();
 });
 
 // Smooth transitions for theme changes
