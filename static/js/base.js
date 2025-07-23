@@ -76,23 +76,23 @@ function showToaster(title, message, type = "info", duration = 3000) {
 function setActiveNavigation() {
     const currentPath = window.location.pathname;
     const navLinks = document.querySelectorAll('.sidebar .nav-link');
-
+    
     console.log('Setting active navigation for path:', currentPath);
     console.log('Found nav links:', navLinks.length);
-
+    
     // Remove active class from all nav links
     navLinks.forEach(link => {
         link.classList.remove('active');
         link.parentElement.classList.remove('active');
     });
-
+    
     let found = false;
-
+    
     // Add active class to current page link
     navLinks.forEach((link, index) => {
         const href = link.getAttribute('href');
         console.log(`Link ${index}: href="${href}", currentPath="${currentPath}"`);
-
+        
         if (href && currentPath === href) {
             console.log('Exact match found for:', href);
             link.classList.add('active');
@@ -100,13 +100,13 @@ function setActiveNavigation() {
             found = true;
         }
     });
-
+    
     // Force portfolio page active if not found
     if (!found && currentPath === '/portfolio') {
         console.log('Forcing portfolio active state');
         const portfolioLinks = document.querySelectorAll('a[href*="portfolio"]');
         console.log('Found portfolio links:', portfolioLinks.length);
-
+        
         portfolioLinks.forEach(link => {
             console.log('Portfolio link href:', link.getAttribute('href'));
             if (link.getAttribute('href').includes('portfolio')) {
@@ -116,7 +116,7 @@ function setActiveNavigation() {
             }
         });
     }
-
+    
     console.log('Active navigation setup complete');
 }
 
@@ -131,7 +131,7 @@ function showLoginModal() {
 // Handle Kotak-only logout
 function logoutKotakOnly(event) {
     event.preventDefault();
-
+    
     // Make AJAX request to logout only from Kotak
     fetch('/logout-kotak', {
         method: 'GET',
@@ -143,11 +143,11 @@ function logoutKotakOnly(event) {
             const kotakAccountBox = document.getElementById('kotakAccountBox');
             const kotakNeoSection = document.getElementById('kotakNeoSection');
             const accountLogin = document.getElementById('accountLogin');
-
+            
             if (kotakAccountBox) kotakAccountBox.style.display = 'none';
             if (kotakNeoSection) kotakNeoSection.style.display = 'none';
             if (accountLogin) accountLogin.style.display = 'block';
-
+            
             showToaster('Success', 'Logged out from Kotak Neo successfully', 'success');
         } else {
             showToaster('Error', 'Failed to logout from Kotak', 'error');
@@ -304,14 +304,14 @@ document.addEventListener("DOMContentLoaded", function () {
         themeToggle.checked = savedTheme === "light";
         themeToggle.addEventListener("change", toggleTheme);
     }
-
+    
     // Initialize font size
     const savedFontSize = localStorage.getItem('website-font-size') || '14';
     document.documentElement.style.setProperty('--global-font-size', savedFontSize + 'px');
-
+    
     // Initialize settings modal
     initializeSettingsModal();
-
+    
     // Initialize notification system
     initializeNotifications();
 });
@@ -342,7 +342,7 @@ function adjustFontSize(action) {
     const root = document.documentElement;
     const currentSize = parseInt(getComputedStyle(root).getPropertyValue('--global-font-size')) || 14;
     let newSize = currentSize;
-
+    
     if (action === 'increase' && currentSize < 20) {
         newSize = currentSize + 1;
     } else if (action === 'decrease' && currentSize > 10) {
@@ -350,16 +350,16 @@ function adjustFontSize(action) {
     } else if (action === 'reset') {
         newSize = 14;
     }
-
+    
     root.style.setProperty('--global-font-size', newSize + 'px');
     localStorage.setItem('website-font-size', newSize);
-
+    
     // Update display
     const fontSizeDisplay = document.getElementById('fontSizeDisplay');
     if (fontSizeDisplay) {
         fontSizeDisplay.textContent = newSize + 'px';
     }
-
+    
     if (typeof showToaster === 'function') {
         showToaster('Font Size', `Font size set to ${newSize}px`, 'success');
     }
@@ -380,12 +380,12 @@ function applySettings() {
         const newSize = parseInt(fontSizeSelect.value);
         document.documentElement.style.setProperty('--global-font-size', newSize + 'px');
         localStorage.setItem('website-font-size', newSize);
-
+        
         if (typeof showToaster === 'function') {
             showToaster('Settings Applied', `Font size set to ${newSize}px`, 'success');
         }
     }
-
+    
     // Close modal
     const modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
     if (modal) {
@@ -399,7 +399,7 @@ function initializeSettingsModal() {
     const fontSizeSelect = document.getElementById('fontSizeSelect');
     if (fontSizeSelect) {
         fontSizeSelect.value = savedFontSize;
-
+        
         // Add event listener for live preview
         fontSizeSelect.addEventListener('change', function() {
             const preview = document.querySelector('.font-size-preview');
@@ -417,7 +417,7 @@ function showKotakLoginForm() {
         card.classList.remove('active');
     });
     document.getElementById('kotakCard')?.classList.add('active');
-
+    
     // Show Kotak login form
     const loginForm = document.getElementById('kotakLoginForm');
     if (loginForm) {
@@ -432,12 +432,12 @@ function initializeNotifications() {
     if (notificationCount) {
         notificationCount.textContent = '0';
     }
-
+    
     // Close notification inbox when clicking outside
     document.addEventListener('click', function(event) {
         const inbox = document.getElementById('notificationInbox');
         const notificationBtn = document.querySelector('.notification-btn');
-
+        
         if (inbox && notificationBtn && 
             !inbox.contains(event.target) && 
             !notificationBtn.contains(event.target) &&
@@ -1527,40 +1527,35 @@ function formatLoginTime() {
     return timeString;
 }
 
-// Update sidebar with account data
 function updateSidebar(accountData) {
-    console.log("Updating sidebar with data:", accountData);
-
-    const kotakSection = document.querySelector('.kotak-neo-section');
-    const kotakAccountBox = document.getElementById("kotakAccountBox");
-    const accountLogin = document.getElementById("accountLogin");
+    console.log('Updating sidebar with data:', accountData);
 
     if (!accountData) {
-        console.log("No account data provided");
-        // Hide Kotak sections when no account data
-        if (kotakSection) {
-            kotakSection.style.display = 'none';
-        }
-        if (kotakAccountBox) {
-            kotakAccountBox.style.display = 'none';
-        }
-        if (accountLogin) {
-            accountLogin.style.display = 'block';
-        }
+        console.log('No account data provided');
         return;
     }
 
-    // Show/hide Kotak sections based on login status
-    if (accountData.kotak_logged_in) {
+    try {
+        // Update Kotak account section visibility
+        const kotakSection = document.querySelector('.kotak-account-section');
         if (kotakSection) {
-            kotakSection.style.display = 'block';
+            kotakSection.style.display = accountData ? 'block' : 'none';
         }
-        showKotakAccountBox(accountData);
-    } else {
-        if (kotakSection) {
-            kotakSection.style.display = 'none';
-        }
-        hideKotakAccountBox();
+
+        // Update account info elements if they exist
+        const ucc = document.getElementById('sidebar-ucc');
+        const mobile = document.getElementById('sidebar-mobile'); 
+        const greeting = document.getElementById('sidebar-greeting');
+        const status = document.getElementById('sidebar-status');
+
+        if (ucc && accountData.ucc) ucc.textContent = accountData.ucc;
+        if (mobile && accountData.mobile) mobile.textContent = accountData.mobile;
+        if (greeting && accountData.greeting_name) greeting.textContent = accountData.greeting_name;
+        if (status && accountData.status) status.textContent = accountData.status;
+
+        console.log('Sidebar updated successfully');
+    } catch (error) {
+        console.error('Error updating sidebar:', error);
     }
 }
 
