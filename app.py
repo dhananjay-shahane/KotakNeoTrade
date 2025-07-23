@@ -390,7 +390,7 @@ def portfolio():
     # Check if user is authenticated - no guest access allowed
     if not (session.get('authenticated') or session.get('kotak_logged_in')):
         return redirect(url_for('auth_routes.trading_account_login'))
-    
+
     # Prepare account data for sidebar if logged in
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
@@ -401,7 +401,7 @@ def portfolio():
             'last_login': 'Just Now',
             'status': 'Online'
         }
-    
+
     return render_template('portfolio.html', kotak_account=kotak_account_data)
 
 
@@ -411,7 +411,7 @@ def trading_signals():
     # Check if user is authenticated - no guest access allowed
     if not (session.get('authenticated') or session.get('kotak_logged_in')):
         return redirect(url_for('auth_routes.trading_account_login'))
-    
+
     # Prepare account data for sidebar if logged in
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
@@ -422,7 +422,7 @@ def trading_signals():
             'last_login': 'Just Now',
             'status': 'Online'
         }
-    
+
     return render_template('trading_signals.html', kotak_account=kotak_account_data)
 
 
@@ -432,7 +432,7 @@ def deals():
     # Check if user is authenticated - no guest access allowed
     if not (session.get('authenticated') or session.get('kotak_logged_in')):
         return redirect(url_for('auth_routes.trading_account_login'))
-    
+
     # Prepare account data for sidebar if logged in
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
@@ -443,7 +443,7 @@ def deals():
             'last_login': 'Just Now',
             'status': 'Online'
         }
-    
+
     return render_template('deals.html', kotak_account=kotak_account_data)
 
 
@@ -962,9 +962,10 @@ except Exception as e:
     trading_functions = None
 
 # Email functionality preserved from original code
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from api.auth_api import send_registration_email
 
 # Initialize extensions for email functionality
 try:
@@ -1012,44 +1013,6 @@ try:
     print("✓ Email configuration loaded")
 except Exception as e:
     print(f"Email configuration optional: {e}")
-
-
-def send_registration_email(user_email, username, password):
-    """Send registration confirmation email with credentials"""
-    try:
-        msg = Message(
-            subject="Welcome to Trading Platform - Your Account Details",
-            sender=app.config['MAIL_DEFAULT_SENDER'],
-            recipients=[user_email])
-
-        # Email content (simplified for brevity)
-        msg.html = f"""
-        <h2>Welcome to Trading Platform!</h2>
-        <p>Your login credentials:</p>
-        <ul>
-            <li>Username: {username}</li>
-            <li>Password: {password}</li>
-            <li>Email: {user_email}</li>
-        </ul>
-        <p>Please keep these credentials safe and secure.</p>
-        """
-
-        msg.body = f"""
-        Welcome to Trading Platform!
-
-        Login Credentials:
-        Username: {username}
-        Password: {password}
-        Email: {user_email}
-
-        Please keep these credentials safe and secure.
-        """
-
-        mail.send(msg)
-        return True
-    except Exception as e:
-        print(f"Error sending email: {e}")
-        return False
 
 
 # Registration and login routes preserved from original code
