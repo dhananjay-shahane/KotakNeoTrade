@@ -1085,64 +1085,7 @@ def send_registration_email(user_email, username, password):
         return False
 
 
-# Registration and login routes preserved from original code
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        mobile = request.form.get('mobile')
-        password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
-
-        # Validate input
-        if not all([email, mobile, password, confirm_password]):
-            flash('All fields are required.', 'error')
-            return render_template('auth/register.html')
-
-        if password != confirm_password:
-            flash('Passwords do not match.', 'error')
-            return render_template('auth/register.html')
-
-        # Check if user already exists
-        try:
-            existing_user = User.query.filter_by(email=email).first()
-            if existing_user:
-                flash('Email already registered.', 'error')
-                return render_template('auth/register.html')
-
-            # Generate unique username from email and mobile
-            username = User.generate_username(email, mobile)
-
-            # Create new user
-            user = User()
-            user.email = email
-            user.mobile = mobile
-            user.username = username
-            user.set_password(password)
-
-            db.session.add(user)
-            db.session.commit()
-
-            # Send registration email with credentials
-            email_sent = send_registration_email(email, username, password)
-
-            if email_sent:
-                flash(
-                    'Registration successful! Please check your email for login credentials.',
-                    'success')
-            else:
-                flash(
-                    'Registration successful! Your username is: ' + username,
-                    'success')
-
-            return redirect(url_for('auth_routes.trading_account_login'))
-        except Exception as e:
-            db.session.rollback()
-            print(f"Registration error: {e}")  # Debug logging
-            flash(f'Registration failed: {str(e)}', 'error')
-            return render_template('auth/register.html')
-
-    return render_template('auth/register.html')
+# Registration route moved to auth_routes blueprint
 
 
 @app.route('/login', methods=['GET', 'POST'])
