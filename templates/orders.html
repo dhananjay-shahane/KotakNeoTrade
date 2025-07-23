@@ -46,60 +46,60 @@
 
     <!-- Summary Cards -->
     <div class="row mb-4" id="ordersSummary">
-        <!-- Shimmer skeleton for summary cards -->
-        <div class="orders-skeleton" id="ordersSummarySkeleton">
+        <!-- Shimmer Loading for Summary Cards -->
+        <div class="orders-shimmer-summary">
             <div class="col-md-2 mb-3">
-                <div class="card bg-dark">
+                <div class="card bg-primary text-white">
                     <div class="card-body text-center p-3">
-                        <div class="shimmer-summary-title mb-2"></div>
-                        <div class="shimmer-summary-count"></div>
+                        <div class="shimmer shimmer-card-title mb-2"></div>
+                        <div class="shimmer shimmer-card-number"></div>
                     </div>
                 </div>
             </div>
             <div class="col-md-2 mb-3">
-                <div class="card bg-dark">
+                <div class="card bg-success text-white">
                     <div class="card-body text-center p-3">
-                        <div class="shimmer-summary-title mb-2"></div>
-                        <div class="shimmer-summary-count"></div>
+                        <div class="shimmer shimmer-card-title mb-2"></div>
+                        <div class="shimmer shimmer-card-number"></div>
                     </div>
                 </div>
             </div>
             <div class="col-md-2 mb-3">
-                <div class="card bg-dark">
+                <div class="card bg-warning text-white">
                     <div class="card-body text-center p-3">
-                        <div class="shimmer-summary-title mb-2"></div>
-                        <div class="shimmer-summary-count"></div>
+                        <div class="shimmer shimmer-card-title mb-2"></div>
+                        <div class="shimmer shimmer-card-number"></div>
                     </div>
                 </div>
             </div>
             <div class="col-md-2 mb-3">
-                <div class="card bg-dark">
+                <div class="card bg-danger text-white">
                     <div class="card-body text-center p-3">
-                        <div class="shimmer-summary-title mb-2"></div>
-                        <div class="shimmer-summary-count"></div>
+                        <div class="shimmer shimmer-card-title mb-2"></div>
+                        <div class="shimmer shimmer-card-number"></div>
                     </div>
                 </div>
             </div>
             <div class="col-md-2 mb-3">
-                <div class="card bg-dark">
+                <div class="card bg-secondary text-white">
                     <div class="card-body text-center p-3">
-                        <div class="shimmer-summary-title mb-2"></div>
-                        <div class="shimmer-summary-count"></div>
+                        <div class="shimmer shimmer-card-title mb-2"></div>
+                        <div class="shimmer shimmer-card-number"></div>
                     </div>
                 </div>
             </div>
             <div class="col-md-2 mb-3">
-                <div class="card bg-dark">
+                <div class="card bg-info text-white">
                     <div class="card-body text-center p-3">
-                        <div class="shimmer-summary-title mb-2"></div>
-                        <div class="shimmer-summary-count"></div>
+                        <div class="shimmer shimmer-card-title mb-2"></div>
+                        <div class="shimmer shimmer-card-number"></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Actual summary cards (hidden initially) -->
-        <div class="orders-content-cards" id="ordersSummaryCards" style="display: none;">
+        <!-- Actual Summary Cards (hidden during loading) -->
+        <div class="orders-content-cards" style="display: none;">
             <div class="col-md-2 mb-3">
                 <div class="card bg-primary text-white filter-card" data-filter="all" style="cursor: pointer;">
                     <div class="card-body text-center p-3">
@@ -108,7 +108,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-2 mb-3">
+        <div class="col-md-2 mb-3">
                 <div class="card bg-success text-white filter-card" data-filter="completed" style="cursor: pointer;">
                     <div class="card-body text-center p-3">
                         <h6 class="card-title mb-1">COMPLETED</h6>
@@ -190,102 +190,66 @@
                         </tr>
                     </thead>
                     <tbody id="ordersTableBody">
-                        <!-- Enhanced Shimmer loading rows -->
+                        <!-- Shimmer Loading State -->
                         <tr class="shimmer-row">
-                            <td class="text-center"><div class="shimmer-cell shimmer-time"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-order-id"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-symbol"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-quantity"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-price"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-actions"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-badge"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-badge"></div></td>
+                            <td><div class="shimmer shimmer-badge"></div></td>
+                            <td><div class="shimmer shimmer-badge"></div></td>
+                            <td><div class="shimmer shimmer-actions"></div></td>
                         </tr>
                         <tr class="shimmer-row">
-                            <td class="text-center"><div class="shimmer-cell shimmer-time"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-order-id"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-symbol"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-quantity"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-price"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-actions"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-badge"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-badge"></div></td>
+                            <td><div class="shimmer shimmer-badge"></div></td>
+                            <td><div class="shimmer shimmer-badge"></div></td>
+                            <td><div class="shimmer shimmer-actions"></div></td>
                         </tr>
                         <tr class="shimmer-row">
-                            <td class="text-center"><div class="shimmer-cell shimmer-time"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-order-id"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-symbol"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-quantity"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-price"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-actions"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-badge"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-badge"></div></td>
+                            <td><div class="shimmer shimmer-badge"></div></td>
+                            <td><div class="shimmer shimmer-badge"></div></td>
+                            <td><div class="shimmer shimmer-actions"></div></td>
                         </tr>
                         <tr class="shimmer-row">
-                            <td class="text-center"><div class="shimmer-cell shimmer-time"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-order-id"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-symbol"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-quantity"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-price"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-actions"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-badge"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-badge"></div></td>
+                            <td><div class="shimmer shimmer-badge"></div></td>
+                            <td><div class="shimmer shimmer-badge"></div></td>
+                            <td><div class="shimmer shimmer-actions"></div></td>
                         </tr>
                         <tr class="shimmer-row">
-                            <td class="text-center"><div class="shimmer-cell shimmer-time"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-order-id"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-symbol"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-quantity"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-price"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-actions"></div></td>
-                        </tr>
-                        <tr class="shimmer-row">
-                            <td class="text-center"><div class="shimmer-cell shimmer-time"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-order-id"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-symbol"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-quantity"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-price"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-actions"></div></td>
-                        </tr>
-                        <tr class="shimmer-row">
-                            <td class="text-center"><div class="shimmer-cell shimmer-time"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-order-id"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-symbol"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-quantity"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-price"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-actions"></div></td>
-                        </tr>
-                        <tr class="shimmer-row">
-                            <td class="text-center"><div class="shimmer-cell shimmer-time"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-order-id"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-symbol"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-quantity"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-price"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-badge"></div></td>
-                            <td class="text-center"><div class="shimmer-cell shimmer-actions"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-badge"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-text"></div></td>
+                            <td><div class="shimmer shimmer-badge"></div></td>
+                            <td><div class="shimmer shimmer-badge"></div></td>
+                            <td><div class="shimmer shimmer-badge"></div></td>
+                            <td><div class="shimmer shimmer-actions"></div></td>
                         </tr>
                     </tbody>
                 </table>
