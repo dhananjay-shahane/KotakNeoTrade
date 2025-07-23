@@ -431,7 +431,7 @@ def handle_register(mail=None):
                 'Use the credentials from your email to login to your account.',
                 'info')
 
-            return redirect(url_for('login'))
+            return redirect(url_for('auth_routes.trading_account_login'))
 
         except Exception as e:
             db.session.rollback()
@@ -448,7 +448,7 @@ def handle_logout():
     from flask import session
     session.pop('_flashes', None)
     flash('You have been logged out', 'info')
-    return redirect(url_for('login'))
+    return redirect(url_for('auth_routes.trading_account_login'))
 
 
 # API endpoints for AJAX requests
