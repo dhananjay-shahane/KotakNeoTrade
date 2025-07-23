@@ -390,7 +390,7 @@ def portfolio():
     # Check if user is authenticated - no guest access allowed
     if not (session.get('authenticated') or session.get('kotak_logged_in')):
         return redirect(url_for('auth_routes.trading_account_login'))
-
+    
     # Prepare account data for sidebar if logged in
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
@@ -401,7 +401,7 @@ def portfolio():
             'last_login': 'Just Now',
             'status': 'Online'
         }
-
+    
     return render_template('portfolio.html', kotak_account=kotak_account_data)
 
 
@@ -411,7 +411,7 @@ def trading_signals():
     # Check if user is authenticated - no guest access allowed
     if not (session.get('authenticated') or session.get('kotak_logged_in')):
         return redirect(url_for('auth_routes.trading_account_login'))
-
+    
     # Prepare account data for sidebar if logged in
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
@@ -422,7 +422,7 @@ def trading_signals():
             'last_login': 'Just Now',
             'status': 'Online'
         }
-
+    
     return render_template('trading_signals.html', kotak_account=kotak_account_data)
 
 
@@ -432,7 +432,7 @@ def deals():
     # Check if user is authenticated - no guest access allowed
     if not (session.get('authenticated') or session.get('kotak_logged_in')):
         return redirect(url_for('auth_routes.trading_account_login'))
-
+    
     # Prepare account data for sidebar if logged in
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
@@ -443,7 +443,7 @@ def deals():
             'last_login': 'Just Now',
             'status': 'Online'
         }
-
+    
     return render_template('deals.html', kotak_account=kotak_account_data)
 
 
@@ -962,10 +962,9 @@ except Exception as e:
     trading_functions = None
 
 # Email functionality preserved from original code
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-from api.auth_api import EmailService
 
 # Initialize extensions for email functionality
 try:
@@ -1015,26 +1014,56 @@ except Exception as e:
     print(f"Email configuration optional: {e}")
 
 
+def send_registration_email(user_email, username, password):
+    """Send registration confirmation email with credentials"""
+    try:
+        msg = Message(
+            subject="Welcome to Trading Platform - Your Account Details",
+            sender=app.config['MAIL_DEFAULT_SENDER'],
+            recipients=[user_email])
+
+        # Email content (simplified for brevity)
+        msg.html = f"""
+        <h2>Welcome to Trading Platform!</h2>
+        <p>Your login credentials:</p>
+        <ul>
+            <li>Username: {username}</li>
+            <li>Password: {password}</li>
+            <li>Email: {user_email}</li>
+        </ul>
+        <p>Please keep these credentials safe and secure.</p>
+        """
+
+        msg.body = f"""
+        Welcome to Trading Platform!
+
+        Login Credentials:
+        Username: {username}
+        Password: {password}
+        Email: {user_email}
+
+        Please keep these credentials safe and secure.
+        """
+
+        mail.send(msg)
+        return True
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return False
+
+
 # Registration and login routes preserved from original code
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         email = request.form.get('email')
         mobile = request.form.get('mobile')
+        username = request.form.get('username')
         password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
-        
-        # Generate username from email (before @ symbol)
-        username = email.split('@')[0] if email else None
 
         # Validate input
-        if not all([email, mobile, password, confirm_password]):
+        if not all([email, mobile, username, password]):
             flash('All fields are required.', 'error')
-            return render_template('auth/register.html')
-            
-        # Validate password confirmation
-        if password != confirm_password:
-            flash('Passwords do not match.', 'error')
             return render_template('auth/register.html')
 
         # Check if user already exists
@@ -1052,7 +1081,7 @@ def register():
             db.session.commit()
 
             # Send registration email with credentials
-            email_sent = EmailService.send_registration_email(mail, email, username, password)
+            email_sent = send_registration_email(email, username, password)
 
             if email_sent:
                 flash(

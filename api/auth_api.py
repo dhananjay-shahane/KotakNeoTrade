@@ -32,7 +32,7 @@ def create_external_users_table():
     conn = get_external_db_connection()
     if not conn:
         return False
-
+    
     try:
         cursor = conn.cursor()
         cursor.execute('''
@@ -60,26 +60,26 @@ def store_user_in_external_db(username, password, email, mobile, trading_account
     try:
         # Ensure table exists
         create_external_users_table()
-
+        
         conn = get_external_db_connection()
         if not conn:
             return False
-
+        
         cursor = conn.cursor()
-
+        
         # Insert user data
         current_datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         cursor.execute('''
             INSERT INTO external_users (username, password, email, mobile, trading_account_name, datetime)
             VALUES (%s, %s, %s, %s, %s, %s)
         ''', (username, password, email, mobile, trading_account_name or 'Not Set', current_datetime))
-
+        
         conn.commit()
         cursor.close()
         conn.close()
-
+        
         return True
-
+        
     except Exception as e:
         print(f"Error storing user in external database: {e}")
         return False
@@ -91,18 +91,18 @@ def authenticate_user_from_external_db(username, password):
         conn = get_external_db_connection()
         if not conn:
             return None
-
+        
         cursor = conn.cursor()
         cursor.execute('''
             SELECT sr, username, email, mobile, trading_account_name, datetime 
             FROM external_users 
             WHERE username = %s AND password = %s
         ''', (username, password))
-
+        
         result = cursor.fetchone()
         cursor.close()
         conn.close()
-
+        
         if result:
             return {
                 'sr': result[0],
@@ -112,9 +112,9 @@ def authenticate_user_from_external_db(username, password):
                 'trading_account_name': result[4],
                 'datetime': result[5]
             }
-
+        
         return None
-
+        
     except Exception as e:
         print(f"Error authenticating user from external database: {e}")
         return None
@@ -150,7 +150,7 @@ class EmailService:
 
     @staticmethod
     def send_registration_email(mail, user_email, username, password):
-        """Send registration email with credentials"""
+        """Send registration confirmation email with credentials"""
         if not mail:
             print("Email service not configured, skipping email send")
             return False
@@ -255,7 +255,7 @@ class EmailService:
                 <div class="content">
                     <h2>Hello {username}!</h2>
                     <p>Congratulations! Your trading platform account has been successfully registered.</p>
-
+                    
                     <p><strong>IMPORTANT:</strong> Below are your login credentials. Please save them securely as you will need them to access your account.</p>
 
                     <div class="credentials-box">
@@ -333,7 +333,7 @@ def handle_login():
 
         # First try to authenticate from external database
         external_user = authenticate_user_from_external_db(username, password)
-
+        
         if external_user:
             # Check if user exists in local database, if not create one
             user = User.query.filter_by(username=username).first()
@@ -347,7 +347,7 @@ def handle_login():
                 user.set_password(password)
                 db.session.add(user)
                 db.session.commit()
-
+            
             login_user(user)
             flash(f'Welcome back, {user.username}!', 'success')
             next_page = request.args.get('next')
@@ -469,7 +469,7 @@ def login_api():
 
         # First try to authenticate from external database
         external_user = authenticate_user_from_external_db(username, password)
-
+        
         if external_user:
             # Check if user exists in local database, if not create one
             user = User.query.filter_by(username=username).first()
@@ -483,7 +483,7 @@ def login_api():
                 user.set_password(password)
                 db.session.add(user)
                 db.session.commit()
-
+            
             login_user(user)
             return jsonify({
                 'success': True,
