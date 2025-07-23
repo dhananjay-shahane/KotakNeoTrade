@@ -97,12 +97,7 @@ endblock %} {% block extra_css %}
         </div>
 
         <div class="card-body p-0">
-            <!-- Top horizontal scroll bar -->
-            <div class="horizontal-scroll-top">
-                <div class="scroll-content-dummy"></div>
-            </div>
-            
-            <div class="table-responsive horizontal-scroll-container" id="tableContainer">
+            <div class="table-responsive">
                 <table
                     class="table table-dark table-hover mb-0 signals-table"
                     id="signalsTable"
@@ -281,15 +276,10 @@ endblock %} {% block extra_css %}
                     </tbody>
                 </table>
             </div>
-            
-            <!-- Bottom horizontal scroll bar -->
-            <div class="horizontal-scroll-bottom">
-                <div class="scroll-content-dummy"></div>
-            </div>
         </div>
 
         <div
-            class="card-footer bg-dark border-0 d-flex justify-content-between align-items-center text-light flex-wrap"
+            class="card-footer bg-dark border-0 d-flex justify-content-between align-items-center text-light"
         >
             <div class="d-flex align-items-center gap-3">
                 <small
@@ -297,32 +287,16 @@ endblock %} {% block extra_css %}
                     <span id="visibleSignalsCount">0</span> filtered signals
                     (Total: <span id="totalCount">0</span>)</small
                 >
-                <div class="d-flex align-items-center gap-2">
-                    <label for="itemsPerPageSelect" class="form-label text-light mb-0 small">Items per page:</label>
-                    <select class="form-select form-select-sm" id="itemsPerPageSelect" onchange="changeItemsPerPage(this.value)" style="width: auto;">
-                        <option value="10">10</option>
-                        <option value="20" selected>20</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                        <option value="all">All</option>
-                    </select>
-                </div>
             </div>
-            
-            <!-- Pagination Controls -->
-            <nav aria-label="Table pagination" class="d-flex align-items-center gap-2">
-                <div id="paginationInfo" class="small text-muted"></div>
-                <ul class="pagination pagination-sm mb-0" id="paginationControls">
-                    <!-- Pagination will be generated here -->
-                </ul>
+            <div class="d-flex align-items-center gap-2">
                 <button
                     type="button"
                     class="btn btn-sm btn-outline-light"
                     onclick="refreshSignals()"
                 >
-                    <i class="fas fa-sync-alt"></i> Refresh
+                    <i class="fas fa-sync-alt"></i> Refresh Data
                 </button>
-            </nav>
+            </div>
         </div>
     </div>
 

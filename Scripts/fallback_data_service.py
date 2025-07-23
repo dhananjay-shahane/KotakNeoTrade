@@ -1,107 +1,148 @@
 """
-Fallback Data Service for Trading Signals
-Provides sample trading data when external database is not available
-This ensures the application can still demonstrate functionality
+Fallback Data Service - Provides error handling and fallback data when external database is unavailable
+This is used when the external PostgreSQL database connection fails, ensuring the UI remains functional
 """
 
 import logging
-from typing import List, Dict
-from datetime import datetime, timedelta
-import random
+from datetime import datetime
+import json
 
 logger = logging.getLogger(__name__)
 
-class FallbackDataService:
-    """Service to provide sample trading data when database is unavailable"""
+def get_fallback_etf_signals_data():
+    """
+    Provide sample ETF signals data structure when external database is unavailable
+    Uses real ETF symbols but with placeholder trading data for UI functionality
+    """
+    logger.info("🔄 Using fallback data service - external database unavailable")
     
-    def __init__(self):
-        self.sample_symbols = [
-            'GOLDBEES', 'NIFTYBEES', 'BANKBEES', 'JUNIORBEES', 'SETFGOLD',
-            'LIQUIDBEES', 'PVTBANKG', 'ITBEES', 'PHARMABES', 'FMCGBEES'
-        ]
-    
-    def get_sample_etf_signals(self) -> List[Dict]:
-        """Generate sample ETF signals data for demonstration"""
-        signals = []
-        
-        for i, symbol in enumerate(self.sample_symbols[:10]):
-            # Generate realistic sample data
-            entry_price = round(random.uniform(50.0, 500.0), 2)
-            current_price = round(entry_price * random.uniform(0.9, 1.15), 2)
-            quantity = random.randint(10, 100)
-            investment = entry_price * quantity
-            current_value = current_price * quantity
-            pnl = current_value - investment
-            pnl_percent = ((current_price - entry_price) / entry_price) * 100
-            
-            # Create sample entry date (last 30 days)
-            entry_date = (datetime.now() - timedelta(days=random.randint(1, 30))).strftime('%Y-%m-%d')
-            
-            signal = {
-                'trade_signal_id': i + 1,
-                'etf': symbol,
-                'symbol': symbol,
-                'thirty': round(current_price * 0.98, 2),
-                'dh': f"{random.uniform(-5, 15):.2f}%",
-                'seven': round(current_price * 0.995, 2), 
-                'ch': f"{random.uniform(-2, 8):.2f}%",
-                'date': entry_date,
-                'qty': quantity,
-                'ep': entry_price,
-                'cmp': current_price,
-                'chan': f"{pnl_percent:.2f}%",
-                'inv': round(investment, 2),
-                'tp': round(entry_price * 1.1, 2),
-                'tpr': round(investment * 0.1, 2),
-                'tva': round(current_value, 2),
-                'cpl': round(pnl, 2),
-                'pl': round(pnl, 2),
-                'pos': 1,  # LONG position
-                'status': 'ACTIVE',
-                'ed': entry_date,
-                'exp': (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d'),
-                'pr': f"{entry_price:.2f}-{entry_price * 1.2:.2f}",
-                'pp': round(pnl_percent, 2),
-                'iv': round(random.uniform(15, 35), 2),
-                'ip': round(random.uniform(-5, 10), 2),
-                'created_at': entry_date
-            }
-            signals.append(signal)
-        
-        logger.info(f"Generated {len(signals)} sample ETF signals for demonstration")
-        return signals
-
-def get_etf_signals_data_json():
-    """Get ETF signals data - fallback version when database is unavailable"""
-    try:
-        # Try to get real data first
-        from Scripts.external_db_service import ExternalDBService
-        db_service = ExternalDBService()
-        real_data = db_service.get_admin_trade_signals()
-        
-        if real_data:
-            logger.info("Using real database data")
-            return {
-                'success': True,
-                'data': real_data,
-                'count': len(real_data),
-                'source': 'database'
-            }
-    except Exception as e:
-        logger.warning(f"Database unavailable: {e}")
-    
-    # Use fallback data for demonstration
-    fallback_service = FallbackDataService()
-    sample_data = fallback_service.get_sample_etf_signals()
+    # Sample ETF trading signals with realistic structure
+    sample_signals = [
+        {
+            'trade_signal_id': 1,
+            'id': 1,
+            'etf': 'NIFTYBEES',
+            'symbol': 'NIFTYBEES',
+            'thirty': 180.50,
+            'dh': 2.35,
+            'date': '2025-01-10',
+            'pos': 1,
+            'qty': 100,
+            'ep': 175.25,
+            'cmp': 180.50,
+            'chan': 3.00,
+            'inv': 17525.00,
+            'tp': 185.00,
+            'tva': 18050.00,
+            'tpr': 2.99,
+            'pl': 525.00,
+            'ed': '',
+            'exp': '',
+            'pr': 0.0,
+            'pp': 0.0,
+            'iv': 17525.00,
+            'ip': 3.00,
+            'nt': '',
+            'qt': '',
+            'seven': 178.20,
+            'ch': 1.29,
+            'created_at': '2025-01-10T10:30:00'
+        },
+        {
+            'trade_signal_id': 2,
+            'id': 2,
+            'etf': 'BANKBEES',
+            'symbol': 'BANKBEES',
+            'thirty': 520.75,
+            'dh': 1.85,
+            'date': '2025-01-09',
+            'pos': 1,
+            'qty': 50,
+            'ep': 512.30,
+            'cmp': 520.75,
+            'chan': 1.65,
+            'inv': 25615.00,
+            'tp': 530.00,
+            'tva': 26037.50,
+            'tpr': 1.65,
+            'pl': 422.50,
+            'ed': '',
+            'exp': '',
+            'pr': 0.0,
+            'pp': 0.0,
+            'iv': 25615.00,
+            'ip': 1.65,
+            'nt': '',
+            'qt': '',
+            'seven': 518.90,
+            'ch': 0.36,
+            'created_at': '2025-01-09T14:15:00'
+        },
+        {
+            'trade_signal_id': 3,
+            'id': 3,
+            'etf': 'JUNIORBEES',
+            'symbol': 'JUNIORBEES',
+            'thirty': 890.25,
+            'dh': -0.85,
+            'date': '2025-01-08',
+            'pos': 1,
+            'qty': 25,
+            'ep': 897.50,
+            'cmp': 890.25,
+            'chan': -0.81,
+            'inv': 22437.50,
+            'tp': 920.00,
+            'tva': 22256.25,
+            'tpr': -0.81,
+            'pl': -181.25,
+            'ed': '',
+            'exp': '',
+            'pr': 0.0,
+            'pp': 0.0,
+            'iv': 22437.50,
+            'ip': -0.81,
+            'nt': '',
+            'qt': '',
+            'seven': 895.10,
+            'ch': -0.54,
+            'created_at': '2025-01-08T11:45:00'
+        }
+    ]
     
     return {
-        'success': True,
-        'data': sample_data,
-        'count': len(sample_data),
-        'source': 'fallback',
-        'message': 'Using sample data for demonstration. Database connection required for real trading data.'
+        'data': sample_signals,
+        'recordsTotal': len(sample_signals),
+        'recordsFiltered': len(sample_signals),
+        'message': 'Sample ETF signals data displayed. Connect database for real trading data.',
+        'status': 'success',
+        'fallback': True,
+        'timestamp': datetime.now().isoformat()
     }
 
-def get_basic_trade_signals_data_json():
-    """Get basic trade signals data - fallback version"""
-    return get_etf_signals_data_json()
+def get_fallback_error_response(error_message="Database connection failed"):
+    """
+    Generate a consistent error response for database connection failures
+    """
+    return {
+        'success': False,
+        'data': [],
+        'recordsTotal': 0,
+        'recordsFiltered': 0,
+        'error': error_message,
+        'message': f'Database connection error: {error_message}',
+        'status': 'error',
+        'fallback': True,
+        'timestamp': datetime.now().isoformat()
+    }
+
+def test_external_database_availability():
+    """
+    Test if external database is available without timeout
+    """
+    try:
+        from Scripts.external_db_service import test_database_connection
+        return test_database_connection()
+    except Exception as e:
+        logger.error(f"External database test failed: {e}")
+        return False
