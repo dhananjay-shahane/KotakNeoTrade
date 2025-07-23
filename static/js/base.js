@@ -77,29 +77,47 @@ function setActiveNavigation() {
     const currentPath = window.location.pathname;
     const navLinks = document.querySelectorAll('.sidebar .nav-link');
     
+    console.log('Setting active navigation for path:', currentPath);
+    console.log('Found nav links:', navLinks.length);
+    
     // Remove active class from all nav links
     navLinks.forEach(link => {
         link.classList.remove('active');
         link.parentElement.classList.remove('active');
     });
     
+    let found = false;
+    
     // Add active class to current page link
-    navLinks.forEach(link => {
+    navLinks.forEach((link, index) => {
         const href = link.getAttribute('href');
-        if (href && (currentPath === href || currentPath.startsWith(href + '/'))) {
+        console.log(`Link ${index}: href="${href}", currentPath="${currentPath}"`);
+        
+        if (href && currentPath === href) {
+            console.log('Exact match found for:', href);
             link.classList.add('active');
             link.parentElement.classList.add('active');
+            found = true;
         }
     });
     
-    // Special handling for exact matches
-    if (currentPath === '/portfolio') {
-        const portfolioLink = document.querySelector('a[href="/portfolio"]');
-        if (portfolioLink) {
-            portfolioLink.classList.add('active');
-            portfolioLink.parentElement.classList.add('active');
-        }
+    // Force portfolio page active if not found
+    if (!found && currentPath === '/portfolio') {
+        console.log('Forcing portfolio active state');
+        const portfolioLinks = document.querySelectorAll('a[href*="portfolio"]');
+        console.log('Found portfolio links:', portfolioLinks.length);
+        
+        portfolioLinks.forEach(link => {
+            console.log('Portfolio link href:', link.getAttribute('href'));
+            if (link.getAttribute('href').includes('portfolio')) {
+                link.classList.add('active');
+                link.parentElement.classList.add('active');
+                console.log('Applied active class to portfolio link');
+            }
+        });
     }
+    
+    console.log('Active navigation setup complete');
 }
 
 // Missing functions that are called from the HTML
@@ -865,7 +883,20 @@ document.addEventListener("click", function (event) {
 
 // Navigation active state - enhanced version
 document.addEventListener("DOMContentLoaded", function () {
-    setActiveNavigation();
+    console.log('DOM loaded, setting up navigation...');
+    // Small delay to ensure DOM is fully rendered
+    setTimeout(() => {
+        setActiveNavigation();
+    }, 100);
+});
+
+// Also call on page visibility change
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        setTimeout(() => {
+            setActiveNavigation();
+        }, 100);
+    }
 });
 
 // Smooth transitions for theme changes
