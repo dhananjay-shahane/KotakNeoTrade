@@ -23,6 +23,9 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_session import Session
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_mail import Mail, Message
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # Add current directory to Python path for module imports
 import sys
@@ -88,9 +91,20 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1,
 # Database configuration with fallback
 database_url = os.environ.get("DATABASE_URL")
 if not database_url:
-    # Fallback to SQLite for development
-    database_url = "sqlite:///trading_platform.db"
-    print("Using SQLite fallback database for development")
+    # Try to construct from individual environment variables
+    db_host = os.environ.get("DB_HOST")
+    db_name = os.environ.get("DB_NAME")
+    db_user = os.environ.get("DB_USER")
+    db_password = os.environ.get("DB_PASSWORD")
+    db_port = os.environ.get("DB_PORT", "5432")
+    
+    if all([db_host, db_name, db_user, db_password]):
+        database_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+        print("Using PostgreSQL database from environment variables")
+    else:
+        # Fallback to SQLite for development
+        database_url = "sqlite:///instance/trading_platform.db"
+        print("Using SQLite fallback database for development")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
@@ -180,24 +194,19 @@ db.init_app(app)
 # Create database tables
 with app.app_context():
     try:
+        # Make sure to import the models here or their tables won't be created
+        try:
+            import Scripts.models as models  # noqa: F401
+            import Scripts.models_etf as models_etf  # noqa: F401
+            print("✓ Models imported successfully")
+        except ImportError as e:
+            print(f"Model imports optional: {e}")
+
         db.create_all()
         print("✅ Database tables created successfully")
     except Exception as e:
         print(f"⚠️ Database initialization warning: {e}")
         # Continue running even if database creation fails
-
-# LoginManager will be initialized after imports below
-
-with app.app_context():
-    # Make sure to import the models here or their tables won't be created
-    try:
-        import Scripts.models as models  # noqa: F401
-        import Scripts.models_etf as models_etf  # noqa: F401
-        print("Database tables created successfully")
-    except ImportError as e:
-        print(f"Database initialization optional: {e}")
-
-    db.create_all()
 
 # Configure session for persistent storage
 app.config['SESSION_TYPE'] = 'filesystem'
@@ -971,11 +980,6 @@ try:
 except Exception as e:
     print(f"Warning: Could not import trading functions: {e}")
     trading_functions = None
-
-# Email functionality preserved from original code
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from flask_mail import Mail, Message
-from werkzeug.security import generate_password_hash, check_password_hash
 
 # Initialize extensions for email functionality
 try:
