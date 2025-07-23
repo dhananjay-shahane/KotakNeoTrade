@@ -980,6 +980,7 @@ except Exception as e:
 try:
 
     class User(UserMixin, db.Model):
+        __tablename__ = 'app_users'  # Avoid conflict with other User tables
         id = db.Column(db.Integer, primary_key=True)
         email = db.Column(db.String(100), unique=True, nullable=False)
         mobile = db.Column(db.String(20), unique=True, nullable=False)
@@ -1040,7 +1041,7 @@ try:
     app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
     app.config['MAIL_USERNAME'] = os.environ.get('EMAIL_USER')
     app.config['MAIL_PASSWORD'] = os.environ.get('EMAIL_PASSWORD')
-    app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER')
+    app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('EMAIL_USER', 'ontimefintech@gmail.com')
     print("✓ Email configuration loaded")
 except Exception as e:
     print(f"Email configuration optional: {e}")
@@ -1113,7 +1114,10 @@ def register():
             username = User.generate_username(email, mobile)
 
             # Create new user
-            user = User(email=email, mobile=mobile, username=username)
+            user = User()
+            user.email = email
+            user.mobile = mobile
+            user.username = username
             user.set_password(password)
 
             db.session.add(user)
@@ -1134,7 +1138,8 @@ def register():
             return redirect(url_for('auth_routes.trading_account_login'))
         except Exception as e:
             db.session.rollback()
-            flash('Registration failed. Please try again.', 'error')
+            print(f"Registration error: {e}")  # Debug logging
+            flash(f'Registration failed: {str(e)}', 'error')
             return render_template('auth/register.html')
 
     return render_template('auth/register.html')
