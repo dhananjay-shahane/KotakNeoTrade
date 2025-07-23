@@ -46,106 +46,51 @@
 
     <!-- Summary Cards -->
     <div class="row mb-4" id="ordersSummary">
-        <!-- Shimmer Loading for Summary Cards -->
-        <div class="orders-shimmer-summary">
-            <div class="col-md-2 mb-3">
-                <div class="card bg-primary text-white">
-                    <div class="card-body text-center p-3">
-                        <div class="shimmer shimmer-card-title mb-2"></div>
-                        <div class="shimmer shimmer-card-number"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-2 mb-3">
-                <div class="card bg-success text-white">
-                    <div class="card-body text-center p-3">
-                        <div class="shimmer shimmer-card-title mb-2"></div>
-                        <div class="shimmer shimmer-card-number"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-2 mb-3">
-                <div class="card bg-warning text-white">
-                    <div class="card-body text-center p-3">
-                        <div class="shimmer shimmer-card-title mb-2"></div>
-                        <div class="shimmer shimmer-card-number"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-2 mb-3">
-                <div class="card bg-danger text-white">
-                    <div class="card-body text-center p-3">
-                        <div class="shimmer shimmer-card-title mb-2"></div>
-                        <div class="shimmer shimmer-card-number"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-2 mb-3">
-                <div class="card bg-secondary text-white">
-                    <div class="card-body text-center p-3">
-                        <div class="shimmer shimmer-card-title mb-2"></div>
-                        <div class="shimmer shimmer-card-number"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-2 mb-3">
-                <div class="card bg-info text-white">
-                    <div class="card-body text-center p-3">
-                        <div class="shimmer shimmer-card-title mb-2"></div>
-                        <div class="shimmer shimmer-card-number"></div>
-                    </div>
+        <div class="col-md-2 mb-3">
+            <div class="card bg-primary text-white filter-card" data-filter="all" style="cursor: pointer;">
+                <div class="card-body text-center p-3">
+                    <h6 class="card-title mb-1">TOTAL ORDERS</h6>
+                    <h4 class="mb-0" id="totalOrdersCount">0</h4>
                 </div>
             </div>
         </div>
-
-        <!-- Actual Summary Cards (hidden during loading) -->
-        <div class="orders-content-cards" style="display: none;">
-            <div class="col-md-2 mb-3">
-                <div class="card bg-primary text-white filter-card" data-filter="all" style="cursor: pointer;">
-                    <div class="card-body text-center p-3">
-                        <h6 class="card-title mb-1">TOTAL ORDERS</h6>
-                        <h4 class="mb-0" id="totalOrdersCount">0</h4>
-                    </div>
-                </div>
-            </div>
         <div class="col-md-2 mb-3">
-                <div class="card bg-success text-white filter-card" data-filter="completed" style="cursor: pointer;">
-                    <div class="card-body text-center p-3">
-                        <h6 class="card-title mb-1">COMPLETED</h6>
-                        <h4 class="mb-0" id="completedOrdersCount">0</h4>
-                    </div>
+            <div class="card bg-success text-white filter-card" data-filter="completed" style="cursor: pointer;">
+                <div class="card-body text-center p-3">
+                    <h6 class="card-title mb-1">COMPLETED</h6>
+                    <h4 class="mb-0" id="completedOrdersCount">0</h4>
                 </div>
             </div>
-            <div class="col-md-2 mb-3">
-                <div class="card bg-warning text-white filter-card" data-filter="pending" style="cursor: pointer;">
-                    <div class="card-body text-center p-3">
-                        <h6 class="card-title mb-1">PENDING</h6>
-                        <h4 class="mb-0" id="pendingOrdersCount">0</h4>
-                    </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card bg-warning text-white filter-card" data-filter="pending" style="cursor: pointer;">
+                <div class="card-body text-center p-3">
+                    <h6 class="card-title mb-1">PENDING</h6>
+                    <h4 class="mb-0" id="pendingOrdersCount">0</h4>
                 </div>
             </div>
-            <div class="col-md-2 mb-3">
-                <div class="card bg-danger text-white filter-card" data-filter="rejected" style="cursor: pointer;">
-                    <div class="card-body text-center p-3">
-                        <h6 class="card-title mb-1">REJECTED</h6>
-                        <h4 class="mb-0" id="rejectedOrdersCount">0</h4>
-                    </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card bg-danger text-white filter-card" data-filter="rejected" style="cursor: pointer;">
+                <div class="card-body text-center p-3">
+                    <h6 class="card-title mb-1">REJECTED</h6>
+                    <h4 class="mb-0" id="rejectedOrdersCount">0</h4>
                 </div>
             </div>
-            <div class="col-md-2 mb-3">
-                <div class="card bg-secondary text-white filter-card" data-filter="cancelled" style="cursor: pointer;">
-                    <div class="card-body text-center p-3">
-                        <h6 class="card-title mb-1">CANCELLED</h6>
-                        <h4 class="mb-0" id="cancelledOrdersCount">0</h4>
-                    </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card bg-secondary text-white filter-card" data-filter="cancelled" style="cursor: pointer;">
+                <div class="card-body text-center p-3">
+                    <h6 class="card-title mb-1">CANCELLED</h6>
+                    <h4 class="mb-0" id="cancelledOrdersCount">0</h4>
                 </div>
             </div>
-            <div class="col-md-2 mb-3">
-                <div class="card bg-info text-white filter-card" data-filter="buy" style="cursor: pointer;">
-                    <div class="card-body text-center p-3">
-                        <h6 class="card-title mb-1">BUY ORDERS</h6>
-                        <h4 class="mb-0" id="buyOrdersCount">0</h4>
-                    </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card bg-info text-white filter-card" data-filter="buy" style="cursor: pointer;">
+                <div class="card-body text-center p-3">
+                    <h6 class="card-title mb-1">BUY ORDERS</h6>
+                    <h4 class="mb-0" id="buyOrdersCount">0</h4>
                 </div>
             </div>
         </div>
@@ -190,66 +135,13 @@
                         </tr>
                     </thead>
                     <tbody id="ordersTableBody">
-                        <!-- Shimmer Loading State -->
-                        <tr class="shimmer-row">
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-badge"></div></td>
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-badge"></div></td>
-                            <td><div class="shimmer shimmer-badge"></div></td>
-                            <td><div class="shimmer shimmer-badge"></div></td>
-                            <td><div class="shimmer shimmer-actions"></div></td>
-                        </tr>
-                        <tr class="shimmer-row">
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-badge"></div></td>
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-badge"></div></td>
-                            <td><div class="shimmer shimmer-badge"></div></td>
-                            <td><div class="shimmer shimmer-badge"></div></td>
-                            <td><div class="shimmer shimmer-actions"></div></td>
-                        </tr>
-                        <tr class="shimmer-row">
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-badge"></div></td>
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-badge"></div></td>
-                            <td><div class="shimmer shimmer-badge"></div></td>
-                            <td><div class="shimmer shimmer-badge"></div></td>
-                            <td><div class="shimmer shimmer-actions"></div></td>
-                        </tr>
-                        <tr class="shimmer-row">
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-badge"></div></td>
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-badge"></div></td>
-                            <td><div class="shimmer shimmer-badge"></div></td>
-                            <td><div class="shimmer shimmer-badge"></div></td>
-                            <td><div class="shimmer shimmer-actions"></div></td>
-                        </tr>
-                        <tr class="shimmer-row">
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-badge"></div></td>
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-text"></div></td>
-                            <td><div class="shimmer shimmer-badge"></div></td>
-                            <td><div class="shimmer shimmer-badge"></div></td>
-                            <td><div class="shimmer shimmer-badge"></div></td>
-                            <td><div class="shimmer shimmer-actions"></div></td>
+                        <tr>
+                            <td colspan="10" class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading orders...</span>
+                                </div>
+                                <p class="text-muted mt-2">Loading your orders...</p>
+                            </td>
                         </tr>
                     </tbody>
                 </table>

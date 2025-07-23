@@ -151,9 +151,6 @@ function sortTable(column) {
 
 function updateOrdersTable(orders) {
     var tableBody = document.getElementById('ordersTableBody');
-    
-    // Hide shimmer and show content
-    document.getElementById('ordersContent').classList.add('orders-content-loaded');
 
     if (!orders || orders.length === 0) {
         showNoOrdersMessage();
@@ -310,9 +307,6 @@ function updateOrdersSummary(orders) {
 function showNoOrdersMessage() {
     var tableBody = document.getElementById('ordersTableBody');
     
-    // Hide shimmer and show content
-    document.getElementById('ordersContent').classList.add('orders-content-loaded');
-    
     tableBody.innerHTML = `
         <tr>
             <td colspan="10" class="text-center py-5">
@@ -340,9 +334,6 @@ function showNoOrdersMessage() {
 
 function showAuthenticationErrorOrders() {
     var tableBody = document.getElementById('ordersTableBody');
-    
-    // Hide shimmer and show content
-    document.getElementById('ordersContent').classList.add('orders-content-loaded');
     
     tableBody.innerHTML = `
         <tr>
@@ -376,17 +367,12 @@ async function refreshOrdersTable() {
     button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...';
     button.disabled = true;
 
-    // Reset shimmer state
-    document.getElementById('ordersContent').classList.remove('orders-content-loaded');
-
     try {
         await loadOrdersData();
         showNotification('Orders refreshed successfully', 'success');
     } catch (error) {
         console.error('Error refreshing orders:', error);
         showNotification('Error refreshing orders', 'error');
-        // Still show content even on error
-        document.getElementById('ordersContent').classList.add('orders-content-loaded');
     } finally {
         button.innerHTML = originalHtml;
         button.disabled = false;
