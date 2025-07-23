@@ -420,45 +420,79 @@ function viewPositionDetails(symbol) {
     var position = positionsData.find(p => (p.trdSym || p.sym) === symbol);
 
     if (position) {
+        // Helper function to safely set element content
+        function safeSetContent(elementId, content) {
+            var element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = content;
+            } else {
+                console.warn('Element not found:', elementId);
+            }
+        }
+
+        // Helper function to safely set element class
+        function safeSetClass(elementId, className) {
+            var element = document.getElementById(elementId);
+            if (element) {
+                element.className = className;
+            } else {
+                console.warn('Element not found:', elementId);
+            }
+        }
+
         // Populate modal with position details
-        document.getElementById('detailTradingSymbol').textContent = position.trdSym || position.sym || 'N/A';
-        document.getElementById('detailExchange').textContent = position.exSeg || 'N/A';
-        document.getElementById('detailProduct').textContent = position.prod || 'N/A';
-        document.getElementById('detailToken').textContent = position.tok || 'N/A';
+        safeSetContent('detailTradingSymbol', position.trdSym || position.sym || 'N/A');
+        safeSetContent('detailExchange', position.exSeg || 'N/A');
+        safeSetContent('detailProduct', position.prod || 'N/A');
+        safeSetContent('detailToken', position.tok || 'N/A');
         
         var buyQty = position.flBuyQty || position.buyQty || '0';
         var sellQty = position.flSellQty || position.sellQty || '0';
         var netQty = position.flNetQty || position.netQty || (parseInt(buyQty) - parseInt(sellQty)) || '0';
         var positionType = parseInt(netQty) > 0 ? 'LONG' : parseInt(netQty) < 0 ? 'SHORT' : 'FLAT';
         
-        document.getElementById('detailNetQty').textContent = netQty;
-        document.getElementById('detailBuyQty').textContent = buyQty;
-        document.getElementById('detailSellQty').textContent = sellQty;
+        safeSetContent('detailNetQty', netQty);
+        safeSetContent('detailBuyQty', buyQty);
+        safeSetContent('detailSellQty', sellQty);
         
         var positionBadge = document.getElementById('detailPositionType');
-        positionBadge.textContent = positionType;
-        positionBadge.className = 'badge ' + (positionType === 'LONG' ? 'bg-success' : positionType === 'SHORT' ? 'bg-danger' : 'bg-secondary');
+        if (positionBadge) {
+            positionBadge.textContent = positionType;
+            positionBadge.className = 'badge ' + (positionType === 'LONG' ? 'bg-success' : positionType === 'SHORT' ? 'bg-danger' : 'bg-secondary');
+        }
         
         var buyAmt = parseFloat(position.buyAmt || position.flBuyAmt || '0');
         var sellAmt = parseFloat(position.sellAmt || position.flSellAmt || '0');
         var pnl = parseFloat(position.pnl || position.flPnl || '0');
         var currentPrice = parseFloat(position.stkPrc || position.currentPrice || '0');
         
-        document.getElementById('detailBuyAmt').textContent = '₹' + buyAmt.toFixed(2);
-        document.getElementById('detailSellAmt').textContent = '₹' + sellAmt.toFixed(2);
-        document.getElementById('detailCurrentPrice').textContent = '₹' + currentPrice.toFixed(2);
+        safeSetContent('detailBuyAmt', '₹' + buyAmt.toFixed(2));
+        safeSetContent('detailSellAmt', '₹' + sellAmt.toFixed(2));
+        safeSetContent('detailCurrentPrice', '₹' + currentPrice.toFixed(2));
         
         var pnlElement = document.getElementById('detailPnl');
-        pnlElement.textContent = '₹' + pnl.toFixed(2);
-        pnlElement.className = pnl >= 0 ? 'text-success' : 'text-danger';
+        if (pnlElement) {
+            pnlElement.textContent = '₹' + pnl.toFixed(2);
+            pnlElement.className = pnl >= 0 ? 'text-success' : 'text-danger';
+        }
         
-        document.getElementById('detailExpiry').textContent = position.expDt || position.exp || position.expiry || 'N/A';
-        document.getElementById('detailLotSize').textContent = position.lotSz || 'N/A';
-        document.getElementById('detailLastUpdated').textContent = position.hsUpTm || position.updRecvTm || 'N/A';
+        safeSetContent('detailExpiry', position.expDt || position.exp || position.expiry || 'N/A');
+        safeSetContent('detailLotSize', position.lotSz || 'N/A');
+        safeSetContent('detailLastUpdated', position.hsUpTm || position.updRecvTm || 'N/A');
         
         // Show modal
-        var modal = new bootstrap.Modal(document.getElementById('positionDetailsModal'));
-        modal.show();
+        var modalElement = document.getElementById('positionDetailsModal');
+        if (modalElement && typeof bootstrap !== 'undefined') {
+            var modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        } else {
+            console.error('Position details modal not found or Bootstrap not loaded');
+            // Fallback: show position info in an alert
+            alert('Position Details:\n' + 
+                  'Symbol: ' + (position.trdSym || position.sym || 'N/A') + '\n' +
+                  'Net Quantity: ' + netQty + '\n' +
+                  'P&L: ₹' + pnl.toFixed(2));
+        }
     }
 }
 
