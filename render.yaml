@@ -6,7 +6,7 @@ services:
     buildCommand: |
       python -m pip install --upgrade pip==24.0 setuptools==69.5.1 wheel==0.43.0
       python -m pip install --no-cache-dir --force-reinstall -r render_requirements.txt
-    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 120 --max-requests 1000 --preload main_render:app
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 120 --max-requests 1000 --preload main:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.8

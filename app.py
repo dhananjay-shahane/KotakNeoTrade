@@ -1136,6 +1136,19 @@ def logout():
 
 
 # ========================================
+# HEALTH CHECK ENDPOINT FOR RENDER DEPLOYMENT
+# ========================================
+
+@app.route('/health')
+def health_check():
+    """Health check endpoint for deployment monitoring"""
+    return {
+        'status': 'healthy',
+        'timestamp': datetime.utcnow().isoformat(),
+        'version': '1.0.0'
+    }, 200
+
+# ========================================
 # APPLICATION INITIALIZATION
 # ========================================
 

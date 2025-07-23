@@ -3,11 +3,10 @@
 Flask==3.1.1
 Flask-Session==0.8.0
 Flask-SQLAlchemy==3.1.1
-Flask-Dance==7.1.0
-Flask-Login==0.6.3
+Flask-Login==1.0.2
 Flask-Mail==0.10.0
 Werkzeug==3.1.3
-Jinja2>=3.1.6
+Jinja2==3.1.6
 
 # Database
 psycopg2-binary==2.9.10
@@ -16,190 +15,25 @@ SQLAlchemy==2.0.41
 # HTTP Server for Production
 gunicorn==23.0.0
 
-# Neo API Client (Kotak Securities)
-git+https://github.com/Kotak-Neo/kotak-neo-api.git
-
 # Environment and Configuration
 python-dotenv==1.0.0
 
-# Data Processing and Analysis
-pandas>=2.0.0
-numpy>=1.24.0
+# Data Processing
+pandas==2.0.0
 
-# HTTP Requests and Web Scraping
-requests>=2.25.1
-beautifulsoup4>=4.13.4
-trafilatura>=1.12.2
+# HTTP Requests
+requests==2.25.1
+beautifulsoup4==4.13.4
 
-# Scheduling and Background Tasks
-schedule>=1.2.2
-
-# External Database Services
-supabase>=0.0.3
+# Scheduling
+schedule==1.2.2
 
 # Authentication and Security
-oauthlib>=3.3.1
-PyJWT>=2.6.0
+oauthlib==3.3.1
+PyJWT==2.6.0
 
 # Validation
-email-validator>=2.2.0
+email-validator==2.2.0
 
-# Additional Utility Scripts
-scripts>=3.0
-
-# Date and Time Handling
-pytz>=2023.3
-
-# JSON Web Tokens
-python-jose[cryptography]>=3.3.0
-
-# WebSocket Support (if needed)
-Flask-SocketIO>=5.3.0
-python-socketio>=5.8.0
-
-# CORS Support
-Flask-CORS>=4.0.0
-
-# API Documentation (optional)
-flask-restx>=1.3.0
-
-# Logging and Monitoring
-structlog>=23.1.0
-
-# File Upload Handling
-Flask-Uploads>=0.2.1
-
-# Rate Limiting
-Flask-Limiter>=3.5.0
-
-# Caching
-Flask-Caching>=2.1.0
-
-# Testing (for CI/CD)
-pytest>=7.4.0
-pytest-flask>=1.2.0
-
-# Production Optimizations
-gevent>=23.7.0
-eventlet>=0.33.3
-
-# Additional Math and Finance Libraries
-scipy>=1.11.0
-matplotlib>=3.7.0
-plotly>=5.15.0
-
-# CSV and Excel Processing
-openpyxl>=3.1.0
-xlsxwriter>=3.1.0
-
-# Timezone Support
-babel>=2.12.0
-
-# Memory Optimization
-psutil>=5.9.0
-
-# SSL and Certificates
-certifi>=2023.7.22
-
-# URL Parsing
-urllib3>=2.0.0
-
-# JSON Processing
-orjson>=3.9.0
-
-# Configuration Management
-environs>=10.0.0
-
-# Backup and Storage
-boto3>=1.28.0
-
-# Task Queue (if using Celery)
-celery>=5.3.0
-redis>=4.6.0
-
-# Image Processing (if needed)
-Pillow>=10.0.0
-
-# Text Processing
-textblob>=0.17.1
-
-# API Rate Limiting
-ratelimit>=2.2.1
-
-# Health Checks
-py-healthcheck>=1.10.1
-
-# Metrics and Monitoring
-prometheus-client>=0.17.0
-
-# Environment Detection
-python-decouple>=3.8
-
-# UUID Generation
-shortuuid>=1.0.11
-
-# Time Zone Handling
-arrow>=1.2.3
-
-# Configuration Validation
-pydantic>=2.0.0
-
-# Async Support
-asyncio-mqtt>=0.16.0
-aiohttp>=3.8.0
-
-# Security Headers
-flask-talisman>=1.1.0
-
-# API Versioning
-flask-restful>=0.3.10
-
-# Background Job Processing
-APScheduler>=3.10.0
-
-# Database Migrations
-Flask-Migrate>=4.0.0
-
-# Session Management
-Flask-Session2>=1.3.1
-
-# CSRF Protection
-Flask-WTF>=1.1.0
-WTForms>=3.0.0
-
-# Timezone Database
-zoneinfo>=0.2.1
-
-# HTML Parsing
-lxml>=4.9.0
-
-# Encryption
-cryptography>=41.0.0
-
-# API Documentation
-flasgger>=0.9.7
-
-# Performance Monitoring
-newrelic>=9.0.0
-
-# Error Tracking
-sentry-sdk[flask]>=1.32.0
-
-# Load Balancing
-haproxy-stats>=2.5.0
-
-# Memory Profiling
-memory-profiler>=0.61.0
-
-# Code Quality
-flake8>=6.0.0
-black>=23.0.0
-
-# Type Checking
-mypy>=1.5.0
-
-# Documentation
-sphinx>=7.1.0
-
-# Testing Coverage
-coverage>=7.3.0
+# Neo API Client (Kotak Securities)
+neo-api-client
