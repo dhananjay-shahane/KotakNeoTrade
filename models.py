@@ -19,7 +19,7 @@ db = SQLAlchemy(model_class=Base)
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(100), unique=True, nullable=False)
     mobile = db.Column(db.String(20), unique=True, nullable=False)
@@ -34,35 +34,30 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-    @staticmethod
-    def generate_username(email, mobile=None):
-        """Generate unique 5-letter username from email and mobile combination"""
-        # Extract letters from email (before @)
-        email_part = re.sub(r'[^a-zA-Z]', '', email.split('@')[0].lower())
+    @classmethod
+    def generate_username(cls, email, mobile):
+        """Generate a unique username from email and mobile number"""
+        # Take first 3 letters from email (before @)
+        email_part = ''.join(filter(str.isalpha, email.split('@')[0]))[:3].lower()
 
-        # Extract digits from mobile number
-        mobile_digits = ''
-        if mobile:
-            mobile_digits = re.sub(r'[^0-9]', '', mobile)
+        # Take last 2 digits from mobile
+        mobile_part = mobile[-2:] if len(mobile) >= 2 else mobile
 
-        # Create base username with 3 letters from email + 2 digits from mobile
-        email_letters = email_part[:3] if len(email_part) >= 3 else email_part.ljust(3, 'x')
-        mobile_nums = mobile_digits[:2] if len(mobile_digits) >= 2 else mobile_digits.ljust(2, '0')
+        # Combine to create 5-character username
+        base_username = (email_part + mobile_part).ljust(5, '0')[:5]
 
-        base_username = email_letters + mobile_nums
-        username = base_username
+        # Ensure uniqueness
         counter = 1
-
-        # Ensure uniqueness by checking database
-        while User.query.filter_by(username=username).first():
-            # If collision, modify last character with counter
-            if counter < 10:
-                username = base_username[:-1] + str(counter)
-            else:
-                username = base_username[:-2] + str(counter)[:2]
+        username = base_username
+        while cls.query.filter_by(username=username).first():
+            username = base_username[:-1] + str(counter)
             counter += 1
+            if counter > 9:  # Prevent infinite loop
+                import random
+                username = base_username[:-2] + str(random.randint(10, 99))
+                break
 
-        return username[:5]  # Ensure exactly 5 characters
+        return username
 
     def __repr__(self):
         return f'<User {self.username}>'lass=Base)
