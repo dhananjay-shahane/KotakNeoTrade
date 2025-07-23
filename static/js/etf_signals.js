@@ -101,16 +101,16 @@ ETFSignalsManager.prototype.setupEventListeners = function () {
         });
     }
 
-    // Items per page selector - REMOVE
-    // var itemsPerPageSelect = document.getElementById("itemsPerPage");
-    // if (itemsPerPageSelect) {
-    //     itemsPerPageSelect.addEventListener("change", function (e) {
-    //         self.itemsPerPage = parseInt(e.target.value);
-    //         self.currentPage = 1;
-    //         self.renderSignalsTable();
-    //         self.updatePagination();
-    //     });
-    // }
+    // Items per page selector
+    var itemsPerPageSelect = document.getElementById("itemsPerPage");
+    if (itemsPerPageSelect) {
+        itemsPerPageSelect.addEventListener("change", function (e) {
+            self.itemsPerPage = parseInt(e.target.value);
+            self.currentPage = 1;
+            self.renderSignalsTable();
+            self.updatePagination();
+        });
+    }
 };
 
 ETFSignalsManager.prototype.loadSignals = function (resetData) {
@@ -155,7 +155,7 @@ ETFSignalsManager.prototype.loadSignals = function (resetData) {
                         self.signals = [];
                         self.filteredSignals = [];
                         self.renderSignalsTable();
-                        self.updateCounts();
+                        self.updatePagination();
                         return;
                     }
 
@@ -173,8 +173,7 @@ ETFSignalsManager.prototype.loadSignals = function (resetData) {
                         // Update displayed signals based on current page
                         self.updateDisplayedSignals();
                         self.renderSignalsTable();
-                        self.renderPaginationHTML();
-                        self.updateCounts();
+                        self.updatePagination();
                         self.showSuccessMessage(
                             "Loaded " + self.signals.length + " signals",
                         );
@@ -856,7 +855,7 @@ function applyColumnSettings() {
         window.etfSignalsManager.saveColumnSettings();
         window.etfSignalsManager.updateTableHeaders();
         window.etfSignalsManager.renderSignalsTable();
-        window.etfSignalsManager.renderPaginationHTML();
+        window.etfSignalsManager.updatePagination();
 
         // Close modal
         var modalElement = document.getElementById("columnSettingsModal");
@@ -912,11 +911,972 @@ ETFSignalsManager.prototype.applyFilters = function () {
     this.currentPage = 1;
     this.updateDisplayedSignals();
     this.renderSignalsTable();
-    this.renderPaginationHTML();
-    this.updateCounts();
+    this.updatePagination();
 };
 
-// Removing pagination and showing all data requires changes to updatePagination and related functions.
+// Pagination Functions
+ETFSignalsManager.prototype.updateDisplayedSignals = function () {
+    var startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    var endIndex = startIndex + this.itemsPerPage;
+    this.displayedSignals = this.filteredSignals.slice(startIndex, endIndex);
+    this.totalPages = Math.ceil(this.filteredSignals.length / this.itemsPerPage);
+
+    // Ensure we don't exceed available pages
+    if (this.currentPage > this.totalPages && this.totalPages > 0) {
+        this.currentPage = this.totalPages;
+        window.currentPage = this.currentPage;
+        startIndex = (this.currentPage - 1) * this.itemsPerPage;
+        endIndex = startIndex + this.itemsPerPage;
+        this.displayedSignals = this.filteredSignals.slice(startIndex, endIndex);
+    }
+
+    console.log("updateDisplayedSignals:", {
+        currentPage: this.currentPage,
+        itemsPerPage: this.itemsPerPage,
+        totalSignals: this.filteredSignals.length,
+        startIndex: startIndex,
+        endIndex: endIndex,
+        displayedCount: this.displayedSignals.length,
+        totalPages: this.totalPages
+    });
+};
+
+ETFSignalsManager.prototype.goToPage = function (pageNumber) {
+    if (pageNumber < 1 || pageNumber > this.totalPages) return;
+    this.currentPage = pageNumber;
+    window.currentPage = this.currentPage; // Update global variable
+    this.updateDisplayedSignals();
+    this.renderSignalsTable();
+    this.updatePagination();
+};
+
+ETFSignalsManager.prototype.changeItemsPerPage = function (newItemsPerPage) {
+    console.log("Changing items per page to:", newItemsPerPage);
+    this.itemsPerPage = parseInt(newItemsPerPage) || 10;
+    this.currentPage = 1;
+    window.currentPage = 1; // Update global variable
+
+    // Update the select dropdown to reflect the change
+    var select = document.getElementById("itemsPerPageSelect");
+    if (select) {
+        select.value = this.itemsPerPage;
+    }
+
+    this.updateDisplayedSignals();
+    this.renderSignalsTable();
+    this.updatePagination();
+    console.log("Updated pagination with", this.itemsPerPage, "items per page");
+};
+
+ETFSignalsManager.prototype.updatePagination = function () {
+    var showingCount = document.getElementById("showingCount");
+    var totalCount = document.getElementById("totalCount");
+    var visibleSignalsCount = document.getElementById("visibleSignalsCount");
+
+    // Calculate the range being shown
+    var startItem = this.filteredSignals.length > 0 ? (this.currentPage - 1) * this.itemsPerPage + 1 : 0;
+    var endItem = Math.min(this.currentPage * this.itemsPerPage, this.filteredSignals.length);
+
+    if (showingCount) {
+        showingCount.textContent = this.displayedSignals.length;
+    }
+
+    if (totalCount) totalCount.textContent = this.signals.length;
+    if (visibleSignalsCount) {
+        // Update both visible signals count elements
+        visibleSignalsCount.textContent = this.filteredSignals.length;
+        var otherVisibleCount = document.querySelectorAll('#visibleSignalsCount');
+        otherVisibleCount.forEach(function(el) {
+            el.textContent = this.filteredSignals.length;
+        }.bind(this));
+    }
+
+    // Update the items per page selector
+    var itemsPerPageSelect = document.getElementById("itemsPerPageSelect");
+    if (itemsPerPageSelect && itemsPerPageSelect.value != this.itemsPerPage) {
+        itemsPerPageSelect.value = this.itemsPerPage;
+    }
+
+    // Update pagination controls
+    this.updatePaginationControls();
+
+    console.log("Pagination updated - showing", startItem, "to", endItem, "of", this.filteredSignals.length, "items");
+};
+
+ETFSignalsManager.prototype.updatePaginationControls = function () {
+    // Update global currentPage variable
+    window.currentPage = this.currentPage;
+
+    var prevPageItem = document.getElementById("prevPageItem");
+    var nextPageItem = document.getElementById("nextPageItem");
+    var currentPageDisplay = document.getElementById("currentPageDisplay");
+
+    if (prevPageItem) {
+        if (this.currentPage <= 1) {
+            prevPageItem.classList.add("disabled");
+        } else {
+            prevPageItem.classList.remove("disabled");
+        }
+    }
+
+    if (nextPageItem) {
+        if (this.currentPage >= this.totalPages) {
+            nextPageItem.classList.add("disabled");
+        } else {
+            nextPageItem.classList.remove("disabled");
+        }
+    }
+
+    if (currentPageDisplay) {
+        currentPageDisplay.textContent = this.currentPage + " of " + this.totalPages;
+    }
+};
+
+ETFSignalsManager.prototype.createPaginationControls = function () {
+    var cardFooter = document.querySelector(".card-footer");
+    if (!cardFooter) {
+        // If card-footer doesn't exist, create it
+        var card = document.querySelector(".card.bg-secondary");
+        if (card) {
+            cardFooter = document.createElement("div");
+            cardFooter.className = "card-footer bg-dark border-0";
+            card.appendChild(cardFooter);
+        }
+    }
+
+    if (cardFooter) {
+        var paginationHTML =
+            '<div id="paginationContainer" class="d-flex justify-content-between align-items-center mt-3">' +
+            '<div class="d-flex align-items-center">' +
+            '<label for="itemsPerPage" class="form-label me-2 mb-0">Items per page:</label>' +
+            '<select id="itemsPerPage" class="form-select form-select-sm" style="width: auto;" onchange="changeItemsPerPage(this.value)">' +
+            '<option value="10">10</option>' +
+            '<option value="20" selected>20</option>' +
+            '<option value="25">25</option>' +
+            '<option value="50">50</option>' +
+            '<option value="100">100</option>' +
+            '</select>' +
+            '</div>' +
+            '<div id="paginationButtons" class="d-flex align-items-center">' +
+            '</div>' +
+            '<div class="text-muted small">' +
+            'Showing <span id="startItem">1</span>-<span id="endItem">10</span> of <span id="totalItems">0</span> items' +
+            '</div>' +
+            '</div>';
+
+        cardFooter.insertAdjacentHTML("beforeend", paginationHTML);
+    }
+};
+
+ETFSignalsManager.prototype.renderPaginationHTML = function () {
+    var buttonsContainer = document.getElementById("paginationButtons");
+    var startItem = document.getElementById("startItem");
+    var endItem = document.getElementById("endItem");
+    var totalItems = document.getElementById("totalItems");
+    var itemsPerPageSelect = document.getElementById("itemsPerPage");
+
+    if (!buttonsContainer) return;
+
+    // Update items per page selector
+    if (itemsPerPageSelect) {
+        itemsPerPageSelect.value = this.itemsPerPage;
+    }
+
+    // Update items display
+    var startIndex = (this.currentPage - 1) * this.itemsPerPage + 1;
+    var endIndex = Math.min(this.currentPage * this.itemsPerPage, this.filteredSignals.length);
+
+    if (startItem) startItem.textContent = startIndex;
+    if (endItem) endItem.textContent = endIndex;
+    if (totalItems) totalItems.textContent = this.filteredSignals.length;
+
+    // Generate pagination buttons
+    var buttonsHTML = '';
+
+    // Previous button
+    buttonsHTML += '<button class="btn btn-sm btn-outline-primary me-2" ' +
+        (this.currentPage === 1 ? 'disabled' : '') + 
+        ' onclick="goToPage(' + (this.currentPage - 1) + ')">' +
+        '<i class="fas fa-chevron-left"></i></button>';
+
+    // Page numbers
+    var startPage = Math.max(1, this.currentPage - 2);
+    var endPage = Math.min(this.totalPages, this.currentPage + 2);
+
+    if (startPage > 1) {
+        buttonsHTML += '<button class="btn btn-sm btn-outline-primary me-1" onclick="goToPage(1)">1</button>';
+        if (startPage > 2) {
+            buttonsHTML += '<span class="me-1">...</span>';
+        }
+    }
+
+    for (var i = startPage; i <= endPage; i++) {
+        buttonsHTML += '<button class="btn btn-sm ' + 
+            (i === this.currentPage ? 'btn-primary' : 'btn-outline-primary') + 
+            ' me-1" onclick="goToPage(' + i + ')">' + i + '</button>';
+    }
+
+    if (endPage < this.totalPages) {
+        if (endPage < this.totalPages - 1) {
+            buttonsHTML += '<span class="me-1">...</span>';
+        }
+        buttonsHTML += '<button class="btn btn-sm btn-outline-primary me-1" onclick="goToPage(' + this.totalPages + ')">' + this.totalPages + '</button>';
+    }
+
+    // Next button
+    buttonsHTML += '<button class="btn btn-sm btn-outline-primary ms-1" ' +
+        (this.currentPage === this.totalPages ? 'disabled' : '') + 
+        ' onclick="goToPage(' + (this.currentPage + 1) + ')">' +
+        '<i class="fas fa-chevron-right"></i></button>';
+
+    buttonsContainer.innerHTML = buttonsHTML;
+};
+
+
+
+ETFSignalsManager.prototype.showLoadingState = function () {
+    var tbody = document.getElementById("signalsTableBody");
+    if (tbody) {
+        tbody.innerHTML =
+            '<tr><td colspan="25" class="text-center py-5">' +
+            '<div class="d-flex flex-column justify-content-center align-items-center">' +
+            '<div class="spinner-border text-primary mb-3" role="status" style="width: 2.5rem; height: 2.5rem;">' +
+            '<span class="visually-hidden">Loading...</span></div>' +
+            '<h6 class="text-light mb-2">Loading ETF Signals</h6>' +
+            '<small class="text-muted">Fetching data from external database...</small>' +
+            '<div class="mt-2"><small class="text-warning">This may take up to 45 seconds</small></div>' +
+            "</div></td></tr>";
+    }
+};
+
+ETFSignalsManager.prototype.hideLoadingState = function () {
+    // Loading state is cleared when table is rendered
+};
+
+ETFSignalsManager.prototype.showSuccessMessage = function (message) {
+    console.log("Success:", message);
+};
+
+ETFSignalsManager.prototype.showErrorMessage = function (message) {
+    console.error("Error:", message);
+    var tbody = document.getElementById("signalsTableBody");
+    if (tbody) {
+        tbody.innerHTML =
+            '<tr><td colspan="25" class="text-center py-5">' +
+            '<div class="d-flex flex-column justify-content-center align-items-center">' +
+            '<i class="fas fa-exclamation-triangle fa-3x mb-3 text-warning"></i>' +
+            '<h6 class="text-light mb-2">Error Loading Data</h6>' +
+            '<p class="text-danger mb-3">' +
+            message +
+            "</p>" +
+            '<button class="btn btn-primary" onclick="refreshSignals()">Try Again</button>' +
+            "</div></td></tr>";
+    }
+};
+
+ETFSignalsManager.prototype.startAutoRefresh = function () {
+    var self = this;
+    this.stopAutoRefresh();
+    this.refreshInterval = setInterval(function () {
+        self.loadSignals(true);
+    }, 300000); // 5 minutes
+};
+
+ETFSignalsManager.prototype.stopAutoRefresh = function () {
+    if (this.refreshInterval) {
+        clearInterval(this.refreshInterval);
+        this.refreshInterval = null;
+    }
+};
+
+// Global functions for HTML event handlers
+function refreshSignals() {
+    if (window.etfSignalsManager) {
+        window.etfSignalsManager.loadSignals(true);
+    }
+}
+
+// Pagination functions
+function goToPage(pageNumber) {
+    if (window.etfSignalsManager) {
+        window.etfSignalsManager.goToPage(pageNumber);
+    }
+}
+
+function changeItemsPerPage() {
+    var select = document.getElementById("itemsPerPageSelect");
+    if (select && window.etfSignalsManager) {
+        var newValue = parseInt(select.value) || 10;
+        console.log("Global changeItemsPerPage called with:", newValue);
+        window.etfSignalsManager.changeItemsPerPage(newValue);
+    }
+}
+
+function setRefreshInterval(interval, text) {
+    // Only allow 5 minute intervals
+    if (interval !== 300000) {
+        interval = 300000;
+        text = "5 Min";
+    }
+
+    if (window.etfSignalsManager) {
+        window.etfSignalsManager.stopAutoRefresh();
+        if (interval > 0) {
+            window.etfSignalsManager.refreshInterval = setInterval(function () {
+                window.etfSignalsManager.loadSignals(true);
+            }, interval);
+        }
+        var currentIntervalSpan = document.getElementById("currentInterval");
+        var refreshIntervalDropdown = document.getElementById(
+            "refreshIntervalDropdown",
+        );
+        if (currentIntervalSpan) {
+            currentIntervalSpan.textContent = text;
+        }
+        if (refreshIntervalDropdown) {
+            refreshIntervalDropdown.textContent = text;
+        }
+        console.log("Refresh interval set to:", interval + "ms (" + text + ")");
+    }
+}
+
+function exportSignals() {
+    if (window.etfSignalsManager) {
+        var signals = window.etfSignalsManager.signals;
+        if (!signals || signals.length === 0) {
+            alert("No data to export");
+            return;
+        }
+
+        var csvContent = "data:text/csv;charset=utf-8,";
+        csvContent +=
+            "ETF,Entry Price,Current Price,Quantity,Investment,P&L,Change %\n";
+
+        signals.forEach(function (signal) {
+            var symbol = signal.etf || signal.symbol || "";
+            var entryPrice = signal.ep || signal.entry_price || 0;
+            var currentPrice = signal.cmp || signal.current_price || 0;
+            var quantity = signal.qty || signal || signal.quantity || 0;
+            var investment = signal.inv || signal.investment_amount || 0;
+            var pnl = signal.pl || signal.pnl || 0;
+            var changePct = signal.change_pct || signal.pp || 0;
+
+            var row = [
+                symbol,
+                entryPrice,
+                currentPrice,
+                quantity,
+                investment,
+                pnl,
+                changePct,
+            ].join(",");
+            csvContent += row + "\n";
+        });
+
+        var encodedUri = encodeURI(csvContent);
+        var link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "etf_signals.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+}
+
+function addDeal(signalId) {
+    console.log("Add Deal called with signalId:", signalId);
+
+    // Find the complete signal data from the current signals array
+    var signal = null;
+    if (window.etfSignalsManager && window.etfSignalsManager.signals) {
+        signal = window.etfSignalsManager.signals.find(function (s) {
+            return s.id == signalId || s.trade_signal_id == signalId;
+        });
+    }
+
+    if (!signal) {
+        console.error("Signal not found for ID:", signalId);
+        showSwalMessage(
+            "Signal data not found. Please refresh the page and try again.",
+            "error",
+        );
+        return;
+    }
+
+    console.log("Found signal:", signal);
+
+    var symbol = signal.etf || signal.symbol || "UNKNOWN";
+    var price = signal.cmp || signal.ep || 0;
+    var quantity = signal.qty || 1;
+    var investment = signal.inv || price * quantity;
+
+    // Validate data before proceeding
+    if (!symbol || symbol === "UNKNOWN" || price <= 0 || quantity <= 0) {
+        showSwalMessage("Invalid signal data. Cannot create deal.", "error");
+        return;
+    }
+
+    // Show SweetAlert2 confirmation dialog
+    if (typeof Swal !== "undefined") {
+        Swal.fire({
+            title: "Add Deal",
+            html:
+                "Add deal for <strong>" +
+                symbol +
+                "</strong> at ₹" +
+                parseFloat(price).toFixed(2) +
+                " (Qty: " +
+                quantity +
+                ")?",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#28a745",
+            cancelButtonColor: "#6c757d",
+            confirmButtonText: "OK",
+            cancelButtonText: "Cancel",
+            background: "#2c3e50",
+            color: "#fff",
+            customClass: {
+                popup: "swal-dark-theme",
+            },
+        }).then((result) => {
+            if (result.isConfirmed) {
+                proceedWithAddingDeal(
+                    signal,
+                    symbol,
+                    price,
+                    quantity,
+                    investment,
+                );
+            }
+        });
+    } else {
+        // Fallback to regular confirm if SweetAlert2 is not available
+        if (
+            confirm(
+                "Add deal for " +
+                    symbol +
+                    " at ₹" +
+                    parseFloat(price).toFixed(2) +
+                    " (Qty: " +
+                    quantity +
+                    ")?",
+            )
+        ) {
+            proceedWithAddingDeal(signal, symbol, price, quantity, investment);
+        }
+    }
+}
+
+// Function removed - no longer checking for duplicates to simplify the flow
+
+function proceedWithAddingDeal(signal, symbol, price, quantity, investment) {
+    console.log("Proceeding with adding deal:", {
+        signal: signal,
+        symbol: symbol,
+        price: price,
+        quantity: quantity,
+        investment: investment,
+    });
+
+    // Show loading indicator
+    if (typeof Swal !== "undefined") {
+        Swal.fire({
+            title: "Creating Deal...",
+            text: "Please wait while we process your request",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            background: "#2c3e50",
+            color: "#fff",
+            customClass: {
+                popup: "swal-dark-theme",
+            },
+            didOpen: () => {
+                Swal.showLoading();
+            },
+        });
+    }
+
+    // Prepare complete signal data for the API
+    var signalData = {
+        etf: signal.etf || signal.symbol || symbol,
+        symbol: signal.etf || signal.symbol || symbol,
+        trade_signal_id: signal.trade_signal_id || signal.id,
+        pos: signal.pos || "",
+        qty: signal.qty || "",
+        ep: signal.ep || "",
+        cmp: signal.cmp || "",
+        tp: signal.tp || "",
+        inv: signal.inv || "",
+        pl: signal.pl || "",
+        change_pct: signal.chan,
+        thirty: signal.thirty,
+        dh: signal.dh || 0,
+        date: signal.date || new Date().toISOString().split("T")[0],
+        ed: signal.ed || signal.date,
+        exp: signal.exp || "",
+        pr: signal.pr || "",
+        pp: signal.pp || "",
+        iv: signal.iv || "",
+        ip: signal.ip || "",
+        nt: signal.nt || "Added from ETF signals",
+        // qt: signal.qt || new Date().toLocaleTimeString(),
+        seven: signal.seven || 0,
+        ch: signal.ch || signal.change_pct || 0,
+        tva: signal.tva,
+        tpr: signal.tpr,
+    };
+
+    console.log("Sending signal data:", signalData);
+
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/deals/create-from-signal", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            console.log("Response status:", xhr.status);
+            console.log("Response text:", xhr.responseText);
+
+            if (xhr.status === 200) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        if (typeof Swal !== "undefined") {
+                            Swal.fire({
+                                title: "Success!",
+                                text:
+                                    "Deal created successfully for " +
+                                    symbol +
+                                    "!",
+                                icon: "success",
+                                confirmButtonColor: "#28a745",
+                                background: "#2c3e50",
+                                color: "#fff",
+                                customClass: {
+                                    popup: "swal-dark-theme",
+                                },
+                            }).then(() => {
+                                window.location.href = "/deals";
+                            });
+                        } else {
+                            alert(
+                                "Deal created successfully for " + symbol + "!",
+                            );
+                            window.location.href = "/deals";
+                        }
+                    } else {
+                        if (typeof Swal !== "undefined") {
+                            Swal.fire({
+                                title: "Error!",
+                                text:
+                                    "Failed to create deal: " +
+                                    (response.message || "Unknown error"),
+                                icon: "error",
+                                confirmButtonColor: "#dc3545",
+                                background: "#2c3e50",
+                                color: "#fff",
+                                customClass: {
+                                    popup: "swal-dark-theme",
+                                },
+                            });
+                        } else {
+                            alert(
+                                "Failed to create deal: " +
+                                    (response.message || "Unknown error"),
+                            );
+                        }
+                    }
+                } catch (parseError) {
+                    console.error("Failed to parse API response:", parseError);
+                    if (typeof Swal !== "undefined") {
+                        Swal.fire({
+                            title: "Error!",
+                            text: "Invalid response from server",
+                            icon: "error",
+                            confirmButtonColor: "#dc3545",
+                            background: "#2c3e50",
+                            color: "#fff",
+                            customClass: {
+                                popup: "swal-dark-theme",
+                            },
+                        });
+                    } else {
+                        alert("Invalid response from server");
+                    }
+                }
+            } else {
+                if (typeof Swal !== "undefined") {
+                    Swal.fire({
+                        title: "Error!",
+                        text:
+                            "Server returned status: " +
+                            xhr.status +
+                            ". Please try again or contact support.",
+                        icon: "error",
+                        confirmButtonColor: "#dc3545",
+                        background: "#2c3e50",
+                        color: "#fff",
+                        customClass: {
+                            popup: "swal-dark-theme",
+                        },
+                    });
+                } else {
+                    alert(
+                        "Server returned status: " +
+                            xhr.status +
+                            ". Please try again or contact support.",
+                    );
+                }
+            }
+        }
+    };
+
+    xhr.onerror = function () {
+        console.error("Network error occurred");
+        if (typeof Swal !== "undefined") {
+            Swal.fire({
+                title: "Network Error!",
+                text: "Network error occurred. Please check your connection.",
+                icon: "error",
+                confirmButtonColor: "#dc3545",
+                background: "#2c3e50",
+                color: "#fff",
+                customClass: {
+                    popup: "swal-dark-theme",
+                },
+            });
+        } else {
+            alert("Network error occurred. Please check your connection.");
+        }
+    };
+
+    xhr.send(JSON.stringify({ signal_data: signalData }));
+}
+
+// Function to sort signals by any column
+function sortSignalsByColumn(column) {
+    if (window.etfSignalsManager) {
+        window.etfSignalsManager.sortDirection =
+            window.etfSignalsManager.sortDirection === "asc" ? "desc" : "asc";
+        var direction = window.etfSignalsManager.sortDirection;
+
+        window.etfSignalsManager.filteredSignals.sort(function (a, b) {
+            var valueA, valueB;
+
+            switch (column) {
+                case "trade_signal_id":
+                    valueA = parseInt(a.trade_signal_id || a.id || 0);
+                    valueB = parseInt(b.trade_signal_id || b.id || 0);
+                    break;
+                case "symbol":
+                    valueA = (a.etf || a.symbol || "").toLowerCase();
+                    valueB = (b.etf || b.symbol || "").toLowerCase();
+                    break;
+                case "ep":
+                    valueA = parseFloat(a.ep || a.entry_price || 0);
+                    valueB = parseFloat(b.ep || b.entry_price || 0);
+                    break;
+                case "cmp":
+                    valueA = parseFloat(a.cmp || a.current_price || 0);
+                    valueB = parseFloat(b.cmp || b.current_price || 0);
+                    break;
+                case "qty":
+                    valueA = parseInt(a.qty || a.quantity || 0);
+                    valueB = parseInt(b.qty || b.quantity || 0);
+                    break;
+                case "changePct":
+                    valueA = parseFloat(a.change_pct || a.pp || 0);
+                    valueB = parseFloat(b.change_pct || b.pp || 0);
+                    break;
+                case "inv":
+                    valueA = parseFloat(a.inv || a.investment_amount || 0);
+                    valueB = parseFloat(b.inv || b.investment_amount || 0);
+                    break;
+                case "tp":
+                    valueA = parseFloat(a.tp || a.target_price || 0);
+                    valueB = parseFloat(b.tp || b.target_price || 0);
+                    break;
+                case "pl":
+                    valueA = parseFloat(a.pl || a.pnl || 0);
+                    valueB = parseFloat(b.pl || b.pnl || 0);
+                    break;
+                case "date":
+                    valueA = a.date || a.created_at || "";
+                    valueB = b.date || b.created_at || "";
+                    break;
+                default:
+                    return 0;
+            }
+
+            if (typeof valueA === "string") {
+                return direction === "asc"
+                    ? valueA.localeCompare(valueB)
+                    : valueB.localeCompare(valueA);
+            } else {
+                return direction === "asc" ? valueA - valueB : valueB - valueA;
+            }
+        });
+
+        window.etfSignalsManager.displayedSignals = window.etfSignalsManager.filteredSignals.slice();
+        window.etfSignalsManager.renderSignalsTable();
+        window.etfSignalsManager.updateCounts();
+    }
+}
+
+// Initialize the ETF Signals Manager
+window.etfSignalsManager = new ETFSignalsManager();
+// Initialize global currentPage variable
+window.currentPage = 1;
+
+document.addEventListener("DOMContentLoaded", function () {
+    // Set default refresh interval to 5 minutes
+    var currentIntervalSpan = document.getElementById("currentInterval");
+    var refreshIntervalDropdown = document.getElementById(
+        "refreshIntervalDropdown",
+    );
+    if (currentIntervalSpan) {
+        currentIntervalSpan.textContent = "5 Min";
+    }
+    if (refreshIntervalDropdown) {
+        refreshIntervalDropdown.textContent = "5 Min";
+    }
+});
+
+// Add Deal functionality
+function addDealFromSignal(symbol, signalData) {
+    try {
+        var signal =
+            typeof signalData === "string"
+                ? JSON.parse(signalData)
+                : signalData;
+
+        console.log("Adding deal for signal:", signal);
+        console.log("Symbol:", symbol);
+
+        // Validate signal data
+        if (!signal || !symbol) {
+            showMessage("Invalid signal data. Cannot create deal.", "error");
+            return;
+        }
+
+        var price = signal.cmp || signal.ep || 0;
+        var quantity = signal.qty || 1;
+
+        if (
+            confirm(
+                "Add deal for " +
+                    symbol +
+                    " at ₹" +
+                    price.toFixed(2) +
+                    " (Qty: " +
+                    quantity +
+                    ")?",
+            )
+        ) {
+            return;
+        }
+
+        // Show loading state
+        showMessage("Creating deal for " + symbol + "...", "info");
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/deals/create-from-signal", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.timeout = 10000; // 10 second timeout
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                try {
+                    if (xhr.status === 200) {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.success) {
+                            showMessage(
+                                "Deal created successfully for " +
+                                    symbol +
+                                    "! Deal ID: " +
+                                    response.deal_id,
+                                "success",
+                            );
+
+                            // Optional: redirect to deals page after a delay
+                            setTimeout(function () {
+                                if (
+                                    confirm(
+                                        "Deal created! Would you like to view your deals page?",
+                                    )
+                                ) {
+                                    window.location.href = "/deals";
+                                }
+                            }, 2000);
+                        } else {
+                            showMessage(
+                                "Failed to create deal: " +
+                                    (response.message || "Unknown error"),
+                                "error",
+                            );
+                        }
+                    } else if (xhr.status === 400) {
+                        var errorResponse = JSON.parse(xhr.responseText);
+                        showMessage(
+                            "Invalid request: " +
+                                (errorResponse.message || "Bad request"),
+                            "error",
+                        );
+                    } else if (xhr.status === 500) {
+                        var errorResponse = JSON.parse(xhr.responseText);
+                        showMessage(
+                            "Server error: " +
+                                (errorResponse.message ||
+                                    "Internal server error"),
+                            "error",
+                        );
+                    } else {
+                        showMessage(
+                            "Request failed with status: " +
+                                xhr.status +
+                                ". Please try again.",
+                            "error",
+                        );
+                    }
+                } catch (parseError) {
+                    console.error("Error parsing response:", parseError);
+                    showMessage(
+                        "Invalid response from server. Please try again.",
+                        "error",
+                    );
+                }
+            }
+        };
+
+        xhr.ontimeout = function () {
+            showMessage("Request timed out. Please try again.", "error");
+        };
+
+        xhr.onerror = function () {
+            showMessage(
+                "Network error. Please check your connection and try again.",
+                "error",
+            );
+        };
+
+        xhr.send(
+            JSON.stringify({
+                signal_data: signal,
+            }),
+        );
+    } catch (error) {
+        console.error("Error adding deal:", error);
+        showMessage("Error processing request: " + error.message, "error");
+    }
+}
+
+// Function to stop automatic CMP updates
+function stopAutoCMPUpdates() {
+    if (typeof cmpUpdateInterval !== "undefined" && cmpUpdateInterval) {
+        clearInterval(cmpUpdateInterval);
+        cmpUpdateInterval = null;
+        console.log("⏹️ Auto CMP updates stopped");
+    }
+}
+
+// Clean up interval when page unloads
+window.addEventListener("beforeunload", function () {
+    stopAutoCMPUpdates();
+});
+
+function showMessage(message, type) {
+    // Remove any existing alerts first
+    var existingAlerts = document.querySelectorAll(".custom-alert");
+    existingAlerts.forEach(function (alert) {
+        alert.remove();
+    });
+
+    var alertClass, iconClass;
+    switch (type) {
+        case "success":
+            alertClass = "alert-success";
+            iconClass = "fa-check-circle";
+            break;
+        case "error":
+            alertClass = "alert-danger";
+            iconClass = "fa-exclamation-triangle";
+            break;
+        case "info":
+            alertClass = "alert-info";
+            iconClass = "fa-info-circle";
+            break;
+        default:
+            alertClass = "alert-primary";
+            iconClass = "fa-info-circle";
+    }
+
+    var alertHtml =
+        '<div class="alert ' +
+        alertClass +
+        ' alert-dismissible fade show custom-alert position-fixed" role="alert" style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">' +
+        '<i class="fas ' +
+        iconClass +
+        ' me-2"></i>' +
+        message +
+        '<button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>' +
+        "</div>";
+
+    var alertDiv = document.createElement("div");
+    alertDiv.innerHTML = alertHtml;
+    document.body.appendChild(alertDiv);
+
+    // Auto-remove after 5 seconds
+    setTimeout(function () {
+        var alert = document.querySelector(".custom-alert");
+        if (alert) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+function showSwalMessage(message, type) {
+    if (typeof Swal !== "undefined") {
+        var icon = "info";
+        var color = "#28a745";
+
+        switch (type) {
+            case "success":
+                icon = "success";
+                color = "#28a745";
+                break;
+            case "error":
+                icon = "error";
+                color = "#dc3545";
+                break;
+            case "warning":
+                icon = "warning";
+                color = "#ffc107";
+                break;
+            default:
+                icon = "info";
+                color = "#17a2b8";
+        }
+
+        Swal.fire({
+            title: type.charAt(0).toUpperCase() + type.slice(1),
+            text: message,
+            icon: icon,
+            confirmButtonColor: color,
+            background: "#2c3e50",
+            color: "#fff",
+            customClass: {
+                popup: "swal-dark-theme",
+            },
+        });
+    } else {
+        // Fallback to regular alert
+        alert(message);
+    }
+}
+
+ETFSignalsManager.prototype.update// Removing pagination and showing all data requires changes to updatePagination and related functions.
 ETFSignalsManager.prototype.updateCounts = function () {
     // Update total count display
     var totalElement = document.getElementById("totalCount");
@@ -924,7 +1884,8 @@ ETFSignalsManager.prototype.updateCounts = function () {
     var showingElement = document.getElementById("showingCount");
 
     if (totalElement) {
-        totalElement.textContent = this.signals.length;    }
+        totalElement.textContent = this.signals.length;
+    }
     if (visibleElement) {
         visibleElement.textContent = this.filteredSignals.length;
     }
@@ -1082,6 +2043,156 @@ ETFSignalsManager.prototype.changeItemsPerPage = function (newItemsPerPage) {
     // No longer needed as pagination is removed
 };
 
+ETFSignalsManager.prototype.setupEventListeners = function () {
+    var self = this;
+
+    // Refresh button
+    var refreshBtn = document.getElementById("refreshSignalsBtn");
+    if (refreshBtn) {
+        refreshBtn.addEventListener("click", function () {
+            self.loadSignals(true);
+        });
+    }
+
+    // Auto-refresh controls
+    var autoRefreshToggle = document.getElementById("autoRefreshToggle");
+    if (autoRefreshToggle) {
+        autoRefreshToggle.addEventListener("change", function (e) {
+            if (e.target.checked) {
+                self.startAutoRefresh();
+            } else {
+                self.stopAutoRefresh();
+            }
+        });
+    }
+
+    // Search functionality
+    var searchInput = document.getElementById("signalSearch");
+    if (searchInput) {
+        searchInput.addEventListener("input", function () {
+            self.applyFilters();
+        });
+    }
+
+    // Items per page selector - REMOVE
+    // var itemsPerPageSelect = document.getElementById("itemsPerPage");
+    // if (itemsPerPageSelect) {
+    //     itemsPerPageSelect.addEventListener("change", function (e) {
+    //         self.itemsPerPage = parseInt(e.target.value);
+    //         self.currentPage = 1;
+    //         self.renderSignalsTable();
+    //         self.updatePagination();
+    //     });
+    // }
+};
+
+ETFSignalsManager.prototype.loadSignals = function (resetData) {
+    var self = this;
+    if (this.isLoading) return;
+
+    if (resetData === true) {
+        this.currentPage = 1;
+        this.signals = [];
+        this.filteredSignals = [];
+    }
+
+    this.isLoading = true;
+    this.showLoadingState();
+
+    var url = "/api/etf-signals-data";
+
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", url, true);
+    xhr.timeout = 45000; // 45 second timeout
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            self.isLoading = false;
+            self.hideLoadingState();
+
+            console.log("API Response Status:", xhr.status);
+            console.log("API Response Text:", xhr.responseText);
+
+            if (xhr.status === 200) {
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    console.log("Parsed API data:", data);
+
+                    if (data.success === false) {
+                        // Handle API errors gracefully
+                        self.showErrorMessage(
+                            data.message ||
+                                data.error ||
+                                "Unknown error occurred",
+                        );
+                        self.signals = [];
+                        self.filteredSignals = [];
+                        self.renderSignalsTable();
+                        self.updateCounts();
+                        return;
+                    }
+
+                    if (data.data && Array.isArray(data.data)) {
+                        // Load all signals at once (server-side handles pagination)
+                        self.signals = data.data || [];
+                        self.filteredSignals = self.signals.slice();
+
+                        // Reset to first page when loading new data
+                        if (resetData === true) {
+                            self.currentPage = 1;
+                            window.currentPage = 1;
+                        }
+
+                        // Update displayed signals based on current page
+                        self.updateDisplayedSignals();
+                        self.renderSignalsTable();
+                        self.renderPaginationHTML();
+                        self.updateCounts();
+                        self.showSuccessMessage(
+                            "Loaded " + self.signals.length + " signals",
+                        );
+                        console.log(
+                            "Successfully loaded",
+                            self.signals.length,
+                            "signals",
+                        );
+                    } else if (data.error) {
+                        throw new Error(data.error);
+                    } else {
+                        throw new Error("Invalid response format");
+                    }
+                } catch (parseError) {
+                    console.error("Error parsing response:", parseError);
+                    self.showErrorMessage("Error parsing server response");
+                }
+            } else {
+                console.error("API request failed with status:", xhr.status);
+                self.showErrorMessage(
+                    "Failed to load signals: Server error " + xhr.status,
+                );
+            }
+        }
+    };
+
+    xhr.ontimeout = function () {
+        self.isLoading = false;
+        self.hideLoadingState();
+        console.error("API request timed out");
+        self.showErrorMessage(
+            "Request timed out - database connection slow. Please try again.",
+        );
+    };
+
+    xhr.onerror = function () {
+        self.isLoading = false;
+        self.hideLoadingState();
+        console.error("API request failed");
+        self.showErrorMessage("Network error - please check your connection.");
+    };
+
+    xhr.send();
+};
+
 ETFSignalsManager.prototype.applyFilters = function () {
     var searchInput = document.getElementById("signalSearch");
     var searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
@@ -1123,64 +2234,3 @@ ETFSignalsManager.prototype.saveColumnSettings = function () {
     }
     localStorage.setItem("etfSignalsColumnSettings", JSON.stringify(settings));
 };
-
-// Add the following CSS to your stylesheet or in a <style> tag in the HTML:
-/* Add this CSS to your stylesheet or in a &lt;style&gt; tag in the HTML */
-/* Ensures the table fills its container and handles overflow */
-#etfSignalsTableContainer {
-    width: 100%;
-    overflow-x: auto; /* Horizontal scroll */
-    position: relative; /* Required for positioning the scrollbars */
-}
-
-/* Style for the table itself */
-#etfSignalsTable {
-    width: 100%; /* Ensure the table takes up the full width */
-    border-collapse: collapse; /* Collapses borders between cells */
-    table-layout: fixed; /* Ensures consistent column widths */
-}
-
-/* Basic table cell styling for readability */
-#etfSignalsTable th,
-#etfSignalsTable td {
-    padding: 8px;
-    border: 1px solid #ddd; /* Light gray border */
-    text-align: left;
-    white-space: nowrap; /* Prevents text from wrapping, forces scrolling */
-}
-
-/* Style for table headers */
-#etfSignalsTable th {
-    background-color: #343a40; /* Dark background for headers */
-    color: white;
-    font-weight: bold;
-}
-
-/* Optional: Zebra striping for improved readability */
-#etfSignalsTable tbody tr:nth-child(odd) {
-    background-color: #212529; /* Darker background for alternating rows */
-}
-
-/* Custom scrollbar styles */
-/* WebKit (Chrome, Safari) */
-#etfSignalsTableContainer::-webkit-scrollbar {
-    width: 10px;
-    height: 10px; /* For horizontal scrollbar */
-}
-
-#etfSignalsTableContainer::-webkit-scrollbar-thumb {
-    background: #6c757d; /* Bootstrap's secondary color */
-    border-radius: 5px;
-}
-
-#etfSignalsTableContainer::-webkit-scrollbar-thumb:hover {
-    background: #5a6268;
-}
-
-/* Firefox */
-/* Note: Firefox scrollbar styling is limited and requires more complex CSS */
-/* You can use JavaScript libraries for more advanced styling */
-#etfSignalsTableContainer {
-    scrollbar-width: thin;
-    scrollbar-color: #6c757d #212529;
-}
