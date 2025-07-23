@@ -378,25 +378,73 @@ def positions_redirect():
 def index():
     """Home page - redirect to portfolio if authenticated, else to login"""
     # Check if user is authenticated
-    return redirect(url_for('portfolio'))
+    if session.get('authenticated') or session.get('kotak_logged_in'):
+        return redirect(url_for('portfolio'))
+    else:
+        return redirect(url_for('auth_routes.trading_account_login'))
 
 
 @app.route('/portfolio')
 def portfolio():
-    """Portfolio page - show portfolio.html template"""
-    return render_template('portfolio.html')
+    """Portfolio page - show portfolio.html template - authentication required"""
+    # Check if user is authenticated - no guest access allowed
+    if not (session.get('authenticated') or session.get('kotak_logged_in')):
+        return redirect(url_for('auth_routes.trading_account_login'))
+    
+    # Prepare account data for sidebar if logged in
+    kotak_account_data = None
+    if session.get('kotak_logged_in') or session.get('authenticated'):
+        kotak_account_data = {
+            'ucc': session.get('ucc', session.get('username', '-')),
+            'mobile': session.get('mobile_number', '-'),
+            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
+            'last_login': 'Just Now',
+            'status': 'Online'
+        }
+    
+    return render_template('portfolio.html', kotak_account=kotak_account_data)
 
 
 @app.route('/trading-signals')
 def trading_signals():
-    """Trading Signals page"""
-    return render_template('trading_signals.html')
+    """Trading Signals page - authentication required"""
+    # Check if user is authenticated - no guest access allowed
+    if not (session.get('authenticated') or session.get('kotak_logged_in')):
+        return redirect(url_for('auth_routes.trading_account_login'))
+    
+    # Prepare account data for sidebar if logged in
+    kotak_account_data = None
+    if session.get('kotak_logged_in') or session.get('authenticated'):
+        kotak_account_data = {
+            'ucc': session.get('ucc', session.get('username', '-')),
+            'mobile': session.get('mobile_number', '-'),
+            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
+            'last_login': 'Just Now',
+            'status': 'Online'
+        }
+    
+    return render_template('trading_signals.html', kotak_account=kotak_account_data)
 
 
 @app.route('/deals')
 def deals():
-    """Deals page"""
-    return render_template('deals.html')
+    """Deals page - authentication required"""
+    # Check if user is authenticated - no guest access allowed
+    if not (session.get('authenticated') or session.get('kotak_logged_in')):
+        return redirect(url_for('auth_routes.trading_account_login'))
+    
+    # Prepare account data for sidebar if logged in
+    kotak_account_data = None
+    if session.get('kotak_logged_in') or session.get('authenticated'):
+        kotak_account_data = {
+            'ucc': session.get('ucc', session.get('username', '-')),
+            'mobile': session.get('mobile_number', '-'),
+            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
+            'last_login': 'Just Now',
+            'status': 'Online'
+        }
+    
+    return render_template('deals.html', kotak_account=kotak_account_data)
 
 
 @app.route('/positions')
