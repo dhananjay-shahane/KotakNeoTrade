@@ -112,8 +112,8 @@ def login():
                     session['authenticated'] = True  # General authentication flag
                     
                     flash('Successfully authenticated with TOTP!', 'success')
-                    logging.info(f"Login successful for UCC: {ucc}, redirecting to portfolio")
-                    return redirect(url_for('portfolio'))
+                    logging.info(f"Login successful for UCC: {ucc}, redirecting to dashboard")
+                    return redirect(url_for('main_routes.dashboard'))
                 else:
                     flash('Invalid client data received', 'error')
             else:
@@ -196,4 +196,4 @@ def logout_kotak():
         session['login_type'] = 'trading_account'
     
     flash('Logged out from Kotak Neo successfully', 'info')
-    return redirect(url_for('portfolio'))
+    return redirect(url_for('main_routes.dashboard'))
