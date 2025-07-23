@@ -676,3 +676,18 @@ def get_etf_signals_data_json(page=1, page_size=10):
             'message':
             'No trading signals found - admin_trade_signals table may be empty'
         }
+
+
+def get_basic_trade_signals_data_json():
+    """Get basic trade signals data in JSON format for API response"""
+    try:
+        return get_etf_signals_data_json()
+    except Exception as e:
+        logger.error(f"Error getting basic trade signals data: {e}")
+        return {
+            'data': [],
+            'recordsTotal': 0,
+            'recordsFiltered': 0,
+            'error': str(e),
+            'message': 'Failed to fetch basic trade signals data'
+        }

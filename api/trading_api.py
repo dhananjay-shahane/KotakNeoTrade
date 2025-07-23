@@ -279,3 +279,64 @@ def get_positions_api():
             'message': str(e),
             'positions': []
         }), 500
+
+
+def handle_place_order_logic(trading_functions, neo_client):
+    """Handle place order logic - extracted for modular use"""
+    try:
+        if not session.get('client'):
+            return jsonify({
+                'success': False,
+                'message': 'Not authenticated'
+            }), 401
+
+        order_data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['symbol', 'quantity', 'transaction_type', 'order_type']
+        for field in required_fields:
+            if field not in order_data:
+                return jsonify({
+                    'success': False,
+                    'message': f'Missing required field: {field}'
+                }), 400
+
+        # Get client from session
+        client = session.get('client')
+        
+        # Prepare order data with defaults
+        order_params = {
+            'symbol': order_data['symbol'],
+            'quantity': str(order_data['quantity']),
+            'transaction_type': order_data['transaction_type'],
+            'order_type': order_data['order_type'],
+            'exchange_segment': order_data.get('exchange_segment', 'nse_cm'),
+            'product': order_data.get('product', 'CNC'),
+            'validity': order_data.get('validity', 'DAY'),
+            'price': order_data.get('price', '0'),
+            'trigger_price': order_data.get('trigger_price', '0')
+        }
+
+        # Place the order
+        result = trading_functions.place_order(client, order_params)
+
+        if result.get('success'):
+            return jsonify({
+                'success': True,
+                'message': 'Order placed successfully',
+                'order_id': result.get('order_id'),
+                'data': result
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': result.get('message', 'Order placement failed'),
+                'error': result.get('error', 'Unknown error')
+            }), 400
+
+    except Exception as e:
+        logging.error(f"Order placement error: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Order placement failed: {str(e)}'
+        }), 500

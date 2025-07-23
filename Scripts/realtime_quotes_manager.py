@@ -53,33 +53,38 @@ class RealtimeQuotesManager:
     def _fetch_and_store_quotes(self):
         """Fetch and store quotes for tracked symbols"""
         try:
-            # Get unique symbols from admin trade signals
-            symbols = db.session.query(AdminTradeSignal.symbol).distinct().all()
-            symbols = [s[0] for s in symbols if s[0]]
-            
-            if not symbols:
-                logger.info("No symbols to track")
-                return
-            
-            # For now, store mock quotes since we don't have real API access
-            # In production, this would fetch from actual market data API
-            for symbol in symbols:
-                quote = RealtimeQuote(
-                    symbol=symbol,
-                    ltp=100.0,  # This would be real price
-                    change=0.5,
-                    change_percent=0.5,
-                    volume=1000,
-                    timestamp=datetime.utcnow()
-                )
-                db.session.add(quote)
-            
-            db.session.commit()
-            logger.info(f"Updated quotes for {len(symbols)} symbols")
+            from app import app
+            with app.app_context():
+                # Get unique symbols from admin trade signals
+                symbols = db.session.query(AdminTradeSignal.symbol).distinct().all()
+                symbols = [s[0] for s in symbols if s[0]]
+                
+                if not symbols:
+                    logger.info("No symbols to track")
+                    return
+                
+                # For now, store mock quotes since we don't have real API access
+                # In production, this would fetch from actual market data API
+                for symbol in symbols:
+                    quote = RealtimeQuote(
+                        symbol=symbol,
+                        ltp=100.0,  # This would be real price
+                        change=0.5,
+                        change_percent=0.5,
+                        volume=1000,
+                        timestamp=datetime.utcnow()
+                    )
+                    db.session.add(quote)
+                
+                db.session.commit()
+                logger.info(f"Updated quotes for {len(symbols)} symbols")
             
         except Exception as e:
             logger.error(f"Error fetching quotes: {e}")
-            db.session.rollback()
+            try:
+                db.session.rollback()
+            except:
+                pass
 
 # Global instance
 realtime_quotes_manager = RealtimeQuotesManager()
@@ -127,4 +132,14 @@ def force_fetch_quotes():
         return True
     except Exception as e:
         logger.error(f"Error forcing quotes fetch: {e}")
+        return False
+
+def start_quotes_scheduler():
+    """Start the quotes scheduler - entry point for app.py"""
+    try:
+        realtime_quotes_manager.start()
+        logger.info("Quotes scheduler started successfully")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to start quotes scheduler: {e}")
         return False

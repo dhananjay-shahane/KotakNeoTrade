@@ -422,7 +422,10 @@ def show_positions():
         }
 
     try:
-        return positions()
+        if 'positions' in globals():
+            return positions()
+        else:
+            return render_template('positions.html', kotak_account=kotak_account_data)
     except:
         return render_template('positions.html',
                                kotak_account=kotak_account_data)
@@ -501,7 +504,10 @@ def show_orders():
         }
 
     try:
-        return orders()
+        if 'orders' in globals():
+            return orders()
+        else:
+            return render_template('orders.html', kotak_account=kotak_account_data)
     except:
         return render_template('orders.html', kotak_account=kotak_account_data)
 
@@ -895,6 +901,17 @@ except Exception as e:
 # ========================================
 # APPLICATION STARTUP
 # ========================================
+
+# Import missing functions and trading_functions
+try:
+    from functions.positions.positions import positions
+    from functions.orders.orders import orders  
+    from Scripts.trading_functions import TradingFunctions
+    trading_functions = TradingFunctions()
+    print("✓ Trading functions imported successfully")
+except Exception as e:
+    print(f"Warning: Could not import trading functions: {e}")
+    trading_functions = None
 
 # Email functionality preserved from original code
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
