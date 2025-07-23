@@ -1021,12 +1021,20 @@ def register():
     if request.method == 'POST':
         email = request.form.get('email')
         mobile = request.form.get('mobile')
-        username = request.form.get('username')
         password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        
+        # Generate username from email (before @ symbol)
+        username = email.split('@')[0] if email else None
 
         # Validate input
-        if not all([email, mobile, username, password]):
+        if not all([email, mobile, password, confirm_password]):
             flash('All fields are required.', 'error')
+            return render_template('auth/register.html')
+            
+        # Validate password confirmation
+        if password != confirm_password:
+            flash('Passwords do not match.', 'error')
             return render_template('auth/register.html')
 
         # Check if user already exists
