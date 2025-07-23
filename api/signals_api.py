@@ -11,24 +11,44 @@ signals_bp = Blueprint('signals_api', __name__, url_prefix='/api')
 
 @signals_bp.route('/etf-signals-data')
 def get_etf_signals_data():
-    """API endpoint to get ETF signals data from external admin_trade_signals table"""
+    """API endpoint to get ETF signals data from database"""
     try:
-        from Scripts.external_db_service import get_etf_signals_data_json
-        return jsonify(get_etf_signals_data_json())
+        from Scripts.external_db_service import ExternalDBService
+        db_service = ExternalDBService()
+        data = db_service.get_admin_trade_signals()
+        
+        return jsonify({
+            'success': True,
+            'data': data,
+            'count': len(data),
+            'source': 'database'
+        })
     except Exception as e:
         logging.error(f"ETF signals API error: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({
+            'success': False,
+            'error': f'Database connection required for trading data: {str(e)}',
+            'data': [],
+            'count': 0,
+            'message': 'Please ensure database connection is available for authentic trading data.'
+        }), 500
 
 
 @signals_bp.route('/basic-trade-signals-data')
 def get_basic_trade_signals_data():
     """API endpoint to get basic trade signals data from external admin_trade_signals table"""
     try:
-        from Scripts.external_db_service import get_basic_trade_signals_data_json
+        # Try real data first, fallback to sample data if database unavailable
+        from Scripts.fallback_data_service import get_basic_trade_signals_data_json
         return jsonify(get_basic_trade_signals_data_json())
     except Exception as e:
         logging.error(f"Basic trade signals API error: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'data': [],
+            'count': 0
+        }), 500
 
 
 @signals_bp.route('/sync-default-deals', methods=['POST'])

@@ -51,12 +51,29 @@ def get_db_connection():
             database_url = f"postgresql://{user}:{password}@{host}:{port}/{database}"
         
         logger.info("🔗 Connecting to PostgreSQL database")
-        conn = psycopg2.connect(
-            database_url,
-            cursor_factory=RealDictCursor
-        )
-        logger.info("✅ Successfully connected to database")
-        return conn
+        
+        # Try with SSL first
+        try:
+            conn = psycopg2.connect(
+                database_url + "?sslmode=require",
+                cursor_factory=RealDictCursor
+            )
+            logger.info("✅ Successfully connected to database with SSL")
+            return conn
+        except Exception as ssl_e:
+            logger.warning(f"SSL connection failed: {ssl_e}, trying fallback")
+            
+            # Fallback without strict SSL
+            try:
+                conn = psycopg2.connect(
+                    database_url + "?sslmode=prefer",
+                    cursor_factory=RealDictCursor
+                )
+                logger.info("✅ Successfully connected to database (fallback)")
+                return conn
+            except Exception as fallback_e:
+                logger.error(f"Fallback connection failed: {fallback_e}")
+                raise fallback_e
         
     except Exception as e:
         logger.error(f"❌ Database connection failed: {e}")

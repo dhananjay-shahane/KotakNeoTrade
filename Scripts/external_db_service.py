@@ -20,23 +20,19 @@ class ExternalDBService:
     """Service for connecting to external PostgreSQL database"""
 
     def __init__(self):
-        self.db_config = {
-            'host': "dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com",
-            'database': "kotak_trading_db",
-            'user': "kotak_trading_db_user",
-            'password': "JRUlk8RutdgVcErSiUXqljDUdK8sBsYO",
-            'port': 5432
-        }
+        import os
+        # Use the PostgreSQL database created by Replit
+        self.database_url = os.getenv('DATABASE_URL')
         self.connection = None
 
     def connect(self):
-        """Establish connection to external database"""
+        """Establish connection to PostgreSQL database"""
         try:
-            self.connection = psycopg2.connect(**self.db_config)
-            logger.info("✓ Connected to external PostgreSQL database")
+            self.connection = psycopg2.connect(self.database_url)
+            logger.info("✓ Connected to PostgreSQL database")
             return True
         except Exception as e:
-            logger.error(f"Failed to connect to external database: {e}")
+            logger.error(f"Database connection failed: {e}")
             return False
 
     def disconnect(self):
