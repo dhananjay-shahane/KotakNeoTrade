@@ -156,36 +156,68 @@ function sortTable(column) {
 }
 
 function showOrdersSkeleton() {
-    // Show skeleton for summary cards
+    // Show skeleton for summary cards with fade effect
     var skeleton = document.getElementById('ordersSummarySkeleton');
     var cards = document.getElementById('ordersSummaryCards');
     
-    if (skeleton) skeleton.style.display = 'flex';
-    if (cards) cards.style.display = 'none';
+    if (skeleton) {
+        skeleton.style.display = 'flex';
+        skeleton.style.opacity = '1';
+    }
+    if (cards) {
+        cards.style.opacity = '0';
+        cards.style.display = 'none';
+    }
     
-    // Show shimmer rows in table
+    // Show shimmer rows in table with staggered animation
     var shimmerRows = document.querySelectorAll('.shimmer-row');
-    shimmerRows.forEach(function(row) {
+    shimmerRows.forEach(function(row, index) {
         row.style.display = 'table-row';
+        row.style.animationDelay = (index * 0.1) + 's';
     });
+    
+    // Remove content loaded class
+    document.body.classList.remove('orders-content-loaded');
 }
 
 function hideOrdersSkeleton() {
-    // Hide skeleton and show actual content
-    var skeleton = document.getElementById('ordersSummarySkeleton');
-    var cards = document.getElementById('ordersSummaryCards');
-    
-    if (skeleton) skeleton.style.display = 'none';
-    if (cards) cards.style.display = 'flex';
-    
-    // Hide shimmer rows in table
-    var shimmerRows = document.querySelectorAll('.shimmer-row');
-    shimmerRows.forEach(function(row) {
-        row.style.display = 'none';
-    });
-    
-    // Add content loaded class
-    document.body.classList.add('orders-content-loaded');
+    // Add smooth transition when hiding skeleton
+    setTimeout(function() {
+        var skeleton = document.getElementById('ordersSummarySkeleton');
+        var cards = document.getElementById('ordersSummaryCards');
+        
+        if (skeleton) {
+            skeleton.style.opacity = '0';
+            setTimeout(function() {
+                skeleton.style.display = 'none';
+            }, 300);
+        }
+        
+        if (cards) {
+            cards.style.display = 'flex';
+            cards.style.opacity = '0';
+            setTimeout(function() {
+                cards.style.opacity = '1';
+            }, 50);
+        }
+        
+        // Hide shimmer rows in table with fade out
+        var shimmerRows = document.querySelectorAll('.shimmer-row');
+        shimmerRows.forEach(function(row, index) {
+            setTimeout(function() {
+                row.style.opacity = '0';
+                setTimeout(function() {
+                    row.style.display = 'none';
+                }, 200);
+            }, index * 30);
+        });
+        
+        // Add content loaded class
+        setTimeout(function() {
+            document.body.classList.add('orders-content-loaded');
+        }, 400);
+        
+    }, 200); // Small delay to show data has loaded
 }
 
 function updateOrdersTable(orders) {
