@@ -84,3 +84,189 @@
 .filter-card:first-child {
     opacity: 1;
 }
+
+/* Enhanced Shimmer Skeleton Animations */
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 0.8;
+    }
+    100% {
+        background-position: 200% 0;
+        opacity: 0.6;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 0.9;
+    }
+}
+
+.shimmer-cell {
+    background: linear-gradient(90deg, 
+        #2a2d3a 25%, 
+        #3a3f52 37.5%, 
+        #454b60 50%, 
+        #3a3f52 62.5%, 
+        #2a2d3a 75%);
+    background-size: 400% 100%;
+    animation: shimmer 2s ease-in-out infinite;
+    border-radius: 6px;
+    margin: 6px 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.shimmer-cell::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(255,255,255,0.1) 50%, 
+        transparent 100%);
+    animation: shimmer 2s ease-in-out infinite;
+}
+
+.shimmer-time {
+    width: 85px;
+    height: 16px;
+}
+
+.shimmer-order-id {
+    width: 140px;
+    height: 16px;
+}
+
+.shimmer-symbol {
+    width: 110px;
+    height: 20px;
+}
+
+.shimmer-badge {
+    width: 70px;
+    height: 26px;
+    border-radius: 13px;
+    background: linear-gradient(90deg, 
+        #1e3a8a 25%, 
+        #3b82f6 50%, 
+        #1e3a8a 75%);
+    background-size: 400% 100%;
+}
+
+.shimmer-quantity {
+    width: 60px;
+    height: 18px;
+}
+
+.shimmer-price {
+    width: 90px;
+    height: 18px;
+}
+
+.shimmer-actions {
+    width: 130px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, 
+        #374151 25%, 
+        #4b5563 50%, 
+        #374151 75%);
+    background-size: 400% 100%;
+}
+
+/* Enhanced Summary cards shimmer */
+.shimmer-summary-title {
+    height: 16px;
+    width: 90px;
+    background: linear-gradient(90deg, 
+        rgba(255,255,255,0.1) 25%, 
+        rgba(255,255,255,0.25) 50%, 
+        rgba(255,255,255,0.1) 75%);
+    background-size: 400% 100%;
+    animation: shimmer 2s ease-in-out infinite;
+    border-radius: 6px;
+    margin: 0 auto 8px;
+}
+
+.shimmer-summary-count {
+    height: 28px;
+    width: 50px;
+    background: linear-gradient(90deg, 
+        rgba(255,255,255,0.15) 25%, 
+        rgba(255,255,255,0.3) 50%, 
+        rgba(255,255,255,0.15) 75%);
+    background-size: 400% 100%;
+    animation: shimmer 2s ease-in-out infinite;
+    border-radius: 8px;
+    margin: 0 auto;
+}
+
+/* Shimmer row spacing */
+.shimmer-row {
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    animation: pulse 3s ease-in-out infinite;
+}
+
+.shimmer-row:nth-child(even) {
+    animation-delay: 0.5s;
+}
+
+.shimmer-row:nth-child(3n) {
+    animation-delay: 1s;
+}
+
+/* Card shimmer effect */
+.orders-skeleton .card {
+    position: relative;
+    overflow: hidden;
+    background: #1e293b;
+}
+
+.orders-skeleton .card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(255,255,255,0.05) 50%, 
+        transparent 100%);
+    animation: shimmer-sweep 3s ease-in-out infinite;
+    z-index: 1;
+}
+
+@keyframes shimmer-sweep {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+/* Hide shimmer when content is loaded */
+.orders-content-loaded .orders-skeleton {
+    display: none !important;
+}
+
+.orders-content-loaded .orders-content-cards {
+    display: flex !important;
+}
+
+.orders-content-loaded .shimmer-row {
+    display: none !important;
+}
