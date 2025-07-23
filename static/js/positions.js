@@ -6,10 +6,21 @@ var currentFilter = 'ALL';
 
 // Load positions when page loads
 document.addEventListener('DOMContentLoaded', function() {
+    showLoadingSkeleton();
     loadPositionsData();
     // Auto-refresh every 30 seconds
     refreshInterval = setInterval(loadPositionsData, 30000);
 });
+
+function showLoadingSkeleton() {
+    document.getElementById('loadingSkeleton').style.display = 'block';
+    document.getElementById('tableContent').style.display = 'none';
+}
+
+function hideLoadingSkeleton() {
+    document.getElementById('loadingSkeleton').style.display = 'none';
+    document.getElementById('tableContent').style.display = 'block';
+}
 
 // Clear interval when page unloads
 window.addEventListener('beforeunload', function() {
@@ -35,9 +46,11 @@ async function loadPositionsData() {
         if (data.success) {
             positionsData = data.positions || [];
             console.log('Positions loaded:', positionsData.length, 'positions');
+            hideLoadingSkeleton();
             updatePositionsTable(positionsData);
             updatePositionsSummary(positionsData);
         } else {
+            hideLoadingSkeleton();
             console.error('Failed to load positions:', data.error || data.message);
             if (data.error && data.error.includes('Not authenticated')) {
                 console.log('User not authenticated, showing login message');
@@ -48,6 +61,7 @@ async function loadPositionsData() {
         }
     } catch (error) {
         console.error('Error loading positions:', error);
+        hideLoadingSkeleton();
         showNoPositionsMessage();
     }
 }
@@ -165,8 +179,8 @@ function updatePositionsSummary(positions) {
 
     // Update summary cards
     document.getElementById('totalPositionsCount').textContent = totalPositions;
-    document.getElementById('longPositionsCount').textContent = longPositions;
-    document.getElementById('shortPositionsCount').textContent = shortPositions;
+    document.getElementById('longPositionsCount').textContent = longPositions + ' positions';
+    document.getElementById('shortPositionsCount').textContent = shortPositions + ' positions';
     document.getElementById('longPositionsValue').textContent = '₹' + longValue.toFixed(2);
     document.getElementById('shortPositionsValue').textContent = '₹' + shortValue.toFixed(2);
     document.getElementById('totalPnlValue').textContent = '₹' + totalPnl.toFixed(2);
@@ -277,6 +291,17 @@ function sortTable(column) {
     } else {
         currentSortColumn = column;
         currentSortDirection = 'asc';
+    }
+
+    // Clear all sort icons
+    document.querySelectorAll('.sort-icon').forEach(icon => {
+        icon.className = 'fas fa-sort ms-1 sort-icon';
+    });
+    
+    // Set active sort icon
+    const sortIcon = document.getElementById(`sort-${column}`);
+    if (sortIcon) {
+        sortIcon.className = `fas fa-sort-${currentSortDirection === 'asc' ? 'up' : 'down'} ms-1 sort-icon active`;
     }
 
     positionsData.sort(function(a, b) {
@@ -395,8 +420,59 @@ function viewPositionDetails(symbol) {
     var position = positionsData.find(p => (p.trdSym || p.sym) === symbol);
 
     if (position) {
-        alert('Position Details:\n' + JSON.stringify(position, null, 2));
+        // Populate modal with position details
+        document.getElementById('detailTradingSymbol').textContent = position.trdSym || position.sym || 'N/A';
+        document.getElementById('detailExchange').textContent = position.exSeg || 'N/A';
+        document.getElementById('detailProduct').textContent = position.prod || 'N/A';
+        document.getElementById('detailToken').textContent = position.tok || 'N/A';
+        
+        var buyQty = position.flBuyQty || position.buyQty || '0';
+        var sellQty = position.flSellQty || position.sellQty || '0';
+        var netQty = position.flNetQty || position.netQty || (parseInt(buyQty) - parseInt(sellQty)) || '0';
+        var positionType = parseInt(netQty) > 0 ? 'LONG' : parseInt(netQty) < 0 ? 'SHORT' : 'FLAT';
+        
+        document.getElementById('detailNetQty').textContent = netQty;
+        document.getElementById('detailBuyQty').textContent = buyQty;
+        document.getElementById('detailSellQty').textContent = sellQty;
+        
+        var positionBadge = document.getElementById('detailPositionType');
+        positionBadge.textContent = positionType;
+        positionBadge.className = 'badge ' + (positionType === 'LONG' ? 'bg-success' : positionType === 'SHORT' ? 'bg-danger' : 'bg-secondary');
+        
+        var buyAmt = parseFloat(position.buyAmt || position.flBuyAmt || '0');
+        var sellAmt = parseFloat(position.sellAmt || position.flSellAmt || '0');
+        var pnl = parseFloat(position.pnl || position.flPnl || '0');
+        var currentPrice = parseFloat(position.stkPrc || position.currentPrice || '0');
+        
+        document.getElementById('detailBuyAmt').textContent = '₹' + buyAmt.toFixed(2);
+        document.getElementById('detailSellAmt').textContent = '₹' + sellAmt.toFixed(2);
+        document.getElementById('detailCurrentPrice').textContent = '₹' + currentPrice.toFixed(2);
+        
+        var pnlElement = document.getElementById('detailPnl');
+        pnlElement.textContent = '₹' + pnl.toFixed(2);
+        pnlElement.className = pnl >= 0 ? 'text-success' : 'text-danger';
+        
+        document.getElementById('detailExpiry').textContent = position.expDt || position.exp || position.expiry || 'N/A';
+        document.getElementById('detailLotSize').textContent = position.lotSz || 'N/A';
+        document.getElementById('detailLastUpdated').textContent = position.hsUpTm || position.updRecvTm || 'N/A';
+        
+        // Show modal
+        var modal = new bootstrap.Modal(document.getElementById('positionDetailsModal'));
+        modal.show();
     }
+}
+
+function openTradeFromDetails() {
+    var symbol = document.getElementById('detailTradingSymbol').textContent;
+    var exchange = document.getElementById('detailExchange').textContent;
+    
+    // Close details modal
+    bootstrap.Modal.getInstance(document.getElementById('positionDetailsModal')).hide();
+    
+    // Open trade modal
+    setTimeout(() => {
+        showPlaceOrderModal(symbol, exchange);
+    }, 300);
 }
 
 // Expose functions globally
@@ -405,6 +481,20 @@ window.setAutoRefresh = setAutoRefresh;
 window.sortTable = sortTable;
 window.filterPositionsByType = function(type) {
     currentFilter = type;
+    
+    // Update filter button states
+    document.querySelectorAll('.filter-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    if (type === 'ALL') {
+        document.getElementById('filterAll').classList.add('active');
+    } else if (type === 'LONG') {
+        document.getElementById('filterLong').classList.add('active');
+    } else if (type === 'SHORT') {
+        document.getElementById('filterShort').classList.add('active');
+    }
+    
     if (positionsData && positionsData.length > 0) {
         updatePositionsTable(positionsData);
     }
@@ -413,3 +503,4 @@ window.showPlaceOrderModal = showPlaceOrderModal;
 window.handleOrderTypeChange = handleOrderTypeChange;
 window.submitPlaceOrder = submitPlaceOrder;
 window.viewPositionDetails = viewPositionDetails;
+window.openTradeFromDetails = openTradeFromDetails;
