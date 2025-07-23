@@ -1002,55 +1002,8 @@ except Exception as e:
     except Exception as login_error:
         print(f"Login manager error: {login_error}")
 
-# Define User model for login functionality
+# User loader for login functionality
 try:
-
-    class User(UserMixin, db.Model):
-        id = db.Column(db.Integer, primary_key=True)
-        email = db.Column(db.String(100), unique=True, nullable=False)
-        mobile = db.Column(db.String(20), unique=True, nullable=False)
-        username = db.Column(db.String(50), unique=True, nullable=False)
-        password_hash = db.Column(db.String(128), nullable=False)
-        registration_date = db.Column(db.DateTime, default=datetime.utcnow)
-
-        def set_password(self, password):
-            self.password_hash = generate_password_hash(password)
-
-        def check_password(self, password):
-            return check_password_hash(self.password_hash, password)
-
-        @staticmethod
-        def generate_username(email, mobile=None):
-            """Generate unique 5-letter username from email and mobile combination"""
-            import re
-
-            # Extract letters from email (before @)
-            email_part = re.sub(r'[^a-zA-Z]', '', email.split('@')[0].lower())
-
-            # Extract digits from mobile number
-            mobile_digits = ''
-            if mobile:
-                mobile_digits = re.sub(r'[^0-9]', '', mobile)
-
-            # Create base username with 3 letters from email + 2 digits from mobile
-            email_letters = email_part[:3] if len(email_part) >= 3 else email_part.ljust(3, 'x')
-            mobile_nums = mobile_digits[:2] if len(mobile_digits) >= 2 else mobile_digits.ljust(2, '0')
-
-            base_username = email_letters + mobile_nums
-            username = base_username
-            counter = 1
-
-            # Ensure uniqueness by checking database
-            while User.query.filter_by(username=username).first():
-                # If collision, modify last character with counter
-                if counter < 10:
-                    username = base_username[:-1] + str(counter)
-                else:
-                    username = base_username[:-2] + str(counter)[:2]
-                counter += 1
-
-            return username[:5]  # Ensure exactly 5 characters
-
     @login_manager.user_loader
     def load_user(user_id):
         try:
@@ -1059,9 +1012,9 @@ try:
             print(f"User loader error: {e}")
             return None
 
-    print("✓ User model defined")
+    print("✓ User loader defined")
 except Exception as e:
-    print(f"User model optional: {e}")
+    print(f"User loader optional: {e}")
 
 # Email configuration for registration functionality
 try:
@@ -1070,8 +1023,13 @@ try:
     app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
     app.config['MAIL_USERNAME'] = os.environ.get('EMAIL_USER')
     app.config['MAIL_PASSWORD'] = os.environ.get('EMAIL_PASSWORD')
-    app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER')
+    app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', os.environ.get('EMAIL_USER'))
+    
+    # Import User model from models.py
+    from models import User
+    
     print("✓ Email configuration loaded")
+    print("✓ User model imported from models.py")
 except Exception as e:
     print(f"Email configuration optional: {e}")
 

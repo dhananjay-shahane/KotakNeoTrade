@@ -4,15 +4,46 @@ Handles session validation, authentication decorators, and user management
 """
 import logging
 from functools import wraps
+from datetime import datetime, timedelta
 from flask import session, redirect, url_for, flash, request, jsonify
-from Scripts.neo_client import NeoClient
-from Scripts.user_manager import UserManager
-from Scripts.session_helper import SessionHelper
 
-# Initialize components
-neo_client = NeoClient()
-user_manager = UserManager()
-session_helper = SessionHelper()
+def validate_current_session():
+    """Validate current session and check expiration"""
+    try:
+        # Check if user is authenticated through any method
+        if session.get('authenticated') or session.get('kotak_logged_in'):
+            return True
+        
+        # Check session expiration
+        if 'login_time' in session:
+            login_time = session['login_time']
+            if isinstance(login_time, str):
+                login_time = datetime.fromisoformat(login_time)
+            
+            # Check if session is expired (24 hours)
+            if datetime.utcnow() - login_time > timedelta(hours=24):
+                session.clear()
+                return False
+        
+        # Check if client exists
+        if session.get('client'):
+            return True
+            
+        return False
+        
+    except Exception as e:
+        logging.error(f"Session validation error: {e}")
+        session.clear()
+        return False
+
+def require_auth(f):
+    """Decorator to require authentication for routes"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not validate_current_session():
+            return redirect(url_for('auth_routes.trading_account_login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 def validate_current_session():
@@ -91,31 +122,29 @@ def get_current_user():
         return None
 
 
-def login_user(client_data, login_response):
+def login_user_session(client_data, login_response=None):
     """Handle user login and session creation"""
     try:
         # Store client in session
         session['client'] = client_data
+        session['authenticated'] = True
+        session['login_time'] = datetime.utcnow().isoformat()
         session.permanent = True
         
-        # Create or update user in database
+        # Store user data if available
         if login_response:
-            db_user = user_manager.create_or_update_user(login_response)
-            user_session = user_manager.create_user_session(db_user.id, login_response)
-            
-            session['db_user_id'] = db_user.id
-            session['db_session_id'] = user_session.session_id
-            
-            logging.info(f"User logged in successfully: {client_data.get('ucc')}")
+            session['ucc'] = login_response.get('ucc', '')
+            session['greeting_name'] = login_response.get('greeting_name', 'User')
+            session['mobile_number'] = login_response.get('mobile_number', '')
         
+        logging.info(f"User logged in successfully: {client_data.get('ucc', 'unknown')}")
         return True
         
     except Exception as e:
         logging.error(f"Login user error: {e}")
         return False
 
-
-def logout_user():
+def logout_user_session():
     """Handle user logout and session cleanup"""
     try:
         # Clear session
