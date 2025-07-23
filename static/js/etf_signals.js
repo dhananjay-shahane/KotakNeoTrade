@@ -11,7 +11,7 @@ function ETFSignalsManager() {
     this.filteredSignals = []; // Filtered signals based on search/sort
     this.displayedSignals = []; // Currently displayed signals
     this.currentPage = 1; // Current page in pagination
-    this.itemsPerPage = 10; // Number of signals per page
+    this.itemsPerPage = 20; // Number of signals per page
     this.totalPages = 1; // Total number of pages
     this.isLoading = false; // Loading state flag
     this.refreshInterval = null; // Auto-refresh timer
@@ -330,14 +330,10 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                     dhValue = parseFloat(dhValue).toFixed(2) + "%";
                 }
                 var percentage = parseFloat(dhValue.replace("%", ""));
-                var colorClass =
-                    percentage >= 0 ? "text-success" : "text-danger";
                 var bgColor = this.getGradientBackgroundColor(percentage);
                 cellStyle = bgColor;
                 cellValue =
-                    '<span class="fw-bold ' +
-                    colorClass +
-                    '">' +
+                    '<span class="fw-bold text-white">' +
                     dhValue +
                     "</span>";
                 break;
@@ -436,14 +432,10 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                     chValue = parseFloat(chValue).toFixed(2) + "%";
                 }
                 var percentage = parseFloat(chValue.replace("%", ""));
-                var colorClass =
-                    percentage >= 0 ? "text-success" : "text-danger";
                 var bgColor = this.getGradientBackgroundColor(percentage);
                 cellStyle = bgColor;
                 cellValue =
-                    '<span class="fw-bold ' +
-                    colorClass +
-                    '">' +
+                    '<span class="fw-bold text-white">' +
                     chValue +
                     "</span>";
                 break;
@@ -471,24 +463,24 @@ ETFSignalsManager.prototype.getGradientBackgroundColor = function (value) {
     if (isNaN(numValue)) return "";
 
     var intensity = Math.min(Math.abs(numValue) / 5, 1); // Scale to 0-1, max at 5%
-    var alpha = 0.3 + intensity * 0.5; // Alpha from 0.3 to 0.8
+    var alpha = 0.4 + intensity * 0.6; // Alpha from 0.4 to 1.0 for better contrast
 
     if (numValue < 0) {
-        // Red gradient for negative values
+        // Red gradient for negative values - all with white text
         if (intensity <= 0.3) {
             // Light red for small negative values
             return (
-                "background-color: rgba(255, 182, 193, " +
+                "background-color: rgba(220, 53, 69, " +
                 alpha +
-                "); color: #000;"
-            ); // Light pink
+                "); color: #fff;"
+            ); // Bootstrap danger color
         } else if (intensity <= 0.6) {
             // Medium red
             return (
-                "background-color: rgba(255, 99, 71, " +
+                "background-color: rgba(198, 40, 40, " +
                 alpha +
                 "); color: #fff;"
-            ); // Tomato
+            ); // Darker red
         } else {
             // Dark red for large negative values
             return (
@@ -496,26 +488,26 @@ ETFSignalsManager.prototype.getGradientBackgroundColor = function (value) {
             ); // Dark red
         }
     } else if (numValue > 0) {
-        // Green gradient for positive values
+        // Green gradient for positive values - all with white text
         if (intensity <= 0.3) {
             // Light green for small positive values
             return (
-                "background-color: rgba(144, 238, 144, " +
+                "background-color: rgba(40, 167, 69, " +
                 alpha +
-                "); color: #000;"
-            ); // Light green
+                "); color: #fff;"
+            ); // Bootstrap success color
         } else if (intensity <= 0.6) {
             // Medium green
             return (
-                "background-color: rgba(50, 205, 50, " +
+                "background-color: rgba(34, 139, 34, " +
                 alpha +
                 "); color: #fff;"
-            ); // Lime green
+            ); // Forest green
         } else {
             // Dark green for large positive values
             return (
-                "background-color: rgba(0, 128, 0, " + alpha + "); color: #fff;"
-            ); // Green
+                "background-color: rgba(0, 100, 0, " + alpha + "); color: #fff;"
+            ); // Dark green
         }
     }
     return "";
@@ -1059,6 +1051,7 @@ ETFSignalsManager.prototype.createPaginationControls = function () {
             '<label for="itemsPerPage" class="form-label me-2 mb-0">Items per page:</label>' +
             '<select id="itemsPerPage" class="form-select form-select-sm" style="width: auto;" onchange="changeItemsPerPage(this.value)">' +
             '<option value="10">10</option>' +
+            '<option value="20" selected>20</option>' +
             '<option value="25">25</option>' +
             '<option value="50">50</option>' +
             '<option value="100">100</option>' +
@@ -1912,29 +1905,138 @@ ETFSignalsManager.prototype.updatePaginationControls = function () {
 };
 
 ETFSignalsManager.prototype.createPaginationControls = function () {
-    // Remove pagination controls
-    var paginationContainer = document.getElementById("paginationContainer");
-    if (paginationContainer) {
-        paginationContainer.remove();
+    var cardFooter = document.querySelector(".card-footer");
+    if (!cardFooter) {
+        // If card-footer doesn't exist, create it
+        var card = document.querySelector(".card.bg-secondary");
+        if (card) {
+            cardFooter = document.createElement("div");
+            cardFooter.className = "card-footer bg-dark border-0";
+            card.appendChild(cardFooter);
+        }
     }
 
-    // Also remove the items per page selector
-    var itemsPerPageSelect = document.getElementById("itemsPerPage");
-    if (itemsPerPageSelect) {
-        itemsPerPageSelect.remove();
+    if (cardFooter) {
+        var paginationHTML =
+            '<div id="paginationContainer" class="d-flex justify-content-between align-items-center mt-3">' +
+            '<div class="d-flex align-items-center">' +
+            '<label for="itemsPerPage" class="form-label me-2 mb-0 text-light">Items per page:</label>' +
+            '<select id="itemsPerPage" class="form-select form-select-sm bg-secondary text-light" style="width: auto;" onchange="changeItemsPerPage(this.value)">' +
+            '<option value="10">10</option>' +
+            '<option value="20" selected>20</option>' +
+            '<option value="25">25</option>' +
+            '<option value="50">50</option>' +
+            '<option value="100">100</option>' +
+            '</select>' +
+            '</div>' +
+            '<div id="paginationButtons" class="d-flex align-items-center">' +
+            '</div>' +
+            '<div class="text-muted small">' +
+            'Showing <span id="startItem">1</span>-<span id="endItem">20</span> of <span id="totalItems">0</span> items' +
+            '</div>' +
+            '</div>';
+
+        cardFooter.insertAdjacentHTML("beforeend", paginationHTML);
     }
 };
 
 ETFSignalsManager.prototype.renderPaginationHTML = function () {
-    // No longer needed as pagination is removed
+    var buttonsContainer = document.getElementById("paginationButtons");
+    var startItem = document.getElementById("startItem");
+    var endItem = document.getElementById("endItem");
+    var totalItems = document.getElementById("totalItems");
+    var itemsPerPageSelect = document.getElementById("itemsPerPage");
+
+    if (!buttonsContainer) return;
+
+    // Update items per page selector
+    if (itemsPerPageSelect) {
+        itemsPerPageSelect.value = this.itemsPerPage;
+    }
+
+    // Update items display
+    var startIndex = (this.currentPage - 1) * this.itemsPerPage + 1;
+    var endIndex = Math.min(this.currentPage * this.itemsPerPage, this.filteredSignals.length);
+
+    if (startItem) startItem.textContent = startIndex;
+    if (endItem) endItem.textContent = endIndex;
+    if (totalItems) totalItems.textContent = this.filteredSignals.length;
+
+    // Generate pagination buttons
+    var buttonsHTML = '';
+
+    // Previous button
+    buttonsHTML += '<button class="btn btn-sm btn-outline-light me-2" ' +
+        (this.currentPage === 1 ? 'disabled' : '') + 
+        ' onclick="goToPage(' + (this.currentPage - 1) + ')">' +
+        '<i class="fas fa-chevron-left"></i></button>';
+
+    // Page numbers
+    var startPage = Math.max(1, this.currentPage - 2);
+    var endPage = Math.min(this.totalPages, this.currentPage + 2);
+
+    if (startPage > 1) {
+        buttonsHTML += '<button class="btn btn-sm btn-outline-light me-1" onclick="goToPage(1)">1</button>';
+        if (startPage > 2) {
+            buttonsHTML += '<span class="me-1 text-light">...</span>';
+        }
+    }
+
+    for (var i = startPage; i <= endPage; i++) {
+        buttonsHTML += '<button class="btn btn-sm ' + 
+            (i === this.currentPage ? 'btn-primary' : 'btn-outline-light') + 
+            ' me-1" onclick="goToPage(' + i + ')">' + i + '</button>';
+    }
+
+    if (endPage < this.totalPages) {
+        if (endPage < this.totalPages - 1) {
+            buttonsHTML += '<span class="me-1 text-light">...</span>';
+        }
+        buttonsHTML += '<button class="btn btn-sm btn-outline-light me-1" onclick="goToPage(' + this.totalPages + ')">' + this.totalPages + '</button>';
+    }
+
+    // Next button
+    buttonsHTML += '<button class="btn btn-sm btn-outline-light ms-1" ' +
+        (this.currentPage === this.totalPages ? 'disabled' : '') + 
+        ' onclick="goToPage(' + (this.currentPage + 1) + ')">' +
+        '<i class="fas fa-chevron-right"></i></button>';
+
+    buttonsContainer.innerHTML = buttonsHTML;
 };
 
 ETFSignalsManager.prototype.updateDisplayedSignals = function () {
-    this.displayedSignals = this.filteredSignals.slice();
+    var startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    var endIndex = startIndex + this.itemsPerPage;
+    this.displayedSignals = this.filteredSignals.slice(startIndex, endIndex);
+    this.totalPages = Math.ceil(this.filteredSignals.length / this.itemsPerPage);
+
+    // Ensure we don't exceed available pages
+    if (this.currentPage > this.totalPages && this.totalPages > 0) {
+        this.currentPage = this.totalPages;
+        window.currentPage = this.currentPage;
+        startIndex = (this.currentPage - 1) * this.itemsPerPage;
+        endIndex = startIndex + this.itemsPerPage;
+        this.displayedSignals = this.filteredSignals.slice(startIndex, endIndex);
+    }
+
+    console.log("updateDisplayedSignals:", {
+        currentPage: this.currentPage,
+        itemsPerPage: this.itemsPerPage,
+        totalSignals: this.filteredSignals.length,
+        startIndex: startIndex,
+        endIndex: endIndex,
+        displayedCount: this.displayedSignals.length,
+        totalPages: this.totalPages
+    });
 };
 
 ETFSignalsManager.prototype.goToPage = function (pageNumber) {
-    // No longer needed as pagination is removed
+    if (pageNumber < 1 || pageNumber > this.totalPages) return;
+    this.currentPage = pageNumber;
+    window.currentPage = this.currentPage; // Update global variable
+    this.updateDisplayedSignals();
+    this.renderSignalsTable();
+    this.renderPaginationHTML();
 };
 
 ETFSignalsManager.prototype.changeItemsPerPage = function (newItemsPerPage) {
@@ -2044,6 +2146,7 @@ ETFSignalsManager.prototype.loadSignals = function (resetData) {
                         // Update displayed signals based on current page
                         self.updateDisplayedSignals();
                         self.renderSignalsTable();
+                        self.renderPaginationHTML();
                         self.updateCounts();
                         self.showSuccessMessage(
                             "Loaded " + self.signals.length + " signals",
@@ -2108,6 +2211,7 @@ ETFSignalsManager.prototype.applyFilters = function () {
     this.currentPage = 1;
     this.updateDisplayedSignals();
     this.renderSignalsTable();
+    this.renderPaginationHTML();
     this.updateCounts();
 };
 
