@@ -423,6 +423,19 @@ endblock %} {% block head %}
             portfolioLink.classList.add("active");
         }
 
+        // Check if user just logged out from Kotak and update UI accordingly
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('kotak_logout') === 'true') {
+            // Hide Kotak sections and show login option
+            const kotakAccountBox = document.getElementById('kotakAccountBox');
+            const kotakNeoSection = document.getElementById('kotakNeoSection');
+            const accountLogin = document.getElementById('accountLogin');
+            
+            if (kotakAccountBox) kotakAccountBox.style.display = 'none';
+            if (kotakNeoSection) kotakNeoSection.style.display = 'none';
+            if (accountLogin) accountLogin.style.display = 'block';
+        }
+
         // Initialize signals chart
         initializeSignalsChart();
 

@@ -196,4 +196,4 @@ def logout_kotak():
         session['login_type'] = 'trading_account'
     
     flash('Logged out from Kotak Neo successfully', 'info')
-    return redirect(url_for('main_routes.dashboard'))
+    return redirect(url_for('portfolio'))

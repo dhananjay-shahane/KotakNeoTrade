@@ -139,16 +139,11 @@ function logoutKotakOnly(event) {
     })
     .then(response => {
         if (response.ok) {
-            // Hide Kotak sections immediately without full page reload
-            const kotakAccountBox = document.getElementById('kotakAccountBox');
-            const kotakNeoSection = document.getElementById('kotakNeoSection');
-            const accountLogin = document.getElementById('accountLogin');
-            
-            if (kotakAccountBox) kotakAccountBox.style.display = 'none';
-            if (kotakNeoSection) kotakNeoSection.style.display = 'none';
-            if (accountLogin) accountLogin.style.display = 'block';
-            
+            // Redirect to portfolio page after successful logout
             showToaster('Success', 'Logged out from Kotak Neo successfully', 'success');
+            setTimeout(() => {
+                window.location.href = '/portfolio';
+            }, 1000);
         } else {
             showToaster('Error', 'Failed to logout from Kotak', 'error');
         }
