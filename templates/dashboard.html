@@ -1,26 +1,49 @@
-{% extends "base.html" %}
-
-{% block title %}Dashboard - Kotak Neo Trading{% endblock %}
-
-{% block content %}
-{% if not session.get('authenticated') and not session.get('kotak_logged_in') %}
+{% extends "base.html" %} {% block title %}Dashboard - Kotak Neo Trading{%
+endblock %} {% block content %} {% if not session.get('authenticated') and not
+session.get('kotak_logged_in') %}
 <!-- Not Logged In Message -->
 <div class="container-fluid mt-5">
     <div class="row justify-content-center">
         <div class="col-md-8 col-lg-6">
-            <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <div
+                class="card border-0 shadow-lg"
+                style="
+                    background: linear-gradient(
+                        135deg,
+                        #667eea 0%,
+                        #764ba2 100%
+                    );
+                    color: white;
+                "
+            >
                 <div class="card-body p-5 text-center">
                     <div class="mb-4">
-                        <i class="fas fa-user-slash" style="font-size: 4rem; opacity: 0.7;"></i>
+                        <i
+                            class="fas fa-user-slash"
+                            style="font-size: 4rem; opacity: 0.7"
+                        ></i>
                     </div>
                     <h2 class="mb-3">Welcome to Trading Platform</h2>
-                    <p class="lead mb-4">Please login first to access your portfolio and trading features.</p>
-                    <div class="d-flex flex-column flex-md-row gap-3 justify-content-center">
-                        <a href="{{ url_for('auth_routes.login') }}" class="btn btn-light btn-lg">
-                            <i class="fas fa-chart-line me-2"></i>Login with Kotak Neo
+                    <p class="lead mb-4">
+                        Please login first to access your portfolio and trading
+                        features.
+                    </p>
+                    <div
+                        class="d-flex flex-column flex-md-row gap-3 justify-content-center"
+                    >
+                        <a
+                            href="{{ url_for('auth_routes.login') }}"
+                            class="btn btn-light btn-lg"
+                        >
+                            <i class="fas fa-chart-line me-2"></i>Login with
+                            Kotak Neo
                         </a>
-                        <a href="{{ url_for('auth_routes.trading_account_login') }}" class="btn btn-outline-light btn-lg">
-                            <i class="fas fa-sign-in-alt me-2"></i>Login with Trading Account
+                        <a
+                            href="{{ url_for('auth_routes.trading_account_login') }}"
+                            class="btn btn-outline-light btn-lg"
+                        >
+                            <i class="fas fa-sign-in-alt me-2"></i>Login with
+                            Trading Account
                         </a>
                     </div>
                 </div>
@@ -50,8 +73,12 @@
                             <div class="d-flex align-items-center">
                                 <div class="skeleton-avatar me-3"></div>
                                 <div>
-                                    <div class="skeleton-welcome-title mb-2"></div>
-                                    <div class="skeleton-welcome-subtitle"></div>
+                                    <div
+                                        class="skeleton-welcome-title mb-2"
+                                    ></div>
+                                    <div
+                                        class="skeleton-welcome-subtitle"
+                                    ></div>
                                 </div>
                             </div>
                         </div>
@@ -69,7 +96,9 @@
         <div class="col-md-3 mb-3">
             <div class="card stats-card border-0 shadow-sm bg-danger">
                 <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center">
+                    <div
+                        class="d-flex justify-content-between align-items-center"
+                    >
                         <div>
                             <div class="skeleton-card-title mb-2"></div>
                             <div class="skeleton-card-number mb-2"></div>
@@ -83,7 +112,9 @@
         <div class="col-md-3 mb-3">
             <div class="card stats-card border-0 shadow-sm bg-success">
                 <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center">
+                    <div
+                        class="d-flex justify-content-between align-items-center"
+                    >
                         <div>
                             <div class="skeleton-card-title mb-2"></div>
                             <div class="skeleton-card-number mb-2"></div>
@@ -97,7 +128,9 @@
         <div class="col-md-3 mb-3">
             <div class="card stats-card border-0 shadow-sm bg-info">
                 <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center">
+                    <div
+                        class="d-flex justify-content-between align-items-center"
+                    >
                         <div>
                             <div class="skeleton-card-title mb-2"></div>
                             <div class="skeleton-card-number mb-2"></div>
@@ -111,7 +144,9 @@
         <div class="col-md-3 mb-3">
             <div class="card stats-card border-0 shadow-sm bg-warning">
                 <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center">
+                    <div
+                        class="d-flex justify-content-between align-items-center"
+                    >
                         <div>
                             <div class="skeleton-card-title mb-2"></div>
                             <div class="skeleton-card-number mb-2"></div>
@@ -127,9 +162,14 @@
     <!-- Positions Tables Skeleton -->
     <div class="row mb-4">
         <div class="col-md-6 mb-3">
-            <div class="card border-0 shadow-lg bg-secondary" style="border-radius: 16px;">
+            <div
+                class="card border-0 shadow-lg bg-secondary"
+                style="border-radius: 16px"
+            >
                 <div class="card-header border-0 pb-2 pt-3">
-                    <div class="d-flex justify-content-between align-items-center">
+                    <div
+                        class="d-flex justify-content-between align-items-center"
+                    >
                         <div class="d-flex align-items-center">
                             <div class="skeleton-table-icon me-3"></div>
                             <div>
@@ -150,9 +190,14 @@
             </div>
         </div>
         <div class="col-md-6 mb-3">
-            <div class="card border-0 shadow-lg bg-secondary" style="border-radius: 16px;">
+            <div
+                class="card border-0 shadow-lg bg-secondary"
+                style="border-radius: 16px"
+            >
                 <div class="card-header border-0 pb-2 pt-3">
-                    <div class="d-flex justify-content-between align-items-center">
+                    <div
+                        class="d-flex justify-content-between align-items-center"
+                    >
                         <div class="d-flex align-items-center">
                             <div class="skeleton-table-icon me-3"></div>
                             <div>
@@ -178,7 +223,9 @@
     <div class="row mb-4">
         <div class="col">
             <div class="card bg-secondary">
-                <div class="card-header d-flex justify-content-between align-items-center">
+                <div
+                    class="card-header d-flex justify-content-between align-items-center"
+                >
                     <div class="skeleton-orders-title"></div>
                     <div class="skeleton-view-all-btn"></div>
                 </div>
@@ -196,553 +243,789 @@
 </div>
 
 <!-- Actual Dashboard Content -->
-<div class="dashboard-content" id="dashboardContent" style="display: none;">
-
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-        <h1 class="h3 mb-1">Trading Dashboard</h1>
-        <p class="text-muted mb-0">Real-time portfolio overview and market data</p>
+<div class="dashboard-content" id="dashboardContent" style="display: none">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="h3 mb-1">Kotak Neo Dashboard</h1>
+        </div>
+        <div class="d-flex gap-2">
+            <button
+                class="btn btn-outline-secondary"
+                onclick="refreshDashboard()"
+            >
+                <i class="fas fa-sync-alt"></i>
+                Refresh Data
+            </button>
+        </div>
     </div>
-    <div class="d-flex gap-2">
-        <button class="btn btn-outline-secondary" onclick="refreshDashboard()">
-            <i class="fas fa-sync-alt"></i>
-            Refresh Data
-        </button>
-    </div>
-</div>
 
-<!-- User Welcome Section -->
-<div class="row mb-3">
-    <div class="col-12">
-        <div class="card border-0 shadow-lg bg-secondary">
-            <div class="card-body p-4">
-                <div class="row align-items-center">
-                    <div class="col-md-8">
+    <!-- User Welcome Section -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card border-0 shadow-lg bg-secondary">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center">
+                                <div class="user-avatar-large me-3">
+                                    <i
+                                        class="fas fa-user-circle fa-3x text-white"
+                                    ></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-white mb-1">
+                                        Welcome back, {{ session.get('user_id',
+                                        session.get('greeting_name',
+                                        session.get('ucc', 'Trader'))) }}!
+                                    </h3>
+                                    <p class="text-white-50 mb-0">
+                                        <i class="fas fa-clock me-1"></i>
+                                        Last login:
+                                        <span id="lastLoginTime"
+                                            >{{ session.get('login_time',
+                                            'Today') }}</span
+                                        >
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <button
+                                class="btn btn-outline-light btn-lg"
+                                onclick="showUserProfile()"
+                            >
+                                <i class="fas fa-user-cog me-2"></i>View Profile
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Portfolio Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card border-0 shadow-sm bg-danger">
+                <div class="card-body p-4">
+                    <div
+                        class="d-flex justify-content-between align-items-center"
+                    >
+                        <div>
+                            <h6
+                                class="card-title text-uppercase text-white-50 fw-bold mb-2"
+                            >
+                                Total Positions
+                            </h6>
+                            <h2
+                                class="mb-0 fw-bold text-white"
+                                id="totalPositions"
+                            >
+                                {{ data.total_positions or 0 }}
+                            </h2>
+                            <small class="text-white-50">
+                                <i class="fas fa-chart-line me-1"></i>
+                                {% set active_positions =
+                                data.positions|selectattr('netQty', '!=',
+                                '0')|list|length if data.positions else 0 %} {{
+                                active_positions }} Active trades
+                            </small>
+                        </div>
+                        <div class="stats-icon">
+                            <div
+                                class="bg-white bg-opacity-20 rounded-circle p-3"
+                            >
+                                <i
+                                    class="fas fa-chart-pie fa-2x text-danger"
+                                ></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card border-0 shadow-sm bg-success">
+                <div class="card-body p-4">
+                    <div
+                        class="d-flex justify-content-between align-items-center"
+                    >
+                        <div>
+                            <h6
+                                class="card-title text-uppercase text-white-50 fw-bold mb-2"
+                            >
+                                Total Holdings
+                            </h6>
+                            <h2
+                                class="mb-0 fw-bold text-white"
+                                id="totalHoldings"
+                            >
+                                {{ data.total_holdings or 0 }}
+                            </h2>
+                            <small class="text-white-50" id="holdingsValue">
+                                <i class="fas fa-walvar me-1"></i>
+                                {% if data.holdings %} {% set holdings_value =
+                                data.holdings|sum(attribute='mktPrice')|float if
+                                data.holdings else 0.0 %} ₹{{
+                                "%.2f"|format(holdings_value) }} {% else %}
+                                ₹0.00 {% endif %}
+                            </small>
+                        </div>
+                        <div class="stats-icon">
+                            <div
+                                class="bg-white bg-opacity-20 rounded-circle p-3"
+                            >
+                                <i
+                                    class="fas fa-briefcase fa-2x text-success"
+                                ></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card border-0 shadow-sm bg-info">
+                <div class="card-body p-4">
+                    <div
+                        class="d-flex justify-content-between align-items-center"
+                    >
+                        <div>
+                            <h6
+                                class="card-title text-uppercase text-white-50 fw-bold mb-2"
+                            >
+                                Today's Orders
+                            </h6>
+                            <h2
+                                class="mb-0 fw-bold text-white"
+                                id="totalOrders"
+                            >
+                                {% if data.recent_orders %} {{
+                                data.recent_orders|length }} {% else %} 0 {%
+                                endif %}
+                            </h2>
+                            <small class="text-white-50">
+                                <i class="fas fa-clock me-1"></i>
+                                {% set pending_orders =
+                                data.recent_orders|selectattr('ordSt', '==',
+                                'open')|list|length if data.recent_orders else 0
+                                %} {{ pending_orders }} Pending
+                            </small>
+                        </div>
+                        <div class="stats-icon">
+                            <div
+                                class="bg-white bg-opacity-20 rounded-circle p-3"
+                            >
+                                <i class="fas fa-list-alt fa-2x text-info"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card border-0 shadow-sm bg-warning">
+                <div class="card-body p-4">
+                    <div
+                        class="d-flex justify-content-between align-items-center"
+                    >
+                        <div>
+                            <h6
+                                class="card-title text-uppercase text-white fw-bold mb-2"
+                            >
+                                Available Margin
+                            </h6>
+                            <h2
+                                class="mb-0 fw-bold text-white"
+                                id="availableMargin"
+                            >
+                                {% if data.limits and data.limits.Net %} ₹{{
+                                "{:,.2f}"|format(data.limits.Net|float) }} {%
+                                else %} ₹0.00 {% endif %}
+                            </h2>
+                            <small class="text-white" id="marginUsed">
+                                <i class="fas fa-rupee-sign me-1"></i>
+                                {% if data.limits and data.limits.MarginUsed %}
+                                Used: ₹{{
+                                "{:,.2f}"|format(data.limits.MarginUsed|float)
+                                }} {% else %} Ready to trade {% endif %}
+                            </small>
+                        </div>
+                        <div class="stats-icon">
+                            <div
+                                class="bg-white bg-opacity-20 rounded-circle p-3"
+                            >
+                                <i class="fas fa-coins fa-2x text-warning"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Positions Tables -->
+    <div class="row mb-4">
+        <!-- Long Positions Table -->
+        <div class="col-md-6 mb-3">
+            <div
+                class="card border-0 shadow-lg bg-secondary"
+                style="border-radius: 16px"
+            >
+                <div class="card-header border-0 pb-2 pt-3">
+                    <div
+                        class="d-flex justify-content-between align-items-center"
+                    >
                         <div class="d-flex align-items-center">
-                            <div class="user-avatar-large me-3">
-                                <i class="fas fa-user-circle fa-3x text-white"></i>
+                            <div
+                                class="bg-white bg-opacity-25 rounded-circle p-2 me-3 shadow-sm"
+                            >
+                                <i
+                                    class="fas fa-chart-line text-success fs-5"
+                                ></i>
                             </div>
                             <div>
-                                <h3 class="text-white mb-1">Welcome back, {{ session.get('user_id', session.get('greeting_name', session.get('ucc', 'Trader'))) }}!</h3>
-                                <p class="text-white-50 mb-0">
-                                    <i class="fas fa-clock me-1"></i>
-                                    Last login: <span id="lastLoginTime">{{ session.get('login_time', 'Today') }}</span>
-                                </p>
+                                <h6 class="mb-0 text-white fw-bold fs-6">
+                                    Long Positions
+                                </h6>
+                                <small class="text-muted">Active Buys</small>
                             </div>
                         </div>
+                        <div class="d-flex align-items-center">
+                            <span
+                                class="badge bg-white text-success fw-bold px-3 py-2 rounded-pill shadow-sm"
+                                id="longPositionsCount"
+                                >0</span
+                            >
+                        </div>
                     </div>
-                    <div class="col-md-4 text-end">
-                        <button class="btn btn-outline-light btn-lg" onclick="showUserProfile()">
-                            <i class="fas fa-user-cog me-2"></i>View Profile
-                        </button>
+                </div>
+                <div class="card-body p-0">
+                    <div
+                        class="table-responsive"
+                        style="border-radius: 0 0 16px 16px; overflow: hidden"
+                    >
+                        <table class="table table-hover table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="fw-semibold border-0 ps-3 py-3">
+                                        SYMBOL
+                                    </th>
+                                    <th class="fw-semibold border-0 py-3">
+                                        QTY
+                                    </th>
+                                    <th class="fw-semibold border-0 pe-3 py-3">
+                                        P&L
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="longPositionsTable">
+                                <tr>
+                                    <td
+                                        colspan="3"
+                                        class="text-center text-white py-4"
+                                    >
+                                        <i
+                                            class="fas fa-spinner fa-spin me-2"
+                                        ></i
+                                        >Loading positions...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Short Positions Table -->
+        <div class="col-md-6 mb-3">
+            <div class="card border-0 shadow-lg bg-secondary">
+                <div class="card-header bg-transparent border-0 pb-2 pt-3">
+                    <div
+                        class="d-flex justify-content-between align-items-center"
+                    >
+                        <div class="d-flex align-items-center">
+                            <div
+                                class="bg-white bg-opacity-25 rounded-circle p-2 me-3 shadow-sm"
+                            >
+                                <i
+                                    class="fas fa-long-arrow-down text-danger fs-5"
+                                ></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0 text-white fw-bold fs-6">
+                                    Short Positions
+                                </h6>
+                                <small class="">Active Sells</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span
+                                class="badge bg-white text-danger fw-bold px-3 py-2 rounded-pill shadow-sm"
+                                id="shortPositionsCount"
+                                >0</span
+                            >
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div
+                        class="table-responsive"
+                        style="border-radius: 0 0 16px 16px; overflow: hidden"
+                    >
+                        <table
+                            class="table table-dark table-hover table-sm mb-0"
+                            style="background: rgba(0, 0, 0, 0.3)"
+                        >
+                            <thead style="background: rgba(0, 0, 0, 0.4)">
+                                <tr>
+                                    <th
+                                        class="text-white fw-semibold border-0 ps-3 py-3"
+                                    >
+                                        SYMBOL
+                                    </th>
+                                    <th
+                                        class="text-white fw-semibold border-0 py-3"
+                                    >
+                                        QTY
+                                    </th>
+                                    <th
+                                        class="text-white fw-semibold border-0 pe-3 py-3"
+                                    >
+                                        P&L
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody
+                                id="shortPositionsTable"
+                                style="background: rgba(0, 0, 0, 0.2)"
+                            >
+                                <tr>
+                                    <td
+                                        colspan="3"
+                                        class="text-center text-white py-4"
+                                    >
+                                        <i
+                                            class="fas fa-spinner fa-spin me-2"
+                                        ></i
+                                        >Loading positions...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Portfolio Summary Cards -->
-<div class="row mb-4">
-    <div class="col-md-3 mb-3">
-        <div class="card stats-card border-0 shadow-sm bg-danger">
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-2">Total Positions</h6>
-                        <h2 class="mb-0 fw-bold text-white" id="totalPositions">{{ data.total_positions or 0 }}</h2>
-                        <small class="text-white-50">
-                            <i class="fas fa-chart-line me-1"></i>
-                            {% set active_positions = data.positions|selectattr('netQty', '!=', '0')|list|length if data.positions else 0 %}
-                            {{ active_positions }} Active trades
-                        </small>
-                    </div>
-                    <div class="stats-icon">
-                        <div class="bg-white bg-opacity-20 rounded-circle p-3">
-                            <i class="fas fa-chart-pie fa-2x text-danger"></i>
-                        </div>
+    <!-- Recent Orders -->
+    {% if data.recent_orders %}
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card bg-secondary">
+                <div
+                    class="card-header d-flex justify-content-between align-items-center"
+                >
+                    <h5 class="mb-0">
+                        <i class="fas fa-list-alt me-2"></i>Recent Orders
+                    </h5>
+                    <a
+                        href="{{ url_for('orders') }}"
+                        class="btn btn-sm btn-outline-light"
+                        >View All</a
+                    >
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Symbol</th>
+                                    <th>Type</th>
+                                    <th>Quantity</th>
+                                    <th>Price</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in data.recent_orders %}
+                                <tr>
+                                    <td>{{ order.orderTime or 'N/A' }}</td>
+                                    <td>
+                                        <strong
+                                            >{{ order.trdSym or 'N/A' }}</strong
+                                        >
+                                    </td>
+                                    <td>
+                                        <span
+                                            class="badge {% if order.transType == 'BUY' %}bg-success{% else %}bg-danger{% endif %}"
+                                        >
+                                            {{ order.transType or 'N/A' }}
+                                        </span>
+                                    </td>
+                                    <td>{{ order.qty or '0' }}</td>
+                                    <td>
+                                        ₹{{ "%.2f"|format(order.prc|float) if
+                                        order.prc else '0.00' }}
+                                    </td>
+                                    <td>
+                                        <span
+                                            class="badge {% if order.ordSt == 'complete' %}bg-success{% elif order.ordSt == 'rejected' %}bg-danger{% else %}bg-warning{% endif %}"
+                                        >
+                                            {{ order.ordSt or 'N/A' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <div class="col-md-3 mb-3">
-        <div class="card stats-card border-0 shadow-sm bg-success">
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-2">Total Holdings</h6>
-                        <h2 class="mb-0 fw-bold text-white" id="totalHoldings">{{ data.total_holdings or 0 }}</h2>
-                        <small class="text-white-50" id="holdingsValue">
-                            <i class="fas fa-walvar me-1"></i>
-                           {% if data.holdings %}
-                                {% set holdings_value = data.holdings|sum(attribute='mktPrice')|float if data.holdings else 0.0 %}
-                                ₹{{ "%.2f"|format(holdings_value) }}
-                            {% else %}
-                                ₹0.00
-                            {% endif %}
-                        </small>
-                    </div>
-                    <div class="stats-icon">
-                        <div class="bg-white bg-opacity-20 rounded-circle p-3">
-                            <i class="fas fa-briefcase fa-2x text-success"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-3 mb-3">
-        <div class="card stats-card border-0 shadow-sm bg-info">
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-title text-uppercase text-white-50 fw-bold mb-2">Today's Orders</h6>
-                        <h2 class="mb-0 fw-bold text-white" id="totalOrders">
-                            {% if data.recent_orders %}
-                                {{ data.recent_orders|length }}
-                            {% else %}
-                                0
-                            {% endif %}
-                        </h2>
-                        <small class="text-white-50">
-                            <i class="fas fa-clock me-1"></i>
-                            {% set pending_orders = data.recent_orders|selectattr('ordSt', '==', 'open')|list|length if data.recent_orders else 0 %}
-                            {{ pending_orders }} Pending
-                        </small>
-                    </div>
-                    <div class="stats-icon">
-                        <div class="bg-white bg-opacity-20 rounded-circle p-3">
-                            <i class="fas fa-list-alt fa-2x text-info"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-3 mb-3">
-        <div class="card stats-card border-0 shadow-sm bg-warning">
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-title text-uppercase text-white fw-bold mb-2">Available Margin</h6>
-                        <h2 class="mb-0 fw-bold text-white" id="availableMargin">
-                            {% if data.limits and data.limits.Net %}
-                                ₹{{ "{:,.2f}"|format(data.limits.Net|float) }}
-                            {% else %}
-                                ₹0.00
-                            {% endif %}
-                        </h2>
-                        <small class="text-white" id="marginUsed">
-                            <i class="fas fa-rupee-sign me-1"></i>
-                            {% if data.limits and data.limits.MarginUsed %}
-                                Used: ₹{{ "{:,.2f}"|format(data.limits.MarginUsed|float) }}
-                            {% else %}
-                                Ready to trade
-                            {% endif %}
-                        </small>
-                    </div>
-                    <div class="stats-icon">
-                        <div class="bg-white bg-opacity-20 rounded-circle p-3">
-                            <i class="fas fa-coins fa-2x text-warning"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Enhanced Positions Tables -->
-<div class="row mb-4">
-    <!-- Long Positions Table -->
-    <div class="col-md-6 mb-3">
-        <div class="card border-0 shadow-lg bg-secondary" style="border-radius: 16px;">
-            <div class="card-header border-0 pb-2 pt-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center">
-                        <div class="bg-white bg-opacity-25 rounded-circle p-2 me-3 shadow-sm">
-                            <i class="fas fa-chart-line text-success fs-5"></i>
-                        </div>
-                        <div>
-                            <h6 class="mb-0 text-white fw-bold fs-6">Long Positions</h6>
-                            <small class="text-muted">Active Buys</small>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <span class="badge bg-white text-success fw-bold px-3 py-2 rounded-pill shadow-sm" id="longPositionsCount">0</span>
-                    </div>
-                </div>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive" style="border-radius: 0 0 16px 16px; overflow: hidden;">
-                    <table class="table table-hover table-sm mb-0">
-                        <thead>
-                            <tr>
-                                <th class="fw-semibold border-0 ps-3 py-3">SYMBOL</th>
-                                <th class="fw-semibold border-0 py-3">QTY</th>
-                                <th class="fw-semibold border-0 pe-3 py-3">P&L</th>
-                            </tr>
-                        </thead>
-                        <tbody id="longPositionsTable">
-                            <tr>
-                                <td colspan="3" class="text-center text-white py-4">
-                                    <i class="fas fa-spinner fa-spin me-2"></i>Loading positions...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Short Positions Table -->
-    <div class="col-md-6 mb-3">
-        <div class="card border-0 shadow-lg bg-secondary">
-            <div class="card-header bg-transparent border-0 pb-2 pt-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center">
-                        <div class="bg-white bg-opacity-25 rounded-circle p-2 me-3 shadow-sm">
-                            <i class="fas fa-long-arrow-down text-danger fs-5"></i>
-                        </div>
-                        <div>
-                            <h6 class="mb-0 text-white fw-bold fs-6">Short Positions</h6>
-                            <small class="">Active Sells</small>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <span class="badge bg-white text-danger fw-bold px-3 py-2 rounded-pill shadow-sm" id="shortPositionsCount">0</span>
-                    </div>
-                </div>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive" style="border-radius: 0 0 16px 16px; overflow: hidden;">
-                    <table class="table table-dark table-hover table-sm mb-0" style="background: rgba(0,0,0,0.3);">
-                        <thead style="background: rgba(0,0,0,0.4);">
-                            <tr>
-                                <th class="text-white fw-semibold border-0 ps-3 py-3">SYMBOL</th>
-                                <th class="text-white fw-semibold border-0 py-3">QTY</th>
-                                <th class="text-white fw-semibold border-0 pe-3 py-3">P&L</th>
-                            </tr>
-                        </thead>
-                        <tbody id="shortPositionsTable" style="background: rgba(0,0,0,0.2);">
-                            <tr>
-                                <td colspan="3" class="text-center text-white py-4">
-                                    <i class="fas fa-spinner fa-spin me-2"></i>Loading positions...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Recent Orders -->
-{% if data.recent_orders %}
-<div class="row mb-4">
-    <div class="col">
-        <div class="card bg-secondary">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="fas fa-list-alt me-2"></i>Recent Orders
-                </h5>
-                <a href="{{ url_for('orders') }}" class="btn btn-sm btn-outline-light">View All</a>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-dark table-hover mb-0">
-                        <thead>
-                            <tr>
-                                <th>Time</th>
-                                <th>Symbol</th>
-                                <th>Type</th>
-                                <th>Quantity</th>
-                                <th>Price</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for order in data.recent_orders %}
-                            <tr>
-                                <td>{{ order.orderTime or 'N/A' }}</td>
-                                <td><strong>{{ order.trdSym or 'N/A' }}</strong></td>
-                                <td>
-                                    <span class="badge {% if order.transType == 'BUY' %}bg-success{% else %}bg-danger{% endif %}">
-                                        {{ order.transType or 'N/A' }}
-                                    </span>
-                                </td>
-                                <td>{{ order.qty or '0' }}</td>
-                                <td>₹{{ "%.2f"|format(order.prc|float) if order.prc else '0.00' }}</td>
-                                <td>
-                                    <span class="badge {% if order.ordSt == 'complete' %}bg-success{% elif order.ordSt == 'rejected' %}bg-danger{% else %}bg-warning{% endif %}">
-                                        {{ order.ordSt or 'N/A' }}
-                                    </span>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
+    {% endif %}
 </div>
 
 <style>
-/* Dashboard Skeleton CSS */
-.dashboard-skeleton {
-    animation: fadeIn 0.3s ease-in;
-}
-
-.skeleton-title {
-    height: 28px;
-    width: 200px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 4px;
-}
-
-.skeleton-subtitle {
-    height: 16px;
-    width: 300px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 4px;
-}
-
-.skeleton-button {
-    height: 40px;
-    width: 120px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 6px;
-}
-
-.skeleton-avatar {
-    height: 60px;
-    width: 60px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 50%;
-}
-
-.skeleton-welcome-title {
-    height: 24px;
-    width: 250px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 4px;
-}
-
-.skeleton-welcome-subtitle {
-    height: 16px;
-    width: 180px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 4px;
-}
-
-.skeleton-profile-btn {
-    height: 45px;
-    width: 140px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 6px;
-}
-
-.skeleton-card-title {
-    height: 14px;
-    width: 100px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.2) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 3px;
-}
-
-.skeleton-card-number {
-    height: 32px;
-    width: 80px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.25) 25%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.25) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 4px;
-}
-
-.skeleton-card-subtitle {
-    height: 12px;
-    width: 120px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 3px;
-}
-
-.skeleton-card-icon {
-    height: 60px;
-    width: 60px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 50%;
-}
-
-.skeleton-table-icon {
-    height: 40px;
-    width: 40px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 50%;
-}
-
-.skeleton-table-title {
-    height: 18px;
-    width: 120px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.2) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 3px;
-}
-
-.skeleton-table-subtitle {
-    height: 12px;
-    width: 80px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 3px;
-}
-
-.skeleton-badge {
-    height: 28px;
-    width: 35px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.2) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 50px;
-}
-
-.skeleton-table {
-    padding: 1rem;
-}
-
-.skeleton-table-row {
-    height: 50px;
-    width: 100%;
-    background: linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 6px;
-    margin-bottom: 0.5rem;
-}
-
-.skeleton-orders-title {
-    height: 20px;
-    width: 140px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 4px;
-}
-
-.skeleton-view-all-btn {
-    height: 32px;
-    width: 80px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 4px;
-}
-
-.skeleton-orders-table {
-    padding: 1rem;
-}
-
-@keyframes shimmer {
-    0% {
-        background-position: -200% 0;
+    /* Dashboard Skeleton CSS */
+    .dashboard-skeleton {
+        animation: fadeIn 0.3s ease-in;
     }
-    100% {
-        background-position: 200% 0;
-    }
-}
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
+    .skeleton-title {
+        height: 28px;
+        width: 200px;
+        background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.1) 25%,
+            rgba(255, 255, 255, 0.2) 50%,
+            rgba(255, 255, 255, 0.1) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 4px;
     }
-    to {
-        opacity: 1;
+
+    .skeleton-subtitle {
+        height: 16px;
+        width: 300px;
+        background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.08) 25%,
+            rgba(255, 255, 255, 0.15) 50%,
+            rgba(255, 255, 255, 0.08) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 4px;
     }
-}
 
-/* Hide skeleton when content is loaded */
-.dashboard-content-loaded .dashboard-skeleton {
-    display: none !important;
-}
+    .skeleton-button {
+        height: 40px;
+        width: 120px;
+        background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.1) 25%,
+            rgba(255, 255, 255, 0.2) 50%,
+            rgba(255, 255, 255, 0.1) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 6px;
+    }
 
-.dashboard-content-loaded .dashboard-content {
-    display: block !important;
-}
+    .skeleton-avatar {
+        height: 60px;
+        width: 60px;
+        background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.15) 25%,
+            rgba(255, 255, 255, 0.25) 50%,
+            rgba(255, 255, 255, 0.15) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 50%;
+    }
+
+    .skeleton-welcome-title {
+        height: 24px;
+        width: 250px;
+        background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.15) 25%,
+            rgba(255, 255, 255, 0.25) 50%,
+            rgba(255, 255, 255, 0.15) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 4px;
+    }
+
+    .skeleton-welcome-subtitle {
+        height: 16px;
+        width: 180px;
+        background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.1) 25%,
+            rgba(255, 255, 255, 0.2) 50%,
+            rgba(255, 255, 255, 0.1) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 4px;
+    }
+
+    .skeleton-profile-btn {
+        height: 45px;
+        width: 140px;
+        background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.15) 25%,
+            rgba(255, 255, 255, 0.25) 50%,
+            rgba(255, 255, 255, 0.15) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 6px;
+    }
+
+    .skeleton-card-title {
+        height: 14px;
+        width: 100px;
+        background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.2) 25%,
+            rgba(255, 255, 255, 0.3) 50%,
+            rgba(255, 255, 255, 0.2) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 3px;
+    }
+
+    .skeleton-card-number {
+        height: 32px;
+        width: 80px;
+        background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.25) 25%,
+            rgba(255, 255, 255, 0.35) 50%,
+            rgba(255, 255, 255, 0.25) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 4px;
+    }
+
+    .skeleton-card-subtitle {
+        height: 12px;
+        width: 120px;
+        background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.15) 25%,
+            rgba(255, 255, 255, 0.25) 50%,
+            rgba(255, 255, 255, 0.15) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 3px;
+    }
+
+    .skeleton-card-icon {
+        height: 60px;
+        width: 60px;
+        background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.15) 25%,
+            rgba(255, 255, 255, 0.25) 50%,
+            rgba(255, 255, 255, 0.15) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 50%;
+    }
+
+    .skeleton-table-icon {
+        height: 40px;
+        width: 40px;
+        background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.15) 25%,
+            rgba(255, 255, 255, 0.25) 50%,
+            rgba(255, 255, 255, 0.15) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 50%;
+    }
+
+    .skeleton-table-title {
+        height: 18px;
+        width: 120px;
+        background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.2) 25%,
+            rgba(255, 255, 255, 0.3) 50%,
+            rgba(255, 255, 255, 0.2) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 3px;
+    }
+
+    .skeleton-table-subtitle {
+        height: 12px;
+        width: 80px;
+        background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.1) 25%,
+            rgba(255, 255, 255, 0.2) 50%,
+            rgba(255, 255, 255, 0.1) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 3px;
+    }
+
+    .skeleton-badge {
+        height: 28px;
+        width: 35px;
+        background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.2) 25%,
+            rgba(255, 255, 255, 0.3) 50%,
+            rgba(255, 255, 255, 0.2) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 50px;
+    }
+
+    .skeleton-table {
+        padding: 1rem;
+    }
+
+    .skeleton-table-row {
+        height: 50px;
+        width: 100%;
+        background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.08) 25%,
+            rgba(255, 255, 255, 0.15) 50%,
+            rgba(255, 255, 255, 0.08) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 6px;
+        margin-bottom: 0.5rem;
+    }
+
+    .skeleton-orders-title {
+        height: 20px;
+        width: 140px;
+        background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.15) 25%,
+            rgba(255, 255, 255, 0.25) 50%,
+            rgba(255, 255, 255, 0.15) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 4px;
+    }
+
+    .skeleton-view-all-btn {
+        height: 32px;
+        width: 80px;
+        background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.1) 25%,
+            rgba(255, 255, 255, 0.2) 50%,
+            rgba(255, 255, 255, 0.1) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 4px;
+    }
+
+    .skeleton-orders-table {
+        padding: 1rem;
+    }
+
+    @keyframes shimmer {
+        0% {
+            background-position: -200% 0;
+        }
+        100% {
+            background-position: 200% 0;
+        }
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    /* Hide skeleton when content is loaded */
+    .dashboard-content-loaded .dashboard-skeleton {
+        display: none !important;
+    }
+
+    .dashboard-content-loaded .dashboard-content {
+        display: block !important;
+    }
 </style>
 
-{% endif %}
-{% endblock %}
-
-{% block scripts %}
+{% endif %} {% endblock %} {% block scripts %}
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 <script>
-// Dashboard skeleton loader management
-document.addEventListener('DOMContentLoaded', function() {
-    // Show skeleton initially
-    document.getElementById('dashboardSkeleton').style.display = 'block';
-    document.getElementById('dashboardContent').style.display = 'none';
-    
-    // Hide skeleton after dashboard data is loaded
-    setTimeout(function() {
-        hideDashboardSkeleton();
-    }, 2000); // Hide after 2 seconds or when data is loaded
-});
+    // Dashboard skeleton loader management
+    document.addEventListener("DOMContentLoaded", function () {
+        // Show skeleton initially
+        document.getElementById("dashboardSkeleton").style.display = "block";
+        document.getElementById("dashboardContent").style.display = "none";
 
-function hideDashboardSkeleton() {
-    const skeleton = document.getElementById('dashboardSkeleton');
-    const content = document.getElementById('dashboardContent');
-    
-    if (skeleton && content) {
-        skeleton.style.transition = 'opacity 0.5s ease-out';
-        skeleton.style.opacity = '0';
-        
-        setTimeout(function() {
-            skeleton.style.display = 'none';
-            content.style.display = 'block';
-            content.style.opacity = '0';
-            content.style.transition = 'opacity 0.5s ease-in';
-            
-            // Trigger fade in
-            setTimeout(function() {
-                content.style.opacity = '1';
-            }, 50);
-        }, 500);
+        // Hide skeleton after dashboard data is loaded
+        setTimeout(function () {
+            hideDashboardSkeleton();
+        }, 2000); // Hide after 2 seconds or when data is loaded
+    });
+
+    function hideDashboardSkeleton() {
+        const skeleton = document.getElementById("dashboardSkeleton");
+        const content = document.getElementById("dashboardContent");
+
+        if (skeleton && content) {
+            skeleton.style.transition = "opacity 0.5s ease-out";
+            skeleton.style.opacity = "0";
+
+            setTimeout(function () {
+                skeleton.style.display = "none";
+                content.style.display = "block";
+                content.style.opacity = "0";
+                content.style.transition = "opacity 0.5s ease-in";
+
+                // Trigger fade in
+                setTimeout(function () {
+                    content.style.opacity = "1";
+                }, 50);
+            }, 500);
+        }
     }
-}
 
-// Call this function when dashboard data is actually loaded
-window.hideDashboardSkeleton = hideDashboardSkeleton;
+    // Call this function when dashboard data is actually loaded
+    window.hideDashboardSkeleton = hideDashboardSkeleton;
 </script>
 {% endblock %}

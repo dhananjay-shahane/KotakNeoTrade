@@ -272,9 +272,10 @@ function toggleTheme() {
         themeToggle.checked = newTheme === "light";
     }
 
-    // Show feedback
+    // Show feedback with proper capitalization
     if (typeof showToaster === "function") {
-        showToaster("Theme Changed", `Switched to ${newTheme} mode`, "success");
+        const themeDisplayName = newTheme === 'dark' ? 'Dark' : 'Light';
+        showToaster("Theme Changed", `Switched to ${themeDisplayName} mode`, "success", 2000);
     }
 }
 
