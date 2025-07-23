@@ -111,6 +111,8 @@ def login():
                     session['kotak_logged_in'] = True  # Flag for sidebar visibility
                     session['authenticated'] = True  # General authentication flag
                     
+                    # Clear any existing flash messages to prevent conflicts
+                    session.pop('_flashes', None)
                     flash('Successfully authenticated with TOTP!', 'success')
                     logging.info(f"Login successful for UCC: {ucc}, redirecting to dashboard")
                     return redirect(url_for('main_routes.dashboard'))
@@ -195,5 +197,7 @@ def logout_kotak():
     if session.get('login_type') == 'kotak_neo':
         session['login_type'] = 'trading_account'
     
+    # Clear any existing flash messages before adding logout message
+    session.pop('_flashes', None)
     flash('Logged out from Kotak Neo successfully', 'info')
     return redirect(url_for('portfolio'))

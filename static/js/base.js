@@ -132,6 +132,11 @@ function showLoginModal() {
 function logoutKotakOnly(event) {
     event.preventDefault();
     
+    // Check if we're in a login flow to prevent duplicate notifications
+    if (window.location.pathname.includes('/login')) {
+        return;
+    }
+    
     // Make AJAX request to logout only from Kotak
     fetch('/logout-kotak', {
         method: 'GET',
