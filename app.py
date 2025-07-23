@@ -185,10 +185,7 @@ with app.app_context():
     except Exception as e:
         print(f"⚠️ Database table creation warning: {e}")
 
-# Initialize login manager
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
+# LoginManager will be initialized after imports below
 
 with app.app_context():
     # Make sure to import the models here or their tables won't be created
@@ -981,13 +978,24 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 # Initialize extensions for email functionality
 try:
-    mail = Mail(app)
+    # Initialize LoginManager properly
     login_manager = LoginManager()
     login_manager.init_app(app)
     login_manager.login_view = 'login'
+    
+    # Initialize Mail
+    mail = Mail(app)
     print("✓ Email and login extensions initialized")
 except Exception as e:
     print(f"Email extensions optional: {e}")
+    # Initialize basic LoginManager even if email fails
+    try:
+        login_manager = LoginManager()
+        login_manager.init_app(app)
+        login_manager.login_view = 'login'
+        print("✓ Basic login manager initialized")
+    except Exception as login_error:
+        print(f"Login manager error: {login_error}")
 
 # Define User model for login functionality
 try:
@@ -1040,7 +1048,11 @@ try:
 
     @login_manager.user_loader
     def load_user(user_id):
-        return User.query.get(int(user_id))
+        try:
+            return User.query.get(int(user_id))
+        except Exception as e:
+            print(f"User loader error: {e}")
+            return None
 
     print("✓ User model defined")
 except Exception as e:

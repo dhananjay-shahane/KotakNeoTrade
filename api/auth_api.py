@@ -68,11 +68,10 @@ def store_user_in_external_db(username, password, email, mobile, trading_account
         cursor = conn.cursor()
         
         # Insert user data
-        current_datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         cursor.execute('''
-            INSERT INTO external_users (username, password, email, mobile, trading_account_name, datetime)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        ''', (username, password, email, mobile, trading_account_name or 'Not Set', current_datetime))
+            INSERT INTO external_users (username, password, email, mobile, trading_account_name)
+            VALUES (%s, %s, %s, %s, %s)
+        ''', (username, password, email, mobile, trading_account_name or 'Not Set'))
         
         conn.commit()
         cursor.close()

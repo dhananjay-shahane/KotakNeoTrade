@@ -84,3 +84,6 @@ def init_db(app):
     with app.app_context():
         db.create_all()
         print("Database tables created successfully")
+
+# Make User available for import
+__all__ = ['User', 'db', 'init_db']
