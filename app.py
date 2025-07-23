@@ -174,8 +174,21 @@ def handle_preflight():
         return response
 
 
-# initialize the app with the extension, flask-sqlalchemy >= 3.0.x
+# Initialize database
 db.init_app(app)
+
+# Create database tables
+with app.app_context():
+    try:
+        db.create_all()
+        print("✅ Database tables created successfully")
+    except Exception as e:
+        print(f"⚠️ Database table creation warning: {e}")
+
+# Initialize login manager
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
 
 with app.app_context():
     # Make sure to import the models here or their tables won't be created
@@ -390,7 +403,7 @@ def portfolio():
     # Check if user is authenticated - no guest access allowed
     if not (session.get('authenticated') or session.get('kotak_logged_in')):
         return redirect(url_for('auth_routes.trading_account_login'))
-    
+
     # Prepare account data for sidebar if logged in
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
@@ -401,7 +414,7 @@ def portfolio():
             'last_login': 'Just Now',
             'status': 'Online'
         }
-    
+
     return render_template('portfolio.html', kotak_account=kotak_account_data)
 
 
@@ -411,7 +424,7 @@ def trading_signals():
     # Check if user is authenticated - no guest access allowed
     if not (session.get('authenticated') or session.get('kotak_logged_in')):
         return redirect(url_for('auth_routes.trading_account_login'))
-    
+
     # Prepare account data for sidebar if logged in
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
@@ -422,7 +435,7 @@ def trading_signals():
             'last_login': 'Just Now',
             'status': 'Online'
         }
-    
+
     return render_template('trading_signals.html', kotak_account=kotak_account_data)
 
 
@@ -432,7 +445,7 @@ def deals():
     # Check if user is authenticated - no guest access allowed
     if not (session.get('authenticated') or session.get('kotak_logged_in')):
         return redirect(url_for('auth_routes.trading_account_login'))
-    
+
     # Prepare account data for sidebar if logged in
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
@@ -443,7 +456,7 @@ def deals():
             'last_login': 'Just Now',
             'status': 'Online'
         }
-    
+
     return render_template('deals.html', kotak_account=kotak_account_data)
 
 
@@ -997,23 +1010,23 @@ try:
         def generate_username(email, mobile=None):
             """Generate unique 5-letter username from email and mobile combination"""
             import re
-            
+
             # Extract letters from email (before @)
             email_part = re.sub(r'[^a-zA-Z]', '', email.split('@')[0].lower())
-            
+
             # Extract digits from mobile number
             mobile_digits = ''
             if mobile:
                 mobile_digits = re.sub(r'[^0-9]', '', mobile)
-            
+
             # Create base username with 3 letters from email + 2 digits from mobile
             email_letters = email_part[:3] if len(email_part) >= 3 else email_part.ljust(3, 'x')
             mobile_nums = mobile_digits[:2] if len(mobile_digits) >= 2 else mobile_digits.ljust(2, '0')
-            
+
             base_username = email_letters + mobile_nums
             username = base_username
             counter = 1
-            
+
             # Ensure uniqueness by checking database
             while User.query.filter_by(username=username).first():
                 # If collision, modify last character with counter
@@ -1022,7 +1035,7 @@ try:
                 else:
                     username = base_username[:-2] + str(counter)[:2]
                 counter += 1
-                
+
             return username[:5]  # Ensure exactly 5 characters
 
     @login_manager.user_loader
