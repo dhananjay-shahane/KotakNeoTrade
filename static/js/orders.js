@@ -21,10 +21,6 @@ window.addEventListener('beforeunload', function() {
 async function loadOrdersData() {
     try {
         console.log('Fetching orders data...');
-        
-        // Show skeleton UI while loading
-        showOrdersSkeleton();
-        
         var response = await fetch('/api/orders', {
             credentials: 'same-origin', // Include cookies
             headers: {
@@ -43,7 +39,6 @@ async function loadOrdersData() {
             updateOrdersSummary(ordersData);
         } else {
             console.error('Failed to load orders:', data.error || data.message);
-            hideOrdersSkeleton(); // Hide skeleton on error
             if (data.error && data.error.includes('Not authenticated')) {
                 console.log('User not authenticated, showing login message');
                 showAuthenticationErrorOrders();
@@ -53,7 +48,6 @@ async function loadOrdersData() {
         }
     } catch (error) {
         console.error('Error loading orders:', error);
-        hideOrdersSkeleton(); // Hide skeleton on error
         showNoOrdersMessage();
     }
 }
@@ -155,76 +149,8 @@ function sortTable(column) {
     updateOrdersTable(ordersData);
 }
 
-function showOrdersSkeleton() {
-    // Show skeleton for summary cards with fade effect
-    var skeleton = document.getElementById('ordersSummarySkeleton');
-    var cards = document.getElementById('ordersSummaryCards');
-    
-    if (skeleton) {
-        skeleton.style.display = 'flex';
-        skeleton.style.opacity = '1';
-    }
-    if (cards) {
-        cards.style.opacity = '0';
-        cards.style.display = 'none';
-    }
-    
-    // Show shimmer rows in table with staggered animation
-    var shimmerRows = document.querySelectorAll('.shimmer-row');
-    shimmerRows.forEach(function(row, index) {
-        row.style.display = 'table-row';
-        row.style.animationDelay = (index * 0.1) + 's';
-    });
-    
-    // Remove content loaded class
-    document.body.classList.remove('orders-content-loaded');
-}
-
-function hideOrdersSkeleton() {
-    // Add smooth transition when hiding skeleton
-    setTimeout(function() {
-        var skeleton = document.getElementById('ordersSummarySkeleton');
-        var cards = document.getElementById('ordersSummaryCards');
-        
-        if (skeleton) {
-            skeleton.style.opacity = '0';
-            setTimeout(function() {
-                skeleton.style.display = 'none';
-            }, 300);
-        }
-        
-        if (cards) {
-            cards.style.display = 'flex';
-            cards.style.opacity = '0';
-            setTimeout(function() {
-                cards.style.opacity = '1';
-            }, 50);
-        }
-        
-        // Hide shimmer rows in table with fade out
-        var shimmerRows = document.querySelectorAll('.shimmer-row');
-        shimmerRows.forEach(function(row, index) {
-            setTimeout(function() {
-                row.style.opacity = '0';
-                setTimeout(function() {
-                    row.style.display = 'none';
-                }, 200);
-            }, index * 30);
-        });
-        
-        // Add content loaded class
-        setTimeout(function() {
-            document.body.classList.add('orders-content-loaded');
-        }, 400);
-        
-    }, 200); // Small delay to show data has loaded
-}
-
 function updateOrdersTable(orders) {
     var tableBody = document.getElementById('ordersTableBody');
-
-    // Hide skeleton UI first
-    hideOrdersSkeleton();
 
     if (!orders || orders.length === 0) {
         showNoOrdersMessage();
@@ -379,8 +305,6 @@ function updateOrdersSummary(orders) {
 }
 
 function showNoOrdersMessage() {
-    hideOrdersSkeleton(); // Make sure skeleton is hidden
-    
     var tableBody = document.getElementById('ordersTableBody');
     tableBody.innerHTML = `
         <tr>
@@ -408,8 +332,6 @@ function showNoOrdersMessage() {
 }
 
 function showAuthenticationErrorOrders() {
-    hideOrdersSkeleton(); // Make sure skeleton is hidden
-    
     var tableBody = document.getElementById('ordersTableBody');
     tableBody.innerHTML = `
         <tr>
