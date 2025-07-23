@@ -183,7 +183,8 @@ with app.app_context():
         db.create_all()
         print("✅ Database tables created successfully")
     except Exception as e:
-        print(f"⚠️ Database table creation warning: {e}")
+        print(f"⚠️ Database initialization warning: {e}")
+        # Continue running even if database creation fails
 
 # LoginManager will be initialized after imports below
 
@@ -936,7 +937,7 @@ try:
 except Exception as e:
     print(f"Auto-sync setup optional: {e}")
 
-# ========================================
+# ================================= berjumpa=======
 # KOTAK NEO PROJECT INTEGRATION
 # ========================================
 
@@ -982,7 +983,7 @@ try:
     login_manager = LoginManager()
     login_manager.init_app(app)
     login_manager.login_view = 'login'
-    
+
     # Initialize Mail
     mail = Mail(app)
     print("✓ Email and login extensions initialized")

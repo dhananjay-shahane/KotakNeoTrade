@@ -13,12 +13,15 @@ def get_external_db_connection():
     """Get connection to external PostgreSQL database"""
     try:
         import psycopg2
+        import os
+        
+        # Use environment variables first, fallback to hardcoded values
         db_config = {
-            'host': "dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com",
-            'database': "kotak_trading_db",
-            'user': "kotak_trading_db_user",
-            'password': "JRUlk8RutdgVcErSiUXqljDUdK8sBsYO",
-            'port': 5432
+            'host': os.environ.get('DB_HOST', "dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com"),
+            'database': os.environ.get('DB_NAME', "kotak_trading_db"),
+            'user': os.environ.get('DB_USER', "kotak_trading_db_user"),
+            'password': os.environ.get('DB_PASSWORD', "JRUlk8RutdgVcErSiUXqljDUdK8sBsYO"),
+            'port': int(os.environ.get('DB_PORT', 5432))
         }
         conn = psycopg2.connect(**db_config)
         return conn

@@ -2,14 +2,15 @@
 Database models for user authentication system
 """
 import os
-from datetime import datetime
-from flask import Flask
+import re
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy.orm import DeclarativeBase
+from datetime import datetime
+from flask import Flask
 import secrets
 import string
+from sqlalchemy.orm import DeclarativeBase
 
 class Base(DeclarativeBase):
     pass
@@ -39,7 +40,6 @@ class User(UserMixin, db.Model):
     @staticmethod
     def generate_username(email, mobile=None):
         """Generate unique 5-letter username from email and mobile combination"""
-        import re
 
         # Extract letters from email (before @)
         email_part = re.sub(r'[^a-zA-Z]', '', email.split('@')[0].lower())
