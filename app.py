@@ -273,6 +273,7 @@ try:
 except ImportError as e:
     print(f"Trading functions optional: {e}")
 
+
 # Add Kotak Neo dashboard route
 @app.route('/dashboard')
 def show_dashboard():
@@ -280,18 +281,23 @@ def show_dashboard():
     # Check if user is authenticated
     if not session.get('authenticated') and not session.get('kotak_logged_in'):
         return redirect(url_for('auth_routes.trading_account_login'))
-    
+
     # Prepare account data for sidebar
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
         kotak_account_data = {
-            'ucc': session.get('ucc', session.get('username', '-')),
-            'mobile': session.get('mobile_number', '-'),
-            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
-            'last_login': 'Just Now',
-            'status': 'Online'
+            'ucc':
+            session.get('ucc', session.get('username', '-')),
+            'mobile':
+            session.get('mobile_number', '-'),
+            'greeting_name':
+            session.get('greeting_name', session.get('username', 'User')),
+            'last_login':
+            'Just Now',
+            'status':
+            'Online'
         }
-    
+
     # Render dashboard with empty data structure for now
     dashboard_data = {
         'positions': [],
@@ -302,8 +308,11 @@ def show_dashboard():
         'total_holdings': 0,
         'total_orders': 0
     }
-    
-    return render_template('dashboard.html', data=dashboard_data, kotak_account=kotak_account_data)
+
+    return render_template('dashboard.html',
+                           data=dashboard_data,
+                           kotak_account=kotak_account_data)
+
 
 # Add missing Kotak Neo routes that are referenced in the sidebar - render directly to avoid redirect loops
 @app.route('/orders')
@@ -312,39 +321,55 @@ def orders_redirect():
     # Check if user is authenticated
     if not session.get('authenticated') and not session.get('kotak_logged_in'):
         return redirect(url_for('auth_routes.trading_account_login'))
-    
+
     # Prepare account data for sidebar
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
         kotak_account_data = {
-            'ucc': session.get('ucc', session.get('username', '-')),
-            'mobile': session.get('mobile_number', '-'),
-            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
-            'last_login': 'Just Now',
-            'status': 'Online'
+            'ucc':
+            session.get('ucc', session.get('username', '-')),
+            'mobile':
+            session.get('mobile_number', '-'),
+            'greeting_name':
+            session.get('greeting_name', session.get('username', 'User')),
+            'last_login':
+            'Just Now',
+            'status':
+            'Online'
         }
-    
-    return render_template('orders.html', kotak_account=kotak_account_data, page_title="Orders")
 
-@app.route('/positions')  
+    return render_template('orders.html',
+                           kotak_account=kotak_account_data,
+                           page_title="Orders")
+
+
+@app.route('/positions')
 def positions_redirect():
-    """Kotak Neo positions route"""  
+    """Kotak Neo positions route"""
     # Check if user is authenticated
     if not session.get('authenticated') and not session.get('kotak_logged_in'):
         return redirect(url_for('auth_routes.trading_account_login'))
-    
+
     # Prepare account data for sidebar
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
         kotak_account_data = {
-            'ucc': session.get('ucc', session.get('username', '-')),
-            'mobile': session.get('mobile_number', '-'),
-            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
-            'last_login': 'Just Now',
-            'status': 'Online'
+            'ucc':
+            session.get('ucc', session.get('username', '-')),
+            'mobile':
+            session.get('mobile_number', '-'),
+            'greeting_name':
+            session.get('greeting_name', session.get('username', 'User')),
+            'last_login':
+            'Just Now',
+            'status':
+            'Online'
         }
-    
-    return render_template('positions.html', kotak_account=kotak_account_data, page_title="Positions")
+
+    return render_template('positions.html',
+                           kotak_account=kotak_account_data,
+                           page_title="Positions")
+
 
 # Remove duplicate route - using show_holdings below instead
 
@@ -353,74 +378,25 @@ def positions_redirect():
 def index():
     """Home page - redirect to portfolio if authenticated, else to login"""
     # Check if user is authenticated
-    if session.get('authenticated') or session.get('kotak_logged_in'):
-        return redirect(url_for('portfolio'))
-    else:
-        return redirect(url_for('auth_routes.trading_account_login'))
+    return redirect(url_for('portfolio'))
 
 
 @app.route('/portfolio')
 def portfolio():
     """Portfolio page - show portfolio.html template"""
-    # Check if user is authenticated
-    if not session.get('authenticated') and not session.get('kotak_logged_in'):
-        return redirect(url_for('auth_routes.trading_account_login'))
-    
-    # Prepare Kotak account data for sidebar if logged in
-    kotak_account_data = None
-    if session.get('kotak_logged_in') or session.get('authenticated'):
-        kotak_account_data = {
-            'ucc': session.get('ucc', session.get('username', '-')),
-            'mobile': session.get('mobile_number', '-'),
-            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
-            'last_login': 'Just Now',
-            'status': 'Online'
-        }
-    
-    return render_template('portfolio.html', kotak_account=kotak_account_data)
+    return render_template('portfolio.html')
 
 
 @app.route('/trading-signals')
 def trading_signals():
     """Trading Signals page"""
-    # Check if user is authenticated
-    if not session.get('authenticated') and not session.get('kotak_logged_in'):
-        return redirect(url_for('auth_routes.trading_account_login'))
-
-    # Prepare Kotak account data for sidebar if logged in
-    kotak_account_data = None
-    if session.get('kotak_logged_in'):
-        kotak_account_data = {
-            'ucc': session.get('ucc', '-'),
-            'mobile': session.get('mobile_number', '-'),
-            'greeting_name': session.get('greeting_name', 'User'),
-            'last_login': 'Just Now',
-            'status': 'Online'
-        }
-
-    return render_template('trading_signals.html',
-                           kotak_account=kotak_account_data)
+    return render_template('trading_signals.html')
 
 
 @app.route('/deals')
 def deals():
     """Deals page"""
-    # Check if user is authenticated
-    if not session.get('authenticated') and not session.get('kotak_logged_in'):
-        return redirect(url_for('auth_routes.trading_account_login'))
-
-    # Prepare Kotak account data for sidebar if logged in
-    kotak_account_data = None
-    if session.get('kotak_logged_in'):
-        kotak_account_data = {
-            'ucc': session.get('ucc', '-'),
-            'mobile': session.get('mobile_number', '-'),
-            'greeting_name': session.get('greeting_name', 'User'),
-            'last_login': 'Just Now',
-            'status': 'Online'
-        }
-
-    return render_template('deals.html', kotak_account=kotak_account_data)
+    return render_template('deals.html')
 
 
 @app.route('/positions')
@@ -484,15 +460,22 @@ def show_holdings():
             holdings_response = trading_funcs.get_holdings(client)
             if isinstance(holdings_response, list):
                 holdings_data = holdings_response
-            elif isinstance(holdings_response, dict) and 'holdings' in holdings_response:
+            elif isinstance(holdings_response,
+                            dict) and 'holdings' in holdings_response:
                 holdings_data = holdings_response['holdings']
-            elif isinstance(holdings_response, dict) and 'error' in holdings_response:
-                logging.error(f"Holdings API error: {holdings_response['error']}")
-            logging.info(f"Holdings data fetched for template: {len(holdings_data)} items")
+            elif isinstance(holdings_response,
+                            dict) and 'error' in holdings_response:
+                logging.error(
+                    f"Holdings API error: {holdings_response['error']}")
+            logging.info(
+                f"Holdings data fetched for template: {len(holdings_data)} items"
+            )
     except Exception as e:
         logging.error(f"Error fetching holdings for template: {e}")
-    
-    return render_template('holdings.html', kotak_account=kotak_account_data, holdings=holdings_data)
+
+    return render_template('holdings.html',
+                           kotak_account=kotak_account_data,
+                           holdings=holdings_data)
 
 
 @app.route('/orders')
@@ -590,10 +573,13 @@ def get_positions_api():
     try:
         client = session.get('client')
         if not client:
-            return jsonify({'success': False, 'error': 'No active client'}), 400
+            return jsonify({
+                'success': False,
+                'error': 'No active client'
+            }), 400
 
         positions = trading_functions.get_positions(client)
-        
+
         # Ensure positions is always a list and return in expected format
         if isinstance(positions, dict) and 'positions' in positions:
             positions_list = positions['positions']
@@ -601,7 +587,7 @@ def get_positions_api():
             positions_list = positions
         else:
             positions_list = []
-            
+
         return jsonify({
             'success': True,
             'positions': positions_list,
@@ -621,10 +607,13 @@ def get_holdings_api():
     try:
         client = session.get('client')
         if not client:
-            return jsonify({'success': False, 'error': 'No active client'}), 400
+            return jsonify({
+                'success': False,
+                'error': 'No active client'
+            }), 400
 
         holdings = trading_functions.get_holdings(client)
-        
+
         # Ensure holdings is always a list and return in expected format
         if isinstance(holdings, dict) and 'holdings' in holdings:
             holdings_list = holdings['holdings']
@@ -632,7 +621,7 @@ def get_holdings_api():
             holdings_list = holdings
         else:
             holdings_list = []
-            
+
         return jsonify({
             'success': True,
             'holdings': holdings_list,
@@ -641,6 +630,7 @@ def get_holdings_api():
     except Exception as e:
         logging.error(f"Holdings API error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/api/orders')
 def get_orders_api():
@@ -651,10 +641,13 @@ def get_orders_api():
     try:
         client = session.get('client')
         if not client:
-            return jsonify({'success': False, 'error': 'No active client'}), 400
+            return jsonify({
+                'success': False,
+                'error': 'No active client'
+            }), 400
 
         orders = trading_functions.get_orders(client)
-        
+
         # Ensure orders is always a list and return in expected format
         if isinstance(orders, dict) and 'orders' in orders:
             orders_list = orders['orders']
@@ -662,7 +655,7 @@ def get_orders_api():
             orders_list = orders
         else:
             orders_list = []
-            
+
         return jsonify({
             'success': True,
             'orders': orders_list,
