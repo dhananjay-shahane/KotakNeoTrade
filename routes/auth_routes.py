@@ -136,7 +136,7 @@ def trading_account_login():
     if request.method == 'POST':
         try:
             # Get form data
-            username = request.form.get('email', '').strip()  # Form uses 'email' field for username
+            username = request.form.get('username', '').strip()  # Form uses 'username' field
             password = request.form.get('password', '').strip()
 
             # Validate inputs

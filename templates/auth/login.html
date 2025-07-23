@@ -25,14 +25,14 @@ endblock %} {% block content %}
 
         <form method="POST" action="{{ url_for('auth_routes.trading_account_login') }}" id="loginForm">
             <div class="form-group">
-                <label for="email" class="form-label">
+                <label for="username" class="form-label">
                     <i class="fas fa-user"></i>Username
                 </label>
                 <input
                     type="text"
                     class="form-control"
-                    id="email"
-                    name="email"
+                    id="username"
+                    name="username"
                     placeholder="Enter your username"
                     required
                     autocomplete="username"
@@ -106,18 +106,18 @@ endblock %} {% block content %}
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const form = document.getElementById("loginForm");
-        const emailInput = document.getElementById("email");
+        const usernameInput = document.getElementById("username");
         const passwordInput = document.getElementById("password");
         const loginBtn = document.getElementById("loginBtn");
         const termsCheckbox = document.getElementById("terms");
 
         // Form validation
         function validateForm() {
-            const email = emailInput.value.trim();
+            const username = usernameInput.value.trim();
             const password = passwordInput.value.trim();
             const termsAccepted = termsCheckbox.checked;
 
-            if (email && password && termsAccepted) {
+            if (username && password && termsAccepted) {
                 loginBtn.disabled = false;
                 loginBtn.style.opacity = "1";
             } else {
@@ -127,7 +127,7 @@ endblock %} {% block content %}
         }
 
         // Real-time validation
-        emailInput.addEventListener("input", validateForm);
+        usernameInput.addEventListener("input", validateForm);
         passwordInput.addEventListener("input", validateForm);
         termsCheckbox.addEventListener("change", validateForm);
 
@@ -136,11 +136,11 @@ endblock %} {% block content %}
 
         // Form submission
         form.addEventListener("submit", function (e) {
-            const email = emailInput.value.trim();
+            const username = usernameInput.value.trim();
             const password = passwordInput.value.trim();
             const termsAccepted = termsCheckbox.checked;
 
-            if (!email || !password || !termsAccepted) {
+            if (!username || !password || !termsAccepted) {
                 e.preventDefault();
                 alert("Please fill in all fields and accept terms");
                 return;

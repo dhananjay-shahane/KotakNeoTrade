@@ -993,6 +993,38 @@ try:
         def check_password(self, password):
             return check_password_hash(self.password_hash, password)
 
+        @staticmethod
+        def generate_username(email, mobile=None):
+            """Generate unique 5-letter username from email and mobile combination"""
+            import re
+            
+            # Extract letters from email (before @)
+            email_part = re.sub(r'[^a-zA-Z]', '', email.split('@')[0].lower())
+            
+            # Extract digits from mobile number
+            mobile_digits = ''
+            if mobile:
+                mobile_digits = re.sub(r'[^0-9]', '', mobile)
+            
+            # Create base username with 3 letters from email + 2 digits from mobile
+            email_letters = email_part[:3] if len(email_part) >= 3 else email_part.ljust(3, 'x')
+            mobile_nums = mobile_digits[:2] if len(mobile_digits) >= 2 else mobile_digits.ljust(2, '0')
+            
+            base_username = email_letters + mobile_nums
+            username = base_username
+            counter = 1
+            
+            # Ensure uniqueness by checking database
+            while User.query.filter_by(username=username).first():
+                # If collision, modify last character with counter
+                if counter < 10:
+                    username = base_username[:-1] + str(counter)
+                else:
+                    username = base_username[:-2] + str(counter)[:2]
+                counter += 1
+                
+            return username[:5]  # Ensure exactly 5 characters
+
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
@@ -1006,8 +1038,8 @@ try:
     app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
     app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
     app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
-    app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
-    app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+    app.config['MAIL_USERNAME'] = os.environ.get('EMAIL_USER')
+    app.config['MAIL_PASSWORD'] = os.environ.get('EMAIL_PASSWORD')
     app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER')
     print("✓ Email configuration loaded")
 except Exception as e:
@@ -1058,20 +1090,27 @@ def register():
     if request.method == 'POST':
         email = request.form.get('email')
         mobile = request.form.get('mobile')
-        username = request.form.get('username')
         password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
 
         # Validate input
-        if not all([email, mobile, username, password]):
+        if not all([email, mobile, password, confirm_password]):
             flash('All fields are required.', 'error')
+            return render_template('auth/register.html')
+
+        if password != confirm_password:
+            flash('Passwords do not match.', 'error')
             return render_template('auth/register.html')
 
         # Check if user already exists
         try:
-            existing_user = User.query.filter_by(username=username).first()
+            existing_user = User.query.filter_by(email=email).first()
             if existing_user:
-                flash('Username already taken.', 'error')
+                flash('Email already registered.', 'error')
                 return render_template('auth/register.html')
+
+            # Generate unique username from email and mobile
+            username = User.generate_username(email, mobile)
 
             # Create new user
             user = User(email=email, mobile=mobile, username=username)
@@ -1089,10 +1128,10 @@ def register():
                     'success')
             else:
                 flash(
-                    'Registration successful! However, we couldn\'t send the confirmation email. Please note your credentials.',
-                    'warning')
+                    'Registration successful! Your username is: ' + username,
+                    'success')
 
-            return redirect(url_for('login'))
+            return redirect(url_for('auth_routes.trading_account_login'))
         except Exception as e:
             db.session.rollback()
             flash('Registration failed. Please try again.', 'error')
