@@ -56,6 +56,86 @@
 
 /* Orders Page Styles */
 
+/* Shimmer Animation */
+.shimmer {
+    background: linear-gradient(90deg, 
+        rgba(255, 255, 255, 0.1) 25%, 
+        rgba(255, 255, 255, 0.3) 50%, 
+        rgba(255, 255, 255, 0.1) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* Shimmer Elements */
+.shimmer-text {
+    height: 16px;
+    width: 80%;
+    margin: 4px 0;
+}
+
+.shimmer-badge {
+    height: 20px;
+    width: 60px;
+    border-radius: 12px;
+}
+
+.shimmer-actions {
+    height: 28px;
+    width: 120px;
+    border-radius: 4px;
+}
+
+.shimmer-card-title {
+    height: 14px;
+    width: 70%;
+    margin: 0 auto;
+}
+
+.shimmer-card-number {
+    height: 24px;
+    width: 40%;
+    margin: 0 auto;
+}
+
+/* Shimmer Rows */
+.shimmer-row td {
+    padding: 12px 8px;
+    text-align: center;
+}
+
+/* Show/Hide Content */
+.orders-content-loaded .orders-shimmer-summary {
+    display: none !important;
+}
+
+.orders-content-loaded .orders-content-cards {
+    display: flex !important;
+}
+
+.orders-content-loaded .shimmer-row {
+    display: none !important;
+}
+
+.orders-shimmer-summary {
+    display: flex;
+    width: 100%;
+}
+
+.orders-content-cards {
+    display: none;
+    width: 100%;
+}
+
 /* Table header sorting */
 #ordersTable th[style*="cursor"] {
     user-select: none;
