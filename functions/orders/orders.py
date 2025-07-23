@@ -22,7 +22,7 @@ def orders():
         client = session.get('client')
         if not client:
             flash('Session expired. Please login again.', 'error')
-            return redirect(url_for('auth_routes.trading_account_login'))
+            return redirect(url_for('login'))
 
         # Fetch orders data
         orders_data = trading_functions.get_orders(client)

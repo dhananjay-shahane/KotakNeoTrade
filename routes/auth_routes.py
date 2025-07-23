@@ -144,30 +144,9 @@ def trading_account_login():
                 flash('Username and password are required', 'error')
                 return render_template('auth/login.html')
 
-            # Check temporary registration data first
-            temp_reg = session.get('temp_registration')
-            if temp_reg and temp_reg.get('username') == username and temp_reg.get('password') == password:
-                # Set session data for authenticated user from temp registration
-                session['authenticated'] = True
-                session['username'] = username
-                session['user_id'] = username
-                session['email'] = temp_reg.get('email')
-                session['mobile'] = temp_reg.get('mobile')
-                session['login_type'] = 'trading_account'
-                session['access_token'] = 'demo_token_' + username
-                session['ucc'] = username
-                session['greeting_name'] = username
-                session.permanent = True
-                
-                # Clear temp registration data
-                session.pop('temp_registration', None)
-                
-                logging.info(f"Trading account login successful for registered user: {username}")
-                flash('Login successful!', 'success')
-                return redirect(url_for('portfolio'))
             # For demo purposes, create a simple authentication
             # In production, this would validate against your user database
-            elif username and password:
+            if username and password:
                 # Store user session with all required fields for dashboard access
                 session['authenticated'] = True
                 session['username'] = username
@@ -222,57 +201,3 @@ def logout_kotak():
     session.pop('_flashes', None)
     flash('Logged out from Kotak Neo successfully', 'info')
     return redirect(url_for('portfolio'))
-
-
-@auth_bp.route('/register', methods=['GET', 'POST'])
-def register():
-    """Register new user with auto-generated username"""
-    if request.method == 'POST':
-        try:
-            email = request.form.get('email', '').strip()
-            mobile = request.form.get('mobile', '').strip()
-            password = request.form.get('password', '').strip()
-            confirm_password = request.form.get('confirm_password', '').strip()
-
-            print(f"Registration attempt: email={email}, mobile={mobile}")  # Debug
-
-            # Validate input
-            if not all([email, mobile, password, confirm_password]):
-                flash('All fields are required.', 'error')
-                return render_template('auth/register.html')
-
-            if password != confirm_password:
-                flash('Passwords do not match.', 'error')
-                return render_template('auth/register.html')
-
-            if len(password) < 6:
-                flash('Password must be at least 6 characters long.', 'error')
-                return render_template('auth/register.html')
-
-            # Simple username generation from email (first 3 chars) + mobile (last 2 digits)
-            email_part = email.split('@')[0][:3].lower()
-            mobile_part = mobile[-2:] if len(mobile) >= 2 else '00'
-            username = f"{email_part}{mobile_part}"
-
-            print(f"Generated username: {username}")  # Debug
-
-            # For now, just store in session and show success message
-            session['temp_registration'] = {
-                'email': email,
-                'mobile': mobile,
-                'username': username,
-                'password': password
-            }
-
-            flash('Registration successful!', 'success')
-            flash(f'Your username is: {username}', 'info')
-            flash('You can now login with your username and password.', 'info')
-
-            return redirect(url_for('auth_routes.trading_account_login'))
-            
-        except Exception as e:
-            print(f"Registration error: {e}")  # Debug logging
-            flash('Registration failed. Please try again.', 'error')
-            return render_template('auth/register.html')
-
-    return render_template('auth/register.html')

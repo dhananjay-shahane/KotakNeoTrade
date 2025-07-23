@@ -980,7 +980,6 @@ except Exception as e:
 try:
 
     class User(UserMixin, db.Model):
-        __tablename__ = 'app_users'  # Avoid conflict with other User tables
         id = db.Column(db.Integer, primary_key=True)
         email = db.Column(db.String(100), unique=True, nullable=False)
         mobile = db.Column(db.String(20), unique=True, nullable=False)
@@ -1041,7 +1040,7 @@ try:
     app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
     app.config['MAIL_USERNAME'] = os.environ.get('EMAIL_USER')
     app.config['MAIL_PASSWORD'] = os.environ.get('EMAIL_PASSWORD')
-    app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('EMAIL_USER', 'ontimefintech@gmail.com')
+    app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER')
     print("✓ Email configuration loaded")
 except Exception as e:
     print(f"Email configuration optional: {e}")
@@ -1085,7 +1084,60 @@ def send_registration_email(user_email, username, password):
         return False
 
 
-# Registration route moved to auth_routes blueprint
+# Registration and login routes preserved from original code
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        mobile = request.form.get('mobile')
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+
+        # Validate input
+        if not all([email, mobile, password, confirm_password]):
+            flash('All fields are required.', 'error')
+            return render_template('auth/register.html')
+
+        if password != confirm_password:
+            flash('Passwords do not match.', 'error')
+            return render_template('auth/register.html')
+
+        # Check if user already exists
+        try:
+            existing_user = User.query.filter_by(email=email).first()
+            if existing_user:
+                flash('Email already registered.', 'error')
+                return render_template('auth/register.html')
+
+            # Generate unique username from email and mobile
+            username = User.generate_username(email, mobile)
+
+            # Create new user
+            user = User(email=email, mobile=mobile, username=username)
+            user.set_password(password)
+
+            db.session.add(user)
+            db.session.commit()
+
+            # Send registration email with credentials
+            email_sent = send_registration_email(email, username, password)
+
+            if email_sent:
+                flash(
+                    'Registration successful! Please check your email for login credentials.',
+                    'success')
+            else:
+                flash(
+                    'Registration successful! Your username is: ' + username,
+                    'success')
+
+            return redirect(url_for('auth_routes.trading_account_login'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Registration failed. Please try again.', 'error')
+            return render_template('auth/register.html')
+
+    return render_template('auth/register.html')
 
 
 @app.route('/login', methods=['GET', 'POST'])
