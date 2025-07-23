@@ -4,18 +4,128 @@
 
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton_animation.css') }}">
+<style>
+.skeleton-shimmer {
+    background: linear-gradient(90deg, #374151 25%, #4B5563 50%, #374151 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.skeleton-card {
+    height: 60px;
+    border-radius: 8px;
+}
+
+.skeleton-table-row {
+    height: 45px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+}
+
+.sortable-header {
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: background-color 0.2s;
+}
+
+.sortable-header:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sort-icon {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.5;
+    transition: opacity 0.2s;
+}
+
+.sortable-header:hover .sort-icon {
+    opacity: 1;
+}
+
+.sort-icon.active {
+    opacity: 1;
+    color: #17a2b8 !important;
+}
+
+.filter-controls {
+    background: #374151;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+}
+
+.filter-button {
+    transition: all 0.2s;
+}
+
+.filter-button.active {
+    background-color: #17a2b8 !important;
+    border-color: #17a2b8 !important;
+}
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="row mb-2">
-    <div class="col">
-        <h4 class="mb-1">Portfolio Holdings</h4>
-        <small class="text-muted">Long-term investment portfolio overview</small>
+<!-- Loading Skeleton (Hidden by default) -->
+<div id="loadingSkeleton" style="display: none;">
+    <div class="row mb-2">
+        <div class="col">
+            <h4 class="mb-1">Portfolio Holdings</h4>
+            <small class="text-muted">Loading portfolio data...</small>
+        </div>
     </div>
-    <div class="col-auto">
-        <button class="btn btn-sm btn-primary" onclick="refreshHoldings()">Refresh</button>
+    
+    <!-- Skeleton Summary Cards -->
+    <div class="row mb-3">
+        <div class="col-lg-3 col-md-6 mb-2">
+            <div class="skeleton-shimmer skeleton-card"></div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-2">
+            <div class="skeleton-shimmer skeleton-card"></div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-2">
+            <div class="skeleton-shimmer skeleton-card"></div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-2">
+            <div class="skeleton-shimmer skeleton-card"></div>
+        </div>
+    </div>
+    
+    <!-- Skeleton Table -->
+    <div class="card bg-secondary border-0">
+        <div class="card-body p-3">
+            <div class="skeleton-shimmer skeleton-table-row mb-2"></div>
+            <div class="skeleton-shimmer skeleton-table-row mb-2"></div>
+            <div class="skeleton-shimmer skeleton-table-row mb-2"></div>
+            <div class="skeleton-shimmer skeleton-table-row mb-2"></div>
+            <div class="skeleton-shimmer skeleton-table-row mb-2"></div>
+            <div class="skeleton-shimmer skeleton-table-row"></div>
+        </div>
     </div>
 </div>
+
+<!-- Main Content -->
+<div id="mainContent">
+    <div class="row mb-2">
+        <div class="col">
+            <h4 class="mb-1">Portfolio Holdings</h4>
+            <small class="text-muted">Long-term investment portfolio overview</small>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-sm btn-primary" onclick="refreshHoldings()">
+                <i class="fas fa-sync me-1"></i>Refresh
+            </button>
+        </div>
+    </div>
 
 {% if holdings %}
 <!-- Calculate totals for cards -->
@@ -34,93 +144,143 @@
 {% set total_pnl = total_current - total_invested %}
 {% set pnl_percentage = (total_pnl / total_invested * 100) if total_invested > 0 else 0 %}
 
-<!-- Compact Summary Cards -->
-<div class="row mb-2">
-    <div class="col-lg-3 col-md-6 mb-1">
-        <div class="card bg-secondary border-0" style="height: 60px;">
-            <div class="card-body p-2 d-flex align-items-center justify-content-between">
-                <div>
-                    <small class="text-muted">Holdings</small>
-                    <div class="fw-bold text-white">{{ holdings|length if holdings else 0 }}</div>
+    <!-- Enhanced Summary Cards -->
+    <div class="row mb-3">
+        <div class="col-lg-3 col-md-6 mb-2">
+            <div class="card bg-secondary border-0" style="height: 65px;">
+                <div class="card-body p-3 d-flex align-items-center justify-content-between">
+                    <div>
+                        <small class="text-muted d-block">Holdings</small>
+                        <div class="fw-bold text-white fs-5" id="holdingsCount">{{ holdings|length if holdings else 0 }}</div>
+                    </div>
+                    <div class="text-info">
+                        <i class="fas fa-briefcase fa-lg"></i>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="col-lg-3 col-md-6 mb-1">
-        <div class="card bg-secondary border-0" style="height: 60px;">
-            <div class="card-body p-2 d-flex align-items-center justify-content-between">
-                <div>
-                    <small class="text-muted">Invested</small>
-                    <div class="fw-bold text-white">₹{{ "{:,.0f}".format(total_invested) }}</div>
+        <div class="col-lg-3 col-md-6 mb-2">
+            <div class="card bg-secondary border-0" style="height: 65px;">
+                <div class="card-body p-3 d-flex align-items-center justify-content-between">
+                    <div>
+                        <small class="text-muted d-block">Invested</small>
+                        <div class="fw-bold text-white fs-6" id="totalInvestedValue">₹{{ "{:,.0f}".format(total_invested) }}</div>
+                    </div>
+                    <div class="text-warning">
+                        <i class="fas fa-chart-line fa-lg"></i>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="col-lg-3 col-md-6 mb-1">
-        <div class="card bg-secondary border-0" style="height: 60px;">
-            <div class="card-body p-2 d-flex align-items-center justify-content-between">
-                <div>
-                    <small class="text-muted">Current Value</small>
-                    <div class="fw-bold text-white">₹{{ "{:,.0f}".format(total_current) }}</div>
+        <div class="col-lg-3 col-md-6 mb-2">
+            <div class="card bg-secondary border-0" style="height: 65px;">
+                <div class="card-body p-3 d-flex align-items-center justify-content-between">
+                    <div>
+                        <small class="text-muted d-block">Current Value</small>
+                        <div class="fw-bold text-white fs-6" id="totalHoldingsValue">₹{{ "{:,.0f}".format(total_current) }}</div>
+                    </div>
+                    <div class="text-success">
+                        <i class="fas fa-coins fa-lg"></i>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="col-lg-3 col-md-6 mb-1">
-        <div class="card bg-secondary border-0" style="height: 60px;">
-            <div class="card-body p-2 d-flex align-items-center justify-content-between">
-                <div>
-                    <small class="text-muted">P&L</small>
-                    <div class="fw-bold {% if total_pnl >= 0 %}text-success{% else %}text-danger{% endif %}">
-                        {% if total_pnl > 0 %}+{% endif %}₹{{ "{:,.0f}".format(total_pnl) }}
-                        <small>({% if total_pnl > 0 %}+{% endif %}{{ "{:.1f}".format(pnl_percentage) }}%)</small>
+        <div class="col-lg-3 col-md-6 mb-2">
+            <div class="card bg-secondary border-0" style="height: 65px;">
+                <div class="card-body p-3 d-flex align-items-center justify-content-between">
+                    <div>
+                        <small class="text-muted d-block">Total P&L</small>
+                        <div class="fw-bold {% if total_pnl >= 0 %}text-success{% else %}text-danger{% endif %} fs-6" id="totalHoldingsPnl">
+                            {% if total_pnl > 0 %}+{% endif %}₹{{ "{:,.0f}".format(total_pnl) }}
+                        </div>
+                        <small class="{% if total_pnl >= 0 %}text-success{% else %}text-danger{% endif %}" id="totalHoldingsPnlPercentage">
+                            ({% if total_pnl > 0 %}+{% endif %}{{ "{:.1f}".format(pnl_percentage) }}%)
+                        </small>
+                    </div>
+                    <div class="{% if total_pnl >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        <i class="fas fa-{% if total_pnl >= 0 %}arrow-up{% else %}arrow-down{% endif %} fa-lg"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<div class="card bg-secondary border-0">
-    <div class="card-header bg-dark d-flex justify-content-between align-items-center py-2">
-        <small class="mb-0 text-white fw-bold">Holdings Details</small>
-        <div class="d-flex gap-1">
-            <button class="btn btn-sm btn-outline-light" onclick="sortTable('symbol')" id="sortSymbolBtn">Sort A-Z</button>
-            <button class="btn btn-sm btn-outline-light" onclick="refreshHoldings()">Refresh</button>
+    <!-- Filter and Sort Controls -->
+    <div class="filter-controls">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <div class="d-flex gap-2 flex-wrap">
+                    <button class="btn btn-sm btn-outline-light filter-button active" onclick="filterHoldings('all')" id="filterAll">
+                        All Holdings
+                    </button>
+                    <button class="btn btn-sm btn-outline-light filter-button" onclick="filterHoldings('profitable')" id="filterProfitable">
+                        Profitable
+                    </button>
+                    <button class="btn btn-sm btn-outline-light filter-button" onclick="filterHoldings('loss')" id="filterLoss">
+                        In Loss
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex gap-2 justify-content-md-end">
+                    <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary" 
+                           placeholder="Search symbols..." id="searchInput" onkeyup="searchHoldings()" style="max-width: 200px;">
+                    <button class="btn btn-sm btn-outline-light" onclick="resetFilters()">
+                        <i class="fas fa-undo me-1"></i>Reset
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-dark table-hover mb-0 table-sm" id="holdingsTable">
-                <thead class="bg-dark">
-                    <tr style="font-size: 0.85rem;">
-                        <th class="sortable border-0 py-2" onclick="sortTable('symbol')" style="cursor: pointer;">
-                            SYMBOL
-                        </th>
-                        <th class="sortable border-0 py-2" onclick="sortTable('exchange')" style="cursor: pointer;">
-                            EXCHANGE
-                        </th>
-                        <th class="sortable border-0 py-2" onclick="sortTable('quantity')" style="cursor: pointer;">
-                            QTY
-                        </th>
-                        <th class="sortable border-0 py-2" onclick="sortTable('avgPrice')" style="cursor: pointer;">
-                            AVG PRICE
-                        </th>
-                        <th class="sortable border-0 py-2" onclick="sortTable('ltp')" style="cursor: pointer;">
-                            LTP
-                        </th>
-                        <th class="sortable border-0 py-2" onclick="sortTable('marketValue')" style="cursor: pointer;">
-                            MARKET VALUE
-                        </th>
-                        <th class="sortable border-0 py-2" onclick="sortTable('pnl')" style="cursor: pointer;">
-                            P&L
-                        </th>
-                        <th class="sortable border-0 py-2" onclick="sortTable('dayChange')" style="cursor: pointer;">
-                            DAY CHANGE
-                        </th>
-                        <th class="border-0 py-2">ACTIONS</th>
-                    </tr>
-                </thead>
+
+    <!-- Holdings Table -->
+    <div class="card bg-secondary border-0">
+        <div class="card-header bg-dark d-flex justify-content-between align-items-center py-2">
+            <small class="mb-0 text-white fw-bold">Holdings Details</small>
+            <div class="d-flex gap-1">
+                <span class="badge bg-info" id="visibleHoldingsCount">{{ holdings|length if holdings else 0 }} holdings</span>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0 table-sm" id="holdingsTable">
+                    <thead class="bg-dark">
+                        <tr style="font-size: 0.85rem;">
+                            <th class="sortable-header border-0 py-3" onclick="sortTable('symbol')" data-sort="symbol">
+                                SYMBOL
+                                <i class="fas fa-sort sort-icon" id="sort-symbol"></i>
+                            </th>
+                            <th class="sortable-header border-0 py-3" onclick="sortTable('exchange')" data-sort="exchange">
+                                EXCHANGE
+                                <i class="fas fa-sort sort-icon" id="sort-exchange"></i>
+                            </th>
+                            <th class="sortable-header border-0 py-3" onclick="sortTable('quantity')" data-sort="quantity">
+                                QTY
+                                <i class="fas fa-sort sort-icon" id="sort-quantity"></i>
+                            </th>
+                            <th class="sortable-header border-0 py-3" onclick="sortTable('avgPrice')" data-sort="avgPrice">
+                                AVG PRICE
+                                <i class="fas fa-sort sort-icon" id="sort-avgPrice"></i>
+                            </th>
+                            <th class="sortable-header border-0 py-3" onclick="sortTable('ltp')" data-sort="ltp">
+                                LTP
+                                <i class="fas fa-sort sort-icon" id="sort-ltp"></i>
+                            </th>
+                            <th class="sortable-header border-0 py-3" onclick="sortTable('marketValue')" data-sort="marketValue">
+                                MARKET VALUE
+                                <i class="fas fa-sort sort-icon" id="sort-marketValue"></i>
+                            </th>
+                            <th class="sortable-header border-0 py-3" onclick="sortTable('pnl')" data-sort="pnl">
+                                P&L
+                                <i class="fas fa-sort sort-icon" id="sort-pnl"></i>
+                            </th>
+                            <th class="sortable-header border-0 py-3" onclick="sortTable('dayChange')" data-sort="dayChange">
+                                DAY CHANGE
+                                <i class="fas fa-sort sort-icon" id="sort-dayChange"></i>
+                            </th>
+                            <th class="border-0 py-3">ACTIONS</th>
+                        </tr>
+                    </thead>
                 <tbody id="holdingsTableBody">
                     {% for holding in holdings %}
                     {% set invested_value = holding.holdingCost|float if holding.holdingCost else 0.0 %}
@@ -194,10 +354,321 @@
                     </tr>
                     {% endfor %}
                 </tbody>
-            </table>
+                </table>
+            </div>
+        </div>
+    </div>
+
+<script>
+// Global variables for sorting and filtering
+let currentSort = { column: '', direction: 'asc' };
+let currentFilter = 'all';
+let originalRows = [];
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    // Show loading skeleton briefly
+    showLoadingSkeleton();
+    
+    // Store original table rows for filtering/sorting
+    const tableBody = document.getElementById('holdingsTableBody');
+    if (tableBody) {
+        originalRows = Array.from(tableBody.querySelectorAll('tr'));
+    }
+    
+    // Hide skeleton after brief delay to show loading effect
+    setTimeout(() => {
+        hideLoadingSkeleton();
+    }, 800);
+});
+
+function showLoadingSkeleton() {
+    document.getElementById('loadingSkeleton').style.display = 'block';
+    document.getElementById('mainContent').style.display = 'none';
+}
+
+function hideLoadingSkeleton() {
+    document.getElementById('loadingSkeleton').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+}
+
+function sortTable(column) {
+    const tableBody = document.getElementById('holdingsTableBody');
+    const rows = Array.from(tableBody.querySelectorAll('tr'));
+    
+    // Determine sort direction
+    if (currentSort.column === column) {
+        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSort.column = column;
+        currentSort.direction = 'asc';
+    }
+    
+    // Clear all sort icons
+    document.querySelectorAll('.sort-icon').forEach(icon => {
+        icon.className = 'fas fa-sort sort-icon';
+    });
+    
+    // Set active sort icon
+    const sortIcon = document.getElementById(`sort-${column}`);
+    if (sortIcon) {
+        sortIcon.className = `fas fa-sort-${currentSort.direction === 'asc' ? 'up' : 'down'} sort-icon active`;
+    }
+    
+    // Sort rows
+    rows.sort((a, b) => {
+        let aValue, bValue;
+        
+        switch (column) {
+            case 'symbol':
+                aValue = a.dataset.symbol || '';
+                bValue = b.dataset.symbol || '';
+                break;
+            case 'exchange':
+                aValue = a.dataset.exchange || '';
+                bValue = b.dataset.exchange || '';
+                break;
+            case 'quantity':
+                aValue = parseFloat(a.dataset.quantity) || 0;
+                bValue = parseFloat(b.dataset.quantity) || 0;
+                break;
+            case 'avgPrice':
+                aValue = parseFloat(a.dataset.avgPrice) || 0;
+                bValue = parseFloat(b.dataset.avgPrice) || 0;
+                break;
+            case 'ltp':
+                aValue = parseFloat(a.dataset.ltp) || 0;
+                bValue = parseFloat(b.dataset.ltp) || 0;
+                break;
+            case 'marketValue':
+                aValue = parseFloat(a.dataset.marketValue) || 0;
+                bValue = parseFloat(b.dataset.marketValue) || 0;
+                break;
+            case 'pnl':
+                aValue = parseFloat(a.dataset.pnl) || 0;
+                bValue = parseFloat(b.dataset.pnl) || 0;
+                break;
+            case 'dayChange':
+                aValue = parseFloat(a.dataset.dayChange) || 0;
+                bValue = parseFloat(b.dataset.dayChange) || 0;
+                break;
+            default:
+                return 0;
+        }
+        
+        if (typeof aValue === 'string') {
+            return currentSort.direction === 'asc' 
+                ? aValue.localeCompare(bValue)
+                : bValue.localeCompare(aValue);
+        } else {
+            return currentSort.direction === 'asc' 
+                ? aValue - bValue
+                : bValue - aValue;
+        }
+    });
+    
+    // Re-append sorted rows
+    rows.forEach(row => tableBody.appendChild(row));
+    
+    // Update visible count
+    updateVisibleCount();
+}
+
+function filterHoldings(filterType) {
+    currentFilter = filterType;
+    
+    // Update filter button states
+    document.querySelectorAll('.filter-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.getElementById(`filter${filterType.charAt(0).toUpperCase() + filterType.slice(1)}`).classList.add('active');
+    
+    const tableBody = document.getElementById('holdingsTableBody');
+    const rows = Array.from(tableBody.querySelectorAll('tr'));
+    
+    rows.forEach(row => {
+        const pnl = parseFloat(row.dataset.pnl) || 0;
+        let shouldShow = true;
+        
+        switch (filterType) {
+            case 'profitable':
+                shouldShow = pnl > 0;
+                break;
+            case 'loss':
+                shouldShow = pnl < 0;
+                break;
+            case 'all':
+            default:
+                shouldShow = true;
+                break;
+        }
+        
+        row.style.display = shouldShow ? '' : 'none';
+    });
+    
+    updateVisibleCount();
+}
+
+function searchHoldings() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const tableBody = document.getElementById('holdingsTableBody');
+    const rows = Array.from(tableBody.querySelectorAll('tr'));
+    
+    rows.forEach(row => {
+        const symbol = (row.dataset.symbol || '').toLowerCase();
+        const shouldShow = symbol.includes(searchTerm);
+        
+        // Apply both search and filter
+        const pnl = parseFloat(row.dataset.pnl) || 0;
+        let filterShow = true;
+        
+        switch (currentFilter) {
+            case 'profitable':
+                filterShow = pnl > 0;
+                break;
+            case 'loss':
+                filterShow = pnl < 0;
+                break;
+        }
+        
+        row.style.display = (shouldShow && filterShow) ? '' : 'none';
+    });
+    
+    updateVisibleCount();
+}
+
+function resetFilters() {
+    // Reset search
+    document.getElementById('searchInput').value = '';
+    
+    // Reset filter to 'all'
+    filterHoldings('all');
+    
+    // Reset sort
+    currentSort = { column: '', direction: 'asc' };
+    document.querySelectorAll('.sort-icon').forEach(icon => {
+        icon.className = 'fas fa-sort sort-icon';
+    });
+    
+    // Restore original order
+    const tableBody = document.getElementById('holdingsTableBody');
+    originalRows.forEach(row => tableBody.appendChild(row));
+    
+    updateVisibleCount();
+}
+
+function updateVisibleCount() {
+    const visibleRows = document.querySelectorAll('#holdingsTableBody tr[style=""], #holdingsTableBody tr:not([style])');
+    document.getElementById('visibleHoldingsCount').textContent = `${visibleRows.length} holdings`;
+}
+</script>
+
+{% else %}
+<div class="card bg-secondary">
+    <div class="card-body text-center py-4">
+        <h5 class="text-muted">No Holdings Found</h5>
+        <p class="text-muted">You don't have any holdings in your portfolio.</p>
+        <a href="{{ url_for('show_dashboard') }}" class="btn btn-primary">Start Investing</a>
+    </div>
+</div>
+{% endif %}
+
+<!-- Advanced Holdings Trade Modal -->
+<div class="modal fade" id="holdingActionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header bg-primary border-0">
+                <h5 class="modal-title text-white fw-bold" id="holdingActionTitle">
+                    <i class="fas fa-chart-line me-2"></i>Buy Holdings
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-dark p-4">
+                <form id="advancedHoldingForm">
+                    <!-- Symbol -->
+                    <div class="mb-3">
+                        <label class="form-label text-light fw-semibold">Symbol</label>
+                        <input type="text" class="form-control bg-secondary text-light border-0 py-2" 
+                               id="actionSymbol" readonly style="font-size: 1rem;">
+                    </div>
+
+                    <!-- Transaction Type -->
+                    <div class="mb-3">
+                        <label class="form-label text-light fw-semibold">Transaction Type</label>
+                        <input type="text" class="form-control bg-secondary text-light border-0 py-2" 
+                               id="actionType" readonly style="font-size: 1rem;">
+                    </div>
+
+                    <!-- Order Type and Product -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-semibold">Order Type</label>
+                            <select class="form-select bg-secondary text-light border-0 py-2" 
+                                    id="orderType" onchange="toggleHoldingPriceFields()" style="font-size: 1rem;">
+                                <option value="MKT">Market</option>
+                                <option value="L">Limit</option>
+                                <option value="SL">Stop Loss</option>
+                                <option value="SL-M">Stop Loss Market</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-semibold">Product</label>
+                            <select class="form-select bg-secondary text-light border-0 py-2" 
+                                    id="productType" style="font-size: 1rem;">
+                                <option value="CNC">CNC (Cash & Carry)</option>
+                                <option value="MIS">MIS (Intraday)</option>
+                                <option value="NRML">NRML (Normal)</option>
+                                <option value="CO">CO (Cover Order)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Price and Quantity -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-semibold">Price</label>
+                            <input type="number" class="form-control bg-secondary text-light border-0 py-2" 
+                                   id="actionPrice" step="0.01" style="font-size: 1rem;">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-semibold">Quantity</label>
+                            <input type="number" class="form-control bg-secondary text-light border-0 py-2" 
+                                   id="actionQuantity" min="1" value="1" style="font-size: 1rem;">
+                            <small class="text-muted" id="maxQuantityText"></small>
+                        </div>
+                    </div>
+
+                    <!-- Validity and Trigger Price -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-semibold">Validity</label>
+                            <select class="form-select bg-secondary text-light border-0 py-2" 
+                                    id="validityType" style="font-size: 1rem;">
+                                <option value="DAY">DAY</option>
+                                <option value="IOC">IOC (Immediate or Cancel)</option>
+                                <option value="GTC">GTC (Good Till Cancel)</option>
+                                <option value="EOS">EOS (End of Session)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-semibold">Trigger Price</label>
+                            <input type="number" class="form-control bg-secondary text-light border-0 py-2" 
+                                   id="triggerPrice" step="0.01" value="0" style="font-size: 1rem;" disabled>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-dark border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitAdvancedHoldingAction()">
+                    Place Order
+                </button>
+            </div>
         </div>
     </div>
 </div>
+</div>
+{% endblock %}
 
 {% else %}
 <div class="card bg-secondary">

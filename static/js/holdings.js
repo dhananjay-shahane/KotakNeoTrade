@@ -7,6 +7,12 @@ document.addEventListener('DOMContentLoaded', function() {
     var tableBody = document.getElementById('holdingsTableBody');
     if (tableBody) {
         console.log('Holdings table found - starting JavaScript updates');
+        
+        // Show skeleton loader briefly
+        if (typeof showLoadingSkeleton === 'function') {
+            showLoadingSkeleton();
+        }
+        
         loadHoldingsData();
         // Auto-refresh every 30 seconds
         refreshInterval = setInterval(loadHoldingsData, 30000);
@@ -42,6 +48,11 @@ async function loadHoldingsData() {
             window.holdingsData = holdingsData; // Store for price lookup
             updateHoldingsTable(holdingsData);
             updateHoldingsSummary(holdingsData);
+            
+            // Hide skeleton loader
+            if (typeof hideLoadingSkeleton === 'function') {
+                hideLoadingSkeleton();
+            }
         } else {
             console.error('Failed to load holdings:', data.error || data.message);
             if (data.error && data.error.includes('Not authenticated')) {
@@ -50,10 +61,20 @@ async function loadHoldingsData() {
             } else {
                 showNoHoldingsMessage();
             }
+            
+            // Hide skeleton loader in case of error
+            if (typeof hideLoadingSkeleton === 'function') {
+                hideLoadingSkeleton();
+            }
         }
     } catch (error) {
         console.error('Error loading holdings:', error);
         showNoHoldingsMessage();
+        
+        // Hide skeleton loader in case of error
+        if (typeof hideLoadingSkeleton === 'function') {
+            hideLoadingSkeleton();
+        }
     }
 }
 
