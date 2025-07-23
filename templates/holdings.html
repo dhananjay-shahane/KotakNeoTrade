@@ -21,6 +21,12 @@
     border-radius: 8px;
 }
 
+.skeleton-text {
+    background: linear-gradient(90deg, #374151 25%, #4B5563 50%, #374151 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
 .skeleton-table-row {
     height: 45px;
     margin-bottom: 8px;
@@ -71,6 +77,36 @@
     background-color: #17a2b8 !important;
     border-color: #17a2b8 !important;
 }
+
+.card-gradient-1 {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.card-gradient-2 {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.card-gradient-3 {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.card-gradient-positive {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
+.card-gradient-negative {
+    background: linear-gradient(135deg, #fc466b 0%, #3f5efb 100%);
+}
+
+.enhanced-card {
+    transition: all 0.3s ease;
+    border-radius: 12px !important;
+}
+
+.enhanced-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3) !important;
+}
 </style>
 {% endblock %}
 
@@ -87,21 +123,65 @@
     <!-- Skeleton Summary Cards -->
     <div class="row mb-3">
         <div class="col-lg-3 col-md-6 mb-2">
-            <div class="skeleton-shimmer skeleton-card"></div>
+            <div class="card bg-secondary border-0" style="height: 80px;">
+                <div class="card-body p-3">
+                    <div class="skeleton-shimmer skeleton-text mb-1" style="height: 12px; width: 60%; border-radius: 4px;"></div>
+                    <div class="skeleton-shimmer skeleton-text" style="height: 24px; width: 40%; border-radius: 4px;"></div>
+                </div>
+            </div>
         </div>
         <div class="col-lg-3 col-md-6 mb-2">
-            <div class="skeleton-shimmer skeleton-card"></div>
+            <div class="card bg-secondary border-0" style="height: 80px;">
+                <div class="card-body p-3">
+                    <div class="skeleton-shimmer skeleton-text mb-1" style="height: 12px; width: 50%; border-radius: 4px;"></div>
+                    <div class="skeleton-shimmer skeleton-text" style="height: 24px; width: 70%; border-radius: 4px;"></div>
+                </div>
+            </div>
         </div>
         <div class="col-lg-3 col-md-6 mb-2">
-            <div class="skeleton-shimmer skeleton-card"></div>
+            <div class="card bg-secondary border-0" style="height: 80px;">
+                <div class="card-body p-3">
+                    <div class="skeleton-shimmer skeleton-text mb-1" style="height: 12px; width: 65%; border-radius: 4px;"></div>
+                    <div class="skeleton-shimmer skeleton-text" style="height: 24px; width: 75%; border-radius: 4px;"></div>
+                </div>
+            </div>
         </div>
         <div class="col-lg-3 col-md-6 mb-2">
-            <div class="skeleton-shimmer skeleton-card"></div>
+            <div class="card bg-secondary border-0" style="height: 80px;">
+                <div class="card-body p-3">
+                    <div class="skeleton-shimmer skeleton-text mb-1" style="height: 12px; width: 45%; border-radius: 4px;"></div>
+                    <div class="skeleton-shimmer skeleton-text" style="height: 24px; width: 60%; border-radius: 4px;"></div>
+                </div>
+            </div>
         </div>
     </div>
     
+    <!-- Skeleton Filter Controls -->
+    <div class="card bg-secondary border-0 mb-3" style="border-radius: 8px;">
+        <div class="card-body p-3">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="d-flex gap-2">
+                        <div class="skeleton-shimmer skeleton-text" style="height: 32px; width: 80px; border-radius: 4px;"></div>
+                        <div class="skeleton-shimmer skeleton-text" style="height: 32px; width: 75px; border-radius: 4px;"></div>
+                        <div class="skeleton-shimmer skeleton-text" style="height: 32px; width: 60px; border-radius: 4px;"></div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex gap-2 justify-content-md-end">
+                        <div class="skeleton-shimmer skeleton-text" style="height: 32px; width: 150px; border-radius: 4px;"></div>
+                        <div class="skeleton-shimmer skeleton-text" style="height: 32px; width: 70px; border-radius: 4px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Skeleton Table -->
     <div class="card bg-secondary border-0">
+        <div class="card-header bg-dark py-2">
+            <div class="skeleton-shimmer skeleton-text" style="height: 16px; width: 120px; border-radius: 4px;"></div>
+        </div>
         <div class="card-body p-3">
             <div class="skeleton-shimmer skeleton-table-row mb-2"></div>
             <div class="skeleton-shimmer skeleton-table-row mb-2"></div>
@@ -147,58 +227,58 @@
     <!-- Enhanced Summary Cards -->
     <div class="row mb-3">
         <div class="col-lg-3 col-md-6 mb-2">
-            <div class="card bg-secondary border-0" style="height: 65px;">
+            <div class="card enhanced-card border-0 shadow-sm card-gradient-1" style="height: 80px;">
                 <div class="card-body p-3 d-flex align-items-center justify-content-between">
                     <div>
-                        <small class="text-muted d-block">Holdings</small>
-                        <div class="fw-bold text-white fs-5" id="holdingsCount">{{ holdings|length if holdings else 0 }}</div>
+                        <small class="text-white-50 d-block fw-medium">Holdings</small>
+                        <div class="fw-bold text-white fs-4" id="holdingsCount">{{ holdings|length if holdings else 0 }}</div>
                     </div>
-                    <div class="text-info">
-                        <i class="fas fa-briefcase fa-lg"></i>
+                    <div class="text-white opacity-75">
+                        <i class="fas fa-briefcase fa-2x"></i>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-lg-3 col-md-6 mb-2">
-            <div class="card bg-secondary border-0" style="height: 65px;">
+            <div class="card enhanced-card border-0 shadow-sm card-gradient-2" style="height: 80px;">
                 <div class="card-body p-3 d-flex align-items-center justify-content-between">
                     <div>
-                        <small class="text-muted d-block">Invested</small>
+                        <small class="text-white-50 d-block fw-medium">Invested</small>
                         <div class="fw-bold text-white fs-6" id="totalInvestedValue">₹{{ "{:,.0f}".format(total_invested) }}</div>
                     </div>
-                    <div class="text-warning">
-                        <i class="fas fa-chart-line fa-lg"></i>
+                    <div class="text-white opacity-75">
+                        <i class="fas fa-chart-line fa-2x"></i>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-lg-3 col-md-6 mb-2">
-            <div class="card bg-secondary border-0" style="height: 65px;">
+            <div class="card enhanced-card border-0 shadow-sm card-gradient-3" style="height: 80px;">
                 <div class="card-body p-3 d-flex align-items-center justify-content-between">
                     <div>
-                        <small class="text-muted d-block">Current Value</small>
+                        <small class="text-white-50 d-block fw-medium">Current Value</small>
                         <div class="fw-bold text-white fs-6" id="totalHoldingsValue">₹{{ "{:,.0f}".format(total_current) }}</div>
                     </div>
-                    <div class="text-success">
-                        <i class="fas fa-coins fa-lg"></i>
+                    <div class="text-white opacity-75">
+                        <i class="fas fa-coins fa-2x"></i>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-lg-3 col-md-6 mb-2">
-            <div class="card bg-secondary border-0" style="height: 65px;">
+            <div class="card enhanced-card border-0 shadow-sm {% if total_pnl >= 0 %}card-gradient-positive{% else %}card-gradient-negative{% endif %}" style="height: 80px;">
                 <div class="card-body p-3 d-flex align-items-center justify-content-between">
                     <div>
-                        <small class="text-muted d-block">Total P&L</small>
-                        <div class="fw-bold {% if total_pnl >= 0 %}text-success{% else %}text-danger{% endif %} fs-6" id="totalHoldingsPnl">
+                        <small class="text-white-50 d-block fw-medium">Total P&L</small>
+                        <div class="fw-bold text-white fs-6" id="totalHoldingsPnl">
                             {% if total_pnl > 0 %}+{% endif %}₹{{ "{:,.0f}".format(total_pnl) }}
                         </div>
-                        <small class="{% if total_pnl >= 0 %}text-success{% else %}text-danger{% endif %}" id="totalHoldingsPnlPercentage">
+                        <small class="text-white-50" id="totalHoldingsPnlPercentage">
                             ({% if total_pnl > 0 %}+{% endif %}{{ "{:.1f}".format(pnl_percentage) }}%)
                         </small>
                     </div>
-                    <div class="{% if total_pnl >= 0 %}text-success{% else %}text-danger{% endif %}">
-                        <i class="fas fa-{% if total_pnl >= 0 %}arrow-up{% else %}arrow-down{% endif %} fa-lg"></i>
+                    <div class="text-white opacity-75">
+                        <i class="fas fa-{% if total_pnl >= 0 %}arrow-trend-up{% else %}arrow-trend-down{% endif %} fa-2x"></i>
                     </div>
                 </div>
             </div>
