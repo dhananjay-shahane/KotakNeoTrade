@@ -351,8 +351,12 @@ def positions_redirect():
 
 @app.route('/')
 def index():
-    """Home page - redirect to portfolio"""
-    return redirect(url_for('portfolio'))
+    """Home page - redirect to portfolio if authenticated, else to login"""
+    # Check if user is authenticated
+    if session.get('authenticated') or session.get('kotak_logged_in'):
+        return redirect(url_for('portfolio'))
+    else:
+        return redirect(url_for('auth_routes.trading_account_login'))
 
 
 @app.route('/portfolio')

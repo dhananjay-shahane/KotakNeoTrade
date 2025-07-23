@@ -18,7 +18,7 @@ trading_functions = TradingFunctions()
 def index():
     """Root route - redirect to dashboard if authenticated, else login"""
     if validate_current_session():
-        return redirect(url_for('main_routes.dashboard'))
+        return redirect(url_for('main_routes.portfolio'))
     return redirect(url_for('auth_routes.trading_account_login'))
 
 
@@ -92,13 +92,17 @@ def dashboard():
             dashboard_data.setdefault('holdings', [])
             dashboard_data.setdefault('limits', {})
             dashboard_data.setdefault('recent_orders', [])
-            dashboard_data.setdefault('total_positions', len(dashboard_data['positions']))
-            dashboard_data.setdefault('total_holdings', len(dashboard_data['holdings']))
-            dashboard_data.setdefault('total_orders', len(dashboard_data['recent_orders']))
+            dashboard_data.setdefault('total_positions',
+                                      len(dashboard_data['positions']))
+            dashboard_data.setdefault('total_holdings',
+                                      len(dashboard_data['holdings']))
+            dashboard_data.setdefault('total_orders',
+                                      len(dashboard_data['recent_orders']))
 
         except Exception as dashboard_error:
             logging.error(f"Dashboard data fetch failed: {dashboard_error}")
-            flash(f'Some data could not be loaded: {str(dashboard_error)}', 'warning')
+            flash(f'Some data could not be loaded: {str(dashboard_error)}',
+                  'warning')
             dashboard_data = {
                 'positions': [],
                 'holdings': [],
@@ -140,8 +144,8 @@ def show_positions():
     except Exception as e:
         logging.error(f"Error in show_positions: {e}")
         return render_template('positions.html',
-                             error=str(e),
-                             page_title="Positions")
+                               error=str(e),
+                               page_title="Positions")
 
 
 @main_bp.route('/holdings')
@@ -152,11 +156,16 @@ def show_holdings():
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
         kotak_account_data = {
-            'ucc': session.get('ucc', session.get('username', '-')),
-            'mobile': session.get('mobile_number', '-'),
-            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
-            'last_login': 'Just Now',
-            'status': 'Online'
+            'ucc':
+            session.get('ucc', session.get('username', '-')),
+            'mobile':
+            session.get('mobile_number', '-'),
+            'greeting_name':
+            session.get('greeting_name', session.get('username', 'User')),
+            'last_login':
+            'Just Now',
+            'status':
+            'Online'
         }
     return render_template('holdings.html', kotak_account=kotak_account_data)
 
@@ -169,13 +178,19 @@ def portfolio():
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
         kotak_account_data = {
-            'ucc': session.get('ucc', session.get('username', '-')),
-            'mobile': session.get('mobile_number', '-'),
-            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
-            'last_login': 'Just Now',
-            'status': 'Online'
+            'ucc':
+            session.get('ucc', session.get('username', '-')),
+            'mobile':
+            session.get('mobile_number', '-'),
+            'greeting_name':
+            session.get('greeting_name', session.get('username', 'User')),
+            'last_login':
+            'Just Now',
+            'status':
+            'Online'
         }
     return render_template('portfolio.html', kotak_account=kotak_account_data)
+
 
 @main_bp.route('/orders')
 @require_auth
@@ -190,8 +205,8 @@ def show_orders():
     except Exception as e:
         logging.error(f"Error in show_orders: {e}")
         return render_template('orders.html',
-                             error=str(e),
-                             page_title="Orders")
+                               error=str(e),
+                               page_title="Orders")
 
 
 @main_bp.route('/charts')
@@ -248,6 +263,8 @@ def basic_trade_signals():
 def deals():
     """Deals page for user deals from user_deals table"""
     return render_template('deals.html')
+
+
 import logging
 from flask import Blueprint, render_template, session, flash, redirect, url_for
 from core.auth import require_auth, validate_current_session
@@ -261,7 +278,8 @@ main_bp = Blueprint('main_routes', __name__)
 trading_functions = TradingFunctions()
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 
@@ -269,7 +287,7 @@ logger = logging.getLogger(__name__)
 def index():
     """Root route - redirect to dashboard if authenticated, else login"""
     if validate_current_session():
-        return redirect(url_for('main_routes.dashboard'))
+        return redirect(url_for('main_routes.portfolio'))
     return redirect(url_for('auth_routes.trading_account_login'))
 
 
@@ -343,13 +361,17 @@ def dashboard():
             dashboard_data.setdefault('holdings', [])
             dashboard_data.setdefault('limits', {})
             dashboard_data.setdefault('recent_orders', [])
-            dashboard_data.setdefault('total_positions', len(dashboard_data['positions']))
-            dashboard_data.setdefault('total_holdings', len(dashboard_data['holdings']))
-            dashboard_data.setdefault('total_orders', len(dashboard_data['recent_orders']))
+            dashboard_data.setdefault('total_positions',
+                                      len(dashboard_data['positions']))
+            dashboard_data.setdefault('total_holdings',
+                                      len(dashboard_data['holdings']))
+            dashboard_data.setdefault('total_orders',
+                                      len(dashboard_data['recent_orders']))
 
         except Exception as dashboard_error:
             logging.error(f"Dashboard data fetch failed: {dashboard_error}")
-            flash(f'Some data could not be loaded: {str(dashboard_error)}', 'warning')
+            flash(f'Some data could not be loaded: {str(dashboard_error)}',
+                  'warning')
             dashboard_data = {
                 'positions': [],
                 'holdings': [],
@@ -391,8 +413,8 @@ def show_positions():
     except Exception as e:
         logger.error(f"Error in show_positions: {e}")
         return render_template('positions.html',
-                             error=str(e),
-                             page_title="Positions")
+                               error=str(e),
+                               page_title="Positions")
 
 
 @main_bp.route('/holdings')
@@ -403,11 +425,16 @@ def show_holdings():
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
         kotak_account_data = {
-            'ucc': session.get('ucc', session.get('username', '-')),
-            'mobile': session.get('mobile_number', '-'),
-            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
-            'last_login': 'Just Now',
-            'status': 'Online'
+            'ucc':
+            session.get('ucc', session.get('username', '-')),
+            'mobile':
+            session.get('mobile_number', '-'),
+            'greeting_name':
+            session.get('greeting_name', session.get('username', 'User')),
+            'last_login':
+            'Just Now',
+            'status':
+            'Online'
         }
     return render_template('holdings.html', kotak_account=kotak_account_data)
 
@@ -425,8 +452,8 @@ def show_orders():
     except Exception as e:
         logger.error(f"Error in show_orders: {e}")
         return render_template('orders.html',
-                             error=str(e),
-                             page_title="Orders")
+                               error=str(e),
+                               page_title="Orders")
 
 
 @main_bp.route('/charts')

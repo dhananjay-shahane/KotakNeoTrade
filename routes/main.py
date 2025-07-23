@@ -19,7 +19,7 @@ neo_client = NeoClient()
 def index():
     """Home page - redirect to dashboard if logged in, otherwise to login"""
     if session.get('authenticated'):
-        return redirect(url_for('main.dashboard'))
+        return redirect(url_for('main.portfolio'))
     return redirect(url_for('auth.login'))
 
 
@@ -329,190 +329,6 @@ def api_positions():
         }), 500
 
 
-# @main_bp.route('/api/portfolio_summary')
-# @login_required
-# def api_portfolio_summary():
-#     """API endpoint for portfolio summary data"""
-#     try:
-#         client = session.get('client')
-#         if not client:
-#             return jsonify({
-#                 'success': False,
-#                 'message': 'Session expired. Please login again.'
-#             }), 401
-
-#         # Get dashboard data
-#         dashboard_data = trading_functions.get_dashboard_data(client)
-
-#         if not dashboard_data or not isinstance(dashboard_data, dict):
-#             return jsonify({
-#                 'success': False,
-#                 'message': 'Failed to fetch dashboard data.'
-#             }), 500
-
-#         # Calculate summary statistics
-#         limits_data = dashboard_data.get('limits', {})
-#         portfolio_summary = {
-#             'total_positions': dashboard_data.get('total_positions', 0),
-#             'total_holdings': dashboard_data.get('total_holdings', 0),
-#             'total_orders': dashboard_data.get('total_orders', 0),
-#             'limits_available': float(limits_data.get('Net', 0) or 0),
-#             'margin_used': float(limits_data.get('MarginUsed', 0) or 0),
-#             'collateral_value':
-#             float(limits_data.get('CollateralValue', 0) or 0),
-#             'total_pnl': 0.0,
-#             'total_investment': 0.0
-#         }
-
-#         # Calculate P&L from positions
-#         positions = dashboard_data.get('positions', [])
-#         for position in positions:
-#             try:
-#                 pnl = float(position.get('pnl', 0) or 0)
-#                 portfolio_summary['total_pnl'] += pnl
-#             except (ValueError, TypeError):
-#                 continue
-
-#         # Calculate investment from holdings
-#         holdings = dashboard_data.get('holdings', [])
-#         for holding in holdings:
-#             try:
-#                 quantity = float(holding.get('quantity', 0) or 0)
-#                 avg_price = float(holding.get('avgPrice', 0) or 0)
-#                 portfolio_summary['total_investment'] += quantity * avg_price
-#             except (ValueError, TypeError):
-#                 continue
-
-#         return jsonify({'success': True, **portfolio_summary})
-
-#     except Exception as e:
-#         logging.error(f"Portfolio summary API error: {str(e)}")
-#         return jsonify({'success': False, 'message': str(e)}), 500
-
-# @main_bp.route('/api/portfolio_details')
-# @login_required
-# def api_portfolio_details():
-#     """API endpoint for detailed portfolio data"""
-#     try:
-#         client = session.get('client')
-#         if not client:
-#             return jsonify({
-#                 'success': False,
-#                 'message': 'Session expired. Please login again.'
-#             }), 401
-
-#         portfolio_data = trading_functions.get_portfolio_summary(client)
-#         return jsonify(portfolio_data)
-
-#     except Exception as e:
-#         logging.error(f"Portfolio details API error: {str(e)}")
-#         return jsonify({'success': False, 'message': str(e)}), 500
-
-# @main_bp.route('/etf-signals')
-# @login_required
-# def etf_signals():
-#     """ETF Signals page - show admin_trade_signals data from external database"""
-#     try:
-#         # Get signals count from external database
-#         from Scripts.external_db_service import get_etf_signals_from_external_db
-
-#         try:
-#             signals = get_etf_signals_from_external_db()
-#             signals_count = len(signals) if signals else 0
-#         except Exception as e:
-#             logging.error(f"Error fetching signals from external DB: {str(e)}")
-#             signals_count = 0
-
-#         logging.info(
-#             f"ETF Signals page: Displaying {signals_count} admin trade signals in datatable"
-#         )
-
-#         return render_template('etf_signals.html', signals_count=signals_count)
-
-#     except Exception as e:
-#         logging.error(f"ETF signals page error: {str(e)}")
-#         flash(f'Error loading ETF signals page: {str(e)}', 'error')
-#         return redirect(url_for('main.dashboard'))
-
-# @main_bp.route('/api/etf_positions')
-# @login_required
-# def api_etf_positions():
-#     """API endpoint for ETF positions"""
-#     try:
-#         if 'user_id' not in session:
-#             return jsonify({
-#                 'success': False,
-#                 'message': 'Not authenticated'
-#             }), 401
-
-#         # Get current user from database
-#         from Scripts.models import User
-#         current_user = User.query.get(session['user_id'])
-#         if not current_user:
-#             return jsonify({
-#                 'success': False,
-#                 'message': 'User not found'
-#             }), 404
-
-#         # Get ETF signal trades for current user
-#         from Scripts.models_etf import ETFSignalTrade
-#         trades = ETFSignalTrade.query.filter_by(
-#             user_id=current_user.id).order_by(
-#                 ETFSignalTrade.created_at.desc()).all()
-
-#         # Calculate portfolio summary
-#         total_invested = 0
-#         current_value = 0
-#         total_pnl = 0
-#         profit_trades = 0
-#         loss_trades = 0
-
-#         trades_data = []
-#         for trade in trades:
-#             trade_dict = trade.to_dict()
-#             trades_data.append(trade_dict)
-
-#             # Update calculations
-#             if trade.invested_amount:
-#                 total_invested += float(trade.invested_amount)
-#             if trade.current_value:
-#                 current_value += float(trade.current_value)
-#             if trade.pnl_amount:
-#                 pnl = float(trade.pnl_amount)
-#                 total_pnl += pnl
-#                 if pnl > 0:
-#                     profit_trades += 1
-#                 elif pnl < 0:
-#                     loss_trades += 1
-
-#         # Calculate return percentage
-#         return_percent = (total_pnl / total_invested *
-#                           100) if total_invested > 0 else 0
-
-#         portfolio_summary = {
-#             'total_invested': total_invested,
-#             'current_value': current_value,
-#             'total_pnl': total_pnl,
-#             'return_percent': return_percent,
-#             'profit_trades': profit_trades,
-#             'loss_trades': loss_trades,
-#             'total_trades': len(trades_data)
-#         }
-
-#         return jsonify({
-#             'success': True,
-#             'trades': trades_data,
-#             'portfolio': portfolio_summary
-#         })
-
-#     except Exception as e:
-#         logging.error(f"Error fetching ETF positions: {str(e)}")
-#         return jsonify({
-#             'success': False,
-#             'message': f'Error fetching data: {str(e)}'
-#         }), 500
-
-
 @main_bp.route('/api/user_profile')
 @login_required
 def api_user_profile():
@@ -724,6 +540,7 @@ def charts():
 def etf_signals():
     """ETF Signals page"""
     return render_template('etf_signals.html')
+
 
 @main_bp.route('/deals')
 @login_required
