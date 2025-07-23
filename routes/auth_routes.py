@@ -144,15 +144,14 @@ def trading_account_login():
                 flash('Username and password are required', 'error')
                 return render_template('auth/login.html')
 
-            # For demo purposes, create a simple authentication
-            # In production, this would validate against your user database
-            if username and password:
+            # Authenticate against external PostgreSQL database
+            if authenticate_external_user(username, password):
                 # Store user session with all required fields for dashboard access
                 session['authenticated'] = True
                 session['username'] = username
                 session['user_id'] = username  # User ID for header display
                 session['login_type'] = 'trading_account'
-                session['access_token'] = 'demo_token_' + username  # Demo token for validation
+                session['access_token'] = 'token_' + username  # Token for validation
                 session['ucc'] = username  # Required field for dashboard
                 session['greeting_name'] = username  # Display name
                 # Don't set kotak_logged_in for trading account login
@@ -175,6 +174,45 @@ def trading_account_login():
         return redirect(url_for('portfolio'))
     
     return render_template('auth/login.html')
+
+
+def authenticate_external_user(username, password):
+    """Authenticate user against external PostgreSQL database"""
+    import psycopg2
+    import os
+    
+    try:
+        # Database configuration from environment variables
+        db_config = {
+            'host': os.environ.get('DB_HOST'),
+            'database': os.environ.get('DB_NAME'),
+            'user': os.environ.get('DB_USER'),
+            'password': os.environ.get('DB_PASSWORD'),
+            'port': int(os.environ.get('DB_PORT', 5432))
+        }
+        
+        # Connect to database
+        conn = psycopg2.connect(**db_config)
+        cursor = conn.cursor()
+        
+        # Check if user exists in public.external_users table
+        cursor.execute("""
+            SELECT username, password FROM public.external_users 
+            WHERE username = %s AND password = %s
+        """, (username, password))
+        
+        result = cursor.fetchone()
+        
+        # Close connection
+        cursor.close()
+        conn.close()
+        
+        # Return True if user found, False otherwise
+        return result is not None
+        
+    except Exception as e:
+        logging.error(f"Database authentication error: {str(e)}")
+        return False
 
 
 @auth_bp.route('/logout')
