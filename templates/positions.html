@@ -1,11 +1,126 @@
 {% extends "base.html" %}
 
-{% block title %}Positions - Kotak Neo Trading{% endblock %}
+{% block title %}Live Positions - Kotak Neo Trading{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/positions.css') }}"/>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton_animation.css') }}"/>
 <style>
+.gradient-bg {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.stat-card {
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border-radius: 24px;
+    overflow: hidden;
+    position: relative;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s;
+}
+
+.stat-card:hover::before {
+    transform: translateX(100%);
+}
+
+.stat-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.metric-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.modern-table {
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modern-table thead {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+}
+
+.modern-table tbody tr {
+    transition: all 0.3s ease;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.modern-table tbody tr:hover {
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    transform: scale(1.01);
+}
+
+.position-badge {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.75rem;
+}
+
+.action-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    border: none;
+    margin: 0 2px;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.floating-refresh {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.floating-refresh:hover {
+    transform: scale(1.1) rotate(180deg);
+    box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6);
+}
+
 .skeleton-shimmer {
     background: linear-gradient(90deg, #374151 25%, #4B5563 50%, #374151 75%);
     background-size: 200% 100%;
@@ -17,730 +132,414 @@
     100% { background-position: 200% 0; }
 }
 
-.skeleton-card {
-    height: 80px;
-    border-radius: 8px;
+.filter-chips {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
-.skeleton-table-row {
-    height: 45px;
-    margin-bottom: 8px;
-    border-radius: 4px;
-}
-
-.skeleton-text {
-    background: linear-gradient(90deg, #374151 25%, #4B5563 50%, #374151 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-}
-
-.filter-button {
-    transition: all 0.2s;
-}
-
-.filter-button.active {
-    background-color: #007bff !important;
-    border-color: #007bff !important;
-    color: white !important;
-}
-
-.position-card-1 {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-}
-
-.position-card-2 {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-}
-
-.position-card-3 {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-}
-
-.position-card-4 {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-}
-
-.classic-position-card {
-    transition: all 0.3s ease;
-    border-radius: 8px !important;
-}
-
-.classic-position-card:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
-}
-
-/* Fix table styling for dark theme */
-.table-dark {
-    --bs-table-color: #fff;
-    --bs-table-bg: #212529;
-    --bs-table-border-color: #373b3e;
-    --bs-table-striped-bg: #2c3034;
-    --bs-table-striped-color: #fff;
-    --bs-table-active-bg: #373b3e;
-    --bs-table-active-color: #fff;
-    --bs-table-hover-bg: #323539;
-    --bs-table-hover-color: #fff;
-    color: var(--bs-table-color);
-    border-color: var(--bs-table-border-color);
-}
-
-.table-dark th,
-.table-dark td {
-    border-color: var(--bs-table-border-color);
-    color: var(--bs-table-color);
-}
-
-.table-primary {
-    background-color: #0d6efd !important;
-    color: white !important;
-}
-
-.sortable-header {
+.filter-chip {
+    padding: 12px 24px;
+    border-radius: 30px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s;
-    user-select: none;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
 }
 
-.sortable-header:hover {
-    background-color: rgba(255, 255, 255, 0.1) !important;
+.filter-chip:hover, .filter-chip.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
 }
 
-.sort-icon {
-    transition: color 0.2s;
+.page-header {
+    text-align: center;
+    margin-bottom: 40px;
 }
 
-.sort-icon.active {
-    color: #ffc107 !important;
+.page-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+}
+
+.page-subtitle {
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.7);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 2.5rem;
+    }
+
+    .stat-card {
+        margin-bottom: 20px;
+    }
+
+    .filter-chips {
+        justify-content: center;
+    }
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Loading Skeleton (Hidden by default) -->
-<div id="loadingSkeleton" style="display: none;">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 mb-1">Live Positions</h1>
-            <small class="text-muted">Loading positions data...</small>
+<div class="min-vh-100" style="background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);">
+    <!-- Loading Skeleton -->
+    <div id="loadingSkeleton" style="display: none;" class="container py-5">
+        <div class="page-header">
+            <div class="skeleton-shimmer" style="height: 60px; width: 300px; margin: 0 auto 20px; border-radius: 10px;"></div>
+            <div class="skeleton-shimmer" style="height: 20px; width: 500px; margin: 0 auto; border-radius: 10px;"></div>
         </div>
-    </div>
-    
-    <!-- Skeleton Summary Cards -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card bg-secondary border-0" style="height: 80px;">
-                <div class="card-body">
-                    <div class="skeleton-shimmer skeleton-text mb-1" style="height: 12px; width: 60%; border-radius: 4px;"></div>
-                    <div class="skeleton-shimmer skeleton-text" style="height: 24px; width: 40%; border-radius: 4px;"></div>
+
+        <div class="row g-4 mb-5">
+            <div class="col-xl-3 col-md-6">
+                <div class="glass-card p-4" style="height: 160px;">
+                    <div class="skeleton-shimmer" style="height: 20px; width: 120px; margin-bottom: 16px; border-radius: 10px;"></div>
+                    <div class="skeleton-shimmer" style="height: 40px; width: 80px; border-radius: 10px;"></div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-secondary border-0" style="height: 80px;">
-                <div class="card-body">
-                    <div class="skeleton-shimmer skeleton-text mb-1" style="height: 12px; width: 50%; border-radius: 4px;"></div>
-                    <div class="skeleton-shimmer skeleton-text" style="height: 24px; width: 70%; border-radius: 4px;"></div>
+            <div class="col-xl-3 col-md-6">
+                <div class="glass-card p-4" style="height: 160px;">
+                    <div class="skeleton-shimmer" style="height: 20px; width: 120px; margin-bottom: 16px; border-radius: 10px;"></div>
+                    <div class="skeleton-shimmer" style="height: 40px; width: 80px; border-radius: 10px;"></div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-secondary border-0" style="height: 80px;">
-                <div class="card-body">
-                    <div class="skeleton-shimmer skeleton-text mb-1" style="height: 12px; width: 55%; border-radius: 4px;"></div>
-                    <div class="skeleton-shimmer skeleton-text" style="height: 24px; width: 65%; border-radius: 4px;"></div>
+            <div class="col-xl-3 col-md-6">
+                <div class="glass-card p-4" style="height: 160px;">
+                    <div class="skeleton-shimmer" style="height: 20px; width: 120px; margin-bottom: 16px; border-radius: 10px;"></div>
+                    <div class="skeleton-shimmer" style="height: 40px; width: 80px; border-radius: 10px;"></div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-secondary border-0" style="height: 80px;">
-                <div class="card-body">
-                    <div class="skeleton-shimmer skeleton-text mb-1" style="height: 12px; width: 45%; border-radius: 4px;"></div>
-                    <div class="skeleton-shimmer skeleton-text" style="height: 24px; width: 60%; border-radius: 4px;"></div>
+            <div class="col-xl-3 col-md-6">
+                <div class="glass-card p-4" style="height: 160px;">
+                    <div class="skeleton-shimmer" style="height: 20px; width: 120px; margin-bottom: 16px; border-radius: 10px;"></div>
+                    <div class="skeleton-shimmer" style="height: 40px; width: 80px; border-radius: 10px;"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Skeleton Filter Controls -->
-    <div class="card bg-secondary border-0 mb-4">
-        <div class="card-header bg-dark">
-            <div class="skeleton-shimmer skeleton-text" style="height: 16px; width: 150px; border-radius: 4px;"></div>
+    <!-- Main Content -->
+    <div id="mainContent" class="container py-5">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">Live Positions</h1>
+            <p class="page-subtitle">Real-time portfolio tracking with advanced analytics and instant updates</p>
         </div>
-        <div class="card-body p-3">
-            <div class="skeleton-shimmer skeleton-table-row mb-2"></div>
-            <div class="skeleton-shimmer skeleton-table-row mb-2"></div>
-            <div class="skeleton-shimmer skeleton-table-row mb-2"></div>
-            <div class="skeleton-shimmer skeleton-table-row mb-2"></div>
-            <div class="skeleton-shimmer skeleton-table-row"></div>
-        </div>
-    </div>
-</div>
 
-<!-- Actual Positions Content -->
-<div class="table-content" id="tableContent">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 mb-1">Live Positions</h1>
-            <p class="text-muted mb-0">
-                Real-time position tracking with comprehensive P&L analysis
-            </p>
-        </div>
-        <div class="d-flex gap-2">
-            <button
-                class="btn btn-outline-secondary"
-                onclick="refreshPositions()"
-            >
-                <i class="fas fa-sync-alt me-1"></i>Refresh
-            </button>
-            <div class="dropdown">
-                <button
-                    class="btn btn-outline-primary dropdown-toggle"
-                    type="button"
-                    data-bs-toggle="dropdown"
-                >
-                    <i class="fas fa-clock me-1"></i>Auto Refresh:
-                    <span id="refreshInterval">30s</span>
-                </button>
-                <ul class="dropdown-menu">
-                    <li>
-                        <a
-                            class="dropdown-item"
-                            href="#"
-                            onclick="setAutoRefresh(10)"
-                            >10 seconds</a
-                        >
-                    </li>
-                    <li>
-                        <a
-                            class="dropdown-item"
-                            href="#"
-                            onclick="setAutoRefresh(30)"
-                            >30 seconds</a
-                        >
-                    </li>
-                    <li>
-                        <a
-                            class="dropdown-item"
-                            href="#"
-                            onclick="setAutoRefresh(60)"
-                            >1 minute</a
-                        >
-                    </li>
-                    <li>
-                        <a
-                            class="dropdown-item"
-                            href="#"
-                            onclick="setAutoRefresh(0)"
-                            >Disable</a
-                        >
-                    </li>
-                </ul>
+        <!-- Statistics Cards -->
+        <div class="row g-4 mb-5">
+            <!-- Total Positions Card -->
+            <div class="col-xl-3 col-md-6">
+                <div class="stat-card glass-card p-4 h-100">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="metric-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                <i class="fas fa-chart-pie text-white"></i>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <h3 class="text-white mb-1 fw-bold" id="totalPositionsCount">0</h3>
+                            <p class="text-white-50 mb-0">Total Positions</p>
+                            <small class="text-success" style="font-size: 0.75rem;">
+                                <i class="fas fa-arrow-up me-1"></i>Active
+                            </small>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Enhanced P&L Summary Cards -->
-    <div class="row mb-4" id="pnlSummary">
-        <div class="col-md-3">
-            <div class="card bg-dark border-secondary">
-                <div class="card-header bg-secondary border-0 py-2">
-                    <h6 class="mb-0 text-white">
-                        <i class="fas fa-chart-pie me-2 text-primary"></i>Total Positions
-                    </h6>
-                </div>
-                <div class="card-body d-flex align-items-center justify-content-between p-3">
-                    <div>
-                        <div class="fw-bold text-primary fs-3" id="totalPositionsCount">0</div>
-                        <small class="text-muted">Active Positions</small>
-                    </div>
-                    <div class="text-primary opacity-75">
-                        <i class="fas fa-chart-pie fa-2x"></i>
+            <!-- Long Positions Card -->
+            <div class="col-xl-3 col-md-6">
+                <div class="stat-card glass-card p-4 h-100">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="metric-icon" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                                <i class="fas fa-arrow-trend-up text-white"></i>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <h3 class="text-success mb-1 fw-bold" id="longPositionsValue">₹0.00</h3>
+                            <p class="text-white-50 mb-0">Long Positions</p>
+                            <small class="text-white-50" style="font-size: 0.75rem;" id="longPositionsCount">0 positions</small>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-dark border-secondary">
-                <div class="card-header bg-secondary border-0 py-2">
-                    <h6 class="mb-0 text-white">
-                        <i class="fas fa-arrow-trend-up me-2 text-success"></i>Long Positions
-                    </h6>
-                </div>
-                <div class="card-body d-flex align-items-center justify-content-between p-3">
-                    <div>
-                        <div class="fw-bold text-success fs-5" id="longPositionsValue">₹0.00</div>
-                        <small class="text-muted" id="longPositionsCount">0 positions</small>
-                    </div>
-                    <div class="text-success opacity-75">
-                        <i class="fas fa-arrow-trend-up fa-2x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-dark border-secondary">
-                <div class="card-header bg-secondary border-0 py-2">
-                    <h6 class="mb-0 text-white">
-                        <i class="fas fa-arrow-trend-down me-2 text-danger"></i>Short Positions
-                    </h6>
-                </div>
-                <div class="card-body d-flex align-items-center justify-content-between p-3">
-                    <div>
-                        <div class="fw-bold text-danger fs-5" id="shortPositionsValue">₹0.00</div>
-                        <small class="text-muted" id="shortPositionsCount">0 positions</small>
-                    </div>
-                    <div class="text-danger opacity-75">
-                        <i class="fas fa-arrow-trend-down fa-2x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-dark border-secondary">
-                <div class="card-header bg-secondary border-0 py-2">
-                    <h6 class="mb-0 text-white">
-                        <i class="fas fa-calculator me-2 text-info"></i>Total P&L
-                    </h6>
-                </div>
-                <div class="card-body d-flex align-items-center justify-content-between p-3">
-                    <div>
-                        <div class="fw-bold text-info fs-5" id="totalPnlValue">₹0.00</div>
-                        <small class="text-muted" id="pnlBadge">0%</small>
-                    </div>
-                    <div class="text-info opacity-75">
-                        <i class="fas fa-calculator fa-2x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Live Positions Table -->
-    <div class="card bg-secondary border-0 shadow-lg">
-        <div class="card-header bg-dark border-0">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 text-light">
-                    <i class="fas fa-table me-2 text-primary"></i>Live Trading
-                    Positions
-                    <span class="badge bg-primary ms-2" id="positionsTableCount"
-                        >0</span
-                    >
-                </h5>
+            <!-- Short Positions Card -->
+            <div class="col-xl-3 col-md-6">
+                <div class="stat-card glass-card p-4 h-100">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="metric-icon" style="background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);">
+                                <i class="fas fa-arrow-trend-down text-white"></i>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <h3 class="text-danger mb-1 fw-bold" id="shortPositionsValue">₹0.00</h3>
+                            <p class="text-white-50 mb-0">Short Positions</p>
+                            <small class="text-white-50" style="font-size: 0.75rem;" id="shortPositionsCount">0 positions</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- P&L Card -->
+            <div class="col-xl-3 col-md-6">
+                <div class="stat-card glass-card p-4 h-100">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="metric-icon" style="background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);">
+                                <i class="fas fa-calculator text-white"></i>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <h3 class="text-warning mb-1 fw-bold" id="totalPnlValue">₹0.00</h3>
+                            <p class="text-white-50 mb-0">Total P&L</p>
+                            <small class="badge" style="font-size: 0.65rem;" id="pnlBadge">0%</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters Section -->
+        <div class="glass-card p-4 mb-4">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div class="filter-chips">
+                    <div class="filter-chip active" onclick="filterPositionsByType('ALL')" id="filterAll">
+                        <i class="fas fa-list me-2"></i>All Positions
+                    </div>
+                    <div class="filter-chip" onclick="filterPositionsByType('LONG')" id="filterLong">
+                        <i class="fas fa-arrow-up me-2"></i>Long Only
+                    </div>
+                    <div class="filter-chip" onclick="filterPositionsByType('SHORT')" id="filterShort">
+                        <i class="fas fa-arrow-down me-2"></i>Short Only
+                    </div>
+                </div>
                 <div class="d-flex gap-2">
-                    <button
-                        class="btn btn-sm btn-outline-light filter-button active"
-                        onclick="filterPositionsByType('ALL')"
-                        title="Show All Positions"
-                        id="filterAll"
-                    >
-                        <i class="fas fa-list me-1"></i>All
-                    </button>
-                    <button
-                        class="btn btn-sm btn-outline-light filter-button"
-                        onclick="filterPositionsByType('LONG')"
-                        title="Show Long Positions"
-                        id="filterLong"
-                    >
-                        <i class="fas fa-arrow-up me-1"></i>Long
-                    </button>
-                    <button
-                        class="btn btn-sm btn-outline-light filter-button"
-                        onclick="filterPositionsByType('SHORT')"
-                        title="Show Short Positions"
-                        id="filterShort"
-                    >
-                        <i class="fas fa-arrow-down me-1"></i>Short
-                    </button>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-light dropdown-toggle px-3 py-2" type="button" data-bs-toggle="dropdown" style="border-radius: 12px;">
+                            <i class="fas fa-clock me-2"></i>Auto: <span id="refreshInterval">30s</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li><a class="dropdown-item" href="#" onclick="setAutoRefresh(10)">10 seconds</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="setAutoRefresh(30)">30 seconds</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="setAutoRefresh(60)">1 minute</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="setAutoRefresh(0)">Disable</a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="card-body p-0">
+
+        <!-- Positions Table -->
+        <div class="modern-table glass-card">
             <div class="table-responsive">
-                <table class="table positions-table mb-0" id="positionsTable">
-                    <thead class="table-dark">
+                <table class="table table-dark mb-0" id="positionsTable">
+                    <thead>
                         <tr>
-                            <th
-                                class="sortable-header"
-                                style="cursor: pointer"
-                                title="Click to sort A-Z"
-                                onclick="sortTable('symbol')"
-                            >
-                                SYMBOL
-                                <i class="fas fa-sort ms-1 sort-icon" id="sort-symbol"></i>
+                            <th class="px-4 py-3 sortable-header" onclick="sortTable('symbol')" style="cursor: pointer;">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-tag me-2"></i>
+                                    SYMBOL
+                                    <i class="fas fa-sort ms-2 sort-icon" id="sort-symbol"></i>
+                                </div>
                             </th>
-                            <th
-                                class="sortable-header"
-                                style="cursor: pointer"
-                                title="Click to sort"
-                                onclick="sortTable('product')"
-                            >
-                                PRODUCT
-                                <i class="fas fa-sort ms-1 sort-icon" id="sort-product"></i>
+                            <th class="px-4 py-3 sortable-header" onclick="sortTable('product')" style="cursor: pointer;">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-cube me-2"></i>
+                                    PRODUCT
+                                    <i class="fas fa-sort ms-2 sort-icon" id="sort-product"></i>
+                                </div>
                             </th>
-                            <th
-                                class="sortable-header"
-                                style="cursor: pointer"
-                                title="Click to sort"
-                                onclick="sortTable('exchange')"
-                            >
-                                EXCHANGE
-                                <i class="fas fa-sort ms-1 sort-icon" id="sort-exchange"></i>
+                            <th class="px-4 py-3 sortable-header" onclick="sortTable('netQty')" style="cursor: pointer;">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-balance-scale me-2"></i>
+                                    NET QTY
+                                    <i class="fas fa-sort ms-2 sort-icon" id="sort-netQty"></i>
+                                </div>
                             </th>
-                            <th
-                                class="sortable-header"
-                                style="cursor: pointer"
-                                title="Click to sort"
-                                onclick="sortTable('buyQty')"
-                            >
-                                BUY QTY
-                                <i class="fas fa-sort ms-1 sort-icon" id="sort-buyQty"></i>
+                            <th class="px-4 py-3 sortable-header" onclick="sortTable('buyAmt')" style="cursor: pointer;">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-arrow-up me-2 text-success"></i>
+                                    BUY AMOUNT
+                                    <i class="fas fa-sort ms-2 sort-icon" id="sort-buyAmt"></i>
+                                </div>
                             </th>
-                            <th
-                                class="sortable-header"
-                                style="cursor: pointer"
-                                title="Click to sort"
-                                onclick="sortTable('sellQty')"
-                            >
-                                SELL QTY
-                                <i class="fas fa-sort ms-1 sort-icon" id="sort-sellQty"></i>
+                            <th class="px-4 py-3 sortable-header" onclick="sortTable('sellAmt')" style="cursor: pointer;">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-arrow-down me-2 text-danger"></i>
+                                    SELL AMOUNT
+                                    <i class="fas fa-sort ms-2 sort-icon" id="sort-sellAmt"></i>
+                                </div>
                             </th>
-                            <th
-                                class="sortable-header"
-                                style="cursor: pointer"
-                                title="Click to sort"
-                                onclick="sortTable('netQty')"
-                            >
-                                NET QTY
-                                <i class="fas fa-sort ms-1 sort-icon" id="sort-netQty"></i>
+                            <th class="px-4 py-3 sortable-header" onclick="sortTable('pnl')" style="cursor: pointer;">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-chart-line me-2"></i>
+                                    P&L
+                                    <i class="fas fa-sort ms-2 sort-icon" id="sort-pnl"></i>
+                                </div>
                             </th>
-                            <th
-                                class="sortable-header"
-                                style="cursor: pointer"
-                                title="Click to sort"
-                                onclick="sortTable('buyAmt')"
-                            >
-                                BUY AMOUNT
-                                <i class="fas fa-sort ms-1 sort-icon" id="sort-buyAmt"></i>
+                            <th class="px-4 py-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-flag me-2"></i>
+                                    POSITION
+                                </div>
                             </th>
-                            <th
-                                class="sortable-header"
-                                style="cursor: pointer"
-                                title="Click to sort"
-                                onclick="sortTable('sellAmt')"
-                            >
-                                SELL AMOUNT
-                                <i class="fas fa-sort ms-1 sort-icon" id="sort-sellAmt"></i>
+                            <th class="px-4 py-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-cogs me-2"></i>
+                                    ACTIONS
+                                </div>
                             </th>
-                            <th
-                                class="sortable-header"
-                                style="cursor: pointer"
-                                title="Click to sort"
-                                onclick="sortTable('pnl')"
-                            >
-                                P&L <i class="fas fa-sort ms-1 sort-icon" id="sort-pnl"></i>
-                            </th>
-                            <th
-                                class="sortable-header"
-                                style="cursor: pointer"
-                                title="Click to sort"
-                                onclick="sortTable('position')"
-                            >
-                                POSITION
-                                <i class="fas fa-sort ms-1 sort-icon" id="sort-position"></i>
-                            </th>
-                            <th
-                                class="sortable-header"
-                                style="cursor: pointer"
-                                title="Click to sort"
-                                onclick="sortTable('expiry')"
-                            >
-                                EXPIRY
-                                <i class="fas fa-sort ms-1 sort-icon" id="sort-expiry"></i>
-                            </th>
-                            <th
-                                class="sortable-header"
-                                style="cursor: pointer"
-                                title="Click to sort"
-                                onclick="sortTable('lastUpdated')"
-                            >
-                                LAST UPDATED
-                                <i class="fas fa-sort ms-1 sort-icon" id="sort-lastUpdated"></i>
-                            </th>
-                            <th>ACTIONS</th>
                         </tr>
                     </thead>
                     <tbody id="positionsTableBody">
                         <tr>
-                            <td colspan="13" class="text-center py-4">
-                                <div
-                                    class="spinner-border text-primary"
-                                    role="status"
-                                >
-                                    <span class="visually-hidden"
-                                        >Loading positions...</span
-                                    >
+                            <td colspan="8" class="text-center py-5">
+                                <div class="d-flex flex-column align-items-center">
+                                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <h5 class="text-white-50 mb-2">Loading Positions</h5>
+                                    <p class="text-white-50 mb-0">Fetching your latest portfolio data...</p>
                                 </div>
-                                <p class="mt-2 mb-0 text-muted">
-                                    Loading live positions data...
-                                </p>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
+
+        <!-- Position Count Badge -->
+        <div class="text-center mt-4">
+            <span class="badge bg-primary px-4 py-2" style="border-radius: 20px; font-size: 0.9rem;">
+                <i class="fas fa-list me-2"></i>
+                Showing <span id="positionsTableCount">0</span> positions
+            </span>
+        </div>
     </div>
 
-    <!-- Position Details Modal -->
+    <!-- Floating Refresh Button -->
+    <button class="floating-refresh" onclick="refreshPositions()" title="Refresh Positions">
+        <i class="fas fa-sync-alt"></i>
+    </button>
+
+    <!-- Enhanced Position Details Modal -->
     <div class="modal fade" id="positionDetailsModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content bg-dark text-light border-secondary">
-                <div class="modal-header bg-secondary border-0">
-                    <h5 class="modal-title text-white">
-                        <i class="fas fa-info-circle me-2"></i>Position Details
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title text-white fw-bold">
+                        <i class="fas fa-info-circle me-2 text-primary"></i>Position Details
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body bg-dark p-4">
-                    <!-- Symbol and Basic Info -->
-                    <div class="mb-4 text-center">
-                        <h4 class="text-primary mb-1" id="detailTradingSymbol">-</h4>
-                        <div class="d-flex justify-content-center gap-2">
-                            <span class="badge bg-info" id="detailExchange">-</span>
-                            <span class="badge bg-warning" id="detailProduct">-</span>
-                            <span class="badge" id="detailPositionType">-</span>
+                <div class="modal-body p-4">
+                    <!-- Symbol Header -->
+                    <div class="text-center mb-4 p-4" style="background: rgba(255,255,255,0.05); border-radius: 16px;">
+                        <h2 class="text-primary mb-2 fw-bold" id="detailTradingSymbol">-</h2>
+                        <div class="d-flex justify-content-center gap-2 flex-wrap">
+                            <span class="badge bg-info px-3 py-2" id="detailExchange">-</span>
+                            <span class="badge bg-warning px-3 py-2" id="detailProduct">-</span>
+                            <span class="badge px-3 py-2" id="detailPositionType">-</span>
                         </div>
                     </div>
 
-                    <!-- Position Summary -->
-                    <div class="row text-center mb-3">
-                        <div class="col-4">
-                            <div class="border-end border-secondary">
-                                <div class="text-success fs-5 fw-bold" id="detailBuyQty">0</div>
-                                <small class="text-muted">Buy Qty</small>
+                    <!-- Quantity Summary -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="text-center p-3" style="background: rgba(40, 167, 69, 0.1); border-radius: 12px; border: 1px solid rgba(40, 167, 69, 0.3);">
+                                <div class="text-success fs-4 fw-bold" id="detailBuyQty">0</div>
+                                <small class="text-white-50">Buy Quantity</small>
                             </div>
                         </div>
-                        <div class="col-4">
-                            <div class="border-end border-secondary">
-                                <div class="text-danger fs-5 fw-bold" id="detailSellQty">0</div>
-                                <small class="text-muted">Sell Qty</small>
+                        <div class="col-md-4">
+                            <div class="text-center p-3" style="background: rgba(220, 53, 69, 0.1); border-radius: 12px; border: 1px solid rgba(220, 53, 69, 0.3);">
+                                <div class="text-danger fs-4 fw-bold" id="detailSellQty">0</div>
+                                <small class="text-white-50">Sell Quantity</small>
                             </div>
                         </div>
-                        <div class="col-4">
-                            <div class="text-white fs-5 fw-bold" id="detailNetQty">0</div>
-                            <small class="text-muted">Net Qty</small>
+                        <div class="col-md-4">
+                            <div class="text-center p-3" style="background: rgba(102, 126, 234, 0.1); border-radius: 12px; border: 1px solid rgba(102, 126, 234, 0.3);">
+                                <div class="text-primary fs-4 fw-bold" id="detailNetQty">0</div>
+                                <small class="text-white-50">Net Quantity</small>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Financial Summary -->
-                    <div class="row text-center mb-3">
-                        <div class="col-6">
-                            <div class="border-end border-secondary">
-                                <div class="text-success fs-6 fw-bold" id="detailBuyAmt">₹0.00</div>
-                                <small class="text-muted">Buy Amount</small>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <div class="p-3" style="background: rgba(255,255,255,0.05); border-radius: 12px;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-white-50">Buy Amount</span>
+                                    <span class="text-success fw-bold" id="detailBuyAmt">₹0.00</span>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-6">
-                            <div class="text-danger fs-6 fw-bold" id="detailSellAmt">₹0.00</div>
-                            <small class="text-muted">Sell Amount</small>
+                        <div class="col-md-6">
+                            <div class="p-3" style="background: rgba(255,255,255,0.05); border-radius: 12px;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-white-50">Sell Amount</span>
+                                    <span class="text-danger fw-bold" id="detailSellAmt">₹0.00</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- P&L Display -->
-                    <div class="text-center mb-3 p-3 bg-secondary rounded">
-                        <div class="fs-4 fw-bold" id="detailPnl">₹0.00</div>
-                        <small class="text-muted">Profit & Loss</small>
+                    <!-- P&L Highlight -->
+                    <div class="text-center p-4 mb-4" style="background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);">
+                        <h3 class="fw-bold mb-1" id="detailPnl">₹0.00</h3>
+                        <p class="text-white-50 mb-0">Profit & Loss</p>
                     </div>
 
                     <!-- Additional Info -->
-                    <div class="row small text-muted">
-                        <div class="col-6">
-                            <strong>Current Price:</strong> <span class="text-info" id="detailCurrentPrice">₹0.00</span>
+                    <div class="row g-3 small">
+                        <div class="col-md-6">
+                            <div class="p-3" style="background: rgba(255,255,255,0.05); border-radius: 12px;">
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-white-50">Current Price</span>
+                                    <span class="text-info fw-bold" id="detailCurrentPrice">₹0.00</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-6">
-                            <strong>Expiry:</strong> <span id="detailExpiry">-</span>
+                        <div class="col-md-6">
+                            <div class="p-3" style="background: rgba(255,255,255,0.05); border-radius: 12px;">
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-white-50">Expiry</span>
+                                    <span class="text-white" id="detailExpiry">-</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-dark border-0 justify-content-center">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Place Order Modal -->
-    <div class="modal fade" id="placeOrderModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content bg-dark">
-                <div class="modal-header border-bottom border-secondary">
-                    <h5
-                        class="modal-title text-light"
-                        id="placeOrderModalLabel"
-                    >
-                        <i class="fas fa-shopping-cart me-2"></i>Place Order
-                    </h5>
-                    <button
-                        type="button"
-                        class="btn-close btn-close-white"
-                        data-bs-dismiss="modal"
-                    ></button>
-                </div>
-                <div class="modal-body">
-                    <form id="placeOrderForm">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light"
-                                    >Symbol</label
-                                >
-                                <input
-                                    type="text"
-                                    class="form-control bg-secondary text-light"
-                                    id="orderSymbol"
-                                    readonly
-                                />
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light"
-                                    >Transaction Type</label
-                                >
-                                <select
-                                    class="form-select bg-secondary text-light"
-                                    id="orderTransactionType"
-                                >
-                                    <option value="BUY">BUY</option>
-                                    <option value="SELL">SELL</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light"
-                                    >Exchange</label
-                                >
-                                <input
-                                    type="text"
-                                    class="form-control bg-secondary text-light"
-                                    id="orderExchange"
-                                    readonly
-                                />
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light"
-                                    >Product</label
-                                >
-                                <select
-                                    class="form-select bg-secondary text-light"
-                                    id="orderProduct"
-                                >
-                                    <option value="CNC">CNC</option>
-                                    <option value="MIS">MIS</option>
-                                    <option value="NRML">NRML</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light"
-                                    >Order Type</label
-                                >
-                                <select
-                                    class="form-select bg-secondary text-light"
-                                    id="orderType"
-                                    onchange="handleOrderTypeChange()"
-                                >
-                                    <option value="MKT">Market</option>
-                                    <option value="L">Limit</option>
-                                    <option value="SL">Stop Loss</option>
-                                    <option value="SL-M">
-                                        Stop Loss Market
-                                    </option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light"
-                                    >Quantity</label
-                                >
-                                <input
-                                    type="number"
-                                    class="form-control bg-secondary text-light"
-                                    id="orderQuantity"
-                                    min="1"
-                                    required
-                                />
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light"
-                                    >Price</label
-                                >
-                                <input
-                                    type="number"
-                                    class="form-control bg-secondary text-light"
-                                    id="orderPrice"
-                                    step="0.01"
-                                />
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light"
-                                    >Trigger Price</label
-                                >
-                                <input
-                                    type="number"
-                                    class="form-control bg-secondary text-light"
-                                    id="orderTriggerPrice"
-                                    step="0.01"
-                                />
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light"
-                                    >Validity</label
-                                >
-                                <select
-                                    class="form-select bg-secondary text-light"
-                                    id="orderValidity"
-                                >
-                                    <option value="DAY">DAY</option>
-                                    <option value="IOC">IOC</option>
-                                    <option value="GTT">GTT</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light"
-                                    >Disclosed Quantity</label
-                                >
-                                <input
-                                    type="number"
-                                    class="form-control bg-secondary text-light"
-                                    id="orderDisclosedQuantity"
-                                    min="0"
-                                    value="0"
-                                />
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer border-top border-secondary">
-                    <button
-                        type="button"
-                        class="btn btn-secondary"
-                        data-bs-dismiss="modal"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        class="btn btn-primary"
-                        onclick="submitPlaceOrder()"
-                    >
-                        Place Order
-                    </button>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-outline-light px-4" data-bs-dismiss="modal" style="border-radius: 12px;">Close</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %} {% block scripts %}
-<script src="{{url_for('static', filename='js/skeleton_animation.js')}}"></script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/skeleton_animation.js') }}"></script>
 <script src="{{ url_for('static', filename='js/positions.js') }}"></script>
 {% endblock %}

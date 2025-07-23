@@ -97,8 +97,6 @@ function updatePositionsTable(positions) {
         var pnl = position.pnl || position.flPnl || '0';
         
         var position_type = parseInt(netQty) > 0 ? 'LONG' : parseInt(netQty) < 0 ? 'SHORT' : 'FLAT';
-        var expiry = position.expDt || position.exp || position.expiry || position.expDate || 'N/A';
-        var lastUpdated = position.hsUpTm || position.updRecvTm || position.lastUpdated || 'N/A';
 
         // Format amounts
         var formattedBuyAmt = parseFloat(buyAmt) || 0;
@@ -115,27 +113,54 @@ function updatePositionsTable(positions) {
 
         // P&L styling
         var pnlClass = formattedPnl >= 0 ? 'text-success' : 'text-danger';
+        var pnlIcon = formattedPnl >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
 
         tableHTML += `
             <tr data-position-symbol="${symbol}">
-                <td><strong>${symbol}</strong></td>
-                <td><span class="badge bg-info">${product}</span></td>
-                <td><span class="badge bg-secondary">${exchange}</span></td>
-                <td>${buyQty}</td>
-                <td>${sellQty}</td>
-                <td><strong>${netQty}</strong></td>
-                <td>₹${formattedBuyAmt.toFixed(2)}</td>
-                <td>₹${formattedSellAmt.toFixed(2)}</td>
-                <td class="${pnlClass}"><strong>₹${formattedPnl.toFixed(2)}</strong></td>
-                <td><span class="badge ${positionClass}">${position_type}</span></td>
-                <td><small>${expiry}</small></td>
-                <td><small>${lastUpdated}</small></td>
-                <td>
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-primary btn-sm" onclick="showPlaceOrderModal('${symbol}', '${exchange}')" title="Place Order">
+                <td class="px-4 py-3">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3" style="width: 40px; height: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.8rem;">
+                            ${symbol.substring(0, 2)}
+                        </div>
+                        <div>
+                            <div class="fw-bold text-white">${symbol}</div>
+                            <small class="text-white-50">${exchange}</small>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-4 py-3">
+                    <span class="badge bg-info position-badge">${product}</span>
+                </td>
+                <td class="px-4 py-3">
+                    <div class="fw-bold text-white">${netQty}</div>
+                    <small class="text-white-50">Net Quantity</small>
+                </td>
+                <td class="px-4 py-3">
+                    <div class="text-success fw-bold">₹${formattedBuyAmt.toFixed(2)}</div>
+                    <small class="text-white-50">${buyQty} qty</small>
+                </td>
+                <td class="px-4 py-3">
+                    <div class="text-danger fw-bold">₹${formattedSellAmt.toFixed(2)}</div>
+                    <small class="text-white-50">${sellQty} qty</small>
+                </td>
+                <td class="px-4 py-3">
+                    <div class="d-flex align-items-center">
+                        <i class="fas ${pnlIcon} me-2 ${pnlClass}"></i>
+                        <div>
+                            <div class="${pnlClass} fw-bold">₹${formattedPnl.toFixed(2)}</div>
+                            <small class="text-white-50">${formattedPnl >= 0 ? 'Profit' : 'Loss'}</small>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-4 py-3">
+                    <span class="badge ${positionClass} position-badge">${position_type}</span>
+                </td>
+                <td class="px-4 py-3">
+                    <div class="d-flex gap-2">
+                        <button class="action-btn btn btn-primary" onclick="showPlaceOrderModal('${symbol}', '${exchange}')" title="Place Order">
                             <i class="fas fa-plus"></i>
                         </button>
-                        <button class="btn btn-info btn-sm" onclick="viewPositionDetails('${symbol}')" title="View Details">
+                        <button class="action-btn btn btn-info" onclick="viewPositionDetails('${symbol}')" title="View Details">
                             <i class="fas fa-info"></i>
                         </button>
                     </div>
@@ -202,21 +227,23 @@ function showNoPositionsMessage() {
     var tableBody = document.getElementById('positionsTableBody');
     tableBody.innerHTML = `
         <tr>
-            <td colspan="13" class="text-center py-5">
-                <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
-                <h4 class="text-muted">No Positions Found</h4>
-                <p class="text-muted">You don't have any open positions yet.</p>
-                <button class="btn btn-primary" onclick="window.location.href='/dashboard'">
-                    <i class="fas fa-plus me-1"></i>Start Trading
-                </button>
+            <td colspan="8" class="text-center py-5">
+                <div class="empty-state">
+                    <i class="fas fa-chart-line mb-4" style="font-size: 4rem; color: rgba(102, 126, 234, 0.3);"></i>
+                    <h4 class="text-white-50 mb-3">No Positions Found</h4>
+                    <p class="text-white-50 mb-4">You don't have any open positions yet. Start trading to see your portfolio here.</p>
+                    <button class="btn btn-primary px-4 py-2" onclick="window.location.href='/dashboard'" style="border-radius: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
+                        <i class="fas fa-plus me-2"></i>Start Trading
+                    </button>
+                </div>
             </td>
         </tr>
     `;
 
     // Reset summary counts
     document.getElementById('totalPositionsCount').textContent = '0';
-    document.getElementById('longPositionsCount').textContent = '0';
-    document.getElementById('shortPositionsCount').textContent = '0';
+    document.getElementById('longPositionsCount').textContent = '0 positions';
+    document.getElementById('shortPositionsCount').textContent = '0 positions';
     document.getElementById('longPositionsValue').textContent = '₹0.00';
     document.getElementById('shortPositionsValue').textContent = '₹0.00';
     document.getElementById('totalPnlValue').textContent = '₹0.00';
@@ -227,21 +254,23 @@ function showAuthenticationError() {
     var tableBody = document.getElementById('positionsTableBody');
     tableBody.innerHTML = `
         <tr>
-            <td colspan="13" class="text-center py-5">
-                <i class="fas fa-lock fa-3x text-warning mb-3"></i>
-                <h4 class="text-warning">Authentication Required</h4>
-                <p class="text-muted">Please log in to your Kotak Neo account to view positions.</p>
-                <button class="btn btn-warning" onclick="window.location.href='/trading-account/login'">
-                    <i class="fas fa-sign-in-alt me-1"></i>Login to Kotak Neo
-                </button>
+            <td colspan="8" class="text-center py-5">
+                <div class="empty-state">
+                    <i class="fas fa-lock mb-4" style="font-size: 4rem; color: rgba(255, 193, 7, 0.6);"></i>
+                    <h4 class="text-warning mb-3">Authentication Required</h4>
+                    <p class="text-white-50 mb-4">Please log in to your Kotak Neo account to view your positions.</p>
+                    <button class="btn btn-warning px-4 py-2" onclick="window.location.href='/trading-account/login'" style="border-radius: 12px;">
+                        <i class="fas fa-sign-in-alt me-2"></i>Login to Kotak Neo
+                    </button>
+                </div>
             </td>
         </tr>
     `;
 
     // Reset summary counts
     document.getElementById('totalPositionsCount').textContent = '0';
-    document.getElementById('longPositionsCount').textContent = '0';
-    document.getElementById('shortPositionsCount').textContent = '0';
+    document.getElementById('longPositionsCount').textContent = '0 positions';
+    document.getElementById('shortPositionsCount').textContent = '0 positions';
     document.getElementById('longPositionsValue').textContent = '₹0.00';
     document.getElementById('shortPositionsValue').textContent = '₹0.00';
     document.getElementById('totalPnlValue').textContent = '₹0.00';
