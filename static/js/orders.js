@@ -21,6 +21,10 @@ window.addEventListener('beforeunload', function() {
 async function loadOrdersData() {
     try {
         console.log('Fetching orders data...');
+        
+        // Show skeleton UI while loading
+        showOrdersSkeleton();
+        
         var response = await fetch('/api/orders', {
             credentials: 'same-origin', // Include cookies
             headers: {
@@ -39,6 +43,7 @@ async function loadOrdersData() {
             updateOrdersSummary(ordersData);
         } else {
             console.error('Failed to load orders:', data.error || data.message);
+            hideOrdersSkeleton(); // Hide skeleton on error
             if (data.error && data.error.includes('Not authenticated')) {
                 console.log('User not authenticated, showing login message');
                 showAuthenticationErrorOrders();
@@ -48,6 +53,7 @@ async function loadOrdersData() {
         }
     } catch (error) {
         console.error('Error loading orders:', error);
+        hideOrdersSkeleton(); // Hide skeleton on error
         showNoOrdersMessage();
     }
 }
@@ -149,8 +155,44 @@ function sortTable(column) {
     updateOrdersTable(ordersData);
 }
 
+function showOrdersSkeleton() {
+    // Show skeleton for summary cards
+    var skeleton = document.getElementById('ordersSummarySkeleton');
+    var cards = document.getElementById('ordersSummaryCards');
+    
+    if (skeleton) skeleton.style.display = 'flex';
+    if (cards) cards.style.display = 'none';
+    
+    // Show shimmer rows in table
+    var shimmerRows = document.querySelectorAll('.shimmer-row');
+    shimmerRows.forEach(function(row) {
+        row.style.display = 'table-row';
+    });
+}
+
+function hideOrdersSkeleton() {
+    // Hide skeleton and show actual content
+    var skeleton = document.getElementById('ordersSummarySkeleton');
+    var cards = document.getElementById('ordersSummaryCards');
+    
+    if (skeleton) skeleton.style.display = 'none';
+    if (cards) cards.style.display = 'flex';
+    
+    // Hide shimmer rows in table
+    var shimmerRows = document.querySelectorAll('.shimmer-row');
+    shimmerRows.forEach(function(row) {
+        row.style.display = 'none';
+    });
+    
+    // Add content loaded class
+    document.body.classList.add('orders-content-loaded');
+}
+
 function updateOrdersTable(orders) {
     var tableBody = document.getElementById('ordersTableBody');
+
+    // Hide skeleton UI first
+    hideOrdersSkeleton();
 
     if (!orders || orders.length === 0) {
         showNoOrdersMessage();
@@ -305,6 +347,8 @@ function updateOrdersSummary(orders) {
 }
 
 function showNoOrdersMessage() {
+    hideOrdersSkeleton(); // Make sure skeleton is hidden
+    
     var tableBody = document.getElementById('ordersTableBody');
     tableBody.innerHTML = `
         <tr>
@@ -332,6 +376,8 @@ function showNoOrdersMessage() {
 }
 
 function showAuthenticationErrorOrders() {
+    hideOrdersSkeleton(); // Make sure skeleton is hidden
+    
     var tableBody = document.getElementById('ordersTableBody');
     tableBody.innerHTML = `
         <tr>
