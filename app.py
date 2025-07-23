@@ -31,7 +31,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Load environment variables from .env file
-load_dotenv()
+load_dotenv(dotenv_path='.env', override=True)
 
 
 def setup_library_paths():
