@@ -1,14 +1,16 @@
+
+/* Orders Page Styles */
 .data-updated {
     animation: highlightUpdate 1s ease-in-out;
 }
 
 @keyframes highlightUpdate {
-    0% { background-color: rgba(0, 123, 255, 0.2); }
+    0% { background-color: rgba(37, 99, 235, 0.2); }
     100% { background-color: transparent; }
 }
 
 .table tbody tr:hover {
-    background-color: rgba(255, 255, 255, 0.1) !important;
+    background-color: rgba(37, 99, 235, 0.1) !important;
 }
 
 .btn-group-sm .btn {
@@ -20,25 +22,33 @@
 .filter-card {
     transition: all 0.3s ease;
     border: 2px solid transparent;
+    background: var(--card-bg);
+    color: var(--text-primary);
+    border-color: var(--border-color);
 }
 
 .filter-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    border-color: var(--primary-color);
 }
 
 .filter-card.active {
-    border-color: #fff;
-    box-shadow: 0 0 15px rgba(255,255,255,0.3);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 15px rgba(37, 99, 235, 0.3);
+    background: rgba(37, 99, 235, 0.1);
 }
 
 /* Table header sorting */
 #ordersTable th[style*="cursor"] {
     user-select: none;
+    background: var(--secondary-color);
+    color: var(--text-primary);
 }
 
 #ordersTable th[style*="cursor"]:hover {
-    background: linear-gradient(135deg, #0b5ed7 0%, #0a58ca 100%);
+    background: linear-gradient(135deg, var(--primary-color) 0%, #1d4ed8 100%);
+    color: white;
 }
 
 #ordersTable th[style*="cursor"]:active {
@@ -47,40 +57,221 @@
 
 .fa-sort {
     opacity: 0.5;
+    color: var(--text-secondary);
 }
 
 .fa-sort-up, .fa-sort-down {
     opacity: 1;
-    color: #fff;
+    color: var(--primary-color);
 }
 
-/* Orders Page Styles */
-
-/* Table header sorting */
-#ordersTable th[style*="cursor"] {
-    user-select: none;
+/* Orders table specific styles */
+#ordersTable {
+    background: var(--card-bg);
+    color: var(--text-primary);
 }
 
-#ordersTable th[style*="cursor"]:hover {
-    background: linear-gradient(135deg, #0b5ed7 0%, #0a58ca 100%);
+#ordersTable thead th {
+    background: var(--secondary-color);
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--border-color);
 }
 
-#ordersTable th[style*="cursor"]:active {
-    transform: scale(0.98);
+#ordersTable tbody td {
+    background: var(--card-bg);
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
 }
 
-/* Filter cards hover effect */
-.filter-card {
-    transition: all 0.3s ease;
-    opacity: 0.7;
+#ordersTable tbody tr:hover td {
+    background: rgba(37, 99, 235, 0.1);
 }
 
-.filter-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 123, 255, 0.15) !important;
-    opacity: 1 !important;
+/* Status badges */
+.badge.bg-success {
+    background-color: var(--success-color) !important;
 }
 
-.filter-card:first-child {
-    opacity: 1;
+.badge.bg-warning {
+    background-color: var(--warning-color) !important;
+}
+
+.badge.bg-danger {
+    background-color: var(--danger-color) !important;
+}
+
+.badge.bg-secondary {
+    background-color: var(--text-secondary) !important;
+}
+
+/* Light theme overrides */
+:root[data-theme="light"] .filter-card {
+    background: #ffffff;
+    border-color: #e5e7eb;
+    color: #111827;
+}
+
+:root[data-theme="light"] .filter-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+:root[data-theme="light"] .filter-card.active {
+    background: rgba(37, 99, 235, 0.05);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 15px rgba(37, 99, 235, 0.2);
+}
+
+:root[data-theme="light"] #ordersTable {
+    background: #ffffff;
+    color: #111827;
+}
+
+:root[data-theme="light"] #ordersTable thead th {
+    background: #f9fafb;
+    color: #374151;
+    border-bottom-color: #d1d5db;
+}
+
+:root[data-theme="light"] #ordersTable tbody td {
+    background: #ffffff;
+    color: #111827;
+    border-bottom-color: #e5e7eb;
+}
+
+:root[data-theme="light"] #ordersTable tbody tr:hover td {
+    background: rgba(59, 130, 246, 0.05);
+}
+
+:root[data-theme="light"] #ordersTable th[style*="cursor"] {
+    background: #f9fafb;
+    color: #374151;
+}
+
+:root[data-theme="light"] #ordersTable th[style*="cursor"]:hover {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #1d4ed8 100%);
+    color: white;
+}
+
+:root[data-theme="light"] .fa-sort {
+    color: #9ca3af;
+}
+
+:root[data-theme="light"] .fa-sort-up,
+:root[data-theme="light"] .fa-sort-down {
+    color: var(--primary-color);
+}
+
+/* Data update animation for light theme */
+:root[data-theme="light"] .data-updated {
+    animation: highlightUpdateLight 1s ease-in-out;
+}
+
+@keyframes highlightUpdateLight {
+    0% { background-color: rgba(59, 130, 246, 0.1); }
+    100% { background-color: transparent; }
+}
+
+/* Loading states */
+.orders-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 3rem;
+    color: var(--text-secondary);
+}
+
+.orders-loading .spinner-border {
+    color: var(--primary-color);
+}
+
+/* Empty state */
+.orders-empty {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary);
+}
+
+.orders-empty i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* Search and filter section */
+.orders-filters {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.orders-filters .form-control {
+    background: var(--dark-bg);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.orders-filters .form-control:focus {
+    background: var(--card-bg);
+    border-color: var(--primary-color);
+    color: var(--text-primary);
+}
+
+/* Light theme for filters */
+:root[data-theme="light"] .orders-filters {
+    background: #ffffff;
+    border-color: #e5e7eb;
+}
+
+:root[data-theme="light"] .orders-filters .form-control {
+    background: #ffffff;
+    border-color: #d1d5db;
+    color: #111827;
+}
+
+:root[data-theme="light"] .orders-filters .form-control:focus {
+    background: #ffffff;
+    border-color: var(--primary-color);
+    color: #111827;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .filter-card {
+        margin-bottom: 0.5rem;
+    }
+    
+    .orders-filters {
+        padding: 0.75rem;
+    }
+    
+    #ordersTable {
+        font-size: 0.8rem;
+    }
+    
+    #ordersTable th,
+    #ordersTable td {
+        padding: 0.5rem 0.25rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .filter-card {
+        padding: 0.75rem;
+    }
+    
+    .orders-filters {
+        padding: 0.5rem;
+    }
+    
+    #ordersTable {
+        font-size: 0.75rem;
+    }
+    
+    .badge {
+        font-size: 0.65rem;
+        padding: 0.25rem 0.5rem;
+    }
 }
