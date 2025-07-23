@@ -144,9 +144,30 @@ def trading_account_login():
                 flash('Username and password are required', 'error')
                 return render_template('auth/login.html')
 
+            # Check temporary registration data first
+            temp_reg = session.get('temp_registration')
+            if temp_reg and temp_reg.get('username') == username and temp_reg.get('password') == password:
+                # Set session data for authenticated user from temp registration
+                session['authenticated'] = True
+                session['username'] = username
+                session['user_id'] = username
+                session['email'] = temp_reg.get('email')
+                session['mobile'] = temp_reg.get('mobile')
+                session['login_type'] = 'trading_account'
+                session['access_token'] = 'demo_token_' + username
+                session['ucc'] = username
+                session['greeting_name'] = username
+                session.permanent = True
+                
+                # Clear temp registration data
+                session.pop('temp_registration', None)
+                
+                logging.info(f"Trading account login successful for registered user: {username}")
+                flash('Login successful!', 'success')
+                return redirect(url_for('portfolio'))
             # For demo purposes, create a simple authentication
             # In production, this would validate against your user database
-            if username and password:
+            elif username and password:
                 # Store user session with all required fields for dashboard access
                 session['authenticated'] = True
                 session['username'] = username
@@ -207,64 +228,51 @@ def logout_kotak():
 def register():
     """Register new user with auto-generated username"""
     if request.method == 'POST':
-        # Import here to get the current app context
-        from flask import current_app
-        with current_app.app_context():
-            try:
-                # Import the User model from app
-                import sys
-                import os
-                current_dir = os.path.dirname(os.path.abspath(__file__))
-                parent_dir = os.path.dirname(current_dir)
-                sys.path.insert(0, parent_dir)
-                
-                # Import from app context
-                from app import User, db
-                
-                email = request.form.get('email')
-                mobile = request.form.get('mobile')
-                password = request.form.get('password')
-                confirm_password = request.form.get('confirm_password')
+        try:
+            email = request.form.get('email', '').strip()
+            mobile = request.form.get('mobile', '').strip()
+            password = request.form.get('password', '').strip()
+            confirm_password = request.form.get('confirm_password', '').strip()
 
-                # Validate input
-                if not all([email, mobile, password, confirm_password]):
-                    flash('All fields are required.', 'error')
-                    return render_template('auth/register.html')
+            print(f"Registration attempt: email={email}, mobile={mobile}")  # Debug
 
-                if password != confirm_password:
-                    flash('Passwords do not match.', 'error')
-                    return render_template('auth/register.html')
-
-                # Check if user already exists
-                existing_user = User.query.filter_by(email=email).first()
-                if existing_user:
-                    flash('Email already registered.', 'error')
-                    return render_template('auth/register.html')
-
-                # Generate unique username from email and mobile
-                username = User.generate_username(email, mobile)
-
-                # Create new user
-                user = User()
-                user.email = email
-                user.mobile = mobile
-                user.username = username
-                user.set_password(password)
-
-                db.session.add(user)
-                db.session.commit()
-
-                # Show success message with username
-                flash('Registration successful! Please check your email for login credentials.', 'success')
-                flash(f'Your username is: {username}', 'info')
-
-                return redirect(url_for('auth_routes.trading_account_login'))
-                
-            except Exception as e:
-                if 'db' in locals():
-                    db.session.rollback()
-                print(f"Registration error: {e}")  # Debug logging
-                flash(f'Registration failed: {str(e)}', 'error')
+            # Validate input
+            if not all([email, mobile, password, confirm_password]):
+                flash('All fields are required.', 'error')
                 return render_template('auth/register.html')
+
+            if password != confirm_password:
+                flash('Passwords do not match.', 'error')
+                return render_template('auth/register.html')
+
+            if len(password) < 6:
+                flash('Password must be at least 6 characters long.', 'error')
+                return render_template('auth/register.html')
+
+            # Simple username generation from email (first 3 chars) + mobile (last 2 digits)
+            email_part = email.split('@')[0][:3].lower()
+            mobile_part = mobile[-2:] if len(mobile) >= 2 else '00'
+            username = f"{email_part}{mobile_part}"
+
+            print(f"Generated username: {username}")  # Debug
+
+            # For now, just store in session and show success message
+            session['temp_registration'] = {
+                'email': email,
+                'mobile': mobile,
+                'username': username,
+                'password': password
+            }
+
+            flash('Registration successful!', 'success')
+            flash(f'Your username is: {username}', 'info')
+            flash('You can now login with your username and password.', 'info')
+
+            return redirect(url_for('auth_routes.trading_account_login'))
+            
+        except Exception as e:
+            print(f"Registration error: {e}")  # Debug logging
+            flash('Registration failed. Please try again.', 'error')
+            return render_template('auth/register.html')
 
     return render_template('auth/register.html')
