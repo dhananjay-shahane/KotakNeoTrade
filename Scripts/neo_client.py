@@ -196,7 +196,9 @@ class NeoClient:
                 # Check for specific error responses that indicate invalid TOTP
                 if 'error' in totp_response:
                     error_msg = totp_response.get('error', 'Invalid TOTP')
-                    if any(phrase in str(error_msg).lower() for phrase in ['invalid', 'wrong', 'incorrect', 'expired']):
+                    # Safely convert error_msg to string to avoid None concatenation
+                    error_msg_str = str(error_msg) if error_msg is not None else 'Invalid TOTP'
+                    if any(phrase in error_msg_str.lower() for phrase in ['invalid', 'wrong', 'incorrect', 'expired']):
                         return {'success': False, 'message': 'Invalid TOTP code. Please check your authenticator app and try again.'}
 
                 # Check for failed authentication status
@@ -206,14 +208,15 @@ class NeoClient:
                 self.logger.info("✅ TOTP login successful!")
 
             except Exception as login_error:
-                error_str = str(login_error).lower()
-                self.logger.error(f"❌ TOTP login step failed: {str(login_error)}")
+                # Safely convert login_error to string to avoid None concatenation
+                error_str = str(login_error) if login_error is not None else 'Unknown error'
+                self.logger.error(f"❌ TOTP login step failed: {error_str}")
 
                 # Check for specific TOTP validation errors
-                if any(phrase in error_str for phrase in ['invalid', 'wrong', 'incorrect', 'expired', 'authentication failed']):
+                if any(phrase in error_str.lower() for phrase in ['invalid', 'wrong', 'incorrect', 'expired', 'authentication failed']):
                     return {'success': False, 'message': 'Invalid TOTP code. Please check your authenticator app and try again.'}
                 else:
-                    return {'success': False, 'message': f'TOTP authentication failed: {str(login_error)}'}
+                    return {'success': False, 'message': f'TOTP authentication failed: {error_str}'}
 
             # Step 2: MPIN Validation - following notebook method
             try:
@@ -228,13 +231,17 @@ class NeoClient:
                 if isinstance(validation_response, dict):
                     # Check for explicit error messages first
                     if 'error' in validation_response:
-                        error_msg = str(validation_response.get('error', '')).lower()
-                        if any(phrase in error_msg for phrase in ['invalid', 'wrong', 'incorrect', 'authentication failed']):
+                        error_msg = validation_response.get('error', '')
+                        # Safely convert to string to avoid None concatenation
+                        error_msg_str = str(error_msg).lower() if error_msg is not None else ''
+                        if any(phrase in error_msg_str for phrase in ['invalid', 'wrong', 'incorrect', 'authentication failed']):
                             return {'success': False, 'message': 'Invalid MPIN. Please check your 6-digit MPIN and try again.'}
                     
                     # Check for failed status only if explicitly set to failed
-                    status = validation_response.get('status', '').lower()
-                    if status == 'failed' or status == 'error':
+                    status = validation_response.get('status', '')
+                    # Safely convert to string to avoid None concatenation
+                    status_str = str(status).lower() if status is not None else ''
+                    if status_str == 'failed' or status_str == 'error':
                         return {'success': False, 'message': 'Invalid MPIN. Please check your 6-digit MPIN and try again.'}
                     
                     # Check success field only if explicitly set to false
@@ -282,19 +289,21 @@ class NeoClient:
                     self.logger.info("✅ MPIN validation successful - non-dict response!")
 
             except Exception as validation_error:
-                self.logger.error(f"❌ MPIN validation exception: {str(validation_error)}")
-                error_str = str(validation_error).lower()
+                # Safely convert validation_error to string to avoid None concatenation
+                error_str = str(validation_error) if validation_error is not None else 'Unknown validation error'
+                self.logger.error(f"❌ MPIN validation exception: {error_str}")
+                error_str_lower = error_str.lower()
 
                 # Handle specific HTTP errors that clearly indicate invalid MPIN
-                if ('401' in error_str and 'unauthorized' in error_str) or '403' in error_str:
+                if ('401' in error_str_lower and 'unauthorized' in error_str_lower) or '403' in error_str_lower:
                     return {'success': False, 'message': 'Invalid MPIN. Please check your 6-digit MPIN and try again.'}
 
                 # Handle explicit authentication failure messages
-                if any(phrase in error_str for phrase in ['invalid credentials', 'wrong mpin', 'incorrect mpin', 'authentication failed', 'invalid mpin']):
+                if any(phrase in error_str_lower for phrase in ['invalid credentials', 'wrong mpin', 'incorrect mpin', 'authentication failed', 'invalid mpin']):
                     return {'success': False, 'message': 'Invalid MPIN. Please check your 6-digit MPIN and try again.'}
                 
                 # For other exceptions, provide more detailed error info for debugging
-                return {'success': False, 'message': f'MPIN validation error: {str(validation_error)}. Please try again or check your credentials.'}
+                return {'success': False, 'message': f'MPIN validation error: {error_str}. Please try again or check your credentials.'}
 
             return {
                 'success': True,
@@ -304,8 +313,10 @@ class NeoClient:
             }
 
         except Exception as e:
-            self.logger.error(f"❌ TOTP Login failed: {str(e)}")
-            return {'success': False, 'message': f'Authentication failed: {str(e)}'}
+            # Safely convert exception to string to avoid None concatenation
+            error_str = str(e) if e is not None else 'Unknown authentication error'
+            self.logger.error(f"❌ TOTP Login failed: {error_str}")
+            return {'success': False, 'message': f'Authentication failed: {error_str}'}
 
     def execute_totp_login(self, mobile_number, ucc, totp, mpin):
         """Execute complete TOTP login process - following notebook flow"""
