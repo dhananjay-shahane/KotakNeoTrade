@@ -965,7 +965,7 @@ except Exception as e:
 from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-from api.auth_api import send_registration_email
+from api.auth_api import EmailService
 
 # Initialize extensions for email functionality
 try:
@@ -1044,7 +1044,7 @@ def register():
             db.session.commit()
 
             # Send registration email with credentials
-            email_sent = send_registration_email(email, username, password)
+            email_sent = EmailService.send_registration_email(mail, email, username, password)
 
             if email_sent:
                 flash(
