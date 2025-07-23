@@ -64,6 +64,7 @@ ETFSignalsManager.prototype.init = function () {
     this.loadColumnSettings();
     this.setupEventListeners();
     this.setupColumnSettings();
+    this.setupHorizontalScrollSync(); // Setup horizontal scroll synchronization
     this.updateTableHeaders(); // Update headers based on column settings
     this.createPaginationControls(); // Create pagination controls
     this.loadSignals(true);
@@ -2220,6 +2221,7 @@ ETFSignalsManager.prototype.init = function () {
     this.loadColumnSettings();
     this.setupEventListeners();
     this.setupColumnSettings();
+    this.setupHorizontalScrollSync(); // Setup horizontal scroll synchronization
     this.updateTableHeaders(); // Update headers based on column settings
     this.createPaginationControls(); // Create pagination controls (but it will be empty)
     this.loadSignals(true);
@@ -2234,3 +2236,194 @@ ETFSignalsManager.prototype.saveColumnSettings = function () {
     }
     localStorage.setItem("etfSignalsColumnSettings", JSON.stringify(settings));
 };
+// Setup horizontal scroll synchronization
+ETFSignalsManager.prototype.setupHorizontalScrollSync = function () {
+    var topScroll = document.querySelector(".horizontal-scroll-top");
+    var bottomScroll = document.querySelector(".horizontal-scroll-bottom");
+    var tableContainer = document.querySelector(".horizontal-scroll-container");
+    var table = document.getElementById("signalsTable");
+
+    if (!topScroll || !bottomScroll || !tableContainer || !table) return;
+
+    // Set the dummy content width to match table width
+    function updateScrollWidth() {
+        var tableWidth = table.offsetWidth;
+        topScroll.querySelector(".scroll-content-dummy").style.width = tableWidth + "px";
+        bottomScroll.querySelector(".scroll-content-dummy").style.width = tableWidth + "px";
+    }
+
+    // Synchronize scroll positions
+    function syncScroll(source, targets) {
+        targets.forEach(function(target) {
+            if (target !== source) {
+                target.scrollLeft = source.scrollLeft;
+            }
+        });
+    }
+
+    // Setup scroll event listeners
+    var scrollElements = [topScroll, bottomScroll, tableContainer];
+    
+    scrollElements.forEach(function(element) {
+        element.addEventListener("scroll", function() {
+            syncScroll(this, scrollElements);
+        });
+    });
+
+    // Update width on window resize and table changes
+    window.addEventListener("resize", updateScrollWidth);
+    updateScrollWidth();
+    
+    // Observer for table changes
+    var observer = new MutationObserver(updateScrollWidth);
+    observer.observe(table, { childList: true, subtree: true });
+};
+
+// Enhanced pagination functionality
+ETFSignalsManager.prototype.updatePagination = function () {
+    var totalItems = this.filteredSignals.length;
+    var itemsPerPageSelect = document.getElementById("itemsPerPageSelect");
+    
+    if (itemsPerPageSelect && itemsPerPageSelect.value === "all") {
+        this.itemsPerPage = totalItems;
+        this.totalPages = 1;
+        this.currentPage = 1;
+    } else {
+        this.totalPages = Math.ceil(totalItems / this.itemsPerPage);
+    }
+
+    this.renderPaginationHTML();
+    this.updateCounts();
+};
+
+ETFSignalsManager.prototype.renderPaginationHTML = function () {
+    var paginationControls = document.getElementById("paginationControls");
+    var paginationInfo = document.getElementById("paginationInfo");
+    
+    if (!paginationControls || !paginationInfo) return;
+
+    var totalItems = this.filteredSignals.length;
+    var startItem = totalItems === 0 ? 0 : (this.currentPage - 1) * this.itemsPerPage + 1;
+    var endItem = Math.min(this.currentPage * this.itemsPerPage, totalItems);
+
+    // Update pagination info
+    paginationInfo.textContent = "Page " + this.currentPage + " of " + this.totalPages;
+
+    // Clear existing pagination
+    paginationControls.innerHTML = "";
+
+    if (this.totalPages <= 1) return;
+
+    var self = this;
+
+    // Previous button
+    var prevLi = document.createElement("li");
+    prevLi.className = "page-item" + (this.currentPage === 1 ? " disabled" : "");
+    var prevLink = document.createElement("a");
+    prevLink.className = "page-link";
+    prevLink.href = "#";
+    prevLink.innerHTML = "&laquo;";
+    prevLink.onclick = function(e) {
+        e.preventDefault();
+        if (self.currentPage > 1) {
+            self.goToPage(self.currentPage - 1);
+        }
+    };
+    prevLi.appendChild(prevLink);
+    paginationControls.appendChild(prevLi);
+
+    // Page numbers
+    var startPage = Math.max(1, this.currentPage - 2);
+    var endPage = Math.min(this.totalPages, this.currentPage + 2);
+
+    if (startPage > 1) {
+        this.addPageNumber(1);
+        if (startPage > 2) {
+            var ellipsisLi = document.createElement("li");
+            ellipsisLi.className = "page-item disabled";
+            var ellipsisLink = document.createElement("span");
+            ellipsisLink.className = "page-link";
+            ellipsisLink.textContent = "...";
+            ellipsisLi.appendChild(ellipsisLink);
+            paginationControls.appendChild(ellipsisLi);
+        }
+    }
+
+    for (var i = startPage; i <= endPage; i++) {
+        this.addPageNumber(i);
+    }
+
+    if (endPage < this.totalPages) {
+        if (endPage < this.totalPages - 1) {
+            var ellipsisLi = document.createElement("li");
+            ellipsisLi.className = "page-item disabled";
+            var ellipsisLink = document.createElement("span");
+            ellipsisLink.className = "page-link";
+            ellipsisLink.textContent = "...";
+            ellipsisLi.appendChild(ellipsisLink);
+            paginationControls.appendChild(ellipsisLi);
+        }
+        this.addPageNumber(this.totalPages);
+    }
+
+    // Next button
+    var nextLi = document.createElement("li");
+    nextLi.className = "page-item" + (this.currentPage === this.totalPages ? " disabled" : "");
+    var nextLink = document.createElement("a");
+    nextLink.className = "page-link";
+    nextLink.href = "#";
+    nextLink.innerHTML = "&raquo;";
+    nextLink.onclick = function(e) {
+        e.preventDefault();
+        if (self.currentPage < self.totalPages) {
+            self.goToPage(self.currentPage + 1);
+        }
+    };
+    nextLi.appendChild(nextLink);
+    paginationControls.appendChild(nextLi);
+};
+
+ETFSignalsManager.prototype.addPageNumber = function (pageNum) {
+    var self = this;
+    var li = document.createElement("li");
+    li.className = "page-item" + (pageNum === this.currentPage ? " active" : "");
+    var link = document.createElement("a");
+    link.className = "page-link";
+    link.href = "#";
+    link.textContent = pageNum;
+    link.onclick = function(e) {
+        e.preventDefault();
+        self.goToPage(pageNum);
+    };
+    li.appendChild(link);
+    document.getElementById("paginationControls").appendChild(li);
+};
+
+ETFSignalsManager.prototype.goToPage = function (page) {
+    if (page < 1 || page > this.totalPages) return;
+    this.currentPage = page;
+    this.updateDisplayedSignals();
+    this.renderSignalsTable();
+    this.renderPaginationHTML();
+    this.updateCounts();
+};
+
+// Global functions for HTML onclick handlers
+function changeItemsPerPage(value) {
+    if (window.etfSignalsManager) {
+        if (value === "all") {
+            window.etfSignalsManager.itemsPerPage = window.etfSignalsManager.filteredSignals.length;
+        } else {
+            window.etfSignalsManager.itemsPerPage = parseInt(value);
+        }
+        window.etfSignalsManager.currentPage = 1;
+        window.etfSignalsManager.updateDisplayedSignals();
+        window.etfSignalsManager.renderSignalsTable();
+        window.etfSignalsManager.updatePagination();
+    }
+}
+
+// Initialize global instance
+var etfSignalsManager = new ETFSignalsManager();
+window.etfSignalsManager = etfSignalsManager;
+
