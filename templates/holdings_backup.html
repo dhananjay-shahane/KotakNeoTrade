@@ -127,22 +127,22 @@
         </div>
     </div>
 
-    {% if holdings %}
-    <!-- Calculate totals for cards -->
-    {% set total_invested = 0.0 %}
-    {% set total_current = 0.0 %}
-    {% for holding in holdings %}
-        {% if holding.holdingCost %}
-            {% set invested = holding.holdingCost|float %}
-            {% set total_invested = total_invested + invested %}
-        {% endif %}
-        {% if holding.mktValue %}
-            {% set current = holding.mktValue|float %}
-            {% set total_current = total_current + current %}
-        {% endif %}
-    {% endfor %}
-    {% set total_pnl = total_current - total_invested %}
-    {% set pnl_percentage = (total_pnl / total_invested * 100) if total_invested > 0 else 0 %}
+{% if holdings %}
+<!-- Calculate totals for cards -->
+{% set total_invested = 0.0 %}
+{% set total_current = 0.0 %}
+{% for holding in holdings %}
+    {% if holding.holdingCost %}
+        {% set invested = holding.holdingCost|float %}
+        {% set total_invested = total_invested + invested %}
+    {% endif %}
+    {% if holding.mktValue %}
+        {% set current = holding.mktValue|float %}
+        {% set total_current = total_current + current %}
+    {% endif %}
+{% endfor %}
+{% set total_pnl = total_current - total_invested %}
+{% set pnl_percentage = (total_pnl / total_invested * 100) if total_invested > 0 else 0 %}
 
     <!-- Enhanced Summary Cards -->
     <div class="row mb-3">
@@ -281,87 +281,83 @@
                             <th class="border-0 py-3">ACTIONS</th>
                         </tr>
                     </thead>
-                    <tbody id="holdingsTableBody">
-                        {% for holding in holdings %}
-                        {% set invested_value = holding.holdingCost|float if holding.holdingCost else 0.0 %}
-                        {% set market_value = holding.mktValue|float if holding.mktValue else 0.0 %}
-                        {% set pnl = market_value - invested_value %}
-                        {% set avg_price = holding.averagePrice|float if holding.averagePrice else 0.0 %}
-                        {% set ltp = holding.closingPrice|float if holding.closingPrice else 0.0 %}
-                        {% set day_change_pct = ((ltp - avg_price) / avg_price * 100) if avg_price > 0 else 0 %}
+                <tbody id="holdingsTableBody">
+                    {% for holding in holdings %}
+                    {% set invested_value = holding.holdingCost|float if holding.holdingCost else 0.0 %}
+                    {% set market_value = holding.mktValue|float if holding.mktValue else 0.0 %}
+                    {% set pnl = market_value - invested_value %}
+                    {% set avg_price = holding.averagePrice|float if holding.averagePrice else 0.0 %}
+                    {% set ltp = holding.closingPrice|float if holding.closingPrice else 0.0 %}
+                    {% set day_change_pct = ((ltp - avg_price) / avg_price * 100) if avg_price > 0 else 0 %}
 
-                        <tr class="border-0" 
-                            data-symbol="{{ holding.displaySymbol or holding.symbol or 'N/A' }}"
-                            data-exchange="{{ holding.exchangeSegment or 'N/A' }}"
-                            data-quantity="{{ holding.quantity or 0 }}"
-                            data-avg-price="{{ avg_price }}"
-                            data-ltp="{{ ltp }}"
-                            data-market-value="{{ market_value }}"
-                            data-pnl="{{ pnl }}"
-                            data-day-change="{{ day_change_pct }}">
+                    <tr class="border-0" 
+                        data-symbol="{{ holding.displaySymbol or holding.symbol or 'N/A' }}"
+                        data-exchange="{{ holding.exchangeSegment or 'N/A' }}"
+                        data-quantity="{{ holding.quantity or 0 }}"
+                        data-avg-price="{{ avg_price }}"
+                        data-ltp="{{ ltp }}"
+                        data-market-value="{{ market_value }}"
+                        data-pnl="{{ pnl }}"
+                        data-day-change="{{ day_change_pct }}">
 
-                            <td class="border-0 py-2">
-                                <div>
-                                    <strong class="text-white">{{ holding.displaySymbol or holding.symbol or 'N/A' }}</strong>
-                                    {% if holding.instrumentName %}
-                                        <br><small class="text-muted">{{ holding.instrumentName[:25] }}...</small>
-                                    {% endif %}
-                                </div>
-                            </td>
-                            <td class="border-0 py-2">
-                                <span class="badge bg-info">{{ holding.exchangeSegment or 'N/A' }}</span>
-                            </td>
-                            <td class="border-0 py-2 text-info fw-semibold">
-                                {{ holding.quantity or '0' }}
-                            </td>
-                            <td class="border-0 py-2 text-light">₹{{ "{:,.2f}".format(avg_price) }}</td>
-                            <td class="border-0 py-2 text-warning fw-semibold">₹{{ "{:,.2f}".format(ltp) }}</td>
-                            <td class="border-0 py-2 text-info fw-semibold">
-                                ₹{{ "{:,.2f}".format(market_value) }}
-                            </td>
-                            <td class="border-0 py-2">
-                                <span class="fw-bold {% if pnl > 0 %}text-success{% elif pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                    {% if pnl > 0 %}+{% endif %}₹{{ "{:,.2f}".format(pnl) }}
-                                    {% if invested_value > 0 %}
-                                        <br><small class="{% if pnl > 0 %}text-success{% elif pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                            ({% if pnl > 0 %}+{% endif %}{{ "{:.2f}".format((pnl/invested_value)*100) }}%)
-                                        </small>
-                                    {% endif %}
-                                </span>
-                            </td>
-                            <td class="border-0 py-2">
-                                <span class="fw-bold {% if day_change_pct > 0 %}text-success{% elif day_change_pct < 0 %}text-danger{% else %}text-muted{% endif %}">
+                        <td class="border-0 py-2">
+                            <div>
+                                <strong class="text-white">{{ holding.displaySymbol or holding.symbol or 'N/A' }}</strong>
+                                {% if holding.instrumentName %}
+                                    <br><small class="text-muted">{{ holding.instrumentName[:25] }}...</small>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="border-0 py-2">
+                            <span class="badge bg-info">{{ holding.exchangeSegment or 'N/A' }}</span>
+                        </td>
+                        <td class="border-0 py-2 text-info fw-semibold">
+                            {{ holding.quantity or '0' }}
+                        </td>
+                        <td class="border-0 py-2 text-light">₹{{ "{:,.2f}".format(avg_price) }}</td>
+                        <td class="border-0 py-2 text-warning fw-semibold">₹{{ "{:,.2f}".format(ltp) }}</td>
+                        <td class="border-0 py-2 text-info fw-semibold">
+                            ₹{{ "{:,.2f}".format(market_value) }}
+                        </td>
+                        <td class="border-0 py-2">
+                            <span class="fw-bold {% if pnl > 0 %}text-success{% elif pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                {% if pnl > 0 %}+{% endif %}₹{{ "{:,.2f}".format(pnl) }}
+                                {% if invested_value > 0 %}
+                                    <br><small class="{% if pnl > 0 %}text-success{% elif pnl < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                        ({% if pnl > 0 %}+{% endif %}{{ "{:.2f}".format((pnl/invested_value)*100) }}%)
+                                    </small>
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td class="border-0 py-2">
+                            <span class="fw-semibold {% if day_change_pct > 0 %}text-success{% elif day_change_pct < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                {% if day_change_pct != 0 %}
                                     {% if day_change_pct > 0 %}+{% endif %}{{ "{:.2f}".format(day_change_pct) }}%
-                                </span>
-                            </td>
-                            <td class="border-0 py-2">
-                                <div class="btn-group" role="group">
-                                    <button class="btn btn-sm btn-success me-1" onclick="openHoldingAction('{{ holding.displaySymbol or holding.symbol }}', 'sell', {{ ltp }}, {{ holding.quantity }})">
-                                        <i class="fas fa-minus me-1"></i>Sell
-                                    </button>
-                                    <button class="btn btn-sm btn-primary" onclick="openHoldingAction('{{ holding.displaySymbol or holding.symbol }}', 'buy', {{ ltp }}, 0)">
-                                        <i class="fas fa-plus me-1"></i>Buy
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td class="border-0 py-2">
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-success btn-sm px-2" onclick="buyHolding('{{ holding.displaySymbol or holding.symbol }}')">
+                                    Buy
+                                </button>
+                                <button class="btn btn-danger btn-sm px-2" onclick="sellHolding('{{ holding.displaySymbol or holding.symbol }}', '{{ holding.sellableQuantity or holding.quantity or 0 }}')">
+                                    Sell
+                                </button>
+                                <button class="btn btn-outline-light btn-sm px-2" onclick="getQuote('{{ holding.instrumentToken }}', '{{ holding.exchangeSegment }}')">
+                                    Quote
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
                 </table>
             </div>
         </div>
     </div>
-
-    {% else %}
-    <div class="card bg-secondary">
-        <div class="card-body text-center py-4">
-            <h5 class="text-muted">No Holdings Found</h5>
-            <p class="text-muted">You don't have any holdings in your portfolio.</p>
-            <a href="{{ url_for('show_dashboard') }}" class="btn btn-primary">Start Investing</a>
-        </div>
-    </div>
-    {% endif %}
-</div>
 
 <script>
 // Global variables for sorting and filtering
@@ -566,18 +562,222 @@ function updateVisibleCount() {
     document.getElementById('visibleHoldingsCount').textContent = `${visibleRows.length} holdings`;
 }
 
-function openHoldingAction(symbol, action, price, maxQty) {
-    // Implementation for trading modal would go here
-    console.log(`${action} ${symbol} at ${price}, max qty: ${maxQty}`);
-}
+{% else %}
+<div class="card bg-secondary">
+    <div class="card-body text-center py-4">
+        <h5 class="text-muted">No Holdings Found</h5>
+        <p class="text-muted">You don't have any holdings in your portfolio.</p>
+        <a href="{{ url_for('show_dashboard') }}" class="btn btn-primary">Start Investing</a>
+    </div>
+</div>
+{% endif %}
 
-function refreshHoldings() {
-    if (typeof loadHoldingsData === 'function') {
-        showLoadingSkeleton();
-        loadHoldingsData();
-    } else {
-        location.reload();
-    }
-}
 </script>
+
+<!-- Advanced Holdings Trade Modal -->
+<div class="modal fade" id="holdingActionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header bg-primary border-0">
+                <h5 class="modal-title text-white fw-bold" id="holdingActionTitle">
+                    <i class="fas fa-chart-line me-2"></i>Buy Holdings
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-dark p-4">
+                <form id="advancedHoldingForm">
+                    <!-- Symbol -->
+                    <div class="mb-3">
+                        <label class="form-label text-light fw-semibold">Symbol</label>
+                        <input type="text" class="form-control bg-secondary text-light border-0 py-2" 
+                               id="actionSymbol" readonly style="font-size: 1rem;">
+                    </div>
+
+                    <!-- Transaction Type -->
+                    <div class="mb-3">
+                        <label class="form-label text-light fw-semibold">Transaction Type</label>
+                        <input type="text" class="form-control bg-secondary text-light border-0 py-2" 
+                               id="actionType" readonly style="font-size: 1rem;">
+                    </div>
+
+                    <!-- Order Type and Product -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-semibold">Order Type</label>
+                            <select class="form-select bg-secondary text-light border-0 py-2" 
+                                    id="orderType" onchange="toggleHoldingPriceFields()" style="font-size: 1rem;">
+                                <option value="MKT">Market</option>
+                                <option value="L">Limit</option>
+                                <option value="SL">Stop Loss</option>
+                                <option value="SL-M">Stop Loss Market</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-semibold">Product</label>
+                            <select class="form-select bg-secondary text-light border-0 py-2" 
+                                    id="productType" style="font-size: 1rem;">
+                                <option value="CNC">CNC (Cash & Carry)</option>
+                                <option value="MIS">MIS (Intraday)</option>
+                                <option value="NRML">NRML (Normal)</option>
+                                <option value="CO">CO (Cover Order)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Price and Quantity -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-semibold">Price</label>
+                            <input type="number" class="form-control bg-secondary text-light border-0 py-2" 
+                                   id="actionPrice" step="0.01" style="font-size: 1rem;">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-semibold">Quantity</label>
+                            <input type="number" class="form-control bg-secondary text-light border-0 py-2" 
+                                   id="actionQuantity" min="1" value="1" style="font-size: 1rem;">
+                            <small class="text-muted" id="maxQuantityText"></small>
+                        </div>
+                    </div>
+
+                    <!-- Validity and Trigger Price -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-semibold">Validity</label>
+                            <select class="form-select bg-secondary text-light border-0 py-2" 
+                                    id="validityType" style="font-size: 1rem;">
+                                <option value="DAY">DAY</option>
+                                <option value="IOC">IOC (Immediate or Cancel)</option>
+                                <option value="GTC">GTC (Good Till Cancel)</option>
+                                <option value="EOS">EOS (End of Session)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-semibold">Trigger Price</label>
+                            <input type="number" class="form-control bg-secondary text-light border-0 py-2" 
+                                   id="triggerPrice" step="0.01" value="0" style="font-size: 1rem;" disabled>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-dark border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitAdvancedHoldingAction()">
+                    Place Order
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% else %}
+<div class="card bg-secondary">
+    <div class="card-body text-center py-4">
+        <h5 class="text-muted">No Holdings Found</h5>
+        <p class="text-muted">You don't have any holdings in your portfolio.</p>
+        <a href="{{ url_for('show_dashboard') }}" class="btn btn-primary">Start Investing</a>
+    </div>
+</div>
+{% endif %}
+
+<!-- Advanced Holdings Trade Modal -->
+<div class="modal fade" id="holdingActionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header bg-primary border-0">
+                <h5 class="modal-title text-white fw-bold" id="holdingActionTitle">
+                    <i class="fas fa-chart-line me-2"></i>Buy Holdings
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-dark p-4">
+                <form id="advancedHoldingForm">
+                    <!-- Symbol -->
+                    <div class="mb-3">
+                        <label class="form-label text-light fw-semibold">Symbol</label>
+                        <input type="text" class="form-control bg-secondary text-light border-0 py-2" 
+                               id="actionSymbol" readonly style="font-size: 1rem;">
+                    </div>
+
+                    <!-- Transaction Type -->
+                    <div class="mb-3">
+                        <label class="form-label text-light fw-semibold">Transaction Type</label>
+                        <input type="text" class="form-control bg-secondary text-light border-0 py-2" 
+                               id="actionType" readonly style="font-size: 1rem;">
+                    </div>
+
+                    <!-- Order Type and Product -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-semibold">Order Type</label>
+                            <select class="form-select bg-secondary text-light border-0 py-2" 
+                                    id="orderType" onchange="toggleHoldingPriceFields()" style="font-size: 1rem;">
+                                <option value="MKT">Market</option>
+                                <option value="L">Limit</option>
+                                <option value="SL">Stop Loss</option>
+                                <option value="SL-M">Stop Loss Market</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-semibold">Product</label>
+                            <select class="form-select bg-secondary text-light border-0 py-2" 
+                                    id="productType" style="font-size: 1rem;">
+                                <option value="CNC">CNC (Cash & Carry)</option>
+                                <option value="MIS">MIS (Intraday)</option>
+                                <option value="NRML">NRML (Normal)</option>
+                                <option value="CO">CO (Cover Order)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Price and Quantity -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-semibold">Price</label>
+                            <input type="number" class="form-control bg-secondary text-light border-0 py-2" 
+                                   id="actionPrice" step="0.01" style="font-size: 1rem;">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-semibold">Quantity</label>
+                            <input type="number" class="form-control bg-secondary text-light border-0 py-2" 
+                                   id="actionQuantity" min="1" value="1" style="font-size: 1rem;">
+                            <small class="text-muted" id="maxQuantityText"></small>
+                        </div>
+                    </div>
+
+                    <!-- Validity and Trigger Price -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-semibold">Validity</label>
+                            <select class="form-select bg-secondary text-light border-0 py-2" 
+                                    id="validityType" style="font-size: 1rem;">
+                                <option value="DAY">DAY</option>
+                                <option value="IOC">IOC (Immediate or Cancel)</option>
+                                <option value="GTC">GTC (Good Till Cancel)</option>
+                                <option value="EOS">EOS (End of Session)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-semibold">Trigger Price</label>
+                            <input type="number" class="form-control bg-secondary text-light border-0 py-2" 
+                                   id="triggerPrice" step="0.01" value="0" style="font-size: 1rem;" disabled>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-dark border-0 pt-0">
+                <button type="button" class="btn btn-secondary px-4 py-2" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary px-4 py-2 fw-semibold" onclick="submitAdvancedHoldingAction()">
+                    <i class="fas fa-chart-line me-2"></i>Place Trade
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+<script src="{{url_for('static', filename='js/skeleton_animation.js')}}"></script>
+<script src="{{url_for('static', filename="js/holdings.js")}}"></script>
 {% endblock %}
