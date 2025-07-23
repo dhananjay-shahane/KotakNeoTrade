@@ -10,12 +10,16 @@ from datetime import datetime, timedelta
 from flask import session, request, jsonify
 from flask_login import current_user
 from kotak_models import KotakAccount, TradingSession, db
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv(dotenv_path='.env', override=True)
 
 class KotakAuthService:
     """Service for handling Kotak Neo authentication"""
     
     def __init__(self):
-        self.base_url = "https://gw-napi.kotaksecurities.com"
+        self.base_url = os.environ.get('KOTAK_NEO_BASE_URL', 'https://gw-napi.kotaksecurities.com')
         self.app_id = "kotakneo"
         
     def authenticate_user(self, mobile_number, ucc, mpin, totp_code):

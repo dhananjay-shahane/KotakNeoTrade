@@ -1,5 +1,9 @@
 import logging
 import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv(dotenv_path='.env', override=True)
 
 # Critical: Preload libraries before any pandas/numpy operations
 import ctypes
@@ -18,9 +22,9 @@ class NeoClient:
             from neo_api_client import NeoAPI
 
             client = NeoAPI(
-                consumer_key=os.environ.get('KOTAK_CONSUMER_KEY'),
-                consumer_secret=os.environ.get('KOTAK_CONSUMER_SECRET'),
-                environment='prod'
+                consumer_key=os.environ.get('KOTAK_NEO_CONSUMER_KEY'),
+                consumer_secret=os.environ.get('KOTAK_NEO_CONSUMER_SECRET'),
+                environment=os.environ.get('KOTAK_NEO_ENVIRONMENT', 'prod')
             )
 
             # Set tokens directly
@@ -42,13 +46,13 @@ class NeoClient:
         try:
             from neo_api_client import NeoAPI
 
-            # Get credentials from environment or defaults
-            consumer_key = os.environ.get('KOTAK_CONSUMER_KEY', '4OKP7bOfI5ozzCB1EI4a6DOIyJsa')
-            consumer_secret = os.environ.get('KOTAK_CONSUMER_SECRET', 'cnLm3ZSJVLCOPiwTk4xAJw5G8v0a')
+            # Get credentials from environment variables
+            consumer_key = os.environ.get('KOTAK_NEO_CONSUMER_KEY', '4OKP7bOfI5ozzCB1EI4a6DOIyJsa')
+            consumer_secret = os.environ.get('KOTAK_NEO_CONSUMER_SECRET', 'cnLm3ZSJVLCOPiwTk4xAJw5G8v0a')
             neo_fin_key = os.environ.get('KOTAK_NEO_FIN_KEY', 'neotradeapi')
 
-            # Get base URL - standard Kotak Neo production URL
-            base_url = "https://gw-napi.kotaksecurities.com/"
+            # Get base URL from environment
+            base_url = os.environ.get('KOTAK_NEO_BASE_URL', 'https://gw-napi.kotaksecurities.com/')
             self.logger.info(f"Base URL retrieved: {base_url}")
 
             # Initialize client exactly like in notebook
@@ -72,9 +76,9 @@ class NeoClient:
         try:
             from neo_api_client import NeoAPI
 
-            # Use credentials from environment
-            consumer_key = os.environ.get('KOTAK_CONSUMER_KEY', '4OKP7bOfI5ozzCB1EI4a6DOIyJsa')
-            consumer_secret = os.environ.get('KOTAK_CONSUMER_SECRET', 'cnLm3ZSJVLCOPiwTk4xAJw5G8v0a')
+            # Use credentials from environment variables
+            consumer_key = os.environ.get('KOTAK_NEO_CONSUMER_KEY', '4OKP7bOfI5ozzCB1EI4a6DOIyJsa')
+            consumer_secret = os.environ.get('KOTAK_NEO_CONSUMER_SECRET', 'cnLm3ZSJVLCOPiwTk4xAJw5G8v0a')
             neo_fin_key = os.environ.get('KOTAK_NEO_FIN_KEY', 'neotradeapi')
 
             client = NeoAPI(

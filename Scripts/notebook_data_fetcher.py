@@ -1,11 +1,16 @@
 """
 Notebook Data Fetcher - Extract real-time trading data from Jupyter notebook style sources
 """
+import os
 import pandas as pd
 import json
 import requests
 from datetime import datetime
 import logging
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv(dotenv_path='.env', override=True)
 try:
     from neo_api_client import NeoAPI
     try:
@@ -23,13 +28,13 @@ class NotebookDataFetcher:
     def __init__(self):
         self.client = None
         self.config = {
-            'MOBILE_NUMBER': "+919372209322",
-            'UCC': "ZHZ3J", 
-            'CONSUMER_KEY': "4OKP7bOfI5ozzCB1EI4a6DOIyJsa",
-            'CONSUMER_SECRET': "cnLm3ZSJVLCOPiwTk4xAJw5G8v0a",
-            'NEO_FIN_KEY': "neotradeapi",
-            'MPIN': "484848",
-            'ENVIRONMENT': "prod"
+            'MOBILE_NUMBER': os.environ.get('KOTAK_NEO_MOBILE_NUMBER', "+919372209322"),
+            'UCC': os.environ.get('KOTAK_NEO_UCC', "ZHZ3J"), 
+            'CONSUMER_KEY': os.environ.get('KOTAK_NEO_CONSUMER_KEY', "4OKP7bOfI5ozzCB1EI4a6DOIyJsa"),
+            'CONSUMER_SECRET': os.environ.get('KOTAK_NEO_CONSUMER_SECRET', "cnLm3ZSJVLCOPiwTk4xAJw5G8v0a"),
+            'NEO_FIN_KEY': os.environ.get('KOTAK_NEO_FIN_KEY', "neotradeapi"),
+            'MPIN': os.environ.get('KOTAK_NEO_MPIN', "484848"),
+            'ENVIRONMENT': os.environ.get('KOTAK_NEO_ENVIRONMENT', "prod")
         }
         self.session_data = {}
         
@@ -45,9 +50,9 @@ class NotebookDataFetcher:
                 try:
                     base_url = BaseUrl(ucc=self.config['UCC']).get_base_url()
                 except:
-                    base_url = "https://gw-napi.kotaksecurities.com/"
+                    base_url = os.environ.get('KOTAK_NEO_BASE_URL', 'https://gw-napi.kotaksecurities.com/')
             else:
-                base_url = "https://gw-napi.kotaksecurities.com/"
+                base_url = os.environ.get('KOTAK_NEO_BASE_URL', 'https://gw-napi.kotaksecurities.com/')
             
             logging.info(f"Base URL: {base_url}")
             
