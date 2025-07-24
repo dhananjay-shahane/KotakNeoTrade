@@ -201,24 +201,28 @@
 
 /* Hide/Show skeleton states */
 .skeleton-loading {
-    display: block !important;
+    visibility: visible;
     opacity: 1;
+    transition: opacity 0.3s ease;
 }
 
 .skeleton-hidden {
-    display: none !important;
+    visibility: hidden;
     opacity: 0;
+    position: absolute;
+    z-index: -1;
+    transition: opacity 0.3s ease;
 }
 
 .content-loading {
-    opacity: 0 !important;
-    display: none !important;
+    opacity: 0;
+    visibility: hidden;
     transition: opacity 0.3s ease;
 }
 
 .content-loaded {
-    opacity: 1 !important;
-    display: block !important;
+    opacity: 1;
+    visibility: visible;
     transition: opacity 0.3s ease;
 }
 

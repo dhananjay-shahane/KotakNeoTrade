@@ -76,7 +76,7 @@ DealsManager.prototype.init = function () {
     if (window.skeletonLoader) {
         window.skeletonLoader.showDealsSkeleton();
     }
-    
+
     this.updateTableHeaders();
     this.loadDeals();
     this.startAutoRefresh();
@@ -319,12 +319,12 @@ DealsManager.prototype.loadDeals = function () {
                         self.filteredDeals = self.deals.slice();
                         self.renderDealsTable();
                         self.updatePagination();
-                        
+
                         // Hide skeleton and show content
                         if (window.skeletonLoader) {
                             window.skeletonLoader.hideDealsSkeleton();
                         }
-                        
+
                         console.log("Successfully loaded " + uniqueDeals.length + " deals from user_deals table");
                     } else {
                         console.log("No deals found in database");
@@ -333,7 +333,7 @@ DealsManager.prototype.loadDeals = function () {
                         self.renderDealsTable();
                         self.updatePagination();
                         self.showEmptyStateMessage();
-                        
+
                         // Hide skeleton and show content even when empty
                         if (window.skeletonLoader) {
                             window.skeletonLoader.hideDealsSkeleton();
@@ -1622,8 +1622,7 @@ function updateDealsCMP() {
                         sourceName +
                         ": " +
                         data.error,
-                    "error",
-                );
+                    );
             }
         })
         .catch((error) => {
@@ -1684,6 +1683,31 @@ function forceCMPUpdate() {
 
 // Initialize Deals Manager on page load
 document.addEventListener("DOMContentLoaded", function () {
+    // Show skeleton loading initially
+    if (window.skeletonLoader) {
+        window.skeletonLoader.showLoadingForAPI('deals');
+    }
+
+    // Initialize deals with faster loading
+    setTimeout(() => {
+        initializeDeals();
+
+        // Hide skeleton after initialization
+        if (window.skeletonLoader) {
+            window.skeletonLoader.hideLoadingForAPI('deals');
+        }
+    }, 100);
+});
+
+// Clean up interval when page unloads
+window.addEventListener("beforeunload", function () {
+    if (window.dealsManager && window.dealsManager.refreshInterval) {
+        clearInterval(window.dealsManager.refreshInterval);
+        window.dealsManager.refreshInterval = null;
+    }
+});
+
+function initializeDeals() {
     console.log("Initializing Deals Manager...");
     window.dealsManager = new DealsManager();
 
@@ -1701,8 +1725,6 @@ document.addEventListener("DOMContentLoaded", function () {
     // Ensure Google Finance is selected by default
     switchDataSource("google");
     updateCurrentDataSourceIndicator();
-
-
 
     var savedInterval = localStorage.getItem("dealsRefreshInterval");
     var savedDisplay = localStorage.getItem("dealsRefreshIntervalDisplay");
@@ -1794,12 +1816,4 @@ document.addEventListener("DOMContentLoaded", function () {
             menu.style.zIndex = "";
         }
     });
-});
-
-// Clean up interval when page unloads
-window.addEventListener("beforeunload", function () {
-    if (window.dealsManager && window.dealsManager.refreshInterval) {
-        clearInterval(window.dealsManager.refreshInterval);
-        window.dealsManager.refreshInterval = null;
-    }
-});
+}
