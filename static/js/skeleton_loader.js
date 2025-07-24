@@ -44,11 +44,14 @@ class SkeletonLoader {
             if (skeletonElement) {
                 skeletonElement.classList.remove('skeleton-loading');
                 skeletonElement.classList.add('skeleton-hidden');
+                skeletonElement.style.display = 'none';
             }
             
             if (contentElement) {
                 contentElement.classList.remove('content-loading');
                 contentElement.classList.add('content-loaded');
+                contentElement.style.opacity = '1';
+                contentElement.style.display = 'block';
             }
             
             this.isLoading = false;

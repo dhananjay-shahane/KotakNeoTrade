@@ -202,19 +202,23 @@
 /* Hide/Show skeleton states */
 .skeleton-loading {
     display: block !important;
+    opacity: 1;
 }
 
 .skeleton-hidden {
     display: none !important;
+    opacity: 0;
 }
 
 .content-loading {
-    opacity: 0;
+    opacity: 0 !important;
+    display: none !important;
     transition: opacity 0.3s ease;
 }
 
 .content-loaded {
-    opacity: 1;
+    opacity: 1 !important;
+    display: block !important;
     transition: opacity 0.3s ease;
 }
 

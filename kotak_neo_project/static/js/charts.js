@@ -555,10 +555,22 @@ document.addEventListener('DOMContentLoaded', function() {
     loadLightweightCharts()
         .then(function() {
             advancedChart = new AdvancedTradingChart();
+            
+            // Hide skeleton and show content
+            if (window.skeletonLoader) {
+                window.skeletonLoader.hideChartsSkeleton();
+            }
+            
             console.log('Advanced Trading Chart initialized successfully');
         })
         .catch(function(error) {
             console.error('Failed to initialize Advanced Trading Chart:', error);
+            
+            // Hide skeleton even on error
+            if (window.skeletonLoader) {
+                window.skeletonLoader.hideChartsSkeleton();
+            }
+            
             // Show error message to user
             var chartGrid = document.getElementById('chartGrid');
             if (chartGrid) {

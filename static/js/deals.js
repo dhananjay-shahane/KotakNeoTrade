@@ -319,6 +319,12 @@ DealsManager.prototype.loadDeals = function () {
                         self.filteredDeals = self.deals.slice();
                         self.renderDealsTable();
                         self.updatePagination();
+                        
+                        // Hide skeleton and show content
+                        if (window.skeletonLoader) {
+                            window.skeletonLoader.hideDealsSkeleton();
+                        }
+                        
                         console.log("Successfully loaded " + uniqueDeals.length + " deals from user_deals table");
                     } else {
                         console.log("No deals found in database");
@@ -327,6 +333,11 @@ DealsManager.prototype.loadDeals = function () {
                         self.renderDealsTable();
                         self.updatePagination();
                         self.showEmptyStateMessage();
+                        
+                        // Hide skeleton and show content even when empty
+                        if (window.skeletonLoader) {
+                            window.skeletonLoader.hideDealsSkeleton();
+                        }
                     }
                 } catch (parseError) {
                     console.error("Failed to parse deals API response:", parseError);
