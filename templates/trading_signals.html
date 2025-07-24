@@ -40,8 +40,10 @@ endblock %} {% block extra_css %}
         </div>
     </div>
 
-    <!-- Trading Signals Skeleton Loading -->
-    <div id="signalsSkeleton" class="skeleton-loading">
+    <!-- Content Container with relative positioning -->
+    <div style="position: relative; min-height: 500px;">
+        <!-- Trading Signals Skeleton Loading -->
+        <div id="signalsSkeleton" class="skeleton-loading">
         <!-- Filter Controls Skeleton -->
         <div class="row mb-3">
             <div class="col-12 d-flex gap-2 flex-wrap">
@@ -455,6 +457,7 @@ endblock %} {% block extra_css %}
                 </div>
             </div>
         </div>
+    </div>
     </div>
 </div>
 {% endblock %} {% block scripts %}

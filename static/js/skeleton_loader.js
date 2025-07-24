@@ -17,11 +17,16 @@ class SkeletonLoader {
         const skeletonElement = document.getElementById(skeletonId);
         const contentElement = document.getElementById(contentId);
         
+        // Ensure parent container has relative positioning for absolute children
+        const parentContainer = skeletonElement?.parentElement;
+        if (parentContainer) {
+            parentContainer.style.position = 'relative';
+            parentContainer.style.minHeight = '400px';
+        }
+        
         if (skeletonElement) {
             skeletonElement.classList.remove('skeleton-hidden');
             skeletonElement.classList.add('skeleton-loading');
-            skeletonElement.style.position = 'relative';
-            skeletonElement.style.zIndex = '1';
         }
         
         if (contentElement) {
