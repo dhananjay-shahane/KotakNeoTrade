@@ -51,6 +51,15 @@ class SkeletonLoader {
             contentElement.classList.add('content-loading');
         }
         
+        // Handle portfolio welcome section separately
+        if (pageType === 'portfolio') {
+            const welcomeSection = document.getElementById('portfolioWelcomeSection');
+            if (welcomeSection) {
+                welcomeSection.classList.remove('content-loaded');
+                welcomeSection.classList.add('content-loading');
+            }
+        }
+        
         this.isLoading = true;
         console.log(`🔄 Skeleton loading started for ${pageType}`);
     }
@@ -73,6 +82,15 @@ class SkeletonLoader {
             if (contentElement) {
                 contentElement.classList.remove('content-loading');
                 contentElement.classList.add('content-loaded');
+            }
+            
+            // Handle portfolio welcome section separately
+            if (pageType === 'portfolio') {
+                const welcomeSection = document.getElementById('portfolioWelcomeSection');
+                if (welcomeSection) {
+                    welcomeSection.classList.remove('content-loading');
+                    welcomeSection.classList.add('content-loaded');
+                }
             }
             
             this.isLoading = false;
