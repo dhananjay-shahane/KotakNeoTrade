@@ -4,7 +4,10 @@ endblock %} {% block head %}
     href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css"
     rel="stylesheet"
 />
-<link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton_animation.css') }}"/>
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/skeleton_animation.css') }}"
+/>
 <style>
     .portfolio-card {
         background: var(--card-bg);
@@ -223,7 +226,10 @@ endblock %} {% block head %}
     </div>
 
     <!-- Trading Signals Summary Cards -->
-    <div class="row portfolio-summary-cards mb-4 content-loading" id="portfolioContent">
+    <div
+        class="row portfolio-summary-cards mb-4 content-loading"
+        id="portfolioContent"
+    >
         <div class="col-md-3 mb-3">
             <div class="card border-0 h-100">
                 <div class="card-body text-center">
