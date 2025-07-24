@@ -187,49 +187,60 @@ endblock %} {% block head %}
         </div>
     </div>
 
-    <!-- Portfolio Skeleton Loading -->
-    <div id="portfolioSkeleton" class="skeleton-loading">
-        <!-- Summary Cards Skeleton -->
-        <div class="row mb-4">
-            <div class="col-md-3 mb-3">
-                <div class="skeleton skeleton-summary-card"></div>
+    <!-- Content Container with relative positioning -->
+    <div style="position: relative; min-height: 600px;">
+        <!-- Portfolio Skeleton Loading -->
+        <div id="portfolioSkeleton" class="skeleton-loading">
+            <!-- Summary Cards Skeleton -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="skeleton skeleton-summary-card"></div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="skeleton skeleton-summary-card"></div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="skeleton skeleton-summary-card"></div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="skeleton skeleton-summary-card"></div>
+                </div>
             </div>
-            <div class="col-md-3 mb-3">
-                <div class="skeleton skeleton-summary-card"></div>
-            </div>
-            <div class="col-md-3 mb-3">
-                <div class="skeleton skeleton-summary-card"></div>
-            </div>
-            <div class="col-md-3 mb-3">
-                <div class="skeleton skeleton-summary-card"></div>
-            </div>
-        </div>
 
-        <!-- Chart Skeleton -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="skeleton skeleton-chart"></div>
+            <!-- Table Header Skeleton -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="skeleton skeleton-table-header"></div>
+                </div>
             </div>
-        </div>
 
-        <!-- Table Skeleton -->
-        <div class="row">
-            <div class="col-12">
-                <div class="skeleton skeleton-table-header"></div>
-                <div class="skeleton skeleton-table-row"></div>
-                <div class="skeleton skeleton-table-row"></div>
-                <div class="skeleton skeleton-table-row"></div>
-                <div class="skeleton skeleton-table-row"></div>
-                <div class="skeleton skeleton-table-row"></div>
+            <!-- Table Rows Skeleton -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="skeleton skeleton-table-row"></div>
+                    <div class="skeleton skeleton-table-row"></div>
+                    <div class="skeleton skeleton-table-row"></div>
+                    <div class="skeleton skeleton-table-row"></div>
+                    <div class="skeleton skeleton-table-row"></div>
+                </div>
+            </div>
+
+            <!-- Activity Card Skeleton -->
+            <div class="row mt-4">
+                <div class="col-md-8 mb-4">
+                    <div class="skeleton skeleton-portfolio-card"></div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="skeleton skeleton-portfolio-card"></div>
+                </div>
             </div>
         </div>
-    </div>
 
     <!-- Trading Signals Summary Cards -->
-    <div
-        class="row portfolio-summary-cards mb-4 content-loading"
-        id="portfolioContent"
-    >
+        <div
+            class="row portfolio-summary-cards mb-4 content-loading"
+            id="portfolioContent"
+        >
         <div class="col-md-3 mb-3">
             <div class="card border-0 h-100">
                 <div class="card-body text-center">
@@ -449,6 +460,7 @@ endblock %} {% block head %}
                 </div>
             </div>
         </div>
+    </div>
     </div>
 </div>
 {% endblock %} {% block scripts %}

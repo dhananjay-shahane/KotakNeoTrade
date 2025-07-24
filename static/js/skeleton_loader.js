@@ -33,6 +33,9 @@ class SkeletonLoader {
                 case 'signals':
                     parentContainer.style.minHeight = '500px';
                     break;
+                case 'portfolio':
+                    parentContainer.style.minHeight = '600px';
+                    break;
                 default:
                     parentContainer.style.minHeight = '400px';
             }
