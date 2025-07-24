@@ -418,6 +418,18 @@ body {
     padding: 0.5rem;
     border-radius: 0.25rem;
     transition: all 0.2s ease;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-close::before {
+    content: '\f00d';
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    font-size: 1rem;
 }
 
 .btn-close:hover {
@@ -425,6 +437,11 @@ body {
     background: rgba(220, 38, 38, 0.1);
     opacity: 1;
     transform: scale(1.1);
+}
+
+/* Override Bootstrap's btn-close-white class */
+.btn-close-white {
+    color: var(--danger-color) !important;
 }
 
 /* Form Controls */
@@ -883,6 +900,70 @@ body {
 :root[data-theme="light"] .btn-close:hover {
     color: #b91c1c;
     background: rgba(220, 38, 38, 0.1);
+}
+
+:root[data-theme="light"] .btn-close-white {
+    color: #dc2626 !important;
+}
+
+/* Fix modal text colors for light theme */
+:root[data-theme="light"] .modal-content .text-light {
+    color: #111827 !important;
+}
+
+:root[data-theme="light"] .modal-content .form-label {
+    color: #374151 !important;
+}
+
+:root[data-theme="light"] .modal-content .bg-secondary {
+    background: #f9fafb !important;
+}
+
+:root[data-theme="light"] .modal-content .bg-dark {
+    background: #ffffff !important;
+}
+
+:root[data-theme="light"] .modal-content .border-secondary {
+    border-color: #d1d5db !important;
+}
+
+/* Form controls in modals for light theme */
+:root[data-theme="light"] .modal-content .form-control,
+:root[data-theme="light"] .modal-content .form-select {
+    background: #ffffff !important;
+    border-color: #d1d5db !important;
+    color: #111827 !important;
+}
+
+:root[data-theme="light"] .modal-content .form-control.bg-secondary,
+:root[data-theme="light"] .modal-content .form-select.bg-secondary {
+    background: #ffffff !important;
+    color: #111827 !important;
+}
+
+:root[data-theme="light"] .modal-content .form-control.text-light,
+:root[data-theme="light"] .modal-content .form-select.text-light {
+    color: #111827 !important;
+}
+
+/* Card styling in modals for light theme */
+:root[data-theme="light"] .modal-content .card.bg-secondary {
+    background: #ffffff !important;
+    border-color: #d1d5db !important;
+}
+
+:root[data-theme="light"] .modal-content .card-header.bg-dark {
+    background: #f9fafb !important;
+    border-bottom-color: #d1d5db !important;
+}
+
+:root[data-theme="light"] .modal-content .card-header.bg-secondary {
+    background: #f9fafb !important;
+}
+
+/* Modal title and text for light theme */
+:root[data-theme="light"] .modal-content .modal-title {
+    color: #111827 !important;
 }
 
 /* Mobile Responsiveness */
