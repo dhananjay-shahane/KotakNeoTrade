@@ -66,12 +66,12 @@ ETFSignalsManager.prototype.init = function () {
     this.setupColumnSettings();
     this.updateTableHeaders(); // Update headers based on column settings
     this.createPaginationControls(); // Create pagination controls
-    
+
     // Show skeleton loading while data loads
     if (window.skeletonLoader) {
         window.skeletonLoader.showSignalsSkeleton();
     }
-    
+
     this.loadSignals(true);
     this.startAutoRefresh();
 };
@@ -162,7 +162,7 @@ ETFSignalsManager.prototype.loadSignals = function (resetData) {
                         self.filteredSignals = [];
                         self.renderSignalsTable();
                         self.updatePagination();
-                        
+
                         // Hide skeleton loading even on error
                         if (window.skeletonLoader) {
                             window.skeletonLoader.hideSignalsSkeleton();
@@ -185,12 +185,12 @@ ETFSignalsManager.prototype.loadSignals = function (resetData) {
                         self.updateDisplayedSignals();
                         self.renderSignalsTable();
                         self.updatePagination();
-                        
+
                         // Hide skeleton loading
                         if (window.skeletonLoader) {
                             window.skeletonLoader.hideSignalsSkeleton();
                         }
-                        
+
                         self.showSuccessMessage(
                             "Loaded " + self.signals.length + " signals",
                         );
@@ -772,9 +772,8 @@ function selectAllColumns() {
     if (window.etfSignalsManager) {
         // Update all columns to visible
         for (
-            var i = 0;
-            i < window.etfSignalsManager.availableColumns.length;
-            i++
+            var i =
+            0; i < window.etfSignalsManager.availableColumns.length; i++
         ) {
             window.etfSignalsManager.availableColumns[i].visible = true;
         }
@@ -811,9 +810,8 @@ function resetDefaultColumns() {
 
         // Update column visibility
         for (
-            var i = 0;
-            i < window.etfSignalsManager.availableColumns.length;
-            i++
+            var i =
+            0; i < window.etfSignalsManager.availableColumns.length; i++
         ) {
             var column = window.etfSignalsManager.availableColumns[i];
             column.visible = defaultVisible.indexOf(column.key) !== -1;
@@ -847,9 +845,8 @@ function applyColumnSettings() {
 
             // Find and update the column in availableColumns array
             for (
-                var j = 0;
-                j < window.etfSignalsManager.availableColumns.length;
-                j++
+                var j =
+                0; j < window.etfSignalsManager.availableColumns.length; j++
             ) {
                 if (
                     window.etfSignalsManager.availableColumns[j].key ===
@@ -1893,7 +1890,6 @@ function showSwalMessage(message, type) {
     }
 }
 
-ETFSignalsManager.prototype.update// Removing pagination and showing all data requires changes to updatePagination and related functions.
 ETFSignalsManager.prototype.updateCounts = function () {
     // Update total count display
     var totalElement = document.getElementById("totalCount");
@@ -2251,3 +2247,160 @@ ETFSignalsManager.prototype.saveColumnSettings = function () {
     }
     localStorage.setItem("etfSignalsColumnSettings", JSON.stringify(settings));
 };
+
+// Initialize when DOM is ready
+$(document).ready(function() {
+    console.log('ETF Signals page loaded');
+
+    // Initialize data fetching
+    initializeETFSignals();
+});
+
+// Initialize ETF Signals with skeleton loader
+function initializeETFSignals() {
+    // Show skeleton initially
+    if (window.skeletonLoader) {
+        window.skeletonLoader.showSignalsSkeleton();
+    }
+
+    // Fetch signals data
+    fetchETFSignalsData();
+}
+
+// Fetch ETF signals data
+function fetchETFSignalsData() {
+    $.ajax({
+        url: '/api/etf-signals-data',
+        method: 'GET',
+        success: function(response) {
+            try {
+                // Process signals data
+                if (response.signals && response.signals.length > 0) {
+                    console.log('Loaded', response.signals.length, 'trading signals');
+                    // Process and display signals here
+                    renderSignalsTable(response.signals);
+                } else {
+                    console.log('No trading signals found');
+                    showNoSignalsMessage();
+                }
+
+                // Hide skeleton and show content
+                if (window.skeletonLoader) {
+                    window.skeletonLoader.hideSignalsSkeleton();
+                }
+
+            } catch (error) {
+                console.error('Error processing signals data:', error);
+                handleSignalsError();
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Failed to fetch signals data:', error);
+            handleSignalsError();
+        }
+    });
+}
+
+// Render signals table
+function renderSignalsTable(signals) {
+    var tableBody = $('#signalsTableBody');
+    tableBody.empty();
+
+    if (signals.length === 0) {
+        showNoSignalsMessage();
+        return;
+    }
+
+    signals.forEach(function(signal) {
+        var row = createSignalRow(signal);
+        tableBody.append(row);
+    });
+
+    updateSignalsCount(signals.length);
+}
+
+// Create signal row
+function createSignalRow(signal) {
+    return `
+        <tr>
+            <td>${signal.trade_signal_id || '--'}</td>
+            <td><strong>${signal.symbol || '--'}</strong></td>
+            <td>${signal.seven || '--'}</td>
+            <td class="${signal.ch >= 0 ? 'text-success' : 'text-danger'}">${signal.ch || '--'}%</td>
+            <td>${signal.thirty || '--'}</td>
+            <td class="${signal.dh >= 0 ? 'text-success' : 'text-danger'}">${signal.dh || '--'}%</td>
+            <td>${signal.date || '--'}</td>
+            <td>${signal.qty || '--'}</td>
+            <td>₹${signal.ep || '--'}</td>
+            <td>₹${signal.cmp || '--'}</td>
+            <td class="${signal.changePct >= 0 ? 'text-success' : 'text-danger'}">${signal.changePct || '--'}%</td>
+            <td>₹${signal.inv || '--'}</td>
+            <td>₹${signal.tp || '--'}</td>
+            <td>${signal.tpr || '--'}%</td>
+            <td>₹${signal.tva || '--'}</td>
+            <td class="${signal.cpl >= 0 ? 'text-success' : 'text-danger'}">₹${signal.cpl || '--'}</td>
+            <td>${signal.ed || '--'}</td>
+            <td>${signal.exp || '--'}</td>
+            <td>${signal.pr || '--'}</td>
+            <td>${signal.pp || '--'}</td>
+            <td>${signal.iv || '--'}</td>
+            <td>${signal.ip || '--'}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" title="View Details">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </td>
+        </tr>
+    `;
+}
+
+// Show no signals message
+function showNoSignalsMessage() {
+    var tableBody = $('#signalsTableBody');
+    tableBody.html(`
+        <tr>
+            <td colspan="23" class="text-center text-muted py-4">
+                <i class="fas fa-chart-line fa-2x mb-2"></i>
+                <p>No trading signals available</p>
+            </td>
+        </tr>
+    `);
+    updateSignalsCount(0);
+}
+
+// Handle signals error
+function handleSignalsError() {
+    // Hide skeleton on error
+    if (window.skeletonLoader) {
+        window.skeletonLoader.hideSignalsSkeleton();
+    }
+
+    var tableBody = $('#signalsTableBody');
+    tableBody.html(`
+        <tr>
+            <td colspan="23" class="text-center text-danger py-4">
+                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                <p>Error loading trading signals</p>
+                <button class="btn btn-sm btn-outline-light" onclick="fetchETFSignalsData()">
+                    <i class="fas fa-redo me-1"></i>Retry
+                </button>
+            </td>
+        </tr>
+    `);
+}
+
+// Update signals count
+function updateSignalsCount(count) {
+    $('#visibleSignalsCount').text(count);
+    $('#totalCount').text(count);
+    $('#showingCount').text(count);
+}
+
+// Refresh signals
+function refreshSignals() {
+    console.log('Refreshing trading signals...');
+    if (window.skeletonLoader) {
+        window.skeletonLoader.showSignalsSkeleton();
+    }
+    fetchETFSignalsData();
+}
