@@ -140,55 +140,8 @@ endblock %} {% block head %}
 {% endblock %} {% block content %}
 <div class="container-fluid">
     <!-- Welcome Section - Hidden during skeleton loading -->
-    <div class="row mb-4 content-loading" id="portfolioWelcomeSection">
-        <div class="col-12">
-            <div class="card welcome-header">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <div class="d-flex align-items-center">
-                                <div class="user-avatar-large me-3">
-                                    <i
-                                        class="fas fa-chart-line fa-3x text-white"
-                                    ></i>
-                                </div>
-                                <div>
-                                    <h3 class="text-white mb-1">Portfolio</h3>
-                                    <p class="text-white-50 mb-0">
-                                        <i class="fas fa-clock me-1"></i>
-                                        Last updated:
-                                        <span id="lastUpdateTime"
-                                            >Just now</span
-                                        >
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 text-end">
-                            <div class="d-flex gap-2 justify-content-end">
-                                <a
-                                    href="/trading-signals"
-                                    class="btn btn-outline-light"
-                                >
-                                    <i class="fas fa-signal me-1"></i>All
-                                    Signals
-                                </a>
-                                <button
-                                    class="btn btn-outline-light"
-                                    onclick="refreshSignals()"
-                                >
-                                    <i class="fas fa-sync me-1"></i>Refresh
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Content Container with relative positioning -->
-    <div style="position: relative; min-height: 600px;">
+    <div style="position: relative; min-height: 600px">
         <!-- Portfolio Skeleton Loading -->
         <div id="portfolioSkeleton" class="skeleton-loading">
             <!-- Welcome Header Skeleton -->
@@ -199,15 +152,23 @@ endblock %} {% block head %}
                             <div class="row align-items-center">
                                 <div class="col-md-8">
                                     <div class="d-flex align-items-center">
-                                        <div class="skeleton-welcome-avatar me-3"></div>
+                                        <div
+                                            class="skeleton-welcome-avatar me-3"
+                                        ></div>
                                         <div>
-                                            <div class="skeleton-welcome-title"></div>
-                                            <div class="skeleton-welcome-subtitle"></div>
+                                            <div
+                                                class="skeleton-welcome-title"
+                                            ></div>
+                                            <div
+                                                class="skeleton-welcome-subtitle"
+                                            ></div>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-4 text-end">
-                                    <div class="d-flex gap-2 justify-content-end">
+                                    <div
+                                        class="d-flex gap-2 justify-content-end"
+                                    >
                                         <div class="skeleton-welcome-btn"></div>
                                         <div class="skeleton-welcome-btn"></div>
                                     </div>
@@ -263,161 +224,241 @@ endblock %} {% block head %}
             </div>
         </div>
 
-    <!-- Trading Signals Summary Cards -->
-        <div
-            class="row portfolio-summary-cards mb-4 content-loading"
-            id="portfolioContent"
-        >
-        <div class="col-md-3 mb-3">
-            <div class="card border-0 h-100">
-                <div class="card-body text-center">
-                    <div class="stats-icon bg-primary text-white mx-auto mb-3">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                    <h5 class="card-title">Total Signals</h5>
-                    <div class="metric-value text-primary" id="totalSignals">
-                        0
-                    </div>
-                    <div class="metric-label">
-                        <span class="text-success" id="activeSignals"
-                            >0 Active</span
-                        >
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3 mb-3">
-            <div class="card border-0 h-100">
-                <div class="card-body text-center">
-                    <div class="stats-icon bg-success text-white mx-auto mb-3">
-                        <i class="fas fa-arrow-up"></i>
-                    </div>
-                    <h5 class="card-title">Total P&L</h5>
-                    <div class="metric-value text-success" id="totalPnl">
-                        ₹0.00
-                    </div>
-                    <div class="metric-label">
-                        <span class="change-positive" id="totalPnlPercent"
-                            >+0.00%</span
-                        >
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3 mb-3">
-            <div class="card border-0 h-100">
-                <div class="card-body text-center">
-                    <div class="stats-icon bg-warning text-dark mx-auto mb-3">
-                        <i class="fas fa-coins"></i>
-                    </div>
-                    <h5 class="card-title">Total Investment</h5>
-                    <div class="metric-value text-warning" id="totalInvestment">
-                        ₹0.00
-                    </div>
-                    <div class="metric-label">Invested amount</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3 mb-3">
-            <div class="card border-0 h-100">
-                <div class="card-body text-center">
-                    <div class="stats-icon bg-info text-white mx-auto mb-3">
-                        <i class="fas fa-trophy"></i>
-                    </div>
-                    <h5 class="card-title">Win Rate</h5>
-                    <div class="metric-value text-info" id="winRate">0%</div>
-                    <div class="metric-label">Success ratio</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Active Trading Signals Table -->
-    <div class="row">
-        <div class="col-12 mb-4">
-            <div class="card">
-                <div
-                    class="card-header d-flex justify-content-between align-items-center"
-                >
-                    <h5 class="mb-0">
-                        <i class="fas fa-signal me-2"></i>Active Trading Signals
-                    </h5>
-                    <div class="d-flex gap-2">
-                        <button
-                            class="btn btn-sm btn-outline-primary"
-                            onclick="filterSignals('ALL')"
-                        >
-                            <i class="fas fa-list me-1"></i>All
-                        </button>
-                        <button
-                            class="btn btn-sm btn-outline-success"
-                            onclick="filterSignals('BUY')"
-                        >
-                            <i class="fas fa-arrow-up me-1"></i>Buy
-                        </button>
-                        <button
-                            class="btn btn-sm btn-outline-danger"
-                            onclick="filterSignals('SELL')"
-                        >
-                            <i class="fas fa-arrow-down me-1"></i>Sell
-                        </button>
-                        <button
-                            class="btn btn-sm btn-outline-primary"
-                            onclick="loadSignals()"
-                        >
-                            <i class="fas fa-sync me-1"></i>Refresh
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive signals-table">
-                        <table class="table table-dark mb-0" id="signalsTable">
-                            <thead>
-                                <tr>
-                                    <th>Symbol</th>
-                                    <th>Signal Type</th>
-                                    <th>Entry Price</th>
-                                    <th>Current Price</th>
-                                    <th>Quantity</th>
-                                    <th>Investment</th>
-                                    <th>P&L</th>
-                                    <th>P&L %</th>
-                                    <th>Status</th>
-                                    <th>Date</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="signalsTableBody">
-                                <tr>
-                                    <td colspan="11" class="text-center py-4">
-                                        <div
-                                            class="spinner-border text-primary"
-                                            role="status"
-                                        >
-                                            <span class="visually-hidden"
-                                                >Loading...</span
-                                            >
+        <div id="portfolioContent">
+            <div class="row mb-4 content-loading" id="portfolioWelcomeSection">
+                <div class="col-12">
+                    <div class="card welcome-header">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <div class="d-flex align-items-center">
+                                        <div class="user-avatar-large me-3">
+                                            <i
+                                                class="fas fa-chart-line fa-3x text-white"
+                                            ></i>
                                         </div>
-                                        <p class="mt-2 mb-0 text-muted">
-                                            Loading trading signals...
-                                        </p>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                        <div>
+                                            <h3 class="text-white mb-1">
+                                                Portfolio
+                                            </h3>
+                                            <p class="text-white-50 mb-0">
+                                                <i
+                                                    class="fas fa-clock me-1"
+                                                ></i>
+                                                Last updated:
+                                                <span id="lastUpdateTime"
+                                                    >Just now</span
+                                                >
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <div
+                                        class="d-flex gap-2 justify-content-end"
+                                    >
+                                        <a
+                                            href="/trading-signals"
+                                            class="btn btn-outline-light"
+                                        >
+                                            <i class="fas fa-signal me-1"></i
+                                            >All Signals
+                                        </a>
+                                        <button
+                                            class="btn btn-outline-light"
+                                            onclick="refreshSignals()"
+                                        >
+                                            <i class="fas fa-sync me-1"></i
+                                            >Refresh
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
+            <!-- Trading Signals Summary Cards -->
+            <div class="row portfolio-summary-cards mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="card border-0 h-100">
+                        <div class="card-body text-center">
+                            <div
+                                class="stats-icon bg-primary text-white mx-auto mb-3"
+                            >
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <h5 class="card-title">Total Signals</h5>
+                            <div
+                                class="metric-value text-primary"
+                                id="totalSignals"
+                            >
+                                0
+                            </div>
+                            <div class="metric-label">
+                                <span class="text-success" id="activeSignals"
+                                    >0 Active</span
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-    <!-- Charts and Quick Actions Row -->
-    <div class="row mb-4">
-        <!-- Portfolio Performance Chart -->
-        <!-- <div class="col-md-8 mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="card border-0 h-100">
+                        <div class="card-body text-center">
+                            <div
+                                class="stats-icon bg-success text-white mx-auto mb-3"
+                            >
+                                <i class="fas fa-arrow-up"></i>
+                            </div>
+                            <h5 class="card-title">Total P&L</h5>
+                            <div
+                                class="metric-value text-success"
+                                id="totalPnl"
+                            >
+                                ₹0.00
+                            </div>
+                            <div class="metric-label">
+                                <span
+                                    class="change-positive"
+                                    id="totalPnlPercent"
+                                    >+0.00%</span
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <div class="card border-0 h-100">
+                        <div class="card-body text-center">
+                            <div
+                                class="stats-icon bg-warning text-dark mx-auto mb-3"
+                            >
+                                <i class="fas fa-coins"></i>
+                            </div>
+                            <h5 class="card-title">Total Investment</h5>
+                            <div
+                                class="metric-value text-warning"
+                                id="totalInvestment"
+                            >
+                                ₹0.00
+                            </div>
+                            <div class="metric-label">Invested amount</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <div class="card border-0 h-100">
+                        <div class="card-body text-center">
+                            <div
+                                class="stats-icon bg-info text-white mx-auto mb-3"
+                            >
+                                <i class="fas fa-trophy"></i>
+                            </div>
+                            <h5 class="card-title">Win Rate</h5>
+                            <div class="metric-value text-info" id="winRate">
+                                0%
+                            </div>
+                            <div class="metric-label">Success ratio</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Trading Signals Table -->
+            <div class="row">
+                <div class="col-12 mb-4">
+                    <div class="card">
+                        <div
+                            class="card-header d-flex justify-content-between align-items-center"
+                        >
+                            <h5 class="mb-0">
+                                <i class="fas fa-signal me-2"></i>Active Trading
+                                Signals
+                            </h5>
+                            <div class="d-flex gap-2">
+                                <button
+                                    class="btn btn-sm btn-outline-primary"
+                                    onclick="filterSignals('ALL')"
+                                >
+                                    <i class="fas fa-list me-1"></i>All
+                                </button>
+                                <button
+                                    class="btn btn-sm btn-outline-success"
+                                    onclick="filterSignals('BUY')"
+                                >
+                                    <i class="fas fa-arrow-up me-1"></i>Buy
+                                </button>
+                                <button
+                                    class="btn btn-sm btn-outline-danger"
+                                    onclick="filterSignals('SELL')"
+                                >
+                                    <i class="fas fa-arrow-down me-1"></i>Sell
+                                </button>
+                                <button
+                                    class="btn btn-sm btn-outline-primary"
+                                    onclick="loadSignals()"
+                                >
+                                    <i class="fas fa-sync me-1"></i>Refresh
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive signals-table">
+                                <table
+                                    class="table table-dark mb-0"
+                                    id="signalsTable"
+                                >
+                                    <thead>
+                                        <tr>
+                                            <th>Symbol</th>
+                                            <th>Signal Type</th>
+                                            <th>Entry Price</th>
+                                            <th>Current Price</th>
+                                            <th>Quantity</th>
+                                            <th>Investment</th>
+                                            <th>P&L</th>
+                                            <th>P&L %</th>
+                                            <th>Status</th>
+                                            <th>Date</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="signalsTableBody">
+                                        <tr>
+                                            <td
+                                                colspan="11"
+                                                class="text-center py-4"
+                                            >
+                                                <div
+                                                    class="spinner-border text-primary"
+                                                    role="status"
+                                                >
+                                                    <span
+                                                        class="visually-hidden"
+                                                        >Loading...</span
+                                                    >
+                                                </div>
+                                                <p class="mt-2 mb-0 text-muted">
+                                                    Loading trading signals...
+                                                </p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts and Quick Actions Row -->
+            <div class="row mb-4">
+                <!-- Portfolio Performance Chart -->
+                <!-- <div class="col-md-8 mb-4">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
@@ -438,56 +479,64 @@ endblock %} {% block head %}
             </div>
         </div> -->
 
-        <!-- Recent Signal Activity -->
-        <div class="col-md-8 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-history me-2"></i>Recent Signal
-                        Activity
-                    </h5>
+                <!-- Recent Signal Activity -->
+                <div class="col-md-8 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-history me-2"></i>Recent Signal
+                                Activity
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="recentActivity">
+                                <div class="text-center py-4">
+                                    <i
+                                        class="fas fa-clock fa-2x text-muted mb-3"
+                                    ></i>
+                                    <p class="text-muted mb-0">
+                                        Loading recent signal activity...
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div id="recentActivity">
-                        <div class="text-center py-4">
-                            <i class="fas fa-clock fa-2x text-muted mb-3"></i>
-                            <p class="text-muted mb-0">
-                                Loading recent signal activity...
-                            </p>
+
+                <!-- Quick Actions -->
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-bolt me-2"></i>Signal Actions
+                            </h5>
+                        </div>
+                        <div class="card-body quick-actions">
+                            <div class="d-grid gap-2">
+                                <a
+                                    href="/trading-signals"
+                                    class="btn btn-primary"
+                                >
+                                    <i class="fas fa-signal me-2"></i>View All
+                                    Signals
+                                </a>
+                                <a href="/deals" class="btn btn-success">
+                                    <i class="fas fa-handshake me-2"></i>Active
+                                    Deals
+                                </a>
+                                <button
+                                    class="btn btn-info"
+                                    onclick="loadActiveSignals()"
+                                >
+                                    <i class="fas fa-chart-pie me-2"></i>Active
+                                    Signals Only
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Quick Actions -->
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-bolt me-2"></i>Signal Actions
-                    </h5>
-                </div>
-                <div class="card-body quick-actions">
-                    <div class="d-grid gap-2">
-                        <a href="/trading-signals" class="btn btn-primary">
-                            <i class="fas fa-signal me-2"></i>View All Signals
-                        </a>
-                        <a href="/deals" class="btn btn-success">
-                            <i class="fas fa-handshake me-2"></i>Active Deals
-                        </a>
-                        <button
-                            class="btn btn-info"
-                            onclick="loadActiveSignals()"
-                        >
-                            <i class="fas fa-chart-pie me-2"></i>Active Signals
-                            Only
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
     </div>
 </div>
 {% endblock %} {% block scripts %}

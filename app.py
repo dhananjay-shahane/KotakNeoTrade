@@ -28,9 +28,6 @@ from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # Add current directory to Python path for module imports
-import sys
-import os
-
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Load environment variables from .env file

@@ -237,7 +237,9 @@ ETFSignalsManager.prototype.loadSignals = function (resetData) {
 };
 
 ETFSignalsManager.prototype.renderSignalsTable = function () {
-    var tbody = document.getElementById("signalsTableBody") || document.getElementById("etfSignalsTableBody");
+    var tbody =
+        document.getElementById("signalsTableBody") ||
+        document.getElementById("etfSignalsTableBody");
     if (!tbody) {
         console.error("Table body not found");
         return;
@@ -350,9 +352,7 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                 var bgColor = this.getGradientBackgroundColor(percentage);
                 cellStyle = bgColor;
                 cellValue =
-                    '<span class="fw-bold text-white">' +
-                    dhValue +
-                    "</span>";
+                    '<span class="fw-bold text-white">' + dhValue + "</span>";
                 break;
             case "date":
                 cellValue = signal.date || "--";
@@ -452,9 +452,7 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                 var bgColor = this.getGradientBackgroundColor(percentage);
                 cellStyle = bgColor;
                 cellValue =
-                    '<span class="fw-bold text-white">' +
-                    chValue +
-                    "</span>";
+                    '<span class="fw-bold text-white">' + chValue + "</span>";
                 break;
             case "actions":
                 var signalId = signal.trade_signal_id || signal.id || index;
@@ -772,8 +770,9 @@ function selectAllColumns() {
     if (window.etfSignalsManager) {
         // Update all columns to visible
         for (
-            var i =
-            0; i < window.etfSignalsManager.availableColumns.length; i++
+            var i = 0;
+            i < window.etfSignalsManager.availableColumns.length;
+            i++
         ) {
             window.etfSignalsManager.availableColumns[i].visible = true;
         }
@@ -810,8 +809,9 @@ function resetDefaultColumns() {
 
         // Update column visibility
         for (
-            var i =
-            0; i < window.etfSignalsManager.availableColumns.length; i++
+            var i = 0;
+            i < window.etfSignalsManager.availableColumns.length;
+            i++
         ) {
             var column = window.etfSignalsManager.availableColumns[i];
             column.visible = defaultVisible.indexOf(column.key) !== -1;
@@ -845,8 +845,9 @@ function applyColumnSettings() {
 
             // Find and update the column in availableColumns array
             for (
-                var j =
-                0; j < window.etfSignalsManager.availableColumns.length; j++
+                var j = 0;
+                j < window.etfSignalsManager.availableColumns.length;
+                j++
             ) {
                 if (
                     window.etfSignalsManager.availableColumns[j].key ===
@@ -933,7 +934,9 @@ ETFSignalsManager.prototype.updateDisplayedSignals = function () {
     var startIndex = (this.currentPage - 1) * this.itemsPerPage;
     var endIndex = startIndex + this.itemsPerPage;
     this.displayedSignals = this.filteredSignals.slice(startIndex, endIndex);
-    this.totalPages = Math.ceil(this.filteredSignals.length / this.itemsPerPage);
+    this.totalPages = Math.ceil(
+        this.filteredSignals.length / this.itemsPerPage,
+    );
 
     // Ensure we don't exceed available pages
     if (this.currentPage > this.totalPages && this.totalPages > 0) {
@@ -941,7 +944,10 @@ ETFSignalsManager.prototype.updateDisplayedSignals = function () {
         window.currentPage = this.currentPage;
         startIndex = (this.currentPage - 1) * this.itemsPerPage;
         endIndex = startIndex + this.itemsPerPage;
-        this.displayedSignals = this.filteredSignals.slice(startIndex, endIndex);
+        this.displayedSignals = this.filteredSignals.slice(
+            startIndex,
+            endIndex,
+        );
     }
 
     console.log("updateDisplayedSignals:", {
@@ -951,7 +957,7 @@ ETFSignalsManager.prototype.updateDisplayedSignals = function () {
         startIndex: startIndex,
         endIndex: endIndex,
         displayedCount: this.displayedSignals.length,
-        totalPages: this.totalPages
+        totalPages: this.totalPages,
     });
 };
 
@@ -988,8 +994,14 @@ ETFSignalsManager.prototype.updatePagination = function () {
     var visibleSignalsCount = document.getElementById("visibleSignalsCount");
 
     // Calculate the range being shown
-    var startItem = this.filteredSignals.length > 0 ? (this.currentPage - 1) * this.itemsPerPage + 1 : 0;
-    var endItem = Math.min(this.currentPage * this.itemsPerPage, this.filteredSignals.length);
+    var startItem =
+        this.filteredSignals.length > 0
+            ? (this.currentPage - 1) * this.itemsPerPage + 1
+            : 0;
+    var endItem = Math.min(
+        this.currentPage * this.itemsPerPage,
+        this.filteredSignals.length,
+    );
 
     if (showingCount) {
         showingCount.textContent = this.displayedSignals.length;
@@ -999,10 +1011,14 @@ ETFSignalsManager.prototype.updatePagination = function () {
     if (visibleSignalsCount) {
         // Update both visible signals count elements
         visibleSignalsCount.textContent = this.filteredSignals.length;
-        var otherVisibleCount = document.querySelectorAll('#visibleSignalsCount');
-        otherVisibleCount.forEach(function(el) {
-            el.textContent = this.filteredSignals.length;
-        }.bind(this));
+        var otherVisibleCount = document.querySelectorAll(
+            "#visibleSignalsCount",
+        );
+        otherVisibleCount.forEach(
+            function (el) {
+                el.textContent = this.filteredSignals.length;
+            }.bind(this),
+        );
     }
 
     // Update the items per page selector
@@ -1014,7 +1030,15 @@ ETFSignalsManager.prototype.updatePagination = function () {
     // Update pagination controls
     this.updatePaginationControls();
 
-    console.log("Pagination updated - showing", startItem, "to", endItem, "of", this.filteredSignals.length, "items");
+    console.log(
+        "Pagination updated - showing",
+        startItem,
+        "to",
+        endItem,
+        "of",
+        this.filteredSignals.length,
+        "items",
+    );
 };
 
 ETFSignalsManager.prototype.updatePaginationControls = function () {
@@ -1042,7 +1066,8 @@ ETFSignalsManager.prototype.updatePaginationControls = function () {
     }
 
     if (currentPageDisplay) {
-        currentPageDisplay.textContent = this.currentPage + " of " + this.totalPages;
+        currentPageDisplay.textContent =
+            this.currentPage + " of " + this.totalPages;
     }
 };
 
@@ -1069,14 +1094,14 @@ ETFSignalsManager.prototype.createPaginationControls = function () {
             '<option value="25">25</option>' +
             '<option value="50">50</option>' +
             '<option value="100">100</option>' +
-            '</select>' +
-            '</div>' +
+            "</select>" +
+            "</div>" +
             '<div id="paginationButtons" class="d-flex align-items-center">' +
-            '</div>' +
+            "</div>" +
             '<div class="text-muted small">' +
             'Showing <span id="startItem">1</span>-<span id="endItem">10</span> of <span id="totalItems">0</span> items' +
-            '</div>' +
-            '</div>';
+            "</div>" +
+            "</div>";
 
         cardFooter.insertAdjacentHTML("beforeend", paginationHTML);
     }
@@ -1098,19 +1123,25 @@ ETFSignalsManager.prototype.renderPaginationHTML = function () {
 
     // Update items display
     var startIndex = (this.currentPage - 1) * this.itemsPerPage + 1;
-    var endIndex = Math.min(this.currentPage * this.itemsPerPage, this.filteredSignals.length);
+    var endIndex = Math.min(
+        this.currentPage * this.itemsPerPage,
+        this.filteredSignals.length,
+    );
 
     if (startItem) startItem.textContent = startIndex;
     if (endItem) endItem.textContent = endIndex;
     if (totalItems) totalItems.textContent = this.filteredSignals.length;
 
     // Generate pagination buttons
-    var buttonsHTML = '';
+    var buttonsHTML = "";
 
     // Previous button
-    buttonsHTML += '<button class="btn btn-sm btn-outline-primary me-2" ' +
-        (this.currentPage === 1 ? 'disabled' : '') + 
-        ' onclick="goToPage(' + (this.currentPage - 1) + ')">' +
+    buttonsHTML +=
+        '<button class="btn btn-sm btn-outline-primary me-2" ' +
+        (this.currentPage === 1 ? "disabled" : "") +
+        ' onclick="goToPage(' +
+        (this.currentPage - 1) +
+        ')">' +
         '<i class="fas fa-chevron-left"></i></button>';
 
     // Page numbers
@@ -1118,35 +1149,47 @@ ETFSignalsManager.prototype.renderPaginationHTML = function () {
     var endPage = Math.min(this.totalPages, this.currentPage + 2);
 
     if (startPage > 1) {
-        buttonsHTML += '<button class="btn btn-sm btn-outline-primary me-1" onclick="goToPage(1)">1</button>';
+        buttonsHTML +=
+            '<button class="btn btn-sm btn-outline-primary me-1" onclick="goToPage(1)">1</button>';
         if (startPage > 2) {
             buttonsHTML += '<span class="me-1">...</span>';
         }
     }
 
     for (var i = startPage; i <= endPage; i++) {
-        buttonsHTML += '<button class="btn btn-sm ' + 
-            (i === this.currentPage ? 'btn-primary' : 'btn-outline-primary') + 
-            ' me-1" onclick="goToPage(' + i + ')">' + i + '</button>';
+        buttonsHTML +=
+            '<button class="btn btn-sm ' +
+            (i === this.currentPage ? "btn-primary" : "btn-outline-primary") +
+            ' me-1" onclick="goToPage(' +
+            i +
+            ')">' +
+            i +
+            "</button>";
     }
 
     if (endPage < this.totalPages) {
         if (endPage < this.totalPages - 1) {
             buttonsHTML += '<span class="me-1">...</span>';
         }
-        buttonsHTML += '<button class="btn btn-sm btn-outline-primary me-1" onclick="goToPage(' + this.totalPages + ')">' + this.totalPages + '</button>';
+        buttonsHTML +=
+            '<button class="btn btn-sm btn-outline-primary me-1" onclick="goToPage(' +
+            this.totalPages +
+            ')">' +
+            this.totalPages +
+            "</button>";
     }
 
     // Next button
-    buttonsHTML += '<button class="btn btn-sm btn-outline-primary ms-1" ' +
-        (this.currentPage === this.totalPages ? 'disabled' : '') + 
-        ' onclick="goToPage(' + (this.currentPage + 1) + ')">' +
+    buttonsHTML +=
+        '<button class="btn btn-sm btn-outline-primary ms-1" ' +
+        (this.currentPage === this.totalPages ? "disabled" : "") +
+        ' onclick="goToPage(' +
+        (this.currentPage + 1) +
+        ')">' +
         '<i class="fas fa-chevron-right"></i></button>';
 
     buttonsContainer.innerHTML = buttonsHTML;
 };
-
-
 
 ETFSignalsManager.prototype.showLoadingState = function () {
     var tbody = document.getElementById("signalsTableBody");
@@ -1633,7 +1676,8 @@ function sortSignalsByColumn(column) {
             }
         });
 
-        window.etfSignalsManager.displayedSignals = window.etfSignalsManager.filteredSignals.slice();
+        window.etfSignalsManager.displayedSignals =
+            window.etfSignalsManager.filteredSignals.slice();
         window.etfSignalsManager.renderSignalsTable();
         window.etfSignalsManager.updateCounts();
     }
@@ -1940,14 +1984,14 @@ ETFSignalsManager.prototype.createPaginationControls = function () {
             '<option value="25">25</option>' +
             '<option value="50">50</option>' +
             '<option value="100">100</option>' +
-            '</select>' +
-            '</div>' +
+            "</select>" +
+            "</div>" +
             '<div id="paginationButtons" class="d-flex align-items-center">' +
-            '</div>' +
+            "</div>" +
             '<div class="text-muted small">' +
             'Showing <span id="startItem">1</span>-<span id="endItem">20</span> of <span id="totalItems">0</span> items' +
-            '</div>' +
-            '</div>';
+            "</div>" +
+            "</div>";
 
         cardFooter.insertAdjacentHTML("beforeend", paginationHTML);
     }
@@ -1969,19 +2013,25 @@ ETFSignalsManager.prototype.renderPaginationHTML = function () {
 
     // Update items display
     var startIndex = (this.currentPage - 1) * this.itemsPerPage + 1;
-    var endIndex = Math.min(this.currentPage * this.itemsPerPage, this.filteredSignals.length);
+    var endIndex = Math.min(
+        this.currentPage * this.itemsPerPage,
+        this.filteredSignals.length,
+    );
 
     if (startItem) startItem.textContent = startIndex;
     if (endItem) endItem.textContent = endIndex;
     if (totalItems) totalItems.textContent = this.filteredSignals.length;
 
     // Generate pagination buttons
-    var buttonsHTML = '';
+    var buttonsHTML = "";
 
     // Previous button
-    buttonsHTML += '<button class="btn btn-sm btn-outline-light me-2" ' +
-        (this.currentPage === 1 ? 'disabled' : '') + 
-        ' onclick="goToPage(' + (this.currentPage - 1) + ')">' +
+    buttonsHTML +=
+        '<button class="btn btn-sm btn-outline-light me-2" ' +
+        (this.currentPage === 1 ? "disabled" : "") +
+        ' onclick="goToPage(' +
+        (this.currentPage - 1) +
+        ')">' +
         '<i class="fas fa-chevron-left"></i></button>';
 
     // Page numbers
@@ -1989,29 +2039,43 @@ ETFSignalsManager.prototype.renderPaginationHTML = function () {
     var endPage = Math.min(this.totalPages, this.currentPage + 2);
 
     if (startPage > 1) {
-        buttonsHTML += '<button class="btn btn-sm btn-outline-light me-1" onclick="goToPage(1)">1</button>';
+        buttonsHTML +=
+            '<button class="btn btn-sm btn-outline-light me-1" onclick="goToPage(1)">1</button>';
         if (startPage > 2) {
             buttonsHTML += '<span class="me-1 text-light">...</span>';
         }
     }
 
     for (var i = startPage; i <= endPage; i++) {
-        buttonsHTML += '<button class="btn btn-sm ' + 
-            (i === this.currentPage ? 'btn-primary' : 'btn-outline-light') + 
-            ' me-1" onclick="goToPage(' + i + ')">' + i + '</button>';
+        buttonsHTML +=
+            '<button class="btn btn-sm ' +
+            (i === this.currentPage ? "btn-primary" : "btn-outline-light") +
+            ' me-1" onclick="goToPage(' +
+            i +
+            ')">' +
+            i +
+            "</button>";
     }
 
     if (endPage < this.totalPages) {
         if (endPage < this.totalPages - 1) {
             buttonsHTML += '<span class="me-1 text-light">...</span>';
         }
-        buttonsHTML += '<button class="btn btn-sm btn-outline-light me-1" onclick="goToPage(' + this.totalPages + ')">' + this.totalPages + '</button>';
+        buttonsHTML +=
+            '<button class="btn btn-sm btn-outline-light me-1" onclick="goToPage(' +
+            this.totalPages +
+            ')">' +
+            this.totalPages +
+            "</button>";
     }
 
     // Next button
-    buttonsHTML += '<button class="btn btn-sm btn-outline-light ms-1" ' +
-        (this.currentPage === this.totalPages ? 'disabled' : '') + 
-        ' onclick="goToPage(' + (this.currentPage + 1) + ')">' +
+    buttonsHTML +=
+        '<button class="btn btn-sm btn-outline-light ms-1" ' +
+        (this.currentPage === this.totalPages ? "disabled" : "") +
+        ' onclick="goToPage(' +
+        (this.currentPage + 1) +
+        ')">' +
         '<i class="fas fa-chevron-right"></i></button>';
 
     buttonsContainer.innerHTML = buttonsHTML;
@@ -2021,7 +2085,9 @@ ETFSignalsManager.prototype.updateDisplayedSignals = function () {
     var startIndex = (this.currentPage - 1) * this.itemsPerPage;
     var endIndex = startIndex + this.itemsPerPage;
     this.displayedSignals = this.filteredSignals.slice(startIndex, endIndex);
-    this.totalPages = Math.ceil(this.filteredSignals.length / this.itemsPerPage);
+    this.totalPages = Math.ceil(
+        this.filteredSignals.length / this.itemsPerPage,
+    );
 
     // Ensure we don't exceed available pages
     if (this.currentPage > this.totalPages && this.totalPages > 0) {
@@ -2029,7 +2095,10 @@ ETFSignalsManager.prototype.updateDisplayedSignals = function () {
         window.currentPage = this.currentPage;
         startIndex = (this.currentPage - 1) * this.itemsPerPage;
         endIndex = startIndex + this.itemsPerPage;
-        this.displayedSignals = this.filteredSignals.slice(startIndex, endIndex);
+        this.displayedSignals = this.filteredSignals.slice(
+            startIndex,
+            endIndex,
+        );
     }
 
     console.log("updateDisplayedSignals:", {
@@ -2039,7 +2108,7 @@ ETFSignalsManager.prototype.updateDisplayedSignals = function () {
         startIndex: startIndex,
         endIndex: endIndex,
         displayedCount: this.displayedSignals.length,
-        totalPages: this.totalPages
+        totalPages: this.totalPages,
     });
 };
 
@@ -2249,8 +2318,8 @@ ETFSignalsManager.prototype.saveColumnSettings = function () {
 };
 
 // Initialize when DOM is ready
-$(document).ready(function() {
-    console.log('ETF Signals page loaded');
+$(document).ready(function () {
+    console.log("ETF Signals page loaded");
 
     // Initialize data fetching
     initializeETFSignals();
@@ -2270,40 +2339,32 @@ function initializeETFSignals() {
 // Fetch ETF signals data
 function fetchETFSignalsData() {
     $.ajax({
-        url: '/api/etf-signals-data',
-        method: 'GET',
-        success: function(response) {
+        url: "/api/etf-signals-data",
+        method: "GET",
+        success: function (response) {
             try {
                 // Process signals data
                 if (response.signals && response.signals.length > 0) {
-                    console.log('Loaded', response.signals.length, 'trading signals');
-                    // Process and display signals here
                     renderSignalsTable(response.signals);
                 } else {
-                    console.log('No trading signals found');
+                    console.log("No trading signals found");
                     showNoSignalsMessage();
                 }
-
-                // Hide skeleton and show content
-                if (window.skeletonLoader) {
-                    window.skeletonLoader.hideSignalsSkeleton();
-                }
-
             } catch (error) {
-                console.error('Error processing signals data:', error);
+                console.error("Error processing signals data:", error);
                 handleSignalsError();
             }
         },
-        error: function(xhr, status, error) {
-            console.error('Failed to fetch signals data:', error);
+        error: function (xhr, status, error) {
+            console.error("Failed to fetch signals data:", error);
             handleSignalsError();
-        }
+        },
     });
 }
 
 // Render signals table
 function renderSignalsTable(signals) {
-    var tableBody = $('#signalsTableBody');
+    var tableBody = $("#signalsTableBody");
     tableBody.empty();
 
     if (signals.length === 0) {
@@ -2311,7 +2372,7 @@ function renderSignalsTable(signals) {
         return;
     }
 
-    signals.forEach(function(signal) {
+    signals.forEach(function (signal) {
         var row = createSignalRow(signal);
         tableBody.append(row);
     });
@@ -2323,28 +2384,28 @@ function renderSignalsTable(signals) {
 function createSignalRow(signal) {
     return `
         <tr>
-            <td>${signal.trade_signal_id || '--'}</td>
-            <td><strong>${signal.symbol || '--'}</strong></td>
-            <td>${signal.seven || '--'}</td>
-            <td class="${signal.ch >= 0 ? 'text-success' : 'text-danger'}">${signal.ch || '--'}%</td>
-            <td>${signal.thirty || '--'}</td>
-            <td class="${signal.dh >= 0 ? 'text-success' : 'text-danger'}">${signal.dh || '--'}%</td>
-            <td>${signal.date || '--'}</td>
-            <td>${signal.qty || '--'}</td>
-            <td>₹${signal.ep || '--'}</td>
-            <td>₹${signal.cmp || '--'}</td>
-            <td class="${signal.changePct >= 0 ? 'text-success' : 'text-danger'}">${signal.changePct || '--'}%</td>
-            <td>₹${signal.inv || '--'}</td>
-            <td>₹${signal.tp || '--'}</td>
-            <td>${signal.tpr || '--'}%</td>
-            <td>₹${signal.tva || '--'}</td>
-            <td class="${signal.cpl >= 0 ? 'text-success' : 'text-danger'}">₹${signal.cpl || '--'}</td>
-            <td>${signal.ed || '--'}</td>
-            <td>${signal.exp || '--'}</td>
-            <td>${signal.pr || '--'}</td>
-            <td>${signal.pp || '--'}</td>
-            <td>${signal.iv || '--'}</td>
-            <td>${signal.ip || '--'}</td>
+            <td>${signal.trade_signal_id || "--"}</td>
+            <td><strong>${signal.symbol || "--"}</strong></td>
+            <td>${signal.seven || "--"}</td>
+            <td class="${signal.ch >= 0 ? "text-success" : "text-danger"}">${signal.ch || "--"}%</td>
+            <td>${signal.thirty || "--"}</td>
+            <td class="${signal.dh >= 0 ? "text-success" : "text-danger"}">${signal.dh || "--"}%</td>
+            <td>${signal.date || "--"}</td>
+            <td>${signal.qty || "--"}</td>
+            <td>₹${signal.ep || "--"}</td>
+            <td>₹${signal.cmp || "--"}</td>
+            <td class="${signal.changePct >= 0 ? "text-success" : "text-danger"}">${signal.changePct || "--"}%</td>
+            <td>₹${signal.inv || "--"}</td>
+            <td>₹${signal.tp || "--"}</td>
+            <td>${signal.tpr || "--"}%</td>
+            <td>₹${signal.tva || "--"}</td>
+            <td class="${signal.cpl >= 0 ? "text-success" : "text-danger"}">₹${signal.cpl || "--"}</td>
+            <td>${signal.ed || "--"}</td>
+            <td>${signal.exp || "--"}</td>
+            <td>${signal.pr || "--"}</td>
+            <td>${signal.pp || "--"}</td>
+            <td>${signal.iv || "--"}</td>
+            <td>${signal.ip || "--"}</td>
             <td>
                 <button class="btn btn-sm btn-outline-primary" title="View Details">
                     <i class="fas fa-eye"></i>
@@ -2356,7 +2417,7 @@ function createSignalRow(signal) {
 
 // Show no signals message
 function showNoSignalsMessage() {
-    var tableBody = $('#signalsTableBody');
+    var tableBody = $("#signalsTableBody");
     tableBody.html(`
         <tr>
             <td colspan="23" class="text-center text-muted py-4">
@@ -2375,7 +2436,7 @@ function handleSignalsError() {
         window.skeletonLoader.hideSignalsSkeleton();
     }
 
-    var tableBody = $('#signalsTableBody');
+    var tableBody = $("#signalsTableBody");
     tableBody.html(`
         <tr>
             <td colspan="23" class="text-center text-danger py-4">
@@ -2391,14 +2452,14 @@ function handleSignalsError() {
 
 // Update signals count
 function updateSignalsCount(count) {
-    $('#visibleSignalsCount').text(count);
-    $('#totalCount').text(count);
-    $('#showingCount').text(count);
+    $("#visibleSignalsCount").text(count);
+    $("#totalCount").text(count);
+    $("#showingCount").text(count);
 }
 
 // Refresh signals
 function refreshSignals() {
-    console.log('Refreshing trading signals...');
+    console.log("Refreshing trading signals...");
     if (window.skeletonLoader) {
         window.skeletonLoader.showSignalsSkeleton();
     }
