@@ -21,7 +21,21 @@ class SkeletonLoader {
         const parentContainer = skeletonElement?.parentElement;
         if (parentContainer) {
             parentContainer.style.position = 'relative';
-            parentContainer.style.minHeight = '400px';
+            
+            // Set appropriate min-height based on page type
+            switch(pageType) {
+                case 'charts':
+                    parentContainer.style.minHeight = '600px';
+                    break;
+                case 'deals':
+                    parentContainer.style.minHeight = '600px';
+                    break;
+                case 'signals':
+                    parentContainer.style.minHeight = '500px';
+                    break;
+                default:
+                    parentContainer.style.minHeight = '400px';
+            }
         }
         
         if (skeletonElement) {
