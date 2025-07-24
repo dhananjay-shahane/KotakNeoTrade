@@ -28,20 +28,23 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             // Show error message to user
-            var chartGrid = document.getElementById('chartGrid');
-            if (chartGrid) {
-                chartGrid.innerHTML = `
-                    <div class="d-flex justify-content-center align-items-center h-100">
-                        <div class="text-center text-danger">
-                            <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
-                            <h5>Chart Library Error</h5>
-                            <p>Failed to load the charting library. Please check your internet connection and refresh the page.</p>
-                            <button class="btn btn-outline-light" onclick="location.reload()">
-                                <i class="fas fa-redo me-1"></i>Refresh Page
-                            </button>
+            var chartsMainContent = document.getElementById('chartsMainContent');
+            if (chartsMainContent) {
+                chartsMainContent.innerHTML = `
+                    <div class="col-12">
+                        <div class="d-flex justify-content-center align-items-center" style="height: 400px;">
+                            <div class="text-center text-danger">
+                                <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                                <h5>Chart Library Error</h5>
+                                <p>Failed to load the charting library. Please check your internet connection and refresh the page.</p>
+                                <button class="btn btn-outline-light" onclick="location.reload()">
+                                    <i class="fas fa-redo me-1"></i>Refresh Page
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `;
+                chartsMainContent.style.display = 'block';
             }
         });
 });

@@ -12,7 +12,7 @@ class SkeletonLoader {
     // Show skeleton loading for specific page
     showSkeleton(pageType) {
         const skeletonId = `${pageType}Skeleton`;
-        const contentId = `${pageType}Content`;
+        const contentId = pageType === 'charts' ? 'chartsMainContent' : pageType === 'deals' ? 'dealsMainContent' : `${pageType}Content`;
         
         const skeletonElement = document.getElementById(skeletonId);
         const contentElement = document.getElementById(contentId);
@@ -20,11 +20,13 @@ class SkeletonLoader {
         if (skeletonElement) {
             skeletonElement.classList.remove('skeleton-hidden');
             skeletonElement.classList.add('skeleton-loading');
+            skeletonElement.style.display = 'block';
         }
         
         if (contentElement) {
             contentElement.classList.remove('content-loaded');
             contentElement.classList.add('content-loading');
+            contentElement.style.display = 'none';
         }
         
         this.isLoading = true;
@@ -36,7 +38,7 @@ class SkeletonLoader {
         // Add delay to show the skeleton animation briefly
         setTimeout(() => {
             const skeletonId = `${pageType}Skeleton`;
-            const contentId = `${pageType}Content`;
+            const contentId = pageType === 'charts' ? 'chartsMainContent' : pageType === 'deals' ? 'dealsMainContent' : `${pageType}Content`;
             
             const skeletonElement = document.getElementById(skeletonId);
             const contentElement = document.getElementById(contentId);
