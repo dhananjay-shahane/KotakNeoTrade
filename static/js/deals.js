@@ -72,6 +72,11 @@ DealsManager.prototype.getDefaultColumns = function () {
 };
 
 DealsManager.prototype.init = function () {
+    // Show skeleton loading while data loads
+    if (window.skeletonLoader) {
+        window.skeletonLoader.showDealsSkeleton();
+    }
+    
     this.updateTableHeaders();
     this.loadDeals();
     this.startAutoRefresh();

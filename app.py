@@ -97,7 +97,7 @@ if not database_url:
     db_user = os.environ.get("DB_USER")
     db_password = os.environ.get("DB_PASSWORD")
     db_port = os.environ.get("DB_PORT", "5432")
-    
+
     if all([db_host, db_name, db_user, db_password]):
         database_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
         print("Using PostgreSQL database from environment variables")
@@ -415,11 +415,16 @@ def portfolio():
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
         kotak_account_data = {
-            'ucc': session.get('ucc', session.get('username', '-')),
-            'mobile': session.get('mobile_number', '-'),
-            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
-            'last_login': 'Just Now',
-            'status': 'Online'
+            'ucc':
+            session.get('ucc', session.get('username', '-')),
+            'mobile':
+            session.get('mobile_number', '-'),
+            'greeting_name':
+            session.get('greeting_name', session.get('username', 'User')),
+            'last_login':
+            'Just Now',
+            'status':
+            'Online'
         }
 
     return render_template('portfolio.html', kotak_account=kotak_account_data)
@@ -436,14 +441,20 @@ def trading_signals():
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
         kotak_account_data = {
-            'ucc': session.get('ucc', session.get('username', '-')),
-            'mobile': session.get('mobile_number', '-'),
-            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
-            'last_login': 'Just Now',
-            'status': 'Online'
+            'ucc':
+            session.get('ucc', session.get('username', '-')),
+            'mobile':
+            session.get('mobile_number', '-'),
+            'greeting_name':
+            session.get('greeting_name', session.get('username', 'User')),
+            'last_login':
+            'Just Now',
+            'status':
+            'Online'
         }
 
-    return render_template('trading_signals.html', kotak_account=kotak_account_data)
+    return render_template('trading_signals.html',
+                           kotak_account=kotak_account_data)
 
 
 @app.route('/deals')
@@ -457,11 +468,16 @@ def deals():
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
         kotak_account_data = {
-            'ucc': session.get('ucc', session.get('username', '-')),
-            'mobile': session.get('mobile_number', '-'),
-            'greeting_name': session.get('greeting_name', session.get('username', 'User')),
-            'last_login': 'Just Now',
-            'status': 'Online'
+            'ucc':
+            session.get('ucc', session.get('username', '-')),
+            'mobile':
+            session.get('mobile_number', '-'),
+            'greeting_name':
+            session.get('greeting_name', session.get('username', 'User')),
+            'last_login':
+            'Just Now',
+            'status':
+            'Online'
         }
 
     return render_template('deals.html', kotak_account=kotak_account_data)
@@ -493,7 +509,8 @@ def show_positions():
         if 'positions' in globals():
             return positions()
         else:
-            return render_template('positions.html', kotak_account=kotak_account_data)
+            return render_template('positions.html',
+                                   kotak_account=kotak_account_data)
     except:
         return render_template('positions.html',
                                kotak_account=kotak_account_data)
@@ -575,7 +592,8 @@ def show_orders():
         if 'orders' in globals():
             return orders()
         else:
-            return render_template('orders.html', kotak_account=kotak_account_data)
+            return render_template('orders.html',
+                                   kotak_account=kotak_account_data)
     except:
         return render_template('orders.html', kotak_account=kotak_account_data)
 
@@ -973,7 +991,7 @@ except Exception as e:
 # Import missing functions and trading_functions
 try:
     from functions.positions.positions import positions
-    from functions.orders.orders import orders  
+    from functions.orders.orders import orders
     from Scripts.trading_functions import TradingFunctions
     trading_functions = TradingFunctions()
     print("✓ Trading functions imported successfully")
@@ -1004,6 +1022,7 @@ except Exception as e:
 
 # User loader for login functionality
 try:
+
     @login_manager.user_loader
     def load_user(user_id):
         try:
@@ -1020,14 +1039,16 @@ except Exception as e:
 try:
     app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
     app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
-    app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
+    app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS',
+                                                'True').lower() == 'true'
     app.config['MAIL_USERNAME'] = os.environ.get('EMAIL_USER')
     app.config['MAIL_PASSWORD'] = os.environ.get('EMAIL_PASSWORD')
-    app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', os.environ.get('EMAIL_USER'))
-    
+    app.config['MAIL_DEFAULT_SENDER'] = os.environ.get(
+        'MAIL_DEFAULT_SENDER', os.environ.get('EMAIL_USER'))
+
     # Import User model from models.py
     from models import User
-    
+
     print("✓ Email configuration loaded")
     print("✓ User model imported from models.py")
 except Exception as e:
@@ -1115,9 +1136,8 @@ def register():
                     'Registration successful! Please check your email for login credentials.',
                     'success')
             else:
-                flash(
-                    'Registration successful! Your username is: ' + username,
-                    'success')
+                flash('Registration successful! Your username is: ' + username,
+                      'success')
 
             return redirect(url_for('auth_routes.trading_account_login'))
         except Exception as e:
@@ -1163,6 +1183,7 @@ def logout():
 # HEALTH CHECK ENDPOINT FOR RENDER DEPLOYMENT
 # ========================================
 
+
 @app.route('/health')
 def health_check():
     """Health check endpoint for deployment monitoring"""
@@ -1171,6 +1192,7 @@ def health_check():
         'timestamp': datetime.utcnow().isoformat(),
         'version': '1.0.0'
     }, 200
+
 
 # ========================================
 # APPLICATION INITIALIZATION

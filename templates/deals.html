@@ -1,5 +1,7 @@
 {% extends "base.html" %} {% block title %}Deals - ETF Trading Signals{%
-endblock %} {% block content %}
+endblock %} {% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton_animation.css') }}"/>
+{% endblock %} {% block content %}
 <!-- Actual Deals Content -->
 <div class="deals-content" id="dealsContent">
     <div
@@ -33,8 +35,38 @@ endblock %} {% block content %}
         </div>
     </div>
 
+    <!-- Deals Skeleton Loading -->
+    <div id="dealsSkeleton" class="skeleton-loading">
+        <!-- Summary Cards Skeleton -->
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3">
+                <div class="skeleton skeleton-deals-summary"></div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="skeleton skeleton-deals-summary"></div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="skeleton skeleton-deals-summary"></div>
+            </div>
+        </div>
+
+        <!-- Filter Controls Skeleton -->
+        <div class="row mb-3">
+            <div class="col-12 d-flex gap-2 flex-wrap">
+                <div class="skeleton skeleton-deals-filter"></div>
+                <div class="skeleton skeleton-deals-filter"></div>
+                <div class="skeleton skeleton-deals-filter"></div>
+                <div class="skeleton skeleton-deals-filter"></div>
+                <div class="skeleton skeleton-deals-filter"></div>
+            </div>
+        </div>
+
+        <!-- Table Skeleton -->
+        <div class="skeleton skeleton-deals-table"></div>
+    </div>
+
     <!-- Deals Table -->
-    <div class="card bg-secondary border-0 shadow-lg">
+    <div class="card bg-secondary border-0 shadow-lg content-loading" id="dealsContent">
         <div
             class="card-header bg-dark border-0 d-flex justify-content-between align-items-center"
         >

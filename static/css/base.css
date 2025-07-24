@@ -411,7 +411,7 @@ body {
 .btn-close {
     background: none;
     border: none;
-    color: var(--danger-color);
+    color: var(--danger-color) !important;
     opacity: 1;
     font-size: 1.125rem;
     font-weight: bold;
@@ -1278,16 +1278,16 @@ body,
         left: 0.5rem;
         max-width: none;
     }
-    
+
     .toaster {
         min-width: auto;
         width: 100%;
     }
-    
+
     .toaster-title {
         font-size: 0.8125rem;
     }
-    
+
     .toaster-message {
         font-size: 0.75rem;
     }

@@ -66,6 +66,12 @@ ETFSignalsManager.prototype.init = function () {
     this.setupColumnSettings();
     this.updateTableHeaders(); // Update headers based on column settings
     this.createPaginationControls(); // Create pagination controls
+    
+    // Show skeleton loading while data loads
+    if (window.skeletonLoader) {
+        window.skeletonLoader.showSignalsSkeleton();
+    }
+    
     this.loadSignals(true);
     this.startAutoRefresh();
 };
@@ -156,6 +162,11 @@ ETFSignalsManager.prototype.loadSignals = function (resetData) {
                         self.filteredSignals = [];
                         self.renderSignalsTable();
                         self.updatePagination();
+                        
+                        // Hide skeleton loading even on error
+                        if (window.skeletonLoader) {
+                            window.skeletonLoader.hideSignalsSkeleton();
+                        }
                         return;
                     }
 
@@ -174,6 +185,12 @@ ETFSignalsManager.prototype.loadSignals = function (resetData) {
                         self.updateDisplayedSignals();
                         self.renderSignalsTable();
                         self.updatePagination();
+                        
+                        // Hide skeleton loading
+                        if (window.skeletonLoader) {
+                            window.skeletonLoader.hideSignalsSkeleton();
+                        }
+                        
                         self.showSuccessMessage(
                             "Loaded " + self.signals.length + " signals",
                         );

@@ -4,6 +4,7 @@ endblock %} {% block head %}
     href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css"
     rel="stylesheet"
 />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton_animation.css') }}"/>
 <style>
     .portfolio-card {
         background: var(--card-bg);
@@ -183,8 +184,46 @@ endblock %} {% block head %}
         </div>
     </div>
 
+    <!-- Portfolio Skeleton Loading -->
+    <div id="portfolioSkeleton" class="skeleton-loading">
+        <!-- Summary Cards Skeleton -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="skeleton skeleton-summary-card"></div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="skeleton skeleton-summary-card"></div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="skeleton skeleton-summary-card"></div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="skeleton skeleton-summary-card"></div>
+            </div>
+        </div>
+
+        <!-- Chart Skeleton -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="skeleton skeleton-chart"></div>
+            </div>
+        </div>
+
+        <!-- Table Skeleton -->
+        <div class="row">
+            <div class="col-12">
+                <div class="skeleton skeleton-table-header"></div>
+                <div class="skeleton skeleton-table-row"></div>
+                <div class="skeleton skeleton-table-row"></div>
+                <div class="skeleton skeleton-table-row"></div>
+                <div class="skeleton skeleton-table-row"></div>
+                <div class="skeleton skeleton-table-row"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Trading Signals Summary Cards -->
-    <div class="row portfolio-summary-cards mb-4">
+    <div class="row portfolio-summary-cards mb-4 content-loading" id="portfolioContent">
         <div class="col-md-3 mb-3">
             <div class="card border-0 h-100">
                 <div class="card-body text-center">

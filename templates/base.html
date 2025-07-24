@@ -147,10 +147,10 @@
                             session.get('user_id') }} {% else %} Guest {% endif
                             %}
                         </h6>
-                        <small>
+                        <!-- <small>
                             {% if session.get('authenticated') %} Trading
                             Account {% else %} Not Logged In {% endif %}
-                        </small>
+                        </small> -->
                     </div>
                     <i
                         class="fas fa-chevron-down"
@@ -928,6 +928,7 @@
         <!-- SweetAlert2 JS -->
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <!-- Custom JS -->
+        <script src="{{ url_for('static', filename='js/skeleton_loader.js') }}"></script>
         <script src="{{ url_for('static', filename='js/base.js') }}"></script>
 
         {% block scripts %}{% endblock %}
