@@ -1364,9 +1364,9 @@ function addDeal(signalId) {
 
     // Find the complete signal data from the current signals array
     var signal = null;
-    if (window.ETFSignalsManager && window.ETFSignalsManager.signals) {
-        signal = window.ETFSignalsManager.signals.find(function (s) {
-            return s.id == signalId || s.trade_signal_id == signalId;
+    if (window.etfSignalsManager && window.etfSignalsManager.signals) {
+        signal = window.etfSignalsManager.signals.find(function (s) {
+            return s.ID == signalId || s.id == signalId || s.trade_signal_id == signalId;
         });
     }
 
