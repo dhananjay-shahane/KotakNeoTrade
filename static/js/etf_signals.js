@@ -474,11 +474,11 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                     '<span class="fw-bold text-white">' + chValue + "</span>";
                 break;
             case "actions":
-                var signalId = signal.ID;
+                var signalId = signal.ID || signal.id || signal.trade_signal_id;
                 cellValue =
-                    '<button class="btn btn-sm btn-success" onclick="addDeal(' +
+                    '<button class="btn btn-sm btn-success add-deal-btn" onclick="addDeal(' +
                     signalId +
-                    ')"><i class="fas fa-plus me-1"></i>Add Deal</button>';
+                    ')" data-signal-id="' + signalId + '"><i class="fas fa-plus me-1"></i>Add Deal</button>';
                 break;
             default:
                 cellValue = "--";
@@ -1362,16 +1362,65 @@ function exportSignals() {
 function addDeal(signalId) {
     console.log("Add Deal called with signalId:", signalId);
 
-    // Find the complete signal data from the current signals array
+    // Prevent double-clicking by disabling the button temporarily
+    var buttonElement = event ? event.target : null;
+    if (buttonElement && buttonElement.tagName === 'BUTTON') {
+        buttonElement.disabled = true;
+        buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Processing...';
+        
+        // Re-enable button after 3 seconds
+        setTimeout(function() {
+            buttonElement.disabled = false;
+            buttonElement.innerHTML = '<i class="fas fa-plus me-1"></i>Add Deal';
+        }, 3000);
+    }
+
+    // Wait for signals to be loaded if they're not available yet
+    if (!window.etfSignalsManager || !window.etfSignalsManager.signals || window.etfSignalsManager.signals.length === 0) {
+        console.log("Signals not loaded yet, waiting...");
+        showSwalMessage("Loading signals data, please wait...", "info");
+        
+        // Wait up to 5 seconds for signals to load
+        var attempts = 0;
+        var checkInterval = setInterval(function() {
+            attempts++;
+            if (window.etfSignalsManager && window.etfSignalsManager.signals && window.etfSignalsManager.signals.length > 0) {
+                clearInterval(checkInterval);
+                findAndProcessSignal(signalId);
+            } else if (attempts >= 10) { // 5 seconds
+                clearInterval(checkInterval);
+                showSwalMessage("Failed to load signals data. Please refresh the page.", "error");
+                if (buttonElement) {
+                    buttonElement.disabled = false;
+                    buttonElement.innerHTML = '<i class="fas fa-plus me-1"></i>Add Deal';
+                }
+            }
+        }, 500);
+        return;
+    }
+
+    findAndProcessSignal(signalId);
+}
+
+function findAndProcessSignal(signalId) {
+    console.log("Finding signal for ID:", signalId);
+
+    // Find the complete signal data from the current signals array with multiple ID checks
     var signal = null;
     if (window.etfSignalsManager && window.etfSignalsManager.signals) {
         signal = window.etfSignalsManager.signals.find(function (s) {
-            return s.ID == signalId;
+            // Check multiple possible ID fields
+            return s.ID == signalId || 
+                   s.id == signalId || 
+                   s.trade_signal_id == signalId ||
+                   parseInt(s.ID) == parseInt(signalId) ||
+                   parseInt(s.id) == parseInt(signalId);
         });
     }
 
     if (!signal) {
         console.error("Signal not found for ID:", signalId);
+        console.log("Available signals:", window.etfSignalsManager ? window.etfSignalsManager.signals : "No manager");
         showSwalMessage(
             "Signal data not found. Please refresh the page and try again.",
             "error",
@@ -1381,10 +1430,10 @@ function addDeal(signalId) {
 
     console.log("Found signal:", signal);
 
-    var symbol = signal.Symbol;
-    var price = signal.EP;
-    var quantity = signal.QTY;
-    var investment = signal.INV;
+    var symbol = signal.Symbol || signal.symbol || signal.etf;
+    var price = signal.EP || signal.ep || signal.entry_price;
+    var quantity = signal.QTY || signal.qty || signal.quantity;
+    var investment = signal.INV || signal.inv || signal.investment_amount;
 
     // Validate data before proceeding
     if (!symbol || symbol === "UNKNOWN" || price <= 0 || quantity <= 0) {
