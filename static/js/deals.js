@@ -1743,10 +1743,45 @@ function clearInlineSearch() {
     if (searchInput) {
         searchInput.value = '';
         performInlineSearch(); // This will reset to show all deals
+        // Optionally hide the search input after clearing
+        toggleSearchInput();
     }
 }
 
 
+
+// Toggle search input visibility
+function toggleSearchInput() {
+    var searchInputGroup = document.getElementById('searchInputGroup');
+    var searchToggleBtn = document.getElementById('searchToggleBtn');
+    var searchInput = document.getElementById('symbolSearchInput');
+    
+    if (searchInputGroup.style.display === 'none' || searchInputGroup.style.display === '') {
+        // Show search input
+        searchInputGroup.style.display = 'flex';
+        searchInput.focus();
+        searchToggleBtn.innerHTML = '<i class="fas fa-times text-white"></i>';
+    } else {
+        // Hide search input
+        searchInputGroup.style.display = 'none';
+        searchInput.value = '';
+        searchToggleBtn.innerHTML = '<i class="fas fa-search text-white"></i>';
+        // Reset search results
+        performInlineSearch();
+    }
+}
+
+// Close search input when clicking outside
+function closeSearchOnClickOutside(event) {
+    var searchContainer = document.querySelector('.search-container');
+    var searchInputGroup = document.getElementById('searchInputGroup');
+    
+    if (searchInputGroup && searchInputGroup.style.display === 'flex') {
+        if (!searchContainer.contains(event.target)) {
+            toggleSearchInput();
+        }
+    }
+}
 
 // Add real-time search support
 document.addEventListener('DOMContentLoaded', function() {
@@ -1767,7 +1802,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 performInlineSearch();
             }
         });
+        
+        // Close search on escape key
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                toggleSearchInput();
+            }
+        });
     }
+    
+    // Add click outside listener
+    document.addEventListener('click', closeSearchOnClickOutside);
 });
 
 // Initialize Deals Manager on page load
