@@ -930,6 +930,7 @@ function applyFilters() {
     window.dealsManager.currentPage = 1;
     window.dealsManager.renderDealsTable();
     window.dealsManager.updatePagination();
+    window.dealsManager.updateDealsCountBadge();
 }
 
 function clearFilters() {
@@ -949,6 +950,7 @@ function clearFilters() {
     window.dealsManager.currentPage = 1;
     window.dealsManager.renderDealsTable();
     window.dealsManager.updatePagination();
+    window.dealsManager.updateDealsCountBadge();
 }
 
 function refreshDeals() {
@@ -1715,7 +1717,7 @@ function showNotification(message, type) {
 // Inline Search Functions
 function performInlineSearch() {
     var searchTerm = document.getElementById('symbolSearchInput').value.trim().toLowerCase();
-    
+
     if (!searchTerm) {
         // Reset to show all deals if search is empty
         window.dealsManager.filteredDeals = window.dealsManager.deals.slice();
@@ -1731,7 +1733,7 @@ function performInlineSearch() {
             );
         });
     }
-    
+
     // Reset to first page and refresh table
     window.dealsManager.currentPage = 1;
     window.dealsManager.renderDealsTable();
@@ -1755,7 +1757,7 @@ function toggleSearchInput() {
     var searchInputGroup = document.getElementById('searchInputGroup');
     var searchToggleBtn = document.getElementById('searchToggleBtn');
     var searchInput = document.getElementById('symbolSearchInput');
-    
+
     if (searchInputGroup.style.display === 'none' || searchInputGroup.style.display === '') {
         // Show search input
         searchInputGroup.style.display = 'flex';
@@ -1775,7 +1777,7 @@ function toggleSearchInput() {
 function closeSearchOnClickOutside(event) {
     var searchContainer = document.querySelector('.search-container');
     var searchInputGroup = document.getElementById('searchInputGroup');
-    
+
     if (searchInputGroup && searchInputGroup.style.display === 'flex') {
         if (!searchContainer.contains(event.target)) {
             toggleSearchInput();
@@ -1794,7 +1796,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 performInlineSearch();
             }, 300); // 300ms delay for better performance
         });
-        
+
         // Also support enter key
         searchInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
@@ -1802,7 +1804,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 performInlineSearch();
             }
         });
-        
+
         // Close search on escape key
         searchInput.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
@@ -1810,7 +1812,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
+
     // Add click outside listener
     document.addEventListener('click', closeSearchOnClickOutside);
 });
@@ -1944,3 +1946,10 @@ function initializeDeals() {
         }
     });
 }
+
+DealsManager.prototype.updateDealsCountBadge = function () {
+    var badge = document.getElementById("dealsCountBadge");
+    if (badge) {
+        badge.textContent = this.filteredDeals.length;
+    }
+};
