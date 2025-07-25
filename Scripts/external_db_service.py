@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 class DatabaseConnector:
     """Database connection handler"""
-    
+
     def __init__(self):
         self.db_config = {
             'host': "dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com",
@@ -53,9 +53,10 @@ class DatabaseConnector:
         if not self.connection:
             if not self.connect():
                 return None
-        
+
         try:
-            cursor = self.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            cursor = self.connection.cursor(
+                cursor_factory=psycopg2.extras.RealDictCursor)
             cursor.execute(query, params)
             if cursor.description:
                 results = cursor.fetchall()
@@ -69,10 +70,11 @@ class DatabaseConnector:
 
 
 class SignalsFetcher:
+
     def __init__(self, db_connector):
         self.db = db_connector
         self.logger = logger
-    
+
     def get_admin_signals(self, days_back: int = 30) -> pd.DataFrame:
         """
         Fetch admin trade signals as DataFrame
@@ -95,38 +97,41 @@ class SignalsFetcher:
                 WHERE created_at >= %s
                 ORDER BY created_at DESC
             """)
-            
+
             params = [datetime.now() - timedelta(days=days_back)]
-            
+
             self.logger.debug("Executing admin signals query")
             results = self.db.execute_query(query, params)
-            
+
             if not results:
                 self.logger.warning("No admin signals found")
                 return pd.DataFrame()
-            
+
             df = pd.DataFrame(results)
-            
+
             # Convert data types
             numeric_cols = ['qty', 'entry_price']
-            df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce')
+            df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric,
+                                                      errors='coerce')
             # df['created_at'] = pd.to_datetime(df['created_at'])
-            
+
             # Clean symbol names
             df['symbol'] = df['symbol'].str.upper().str.strip()
-            
+
             return df.dropna(subset=numeric_cols)
 
         except Exception as e:
-            self.logger.error(f"Error fetching admin signals: {str(e)}", exc_info=True)
+            self.logger.error(f"Error fetching admin signals: {str(e)}",
+                              exc_info=True)
             return pd.DataFrame()
 
 
 class PriceFetcher:
+
     def __init__(self, db_connector):
         self.db = db_connector
         self.logger = logger
-    
+
     def table_exists(self, table_name: str) -> bool:
         """Check if table exists in symbols schema"""
         query = """
@@ -136,7 +141,7 @@ class PriceFetcher:
             AND table_name = %s
         )
         """
-        result = self.db.execute_query(query, (table_name,))
+        result = self.db.execute_query(query, (table_name, ))
         return result and result[0]['exists']
 
     def get_cmp(self, symbol: str) -> Optional[float]:
@@ -149,11 +154,11 @@ class PriceFetcher:
         """
         try:
             table_name = f"{symbol.lower()}_5m"
-            
+
             if not self.table_exists(table_name):
                 self.logger.warning(f"5min table not found: {table_name}")
                 return None
-            
+
             query = sql.SQL("""
                 SELECT close 
                 FROM symbols.{} 
@@ -170,6 +175,7 @@ class PriceFetcher:
 
 
 class HistoricalFetcher:
+
     def __init__(self, db_connector):
         self.db = db_connector
 
@@ -181,7 +187,7 @@ class HistoricalFetcher:
             AND table_name = %s
         )
         """
-        result = self.db.execute_query(query, (table_name,))
+        result = self.db.execute_query(query, (table_name, ))
         return result and result[0]['exists']
 
     def get_offset_price(self, symbol: str, offset: int) -> Optional[float]:
@@ -196,7 +202,9 @@ class HistoricalFetcher:
                 return None
 
             # Count rows
-            count_query = sql.SQL("SELECT COUNT(*) as cnt FROM symbols.{}").format(sql.Identifier(table_name))
+            count_query = sql.SQL(
+                "SELECT COUNT(*) as cnt FROM symbols.{}").format(
+                    sql.Identifier(table_name))
             count_result = self.db.execute_query(count_query)
             row_count = count_result[0]['cnt'] if count_result else 0
 
@@ -209,10 +217,11 @@ class HistoricalFetcher:
                 ORDER BY datetime DESC
                 OFFSET %s LIMIT 1
             """).format(sql.Identifier(table_name))
-            result = self.db.execute_query(price_query, (offset,))
+            result = self.db.execute_query(price_query, (offset, ))
             return float(result[0]['close']) if result else None
         except Exception as e:
-            logger.error(f"Error fetching offset={offset} price: {e}", exc_info=True)
+            logger.error(f"Error fetching offset={offset} price: {e}",
+                         exc_info=True)
             return None
 
     def get_latest_close(self, symbol: str) -> Optional[float]:
@@ -232,7 +241,8 @@ class HistoricalFetcher:
             result = self.db.execute_query(price_query)
             return float(result[0]['close']) if result else None
         except Exception as e:
-            logger.error(f"Error fetching latest close price: {e}", exc_info=True)
+            logger.error(f"Error fetching latest close price: {e}",
+                         exc_info=True)
             return None
 
 
@@ -241,12 +251,12 @@ def try_percent(cmp_val, hist_val):
     Calculate percent change if both are numbers, else '--'.
     """
     try:
-        if (
-            cmp_val is not None and hist_val is not None and
-            isinstance(cmp_val, (int, float)) and isinstance(hist_val, (int, float)) and
-            hist_val != 0 and not pd.isna(cmp_val) and not pd.isna(hist_val)
-        ):
-            pct_change = (float(cmp_val) - float(hist_val)) / float(hist_val) * 100
+        if (cmp_val is not None and hist_val is not None
+                and isinstance(cmp_val, (int, float))
+                and isinstance(hist_val, (int, float)) and hist_val != 0
+                and not pd.isna(cmp_val) and not pd.isna(hist_val)):
+            pct_change = (float(cmp_val) -
+                          float(hist_val)) / float(hist_val) * 100
             return f"{pct_change:.2f}%"
         else:
             return '--'
@@ -289,7 +299,8 @@ def get_all_trade_metrics():
             return []
 
         # 4. For each signal, enrich and calculate all desired metrics
-        for count, signal in enumerate(df_signals.to_dict(orient='records'), start=1):
+        for count, signal in enumerate(df_signals.to_dict(orient='records'),
+                                       start=1):
             # --- Extract basic trading info ---
             symbol = str(signal.get('symbol') or 'N/A').upper()
             id_ = signal.get('id') or count
@@ -297,7 +308,8 @@ def get_all_trade_metrics():
             entry_price = float(signal.get('entry_price') or 0)
 
             # --- Format the date as dd-mm-yy HH:MM ---
-            raw_date = signal.get('date', '') or signal.get('created_at', '') or ''
+            raw_date = signal.get('date', '') or signal.get('created_at',
+                                                            '') or ''
             if raw_date:
                 try:
                     dt_obj = pd.to_datetime(raw_date)
@@ -323,8 +335,8 @@ def get_all_trade_metrics():
                 cmp_display = "--"
                 cmp_is_num = False
 
-            d7_val = hist_fetcher.get_offset_price(symbol, 7)
-            d30_val = hist_fetcher.get_offset_price(symbol, 30)
+            d7_val = hist_fetcher.get_offset_price(symbol, 5)
+            d30_val = hist_fetcher.get_offset_price(symbol, 20)
             p7 = try_percent(cmp_numeric, d7_val)
             p30 = try_percent(cmp_numeric, d30_val)
 
@@ -332,7 +344,9 @@ def get_all_trade_metrics():
             investment = qty * entry_price
             current_value = qty * cmp_numeric if cmp_is_num else 0
             profit_loss = current_value - investment if cmp_is_num else 0
-            change_percent = ((cmp_numeric - entry_price) / entry_price) * 100 if cmp_is_num and entry_price > 0 else 0
+            change_percent = (
+                (cmp_numeric - entry_price) /
+                entry_price) * 100 if cmp_is_num and entry_price > 0 else 0
 
             # --- Get custom/calculated fields with fallback ---
             iv_value = signal.get('iv', investment)
@@ -343,15 +357,17 @@ def get_all_trade_metrics():
                 iv_value = investment
             if not isinstance(ip_value, (int, float)) or ip_value <= 0:
                 ip_value = entry_price
-            if nt_value != "--" and (not isinstance(nt_value, (int, float)) or nt_value <= 0):
+            if nt_value != "--" and (not isinstance(nt_value, (int, float))
+                                     or nt_value <= 0):
                 nt_value = current_value if cmp_is_num else "--"
 
             # --- Target Price, TPR, TVA calculation (business logic) ---
             if entry_price > 0:
                 if cmp_numeric > 0 and cmp_is_num:
-                    current_gain_percent = ((cmp_numeric - entry_price) / entry_price) * 100
+                    current_gain_percent = (
+                        (cmp_numeric - entry_price) / entry_price) * 100
                     if current_gain_percent > 10:
-                        target_price = entry_price * 1.25       # 25% from entry price
+                        target_price = entry_price * 1.25  # 25% from entry price
                     elif current_gain_percent > 5:
                         target_price = entry_price * 1.20
                     elif current_gain_percent > 0:
@@ -361,8 +377,9 @@ def get_all_trade_metrics():
                     else:
                         target_price = entry_price * 1.10
                 else:
-                    target_price = entry_price * 1.15          # Default 15% target
-                tpr_percent = ((target_price - entry_price) / entry_price) * 100
+                    target_price = entry_price * 1.15  # Default 15% target
+                tpr_percent = (
+                    (target_price - entry_price) / entry_price) * 100
                 tp_value = round(target_price, 2)
                 tpr_value = f"{tpr_percent:.2f}%"
                 tva_value = round(target_price * qty, 2)
@@ -452,7 +469,7 @@ class ExternalDBService:
         # Convert new format to legacy format for backward compatibility
         signals = get_all_trade_metrics()
         legacy_signals = []
-        
+
         for signal in signals:
             legacy_signal = {
                 'id': signal.get('ID'),
@@ -465,7 +482,7 @@ class ExternalDBService:
                 'date': signal.get('DATE')
             }
             legacy_signals.append(legacy_signal)
-        
+
         return legacy_signals
 
     def get_signal_by_id(self, signal_id: int) -> Optional[Dict]:
@@ -495,11 +512,12 @@ def get_etf_signals_from_external_db() -> List[Dict]:
 def get_etf_signals_data_json(page=1, page_size=None):
     """Get ETF signals data with optional pagination for /trading-signals page"""
     try:
-        logger.info("Fetching complete ETF signals data from external database")
-        
+        logger.info(
+            "Fetching complete ETF signals data from external database")
+
         # Get all signals using new implementation (ignoring pagination for now)
         signals = get_all_trade_metrics()
-        
+
         if not signals:
             logger.warning("No trading signals found in database")
             return {
@@ -507,17 +525,18 @@ def get_etf_signals_data_json(page=1, page_size=None):
                 'total': 0,
                 'message': 'No trading signals available'
             }
-        
+
         logger.info(f"✓ Fetched {len(signals)} trading signals successfully")
-        
+
         return {
             'data': signals,
             'total': len(signals),
             'message': f'Successfully loaded {len(signals)} trading signals'
         }
-        
+
     except Exception as e:
-        logger.error(f"Error in get_etf_signals_data_json: {str(e)}", exc_info=True)
+        logger.error(f"Error in get_etf_signals_data_json: {str(e)}",
+                     exc_info=True)
         return {
             'data': [],
             'total': 0,
@@ -530,10 +549,10 @@ def get_basic_trade_signals_data_json():
     """Get basic trade signals data for API endpoints"""
     try:
         logger.info("Fetching basic trade signals data")
-        
+
         # Use the new comprehensive function
         signals = get_all_trade_metrics()
-        
+
         if not signals:
             logger.warning("No basic trade signals found")
             return {
@@ -541,7 +560,7 @@ def get_basic_trade_signals_data_json():
                 'total': 0,
                 'message': 'No basic trade signals available'
             }
-        
+
         # Format for basic display (simplified version)
         basic_signals = []
         for signal in signals:
@@ -559,17 +578,21 @@ def get_basic_trade_signals_data_json():
                 'target_percent': signal.get('TPR')
             }
             basic_signals.append(basic_signal)
-        
+
         logger.info(f"✓ Formatted {len(basic_signals)} basic trade signals")
-        
+
         return {
-            'data': basic_signals,
-            'total': len(basic_signals),
-            'message': f'Successfully loaded {len(basic_signals)} basic trade signals'
+            'data':
+            basic_signals,
+            'total':
+            len(basic_signals),
+            'message':
+            f'Successfully loaded {len(basic_signals)} basic trade signals'
         }
-        
+
     except Exception as e:
-        logger.error(f"Error in get_basic_trade_signals_data_json: {str(e)}", exc_info=True)
+        logger.error(f"Error in get_basic_trade_signals_data_json: {str(e)}",
+                     exc_info=True)
         return {
             'data': [],
             'total': 0,
