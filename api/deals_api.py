@@ -607,30 +607,61 @@ def create_deal_from_signal():
                 'error': 'Database connection failed'
             }), 500
 
-        # Set user_id - use 1 as default for now
-        user_id = session.get('user_id', 1)
+        # Set user_id - handle both string and integer user_ids safely
+        session_user_id = session.get('user_id', 1)
         
-        # Ensure user_id is valid
-        if not user_id or user_id == 0:
+        # Convert user_id to integer safely, fallback to 1 if invalid
+        try:
+            if isinstance(session_user_id, str):
+                # If it's a string that's not numeric, use default user_id = 1
+                if session_user_id.isdigit():
+                    user_id = int(session_user_id)
+                else:
+                    logger.info(f"Non-numeric user_id in session: {session_user_id}, using default user_id = 1")
+                    user_id = 1
+            elif isinstance(session_user_id, int):
+                user_id = session_user_id
+            else:
+                user_id = 1
+        except (ValueError, TypeError):
+            logger.warning(f"Invalid user_id in session: {session_user_id}, using default user_id = 1")
+            user_id = 1
+        
+        # Ensure user_id is positive
+        if not user_id or user_id <= 0:
             user_id = 1
 
         try:
             with conn.cursor() as cursor:
-                # Check if users table exists and ensure user_id 1 exists
+                # Check if users table exists and ensure user_id exists
                 try:
                     cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
                     if not cursor.fetchone():
-                        # Insert default user with ID 1
+                        # Insert default user with the required ID
+                        cursor.execute("""
+                            INSERT INTO users (id, ucc, mobile_number, greeting_name, is_active)
+                            VALUES (%s, %s, %s, %s, %s)
+                            ON CONFLICT (id) DO NOTHING
+                        """, (user_id, f'USER_{user_id}', '9999999999', f'User {user_id}', True))
+                        conn.commit()
+                        logger.info(f"Created default user with ID {user_id}")
+                except Exception as user_check_error:
+                    logger.warning(f"Could not verify/create user: {user_check_error}")
+                    # Reset connection to clear any transaction issues
+                    conn.rollback()
+                    # Use default user_id = 1 and ensure it exists
+                    user_id = 1
+                    try:
                         cursor.execute("""
                             INSERT INTO users (id, ucc, mobile_number, greeting_name, is_active)
                             VALUES (%s, %s, %s, %s, %s)
                             ON CONFLICT (id) DO NOTHING
                         """, (1, 'DEFAULT_USER', '9999999999', 'Default User', True))
                         conn.commit()
-                        logger.info("Created default user with ID 1")
-                except Exception as user_check_error:
-                    logger.warning(f"Could not verify/create user: {user_check_error}")
-                    # Continue with user_id = 1
+                        logger.info("Created fallback default user with ID 1")
+                    except Exception as fallback_error:
+                        logger.error(f"Failed to create fallback user: {fallback_error}")
+                        conn.rollback()
 
                 # Insert into user_deals table
                 insert_query = """
