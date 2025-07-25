@@ -581,6 +581,26 @@ def create_deal_from_signal():
         
         pos = safe_int(signal_data.get('pos'), 1)
         
+        # Set user_id early in the function - handle both string and integer user_ids safely
+        session_user_id = session.get('user_id', 1)
+        
+        # Convert user_id to integer safely, fallback to 1 if invalid
+        try:
+            if isinstance(session_user_id, str):
+                # If it's a string that's not numeric, use default user_id = 1
+                if session_user_id.isdigit():
+                    user_id = int(session_user_id)
+                else:
+                    logger.info(f"Non-numeric user_id in session: {session_user_id}, using default user_id = 1")
+                    user_id = 1
+            elif isinstance(session_user_id, int):
+                user_id = session_user_id
+            else:
+                user_id = 1
+        except (ValueError, TypeError):
+            logger.warning(f"Invalid user_id in session: {session_user_id}, using default user_id = 1")
+            user_id = 1
+
         # Validate required data
         if ep <= 0 or qty <= 0:
             return jsonify({
@@ -620,26 +640,6 @@ def create_deal_from_signal():
                 'error': 'Database connection failed'
             }), 500
 
-        # Set user_id - handle both string and integer user_ids safely
-        session_user_id = session.get('user_id', 1)
-        
-        # Convert user_id to integer safely, fallback to 1 if invalid
-        try:
-            if isinstance(session_user_id, str):
-                # If it's a string that's not numeric, use default user_id = 1
-                if session_user_id.isdigit():
-                    user_id = int(session_user_id)
-                else:
-                    logger.info(f"Non-numeric user_id in session: {session_user_id}, using default user_id = 1")
-                    user_id = 1
-            elif isinstance(session_user_id, int):
-                user_id = session_user_id
-            else:
-                user_id = 1
-        except (ValueError, TypeError):
-            logger.warning(f"Invalid user_id in session: {session_user_id}, using default user_id = 1")
-            user_id = 1
-        
         # Ensure user_id is positive
         if not user_id or user_id <= 0:
             user_id = 1

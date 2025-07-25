@@ -821,8 +821,9 @@ def get_etf_signals_data():
 def get_basic_trade_signals_data():
     """API endpoint to get basic trade signals data from external admin_trade_signals table"""
     try:
-        from Scripts.external_db_service import get_basic_trade_signals_data_json
-        return jsonify(get_basic_trade_signals_data_json())
+        from Scripts.external_db_service import get_etf_signals_data_json
+        # Use ETF signals data as basic trade signals 
+        return jsonify(get_etf_signals_data_json())
     except Exception as e:
         logging.error(f"Basic trade signals API error: {e}")
         return jsonify({'error': str(e)}), 500
@@ -995,7 +996,7 @@ try:
     # Initialize LoginManager properly
     login_manager = LoginManager()
     login_manager.init_app(app)
-    login_manager.login_view = 'auth_routes.trading_account_login'
+    login_manager.login_view = 'trading_account_login'
 
     # Initialize Mail
     mail = Mail(app)
@@ -1006,7 +1007,7 @@ except Exception as e:
     try:
         login_manager = LoginManager()
         login_manager.init_app(app)
-        login_manager.login_view = 'auth_routes.trading_account_login'
+        login_manager.login_view = 'trading_account_login'
         print("✓ Basic login manager initialized")
     except Exception as login_error:
         print(f"Login manager error: {login_error}")
@@ -1017,6 +1018,7 @@ try:
     @login_manager.user_loader
     def load_user(user_id):
         try:
+            from models import User
             return User.query.get(int(user_id))
         except Exception as e:
             print(f"User loader error: {e}")
