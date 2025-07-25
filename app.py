@@ -79,7 +79,7 @@ app = Flask(__name__)
 # Security configuration with fallback
 session_secret = os.environ.get("SESSION_SECRET")
 if not session_secret:
-    session_secret = "replit-kotak-neo-trading-platform-secret-key-2025"
+    session_secret = "kotak-neo-trading-platform-replit-session-key-2025-secure"
     print("Using fallback session secret for development")
 app.secret_key = session_secret
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1,
@@ -89,19 +89,19 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1,
 database_url = os.environ.get("DATABASE_URL")
 if not database_url:
     # Try to construct from individual environment variables
-    db_host = os.environ.get("DB_HOST")
-    db_name = os.environ.get("DB_NAME")
-    db_user = os.environ.get("DB_USER")
-    db_password = os.environ.get("DB_PASSWORD")
+    db_host = os.environ.get("DB_HOST", "dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com")
+    db_name = os.environ.get("DB_NAME", "kotak_trading_db")
+    db_user = os.environ.get("DB_USER", "kotak_trading_db_user")
+    db_password = os.environ.get("DB_PASSWORD", "JRUlk8RutdgVcErSiUXqljDUdK8sBsYO")
     db_port = os.environ.get("DB_PORT", "5432")
 
     if all([db_host, db_name, db_user, db_password]):
         database_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
         print("Using PostgreSQL database from environment variables")
     else:
-        # Fallback to SQLite for development
-        database_url = "sqlite:///instance/trading_platform.db"
-        print("Using SQLite fallback database for development")
+        # Use the external database URL as fallback
+        database_url = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com:5432/kotak_trading_db"
+        print("Using external PostgreSQL database")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
