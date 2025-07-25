@@ -982,33 +982,6 @@ ETFSignalsManager.prototype.updateDisplayedSignals = function () {
     });
 };
 
-ETFSignalsManager.prototype.goToPage = function (pageNumber) {
-    if (pageNumber < 1 || pageNumber > this.totalPages) return;
-    this.currentPage = pageNumber;
-    window.currentPage = this.currentPage; // Update global variable
-    this.updateDisplayedSignals();
-    this.renderSignalsTable();
-    this.updatePagination();
-};
-
-ETFSignalsManager.prototype.changeItemsPerPage = function (newItemsPerPage) {
-    console.log("Changing items per page to:", newItemsPerPage);
-    this.itemsPerPage = parseInt(newItemsPerPage) || 10;
-    this.currentPage = 1;
-    window.currentPage = 1; // Update global variable
-
-    // Update the select dropdown to reflect the change
-    var select = document.getElementById("itemsPerPageSelect");
-    if (select) {
-        select.value = this.itemsPerPage;
-    }
-
-    this.updateDisplayedSignals();
-    this.renderSignalsTable();
-    this.updatePagination();
-    console.log("Updated pagination with", this.itemsPerPage, "items per page");
-};
-
 ETFSignalsManager.prototype.updatePagination = function () {
     var showingCount = document.getElementById("showingCount");
     var totalCount = document.getElementById("totalCount");
@@ -1107,21 +1080,6 @@ ETFSignalsManager.prototype.createPaginationControls = function () {
     if (cardFooter) {
         var paginationHTML =
             '<div id="paginationContainer" class="d-flex justify-content-between align-items-center mt-3">' +
-            '<div class="d-flex align-items-center">' +
-            '<label for="itemsPerPage" class="form-label me-2 mb-0">Items per page:</label>' +
-            '<select id="itemsPerPage" class="form-select form-select-sm" style="width: auto;" onchange="changeItemsPerPage(this.value)">' +
-            '<option value="10">10</option>' +
-            '<option value="20" selected>20</option>' +
-            '<option value="25">25</option>' +
-            '<option value="50">50</option>' +
-            '<option value="100">100</option>' +
-            "</select>" +
-            "</div>" +
-            '<div id="paginationButtons" class="d-flex align-items-center">' +
-            "</div>" +
-            '<div class="text-muted small">' +
-            'Showing <span id="startItem">1</span>-<span id="endItem">10</span> of <span id="totalItems">0</span> items' +
-            "</div>" +
             "</div>";
 
         cardFooter.insertAdjacentHTML("beforeend", paginationHTML);
@@ -2333,117 +2291,6 @@ ETFSignalsManager.prototype.updateCounts = function () {
     if (showingElement) {
         showingElement.textContent = this.filteredSignals.length;
     }
-};
-
-// Old loadMoreSignals function removed - replaced with pagination
-
-ETFSignalsManager.prototype.updatePagination = function () {
-    // No longer needed as pagination is removed
-};
-
-ETFSignalsManager.prototype.updatePaginationControls = function () {
-    // No longer needed as pagination is removed
-};
-
-ETFSignalsManager.prototype.createPaginationControls = function () {
-    var cardFooter = document.querySelector(".card-footer");
-    if (!cardFooter) {
-        // If card-footer doesn't exist, create it
-        var card = document.querySelector(".card.bg-secondary");
-        if (card) {
-            cardFooter = document.createElement("div");
-            cardFooter.className = "card-footer bg-dark border-0";
-            card.appendChild(cardFooter);
-        }
-    }
-
-    if (cardFooter) {
-        var paginationHTML =
-            '<div id="paginationContainer" class="d-flex justify-content-between align-items-center mt-3">' +
-            '<div class="d-flex align-items-center">' +
-            '<label for="itemsPerPage" class="form-label me-2 mb-0 text-light">Items per page:</label>' +
-            '<select id="itemsPerPage" class="form-select form-select-sm bg-secondary text-light" style="width: auto;" onchange="changeItemsPerPage(this.value)">' +
-            '<option value="10">10</option>' +
-            '<option value="20" selected>20</option>' +
-            '<option value="25">25</option>' +
-            '<option value="50">50</option>' +
-            '<option value="100">100</option>' +
-            "</select>" +
-            "</div>" +
-            '<div id="paginationButtons" class="d-flex align-items-center">' +
-            "</div>" +
-            '<div class="text-muted small">' +
-            'Showing <span id="startItem">1</span>-<span id="endItem">20</span> of <span id="totalItems">0</span> items' +
-            "</div>" +
-            "</div>";
-
-        cardFooter.insertAdjacentHTML("beforeend", paginationHTML);
-    }
-};
-
-ETFSignalsManager.prototype.renderPaginationHTML = function () {
-    var buttonsContainer = document.getElementById("paginationButtons");
-    var startItem = document.getElementById("startItem");
-    var endItem = document.getElementById("endItem");
-    var totalItems = document.getElementById("totalItems");
-    var itemsPerPageSelect = document.getElementById("itemsPerPage");
-
-    if (!buttonsContainer) return;
-
-    // Update items per page selector
-    if (itemsPerPageSelect) {
-        itemsPerPageSelect.value = this.itemsPerPage;
-    }
-
-    // Calculate pagination info
-    var totalSignals = this.filteredSignals.length;
-    var startIndex = (this.currentPage - 1) * this.itemsPerPage + 1;
-    var endIndex = Math.min(this.currentPage * this.itemsPerPage, totalSignals);
-
-    // Update display counts
-    if (startItem) startItem.textContent = totalSignals > 0 ? startIndex : 0;
-    if (endItem) endItem.textContent = endIndex;
-    if (totalItems) totalItems.textContent = totalSignals;
-
-    // Generate pagination buttons
-    var paginationHTML = "";
-
-    if (this.totalPages > 1) {
-        // Previous button
-        if (this.currentPage > 1) {
-            paginationHTML +=
-                '<button class="btn btn-sm btn-outline-light me-1" onclick="window.etfSignalsManager.goToPage(' +
-                (this.currentPage - 1) +
-                ')">‹ Previous</button>';
-        }
-
-        // Page numbers
-        var startPage = Math.max(1, this.currentPage - 2);
-        var endPage = Math.min(this.totalPages, this.currentPage + 2);
-
-        for (var i = startPage; i <= endPage; i++) {
-            var activeClass =
-                i === this.currentPage ? "btn-primary" : "btn-outline-light";
-            paginationHTML +=
-                '<button class="btn btn-sm ' +
-                activeClass +
-                ' me-1" onclick="window.etfSignalsManager.goToPage(' +
-                i +
-                ')">' +
-                i +
-                "</button>";
-        }
-
-        // Next button
-        if (this.currentPage < this.totalPages) {
-            paginationHTML +=
-                '<button class="btn btn-sm btn-outline-light" onclick="window.etfSignalsManager.goToPage(' +
-                (this.currentPage + 1) +
-                ')">Next ›</button>';
-        }
-    }
-
-    buttonsContainer.innerHTML = paginationHTML;
 };
 
 // Page navigation function
