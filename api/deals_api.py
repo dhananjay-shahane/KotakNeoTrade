@@ -588,6 +588,19 @@ def create_deal_from_signal():
                 'error': 'Invalid price or quantity data'
             }), 400
 
+        # Additional validation
+        if not symbol or len(symbol.strip()) == 0:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid symbol'
+            }), 400
+
+        if user_id <= 0:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid user ID'
+            }), 400
+
         # Calculate target price safely
         tp = safe_float(signal_data.get('tp'), ep * 1.05)
         if tp <= 0:
@@ -704,8 +717,17 @@ def create_deal_from_signal():
                     pnl_amount
                 )
 
+                logger.info(f"Executing insert query with values: {values}")
                 cursor.execute(insert_query, values)
-                deal_id = cursor.fetchone()[0]
+                
+                # Get the deal ID
+                result = cursor.fetchone()
+                if not result or not result[0]:
+                    raise Exception("Failed to create deal - no ID returned")
+                
+                deal_id = result[0]
+                logger.info(f"Deal created with ID: {deal_id}")
+                
                 conn.commit()
 
                 logger.info(f"✓ Created deal from signal: {symbol} - Deal ID: {deal_id} for user: {user_id}")
@@ -722,11 +744,19 @@ def create_deal_from_signal():
 
         except Exception as db_error:
             logger.error(f"Database error creating deal: {db_error}")
+            logger.error(f"Signal data was: {signal_data}")
+            logger.error(f"Processed values were: user_id={user_id}, symbol={symbol}, qty={qty}, ep={ep}, cmp={cmp}")
             if conn:
                 conn.rollback()
+            
+            # More specific error message
+            error_msg = str(db_error)
+            if not error_msg or error_msg == '0':
+                error_msg = "Database insert failed - check signal data format"
+            
             return jsonify({
                 'success': False,
-                'error': f'Failed to create deal: {str(db_error)}'
+                'error': f'Failed to create deal: {error_msg}'
             }), 500
         finally:
             if conn:
