@@ -1,13 +1,14 @@
 """
-Deals API - Clean version without PostgreSQL dependencies
-Handles all deals-related operations with simple local JSON storage
+Deals API - External Database Integration
+Handles all deals-related operations with external PostgreSQL database
 """
 import logging
 from flask import Blueprint, request, jsonify, session
-import json
-import os
+import psycopg2
+import psycopg2.extras
 from datetime import datetime
 import traceback
+import os
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -23,46 +24,88 @@ def test_deals():
         'success': True
     })
 
-def get_user_deals_from_local():
+def get_external_db_connection():
+    """Get connection to external PostgreSQL database"""
+    try:
+        database_url = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com:5432/kotak_trading_db"
+        conn = psycopg2.connect(database_url)
+        logger.info("✓ Connected to external PostgreSQL database")
+        return conn
+    except Exception as e:
+        logger.error(f"❌ Failed to connect to external database: {e}")
+        return None
+
+def get_user_deals_from_db():
     """
-    Get user deals from local JSON file storage
+    Get user deals from external database public.user_deals table
     Returns all authentic deals with proper structure for calculations
     """
     try:
-        deals_file = 'user_deals.json'
-        
-        if not os.path.exists(deals_file):
-            logger.info("No deals file found, returning empty list")
+        conn = get_external_db_connection()
+        if not conn:
+            logger.error("Failed to connect to external database")
             return []
 
-        with open(deals_file, 'r') as f:
-            all_deals = json.load(f)
-
-        # Filter and return active deals
-        deals = []
-        for deal in all_deals:
-            if deal.get('status') == 'ACTIVE':
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
+            # Query to get all user deals from external database
+            query = """
+            SELECT 
+                id,
+                user_id,
+                symbol,
+                trading_symbol,
+                entry_date,
+                position_type,
+                quantity,
+                entry_price,
+                current_price,
+                target_price,
+                stop_loss,
+                invested_amount,
+                current_value,
+                pnl_amount,
+                pnl_percent,
+                status,
+                deal_type,
+                notes,
+                tags,
+                created_at,
+                updated_at
+            FROM public.user_deals 
+            WHERE status = 'ACTIVE'
+            ORDER BY created_at DESC
+            """
+            
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            
+            # Convert to list of dictionaries
+            deals = []
+            for row in rows:
+                deal = dict(row)
                 # Ensure numeric fields are properly formatted
-                deal['entry_price'] = float(deal.get('entry_price', 0))
-                deal['current_price'] = float(deal.get('current_price', 0))
-                deal['invested_amount'] = float(deal.get('invested_amount', 0))
-                deal['current_value'] = float(deal.get('current_value', 0))
-                deal['pnl_amount'] = float(deal.get('pnl_amount', 0))
-                deal['pnl_percent'] = float(deal.get('pnl_percent', 0))
+                deal['entry_price'] = float(deal['entry_price']) if deal['entry_price'] else 0.0
+                deal['current_price'] = float(deal['current_price']) if deal['current_price'] else 0.0
+                deal['invested_amount'] = float(deal['invested_amount']) if deal['invested_amount'] else 0.0
+                deal['current_value'] = float(deal['current_value']) if deal['current_value'] else 0.0
+                deal['pnl_amount'] = float(deal['pnl_amount']) if deal['pnl_amount'] else 0.0
+                deal['pnl_percent'] = float(deal['pnl_percent']) if deal['pnl_percent'] else 0.0
                 deals.append(deal)
-        
-        logger.info(f"✓ Fetched {len(deals)} user deals from local storage")
+            
+        conn.close()
+        logger.info(f"✓ Fetched {len(deals)} user deals from external database")
         return deals
 
     except Exception as e:
         logger.error(f"Error fetching user deals: {e}")
+        traceback.print_exc()
         return []
 
 @deals_api.route('/user-deals-data')
 def get_user_deals_data():
-    """API endpoint to get user deals data from local storage"""
+    """API endpoint to get user deals data from external database"""
     try:
-        deals = get_user_deals_from_local()
+        deals = get_user_deals_from_db()
         
         # Calculate summary
         total_invested = sum(deal.get('invested_amount', 0) for deal in deals)
@@ -198,63 +241,76 @@ def create_deal_from_signal():
         pnl_amount = current_value - invested_amount
         pnl_percent = (pnl_amount / invested_amount * 100) if invested_amount > 0 else 0
 
-        # Use local JSON file storage
-        deals_file = 'user_deals.json'
-        
+        # Connect to external database
+        conn = get_external_db_connection()
+        if not conn:
+            return jsonify({
+                'success': False,
+                'error': 'External database connection failed'
+            }), 500
+
         # Ensure user_id is positive
         if not user_id or user_id <= 0:
             user_id = 1
 
-        # Load existing deals or create new file
-        if os.path.exists(deals_file):
-            with open(deals_file, 'r') as f:
-                all_deals = json.load(f)
-        else:
-            all_deals = []
+        try:
+            with conn.cursor() as cursor:
+                # Insert new deal into public.user_deals table
+                insert_query = """
+                INSERT INTO public.user_deals (
+                    user_id, symbol, trading_symbol, entry_date, position_type,
+                    quantity, entry_price, current_price, target_price, stop_loss,
+                    invested_amount, current_value, pnl_amount, pnl_percent,
+                    status, deal_type, notes, tags, created_at, updated_at
+                ) VALUES (
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                ) RETURNING id;
+                """
+                
+                values = (
+                    user_id,
+                    symbol.upper(),
+                    symbol.upper(),
+                    datetime.now().strftime('%Y-%m-%d'),
+                    'LONG' if pos == 1 else 'SHORT',
+                    qty,
+                    float(ep),
+                    float(cmp),
+                    float(tp),
+                    float(ep * 0.95),  # Default 5% stop loss
+                    float(invested_amount),
+                    float(current_value),
+                    float(pnl_amount),
+                    float(pnl_percent),
+                    'ACTIVE',
+                    'SIGNAL',
+                    f'Added from ETF signal - {symbol}',
+                    'ETF,SIGNAL',
+                    datetime.now(),
+                    datetime.now()
+                )
 
-        # Create new deal record
-        deal_id = len(all_deals) + 1
-        new_deal = {
-            'id': deal_id,
-            'user_id': user_id,
-            'symbol': symbol.upper(),
-            'trading_symbol': symbol.upper(),
-            'entry_date': datetime.now().strftime('%Y-%m-%d'),
-            'position_type': 'LONG' if pos == 1 else 'SHORT',
-            'quantity': qty,
-            'entry_price': float(ep),
-            'current_price': float(cmp),
-            'target_price': float(tp),
-            'stop_loss': float(ep * 0.95),  # Default 5% stop loss
-            'invested_amount': float(invested_amount),
-            'current_value': float(current_value),
-            'pnl_amount': float(pnl_amount),
-            'pnl_percent': float(pnl_percent),
-            'status': 'ACTIVE',
-            'deal_type': 'SIGNAL',
-            'notes': f'Added from ETF signal - {symbol}',
-            'tags': 'ETF,SIGNAL',
-            'created_at': datetime.now().isoformat(),
-            'updated_at': datetime.now().isoformat()
-        }
+                logger.info(f"Executing insert query with values: {values}")
+                cursor.execute(insert_query, values)
+                deal_id = cursor.fetchone()[0]
+                conn.commit()
 
-        all_deals.append(new_deal)
+                logger.info(f"✓ Created deal from signal: {symbol} - Deal ID: {deal_id} for user: {user_id}")
 
-        # Save to JSON file
-        with open(deals_file, 'w') as f:
-            json.dump(all_deals, f, indent=2)
+                return jsonify({
+                    'success': True,
+                    'message': f'Deal created successfully for {symbol}',
+                    'deal_id': deal_id,
+                    'symbol': symbol,
+                    'entry_price': ep,
+                    'quantity': qty,
+                    'invested_amount': invested_amount
+                })
 
-        logger.info(f"✓ Created deal from signal: {symbol} - Deal ID: {deal_id} for user: {user_id}")
-
-        return jsonify({
-            'success': True,
-            'message': f'Deal created successfully for {symbol}',
-            'deal_id': deal_id,
-            'symbol': symbol,
-            'entry_price': ep,
-            'quantity': qty,
-            'invested_amount': invested_amount
-        })
+        finally:
+            if conn:
+                conn.close()
 
     except Exception as db_error:
         logger.error(f"Database error creating deal: {db_error}")
