@@ -1712,108 +1712,25 @@ function showNotification(message, type) {
     }, 5000);
 }
 
-// Search Symbol Functions
-function searchSymbol() {
-    var searchTerm = document.getElementById('symbolSearchInput').value.trim();
+// Inline Search Functions
+function performInlineSearch() {
+    var searchTerm = document.getElementById('symbolSearchInput').value.trim().toLowerCase();
     
     if (!searchTerm) {
-        showNotification('Please enter a symbol to search', 'error');
-        return;
-    }
-    
-    var resultsContainer = document.getElementById('searchResults');
-    var resultsRow = document.getElementById('searchResultsRow');
-    
-    // Show results section
-    resultsRow.style.display = 'block';
-    resultsContainer.innerHTML = '<div class="text-center py-3"><i class="fas fa-spinner fa-spin me-2"></i>Searching...</div>';
-    
-    // Filter deals by symbol
-    var filteredDeals = window.dealsManager.deals.filter(function(deal) {
-        return deal.symbol && deal.symbol.toLowerCase().includes(searchTerm.toLowerCase());
-    });
-    
-    if (filteredDeals.length > 0) {
-        var resultsHTML = '<div class="row g-2">';
-        
-        filteredDeals.forEach(function(deal) {
-            resultsHTML += 
-                '<div class="col-12">' +
-                '<div class="search-result-item bg-secondary rounded p-3 border border-primary">' +
-                '<div class="row align-items-center">' +
-                '<div class="col-8">' +
-                '<h6 class="text-light mb-1">' +
-                '<i class="fas fa-chart-line text-primary me-2"></i>' + deal.symbol +
-                '</h6>' +
-                '<div class="row text-muted small">' +
-                '<div class="col-6">Qty: <span class="text-info">' + deal.qty + '</span></div>' +
-                '<div class="col-6">EP: <span class="text-success">₹' + deal.ep + '</span></div>' +
-                '</div>' +
-                '</div>' +
-                '<div class="col-4 text-end">' +
-                '<button class="btn btn-primary btn-sm w-100" onclick="selectSymbolFromSearch(\'' + deal.symbol + '\')">' +
-                '<i class="fas fa-check me-1"></i>Select' +
-                '</button>' +
-                '</div>' +
-                '</div>' +
-                '</div>' +
-                '</div>';
-        });
-        resultsHTML += '</div>';
-        resultsContainer.innerHTML = resultsHTML;
+        // Reset to show all deals if search is empty
+        window.dealsManager.filteredDeals = window.dealsManager.deals.slice();
     } else {
-        resultsContainer.innerHTML = 
-            '<div class="text-center py-4">' +
-            '<i class="fas fa-search fa-2x text-muted mb-2"></i>' +
-            '<h6 class="text-muted">No deals found for "' + searchTerm + '"</h6>' +
-            '<small class="text-muted">Try searching for different symbols</small>' +
-            '</div>';
+        // Filter deals by multiple fields
+        window.dealsManager.filteredDeals = window.dealsManager.deals.filter(function(deal) {
+            return (
+                (deal.symbol && deal.symbol.toLowerCase().includes(searchTerm)) ||
+                (deal.status && deal.status.toLowerCase().includes(searchTerm)) ||
+                (deal.deal_type && deal.deal_type.toLowerCase().includes(searchTerm)) ||
+                (deal.position_type && deal.position_type.toLowerCase().includes(searchTerm)) ||
+                (deal.date && deal.date.toLowerCase().includes(searchTerm))
+            );
+        });
     }
-}
-
-function clearSearchResults() {
-    var searchInput = document.getElementById('symbolSearchInput');
-    var resultsContainer = document.getElementById('searchResults');
-    var resultsRow = document.getElementById('searchResultsRow');
-    
-    if (searchInput) {
-        searchInput.value = '';
-    }
-    
-    if (resultsContainer) {
-        resultsContainer.innerHTML = '';
-    }
-    
-    if (resultsRow) {
-        resultsRow.style.display = 'none';
-    }
-}
-
-function selectSymbolFromSearch(symbol) {
-    // Filter deals table to show only this symbol
-    filterDealsBySymbol(symbol);
-    
-    // Close modal
-    var modal = bootstrap.Modal.getInstance(document.getElementById('searchSymbolModal'));
-    if (modal) {
-        modal.hide();
-    }
-    
-    showNotification('Filtered deals for ' + symbol, 'success');
-}
-
-function selectSymbolFromPopular(symbol) {
-    document.getElementById('symbolSearchInput').value = symbol;
-    searchSymbol();
-}
-
-function filterDealsBySymbol(symbol) {
-    if (!window.dealsManager) return;
-    
-    // Filter deals by symbol
-    window.dealsManager.filteredDeals = window.dealsManager.deals.filter(function(deal) {
-        return deal.symbol && deal.symbol.toLowerCase() === symbol.toLowerCase();
-    });
     
     // Reset to first page and refresh table
     window.dealsManager.currentPage = 1;
@@ -1821,13 +1738,33 @@ function filterDealsBySymbol(symbol) {
     window.dealsManager.updatePagination();
 }
 
-// Add enter key support for search
+function clearInlineSearch() {
+    var searchInput = document.getElementById('symbolSearchInput');
+    if (searchInput) {
+        searchInput.value = '';
+        performInlineSearch(); // This will reset to show all deals
+    }
+}
+
+
+
+// Add real-time search support
 document.addEventListener('DOMContentLoaded', function() {
     var searchInput = document.getElementById('symbolSearchInput');
     if (searchInput) {
+        // Real-time search as user types
+        searchInput.addEventListener('input', function(e) {
+            clearTimeout(window.searchTimeout);
+            window.searchTimeout = setTimeout(function() {
+                performInlineSearch();
+            }, 300); // 300ms delay for better performance
+        });
+        
+        // Also support enter key
         searchInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                searchSymbol();
+                clearTimeout(window.searchTimeout);
+                performInlineSearch();
             }
         });
     }
