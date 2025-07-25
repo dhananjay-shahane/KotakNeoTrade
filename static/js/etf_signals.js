@@ -68,9 +68,7 @@ ETFSignalsManager.prototype.init = function () {
     this.createPaginationControls(); // Create pagination controls
 
     // Show skeleton loading while data loads
-    if (window.skeletonLoader) {
-        window.skeletonLoader.showSignalsSkeleton();
-    }
+    this.showLoadingState();
 
     this.loadSignals(true);
     this.startAutoRefresh();
@@ -163,10 +161,8 @@ ETFSignalsManager.prototype.loadSignals = function (resetData) {
                         self.renderSignalsTable();
                         self.updatePagination();
 
-                        // Hide skeleton loading even on error
-                        if (window.skeletonLoader) {
-                            window.skeletonLoader.hideSignalsSkeleton();
-                        }
+                        // Hide loading state even on error
+                        self.hideLoadingState();
                         return;
                     }
 
@@ -186,10 +182,8 @@ ETFSignalsManager.prototype.loadSignals = function (resetData) {
                         self.renderSignalsTable();
                         self.updatePagination();
 
-                        // Hide skeleton loading
-                        if (window.skeletonLoader) {
-                            window.skeletonLoader.hideSignalsSkeleton();
-                        }
+                        // Hide loading state
+                        self.hideLoadingState();
 
                         self.showSuccessMessage(
                             "Loaded " + self.signals.length + " signals",
@@ -279,27 +273,20 @@ ETFSignalsManager.prototype.renderSignalsTable = function () {
 ETFSignalsManager.prototype.createSignalRow = function (signal) {
     var row = document.createElement("tr");
 
-    // Extract and format signal data
-    var symbol = signal.etf || signal.symbol || "N/A";
-    var entryPrice = parseFloat(signal.ep || signal.entry_price || 0);
-    var currentPrice = parseFloat(
-        signal.cmp || signal.current_price || entryPrice,
-    );
-    var quantity = parseInt(signal.qty || signal.quantity || 0);
-    var pnl = parseFloat(signal.pl || signal.pnl || 0);
+    // Extract and format signal data using new format from get_all_trade_metrics()
+    var symbol = signal.Symbol || signal.etf || signal.symbol || "N/A";
+    var entryPrice = parseFloat(signal.EP || signal.ep || signal.entry_price || 0);
+    var currentPrice = parseFloat(signal.CMP || signal.cmp || signal.current_price || entryPrice);
+    var quantity = parseInt(signal.QTY || signal.qty || signal.quantity || 0);
+    var pnl = parseFloat(signal.CPL || signal.pl || signal.pnl || 0);
     var changePct = parseFloat(signal.change_pct || signal.pp || 0);
-    var investment = parseFloat(
-        signal.inv || signal.investment_amount || entryPrice * quantity,
-    );
-    var targetPrice = parseFloat(
-        signal.tp || signal.target_price || entryPrice * 1.1,
-    );
+    var investment = parseFloat(signal.INV || signal.inv || signal.investment_amount || entryPrice * quantity);
+    var targetPrice = parseFloat(signal.TP || signal.tp || signal.target_price || entryPrice * 1.1);
     var status = signal.status || "ACTIVE";
-    var positionType =
-        signal.position_type || (signal.pos === 1 ? "LONG" : "SHORT") || "LONG";
+    var positionType = signal.position_type || (signal.pos === 1 ? "LONG" : "SHORT") || "LONG";
 
-    // Parse percentage change from chan field (remove % symbol)
-    var chanValue = signal.chan || "";
+    // Parse percentage change from %CHAN field (remove % symbol)
+    var chanValue = signal["%CHAN"] || signal.chan || "";
     if (chanValue && typeof chanValue === "string" && chanValue.includes("%")) {
         changePct = parseFloat(chanValue.replace("%", ""));
     }
@@ -324,7 +311,7 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
 
         switch (column.key) {
             case "trade_signal_id":
-                var tradeId = signal.trade_signal_id || signal.id || "N/A";
+                var tradeId = signal.ID || signal.trade_signal_id || signal.id || "N/A";
                 cellValue =
                     '<span class="badge bg-secondary">' + tradeId + "</span>";
                 break;
@@ -333,7 +320,7 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                     '<span class="fw-bold text-primary">' + symbol + "</span>";
                 break;
             case "thirty":
-                var thirtyValue = signal.thirty || signal.d30 || 0;
+                var thirtyValue = signal["30D"] || signal.thirty || signal.d30 || 0;
                 if (typeof thirtyValue === "string") {
                     thirtyValue = parseFloat(thirtyValue) || 0;
                 }
@@ -341,7 +328,7 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                     thirtyValue > 0 ? "₹" + thirtyValue.toFixed(2) : "₹0.00";
                 break;
             case "dh":
-                var dhValue = signal.dh || signal.ch30 || "0.00%";
+                var dhValue = signal["30D%"] || signal.dh || signal.ch30 || "0.00%";
                 if (typeof dhValue === "number") {
                     dhValue = dhValue.toFixed(2) + "%";
                 }
@@ -355,7 +342,7 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                     '<span class="fw-bold text-white">' + dhValue + "</span>";
                 break;
             case "date":
-                cellValue = signal.date || "--";
+                cellValue = signal.DATE || signal.date || "--";
                 break;
             case "qty":
                 cellValue =
@@ -373,7 +360,7 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                     "</span>";
                 break;
             case "chan":
-                var chanDisplay = signal.chan || changePct.toFixed(2) + "%";
+                var chanDisplay = signal["%CHAN"] || signal.chan || changePct.toFixed(2) + "%";
                 var bgColor = this.getGradientBackgroundColor(changePct);
                 cellStyle = bgColor;
                 cellValue = '<span class="fw-bold">' + chanDisplay + "</span>";
@@ -433,7 +420,7 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
             //     cellValue = signal.qt || quantity;
             //     break;
             case "seven":
-                var sevenValue = signal.seven || signal.d7 || 0;
+                var sevenValue = signal["7D"] || signal.seven || signal.d7 || 0;
                 if (typeof sevenValue === "string") {
                     sevenValue = parseFloat(sevenValue) || 0;
                 }
@@ -441,7 +428,7 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                     sevenValue > 0 ? "₹" + sevenValue.toFixed(2) : "₹0.00";
                 break;
             case "ch":
-                var chValue = signal.ch || signal.ch7 || "0.00%";
+                var chValue = signal["7D%"] || signal.ch || signal.ch7 || "0.00%";
                 if (typeof chValue === "number") {
                     chValue = chValue.toFixed(2) + "%";
                 }

@@ -139,6 +139,15 @@ class SkeletonLoader {
         this.hideSkeleton("charts");
     }
 
+    // Signals page skeleton management
+    showSignalsSkeleton() {
+        this.showSkeleton("signals");
+    }
+
+    hideSignalsSkeleton() {
+        this.hideSkeleton("signals");
+    }
+
     // Auto-hide skeleton after timeout (fallback)
     autoHideSkeleton(pageType, timeout = 5000) {
         this.loadingTimeout = setTimeout(() => {
@@ -173,6 +182,8 @@ class SkeletonLoader {
             this.showPortfolioSkeleton();
             this.autoHideSkeleton("portfolio");
         } else if (currentPath.includes("/trading-signals")) {
+            this.showSignalsSkeleton();
+            this.autoHideSkeleton("signals");
         } else if (currentPath.includes("/deals")) {
             this.showDealsSkeleton();
             this.autoHideSkeleton("deals");
@@ -216,6 +227,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (href.includes("/portfolio")) {
                     window.skeletonLoader.showPortfolioSkeleton();
                 } else if (href.includes("/trading-signals")) {
+                    window.skeletonLoader.showSignalsSkeleton();
                 } else if (href.includes("/deals")) {
                     window.skeletonLoader.showDealsSkeleton();
                 } else if (href.includes("/charts")) {
