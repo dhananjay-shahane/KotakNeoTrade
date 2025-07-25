@@ -13,19 +13,8 @@ endblock %} {% block head %}
         </div>
         <div class="d-flex gap-2">
             <div class="search-container" style="position: relative;">
-                <!-- Search Button -->
-                <button 
-                    class="btn btn-primary" 
-                    type="button" 
-                    id="searchToggleBtn"
-                    onclick="toggleSearchInput()"
-                    style="min-width: 42px; height: 38px;"
-                >
-                    <i class="fas fa-search text-white"></i>
-                </button>
-                
                 <!-- Hidden Search Input (Initially Hidden) -->
-                <div class="input-group" id="searchInputGroup" style="width: 300px; display: none; position: absolute; top: 0; left: 50px; z-index: 1000;">
+                <div class="input-group" id="searchInputGroup" style="width: 300px; display: none; position: absolute; top: 0; right: 50px; z-index: 1000;">
                     <input
                         type="text"
                         class="form-control bg-secondary text-light border-0"
@@ -38,6 +27,17 @@ endblock %} {% block head %}
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
+                
+                <!-- Search Button -->
+                <button 
+                    class="btn btn-primary" 
+                    type="button" 
+                    id="searchToggleBtn"
+                    onclick="toggleSearchInput()"
+                    style="min-width: 42px; height: 38px;"
+                >
+                    <i class="fas fa-search text-white"></i>
+                </button>
             </div>
             <button
                 class="btn btn-outline-secondary text-muted"
