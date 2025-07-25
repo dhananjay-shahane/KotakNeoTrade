@@ -247,7 +247,7 @@ DealsManager.prototype.loadDeals = function () {
     console.log("Loading deals from user_deals database...");
 
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", "/api/user-deals", true);
+    xhr.open("GET", "/api/user-deals-data", true);
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.timeout = 15000; // 15 second timeout
 
@@ -1714,8 +1714,10 @@ function initializeDeals() {
     // Load initial data
     window.dealsManager.loadDeals();
 
-    // Check price update status
-    window.dealsManager.checkPriceUpdateStatus();
+    // Check price update status (if method exists)
+    if (typeof window.dealsManager.checkPriceUpdateStatus === 'function') {
+        window.dealsManager.checkPriceUpdateStatus();
+    }
 
     // Set default data source to Google Finance if not already set
     if (!localStorage.getItem("data-source")) {

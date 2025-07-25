@@ -102,6 +102,7 @@ def get_user_deals_from_db():
         return []
 
 @deals_api.route('/user-deals-data')
+@deals_api.route('/user-deals')
 def get_user_deals_data():
     """API endpoint to get user deals data from external database"""
     try:
