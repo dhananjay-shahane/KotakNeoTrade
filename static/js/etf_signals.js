@@ -278,15 +278,27 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
 
     // Extract and format signal data using new format from get_all_trade_metrics()
     var symbol = signal.Symbol || signal.etf || signal.symbol || "N/A";
-    var entryPrice = parseFloat(signal.EP || signal.ep || signal.entry_price || 0);
-    var currentPrice = parseFloat(signal.CMP || signal.cmp || signal.current_price || entryPrice);
+    var entryPrice = parseFloat(
+        signal.EP || signal.ep || signal.entry_price || 0,
+    );
+    var currentPrice = parseFloat(
+        signal.CMP || signal.cmp || signal.current_price || entryPrice,
+    );
     var quantity = parseInt(signal.QTY || signal.qty || signal.quantity || 0);
     var pnl = parseFloat(signal.CPL || signal.pl || signal.pnl || 0);
     var changePct = parseFloat(signal.change_pct || signal.pp || 0);
-    var investment = parseFloat(signal.INV || signal.inv || signal.investment_amount || entryPrice * quantity);
-    var targetPrice = parseFloat(signal.TP || signal.tp || signal.target_price || entryPrice * 1.1);
+    var investment = parseFloat(
+        signal.INV ||
+            signal.inv ||
+            signal.investment_amount ||
+            entryPrice * quantity,
+    );
+    var targetPrice = parseFloat(
+        signal.TP || signal.tp || signal.target_price || entryPrice * 1.1,
+    );
     var status = signal.status || "ACTIVE";
-    var positionType = signal.position_type || (signal.pos === 1 ? "LONG" : "SHORT") || "LONG";
+    var positionType =
+        signal.position_type || (signal.pos === 1 ? "LONG" : "SHORT") || "LONG";
 
     // Parse percentage change from %CHAN field (remove % symbol)
     var chanValue = signal["%CHAN"] || signal.chan || "";
@@ -314,7 +326,8 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
 
         switch (column.key) {
             case "trade_signal_id":
-                var tradeId = signal.ID || signal.trade_signal_id || signal.id || "N/A";
+                var tradeId =
+                    signal.ID || signal.trade_signal_id || signal.id || "N/A";
                 cellValue =
                     '<span class="badge bg-secondary">' + tradeId + "</span>";
                 break;
@@ -323,7 +336,8 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                     '<span class="fw-bold text-primary">' + symbol + "</span>";
                 break;
             case "thirty":
-                var thirtyValue = signal["30D"] || signal.thirty || signal.d30 || 0;
+                var thirtyValue =
+                    signal["30D"] || signal.thirty || signal.d30 || 0;
                 if (typeof thirtyValue === "string") {
                     thirtyValue = parseFloat(thirtyValue) || 0;
                 }
@@ -331,7 +345,8 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                     thirtyValue > 0 ? "₹" + thirtyValue.toFixed(2) : "₹0.00";
                 break;
             case "dh":
-                var dhValue = signal["30D%"] || signal.dh || signal.ch30 || "0.00%";
+                var dhValue =
+                    signal["30D%"] || signal.dh || signal.ch30 || "0.00%";
                 if (typeof dhValue === "number") {
                     dhValue = dhValue.toFixed(2) + "%";
                 }
@@ -363,7 +378,10 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                     "</span>";
                 break;
             case "chan":
-                var chanDisplay = signal["%CHAN"] || signal.chan || changePct.toFixed(2) + "%";
+                var chanDisplay =
+                    signal["%CHAN"] ||
+                    signal.chan ||
+                    changePct.toFixed(2) + "%";
                 var bgColor = this.getGradientBackgroundColor(changePct);
                 cellStyle = bgColor;
                 cellValue = '<span class="fw-bold">' + chanDisplay + "</span>";
@@ -412,7 +430,7 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                 break;
             case "iv":
                 var ivValue = signal.IV || signal.iv || 0;
-                if (typeof ivValue === 'number' && ivValue > 0) {
+                if (typeof ivValue === "number" && ivValue > 0) {
                     cellValue = "₹" + parseFloat(ivValue).toFixed(2);
                 } else {
                     cellValue = "--";
@@ -420,7 +438,7 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                 break;
             case "ip":
                 var ipValue = signal.IP || signal.ip || 0;
-                if (typeof ipValue === 'number' && ipValue > 0) {
+                if (typeof ipValue === "number" && ipValue > 0) {
                     cellValue = "₹" + parseFloat(ipValue).toFixed(2);
                 } else {
                     cellValue = "--";
@@ -441,7 +459,8 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                     sevenValue > 0 ? "₹" + sevenValue.toFixed(2) : "₹0.00";
                 break;
             case "ch":
-                var chValue = signal["7D%"] || signal.ch || signal.ch7 || "0.00%";
+                var chValue =
+                    signal["7D%"] || signal.ch || signal.ch7 || "0.00%";
                 if (typeof chValue === "number") {
                     chValue = chValue.toFixed(2) + "%";
                 }
@@ -455,10 +474,11 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                     '<span class="fw-bold text-white">' + chValue + "</span>";
                 break;
             case "actions":
-                var signalId = signal.ID || signal.id || signal.trade_signal_id || "1";
+                var signalId =
+                    signal.ID || signal.id || signal.trade_signal_id || "1";
                 console.log("Creating action button for signal:", {
                     signalId: signalId,
-                    originalSignal: signal
+                    originalSignal: signal,
                 });
                 cellValue =
                     '<button class="btn btn-sm btn-success" onclick="addDeal(' +
@@ -1346,51 +1366,17 @@ function exportSignals() {
 
 function addDeal(signalId) {
     console.log("Add Deal called with signalId:", signalId);
-    console.log("Available signals:", window.etfSignalsManager ? window.etfSignalsManager.signals : 'No signals manager');
 
     // Find the complete signal data from the current signals array
     var signal = null;
     if (window.etfSignalsManager && window.etfSignalsManager.signals) {
-        console.log("Searching through", window.etfSignalsManager.signals.length, "signals");
-        console.log("Looking for signal ID:", signalId, "Type:", typeof signalId);
-        
-        // Log the first few signals to see their structure
-        if (window.etfSignalsManager.signals.length > 0) {
-            console.log("Sample signal structure:", JSON.stringify(window.etfSignalsManager.signals[0], null, 2));
-        }
-        
         signal = window.etfSignalsManager.signals.find(function (s) {
-            // Convert both to numbers for comparison since DB returns numbers
-            var signalIdNum = parseInt(signalId);
-            var matchesID = (s.ID == signalIdNum) || (s.ID == signalId);
-            var matchesId = (s.id == signalIdNum) || (s.id == signalId);
-            var matchesTradeId = (s.trade_signal_id == signalIdNum) || (s.trade_signal_id == signalId);
-            
-            console.log("Checking signal:", {
-                signalID: s.ID,
-                signalId: s.id,
-                tradeSignalId: s.trade_signal_id,
-                searchingFor: signalId,
-                searchingForNum: signalIdNum,
-                matchesID: matchesID,
-                matchesId: matchesId,
-                matchesTradeId: matchesTradeId
-            });
-            
-            return matchesID || matchesId || matchesTradeId;
+            return s.id == signalId || s.trade_signal_id == signalId;
         });
     }
 
     if (!signal) {
         console.error("Signal not found for ID:", signalId);
-        console.error("Available signal IDs:", window.etfSignalsManager.signals.map(function(s) {
-            return {
-                ID: s.ID,
-                id: s.id,
-                trade_signal_id: s.trade_signal_id,
-                symbol: s.Symbol || s.symbol
-            };
-        }));
         showSwalMessage(
             "Signal data not found. Please refresh the page and try again.",
             "error",
@@ -1436,17 +1422,12 @@ function addDeal(signalId) {
             },
         }).then((result) => {
             if (result.isConfirmed) {
-                var entryPrice = signal.EP || signal.ep || signal.entry_price || 0;
-                var currentPrice = signal.CMP || signal.cmp || signal.current_price || entryPrice;
-                var targetPrice = signal.TP || signal.tp || signal.target_price || entryPrice * 1.1;
-                createUserDealFromSignal(
+                proceedWithAddingDeal(
                     signal,
                     symbol,
-                    parseFloat(entryPrice),
-                    parseFloat(currentPrice),
-                    parseInt(quantity),
-                    parseFloat(targetPrice),
-                    parseFloat(investment)
+                    price,
+                    quantity,
+                    investment,
                 );
             }
         });
@@ -1463,17 +1444,22 @@ function addDeal(signalId) {
                     ")?",
             )
         ) {
-            var entryPrice = signal.EP || signal.ep || signal.entry_price || 0;
-            var currentPrice = signal.CMP || signal.cmp || signal.current_price || entryPrice;
-            var targetPrice = signal.TP || signal.tp || signal.target_price || entryPrice * 1.1;
-            createUserDealFromSignal(signal, symbol, parseFloat(entryPrice), parseFloat(currentPrice), parseInt(quantity), parseFloat(targetPrice), parseFloat(investment));
+            proceedWithAddingDeal(signal, symbol, price, quantity, investment);
         }
     }
 }
 
 // Function removed - no longer checking for duplicates to simplify the flow
 
-function createUserDealFromSignal(signal, symbol, entryPrice, currentPrice, quantity, targetPrice, investment) {
+function createUserDealFromSignal(
+    signal,
+    symbol,
+    entryPrice,
+    currentPrice,
+    quantity,
+    targetPrice,
+    investment,
+) {
     console.log("Creating user deal from signal:", {
         signal: signal,
         symbol: symbol,
@@ -1481,7 +1467,7 @@ function createUserDealFromSignal(signal, symbol, entryPrice, currentPrice, quan
         currentPrice: currentPrice,
         quantity: quantity,
         targetPrice: targetPrice,
-        investment: investment
+        investment: investment,
     });
 
     // Show loading indicator
@@ -1513,12 +1499,12 @@ function createUserDealFromSignal(signal, symbol, entryPrice, currentPrice, quan
             ID: signal.ID || signal.id || signal.trade_signal_id,
             id: signal.ID || signal.id || signal.trade_signal_id,
             trade_signal_id: signal.ID || signal.id || signal.trade_signal_id,
-            
+
             // Quantity fields
             qty: quantity,
             QTY: quantity,
             quantity: quantity,
-            
+
             // Price fields
             ep: entryPrice,
             EP: entryPrice,
@@ -1529,23 +1515,35 @@ function createUserDealFromSignal(signal, symbol, entryPrice, currentPrice, quan
             tp: targetPrice,
             TP: targetPrice,
             target_price: targetPrice,
-            
+
             // Investment fields
             inv: investment,
             INV: investment,
             investment: investment,
             investment_amount: investment,
-            
+
             // Position and status
             pos: 1, // Default to LONG position
             position_type: "LONG",
             status: "ACTIVE",
-            
+
             // Date fields
-            date: signal.DATE || signal.date || signal.created_at || new Date().toLocaleDateString(),
-            DATE: signal.DATE || signal.date || signal.created_at || new Date().toLocaleDateString(),
-            created_at: signal.DATE || signal.date || signal.created_at || new Date().toISOString(),
-            
+            date:
+                signal.DATE ||
+                signal.date ||
+                signal.created_at ||
+                new Date().toLocaleDateString(),
+            DATE:
+                signal.DATE ||
+                signal.date ||
+                signal.created_at ||
+                new Date().toLocaleDateString(),
+            created_at:
+                signal.DATE ||
+                signal.date ||
+                signal.created_at ||
+                new Date().toISOString(),
+
             // Include all other signal fields as-is
             "7D": signal["7D"] || 0,
             "7D%": signal["7D%"] || "0.00%",
@@ -1555,14 +1553,14 @@ function createUserDealFromSignal(signal, symbol, entryPrice, currentPrice, quan
             CPL: signal.CPL || 0,
             TPR: signal.TPR || "0.00%",
             TVA: signal.TVA || 0,
-            
+
             // Add any additional fields from the original signal
             seven: signal.seven || signal["7D"] || 0,
             ch: signal.ch || signal["7D%"] || "0.00%",
             thirty: signal.thirty || signal["30D"] || 0,
             dh: signal.dh || signal["30D%"] || "0.00%",
-            chan: signal.chan || signal["%CHAN"] || "0.00%"
-        }
+            chan: signal.chan || signal["%CHAN"] || "0.00%",
+        },
     };
 
     console.log("Sending deal data to user_deals API:", dealData);
@@ -1584,12 +1582,19 @@ function createUserDealFromSignal(signal, symbol, entryPrice, currentPrice, quan
                         if (typeof Swal !== "undefined") {
                             Swal.fire({
                                 title: "Success!",
-                                html: 
+                                html:
                                     "Deal created successfully!<br>" +
-                                    "<strong>Symbol:</strong> " + symbol + "<br>" +
-                                    "<strong>Quantity:</strong> " + quantity + "<br>" +
-                                    "<strong>Entry Price:</strong> ₹" + entryPrice.toFixed(2) + "<br>" +
-                                    "<strong>Investment:</strong> ₹" + investment.toFixed(2),
+                                    "<strong>Symbol:</strong> " +
+                                    symbol +
+                                    "<br>" +
+                                    "<strong>Quantity:</strong> " +
+                                    quantity +
+                                    "<br>" +
+                                    "<strong>Entry Price:</strong> ₹" +
+                                    entryPrice.toFixed(2) +
+                                    "<br>" +
+                                    "<strong>Investment:</strong> ₹" +
+                                    investment.toFixed(2),
                                 icon: "success",
                                 confirmButtonColor: "#28a745",
                                 background: "#2c3e50",
@@ -1599,14 +1604,20 @@ function createUserDealFromSignal(signal, symbol, entryPrice, currentPrice, quan
                                 },
                             }).then(() => {
                                 // Optional: Redirect to deals page
-                                var goToDeals = confirm("Would you like to view your deals page?");
+                                var goToDeals = confirm(
+                                    "Would you like to view your deals page?",
+                                );
                                 if (goToDeals) {
                                     window.location.href = "/deals";
                                 }
                             });
                         } else {
-                            alert("Deal created successfully for " + symbol + "!");
-                            var goToDeals = confirm("Would you like to view your deals page?");
+                            alert(
+                                "Deal created successfully for " + symbol + "!",
+                            );
+                            var goToDeals = confirm(
+                                "Would you like to view your deals page?",
+                            );
                             if (goToDeals) {
                                 window.location.href = "/deals";
                             }
@@ -1615,7 +1626,9 @@ function createUserDealFromSignal(signal, symbol, entryPrice, currentPrice, quan
                         if (typeof Swal !== "undefined") {
                             Swal.fire({
                                 title: "Error!",
-                                text: "Failed to create deal: " + (response.message || "Unknown error"),
+                                text:
+                                    "Failed to create deal: " +
+                                    (response.message || "Unknown error"),
                                 icon: "error",
                                 confirmButtonColor: "#dc3545",
                                 background: "#2c3e50",
@@ -1625,7 +1638,10 @@ function createUserDealFromSignal(signal, symbol, entryPrice, currentPrice, quan
                                 },
                             });
                         } else {
-                            alert("Failed to create deal: " + (response.message || "Unknown error"));
+                            alert(
+                                "Failed to create deal: " +
+                                    (response.message || "Unknown error"),
+                            );
                         }
                     }
                 } catch (parseError) {
@@ -1669,7 +1685,10 @@ function createUserDealFromSignal(signal, symbol, entryPrice, currentPrice, quan
                 if (typeof Swal !== "undefined") {
                     Swal.fire({
                         title: "Error!",
-                        text: "Server error (" + xhr.status + "). Please try again.",
+                        text:
+                            "Server error (" +
+                            xhr.status +
+                            "). Please try again.",
                         icon: "error",
                         confirmButtonColor: "#dc3545",
                         background: "#2c3e50",
@@ -1679,7 +1698,9 @@ function createUserDealFromSignal(signal, symbol, entryPrice, currentPrice, quan
                         },
                     });
                 } else {
-                    alert("Server error (" + xhr.status + "). Please try again.");
+                    alert(
+                        "Server error (" + xhr.status + "). Please try again.",
+                    );
                 }
             }
         }
@@ -1940,7 +1961,7 @@ function addDealFromSignal(symbol, signalData) {
         );
     } catch (error) {
         console.error("Error adding deal:", error);
-showMessage("Error processing request: " + error.message, "error");
+        showMessage("Error processing request: " + error.message, "error");
     }
 }
 
@@ -2141,7 +2162,10 @@ ETFSignalsManager.prototype.renderPaginationHTML = function () {
     if (this.totalPages > 1) {
         // Previous button
         if (this.currentPage > 1) {
-            paginationHTML += '<button class="btn btn-sm btn-outline-light me-1" onclick="window.etfSignalsManager.goToPage(' + (this.currentPage - 1) + ')">‹ Previous</button>';
+            paginationHTML +=
+                '<button class="btn btn-sm btn-outline-light me-1" onclick="window.etfSignalsManager.goToPage(' +
+                (this.currentPage - 1) +
+                ')">‹ Previous</button>';
         }
 
         // Page numbers
@@ -2149,13 +2173,24 @@ ETFSignalsManager.prototype.renderPaginationHTML = function () {
         var endPage = Math.min(this.totalPages, this.currentPage + 2);
 
         for (var i = startPage; i <= endPage; i++) {
-            var activeClass = i === this.currentPage ? "btn-primary" : "btn-outline-light";
-            paginationHTML += '<button class="btn btn-sm ' + activeClass + ' me-1" onclick="window.etfSignalsManager.goToPage(' + i + ')">' + i + '</button>';
+            var activeClass =
+                i === this.currentPage ? "btn-primary" : "btn-outline-light";
+            paginationHTML +=
+                '<button class="btn btn-sm ' +
+                activeClass +
+                ' me-1" onclick="window.etfSignalsManager.goToPage(' +
+                i +
+                ')">' +
+                i +
+                "</button>";
         }
 
         // Next button
         if (this.currentPage < this.totalPages) {
-            paginationHTML += '<button class="btn btn-sm btn-outline-light" onclick="window.etfSignalsManager.goToPage(' + (this.currentPage + 1) + ')">Next ›</button>';
+            paginationHTML +=
+                '<button class="btn btn-sm btn-outline-light" onclick="window.etfSignalsManager.goToPage(' +
+                (this.currentPage + 1) +
+                ')">Next ›</button>';
         }
     }
 
@@ -2163,7 +2198,7 @@ ETFSignalsManager.prototype.renderPaginationHTML = function () {
 };
 
 // Page navigation function
-ETFSignalsManager.prototype.goToPage = function(page) {
+ETFSignalsManager.prototype.goToPage = function (page) {
     if (page >= 1 && page <= this.totalPages && page !== this.currentPage) {
         this.currentPage = page;
         this.updateDisplayedSignals();
