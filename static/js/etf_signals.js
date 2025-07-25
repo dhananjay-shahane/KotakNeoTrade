@@ -1475,13 +1475,14 @@ function findAndProcessSignal(signalId) {
     }
 }
 
-function proceedWithAddingDeal(signal, symbol, price, quantity, investment) {
+function proceedWithAddingDeal(signal, symbol, price, quantity, investment, forceAdd) {
     console.log("Proceeding with adding deal:", {
         signal: signal,
         symbol: symbol,
         price: price,
         quantity: quantity,
         investment: investment,
+        forceAdd: forceAdd
     });
 
     // Show loading indicator
@@ -1609,6 +1610,44 @@ function proceedWithAddingDeal(signal, symbol, price, quantity, investment) {
                         alert("Invalid response from server");
                     }
                 }
+            } else if (xhr.status === 409) {
+                // Handle duplicate deal conflict (409 status code)
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.duplicate) {
+                        console.log("Duplicate deal detected:", response);
+                        if (typeof Swal !== "undefined") {
+                            Swal.fire({
+                                title: "Duplicate Deal",
+                                text: response.message || "This trade is already added, you want add?",
+                                icon: "question",
+                                showCancelButton: true,
+                                confirmButtonColor: "#28a745",
+                                cancelButtonColor: "#dc3545",
+                                confirmButtonText: "Add",
+                                cancelButtonText: "Cancel",
+                                background: "#2c3e50",
+                                color: "#fff",
+                                customClass: {
+                                    popup: "swal-dark-theme",
+                                },
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    // Retry with force_add = true
+                                    proceedWithAddingDeal(signal, symbol, price, quantity, investment, true);
+                                }
+                            });
+                        } else {
+                            // Fallback to regular confirm if SweetAlert2 is not available
+                            if (confirm(response.message || "This trade is already added, you want add?")) {
+                                proceedWithAddingDeal(signal, symbol, price, quantity, investment, true);
+                            }
+                        }
+                        return;
+                    }
+                } catch (parseError) {
+                    console.error("Failed to parse duplicate response:", parseError);
+                }
             } else {
                 if (typeof Swal !== "undefined") {
                     Swal.fire({
@@ -1655,7 +1694,10 @@ function proceedWithAddingDeal(signal, symbol, price, quantity, investment) {
         }
     };
 
-    xhr.send(JSON.stringify({ signal_data: signalData }));
+    xhr.send(JSON.stringify({ 
+        signal_data: signalData,
+        force_add: forceAdd || false 
+    }));
 }
 
 function createUserDealFromSignal(

@@ -35,6 +35,31 @@ def get_external_db_connection():
         logger.error(f"❌ Failed to connect to external database: {e}")
         return None
 
+def check_duplicate_deal(symbol, user_id=1):
+    """
+    Check if a deal with the same symbol already exists for the user
+    Returns True if duplicate exists, False otherwise
+    """
+    try:
+        conn = get_external_db_connection()
+        if not conn:
+            return False
+
+        with conn.cursor() as cursor:
+            query = """
+            SELECT COUNT(*) FROM public.user_deals 
+            WHERE symbol = %s AND user_id = %s AND status = 'ACTIVE'
+            """
+            cursor.execute(query, (symbol.upper(), user_id))
+            count = cursor.fetchone()[0]
+            
+        conn.close()
+        return count > 0
+
+    except Exception as e:
+        logger.error(f"Error checking duplicate deal: {e}")
+        return False
+
 def get_user_deals_from_db():
     """
     Get user deals from external database public.user_deals table
@@ -141,9 +166,42 @@ def get_user_deals_data():
             }
         }), 500
 
+@deals_api.route('/deals/check-duplicate', methods=['POST'])
+def check_deal_duplicate():
+    """Check if a deal with the same symbol already exists"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+
+        symbol = data.get('symbol', '').strip()
+        if not symbol:
+            return jsonify({'success': False, 'error': 'Symbol is required'}), 400
+
+        # Get user_id from session
+        user_id = session.get('user_id')
+        if not user_id or not isinstance(user_id, int):
+            user_id = 1
+
+        # Check for duplicate
+        is_duplicate = check_duplicate_deal(symbol, user_id)
+        
+        return jsonify({
+            'success': True,
+            'duplicate': is_duplicate,
+            'symbol': symbol
+        })
+
+    except Exception as e:
+        logger.error(f"Error checking duplicate deal: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @deals_api.route('/deals/create-from-signal', methods=['POST'])
 def create_deal_from_signal():
-    """Create a new deal from trading signal using local JSON storage"""
+    """Create a new deal from trading signal with duplicate detection"""
     try:
         data = request.get_json()
         
@@ -211,6 +269,18 @@ def create_deal_from_signal():
         except (ValueError, TypeError):
             logger.warning(f"Invalid user_id in session: {session_user_id}, using default user_id = 1")
             user_id = 1
+
+        # Check for force_add flag to bypass duplicate check
+        force_add = data.get('force_add', False)
+
+        # Check for duplicate unless force_add is True
+        if not force_add and check_duplicate_deal(symbol, user_id):
+            return jsonify({
+                'success': False,
+                'duplicate': True,
+                'message': f'This trade is already added, you want add?',
+                'symbol': symbol
+            }), 409  # Conflict status code
 
         # Validate required data
         if ep <= 0 or qty <= 0:
