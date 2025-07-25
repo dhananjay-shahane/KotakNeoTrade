@@ -1398,12 +1398,17 @@ function addDeal(signalId) {
             },
         }).then((result) => {
             if (result.isConfirmed) {
-                proceedWithAddingDeal(
+                var entryPrice = signal.EP || signal.ep || signal.entry_price || 0;
+                var currentPrice = signal.CMP || signal.cmp || signal.current_price || entryPrice;
+                var targetPrice = signal.TP || signal.tp || signal.target_price || entryPrice * 1.1;
+                createUserDealFromSignal(
                     signal,
                     symbol,
-                    price,
-                    quantity,
-                    investment,
+                    parseFloat(entryPrice),
+                    parseFloat(currentPrice),
+                    parseInt(quantity),
+                    parseFloat(targetPrice),
+                    parseFloat(investment)
                 );
             }
         });
@@ -1420,27 +1425,32 @@ function addDeal(signalId) {
                     ")?",
             )
         ) {
-            proceedWithAddingDeal(signal, symbol, price, quantity, investment);
+            var entryPrice = signal.EP || signal.ep || signal.entry_price || 0;
+            var currentPrice = signal.CMP || signal.cmp || signal.current_price || entryPrice;
+            var targetPrice = signal.TP || signal.tp || signal.target_price || entryPrice * 1.1;
+            createUserDealFromSignal(signal, symbol, parseFloat(entryPrice), parseFloat(currentPrice), parseInt(quantity), parseFloat(targetPrice), parseFloat(investment));
         }
     }
 }
 
 // Function removed - no longer checking for duplicates to simplify the flow
 
-function proceedWithAddingDeal(signal, symbol, price, quantity, investment) {
-    console.log("Proceeding with adding deal:", {
+function createUserDealFromSignal(signal, symbol, entryPrice, currentPrice, quantity, targetPrice, investment) {
+    console.log("Creating user deal from signal:", {
         signal: signal,
         symbol: symbol,
-        price: price,
+        entryPrice: entryPrice,
+        currentPrice: currentPrice,
         quantity: quantity,
-        investment: investment,
+        targetPrice: targetPrice,
+        investment: investment
     });
 
     // Show loading indicator
     if (typeof Swal !== "undefined") {
         Swal.fire({
             title: "Creating Deal...",
-            text: "Please wait while we process your request",
+            text: "Please wait while we create your deal",
             allowOutsideClick: false,
             allowEscapeKey: false,
             showConfirmButton: false,
@@ -1455,58 +1465,48 @@ function proceedWithAddingDeal(signal, symbol, price, quantity, investment) {
         });
     }
 
-    // Prepare complete signal data for the API
-    var signalData = {
-        etf: signal.etf || signal.symbol || symbol,
-        symbol: signal.etf || signal.symbol || symbol,
-        trade_signal_id: signal.trade_signal_id || signal.id,
-        pos: signal.pos || "",
-        qty: signal.qty || "",
-        ep: signal.ep || "",
-        cmp: signal.cmp || "",
-        tp: signal.tp || "",
-        inv: signal.inv || "",
-        pl: signal.pl || "",
-        change_pct: signal.chan,
-        thirty: signal.thirty,
-        dh: signal.dh || 0,
-        date: signal.date || new Date().toISOString().split("T")[0],
-        ed: signal.ed || signal.date,
-        exp: signal.exp || "",
-        pr: signal.pr || "",
-        pp: signal.pp || "",
-        iv: signal.iv || "",
-        ip: signal.ip || "",
-        nt: signal.nt || "Added from ETF signals",
-        // qt: signal.qt || new Date().toLocaleTimeString(),
-        seven: signal.seven || 0,
-        ch: signal.ch || signal.change_pct || 0,
-        tva: signal.tva,
-        tpr: signal.tpr,
+    // Prepare deal data for user_deals table
+    var dealData = {
+        symbol: symbol,
+        trading_symbol: symbol,
+        exchange: "NSE",
+        position_type: "LONG", // Default to LONG position
+        quantity: quantity,
+        entry_price: entryPrice,
+        current_price: currentPrice,
+        target_price: targetPrice,
+        stop_loss: entryPrice * 0.95, // Set stop loss at 5% below entry
+        invested_amount: investment,
+        notes: "Added from ETF trading signal on " + new Date().toLocaleDateString(),
+        tags: "ETF Signal, Trading Signal",
+        deal_type: "SIGNAL"
     };
 
-    console.log("Sending signal data:", signalData);
+    console.log("Sending deal data to user_deals API:", dealData);
 
     var xhr = new XMLHttpRequest();
-    xhr.open("POST", "/api/deals/create-from-signal", true);
+    xhr.open("POST", "/api/deals", true);
     xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.timeout = 15000; // 15 second timeout
 
     xhr.onreadystatechange = function () {
         if (xhr.readyState === 4) {
             console.log("Response status:", xhr.status);
             console.log("Response text:", xhr.responseText);
 
-            if (xhr.status === 200) {
+            if (xhr.status === 200 || xhr.status === 201) {
                 try {
                     var response = JSON.parse(xhr.responseText);
                     if (response.success) {
                         if (typeof Swal !== "undefined") {
                             Swal.fire({
                                 title: "Success!",
-                                text:
-                                    "Deal created successfully for " +
-                                    symbol +
-                                    "!",
+                                html: 
+                                    "Deal created successfully!<br>" +
+                                    "<strong>Symbol:</strong> " + symbol + "<br>" +
+                                    "<strong>Quantity:</strong> " + quantity + "<br>" +
+                                    "<strong>Entry Price:</strong> ₹" + entryPrice.toFixed(2) + "<br>" +
+                                    "<strong>Investment:</strong> ₹" + investment.toFixed(2),
                                 icon: "success",
                                 confirmButtonColor: "#28a745",
                                 background: "#2c3e50",
@@ -1515,21 +1515,24 @@ function proceedWithAddingDeal(signal, symbol, price, quantity, investment) {
                                     popup: "swal-dark-theme",
                                 },
                             }).then(() => {
-                                window.location.href = "/deals";
+                                // Optional: Redirect to deals page
+                                var goToDeals = confirm("Would you like to view your deals page?");
+                                if (goToDeals) {
+                                    window.location.href = "/deals";
+                                }
                             });
                         } else {
-                            alert(
-                                "Deal created successfully for " + symbol + "!",
-                            );
-                            window.location.href = "/deals";
+                            alert("Deal created successfully for " + symbol + "!");
+                            var goToDeals = confirm("Would you like to view your deals page?");
+                            if (goToDeals) {
+                                window.location.href = "/deals";
+                            }
                         }
                     } else {
                         if (typeof Swal !== "undefined") {
                             Swal.fire({
                                 title: "Error!",
-                                text:
-                                    "Failed to create deal: " +
-                                    (response.message || "Unknown error"),
+                                text: "Failed to create deal: " + (response.message || "Unknown error"),
                                 icon: "error",
                                 confirmButtonColor: "#dc3545",
                                 background: "#2c3e50",
@@ -1539,14 +1542,11 @@ function proceedWithAddingDeal(signal, symbol, price, quantity, investment) {
                                 },
                             });
                         } else {
-                            alert(
-                                "Failed to create deal: " +
-                                    (response.message || "Unknown error"),
-                            );
+                            alert("Failed to create deal: " + (response.message || "Unknown error"));
                         }
                     }
                 } catch (parseError) {
-                    console.error("Failed to parse API response:", parseError);
+                    console.error("Error parsing response:", parseError);
                     if (typeof Swal !== "undefined") {
                         Swal.fire({
                             title: "Error!",
@@ -1563,14 +1563,30 @@ function proceedWithAddingDeal(signal, symbol, price, quantity, investment) {
                         alert("Invalid response from server");
                     }
                 }
+            } else if (xhr.status === 401) {
+                if (typeof Swal !== "undefined") {
+                    Swal.fire({
+                        title: "Authentication Required!",
+                        text: "Please login to create deals",
+                        icon: "warning",
+                        confirmButtonColor: "#ffc107",
+                        background: "#2c3e50",
+                        color: "#fff",
+                        customClass: {
+                            popup: "swal-dark-theme",
+                        },
+                    }).then(() => {
+                        window.location.href = "/trading-account/login";
+                    });
+                } else {
+                    alert("Please login to create deals");
+                    window.location.href = "/trading-account/login";
+                }
             } else {
                 if (typeof Swal !== "undefined") {
                     Swal.fire({
                         title: "Error!",
-                        text:
-                            "Server returned status: " +
-                            xhr.status +
-                            ". Please try again or contact support.",
+                        text: "Server error (" + xhr.status + "). Please try again.",
                         icon: "error",
                         confirmButtonColor: "#dc3545",
                         background: "#2c3e50",
@@ -1580,13 +1596,28 @@ function proceedWithAddingDeal(signal, symbol, price, quantity, investment) {
                         },
                     });
                 } else {
-                    alert(
-                        "Server returned status: " +
-                            xhr.status +
-                            ". Please try again or contact support.",
-                    );
+                    alert("Server error (" + xhr.status + "). Please try again.");
                 }
             }
+        }
+    };
+
+    xhr.ontimeout = function () {
+        console.error("Request timed out");
+        if (typeof Swal !== "undefined") {
+            Swal.fire({
+                title: "Timeout!",
+                text: "Request timed out. Please try again.",
+                icon: "error",
+                confirmButtonColor: "#dc3545",
+                background: "#2c3e50",
+                color: "#fff",
+                customClass: {
+                    popup: "swal-dark-theme",
+                },
+            });
+        } else {
+            alert("Request timed out. Please try again.");
         }
     };
 
@@ -1609,7 +1640,7 @@ function proceedWithAddingDeal(signal, symbol, price, quantity, investment) {
         }
     };
 
-    xhr.send(JSON.stringify({ signal_data: signalData }));
+    xhr.send(JSON.stringify(dealData));
 }
 
 // Function to sort signals by any column
@@ -1645,7 +1676,7 @@ function sortSignalsByColumn(column) {
                     break;
                 case "changePct":
                     valueA = parseFloat(a.change_pct || a.pp || 0);
-                    valueB = parseFloat(b.change_pct || b.pp || 0);
+                    valueB = parseFloat(b.change_pct || a.pp || 0);
                     break;
                 case "inv":
                     valueA = parseFloat(a.inv || a.investment_amount || 0);
@@ -1826,7 +1857,7 @@ function addDealFromSignal(symbol, signalData) {
         );
     } catch (error) {
         console.error("Error adding deal:", error);
-        showMessage("Error processing request: " + error.message, "error");
+showMessage("Error processing request: " + error.message, "error");
     }
 }
 
@@ -2023,7 +2054,7 @@ ETFSignalsManager.prototype.renderPaginationHTML = function () {
 
     // Generate pagination buttons
     var paginationHTML = "";
-    
+
     if (this.totalPages > 1) {
         // Previous button
         if (this.currentPage > 1) {
