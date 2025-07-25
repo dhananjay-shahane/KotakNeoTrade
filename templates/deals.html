@@ -10,7 +10,6 @@ endblock %} {% block head %}
         <div>
             <h1 class="h3 mb-1">
                 Deals 
-                <span class="badge bg-primary ms-2" id="dealsCountBadge">0</span>
             </h1>
             <p class="text-muted mb-0">Orders placed from trading signals</p>
         </div>
@@ -78,6 +77,14 @@ endblock %} {% block head %}
         <div
             class="card-header bg-dark border-0 d-flex justify-content-between align-items-center"
         >
+            <h5 class="mb-0 text-light">
+                <i class="fas fa-chart-line me-2 text-primary"></i>Deals
+                Signals
+                <span class="badge bg-primary ms-2" id="dealsCountBadge"
+                    >0</span
+                >
+            </h5>
+            
             <div class="d-flex gap-2 align-items-center">
                 <div class="form-check form-switch">
                     <input
