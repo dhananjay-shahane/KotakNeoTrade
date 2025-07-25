@@ -17,37 +17,36 @@ function DealsManager() {
             width: "50px",
             sortable: true,
         },
-        symbol: { label: "ETF", default: true, width: "80px", sortable: true },
-        pos: { label: "POS", default: false, width: "50px", sortable: true },
-        thirty: { label: "30", default: false, width: "50px", sortable: true },
-        dh: { label: "DH", default: false, width: "40px", sortable: true },
+        symbol: { label: "Symbol", default: true, width: "80px", sortable: true },
+        seven: { label: "7D", default: true, width: "50px", sortable: true },
+        seven_percent: { label: "7D%", default: true, width: "50px", sortable: true },
+        thirty: { label: "30D", default: true, width: "50px", sortable: true },
+        thirty_percent: { label: "30D%", default: true, width: "50px", sortable: true },
         date: { label: "DATE", default: true, width: "80px", sortable: true },
         qty: { label: "QTY", default: true, width: "60px", sortable: true },
         ep: { label: "EP", default: true, width: "70px", sortable: true },
         cmp: { label: "CMP", default: true, width: "70px", sortable: true },
+        pos: { label: "POS", default: true, width: "50px", sortable: true },
         chan_percent: {
             label: "%CHAN",
             default: true,
             width: "60px",
             sortable: true,
         },
-        inv: { label: "INV.", default: false, width: "70px", sortable: true },
-        tp: { label: "TP", default: false, width: "60px", sortable: true },
-        tva: { label: "TVA", default: false, width: "70px", sortable: true },
-        tpr: { label: "TPR", default: false, width: "70px", sortable: true },
-        pl: { label: "PL", default: true, width: "60px", sortable: true },
-        ed: { label: "ED", default: false, width: "70px", sortable: true },
+        inv: { label: "INV.", default: true, width: "70px", sortable: true },
+        tp: { label: "TP", default: true, width: "60px", sortable: true },
+        tpr: { label: "TPR", default: true, width: "70px", sortable: true },
+        tva: { label: "TVA", default: true, width: "70px", sortable: true },
+        pl: { label: "CPL", default: true, width: "60px", sortable: true },
+        qt: { label: "QT", default: true, width: "60px", sortable: true },
+        ed: { label: "ED", default: true, width: "70px", sortable: true },
         exp: { label: "EXP", default: false, width: "70px", sortable: true },
         pr: { label: "PR", default: false, width: "80px", sortable: true },
         pp: { label: "PP", default: false, width: "50px", sortable: true },
         iv: { label: "IV", default: false, width: "60px", sortable: true },
         ip: { label: "IP", default: false, width: "60px", sortable: true },
-        nt: { label: "NT", default: false, width: "120px", sortable: true },
-        qt: { label: "QT", default: false, width: "60px", sortable: true },
-        seven: { label: "7", default: false, width: "50px", sortable: true },
-        ch: { label: "%CH", default: false, width: "60px", sortable: true },
         actions: {
-            label: "ACTIONS",
+            label: "ACTION",
             default: true,
             width: "80px",
             sortable: false,
@@ -288,21 +287,19 @@ DealsManager.prototype.loadDeals = function () {
                                 tpr: parseFloat(deal.pnl_amount || deal.pl || 0),
                                 date: deal.entry_date || deal.date || deal.created_at ? (deal.entry_date || deal.date || deal.created_at).split("T")[0] : "",
                                 status: deal.status || "ACTIVE",
-                                thirty: "0%",
-                                dh: deal.days_held || 0,
-                                ed: deal.entry_date || deal.date || deal.created_at ? (deal.entry_date || deal.date || deal.created_at).split("T")[0] : "",
-                                exp: "",
-                                pr: "0%",
-                                pp: "--",
-                                iv: "",
-                                ip: deal.pnl_percent ? (deal.pnl_percent > 0 ? "+" : "") + deal.pnl_percent.toFixed(1) + "%" : "0%",
-                                nt: deal.notes || "--",
-                                qt: new Date().toLocaleTimeString("en-GB", {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                }),
-                                seven: "0%",
-                                ch: deal.pnl_percent ? deal.pnl_percent.toFixed(2) + "%" : "0%",
+                                seven: deal.seven || "--",
+                                seven_percent: deal.seven_percent || "--",
+                                thirty: deal.thirty || "--",
+                                thirty_percent: deal.thirty_percent || "--",
+                                ed: "--",  // Always "--" as requested
+                                exp: deal.exp || "--",
+                                pr: deal.pr || "--",
+                                pp: deal.pp || "--",
+                                iv: deal.iv || "--",
+                                ip: deal.ip || "--",
+                                tpr: deal.tpr || "--",
+                                tva: deal.tva || "--",
+                                qt: deal.qt || "--",
                                 entry_price: parseFloat(deal.entry_price || deal.ep || 0),
                                 current_price: parseFloat(deal.current_price || deal.cmp || deal.entry_price || 0),
                                 invested_amount: parseFloat(deal.invested_amount || deal.inv || 0),
@@ -476,11 +473,27 @@ DealsManager.prototype.renderDealsTable = function () {
                     cellContent =
                         "<strong>" + (deal.symbol || "") + "</strong>";
                     break;
-                case "thirty":
-                    cellContent = deal.thirty || "-";
+                case "seven":
+                    cellContent = deal.seven !== undefined && deal.seven !== '--' ? 
+                        "₹" + parseFloat(deal.seven).toFixed(2) : "--";
                     break;
-                case "dh":
-                    cellContent = deal.dh !== undefined ? deal.dh + "d" : "0d";
+                case "seven_percent":
+                    var sevenPctValue = deal.seven_percent || "--";
+                    if (sevenPctValue !== "--") {
+                        style = self.getGradientBackgroundColor(sevenPctValue.replace("%", ""));
+                    }
+                    cellContent = sevenPctValue;
+                    break;
+                case "thirty":
+                    cellContent = deal.thirty !== undefined && deal.thirty !== '--' ? 
+                        "₹" + parseFloat(deal.thirty).toFixed(2) : "--";
+                    break;
+                case "thirty_percent":
+                    var thirtyPctValue = deal.thirty_percent || "--";
+                    if (thirtyPctValue !== "--") {
+                        style = self.getGradientBackgroundColor(thirtyPctValue.replace("%", ""));
+                    }
+                    cellContent = thirtyPctValue;
                     break;
                 case "date":
                     cellContent = deal.date || "";
@@ -523,6 +536,38 @@ DealsManager.prototype.renderDealsTable = function () {
                     break;
                 case "tp":
                     cellContent = deal.tp ? "₹" + deal.tp.toFixed(2) : "-";
+                    break;
+                case "tpr":
+                    cellContent = deal.tpr || "--";
+                    break;
+                case "tva":
+                    cellContent = deal.tva || "--";
+                    break;
+                case "pl":
+                    var plValue = deal.pl || 0;
+                    style = self.getGradientBackgroundColor(plValue);
+                    cellContent = plValue ? "₹" + plValue.toFixed(2) : "₹0";
+                    break;
+                case "qt":
+                    cellContent = deal.qt || "--";
+                    break;
+                case "ed":
+                    cellContent = "--";  // Always show "--" as requested
+                    break;
+                case "exp":
+                    cellContent = deal.exp || "--";
+                    break;
+                case "pr":
+                    cellContent = deal.pr || "--";
+                    break;
+                case "pp":
+                    cellContent = deal.pp || "--";
+                    break;
+                case "iv":
+                    cellContent = deal.iv || "--";
+                    break;
+                case "ip":
+                    cellContent = deal.ip || "--";
                     break;
                 case "tva":
                     cellContent = deal.tva

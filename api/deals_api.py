@@ -9,6 +9,10 @@ import psycopg2.extras
 from datetime import datetime
 import traceback
 import os
+import sys
+sys.path.append('Scripts')
+from price_fetcher import PriceFetcher, HistoricalFetcher, try_percent
+from db_connector import DatabaseConnector
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -129,13 +133,91 @@ def get_user_deals_from_db():
 @deals_api.route('/user-deals-data')
 @deals_api.route('/user-deals')
 def get_user_deals_data():
-    """API endpoint to get user deals data from external database"""
+    """API endpoint to get user deals data from external database with historical price data"""
     try:
-        deals = get_user_deals_from_db()
+        # Setup database connection for price fetching
+        database_url = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com:5432/kotak_trading_db"
+        db_connector = DatabaseConnector(database_url)
+        
+        # Initialize price fetchers
+        price_fetcher = PriceFetcher(db_connector)
+        historical_fetcher = HistoricalFetcher(db_connector)
+        
+        # Get basic deals data
+        raw_deals = get_user_deals_from_db()
+        
+        # Process deals with historical data
+        deals = []
+        total_invested = 0
+        total_current = 0
+        
+        for deal in raw_deals:
+            symbol = deal.get('symbol', '').upper()
+            
+            # Get historical and current price data
+            cmp = price_fetcher.get_cmp(symbol)
+            seven_day_price = historical_fetcher.get_offset_price(symbol, 7)
+            thirty_day_price = historical_fetcher.get_offset_price(symbol, 30)
+            
+            # Use stored current_price if CMP fetch fails
+            if cmp is None:
+                cmp = float(deal.get('current_price', 0))
+            
+            # Calculate percentages
+            seven_percent = try_percent(cmp, seven_day_price)
+            thirty_percent = try_percent(cmp, thirty_day_price)
+            
+            # Calculate values
+            entry_price = float(deal.get('entry_price', 0))
+            quantity = int(deal.get('quantity', 0))
+            invested = entry_price * quantity
+            current = cmp * quantity if cmp else 0
+            pnl = current - invested if current else 0
+            pnl_percent = (pnl / invested * 100) if invested > 0 else 0
+            
+            # Update running totals
+            total_invested += invested
+            total_current += current
+            
+            # Format deal with all new columns
+            formatted_deal = {
+                'trade_signal_id': deal.get('id', 0),
+                'symbol': symbol,
+                'seven': seven_day_price if seven_day_price else '--',
+                'seven_percent': seven_percent,
+                'thirty': thirty_day_price if thirty_day_price else '--', 
+                'thirty_percent': thirty_percent,
+                'date': deal.get('entry_date', '').strftime('%Y-%m-%d') if deal.get('entry_date') else '',
+                'qty': quantity,
+                'ep': entry_price,
+                'cmp': cmp if cmp else '--',
+                'pos': deal.get('position_type', 'BUY'),
+                'chan_percent': round(pnl_percent, 2),
+                'inv': invested,
+                'tp': float(deal.get('target_price', 0)),
+                'tpr': '--',  # Target profit return
+                'tva': '--',  # Target value amount  
+                'pl': round(pnl, 2),
+                'qt': '--',   # Quote time
+                'ed': '--',   # Entry date - set to "--" as requested
+                'exp': '--',  # Expiry
+                'pr': '--',   # Price range
+                'pp': '--',   # Performance points
+                'iv': '--',   # Implied volatility
+                'ip': '--',   # Intraday performance
+                'status': deal.get('status', 'ACTIVE'),
+                'deal_type': deal.get('deal_type', 'MANUAL'),
+                'notes': deal.get('notes', ''),
+                'tags': deal.get('tags', ''),
+                'created_at': deal.get('created_at', '').isoformat() if deal.get('created_at') else '',
+                'updated_at': deal.get('updated_at', '').isoformat() if deal.get('updated_at') else ''
+            }
+            deals.append(formatted_deal)
+        
+        # Close database connection
+        db_connector.close()
         
         # Calculate summary
-        total_invested = sum(deal.get('invested_amount', 0) for deal in deals)
-        total_current = sum(deal.get('current_value', 0) for deal in deals)
         total_pnl = total_current - total_invested
         total_pnl_percent = (total_pnl / total_invested * 100) if total_invested > 0 else 0
         
