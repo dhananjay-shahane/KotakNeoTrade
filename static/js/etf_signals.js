@@ -1366,7 +1366,7 @@ function addDeal(signalId) {
     var signal = null;
     if (window.etfSignalsManager && window.etfSignalsManager.signals) {
         signal = window.etfSignalsManager.signals.find(function (s) {
-            return s.ID == signalId || s.id == signalId || s.trade_signal_id == signalId;
+            return s.ID == signalId;
         });
     }
 
@@ -1381,10 +1381,10 @@ function addDeal(signalId) {
 
     console.log("Found signal:", signal);
 
-    var symbol = signal.symbol;
-    var price = signal.ep;
-    var quantity = signal.qty;
-    var investment = signal.inv;
+    var symbol = signal.Symbol;
+    var price = signal.EP;
+    var quantity = signal.QTY;
+    var investment = signal.INV;
 
     // Validate data before proceeding
     if (!symbol || symbol === "UNKNOWN" || price <= 0 || quantity <= 0) {
@@ -1444,7 +1444,189 @@ function addDeal(signalId) {
     }
 }
 
-// Function removed - no longer checking for duplicates to simplify the flow
+function proceedWithAddingDeal(signal, symbol, price, quantity, investment) {
+    console.log("Proceeding with adding deal:", {
+        signal: signal,
+        symbol: symbol,
+        price: price,
+        quantity: quantity,
+        investment: investment,
+    });
+
+    // Show loading indicator
+    if (typeof Swal !== "undefined") {
+        Swal.fire({
+            title: "Creating Deal...",
+            text: "Please wait while we process your request",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            background: "#2c3e50",
+            color: "#fff",
+            customClass: {
+                popup: "swal-dark-theme",
+            },
+            didOpen: () => {
+                Swal.showLoading();
+            },
+        });
+    }
+
+    // Prepare complete signal data for the API
+    var signalData = {
+        etf: signal.etf || signal.symbol || symbol,
+        symbol: signal.etf || signal.symbol || symbol,
+        trade_signal_id: signal.trade_signal_id || signal.id,
+        pos: signal.pos || "",
+        qty: signal.qty || "",
+        ep: signal.ep || "",
+        cmp: signal.cmp || "",
+        tp: signal.tp || "",
+        inv: signal.inv || "",
+        pl: signal.pl || "",
+        change_pct: signal.chan,
+        thirty: signal.thirty,
+        dh: signal.dh || 0,
+        date: signal.date || new Date().toISOString().split("T")[0],
+        ed: signal.ed || signal.date,
+        exp: signal.exp || "",
+        pr: signal.pr || "",
+        pp: signal.pp || "",
+        iv: signal.iv || "",
+        ip: signal.ip || "",
+        nt: signal.nt || "Added from ETF signals",
+        seven: signal.seven || 0,
+        ch: signal.ch || signal.change_pct || 0,
+        tva: signal.tva,
+        tpr: signal.tpr,
+    };
+
+    console.log("Sending signal data:", signalData);
+
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/deals/create-from-signal", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            console.log("Response status:", xhr.status);
+            console.log("Response text:", xhr.responseText);
+
+            if (xhr.status === 200) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        if (typeof Swal !== "undefined") {
+                            Swal.fire({
+                                title: "Success!",
+                                text:
+                                    "Deal created successfully for " +
+                                    symbol +
+                                    "!",
+                                icon: "success",
+                                confirmButtonColor: "#28a745",
+                                background: "#2c3e50",
+                                color: "#fff",
+                                customClass: {
+                                    popup: "swal-dark-theme",
+                                },
+                            }).then(() => {
+                                window.location.href = "/deals";
+                            });
+                        } else {
+                            alert(
+                                "Deal created successfully for " + symbol + "!",
+                            );
+                            window.location.href = "/deals";
+                        }
+                    } else {
+                        if (typeof Swal !== "undefined") {
+                            Swal.fire({
+                                title: "Error!",
+                                text:
+                                    "Failed to create deal: " +
+                                    (response.message || "Unknown error"),
+                                icon: "error",
+                                confirmButtonColor: "#dc3545",
+                                background: "#2c3e50",
+                                color: "#fff",
+                                customClass: {
+                                    popup: "swal-dark-theme",
+                                },
+                            });
+                        } else {
+                            alert(
+                                "Failed to create deal: " +
+                                    (response.message || "Unknown error"),
+                            );
+                        }
+                    }
+                } catch (parseError) {
+                    console.error("Failed to parse API response:", parseError);
+                    if (typeof Swal !== "undefined") {
+                        Swal.fire({
+                            title: "Error!",
+                            text: "Invalid response from server",
+                            icon: "error",
+                            confirmButtonColor: "#dc3545",
+                            background: "#2c3e50",
+                            color: "#fff",
+                            customClass: {
+                                popup: "swal-dark-theme",
+                            },
+                        });
+                    } else {
+                        alert("Invalid response from server");
+                    }
+                }
+            } else {
+                if (typeof Swal !== "undefined") {
+                    Swal.fire({
+                        title: "Error!",
+                        text:
+                            "Server returned status: " +
+                            xhr.status +
+                            ". Please try again or contact support.",
+                        icon: "error",
+                        confirmButtonColor: "#dc3545",
+                        background: "#2c3e50",
+                        color: "#fff",
+                        customClass: {
+                            popup: "swal-dark-theme",
+                        },
+                    });
+                } else {
+                    alert(
+                        "Server returned status: " +
+                            xhr.status +
+                            ". Please try again or contact support.",
+                    );
+                }
+            }
+        }
+    };
+
+    xhr.onerror = function () {
+        console.error("Network error occurred");
+        if (typeof Swal !== "undefined") {
+            Swal.fire({
+                title: "Network Error!",
+                text: "Network error occurred. Please check your connection.",
+                icon: "error",
+                confirmButtonColor: "#dc3545",
+                background: "#2c3e50",
+                color: "#fff",
+                customClass: {
+                    popup: "swal-dark-theme",
+                },
+            });
+        } else {
+            alert("Network error occurred. Please check your connection.");
+        }
+    };
+
+    xhr.send(JSON.stringify({ signal_data: signalData }));
+}
 
 function createUserDealFromSignal(
     signal,
