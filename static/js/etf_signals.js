@@ -1347,7 +1347,7 @@ function addDeal(signalId) {
     var signal = null;
     if (window.etfSignalsManager && window.etfSignalsManager.signals) {
         signal = window.etfSignalsManager.signals.find(function (s) {
-            return s.id == signalId || s.trade_signal_id == signalId;
+            return s.ID == signalId || s.id == signalId || s.trade_signal_id == signalId;
         });
     }
 
@@ -1465,21 +1465,35 @@ function createUserDealFromSignal(signal, symbol, entryPrice, currentPrice, quan
         });
     }
 
-    // Prepare deal data for user_deals table
+    // Prepare deal data for user_deals table with complete signal information
     var dealData = {
-        symbol: symbol,
-        trading_symbol: symbol,
-        exchange: "NSE",
-        position_type: "LONG", // Default to LONG position
-        quantity: quantity,
-        entry_price: entryPrice,
-        current_price: currentPrice,
-        target_price: targetPrice,
-        stop_loss: entryPrice * 0.95, // Set stop loss at 5% below entry
-        invested_amount: investment,
-        notes: "Added from ETF trading signal on " + new Date().toLocaleDateString(),
-        tags: "ETF Signal, Trading Signal",
-        deal_type: "SIGNAL"
+        signal_data: {
+            symbol: symbol,
+            etf: symbol,
+            Symbol: symbol,
+            ID: signal.ID || signal.id,
+            qty: quantity,
+            QTY: quantity,
+            ep: entryPrice,
+            EP: entryPrice,
+            cmp: currentPrice,
+            CMP: currentPrice,
+            tp: targetPrice,
+            TP: targetPrice,
+            inv: investment,
+            INV: investment,
+            pos: 1, // Default to LONG position
+            date: signal.DATE || signal.date || new Date().toLocaleDateString(),
+            // Include all other signal fields
+            "7D": signal["7D"] || 0,
+            "7D%": signal["7D%"] || "0.00%",
+            "30D": signal["30D"] || 0,
+            "30D%": signal["30D%"] || "0.00%",
+            "%CHAN": signal["%CHAN"] || "0.00%",
+            CPL: signal.CPL || 0,
+            TPR: signal.TPR || "0.00%",
+            TVA: signal.TVA || 0
+        }
     };
 
     console.log("Sending deal data to user_deals API:", dealData);
