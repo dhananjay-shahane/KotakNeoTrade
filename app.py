@@ -85,23 +85,14 @@ app.secret_key = session_secret
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1,
                         x_host=1)  # Enable HTTPS URL generation
 
-# Database configuration with fallback
+# Database configuration - use Replit PostgreSQL
 database_url = os.environ.get("DATABASE_URL")
-if not database_url:
-    # Try to construct from individual environment variables
-    db_host = os.environ.get("DB_HOST")
-    db_name = os.environ.get("DB_NAME")
-    db_user = os.environ.get("DB_USER")
-    db_password = os.environ.get("DB_PASSWORD")
-    db_port = os.environ.get("DB_PORT", "5432")
-
-    if all([db_host, db_name, db_user, db_password]):
-        database_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
-        print("Using PostgreSQL database from environment variables")
-    else:
-        # Fallback to SQLite for development
-        database_url = "sqlite:///instance/trading_platform.db"
-        print("Using SQLite fallback database for development")
+if database_url:
+    print("✓ Using Replit PostgreSQL database")
+else:
+    # Fallback to SQLite for development only
+    database_url = "sqlite:///instance/trading_platform.db" 
+    print("⚠️ Using SQLite fallback - PostgreSQL not available")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
