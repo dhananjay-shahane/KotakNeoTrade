@@ -1,23 +1,424 @@
 """
 External Database Service for fetching data from admin_trade_signals table
-Connects to external PostgreSQL database and provides ETF signals data
+Connects to external PostgreSQL database and provides trading signals data with complete functionality
 
- filename : external_db_service.py
-
-
+Updated with SignalsFetcher, PriceFetcher, and HistoricalFetcher classes
 """
 
 import psycopg2
 import psycopg2.extras
+from psycopg2 import sql
 import logging
+import pandas as pd
+import numbers
 from typing import List, Dict, Optional
+from datetime import datetime, timedelta
 import json
 
 logger = logging.getLogger(__name__)
 
 
+class DatabaseConnector:
+    """Database connection handler"""
+    
+    def __init__(self):
+        self.db_config = {
+            'host': "dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com",
+            'database': "kotak_trading_db",
+            'user': "kotak_trading_db_user",
+            'password': "JRUlk8RutdgVcErSiUXqljDUdK8sBsYO",
+            'port': 5432
+        }
+        self.connection = None
+
+    def connect(self):
+        """Establish connection to database"""
+        try:
+            self.connection = psycopg2.connect(**self.db_config)
+            logger.info("✓ Connected to PostgreSQL database")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to connect to database: {e}")
+            return False
+
+    def disconnect(self):
+        """Close database connection"""
+        if self.connection:
+            self.connection.close()
+            self.connection = None
+            logger.info("✓ Disconnected from database")
+
+    def execute_query(self, query, params=None):
+        """Execute query and return results"""
+        if not self.connection:
+            if not self.connect():
+                return None
+        
+        try:
+            cursor = self.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            cursor.execute(query, params)
+            if cursor.description:
+                results = cursor.fetchall()
+                cursor.close()
+                return results
+            cursor.close()
+            return True
+        except Exception as e:
+            logger.error(f"Query execution failed: {e}")
+            return None
+
+
+class SignalsFetcher:
+    def __init__(self, db_connector):
+        self.db = db_connector
+        self.logger = logger
+    
+    def get_admin_signals(self, days_back: int = 30) -> pd.DataFrame:
+        """
+        Fetch admin trade signals as DataFrame
+        
+        Args:
+            days_back: Number of days to look back for signals
+            
+        Returns:
+            DataFrame with columns: id, symbol, qty, entry_price, created_at
+        """
+        try:
+            query = sql.SQL("""
+                SELECT 
+                    id, 
+                    symbol, 
+                    qty, 
+                    ep AS entry_price,
+                    created_at
+                FROM admin_trade_signals
+                WHERE created_at >= %s
+                ORDER BY created_at DESC
+            """)
+            
+            params = [datetime.now() - timedelta(days=days_back)]
+            
+            self.logger.debug("Executing admin signals query")
+            results = self.db.execute_query(query, params)
+            
+            if not results:
+                self.logger.warning("No admin signals found")
+                return pd.DataFrame()
+            
+            df = pd.DataFrame(results)
+            
+            # Convert data types
+            numeric_cols = ['qty', 'entry_price']
+            df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce')
+            # df['created_at'] = pd.to_datetime(df['created_at'])
+            
+            # Clean symbol names
+            df['symbol'] = df['symbol'].str.upper().str.strip()
+            
+            return df.dropna(subset=numeric_cols)
+
+        except Exception as e:
+            self.logger.error(f"Error fetching admin signals: {str(e)}", exc_info=True)
+            return pd.DataFrame()
+
+
+class PriceFetcher:
+    def __init__(self, db_connector):
+        self.db = db_connector
+        self.logger = logger
+    
+    def table_exists(self, table_name: str) -> bool:
+        """Check if table exists in symbols schema"""
+        query = """
+        SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'symbols' 
+            AND table_name = %s
+        )
+        """
+        result = self.db.execute_query(query, (table_name,))
+        return result and result[0]['exists']
+
+    def get_cmp(self, symbol: str) -> Optional[float]:
+        """
+        Get current market price from _5min table
+        Args:
+            symbol: Stock symbol
+        Returns:
+            Last price or None if not available
+        """
+        try:
+            table_name = f"{symbol.lower()}_5m"
+            
+            if not self.table_exists(table_name):
+                self.logger.warning(f"5min table not found: {table_name}")
+                return None
+            
+            query = sql.SQL("""
+                SELECT close 
+                FROM symbols.{} 
+                ORDER BY datetime DESC 
+                LIMIT 1
+            """).format(sql.Identifier(table_name))
+
+            result = self.db.execute_query(query)
+            return float(result[0]['close']) if result else None
+
+        except Exception as e:
+            self.logger.error(f"Error fetching CMP: {str(e)}", exc_info=True)
+            return None
+
+
+class HistoricalFetcher:
+    def __init__(self, db_connector):
+        self.db = db_connector
+
+    def table_exists(self, table_name: str) -> bool:
+        query = """
+        SELECT EXISTS (
+            SELECT 1 FROM information_schema.tables 
+            WHERE table_schema = 'symbols' 
+            AND table_name = %s
+        )
+        """
+        result = self.db.execute_query(query, (table_name,))
+        return result and result[0]['exists']
+
+    def get_offset_price(self, symbol: str, offset: int) -> Optional[float]:
+        """
+        Return close price for N trading days ago (offset=7 or 30).
+        If not enough data, return None.
+        """
+        try:
+            table_name = f"{symbol.lower()}_daily"
+            if not self.table_exists(table_name):
+                logger.warning(f"Table not found: symbols.{table_name}")
+                return None
+
+            # Count rows
+            count_query = sql.SQL("SELECT COUNT(*) as cnt FROM symbols.{}").format(sql.Identifier(table_name))
+            count_result = self.db.execute_query(count_query)
+            row_count = count_result[0]['cnt'] if count_result else 0
+
+            if row_count <= offset:
+                return None  # Not enough rows
+
+            # Get Nth previous close: 0 = latest, 1 = 1 trading day ago, ...
+            price_query = sql.SQL("""
+                SELECT close FROM symbols.{}
+                ORDER BY datetime DESC
+                OFFSET %s LIMIT 1
+            """).format(sql.Identifier(table_name))
+            result = self.db.execute_query(price_query, (offset,))
+            return float(result[0]['close']) if result else None
+        except Exception as e:
+            logger.error(f"Error fetching offset={offset} price: {e}", exc_info=True)
+            return None
+
+    def get_latest_close(self, symbol: str) -> Optional[float]:
+        """
+        Return close price for latest available trading day.
+        """
+        try:
+            table_name = f"{symbol.lower()}_daily"
+            if not self.table_exists(table_name):
+                logger.warning(f"Table not found: symbols.{table_name}")
+                return None
+            price_query = sql.SQL("""
+                SELECT close FROM symbols.{}
+                ORDER BY datetime DESC
+                LIMIT 1
+            """).format(sql.Identifier(table_name))
+            result = self.db.execute_query(price_query)
+            return float(result[0]['close']) if result else None
+        except Exception as e:
+            logger.error(f"Error fetching latest close price: {e}", exc_info=True)
+            return None
+
+
+def try_percent(cmp_val, hist_val):
+    """
+    Calculate percent change if both are numbers, else '--'.
+    """
+    try:
+        if (
+            cmp_val is not None and hist_val is not None and
+            isinstance(cmp_val, (int, float)) and isinstance(hist_val, (int, float)) and
+            hist_val != 0 and not pd.isna(cmp_val) and not pd.isna(hist_val)
+        ):
+            pct_change = (float(cmp_val) - float(hist_val)) / float(hist_val) * 100
+            return f"{pct_change:.2f}%"
+        else:
+            return '--'
+    except Exception:
+        return '--'
+
+
+def create_db_connection():
+    """Create and return database connection"""
+    db_connector = DatabaseConnector()
+    if db_connector.connect():
+        return db_connector
+    return None
+
+
+def get_all_trade_metrics():
+    """
+    Fetches all signals from DB and enriches with price, target, and derived fields.
+    Returns list of dicts for DataFrame/display.
+    """
+    db_connector = None
+    formatted_signals = []
+
+    try:
+        # 1. Connect to database
+        db_connector = create_db_connection()
+        if not db_connector:
+            print("Database connection failed!")
+            return []
+
+        # 2. Initialize helper/fetcher objects
+        price_fetcher = PriceFetcher(db_connector)
+        signals_fetcher = SignalsFetcher(db_connector)
+        hist_fetcher = HistoricalFetcher(db_connector)
+
+        # 3. Fetch all trading signals as DataFrame
+        df_signals = signals_fetcher.get_admin_signals()
+        if df_signals.empty:
+            print("No trading signals in database!")
+            return []
+
+        # 4. For each signal, enrich and calculate all desired metrics
+        for count, signal in enumerate(df_signals.to_dict(orient='records'), start=1):
+            # --- Extract basic trading info ---
+            symbol = str(signal.get('symbol') or 'N/A').upper()
+            id_ = signal.get('id') or count
+            qty = float(signal.get('qty') or 0)
+            entry_price = float(signal.get('entry_price') or 0)
+
+            # --- Format the date as dd-mm-yy HH:MM ---
+            raw_date = signal.get('date', '') or signal.get('created_at', '') or ''
+            if raw_date:
+                try:
+                    dt_obj = pd.to_datetime(raw_date)
+                    date_fmt = dt_obj.strftime("%d-%m-%y %H:%M")
+                except Exception:
+                    date_fmt = raw_date
+            else:
+                date_fmt = ''
+
+            # --- Fetch prices (CMP, 7D, 30D) ---
+            cmp_val = price_fetcher.get_cmp(symbol)
+            if cmp_val not in (None, "--"):
+                try:
+                    cmp_numeric = float(cmp_val)
+                    cmp_display = cmp_numeric
+                    cmp_is_num = True
+                except Exception:
+                    cmp_numeric = 0.0
+                    cmp_display = "--"
+                    cmp_is_num = False
+            else:
+                cmp_numeric = 0.0
+                cmp_display = "--"
+                cmp_is_num = False
+
+            d7_val = hist_fetcher.get_offset_price(symbol, 7)
+            d30_val = hist_fetcher.get_offset_price(symbol, 30)
+            p7 = try_percent(cmp_numeric, d7_val)
+            p30 = try_percent(cmp_numeric, d30_val)
+
+            # --- Investment/Profit/Loss calculations ---
+            investment = qty * entry_price
+            current_value = qty * cmp_numeric if cmp_is_num else 0
+            profit_loss = current_value - investment if cmp_is_num else 0
+            change_percent = ((cmp_numeric - entry_price) / entry_price) * 100 if cmp_is_num and entry_price > 0 else 0
+
+            # --- Get custom/calculated fields with fallback ---
+            iv_value = signal.get('iv', investment)
+            ip_value = signal.get('ip', entry_price)
+            nt_value = signal.get('nt', current_value if cmp_is_num else "--")
+            # Ensure robust numeric fallback
+            if not isinstance(iv_value, (int, float)) or iv_value <= 0:
+                iv_value = investment
+            if not isinstance(ip_value, (int, float)) or ip_value <= 0:
+                ip_value = entry_price
+            if nt_value != "--" and (not isinstance(nt_value, (int, float)) or nt_value <= 0):
+                nt_value = current_value if cmp_is_num else "--"
+
+            # --- Target Price, TPR, TVA calculation (business logic) ---
+            if entry_price > 0:
+                if cmp_numeric > 0 and cmp_is_num:
+                    current_gain_percent = ((cmp_numeric - entry_price) / entry_price) * 100
+                    if current_gain_percent > 10:
+                        target_price = entry_price * 1.25       # 25% from entry price
+                    elif current_gain_percent > 5:
+                        target_price = entry_price * 1.20
+                    elif current_gain_percent > 0:
+                        target_price = entry_price * 1.15
+                    elif current_gain_percent > -5:
+                        target_price = entry_price * 1.12
+                    else:
+                        target_price = entry_price * 1.10
+                else:
+                    target_price = entry_price * 1.15          # Default 15% target
+                tpr_percent = ((target_price - entry_price) / entry_price) * 100
+                tp_value = round(target_price, 2)
+                tpr_value = f"{tpr_percent:.2f}%"
+                tva_value = round(target_price * qty, 2)
+            else:
+                tp_value = "--"
+                tpr_value = "--"
+                tva_value = "--"
+
+            # --- Additional custom fields with default fallback ---
+            cpl_value = signal.get('cpl', "--")
+            ed_value = signal.get('ed', "--")
+            exp_value = signal.get('exp', "--")
+            pr_value = signal.get('pr', "--")
+            pp_value = signal.get('pp', "--")
+
+            # --- Compose results dictionary for this trade signal ---
+            row = {
+                'ID': id_,
+                'Symbol': symbol,
+                '7D': d7_val if d7_val not in (None, "--") else "--",
+                '7D%': p7,
+                '30D': d30_val if d30_val not in (None, "--") else "--",
+                '30D%': p30,
+                'DATE': date_fmt,  # <-- Use formatted date here
+                'QTY': int(qty),
+                'EP': round(entry_price, 2),
+                'CMP': cmp_display if cmp_is_num else "--",
+                '%CHAN': f"{change_percent:.2f}%" if cmp_is_num else "--",
+                'INV': round(investment, 2),
+                'TP': tp_value,
+                'TPR': tpr_value,
+                'TVA': tva_value,
+                'CPL': round(profit_loss, 2) if cmp_is_num else "--",
+                'ED': ed_value,
+                'EXP': exp_value,
+                'PR': pr_value,
+                'PP': pp_value,
+                'IV': round(float(iv_value), 2),
+                'IP': round(float(ip_value), 2)
+            }
+            formatted_signals.append(row)
+
+        # 5. Return full list of dictionaries (for a DataFrame or other output)
+        return formatted_signals
+
+    except Exception as e:
+        print(f"Trade calculation failed: {e}")
+        return []
+    finally:
+        if db_connector:
+            db_connector.disconnect()
+
+
+# Legacy ExternalDBService class for backward compatibility
 class ExternalDBService:
-    """Service for connecting to external PostgreSQL database"""
+    """Service for connecting to external PostgreSQL database - Legacy class for backward compatibility"""
 
     def __init__(self):
         self.db_config = {
@@ -47,647 +448,131 @@ class ExternalDBService:
             logger.info("✓ Disconnected from external database")
 
     def get_admin_trade_signals(self) -> List[Dict]:
-        """Fetch only required fields from admin_trade_signals and get CMP from available tables"""
-        if not self.connection:
-            if not self.connect():
-                return []
-
-        try:
-            with self.connection.cursor(
-                    cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
-                # First, check what tables exist in both public and symbols schemas
-                cursor.execute(
-                    "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"
-                )
-                public_tables = [
-                    row['table_name'] for row in cursor.fetchall()
-                ]
-                logger.info(f"Available public tables: {public_tables}")
-
-                # Check symbols schema for symbol tables
-                cursor.execute(
-                    "SELECT table_name FROM information_schema.tables WHERE table_schema = 'symbols' AND table_type = 'BASE TABLE'"
-                )
-                symbol_tables = [
-                    row['table_name'] for row in cursor.fetchall()
-                ]
-                logger.info(
-                    f"Available symbol tables in symbols schema: {symbol_tables}"
-                )
-
-                # Check if admin_trade_signals table exists and has data
-                if 'admin_trade_signals' in public_tables:
-                    cursor.execute(
-                        "SELECT COUNT(*) as count FROM admin_trade_signals")
-                    row_count = cursor.fetchone()['count']
-                    logger.info(
-                        f"admin_trade_signals table has {row_count} rows")
-
-                    if row_count == 0:
-                        logger.warning(
-                            "admin_trade_signals table is empty - checking table structure"
-                        )
-                        # Check table structure
-                        cursor.execute("""
-                            SELECT column_name, data_type 
-                            FROM information_schema.columns 
-                            WHERE table_name = 'admin_trade_signals'
-                        """)
-                        columns = cursor.fetchall()
-                        logger.info(f"Table structure: {columns}")
-                        return []
-                else:
-                    logger.error("admin_trade_signals table does not exist")
-                    return []
-
-                # Get only required fields from admin_trade_signals (excluding CMP)
-                query = """
-                SELECT 
-                    id,
-                    symbol,
-                    qty,
-                    ep as entry_price,
-                    created_at,
-                    date,
-                    pos
-                FROM admin_trade_signals
-                ORDER BY created_at DESC
-                """
-
-                cursor.execute(query)
-                results = cursor.fetchall()
-
-                # Use symbol tables from symbols schema for price matching
-                logger.info(
-                    f"Found {len(symbol_tables)} symbol tables in symbols schema: {symbol_tables[:10]}..."
-                )  # Show first 10
-
-                # Convert RealDictRow to regular dict and handle data types
-                signals = []
-                for row in results:
-                    signal = dict(row)
-
-                    # Convert dates to string if they exist
-                    if signal.get('date'):
-                        signal['date'] = str(
-                            signal['date']) if signal['date'] else ''
-                    if signal.get('created_at'):
-                        signal['created_at'] = signal['created_at'].strftime(
-                            '%Y-%m-%d %H:%M:%S'
-                        ) if signal['created_at'] else None
-
-                    # Ensure numeric fields are properly formatted
-                    numeric_fields = ['pos', 'qty', 'entry_price']
-
-                    for field in numeric_fields:
-                        if signal.get(field) is not None:
-                            try:
-                                signal[field] = float(signal[field])
-                            except (ValueError, TypeError):
-                                signal[field] = 0.0
-
-                    # Initialize CMP to None - will be updated from symbol table if found
-                    signal['cmp'] = None
-                    cmp_found = False
-
-                    # Initialize historical price data for calculations
-                    price_30d_ago = 0.0
-                    price_7d_ago = 0.0
-
-                    # Ensure string fields are properly formatted
-                    if signal.get('symbol'):
-                        signal['symbol'] = str(signal['symbol']).upper()
-                    else:
-                        signal['symbol'] = ''
-
-                    # Try to get CMP and historical data from matching symbol table in symbols schema
-                    symbol_name = signal.get('symbol', '').upper()
-                    if symbol_name and symbol_tables:
-                        # Look for matching table (case-insensitive, multiple matching strategies)
-                        matching_table = None
-
-                        # Strategy 1: Exact match with symbol name + _5m
-                        exact_match = f"{symbol_name}_5m".lower()
-                        for table in symbol_tables:
-                            if table.lower() == exact_match:
-                                matching_table = table
-                                break
-
-                        # Strategy 2: Table contains symbol name
-                        if not matching_table:
-                            for table in symbol_tables:
-                                if symbol_name.lower() in table.lower():
-                                    matching_table = table
-                                    break
-
-                        # Strategy 3: Symbol name contains table name (for shorter table names)
-                        if not matching_table:
-                            for table in symbol_tables:
-                                table_base = table.replace('_5m', '').replace(
-                                    '_', '')
-                                if table_base.upper() in symbol_name.upper():
-                                    matching_table = table
-                                    break
-
-                        if matching_table:
-                            try:
-                                # Get the latest price data from the matching table in symbols schema
-                                price_query = f"""
-                                SELECT datetime, open, high, low, close, volume 
-                                FROM symbols."{matching_table}" 
-                                ORDER BY datetime DESC
-                                LIMIT 1
-                                """
-                                cursor.execute(price_query)
-                                price_data = cursor.fetchone()
-
-                                if price_data:
-                                    # Use close price as CMP
-                                    close_price = price_data[
-                                        'close'] if isinstance(
-                                            price_data,
-                                            dict) else price_data[4]
-                                    if close_price:
-                                        signal['cmp'] = round(
-                                            float(close_price), 2)
-                                        cmp_found = True
-                                        logger.info(
-                                            f"Updated CMP for {symbol_name} from symbols.{matching_table}: {signal['cmp']}"
-                                        )
-                                    else:
-                                        logger.warning(
-                                            f"No valid close price found in symbols.{matching_table} for {symbol_name}"
-                                        )
-                                else:
-                                    logger.warning(
-                                        f"No price data found in symbols.{matching_table} for {symbol_name}"
-                                    )
-
-                                # Get historical data for 7-day and 30-day calculations from daily data
-                                try:
-                                    # Look for daily table specifically for accurate historical calculations
-                                    daily_table = None
-                                    
-                                    # Check for _daily table variants
-                                    possible_daily_tables = [
-                                        f"{symbol_name.lower()}_daily",
-                                        matching_table.replace('_5m', '_daily'),
-                                        f"{symbol_name}_daily".lower()
-                                    ]
-                                    
-                                    for possible_table in possible_daily_tables:
-                                        if possible_table in symbol_tables:
-                                            daily_table = possible_table
-                                            break
-                                    
-                                    if daily_table:
-                                        logger.info(f"Using daily table: {daily_table} for {symbol_name}")
-                                        
-                                        # Get last 30 days of data for moving averages and percentage calculations
-                                        daily_data_query = f"""
-                                        SELECT datetime, close, high, low 
-                                        FROM symbols."{daily_table}" 
-                                        ORDER BY datetime DESC
-                                        LIMIT 30
-                                        """
-                                        cursor.execute(daily_data_query)
-                                        daily_data = cursor.fetchall()
-                                        
-                                        if daily_data and len(daily_data) > 0:
-                                            # Current price (most recent close)
-                                            current_price = signal.get('cmp', 0.0)
-                                            
-                                            # Calculate 7-day moving average
-                                            if len(daily_data) >= 7:
-                                                last_7_days = daily_data[:7]  # Most recent 7 days
-                                                seven_day_ma = sum(float(row['close'] if isinstance(row, dict) else row[1]) for row in last_7_days) / 7
-                                                signal['7d'] = round(seven_day_ma, 2)
-                                                
-                                                # 7-day percentage change (current vs 7 days ago)
-                                                if len(daily_data) > 7:
-                                                    price_7d_ago = float(daily_data[7]['close'] if isinstance(daily_data[7], dict) else daily_data[7][1])
-                                                    if price_7d_ago > 0 and current_price > 0:
-                                                        pct_change_7d = ((current_price - price_7d_ago) / price_7d_ago) * 100
-                                                        signal['7%'] = f"{pct_change_7d:.2f}%"
-                                                    else:
-                                                        signal['7%'] = "0.00%"
-                                                else:
-                                                    signal['7%'] = "0.00%"
-                                            else:
-                                                signal['7d'] = current_price if current_price else 0.0
-                                                signal['7%'] = "0.00%"
-                                            
-                                            # Calculate 30-day moving average
-                                            if len(daily_data) >= 30:
-                                                thirty_day_ma = sum(float(row['close'] if isinstance(row, dict) else row[1]) for row in daily_data) / 30
-                                                signal['30d'] = round(thirty_day_ma, 2)
-                                                
-                                                # 30-day percentage change (current vs 30 days ago)
-                                                price_30d_ago = float(daily_data[-1]['close'] if isinstance(daily_data[-1], dict) else daily_data[-1][1])
-                                                if price_30d_ago > 0 and current_price > 0:
-                                                    pct_change_30d = ((current_price - price_30d_ago) / price_30d_ago) * 100
-                                                    signal['30%'] = f"{pct_change_30d:.2f}%"
-                                                else:
-                                                    signal['30%'] = "0.00%"
-                                            elif len(daily_data) > 0:
-                                                # Use available data for 30-day average
-                                                available_day_ma = sum(float(row['close'] if isinstance(row, dict) else row[1]) for row in daily_data) / len(daily_data)
-                                                signal['30d'] = round(available_day_ma, 2)
-                                                signal['30%'] = "0.00%"
-                                            else:
-                                                signal['30d'] = current_price if current_price else 0.0
-                                                signal['30%'] = "0.00%"
-                                                
-                                            logger.info(f"Calculated historical metrics for {symbol_name}: 7d={signal.get('7d')}, 30d={signal.get('30d')}, 7%={signal.get('7%')}, 30%={signal.get('30%')}")
-                                        else:
-                                            logger.warning(f"No daily data found in {daily_table} for {symbol_name}")
-                                            signal['7d'] = signal.get('cmp', 0.0)
-                                            signal['30d'] = signal.get('cmp', 0.0) 
-                                            signal['7%'] = "0.00%"
-                                            signal['30%'] = "0.00%"
-                                    else:
-                                        logger.info(f"No daily table found for {symbol_name}, using current price for averages")
-                                        current_price = signal.get('cmp', 0.0)
-                                        signal['7d'] = current_price
-                                        signal['30d'] = current_price
-                                        signal['7%'] = "0.00%"
-                                        signal['30%'] = "0.00%"
-
-                                except Exception as hist_e:
-                                    logger.warning(f"Could not fetch historical data for {symbol_name}: {hist_e}")
-                                    # Set default values if historical calculation fails
-                                    current_price = signal.get('cmp', 0.0)
-                                    signal['7d'] = current_price
-                                    signal['30d'] = current_price
-                                    signal['7%'] = "0.00%"
-                                    signal['30%'] = "0.00%"
-
-                            except Exception as e:
-                                logger.error(
-                                    f"Error fetching price for {symbol_name} from symbols.{matching_table}: {e}"
-                                )
-                        else:
-                            logger.info(
-                                f"No matching symbol table found for {symbol_name} among {len(symbol_tables)} symbol tables in symbols schema"
-                            )
-
-                    # Set CMP to "--" if no matching symbol table found or no CMP retrieved
-                    if not cmp_found or signal.get('cmp') is None:
-                        signal['cmp'] = "--"
-
-                    # Calculate dynamic values using CMP and other data
-                    cmp = signal.get('cmp')
-                    entry_price = signal.get('entry_price', 0.0) or 0.0
-                    qty = signal.get('qty', 0.0) or 0.0
-
-                    # Handle numeric CMP for calculations
-                    if cmp == "--" or cmp is None:
-                        cmp_numeric = 0.0
-                    else:
-                        cmp_numeric = float(cmp)
-
-                    # Ensure we have valid numeric values
-                    if cmp_numeric <= 0:
-                        cmp_numeric = entry_price
-                    if entry_price <= 0:
-                        entry_price = cmp_numeric if cmp_numeric > 0 else 0.0
-                    if qty <= 0:
-                        qty = 1
-
-                    # IV - Investment Value (Entry Price * Quantity)
-                    iv_value = entry_price * qty
-
-                    # IP - Initial Price (Entry Price)
-                    ip_value = entry_price
-
-                    # NT - Net Total (Current Market Price * Quantity)
-                    if cmp == "--":
-                        nt_value = "--"
-                    else:
-                        nt_value = cmp_numeric * qty
-
-                    # Use the calculated 7d and 30d values from daily data if available
-                    # Otherwise, set defaults
-                    if not signal.get('7d'):
-                        signal['7d'] = cmp_numeric if cmp != "--" else "--"
-                    if not signal.get('30d'):
-                        signal['30d'] = cmp_numeric if cmp != "--" else "--"
-                    if not signal.get('7%'):
-                        signal['7%'] = "0.00%"
-                    if not signal.get('30%'):
-                        signal['30%'] = "0.00%"
-
-                    # Calculate TP (Target Price) and TPR (Target Profit Return) properly
-                    # Check if we have existing target price data in the database
-                    # Otherwise calculate based on current performance
-                    
-                    if entry_price > 0 and cmp_numeric > 0:
-                        # Method 1: If we have current market price, calculate target based on trend
-                        # For upward trending stocks: TP = CMP + (CMP - EP) * 0.5 (conservative 50% of current gain)
-                        # For stable/declining: TP = EP * 1.10 (10% target)
-                        
-                        current_gain_percent = ((cmp_numeric - entry_price) / entry_price) * 100
-                        
-                        if current_gain_percent > 5:  # If stock is performing well (>5% gain)
-                            # Conservative approach: Target additional 50% of current gains
-                            additional_gain = (cmp_numeric - entry_price) * 0.5
-                            target_price = cmp_numeric + additional_gain
-                        elif current_gain_percent > 0:  # Small positive gain (0-5%)
-                            # Target 15% from entry price
-                            target_price = entry_price * 1.15
-                        else:  # Stock is down or flat
-                            # Conservative 10% target from entry price
-                            target_price = entry_price * 1.10
-                        
-                        # Calculate TPR based on actual target price
-                        # TPR = (Target Price - Entry Price) / Entry Price * 100
-                        tpr_percent = ((target_price - entry_price) / entry_price) * 100
-                        
-                        signal['tp'] = round(target_price, 2)
-                        signal['tpr'] = f"{tpr_percent:.2f}%"
-                        
-                        # Also calculate Target Value Amount (TVA) = Target Price * Quantity
-                        signal['tva'] = round(target_price * qty, 2)
-                        
-                    elif entry_price > 0:  # No CMP but have entry price
-                        # Default 10% target
-                        target_price = entry_price * 1.10
-                        tpr_percent = 10.0
-                        signal['tp'] = round(target_price, 2)
-                        signal['tpr'] = f"{tpr_percent:.2f}%"
-                        signal['tva'] = round(target_price * qty, 2)
-                    else:
-                        signal['tp'] = "--"
-                        signal['tpr'] = "--"
-                        signal['tva'] = "--"
-
-                    # Add calculated values to signal (using new field names)
-                    signal['iv'] = round(iv_value, 2)
-                    signal['ip'] = round(ip_value, 2)
-                    signal['nt'] = nt_value if nt_value == "--" else round(nt_value, 2)
-                    
-                    # Map to legacy field names for compatibility
-                    signal['thirty'] = signal['30d']
-                    signal['seven'] = signal['7d'] 
-                    signal['dh'] = signal['30%']
-                    signal['ch'] = signal['7%']
-
-                    if cmp == "--":
-                        logger.info(f"Symbol {symbol_name}: No matching price table found - CMP set to '--'")
-                    else:
-                        logger.info(f"Calculated values for {symbol_name}: IV={iv_value:.2f}, IP={ip_value:.2f}, NT={nt_value:.2f}, 30d={signal['30d']}, 30%={signal['30%']}, 7d={signal['7d']}, 7%={signal['7%']}")
-
-                    signals.append(signal)
-
-                logger.info(
-                    f"✓ Fetched {len(signals)} admin trade signals with CMP from database"
-                )
-                return signals
-
-        except Exception as e:
-            logger.error(f"Error fetching admin trade signals: {e}")
-            import traceback
-            logger.error(f"Full traceback: {traceback.format_exc()}")
-            return []
+        """Legacy method - use get_all_trade_metrics() for full functionality"""
+        # Convert new format to legacy format for backward compatibility
+        signals = get_all_trade_metrics()
+        legacy_signals = []
+        
+        for signal in signals:
+            legacy_signal = {
+                'id': signal.get('ID'),
+                'symbol': signal.get('Symbol'),
+                'qty': signal.get('QTY'),
+                'entry_price': signal.get('EP'),
+                'cmp': signal.get('CMP'),
+                'created_at': signal.get('DATE'),
+                'pos': 1,  # Default position
+                'date': signal.get('DATE')
+            }
+            legacy_signals.append(legacy_signal)
+        
+        return legacy_signals
 
     def get_signal_by_id(self, signal_id: int) -> Optional[Dict]:
-        """Fetch specific admin trade signal by ID"""
-        if not self.connection:
-            if not self.connect():
-                return None
-
-        try:
-            cursor = self.connection.cursor(
-                cursor_factory=psycopg2.extras.RealDictCursor)
-
-            query = """
-            SELECT * FROM admin_trade_signals 
-            WHERE id = %s
-            """
-
-            cursor.execute(query, (signal_id, ))
-            result = cursor.fetchone()
-            cursor.close()
-
-            if result:
-                signal = dict(result)
-                # Format dates and numeric fields same as above
-                if signal.get('entry_date'):
-                    signal['entry_date'] = signal['entry_date'].strftime(
-                        '%Y-%m-%d') if signal['entry_date'] else None
-                if signal.get('exit_date'):
-                    signal['exit_date'] = signal['exit_date'].strftime(
-                        '%Y-%m-%d') if signal['exit_date'] else None
-
-                return signal
-            return None
-
-        except Exception as e:
-            logger.error(f"Error fetching signal by ID {signal_id}: {e}")
-            return None
+        """Get a single signal by ID"""
+        signals = get_all_trade_metrics()
+        for signal in signals:
+            if signal.get('ID') == signal_id:
+                return {
+                    'id': signal.get('ID'),
+                    'symbol': signal.get('Symbol'),
+                    'qty': signal.get('QTY'),
+                    'entry_price': signal.get('EP'),
+                    'cmp': signal.get('CMP'),
+                    'created_at': signal.get('DATE'),
+                    'pos': 1,
+                    'date': signal.get('DATE')
+                }
+        return None
 
 
+# Legacy functions for backward compatibility
 def get_etf_signals_from_external_db() -> List[Dict]:
-    """Fetch ETF signals data from external admin_trade_signals table"""
-    db_service = ExternalDBService()
+    """Legacy function - redirects to new implementation"""
+    return get_all_trade_metrics()
+
+
+def get_etf_signals_data_json():
+    """Get ETF signals data without pagination for /trading-signals page"""
     try:
-        signals = db_service.get_admin_trade_signals()
-        return signals
-    finally:
-        db_service.disconnect()
-
-
-def get_etf_signals_data_json(page=1, page_size=10):
-    """Get ETF signals data in JSON format for API response with pagination"""
-    try:
-        signals = get_etf_signals_from_external_db()
-
-        # If no signals found, return appropriate message
+        logger.info("Fetching complete ETF signals data from external database")
+        
+        # Get all signals using new implementation
+        signals = get_all_trade_metrics()
+        
         if not signals:
-            logger.info(
-                "No signals found in database - returning empty result")
+            logger.warning("No trading signals found in database")
             return {
                 'data': [],
-                'recordsTotal':
-                0,
-                'recordsFiltered':
-                0,
-                'page':
-                page,
-                'page_size':
-                page_size,
-                'total_pages':
-                0,
-                'has_more':
-                False,
-                'message':
-                'No trading signals found in admin_trade_signals table. Please check if data exists in the external database.'
+                'total': 0,
+                'message': 'No trading signals available'
             }
-
-        formatted_signals = []
-        count = 0
-
-        for signal in signals:
-            count += 1
-            # Get the required fields from admin_trade_signals with calculated values
-            symbol = str(signal.get('symbol') or 'N/A').upper()
-            qty = float(signal.get('qty')
-                        or 0) if signal.get('qty') is not None else 0.0
-            entry_price = float(
-                signal.get('entry_price')
-                or 0) if signal.get('entry_price') is not None else 0.0
-
-            # Get CMP and calculated values
-            cmp = signal.get('cmp')
-            if cmp == "--" or cmp is None:
-                cmp_numeric = 0.0
-                cmp_display = "--"
-            else:
-                cmp_numeric = float(cmp)
-                cmp_display = cmp_numeric
-
-            # Calculate basic metrics
-            investment = qty * entry_price if qty and entry_price else 0
-            current_value = qty * cmp_numeric if qty and cmp_numeric else 0
-            profit_loss = current_value - investment if cmp != "--" else 0
-            change_percent = ((cmp_numeric - entry_price) /
-                              entry_price) * 100 if entry_price > 0 and cmp != "--" else 0
-
-            # Get calculated values from signal with proper fallbacks
-            iv_value = signal.get('iv', investment)
-            ip_value = signal.get('ip', entry_price)
-            nt_value = signal.get('nt', current_value if cmp != "--" else "--")
-            thirty_value = signal.get('thirty', cmp_display if cmp != "--" else "--")
-            dh_value = signal.get('dh', f"{change_percent:.2f}%" if cmp != "--" else "--")
-            seven_value = signal.get('seven', cmp_display if cmp != "--" else "--")
-            ch_value = signal.get('ch', f"{change_percent:.2f}%" if cmp != "--" else "--")
-
-            # Ensure we have valid numeric values (skip validation for -- values)
-            if not isinstance(iv_value, (int, float)) or iv_value <= 0:
-                iv_value = investment
-            if not isinstance(ip_value, (int, float)) or ip_value <= 0:
-                ip_value = entry_price
-            if nt_value != "--" and (not isinstance(nt_value, (int, float)) or nt_value <= 0):
-                nt_value = current_value if cmp != "--" else "--"
-            if thirty_value != "--" and (not isinstance(thirty_value, (int, float)) or thirty_value <= 0):
-                thirty_value = cmp_display if cmp != "--" else "--"
-            if seven_value != "--" and (not isinstance(seven_value, (int, float)) or seven_value <= 0):
-                seven_value = cmp_display if cmp != "--" else "--"
-
-            # Get TP, TPR, and TVA values from signal
-            tp_value = signal.get('tp', "--")
-            tpr_value = signal.get('tpr', "--")
-            tva_value = signal.get('tva', "--")
-
-            # Format the data structure with calculated values
-            formatted_signal = {
-                'id': signal.get('id') or count,
-                'trade_signal_id': signal.get('id') or count,
-                'symbol': symbol,
-                'etf': symbol,
-                'qty': int(qty),
-                'ep': round(entry_price, 2),
-                'cmp': cmp_display if cmp != "--" else "--",
-                'inv': round(investment, 2),
-                'current_value': round(current_value, 2) if cmp != "--" else "--",
-                'pl': round(profit_loss, 2) if cmp != "--" else "--",
-                'chan': f"{change_percent:.2f}%" if cmp != "--" else "--",
-                'change_percent': round(change_percent, 2) if cmp != "--" else 0,
-                'date': signal.get('date', ''),
-                'created_at': signal.get('created_at', ''),
-                'pos': signal.get('pos', 1),
-                
-                # Target Price calculations - properly calculated per trade
-                'tp': tp_value if tp_value == "--" else round(float(tp_value), 2),
-                'tpr': str(tpr_value),
-                'tva': tva_value if tva_value == "--" else round(float(tva_value), 2),
-                
-                # Calculated values using CMP - properly formatted
-                'iv': round(float(iv_value), 2),
-                'ip': round(float(ip_value), 2),
-                'nt': nt_value if nt_value == "--" else round(float(nt_value), 2),
-                'thirty': thirty_value if thirty_value == "--" else round(float(thirty_value), 2),
-                'dh': str(dh_value),
-                'seven': seven_value if seven_value == "--" else round(float(seven_value), 2),
-                'ch': str(ch_value),
-                
-                # Store numeric percentage values for calculations
-                'thirty_percent_numeric': signal.get('thirty_percent_numeric', 0),
-                'seven_percent_numeric': signal.get('seven_percent_numeric', 0),
-                
-                # Formatted display values
-                'ep_formatted': f"₹{entry_price:.2f}",
-                'cmp_formatted': "--" if cmp == "--" else f"₹{cmp_display:.2f}",
-                'inv_formatted': f"₹{investment:.2f}",
-                'pl_formatted': "--" if cmp == "--" else f"₹{profit_loss:.2f}",
-                'current_value_formatted': "--" if cmp == "--" else f"₹{current_value:.2f}",
-                'tp_formatted': "--" if tp_value == "--" else f"₹{float(tp_value):.2f}",
-                'tva_formatted': "--" if tva_value == "--" else f"₹{float(tva_value):.2f}",
-                'iv_formatted': f"₹{float(iv_value):.2f}",
-                'ip_formatted': f"₹{float(ip_value):.2f}",
-                'nt_formatted': "--" if nt_value == "--" else f"₹{float(nt_value):.2f}",
-                'thirty_formatted': "--" if thirty_value == "--" else f"₹{float(thirty_value):.2f}",
-                'seven_formatted': "--" if seven_value == "--" else f"₹{float(seven_value):.2f}"
-            }
-            formatted_signals.append(formatted_signal)
-
-        # Apply pagination
-        start_idx = (page - 1) * page_size
-        end_idx = start_idx + page_size
-        paginated_signals = formatted_signals[start_idx:end_idx]
-
+        
+        logger.info(f"✓ Fetched {len(signals)} trading signals successfully")
+        
         return {
-            'data':
-            paginated_signals,
-            'recordsTotal':
-            len(formatted_signals),
-            'recordsFiltered':
-            len(formatted_signals),
-            'page':
-            page,
-            'page_size':
-            page_size,
-            'total_pages':
-            (len(formatted_signals) + page_size - 1) // page_size,
-            'has_more':
-            end_idx < len(formatted_signals),
-            'message':
-            f'Successfully loaded {len(paginated_signals)} signals from admin_trade_signals table'
+            'data': signals,
+            'total': len(signals),
+            'message': f'Successfully loaded {len(signals)} trading signals'
         }
-
+        
     except Exception as e:
-        logger.error(f"Error getting ETF signals data: {e}")
-        import traceback
-        logger.error(f"Full traceback: {traceback.format_exc()}")
+        logger.error(f"Error in get_etf_signals_data_json: {str(e)}", exc_info=True)
         return {
             'data': [],
-            'recordsTotal':
-            0,
-            'recordsFiltered':
-            0,
-            'page':
-            page,
-            'page_size':
-            page_size,
-            'has_more':
-            False,
-            'error':
-            str(e),
-            'message':
-            'No trading signals found - admin_trade_signals table may be empty'
+            'total': 0,
+            'error': str(e),
+            'message': 'Failed to fetch trading signals'
         }
 
 
 def get_basic_trade_signals_data_json():
-    """Get basic trade signals data in JSON format for API response"""
+    """Get basic trade signals data for API endpoints"""
     try:
-        return get_etf_signals_data_json()
+        logger.info("Fetching basic trade signals data")
+        
+        # Use the new comprehensive function
+        signals = get_all_trade_metrics()
+        
+        if not signals:
+            logger.warning("No basic trade signals found")
+            return {
+                'data': [],
+                'total': 0,
+                'message': 'No basic trade signals available'
+            }
+        
+        # Format for basic display (simplified version)
+        basic_signals = []
+        for signal in signals:
+            basic_signal = {
+                'id': signal.get('ID'),
+                'symbol': signal.get('Symbol'),
+                'date': signal.get('DATE'),
+                'qty': signal.get('QTY'),
+                'entry_price': signal.get('EP'),
+                'cmp': signal.get('CMP'),
+                'change_percent': signal.get('%CHAN'),
+                'investment': signal.get('INV'),
+                'current_value': signal.get('CPL'),
+                'target_price': signal.get('TP'),
+                'target_percent': signal.get('TPR')
+            }
+            basic_signals.append(basic_signal)
+        
+        logger.info(f"✓ Formatted {len(basic_signals)} basic trade signals")
+        
+        return {
+            'data': basic_signals,
+            'total': len(basic_signals),
+            'message': f'Successfully loaded {len(basic_signals)} basic trade signals'
+        }
+        
     except Exception as e:
-        logger.error(f"Error getting basic trade signals data: {e}")
+        logger.error(f"Error in get_basic_trade_signals_data_json: {str(e)}", exc_info=True)
         return {
             'data': [],
-            'recordsTotal': 0,
-            'recordsFiltered': 0,
+            'total': 0,
             'error': str(e),
-            'message': 'Failed to fetch basic trade signals data'
+            'message': 'Failed to fetch basic trade signals'
         }
