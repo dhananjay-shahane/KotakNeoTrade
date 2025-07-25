@@ -266,3 +266,74 @@
     transform: translateY(-2px) !important;
     box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4) !important;
 }
+/* ETF Signals specific styles */
+.etf-signals-content {
+    min-height: 100vh;
+}
+
+.signals-table {
+    font-size: 0.85rem;
+}
+
+.signals-table th {
+    background-color: #1a1a1a !important;
+    border-bottom: 2px solid #333 !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.signals-table td {
+    border-color: #333 !important;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.badge {
+    font-size: 0.75rem;
+}
+
+/* Enhanced search bar styles */
+.input-group-lg .form-control {
+    border-radius: 0 8px 8px 0 !important;
+    transition: all 0.3s ease;
+}
+
+.input-group-lg .form-control:focus {
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    border-color: #007bff;
+}
+
+.input-group-lg .input-group-text {
+    border-radius: 8px 0 0 8px !important;
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    border: none;
+}
+
+/* Horizontal scroll styling */
+.table-responsive::-webkit-scrollbar {
+    height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #2c2c2c;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #007bff;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #0056b3;
+}
+
+/* Loading states */
+.content-loading {
+    position: relative;
+}

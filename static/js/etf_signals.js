@@ -108,20 +108,7 @@ ETFSignalsManager.prototype.setupEventListeners = function () {
         });
     }
 
-    // Filter dropdowns
-    var statusFilter = document.getElementById("statusFilter");
-    if (statusFilter) {
-        statusFilter.addEventListener("change", function () {
-            self.applyFilters();
-        });
-    }
-
-    var profitFilter = document.getElementById("profitFilter");
-    if (profitFilter) {
-        profitFilter.addEventListener("change", function () {
-            self.applyFilters();
-        });
-    }
+    // Remove filter dropdowns - keeping only search functionality
 
     // Items per page selector
     var itemsPerPageSelect = document.getElementById("itemsPerPage");
@@ -949,8 +936,6 @@ ETFSignalsManager.prototype.updatePortfolioSummary = function (portfolio) {
 
 ETFSignalsManager.prototype.applyFilters = function () {
     var searchInput = document.getElementById("signalSearch");
-    var statusFilter = document.getElementById("statusFilter");
-    var profitFilter = document.getElementById("profitFilter");
     var modalStatusFilter = document.getElementById("modalStatusFilter");
     var modalSymbolFilter = document.getElementById("modalSymbolFilter");
     var positionTypeFilter = document.getElementById("positionTypeFilter");
@@ -960,8 +945,6 @@ ETFSignalsManager.prototype.applyFilters = function () {
     var maxPnlFilter = document.getElementById("maxPnlFilter");
 
     var searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
-    var statusValue = statusFilter ? statusFilter.value : "";
-    var profitValue = profitFilter ? profitFilter.value : "";
     var modalStatusValue = modalStatusFilter ? modalStatusFilter.value : "";
     var modalSymbolValue = modalSymbolFilter ? modalSymbolFilter.value.toLowerCase() : "";
     var positionTypeValue = positionTypeFilter ? positionTypeFilter.value : "";
@@ -978,14 +961,20 @@ ETFSignalsManager.prototype.applyFilters = function () {
         var pnl = parseFloat(signal.CPL || signal.cpl || signal.pl || 0);
         var positionType = signal.pos > 0 ? "BUY" : "SELL";
 
-        // Search term filter
-        if (searchTerm && symbol.indexOf(searchTerm) === -1 && status.toLowerCase().indexOf(searchTerm) === -1) {
-            return false;
-        }
-
-        // Status filter (from top bar)
-        if (statusValue && status !== statusValue.toUpperCase()) {
-            return false;
+        // Enhanced search term filter - search across multiple fields
+        if (searchTerm) {
+            var searchFields = [
+                symbol,
+                status.toLowerCase(),
+                (signal.DATE || signal.date || "").toLowerCase(),
+                (signal.EP || signal.ep || "").toString(),
+                (signal.CMP || signal.cmp || "").toString(),
+                (signal.QTY || signal.qty || "").toString()
+            ].join(" ");
+            
+            if (searchFields.indexOf(searchTerm) === -1) {
+                return false;
+            }
         }
 
         // Modal status filter
@@ -995,14 +984,6 @@ ETFSignalsManager.prototype.applyFilters = function () {
 
         // Modal symbol filter
         if (modalSymbolValue && symbol.indexOf(modalSymbolValue) === -1) {
-            return false;
-        }
-
-        // Profit/Loss filter
-        if (profitValue === "profit" && pnl <= 0) {
-            return false;
-        }
-        if (profitValue === "loss" && pnl >= 0) {
             return false;
         }
 
