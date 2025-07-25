@@ -646,7 +646,10 @@ def get_dashboard_data_api():
         if not client:
             return jsonify({'error': 'No active client'}), 400
 
-        dashboard_data = trading_functions.get_dashboard_data(client)
+        if trading_functions:
+            dashboard_data = trading_functions.get_dashboard_data(client)
+        else:
+            dashboard_data = {'error': 'Trading functions not available'}
         return jsonify(dashboard_data)
     except Exception as e:
         logging.error(f"Dashboard data error: {e}")
@@ -667,7 +670,10 @@ def get_positions_api():
                 'error': 'No active client'
             }), 400
 
-        positions = trading_functions.get_positions(client)
+        if trading_functions:
+            positions = trading_functions.get_positions(client)
+        else:
+            positions = []
 
         # Ensure positions is always a list and return in expected format
         if isinstance(positions, dict) and 'positions' in positions:
@@ -701,7 +707,10 @@ def get_holdings_api():
                 'error': 'No active client'
             }), 400
 
-        holdings = trading_functions.get_holdings(client)
+        if trading_functions:
+            holdings = trading_functions.get_holdings(client)
+        else:
+            holdings = []
 
         # Ensure holdings is always a list and return in expected format
         if isinstance(holdings, dict) and 'holdings' in holdings:
@@ -735,7 +744,10 @@ def get_orders_api():
                 'error': 'No active client'
             }), 400
 
-        orders = trading_functions.get_orders(client)
+        if trading_functions:
+            orders = trading_functions.get_orders(client)
+        else:
+            orders = []
 
         # Ensure orders is always a list and return in expected format
         if isinstance(orders, dict) and 'orders' in orders:
@@ -966,18 +978,9 @@ except Exception as e:
 # ========================================
 
 # Register Kotak Neo blueprints
+# Kotak Neo integration - optional
 try:
-    from kotak_neo_project.app import app as kotak_app
-
-    # Copy routes from Kotak Neo app to main app
-    for rule in kotak_app.url_map.iter_rules():
-        if rule.endpoint not in app.view_functions:
-            app.add_url_rule(f"/kotak{rule.rule}",
-                             endpoint=f"kotak_{rule.endpoint}",
-                             view_func=kotak_app.view_functions[rule.endpoint],
-                             methods=rule.methods)
-
-    print("Successfully registered Kotak Neo blueprints")
+    print("Kotak Neo integration components already integrated in main app")
 except Exception as e:
     print(f"Kotak Neo integration optional: {e}")
 
@@ -1001,7 +1004,7 @@ try:
     # Initialize LoginManager properly
     login_manager = LoginManager()
     login_manager.init_app(app)
-    login_manager.login_view = 'login'
+    login_manager.login_view = 'auth_routes.trading_account_login'
 
     # Initialize Mail
     mail = Mail(app)
@@ -1012,7 +1015,7 @@ except Exception as e:
     try:
         login_manager = LoginManager()
         login_manager.init_app(app)
-        login_manager.login_view = 'login'
+        login_manager.login_view = 'auth_routes.trading_account_login'
         print("✓ Basic login manager initialized")
     except Exception as login_error:
         print(f"Login manager error: {login_error}")
