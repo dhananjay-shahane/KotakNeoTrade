@@ -455,7 +455,11 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                     '<span class="fw-bold text-white">' + chValue + "</span>";
                 break;
             case "actions":
-                var signalId = signal.ID || signal.trade_signal_id || signal.id || "1";
+                var signalId = signal.ID || signal.id || signal.trade_signal_id || "1";
+                console.log("Creating action button for signal:", {
+                    signalId: signalId,
+                    originalSignal: signal
+                });
                 cellValue =
                     '<button class="btn btn-sm btn-success" onclick="addDeal(' +
                     signalId +
@@ -1342,17 +1346,47 @@ function exportSignals() {
 
 function addDeal(signalId) {
     console.log("Add Deal called with signalId:", signalId);
+    console.log("Available signals:", window.etfSignalsManager ? window.etfSignalsManager.signals : 'No signals manager');
 
     // Find the complete signal data from the current signals array
     var signal = null;
     if (window.etfSignalsManager && window.etfSignalsManager.signals) {
+        console.log("Searching through", window.etfSignalsManager.signals.length, "signals");
+        
+        // Log the first few signals to see their structure
+        if (window.etfSignalsManager.signals.length > 0) {
+            console.log("Sample signal structure:", JSON.stringify(window.etfSignalsManager.signals[0], null, 2));
+        }
+        
         signal = window.etfSignalsManager.signals.find(function (s) {
-            return s.ID == signalId || s.id == signalId || s.trade_signal_id == signalId;
+            var matchesID = s.ID == signalId;
+            var matchesId = s.id == signalId;
+            var matchesTradeId = s.trade_signal_id == signalId;
+            
+            console.log("Checking signal:", {
+                signalID: s.ID,
+                signalId: s.id,
+                tradeSignalId: s.trade_signal_id,
+                searchingFor: signalId,
+                matchesID: matchesID,
+                matchesId: matchesId,
+                matchesTradeId: matchesTradeId
+            });
+            
+            return matchesID || matchesId || matchesTradeId;
         });
     }
 
     if (!signal) {
         console.error("Signal not found for ID:", signalId);
+        console.error("Available signal IDs:", window.etfSignalsManager.signals.map(function(s) {
+            return {
+                ID: s.ID,
+                id: s.id,
+                trade_signal_id: s.trade_signal_id,
+                symbol: s.Symbol || s.symbol
+            };
+        }));
         showSwalMessage(
             "Signal data not found. Please refresh the page and try again.",
             "error",
@@ -1468,23 +1502,47 @@ function createUserDealFromSignal(signal, symbol, entryPrice, currentPrice, quan
     // Prepare deal data for user_deals table with complete signal information
     var dealData = {
         signal_data: {
+            // Core identification
             symbol: symbol,
             etf: symbol,
             Symbol: symbol,
-            ID: signal.ID || signal.id,
+            ID: signal.ID || signal.id || signal.trade_signal_id,
+            id: signal.ID || signal.id || signal.trade_signal_id,
+            trade_signal_id: signal.ID || signal.id || signal.trade_signal_id,
+            
+            // Quantity fields
             qty: quantity,
             QTY: quantity,
+            quantity: quantity,
+            
+            // Price fields
             ep: entryPrice,
             EP: entryPrice,
+            entry_price: entryPrice,
             cmp: currentPrice,
             CMP: currentPrice,
+            current_price: currentPrice,
             tp: targetPrice,
             TP: targetPrice,
+            target_price: targetPrice,
+            
+            // Investment fields
             inv: investment,
             INV: investment,
+            investment: investment,
+            investment_amount: investment,
+            
+            // Position and status
             pos: 1, // Default to LONG position
-            date: signal.DATE || signal.date || new Date().toLocaleDateString(),
-            // Include all other signal fields
+            position_type: "LONG",
+            status: "ACTIVE",
+            
+            // Date fields
+            date: signal.DATE || signal.date || signal.created_at || new Date().toLocaleDateString(),
+            DATE: signal.DATE || signal.date || signal.created_at || new Date().toLocaleDateString(),
+            created_at: signal.DATE || signal.date || signal.created_at || new Date().toISOString(),
+            
+            // Include all other signal fields as-is
             "7D": signal["7D"] || 0,
             "7D%": signal["7D%"] || "0.00%",
             "30D": signal["30D"] || 0,
@@ -1492,7 +1550,14 @@ function createUserDealFromSignal(signal, symbol, entryPrice, currentPrice, quan
             "%CHAN": signal["%CHAN"] || "0.00%",
             CPL: signal.CPL || 0,
             TPR: signal.TPR || "0.00%",
-            TVA: signal.TVA || 0
+            TVA: signal.TVA || 0,
+            
+            // Add any additional fields from the original signal
+            seven: signal.seven || signal["7D"] || 0,
+            ch: signal.ch || signal["7D%"] || "0.00%",
+            thirty: signal.thirty || signal["30D"] || 0,
+            dh: signal.dh || signal["30D%"] || "0.00%",
+            chan: signal.chan || signal["%CHAN"] || "0.00%"
         }
     };
 
