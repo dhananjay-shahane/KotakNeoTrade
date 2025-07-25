@@ -314,23 +314,62 @@
     border: none;
 }
 
-/* Horizontal scroll styling */
+/* Horizontal scroll styling - Top positioned scrollbar */
+.table-responsive {
+    position: relative;
+    overflow-x: auto;
+    overflow-y: visible;
+}
+
+/* Custom scrollbar wrapper to position at top */
+.table-responsive::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 12px;
+    background: #1a1a1a;
+    border-bottom: 1px solid #333;
+    z-index: 20;
+}
+
+/* Scrollbar styling */
 .table-responsive::-webkit-scrollbar {
-    height: 8px;
+    height: 12px;
 }
 
 .table-responsive::-webkit-scrollbar-track {
-    background: #2c2c2c;
-    border-radius: 4px;
+    background: #1a1a1a;
+    border-radius: 0;
 }
 
 .table-responsive::-webkit-scrollbar-thumb {
-    background: #007bff;
-    border-radius: 4px;
+    background: linear-gradient(90deg, #007bff, #0056b3);
+    border-radius: 6px;
+    border: 2px solid #1a1a1a;
 }
 
 .table-responsive::-webkit-scrollbar-thumb:hover {
-    background: #0056b3;
+    background: linear-gradient(90deg, #0056b3, #004085);
+}
+
+/* Alternative approach for better top scrollbar visibility */
+.scroll-container {
+    position: relative;
+}
+
+.scroll-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 17px; /* Account for vertical scrollbar */
+    height: 12px;
+    background: linear-gradient(90deg, transparent 0%, #007bff 50%, transparent 100%);
+    opacity: 0.3;
+    z-index: 15;
+    pointer-events: none;
 }
 
 /* Loading states */
