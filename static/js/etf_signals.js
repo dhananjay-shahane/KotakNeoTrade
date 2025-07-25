@@ -103,6 +103,24 @@ ETFSignalsManager.prototype.setupEventListeners = function () {
         searchInput.addEventListener("input", function () {
             self.applyFilters();
         });
+        searchInput.addEventListener("keyup", function () {
+            self.applyFilters();
+        });
+    }
+
+    // Filter dropdowns
+    var statusFilter = document.getElementById("statusFilter");
+    if (statusFilter) {
+        statusFilter.addEventListener("change", function () {
+            self.applyFilters();
+        });
+    }
+
+    var profitFilter = document.getElementById("profitFilter");
+    if (profitFilter) {
+        profitFilter.addEventListener("change", function () {
+            self.applyFilters();
+        });
     }
 
     // Items per page selector
@@ -931,16 +949,79 @@ ETFSignalsManager.prototype.updatePortfolioSummary = function (portfolio) {
 
 ETFSignalsManager.prototype.applyFilters = function () {
     var searchInput = document.getElementById("signalSearch");
+    var statusFilter = document.getElementById("statusFilter");
+    var profitFilter = document.getElementById("profitFilter");
+    var modalStatusFilter = document.getElementById("modalStatusFilter");
+    var modalSymbolFilter = document.getElementById("modalSymbolFilter");
+    var positionTypeFilter = document.getElementById("positionTypeFilter");
+    var minInvestmentFilter = document.getElementById("minInvestmentFilter");
+    var maxInvestmentFilter = document.getElementById("maxInvestmentFilter");
+    var minPnlFilter = document.getElementById("minPnlFilter");
+    var maxPnlFilter = document.getElementById("maxPnlFilter");
+
     var searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
+    var statusValue = statusFilter ? statusFilter.value : "";
+    var profitValue = profitFilter ? profitFilter.value : "";
+    var modalStatusValue = modalStatusFilter ? modalStatusFilter.value : "";
+    var modalSymbolValue = modalSymbolFilter ? modalSymbolFilter.value.toLowerCase() : "";
+    var positionTypeValue = positionTypeFilter ? positionTypeFilter.value : "";
+    var minInvestment = minInvestmentFilter ? parseFloat(minInvestmentFilter.value) || 0 : 0;
+    var maxInvestment = maxInvestmentFilter ? parseFloat(maxInvestmentFilter.value) || Infinity : Infinity;
+    var minPnl = minPnlFilter ? parseFloat(minPnlFilter.value) || -Infinity : -Infinity;
+    var maxPnl = maxPnlFilter ? parseFloat(maxPnlFilter.value) || Infinity : Infinity;
 
     var self = this;
     this.filteredSignals = this.signals.filter(function (signal) {
-        var symbol = signal.etf || signal.symbol || "";
-        var status = signal.status || "";
-        return (
-            symbol.toLowerCase().indexOf(searchTerm) !== -1 ||
-            status.toLowerCase().indexOf(searchTerm) !== -1
-        );
+        var symbol = (signal.Symbol || signal.etf || signal.symbol || "").toLowerCase();
+        var status = (signal.status || "ACTIVE").toUpperCase();
+        var investment = parseFloat(signal.INV || signal.inv || 0);
+        var pnl = parseFloat(signal.CPL || signal.cpl || signal.pl || 0);
+        var positionType = signal.pos > 0 ? "BUY" : "SELL";
+
+        // Search term filter
+        if (searchTerm && symbol.indexOf(searchTerm) === -1 && status.toLowerCase().indexOf(searchTerm) === -1) {
+            return false;
+        }
+
+        // Status filter (from top bar)
+        if (statusValue && status !== statusValue.toUpperCase()) {
+            return false;
+        }
+
+        // Modal status filter
+        if (modalStatusValue && status !== modalStatusValue.toUpperCase()) {
+            return false;
+        }
+
+        // Modal symbol filter
+        if (modalSymbolValue && symbol.indexOf(modalSymbolValue) === -1) {
+            return false;
+        }
+
+        // Profit/Loss filter
+        if (profitValue === "profit" && pnl <= 0) {
+            return false;
+        }
+        if (profitValue === "loss" && pnl >= 0) {
+            return false;
+        }
+
+        // Position type filter
+        if (positionTypeValue && positionType !== positionTypeValue) {
+            return false;
+        }
+
+        // Investment range filter
+        if (investment < minInvestment || investment > maxInvestment) {
+            return false;
+        }
+
+        // P&L range filter
+        if (pnl < minPnl || pnl > maxPnl) {
+            return false;
+        }
+
+        return true;
     });
 
     // Reset to first page after filtering
@@ -1229,6 +1310,39 @@ ETFSignalsManager.prototype.stopAutoRefresh = function () {
 function refreshSignals() {
     if (window.etfSignalsManager) {
         window.etfSignalsManager.loadSignals(true);
+    }
+}
+
+function applySearch() {
+    if (window.etfSignalsManager) {
+        window.etfSignalsManager.applyFilters();
+    }
+}
+
+function applyFilters() {
+    if (window.etfSignalsManager) {
+        window.etfSignalsManager.applyFilters();
+    }
+}
+
+function clearFilters() {
+    // Clear all filter inputs
+    var filterInputs = [
+        'signalSearch', 'statusFilter', 'profitFilter', 'modalStatusFilter',
+        'modalSymbolFilter', 'positionTypeFilter', 'minInvestmentFilter',
+        'maxInvestmentFilter', 'minPnlFilter', 'maxPnlFilter'
+    ];
+    
+    filterInputs.forEach(function(inputId) {
+        var element = document.getElementById(inputId);
+        if (element) {
+            element.value = '';
+        }
+    });
+    
+    // Apply filters to reset the view
+    if (window.etfSignalsManager) {
+        window.etfSignalsManager.applyFilters();
     }
 }
 
