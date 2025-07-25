@@ -1722,7 +1722,11 @@ function searchSymbol() {
     }
     
     var resultsContainer = document.getElementById('searchResults');
-    resultsContainer.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin me-2"></i>Searching...</div>';
+    var resultsRow = document.getElementById('searchResultsRow');
+    
+    // Show results section
+    resultsRow.style.display = 'block';
+    resultsContainer.innerHTML = '<div class="text-center py-3"><i class="fas fa-spinner fa-spin me-2"></i>Searching...</div>';
     
     // Filter deals by symbol
     var filteredDeals = window.dealsManager.deals.filter(function(deal) {
@@ -1730,20 +1734,28 @@ function searchSymbol() {
     });
     
     if (filteredDeals.length > 0) {
-        var resultsHTML = '<div class="search-results">';
-        resultsHTML += '<h6 class="text-light mb-2">Found ' + filteredDeals.length + ' deals:</h6>';
+        var resultsHTML = '<div class="row g-2">';
         
         filteredDeals.forEach(function(deal) {
             resultsHTML += 
-                '<div class="search-result-item bg-secondary rounded p-2 mb-2">' +
-                '<div class="d-flex justify-content-between align-items-center">' +
-                '<div>' +
-                '<strong class="text-light">' + deal.symbol + '</strong>' +
-                '<small class="text-muted d-block">Qty: ' + deal.qty + ' | EP: ₹' + deal.ep + '</small>' +
+                '<div class="col-12">' +
+                '<div class="search-result-item bg-secondary rounded p-3 border border-primary">' +
+                '<div class="row align-items-center">' +
+                '<div class="col-8">' +
+                '<h6 class="text-light mb-1">' +
+                '<i class="fas fa-chart-line text-primary me-2"></i>' + deal.symbol +
+                '</h6>' +
+                '<div class="row text-muted small">' +
+                '<div class="col-6">Qty: <span class="text-info">' + deal.qty + '</span></div>' +
+                '<div class="col-6">EP: <span class="text-success">₹' + deal.ep + '</span></div>' +
                 '</div>' +
-                '<button class="btn btn-sm btn-primary" onclick="selectSymbolFromSearch(\'' + deal.symbol + '\')">' +
-                'Select' +
+                '</div>' +
+                '<div class="col-4 text-end">' +
+                '<button class="btn btn-primary btn-sm w-100" onclick="selectSymbolFromSearch(\'' + deal.symbol + '\')">' +
+                '<i class="fas fa-check me-1"></i>Select' +
                 '</button>' +
+                '</div>' +
+                '</div>' +
                 '</div>' +
                 '</div>';
         });
@@ -1751,9 +1763,29 @@ function searchSymbol() {
         resultsContainer.innerHTML = resultsHTML;
     } else {
         resultsContainer.innerHTML = 
-            '<div class="text-center text-muted">' +
-            '<i class="fas fa-search me-2"></i>No deals found for "' + searchTerm + '"' +
+            '<div class="text-center py-4">' +
+            '<i class="fas fa-search fa-2x text-muted mb-2"></i>' +
+            '<h6 class="text-muted">No deals found for "' + searchTerm + '"</h6>' +
+            '<small class="text-muted">Try searching for different symbols</small>' +
             '</div>';
+    }
+}
+
+function clearSearchResults() {
+    var searchInput = document.getElementById('symbolSearchInput');
+    var resultsContainer = document.getElementById('searchResults');
+    var resultsRow = document.getElementById('searchResultsRow');
+    
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    
+    if (resultsContainer) {
+        resultsContainer.innerHTML = '';
+    }
+    
+    if (resultsRow) {
+        resultsRow.style.display = 'none';
     }
 }
 
