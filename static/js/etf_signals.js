@@ -478,7 +478,9 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                 cellValue =
                     '<button class="btn btn-sm btn-success add-deal-btn" onclick="addDeal(' +
                     signalId +
-                    ')" data-signal-id="' + signalId + '"><i class="fas fa-plus me-1"></i>Add Deal</button>';
+                    ')" data-signal-id="' +
+                    signalId +
+                    '"><i class="fas fa-plus me-1"></i>Add Deal</button>';
                 break;
             default:
                 cellValue = "--";
@@ -1364,35 +1366,50 @@ function addDeal(signalId) {
 
     // Prevent double-clicking by disabling the button temporarily
     var buttonElement = event ? event.target : null;
-    if (buttonElement && buttonElement.tagName === 'BUTTON') {
+    if (buttonElement && buttonElement.tagName === "BUTTON") {
         buttonElement.disabled = true;
-        buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Processing...';
-        
+        buttonElement.innerHTML =
+            '<i class="fas fa-spinner fa-spin me-1"></i>Processing...';
+
         // Re-enable button after 3 seconds
-        setTimeout(function() {
+        setTimeout(function () {
             buttonElement.disabled = false;
-            buttonElement.innerHTML = '<i class="fas fa-plus me-1"></i>Add Deal';
+            buttonElement.innerHTML =
+                '<i class="fas fa-plus me-1"></i>Add Deal';
         }, 3000);
     }
 
     // Wait for signals to be loaded if they're not available yet
-    if (!window.etfSignalsManager || !window.etfSignalsManager.signals || window.etfSignalsManager.signals.length === 0) {
+    if (
+        !window.etfSignalsManager ||
+        !window.etfSignalsManager.signals ||
+        window.etfSignalsManager.signals.length === 0
+    ) {
         console.log("Signals not loaded yet, waiting...");
         showSwalMessage("Loading signals data, please wait...", "info");
-        
+
         // Wait up to 5 seconds for signals to load
         var attempts = 0;
-        var checkInterval = setInterval(function() {
+        var checkInterval = setInterval(function () {
             attempts++;
-            if (window.etfSignalsManager && window.etfSignalsManager.signals && window.etfSignalsManager.signals.length > 0) {
+            if (
+                window.etfSignalsManager &&
+                window.etfSignalsManager.signals &&
+                window.etfSignalsManager.signals.length > 0
+            ) {
                 clearInterval(checkInterval);
                 findAndProcessSignal(signalId);
-            } else if (attempts >= 10) { // 5 seconds
+            } else if (attempts >= 10) {
+                // 5 seconds
                 clearInterval(checkInterval);
-                showSwalMessage("Failed to load signals data. Please refresh the page.", "error");
+                showSwalMessage(
+                    "Failed to load signals data. Please refresh the page.",
+                    "error",
+                );
                 if (buttonElement) {
                     buttonElement.disabled = false;
-                    buttonElement.innerHTML = '<i class="fas fa-plus me-1"></i>Add Deal';
+                    buttonElement.innerHTML =
+                        '<i class="fas fa-plus me-1"></i>Add Deal';
                 }
             }
         }, 500);
@@ -1410,17 +1427,24 @@ function findAndProcessSignal(signalId) {
     if (window.etfSignalsManager && window.etfSignalsManager.signals) {
         signal = window.etfSignalsManager.signals.find(function (s) {
             // Check multiple possible ID fields
-            return s.ID == signalId || 
-                   s.id == signalId || 
-                   s.trade_signal_id == signalId ||
-                   parseInt(s.ID) == parseInt(signalId) ||
-                   parseInt(s.id) == parseInt(signalId);
+            return (
+                s.ID == signalId ||
+                s.id == signalId ||
+                s.trade_signal_id == signalId ||
+                parseInt(s.ID) == parseInt(signalId) ||
+                parseInt(s.id) == parseInt(signalId)
+            );
         });
     }
 
     if (!signal) {
         console.error("Signal not found for ID:", signalId);
-        console.log("Available signals:", window.etfSignalsManager ? window.etfSignalsManager.signals : "No manager");
+        console.log(
+            "Available signals:",
+            window.etfSignalsManager
+                ? window.etfSignalsManager.signals
+                : "No manager",
+        );
         showSwalMessage(
             "Signal data not found. Please refresh the page and try again.",
             "error",
@@ -1527,27 +1551,26 @@ function proceedWithAddingDeal(signal, symbol, price, quantity, investment) {
         symbol: signal.etf || signal.symbol || symbol,
         trade_signal_id: signal.trade_signal_id || signal.id,
         pos: signal.pos || "",
-        qty: signal.qty || "",
-        ep: signal.ep || "",
-        cmp: signal.cmp || "",
-        tp: signal.tp || "",
-        inv: signal.inv || "",
-        pl: signal.pl || "",
-        change_pct: signal.chan,
+        qty: signal.QTY || "",
+        ep: signal.EP || "",
+        cmp: signal.CMP || "",
+        tp: signal.TP || "",
+        inv: signal.INV || "",
+        pl: signal.PL || "",
+        change_pct: signal.CHAN,
         thirty: signal.thirty,
         dh: signal.dh || 0,
         date: signal.date || new Date().toISOString().split("T")[0],
-        ed: signal.ed || signal.date,
-        exp: signal.exp || "",
-        pr: signal.pr || "",
-        pp: signal.pp || "",
-        iv: signal.iv || "",
-        ip: signal.ip || "",
-        nt: signal.nt || "Added from ETF signals",
+        ed: signal.ED,
+        exp: signal.EXP || "",
+        pr: signal.PR || "",
+        pp: signal.PP || "",
+        iv: signal.IV || "",
+        ip: signal.IP || "",
         seven: signal.seven || 0,
         ch: signal.ch || signal.change_pct || 0,
-        tva: signal.tva,
-        tpr: signal.tpr,
+        tva: signal.TVA,
+        tpr: signal.TPR,
     };
 
     console.log("Sending signal data:", signalData);
