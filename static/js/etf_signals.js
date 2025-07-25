@@ -474,12 +474,7 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                     '<span class="fw-bold text-white">' + chValue + "</span>";
                 break;
             case "actions":
-                var signalId =
-                    signal.ID || signal.id || signal.trade_signal_id || "1";
-                console.log("Creating action button for signal:", {
-                    signalId: signalId,
-                    originalSignal: signal,
-                });
+                var signalId = signal.ID;
                 cellValue =
                     '<button class="btn btn-sm btn-success" onclick="addDeal(' +
                     signalId +
@@ -1369,8 +1364,8 @@ function addDeal(signalId) {
 
     // Find the complete signal data from the current signals array
     var signal = null;
-    if (window.etfSignalsManager && window.etfSignalsManager.signals) {
-        signal = window.etfSignalsManager.signals.find(function (s) {
+    if (window.ETFSignalsManager && window.ETFSignalsManager.signals) {
+        signal = window.ETFSignalsManager.signals.find(function (s) {
             return s.id == signalId || s.trade_signal_id == signalId;
         });
     }
@@ -1386,10 +1381,10 @@ function addDeal(signalId) {
 
     console.log("Found signal:", signal);
 
-    var symbol = signal.etf || signal.symbol || "UNKNOWN";
-    var price = signal.cmp || signal.ep || 0;
-    var quantity = signal.qty || 1;
-    var investment = signal.inv || price * quantity;
+    var symbol = signal.symbol;
+    var price = signal.ep;
+    var quantity = signal.qty;
+    var investment = signal.inv;
 
     // Validate data before proceeding
     if (!symbol || symbol === "UNKNOWN" || price <= 0 || quantity <= 0) {
