@@ -63,15 +63,6 @@ endblock %} {% block extra_css %}
                 >
                     <i class="fas fa-times"></i>
                 </button>
-                <button
-                    class="btn btn-primary border-0"
-                    type="button"
-                    data-bs-toggle="modal"
-                    data-bs-target="#symbolSearchModal"
-                    title="Advanced Symbol Search"
-                >
-                    <i class="fas fa-search-plus me-1"></i>Search Symbol
-                </button>
             </div>
         </div>
     </div>
@@ -497,98 +488,6 @@ endblock %} {% block extra_css %}
                         data-bs-dismiss="modal"
                     >
                         Apply Filters
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Symbol Search Modal -->
-    <div class="modal fade" id="symbolSearchModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content bg-dark">
-                <div class="modal-header border-bottom border-secondary">
-                    <h5 class="modal-title text-light">
-                        <i class="fas fa-search-plus me-2"></i>Advanced Symbol Search
-                    </h5>
-                    <button
-                        type="button"
-                        class="btn-close btn-close-white"
-                        data-bs-dismiss="modal"
-                    ></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Search Input -->
-                    <div class="mb-4">
-                        <label class="form-label text-light fw-bold">Search Symbol</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-primary text-white">
-                                <i class="fas fa-search"></i>
-                            </span>
-                            <input
-                                type="text"
-                                class="form-control bg-secondary text-light"
-                                id="symbolSearchInput"
-                                placeholder="Type symbol name (e.g., RELIANCE, TCS, NIFTY...)"
-                                onkeyup="searchSymbols()"
-                                style="font-size: 1.1rem;"
-                            />
-                            <button
-                                class="btn btn-outline-light"
-                                type="button"
-                                onclick="clearSymbolSearch()"
-                            >
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Search Results -->
-                    <div class="mb-3">
-                        <label class="form-label text-light">Search Results</label>
-                        <div 
-                            id="symbolSearchResults" 
-                            class="bg-secondary rounded p-3"
-                            style="max-height: 300px; overflow-y: auto;"
-                        >
-                            <div class="text-center text-muted">
-                                <i class="fas fa-search fa-2x mb-2"></i>
-                                <p>Start typing to search for symbols...</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Popular Symbols -->
-                    <div class="mb-3">
-                        <label class="form-label text-light">Popular Symbols</label>
-                        <div class="d-flex flex-wrap gap-2">
-                            <button class="btn btn-sm btn-outline-primary" onclick="selectSymbol('RELIANCE')">RELIANCE</button>
-                            <button class="btn btn-sm btn-outline-primary" onclick="selectSymbol('TCS')">TCS</button>
-                            <button class="btn btn-sm btn-outline-primary" onclick="selectSymbol('INFY')">INFY</button>
-                            <button class="btn btn-sm btn-outline-primary" onclick="selectSymbol('HDFCBANK')">HDFCBANK</button>
-                            <button class="btn btn-sm btn-outline-primary" onclick="selectSymbol('ICICIBANK')">ICICIBANK</button>
-                            <button class="btn btn-sm btn-outline-primary" onclick="selectSymbol('SBIN')">SBIN</button>
-                            <button class="btn btn-sm btn-outline-primary" onclick="selectSymbol('BHARTIARTL')">BHARTIARTL</button>
-                            <button class="btn btn-sm btn-outline-primary" onclick="selectSymbol('ITC')">ITC</button>
-                            <button class="btn btn-sm btn-outline-primary" onclick="selectSymbol('WIPRO')">WIPRO</button>
-                            <button class="btn btn-sm btn-outline-primary" onclick="selectSymbol('MARUTI')">MARUTI</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer border-top border-secondary">
-                    <button
-                        type="button"
-                        class="btn btn-secondary"
-                        data-bs-dismiss="modal"
-                    >
-                        Close
-                    </button>
-                    <button
-                        type="button"
-                        class="btn btn-primary"
-                        onclick="applySymbolSearch()"
-                    >
-                        Apply Search
                     </button>
                 </div>
             </div>
