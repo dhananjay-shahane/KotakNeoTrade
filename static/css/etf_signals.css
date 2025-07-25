@@ -376,3 +376,59 @@
 .content-loading {
     position: relative;
 }
+
+/* Search Results Styling */
+.search-results {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.search-result-item {
+    transition: all 0.2s ease;
+    border: 1px solid var(--border-color);
+}
+
+.search-result-item:hover {
+    background-color: var(--primary-color) !important;
+    transform: translateY(-1px);
+}
+
+.search-result-item .btn-primary {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Modal styling improvements */
+.modal-content.bg-dark {
+    border: 1px solid var(--border-color);
+}
+
+.modal-header.border-bottom.border-secondary {
+    border-color: var(--border-color) !important;
+}
+
+.modal-footer.border-top.border-secondary {
+    border-color: var(--border-color) !important;
+}
+
+/* Popular symbols styling */
+.btn-outline-light {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    margin: 0.125rem;
+}
+
+/* Loading states */
+.skeleton-loading {
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.08));
+    animation: skeleton-loading 1.5s linear infinite;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}

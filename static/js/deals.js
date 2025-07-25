@@ -939,6 +939,12 @@ function clearFilters() {
     document.getElementById("minPnlFilter").value = "";
     document.getElementById("maxPnlFilter").value = "";
 
+    // Also clear search input if exists
+    var searchInput = document.getElementById("symbolSearchInput");
+    if (searchInput) {
+        searchInput.value = "";
+    }
+
     window.dealsManager.filteredDeals = window.dealsManager.deals.slice();
     window.dealsManager.currentPage = 1;
     window.dealsManager.renderDealsTable();
@@ -1705,6 +1711,95 @@ function showNotification(message, type) {
         }
     }, 5000);
 }
+
+// Search Symbol Functions
+function searchSymbol() {
+    var searchTerm = document.getElementById('symbolSearchInput').value.trim();
+    
+    if (!searchTerm) {
+        showNotification('Please enter a symbol to search', 'error');
+        return;
+    }
+    
+    var resultsContainer = document.getElementById('searchResults');
+    resultsContainer.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin me-2"></i>Searching...</div>';
+    
+    // Filter deals by symbol
+    var filteredDeals = window.dealsManager.deals.filter(function(deal) {
+        return deal.symbol && deal.symbol.toLowerCase().includes(searchTerm.toLowerCase());
+    });
+    
+    if (filteredDeals.length > 0) {
+        var resultsHTML = '<div class="search-results">';
+        resultsHTML += '<h6 class="text-light mb-2">Found ' + filteredDeals.length + ' deals:</h6>';
+        
+        filteredDeals.forEach(function(deal) {
+            resultsHTML += 
+                '<div class="search-result-item bg-secondary rounded p-2 mb-2">' +
+                '<div class="d-flex justify-content-between align-items-center">' +
+                '<div>' +
+                '<strong class="text-light">' + deal.symbol + '</strong>' +
+                '<small class="text-muted d-block">Qty: ' + deal.qty + ' | EP: ₹' + deal.ep + '</small>' +
+                '</div>' +
+                '<button class="btn btn-sm btn-primary" onclick="selectSymbolFromSearch(\'' + deal.symbol + '\')">' +
+                'Select' +
+                '</button>' +
+                '</div>' +
+                '</div>';
+        });
+        resultsHTML += '</div>';
+        resultsContainer.innerHTML = resultsHTML;
+    } else {
+        resultsContainer.innerHTML = 
+            '<div class="text-center text-muted">' +
+            '<i class="fas fa-search me-2"></i>No deals found for "' + searchTerm + '"' +
+            '</div>';
+    }
+}
+
+function selectSymbolFromSearch(symbol) {
+    // Filter deals table to show only this symbol
+    filterDealsBySymbol(symbol);
+    
+    // Close modal
+    var modal = bootstrap.Modal.getInstance(document.getElementById('searchSymbolModal'));
+    if (modal) {
+        modal.hide();
+    }
+    
+    showNotification('Filtered deals for ' + symbol, 'success');
+}
+
+function selectSymbolFromPopular(symbol) {
+    document.getElementById('symbolSearchInput').value = symbol;
+    searchSymbol();
+}
+
+function filterDealsBySymbol(symbol) {
+    if (!window.dealsManager) return;
+    
+    // Filter deals by symbol
+    window.dealsManager.filteredDeals = window.dealsManager.deals.filter(function(deal) {
+        return deal.symbol && deal.symbol.toLowerCase() === symbol.toLowerCase();
+    });
+    
+    // Reset to first page and refresh table
+    window.dealsManager.currentPage = 1;
+    window.dealsManager.renderDealsTable();
+    window.dealsManager.updatePagination();
+}
+
+// Add enter key support for search
+document.addEventListener('DOMContentLoaded', function() {
+    var searchInput = document.getElementById('symbolSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchSymbol();
+            }
+        });
+    }
+});
 
 // Initialize Deals Manager on page load
 document.addEventListener("DOMContentLoaded", function () {
