@@ -71,8 +71,7 @@ ETFSignalsManager.prototype.init = function () {
     this.showLoadingState();
 
     this.loadSignals(true);
-    // Disabled auto-refresh to prevent duplicate API calls
-    // this.startAutoRefresh();
+    this.startAutoRefresh();
 };
 
 ETFSignalsManager.prototype.setupEventListeners = function () {
@@ -2001,3 +2000,59 @@ ETFSignalsManager.prototype.renderPaginationHTML = function () {
     if (itemsPerPageSelect) {
         itemsPerPageSelect.value = this.itemsPerPage;
     }
+
+    // Calculate pagination info
+    var totalSignals = this.filteredSignals.length;
+    var startIndex = (this.currentPage - 1) * this.itemsPerPage + 1;
+    var endIndex = Math.min(this.currentPage * this.itemsPerPage, totalSignals);
+
+    // Update display counts
+    if (startItem) startItem.textContent = totalSignals > 0 ? startIndex : 0;
+    if (endItem) endItem.textContent = endIndex;
+    if (totalItems) totalItems.textContent = totalSignals;
+
+    // Generate pagination buttons
+    var paginationHTML = "";
+    
+    if (this.totalPages > 1) {
+        // Previous button
+        if (this.currentPage > 1) {
+            paginationHTML += '<button class="btn btn-sm btn-outline-light me-1" onclick="window.etfSignalsManager.goToPage(' + (this.currentPage - 1) + ')">‹ Previous</button>';
+        }
+
+        // Page numbers
+        var startPage = Math.max(1, this.currentPage - 2);
+        var endPage = Math.min(this.totalPages, this.currentPage + 2);
+
+        for (var i = startPage; i <= endPage; i++) {
+            var activeClass = i === this.currentPage ? "btn-primary" : "btn-outline-light";
+            paginationHTML += '<button class="btn btn-sm ' + activeClass + ' me-1" onclick="window.etfSignalsManager.goToPage(' + i + ')">' + i + '</button>';
+        }
+
+        // Next button
+        if (this.currentPage < this.totalPages) {
+            paginationHTML += '<button class="btn btn-sm btn-outline-light" onclick="window.etfSignalsManager.goToPage(' + (this.currentPage + 1) + ')">Next ›</button>';
+        }
+    }
+
+    buttonsContainer.innerHTML = paginationHTML;
+};
+
+// Page navigation function
+ETFSignalsManager.prototype.goToPage = function(page) {
+    if (page >= 1 && page <= this.totalPages && page !== this.currentPage) {
+        this.currentPage = page;
+        this.updateDisplayedSignals();
+        this.renderSignalsTable();
+        this.renderPaginationHTML();
+    }
+};
+
+// Initialize ETF Signals Manager when DOM is ready
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () {
+        window.etfSignalsManager = new ETFSignalsManager();
+    });
+} else {
+    window.etfSignalsManager = new ETFSignalsManager();
+}
