@@ -1352,6 +1352,7 @@ function addDeal(signalId) {
     var signal = null;
     if (window.etfSignalsManager && window.etfSignalsManager.signals) {
         console.log("Searching through", window.etfSignalsManager.signals.length, "signals");
+        console.log("Looking for signal ID:", signalId, "Type:", typeof signalId);
         
         // Log the first few signals to see their structure
         if (window.etfSignalsManager.signals.length > 0) {
@@ -1359,15 +1360,18 @@ function addDeal(signalId) {
         }
         
         signal = window.etfSignalsManager.signals.find(function (s) {
-            var matchesID = s.ID == signalId;
-            var matchesId = s.id == signalId;
-            var matchesTradeId = s.trade_signal_id == signalId;
+            // Convert both to numbers for comparison since DB returns numbers
+            var signalIdNum = parseInt(signalId);
+            var matchesID = (s.ID == signalIdNum) || (s.ID == signalId);
+            var matchesId = (s.id == signalIdNum) || (s.id == signalId);
+            var matchesTradeId = (s.trade_signal_id == signalIdNum) || (s.trade_signal_id == signalId);
             
             console.log("Checking signal:", {
                 signalID: s.ID,
                 signalId: s.id,
                 tradeSignalId: s.trade_signal_id,
                 searchingFor: signalId,
+                searchingForNum: signalIdNum,
                 matchesID: matchesID,
                 matchesId: matchesId,
                 matchesTradeId: matchesTradeId
