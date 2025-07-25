@@ -411,10 +411,20 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                 cellValue = signal.pp || "--";
                 break;
             case "iv":
-                cellValue = signal.iv || "--";
+                var ivValue = signal.IV || signal.iv || 0;
+                if (typeof ivValue === 'number' && ivValue > 0) {
+                    cellValue = "₹" + parseFloat(ivValue).toFixed(2);
+                } else {
+                    cellValue = "--";
+                }
                 break;
             case "ip":
-                cellValue = signal.ip || "--";
+                var ipValue = signal.IP || signal.ip || 0;
+                if (typeof ipValue === 'number' && ipValue > 0) {
+                    cellValue = "₹" + parseFloat(ipValue).toFixed(2);
+                } else {
+                    cellValue = "--";
+                }
                 break;
             case "nt":
                 cellValue = signal.nt || "--";
