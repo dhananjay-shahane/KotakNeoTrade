@@ -17,11 +17,26 @@ function DealsManager() {
             width: "50px",
             sortable: true,
         },
-        symbol: { label: "Symbol", default: true, width: "80px", sortable: true },
+        symbol: {
+            label: "Symbol",
+            default: true,
+            width: "80px",
+            sortable: true,
+        },
         seven: { label: "7D", default: true, width: "50px", sortable: true },
-        seven_percent: { label: "7D%", default: true, width: "50px", sortable: true },
+        seven_percent: {
+            label: "7D%",
+            default: true,
+            width: "50px",
+            sortable: true,
+        },
         thirty: { label: "30D", default: true, width: "50px", sortable: true },
-        thirty_percent: { label: "30D%", default: true, width: "50px", sortable: true },
+        thirty_percent: {
+            label: "30D%",
+            default: true,
+            width: "50px",
+            sortable: true,
+        },
         date: { label: "DATE", default: true, width: "80px", sortable: true },
         qty: { label: "QTY", default: true, width: "60px", sortable: true },
         ep: { label: "EP", default: true, width: "70px", sortable: true },
@@ -263,7 +278,10 @@ DealsManager.prototype.loadDeals = function () {
                     var dealsData = [];
                     if (response.data && Array.isArray(response.data)) {
                         dealsData = response.data;
-                    } else if (response.deals && Array.isArray(response.deals)) {
+                    } else if (
+                        response.deals &&
+                        Array.isArray(response.deals)
+                    ) {
                         dealsData = response.deals;
                     } else if (Array.isArray(response)) {
                         dealsData = response;
@@ -273,25 +291,59 @@ DealsManager.prototype.loadDeals = function () {
                         var uniqueDeals = dealsData.map(function (deal) {
                             return {
                                 id: deal.id || deal.trade_signal_id || "",
-                                trade_signal_id: deal.id || deal.trade_signal_id || "",
-                                symbol: deal.symbol || deal.trading_symbol || "",
-                                pos: deal.position_type === "LONG" || deal.pos === 1 ? 1 : 0,
+                                trade_signal_id:
+                                    deal.id || deal.trade_signal_id || "",
+                                symbol:
+                                    deal.symbol || deal.trading_symbol || "",
+                                pos:
+                                    deal.position_type === "LONG" ||
+                                    deal.pos === 1
+                                        ? 1
+                                        : 0,
                                 qty: parseInt(deal.quantity || deal.qty || 0),
-                                ep: parseFloat(deal.entry_price || deal.ep || 0),
-                                cmp: parseFloat(deal.current_price || deal.cmp || deal.entry_price || 0),
+                                ep: parseFloat(
+                                    deal.entry_price || deal.ep || 0,
+                                ),
+                                cmp: parseFloat(
+                                    deal.current_price ||
+                                        deal.cmp ||
+                                        deal.entry_price ||
+                                        0,
+                                ),
                                 pl: parseFloat(deal.pnl_amount || deal.pl || 0),
-                                chan_percent: deal.pnl_percent ? deal.pnl_percent.toFixed(2) + "%" : "0%",
-                                inv: parseFloat(deal.invested_amount || deal.inv || 0),
-                                tp: parseFloat(deal.target_price || deal.tp || 0),
-                                tva: parseFloat(deal.target_price || deal.tp || 0) * parseInt(deal.quantity || deal.qty || 0),
-                                tpr: parseFloat(deal.pnl_amount || deal.pl || 0),
-                                date: deal.entry_date || deal.date || deal.created_at ? (deal.entry_date || deal.date || deal.created_at).split("T")[0] : "",
+                                chan_percent: deal.pnl_percent
+                                    ? deal.pnl_percent.toFixed(2) + "%"
+                                    : "0%",
+                                inv: parseFloat(
+                                    deal.invested_amount || deal.inv || 0,
+                                ),
+                                tp: parseFloat(
+                                    deal.target_price || deal.tp || 0,
+                                ),
+                                tva:
+                                    parseFloat(
+                                        deal.target_price || deal.tp || 0,
+                                    ) *
+                                    parseInt(deal.quantity || deal.qty || 0),
+                                tpr: parseFloat(
+                                    deal.pnl_amount || deal.pl || 0,
+                                ),
+                                date:
+                                    deal.entry_date ||
+                                    deal.date ||
+                                    deal.created_at
+                                        ? (
+                                              deal.entry_date ||
+                                              deal.date ||
+                                              deal.created_at
+                                          ).split("T")[0]
+                                        : "",
                                 status: deal.status || "ACTIVE",
                                 seven: deal.seven || "--",
                                 seven_percent: deal.seven_percent || "--",
                                 thirty: deal.thirty || "--",
                                 thirty_percent: deal.thirty_percent || "--",
-                                ed: "--",  // Always "--" as requested
+                                ed: "--", // Always "--" as requested
                                 exp: deal.exp || "--",
                                 pr: deal.pr || "--",
                                 pp: deal.pp || "--",
@@ -300,15 +352,27 @@ DealsManager.prototype.loadDeals = function () {
                                 tpr: deal.tpr || "--",
                                 tva: deal.tva || "--",
                                 qt: deal.qt || "--",
-                                entry_price: parseFloat(deal.entry_price || deal.ep || 0),
-                                current_price: parseFloat(deal.current_price || deal.cmp || deal.entry_price || 0),
-                                invested_amount: parseFloat(deal.invested_amount || deal.inv || 0),
-                                pnl_amount: parseFloat(deal.pnl_amount || deal.pl || 0),
+                                entry_price: parseFloat(
+                                    deal.entry_price || deal.ep || 0,
+                                ),
+                                current_price: parseFloat(
+                                    deal.current_price ||
+                                        deal.cmp ||
+                                        deal.entry_price ||
+                                        0,
+                                ),
+                                invested_amount: parseFloat(
+                                    deal.invested_amount || deal.inv || 0,
+                                ),
+                                pnl_amount: parseFloat(
+                                    deal.pnl_amount || deal.pl || 0,
+                                ),
                                 pnl_percent: parseFloat(deal.pnl_percent || 0),
                                 deal_type: deal.deal_type || "MANUAL",
                                 position_type: deal.position_type || "LONG",
-                                trading_symbol: deal.trading_symbol || deal.symbol,
-                                exchange: deal.exchange || "NSE"
+                                trading_symbol:
+                                    deal.trading_symbol || deal.symbol,
+                                exchange: deal.exchange || "NSE",
                             };
                         });
 
@@ -322,7 +386,11 @@ DealsManager.prototype.loadDeals = function () {
                             window.skeletonLoader.hideDealsSkeleton();
                         }
 
-                        console.log("Successfully loaded " + uniqueDeals.length + " deals from user_deals table");
+                        console.log(
+                            "Successfully loaded " +
+                                uniqueDeals.length +
+                                " deals from user_deals table",
+                        );
                     } else {
                         console.log("No deals found in database");
                         self.deals = [];
@@ -337,15 +405,24 @@ DealsManager.prototype.loadDeals = function () {
                         }
                     }
                 } catch (parseError) {
-                    console.error("Failed to parse deals API response:", parseError);
+                    console.error(
+                        "Failed to parse deals API response:",
+                        parseError,
+                    );
                     self.showError("Invalid response from server");
                 }
             } else if (xhr.status === 0) {
-                console.error("Network error - request was aborted or connection failed");
+                console.error(
+                    "Network error - request was aborted or connection failed",
+                );
                 self.showError("Network connection error");
             } else {
                 console.error("Deals API call failed with status:", xhr.status);
-                self.showError("Failed to load deals from server (Status: " + xhr.status + ")");
+                self.showError(
+                    "Failed to load deals from server (Status: " +
+                        xhr.status +
+                        ")",
+                );
             }
         }
     };
@@ -474,24 +551,32 @@ DealsManager.prototype.renderDealsTable = function () {
                         "<strong>" + (deal.symbol || "") + "</strong>";
                     break;
                 case "seven":
-                    cellContent = deal.seven !== undefined && deal.seven !== '--' ? 
-                        "₹" + parseFloat(deal.seven).toFixed(2) : "--";
+                    cellContent =
+                        deal.seven !== undefined && deal.seven !== "--"
+                            ? "₹" + parseFloat(deal.seven).toFixed(2)
+                            : "--";
                     break;
                 case "seven_percent":
                     var sevenPctValue = deal.seven_percent || "--";
                     if (sevenPctValue !== "--") {
-                        style = self.getGradientBackgroundColor(sevenPctValue.replace("%", ""));
+                        style = self.getGradientBackgroundColor(
+                            sevenPctValue.replace("%", ""),
+                        );
                     }
                     cellContent = sevenPctValue;
                     break;
                 case "thirty":
-                    cellContent = deal.thirty !== undefined && deal.thirty !== '--' ? 
-                        "₹" + parseFloat(deal.thirty).toFixed(2) : "--";
+                    cellContent =
+                        deal.thirty !== undefined && deal.thirty !== "--"
+                            ? "₹" + parseFloat(deal.thirty).toFixed(2)
+                            : "--";
                     break;
                 case "thirty_percent":
                     var thirtyPctValue = deal.thirty_percent || "--";
                     if (thirtyPctValue !== "--") {
-                        style = self.getGradientBackgroundColor(thirtyPctValue.replace("%", ""));
+                        style = self.getGradientBackgroundColor(
+                            thirtyPctValue.replace("%", ""),
+                        );
                     }
                     cellContent = thirtyPctValue;
                     break;
@@ -552,7 +637,7 @@ DealsManager.prototype.renderDealsTable = function () {
                     cellContent = deal.qt || "--";
                     break;
                 case "ed":
-                    cellContent = "--";  // Always show "--" as requested
+                    cellContent = "--"; // Always show "--" as requested
                     break;
                 case "exp":
                     cellContent = deal.exp || "--";
@@ -806,15 +891,15 @@ DealsManager.prototype.showEmptyStateMessage = function () {
 };
 
 // Method to check if price updates are running
-    this.checkPriceUpdateStatus = function() {
-        // Simple implementation to check update status
-        return false; // Default to not updating
-    };
+this.checkPriceUpdateStatus = function () {
+    // Simple implementation to check update status
+    return false; // Default to not updating
+};
 
-    // Alternative implementation with more functionality
-    this.checkPriceUpdateStatusAdvanced = function() {
-        // Implementation logic here
-    };
+// Alternative implementation with more functionality
+this.checkPriceUpdateStatusAdvanced = function () {
+    // Implementation logic here
+};
 
 function applyFilters() {
     var orderType = document.getElementById("orderTypeFilter").value;
@@ -914,7 +999,8 @@ function buyTrade(symbol, currentPrice) {
         currentPrice = 100; // Default fallback price
         console.warn("Invalid price provided, using fallback:", currentPrice);
     }
-    console.log(        "Opening buy trade modal for:",
+    console.log(
+        "Opening buy trade modal for:",
         symbol,
         "at price:",
         currentPrice,
@@ -1620,117 +1706,11 @@ function showNotification(message, type) {
     }, 5000);
 }
 
-// Function to update CMP values for deals page
-function updateDealsCMP() {
-    var dataSource = localStorage.getItem("data-source") || "google";
-    var apiEndpoint =
-        dataSource === "google"
-            ? "/api/google-finance/update-etf-cmp"
-            : "/api/yahoo/update-prices";
-    var sourceName =
-        dataSource === "google" ? "Google Finance" : "Yahoo Finance";
-
-    console.log("Updating deals CMP using " + sourceName);
-
-    fetch(apiEndpoint, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-    })
-        .then((response) => response.json())
-        .then((data) => {
-            if (data.success) {
-                console.log(
-                    "Deals CMP update response from " + sourceName + ":",
-                    data,
-                );
-
-                // Refresh the deals table
-                if (window.dealsManager) {
-                    window.dealsManager.loadDeals();
-                }
-
-                var updatedCount =
-                    data.updated_count || data.signals_updated || 0;
-                showNotification(
-                    "Updated CMP for " +
-                        updatedCount +
-                        " records from " +
-                        sourceName,
-                    "success",
-                );
-            } else {
-                console.error("Deals CMP update failed:", data.error);
-                showNotification(
-                    "Failed to update CMP from " +
-                        sourceName +
-                        ": " +
-                        data.error,
-                    );
-            }
-        })
-        .catch((error) => {
-            console.error("Error updating deals CMP:", error);
-            showNotification(
-                "Error updating CMP from " + sourceName + ": " + error.message,
-                "error",
-            );
-        });
-}
-
-// Data source switching functions
-function switchDataSource(newSource) {
-    var oldSource = localStorage.getItem("data-source") || "google";
-    localStorage.setItem("data-source", newSource);
-
-    var sourceName =
-        newSource === "google" ? "Google Finance" : "Yahoo Finance";
-
-    // Update UI indicator
-    var currentDataSourceSpan = document.getElementById("currentDataSource");
-    if (currentDataSourceSpan) {
-        currentDataSourceSpan.textContent = sourceName;
-    }
-
-    // Show immediate notification
-    if (typeof showNotification === "function") {
-        showNotification(
-            "Data Source Changed to " + sourceName + " - Updating CMP...",
-            "info",
-        );
-    }
-
-    // Immediately update CMP when source changes
-    if (newSource !== oldSource) {
-        updateDealsCMP();
-    }
-}
-
-function updateCurrentDataSourceIndicator() {
-    var dataSource = localStorage.getItem("data-source") || "google";
-    var sourceName =
-        dataSource === "google" ? "Google Finance" : "Yahoo Finance";
-
-    var currentDataSourceSpan = document.getElementById("currentDataSource");
-    if (currentDataSourceSpan) {
-        currentDataSourceSpan.textContent = sourceName;
-    }
-}
-
-// Removed sample deals functionality - deals should be created from real trading data
-
-// CMP update function for manual trigger
-function forceCMPUpdate() {
-    console.log("🚀 Force CMP update triggered by user");
-    updateDealsCMPFromGoogleFinance();
-}
-
 // Initialize Deals Manager on page load
 document.addEventListener("DOMContentLoaded", function () {
     // Show skeleton loading initially
     if (window.skeletonLoader) {
-        window.skeletonLoader.showLoadingForAPI('deals');
+        window.skeletonLoader.showLoadingForAPI("deals");
     }
 
     // Initialize deals with faster loading
@@ -1739,7 +1719,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Hide skeleton after initialization
         if (window.skeletonLoader) {
-            window.skeletonLoader.hideLoadingForAPI('deals');
+            window.skeletonLoader.hideLoadingForAPI("deals");
         }
     }, 100);
 });
@@ -1760,18 +1740,9 @@ function initializeDeals() {
     window.dealsManager.loadDeals();
 
     // Check price update status (if method exists)
-    if (typeof window.dealsManager.checkPriceUpdateStatus === 'function') {
+    if (typeof window.dealsManager.checkPriceUpdateStatus === "function") {
         window.dealsManager.checkPriceUpdateStatus();
     }
-
-    // Set default data source to Google Finance if not already set
-    if (!localStorage.getItem("data-source")) {
-        localStorage.setItem("data-source", "google");
-    }
-
-    // Ensure Google Finance is selected by default
-    switchDataSource("google");
-    updateCurrentDataSourceIndicator();
 
     var savedInterval = localStorage.getItem("dealsRefreshInterval");
     var savedDisplay = localStorage.getItem("dealsRefreshIntervalDisplay");
