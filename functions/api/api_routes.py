@@ -34,14 +34,7 @@ def get_holdings_api(trading_functions):
         logging.error(f"Holdings API error: {e}")
         return jsonify({'error': str(e)}), 500
 
-def get_etf_signals_data():
-    """API endpoint to get ETF signals data from external admin_trade_signals table"""
-    try:
-        from Scripts.external_db_service import get_etf_signals_data_json
-        return get_etf_signals_data_json()
-    except Exception as e:
-        logging.error(f"ETF signals API error: {e}")
-        return jsonify({'error': str(e)}), 500
+# Removed duplicate function - using api/signals_api.py instead
 
 def place_order(neo_client):
     """API endpoint to place buy/sell orders using Kotak Neo API"""

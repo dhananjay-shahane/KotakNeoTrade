@@ -492,12 +492,12 @@ def get_etf_signals_from_external_db() -> List[Dict]:
     return get_all_trade_metrics()
 
 
-def get_etf_signals_data_json():
-    """Get ETF signals data without pagination for /trading-signals page"""
+def get_etf_signals_data_json(page=1, page_size=None):
+    """Get ETF signals data with optional pagination for /trading-signals page"""
     try:
         logger.info("Fetching complete ETF signals data from external database")
         
-        # Get all signals using new implementation
+        # Get all signals using new implementation (ignoring pagination for now)
         signals = get_all_trade_metrics()
         
         if not signals:
