@@ -1749,6 +1749,325 @@ function clearInlineSearch() {
     }
 }
 
+// Toggle search input visibility
+function toggleSearchInput() {
+    var searchInputGroup = document.getElementById('searchInputGroup');
+    var searchToggleBtn = document.getElementById('searchToggleBtn');
+    var searchInput = document.getElementById('symbolSearchInput');
+
+    if (searchInputGroup.style.display === 'none' || searchInputGroup.style.display === '') {
+        // Show search input
+        searchInputGroup.style.display = 'flex';
+        searchInput.focus();
+        searchToggleBtn.innerHTML = '<i class="fas fa-times text-white"></i>';
+    } else {
+        // Hide search input
+        searchInputGroup.style.display = 'none';
+        searchInput.value = '';
+        searchToggleBtn.innerHTML = '<i class="fas fa-search text-white"></i>';
+        // Reset search results
+        performInlineSearch();
+    }
+}
+
+// Close search input when clicking outside
+function closeSearchOnClickOutside(event) {
+    var searchContainer = document.querySelector('.search-container');
+    var searchInputGroup = document.getElementById('searchInputGroup');
+
+    if (searchInputGroup && searchInputGroup.style.display === 'flex') {
+        if (!searchContainer.contains(event.target)) {
+            toggleSearchInput();
+        }
+    }
+}
+
+// Add real-time search support
+document.addEventListener('DOMContentLoaded', function() {
+    var searchInput = document.getElementById('symbolSearchInput');
+    if (searchInput) {
+        // Real-time search as user types
+        searchInput.addEventListener('input', function(e) {
+            clearTimeout(window.searchTimeout);
+            window.searchTimeout = setTimeout(function() {
+                performInlineSearch();
+            }, 300); // 300ms delay for better performance
+        });
+
+        // Also support enter key
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                clearTimeout(window.searchTimeout);
+                performInlineSearch();
+            }
+        });
+
+        // Close search on escape key
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                toggleSearchInput();
+            }
+        });
+    }
+
+    // Add click outside listener
+    document.addEventListener('click', closeSearchOnClickOutside);
+});
+
+// Initialize Deals Manager on page load
+document.addEventListener("DOMContentLoaded", function () {
+    // Show skeleton loading initially
+    if (window.skeletonLoader) {
+        window.skeletonLoader.showLoadingForAPI("deals");
+    }
+
+    // Initialize deals with faster loading
+    setTimeout(() => {
+        initializeDeals();
+
+        // Hide skeleton after initialization
+        if (window.skeletonLoader) {
+            window.skeletonLoader.hideLoadingForAPI("deals");
+        }
+    }, 100);
+});
+
+// Clean up interval when page unloads
+window.addEventListener("beforeunload", function () {
+    if (window.dealsManager && window.dealsManager.refreshInterval) {
+        clearInterval(window.dealsManager.refreshInterval);
+        window.dealsManager.refreshInterval = null;
+    }
+});
+
+function initializeDeals() {
+    console.log("Initializing Deals Manager...");
+    window.dealsManager = new DealsManager();
+
+    // Load initial data
+    window.dealsManager.loadDeals();
+
+    // Check price update status (if method exists)
+    if (typeof window.dealsManager.checkPriceUpdateStatus === "function") {
+        window.dealsManager.checkPriceUpdateStatus();
+    }
+
+    var savedInterval = localStorage.getItem("dealsRefreshInterval");
+    var savedDisplay = localStorage.getItem("dealsRefreshIntervalDisplay");
+
+    if (savedInterval && savedDisplay && parseInt(savedInterval) === 300000) {
+        window.dealsManager.refreshIntervalTime = parseInt(savedInterval);
+        document.getElementById("currentInterval").textContent = savedDisplay;
+    } else {
+        // Force 5 minute interval
+        window.dealsManager.refreshIntervalTime = 300000;
+        if (document.getElementById("currentInterval")) {
+            document.getElementById("currentInterval").textContent = "5 Min";
+        }
+    }
+
+    // Pause auto-refresh when tab is not visible
+    document.addEventListener("visibilitychange", function () {
+        if (document.hidden) {
+            console.log("Tab hidden - pausing auto-refresh");
+            window.dealsManager.stopAutoRefresh();
+        } else {
+            console.log("Tab visible - resuming auto-refresh");
+            if (window.dealsManager.autoRefresh) {
+                window.dealsManager.startAutoRefresh();
+                // Load fresh data when tab becomes visible
+                window.dealsManager.loadDeals();
+            }
+        }
+    });
+
+    window.addEventListener("storage", function (e) {
+        if (e.key === "userDeals") {
+            console.log("Deals updated in localStorage, refreshing...");
+            if (!window.dealsManager.isLoading) {
+                window.dealsManager.loadDeals();
+            }
+        }
+    });
+
+    document.addEventListener("shown.bs.dropdown", function (e) {
+        var dropdown = e.target.closest(".dropdown");
+        var toggle = dropdown.querySelector(".dropdown-toggle");
+        var menu = dropdown.querySelector(".dropdown-menu");
+
+        if (menu && toggle) {
+            var rect = toggle.getBoundingClientRect();
+            var menuHeight = 200;
+            var menuWidth = 160;
+
+            menu.style.position = "fixed";
+            menu.style.zIndex = "10000";
+            menu.style.transform = "none";
+            menu.style.margin = "0";
+
+            var top = rect.bottom + 2;
+            var left = rect.left;
+
+            if (top + menuHeight > window.innerHeight - 20) {
+                top = rect.top - menuHeight - 2;
+            }
+
+            if (left + menuWidth > window.innerWidth - 20) {
+                left = rect.right - menuWidth;
+            }
+
+            if (left < 10) {
+                left = 10;
+            }
+
+            menu.style.top = top + "px";
+            menu.style.left = left + "px";
+            menu.style.right = "auto";
+            menu.style.bottom = "auto";
+        }
+    });
+
+    document.addEventListener("hidden.bs.dropdown", function (e) {
+        var dropdown = e.target.closest(".dropdown");
+        var menu = dropdown.querySelector(".dropdown-menu");
+
+        if (menu) {
+            menu.style.position = "";
+            menu.style.top = "";
+            menu.style.left = "";
+            menu.style.right = "";
+            menu.style.bottom = "";
+            menu.style.transform = "";
+            menu.style.margin = "";
+            menu.style.zIndex = "";
+        }
+    });
+}
+
+DealsManager.prototype.updateDealsCountBadge = function () {
+    var badge = document.getElementById("dealsCountBadge");
+    if (badge) {
+        badge.textContent = this.filteredDeals.length;
+    }
+};
+
+// Edit and Close Deal functions
+function editDeal(dealId, symbol, entryPrice, targetPrice) {
+    // Input validation
+    if (!dealId || dealId.trim() === "") {
+        alert("Invalid deal ID provided");
+        return;
+    }
+
+    if (!symbol || symbol.trim() === "") {
+        alert("Invalid symbol provided");
+        return;
+    }
+
+    // Show edit modal
+    showEditDealModal(dealId, symbol, entryPrice, targetPrice);
+}
+
+function closeDeal(dealId, symbol) {
+    // Input validation
+    if (!dealId || dealId.trim() === "") {
+        alert("Invalid deal ID provided");
+        return;
+    }
+
+    if (!symbol || symbol.trim() === "") {
+        alert("Invalid symbol provided");
+        return;
+    }
+
+    // Confirmation dialog
+    if (confirm("Are you sure you want to close the deal for " + symbol + "?")) {
+        // Submit close deal request via AJAX
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/close-deal", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    alert("Deal closed successfully for " + symbol);
+                    // Refresh deals table
+                    refreshDeals();
+                } else {
+                    alert("Failed to close deal. Please try again.");
+                }
+            }
+        };
+
+        xhr.send(JSON.stringify({
+            deal_id: dealId,
+            symbol: symbol
+        }));
+    }
+}
+
+function showEditDealModal(dealId, symbol, entryPrice, targetPrice) {
+    // Set values in the edit modal
+    document.getElementById("editDealId").value = dealId;
+    document.getElementById("editSymbol").value = symbol;
+    document.getElementById("editEntryPrice").value = entryPrice || '';
+    document.getElementById("editTargetPrice").value = targetPrice || '';
+
+    // Show the modal
+    var editModal = new bootstrap.Modal(document.getElementById('editDealModal'));
+    editModal.show();
+}
+
+function submitEditDeal() {
+    var dealId = document.getElementById("editDealId").value;
+    var symbol = document.getElementById("editSymbol").value;
+    var entryPrice = parseFloat(document.getElementById("editEntryPrice").value);
+    var targetPrice = parseFloat(document.getElementById("editTargetPrice").value);
+
+    // Validation
+    if (!dealId || !symbol) {
+        alert("Deal ID and Symbol are required");
+        return;
+    }
+
+    if (isNaN(entryPrice) || entryPrice <= 0) {
+        alert("Please enter a valid entry price");
+        return;
+    }
+
+    if (isNaN(targetPrice) || targetPrice <= 0) {
+        alert("Please enter a valid target price");
+        return;
+    }
+
+    // Submit edit request via AJAX
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/edit-deal", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                alert("Deal updated successfully for " + symbol);
+                // Hide modal
+                var editModal = bootstrap.Modal.getInstance(document.getElementById('editDealModal'));
+                editModal.hide();
+                // Refresh deals table
+                refreshDeals();
+            } else {
+                alert("Failed to update deal. Please try again.");
+            }
+        }
+    };
+
+    xhr.send(JSON.stringify({
+        deal_id: dealId,
+        symbol: symbol,
+        entry_price: entryPrice,
+        target_price: targetPrice
+    }));
+}
+
 
 
 // Toggle search input visibility
