@@ -32,8 +32,8 @@ class SkeletonLoader {
                 case "charts":
                     parentContainer.style.minHeight = "600px";
                     break;
-                case "deals":
-                    parentContainer.style.minHeight = "600px";
+                    // case "deals":
+                    //     parentContainer.style.minHeight = "600px";
                     break;
                 case "signals":
                     parentContainer.style.minHeight = "500px";
@@ -122,13 +122,13 @@ class SkeletonLoader {
     }
 
     // Deals page skeleton management
-    showDealsSkeleton() {
-        this.showSkeleton("deals");
-    }
+    // showDealsSkeleton() {
+    //     this.showSkeleton("deals");
+    // }
 
-    hideDealsSkeleton() {
-        this.hideSkeleton("deals");
-    }
+    // hideDealsSkeleton() {
+    //     this.hideSkeleton("deals");
+    // }
 
     // Charts page skeleton management
     showChartsSkeleton() {
@@ -184,9 +184,9 @@ class SkeletonLoader {
         } else if (currentPath.includes("/trading-signals")) {
             this.showSignalsSkeleton();
             this.autoHideSkeleton("signals");
-        } else if (currentPath.includes("/deals")) {
-            this.showDealsSkeleton();
-            this.autoHideSkeleton("deals");
+            // } else if (currentPath.includes("/deals")) {
+            //     this.showDealsSkeleton();
+            //     this.autoHideSkeleton("deals");
         } else if (currentPath.includes("/charts")) {
             this.showChartsSkeleton();
             this.autoHideSkeleton("charts");
@@ -228,8 +228,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     window.skeletonLoader.showPortfolioSkeleton();
                 } else if (href.includes("/trading-signals")) {
                     window.skeletonLoader.showSignalsSkeleton();
-                } else if (href.includes("/deals")) {
-                    window.skeletonLoader.showDealsSkeleton();
+                    // } else if (href.includes("/deals")) {
+                    //     window.skeletonLoader.showDealsSkeleton();
                 } else if (href.includes("/charts")) {
                     window.skeletonLoader.showChartsSkeleton();
                 }

@@ -305,8 +305,8 @@ DealsManager.prototype.loadDeals = function () {
                                         0,
                                 ),
                                 pl: parseFloat(deal.pnl_amount || deal.pl || 0),
-                                chan_percent: deal.pnl_percent
-                                    ? deal.pnl_percent.toFixed(2) + "%"
+                                chan_percent: deal.chan_percent
+                                    ? deal.chan_percent.toFixed(2) + "%"
                                     : "0%",
                                 inv: parseFloat(
                                     deal.invested_amount || deal.inv || 0,
@@ -558,7 +558,7 @@ DealsManager.prototype.renderDealsTable = function () {
                     cellContent = deal.date || "";
                     break;
                 case "pos":
-                    cellContent = deal.pos === 1 ? "1" : "0";
+                    cellContent = deal.pos === "Long" ? "1" : "1";
                     break;
                 case "qty":
                     cellContent = deal.qty
@@ -863,11 +863,11 @@ DealsManager.prototype.showLoadingSpinner = function () {
         '<div class="d-flex flex-column justify-content-center align-items-center" style="min-height: 250px;">' +
         '<div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem; border-width: 4px;">' +
         '<span class="visually-hidden">Loading...</span>' +
-        '</div>' +
+        "</div>" +
         '<h6 class="text-light mb-2">Loading Deals Data</h6>' +
         '<p class="text-muted mb-3">Fetching data from database...</p>' +
         '<small class="text-warning">This may take up to 15 seconds</small>' +
-        '</div>' +
+        "</div>" +
         "</td>" +
         "</tr>";
 };

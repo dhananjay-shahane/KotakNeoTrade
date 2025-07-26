@@ -4,7 +4,7 @@ endblock %} {% block extra_css %}
     rel="stylesheet"
     href="{{ url_for('static', filename='css/etf_signals.css') }}"
 />
-<link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton_animation.css') }}"/>
+
 {% endblock %} {% block extra_js %} {% endblock %} {% block content %}
 
 <!-- Actual ETF Signals Content -->
@@ -131,186 +131,189 @@ endblock %} {% block extra_css %}
 
         <div class="card-body p-0">
             <div class="scroll-container">
-                <div class="table-responsive" style="overflow-x: auto; overflow-y: visible; border-top: 12px solid #1a1a1a;">
+                <div class="table-responsive" style="overflow-x: auto; border-top: 12px solid #1a1a1a;">
+
                     <table
                         class="table table-dark table-hover mb-0 signals-table"
                         id="signalsTable"
-                        style="min-width: 1800px;"
-                    ></div>
+                        style="overflow:auto !important;"
+                    >
+                            <thead style="position: sticky; top: 0; z-index: 100;">
+                                <tr id="tableHeaders">
+                                    <th
+                                        style="cursor: pointer"
+                                        title="Trade Signal ID - Click to sort"
+                                        onclick="sortSignalsByColumn('trade_signal_id')"
+                                    >
+                                        ID <i class="fas fa-sort ms-1"></i>
+                                    </th>
+                                    <th
+                                        style="cursor: pointer"
+                                        title="ETF Symbol - Click to sort A-Z"
+                                        onclick="sortSignalsByColumn('symbol')"
+                                    >
+                                        Symbol<i class="fas fa-sort ms-1"></i>
+                                    </th>
+                                    <th
+                                        style="cursor: pointer"
+                                        title="7 Day Price - Click to sort"
+                                        onclick="sortSignalsByColumn('seven')"
+                                    >
+                                        7D <i class="fas fa-sort ms-1"></i>
+                                    </th>
+                                    <th
+                                        style="cursor: pointer"
+                                        title="7 Day Change % - Click to sort"
+                                        onclick="sortSignalsByColumn('ch')"
+                                    >
+                                        7D% <i class="fas fa-sort ms-1"></i>
+                                    </th>
+                                    <th
+                                        style="cursor: pointer"
+                                        title="30 Day Price - Click to sort"
+                                        onclick="sortSignalsByColumn('thirty')"
+                                    >
+                                        30D <i class="fas fa-sort ms-1"></i>
+                                    </th>
+                                    <th
+                                        style="cursor: pointer"
+                                        title="30 Day Change % - Click to sort"
+                                        onclick="sortSignalsByColumn('dh')"
+                                    >
+                                        30D% <i class="fas fa-sort ms-1"></i>
+                                    </th>
+                                    <th
+                                        style="cursor: pointer"
+                                        title="Entry Date - Click to sort"
+                                        onclick="sortSignalsByColumn('date')"
+                                    >
+                                        DATE <i class="fas fa-sort ms-1"></i>
+                                    </th>
+                                    <th
+                                        style="cursor: pointer"
+                                        title="Quantity - Click to sort"
+                                        onclick="sortSignalsByColumn('qty')"
+                                    >
+                                        QTY <i class="fas fa-sort ms-1"></i>
+                                    </th>
+                                    <th
+                                        style="cursor: pointer"
+                                        title="Entry Price - Click to sort"
+                                        onclick="sortSignalsByColumn('ep')"
+                                    >
+                                        EP <i class="fas fa-sort ms-1"></i>
+                                    </th>
+                                    <th
+                                        style="cursor: pointer"
+                                        title="Current Market Price - Click to sort"
+                                        onclick="sortSignalsByColumn('cmp')"
+                                    >
+                                        CMP <i class="fas fa-sort ms-1"></i>
+                                    </th>
+                                    <th
+                                        style="cursor: pointer"
+                                        title="Percentage Change - Click to sort"
+                                        onclick="sortSignalsByColumn('changePct')"
+                                    >
+                                        %CHAN <i class="fas fa-sort ms-1"></i>
+                                    </th>
+                                    <th
+                                        style="cursor: pointer"
+                                        title="Investment Amount - Click to sort"
+                                        onclick="sortSignalsByColumn('inv')"
+                                    >
+                                        INV. <i class="fas fa-sort ms-1"></i>
+                                    </th>
+                                    <th
+                                        style="cursor: pointer"
+                                        title="Target Price - Click to sort"
+                                        onclick="sortSignalsByColumn('tp')"
+                                    >
+                                        TP <i class="fas fa-sort ms-1"></i>
+                                    </th>
+                                    <th
+                                        style="cursor: pointer"
+                                        title="Target Profit Return - Click to sort"
+                                        onclick="sortSignalsByColumn('tpr')"
+                                    >
+                                        TPR <i class="fas fa-sort ms-1"></i>
+                                    </th>
+                                    <th
+                                        style="cursor: pointer"
+                                        title="Target Value Amount - Click to sort"
+                                        onclick="sortSignalsByColumn('tva')"
+                                    >
+                                        TVA <i class="fas fa-sort ms-1"></i>
+                                    </th>
+
+                                    <th
+                                        style="cursor: pointer"
+                                        title="Current Profit/Loss - Click to sort"
+                                        onclick="sortSignalsByColumn('cpl')"
+                                    >
+                                        CPL <i class="fas fa-sort ms-1"></i>
+                                    </th>
+                                    <th
+                                        style="cursor: pointer"
+                                        title="Entry Date - Click to sort"
+                                        onclick="sortSignalsByColumn('ed')"
+                                    >
+                                        ED <i class="fas fa-sort ms-1"></i>
+                                    </th>
+                                    <th
+                                        style="cursor: pointer"
+                                        title="Expected/Expiry - Click to sort"
+                                        onclick="sortSignalsByColumn('exp')"
+                                    >
+                                        EXP <i class="fas fa-sort ms-1"></i>
+                                    </th>
+                                    <th
+                                        style="cursor: pointer"
+                                        title="Price Range - Click to sort"
+                                        onclick="sortSignalsByColumn('pr')"
+                                    >
+                                        PR <i class="fas fa-sort ms-1"></i>
+                                    </th>
+                                    <th
+                                        style="cursor: pointer"
+                                        title="Performance Points - Click to sort"
+                                        onclick="sortSignalsByColumn('pp')"
+                                    >
+                                        PP <i class="fas fa-sort ms-1"></i>
+                                    </th>
+                                    <th
+                                        style="cursor: pointer"
+                                        title="Implied Volatility - Click to sort"
+                                        onclick="sortSignalsByColumn('iv')"
+                                    >
+                                        IV <i class="fas fa-sort ms-1"></i>
+                                    </th>
+                                    <th
+                                        style="cursor: pointer"
+                                        title="Intraday Performance - Click to sort"
+                                        onclick="sortSignalsByColumn('ip')"
+                                    >
+                                        IP <i class="fas fa-sort ms-1"></i>
+                                    </th>
+
+                                    <!-- <th
+                                        style="cursor: pointer"
+                                        title="Quote Time - Click to sort"
+                                        onclick="sortSignalsByColumn('qt')"
+                                    >
+                                        QT <i class="fas fa-sort ms-1"></i>
+                                    </th> -->
+
+                                    <th title="Actions">ACTIONS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="signalsTableBody">
+                                <!-- Dynamic content will be loaded here -->
+                            </tbody>
+                            </table>
+                    </div>
             </div>
-                    <thead>
-                        <tr id="tableHeaders">
-                            <th
-                                style="cursor: pointer"
-                                title="Trade Signal ID - Click to sort"
-                                onclick="sortSignalsByColumn('trade_signal_id')"
-                            >
-                                ID <i class="fas fa-sort ms-1"></i>
-                            </th>
-                            <th
-                                style="cursor: pointer"
-                                title="ETF Symbol - Click to sort A-Z"
-                                onclick="sortSignalsByColumn('symbol')"
-                            >
-                                Symbol<i class="fas fa-sort ms-1"></i>
-                            </th>
-                            <th
-                                style="cursor: pointer"
-                                title="7 Day Price - Click to sort"
-                                onclick="sortSignalsByColumn('seven')"
-                            >
-                                7D <i class="fas fa-sort ms-1"></i>
-                            </th>
-                            <th
-                                style="cursor: pointer"
-                                title="7 Day Change % - Click to sort"
-                                onclick="sortSignalsByColumn('ch')"
-                            >
-                                7D% <i class="fas fa-sort ms-1"></i>
-                            </th>
-                            <th
-                                style="cursor: pointer"
-                                title="30 Day Price - Click to sort"
-                                onclick="sortSignalsByColumn('thirty')"
-                            >
-                                30D <i class="fas fa-sort ms-1"></i>
-                            </th>
-                            <th
-                                style="cursor: pointer"
-                                title="30 Day Change % - Click to sort"
-                                onclick="sortSignalsByColumn('dh')"
-                            >
-                                30D% <i class="fas fa-sort ms-1"></i>
-                            </th>
-                            <th
-                                style="cursor: pointer"
-                                title="Entry Date - Click to sort"
-                                onclick="sortSignalsByColumn('date')"
-                            >
-                                DATE <i class="fas fa-sort ms-1"></i>
-                            </th>
-                            <th
-                                style="cursor: pointer"
-                                title="Quantity - Click to sort"
-                                onclick="sortSignalsByColumn('qty')"
-                            >
-                                QTY <i class="fas fa-sort ms-1"></i>
-                            </th>
-                            <th
-                                style="cursor: pointer"
-                                title="Entry Price - Click to sort"
-                                onclick="sortSignalsByColumn('ep')"
-                            >
-                                EP <i class="fas fa-sort ms-1"></i>
-                            </th>
-                            <th
-                                style="cursor: pointer"
-                                title="Current Market Price - Click to sort"
-                                onclick="sortSignalsByColumn('cmp')"
-                            >
-                                CMP <i class="fas fa-sort ms-1"></i>
-                            </th>
-                            <th
-                                style="cursor: pointer"
-                                title="Percentage Change - Click to sort"
-                                onclick="sortSignalsByColumn('changePct')"
-                            >
-                                %CHAN <i class="fas fa-sort ms-1"></i>
-                            </th>
-                            <th
-                                style="cursor: pointer"
-                                title="Investment Amount - Click to sort"
-                                onclick="sortSignalsByColumn('inv')"
-                            >
-                                INV. <i class="fas fa-sort ms-1"></i>
-                            </th>
-                            <th
-                                style="cursor: pointer"
-                                title="Target Price - Click to sort"
-                                onclick="sortSignalsByColumn('tp')"
-                            >
-                                TP <i class="fas fa-sort ms-1"></i>
-                            </th>
-                            <th
-                                style="cursor: pointer"
-                                title="Target Profit Return - Click to sort"
-                                onclick="sortSignalsByColumn('tpr')"
-                            >
-                                TPR <i class="fas fa-sort ms-1"></i>
-                            </th>
-                            <th
-                                style="cursor: pointer"
-                                title="Target Value Amount - Click to sort"
-                                onclick="sortSignalsByColumn('tva')"
-                            >
-                                TVA <i class="fas fa-sort ms-1"></i>
-                            </th>
-
-                            <th
-                                style="cursor: pointer"
-                                title="Current Profit/Loss - Click to sort"
-                                onclick="sortSignalsByColumn('cpl')"
-                            >
-                                CPL <i class="fas fa-sort ms-1"></i>
-                            </th>
-                            <th
-                                style="cursor: pointer"
-                                title="Entry Date - Click to sort"
-                                onclick="sortSignalsByColumn('ed')"
-                            >
-                                ED <i class="fas fa-sort ms-1"></i>
-                            </th>
-                            <th
-                                style="cursor: pointer"
-                                title="Expected/Expiry - Click to sort"
-                                onclick="sortSignalsByColumn('exp')"
-                            >
-                                EXP <i class="fas fa-sort ms-1"></i>
-                            </th>
-                            <th
-                                style="cursor: pointer"
-                                title="Price Range - Click to sort"
-                                onclick="sortSignalsByColumn('pr')"
-                            >
-                                PR <i class="fas fa-sort ms-1"></i>
-                            </th>
-                            <th
-                                style="cursor: pointer"
-                                title="Performance Points - Click to sort"
-                                onclick="sortSignalsByColumn('pp')"
-                            >
-                                PP <i class="fas fa-sort ms-1"></i>
-                            </th>
-                            <th
-                                style="cursor: pointer"
-                                title="Implied Volatility - Click to sort"
-                                onclick="sortSignalsByColumn('iv')"
-                            >
-                                IV <i class="fas fa-sort ms-1"></i>
-                            </th>
-                            <th
-                                style="cursor: pointer"
-                                title="Intraday Performance - Click to sort"
-                                onclick="sortSignalsByColumn('ip')"
-                            >
-                                IP <i class="fas fa-sort ms-1"></i>
-                            </th>
-
-                            <!-- <th
-                                style="cursor: pointer"
-                                title="Quote Time - Click to sort"
-                                onclick="sortSignalsByColumn('qt')"
-                            >
-                                QT <i class="fas fa-sort ms-1"></i>
-                            </th> -->
-
-                            <th title="Actions">ACTIONS</th>
-                        </tr>
-                    </thead>
-                    <tbody id="signalsTableBody">
-                        <!-- Dynamic content will be loaded here -->
-                    </tbody>
-                    </table>
+            
                 </div>
             </div>
         </div>
