@@ -87,9 +87,7 @@ DealsManager.prototype.getDefaultColumns = function () {
 
 DealsManager.prototype.init = function () {
     // Show skeleton loading while data loads
-    if (window.skeletonLoader) {
-        window.skeletonLoader.showDealsSkeleton();
-    }
+
 
     this.updateTableHeaders();
     this.loadDeals();
@@ -263,7 +261,7 @@ DealsManager.prototype.loadDeals = function () {
     // Show skeleton loader and hide main content
     var dealsSkeleton = document.getElementById('dealsSkeleton');
     var dealsMainContent = document.getElementById('dealsMainContent');
-    
+
     if (dealsSkeleton) {
         dealsSkeleton.style.display = 'block';
     }
@@ -280,7 +278,7 @@ DealsManager.prototype.loadDeals = function () {
         if (xhr.readyState === 4) {
             self.isLoading = false;
 
-            
+
 
             if (xhr.status === 200) {
                 try {
@@ -383,14 +381,14 @@ DealsManager.prototype.loadDeals = function () {
                         // Hide skeleton and show main content
                         var dealsSkeleton = document.getElementById('dealsSkeleton');
                         var dealsMainContent = document.getElementById('dealsMainContent');
-                        
+
                         if (dealsSkeleton) {
                             dealsSkeleton.style.display = 'none';
                         }
                         if (dealsMainContent) {
                             dealsMainContent.style.display = 'block';
                         }
-                        
+
                         self.updateDealsCountInHeading();
 
                         console.log(
@@ -409,14 +407,14 @@ DealsManager.prototype.loadDeals = function () {
                         // Hide skeleton and show main content even when empty
                         var dealsSkeleton = document.getElementById('dealsSkeleton');
                         var dealsMainContent = document.getElementById('dealsMainContent');
-                        
+
                         if (dealsSkeleton) {
                             dealsSkeleton.style.display = 'none';
                         }
                         if (dealsMainContent) {
                             dealsMainContent.style.display = 'block';
                         }
-                        
+
                         self.updateDealsCountInHeading();
                     }
                 } catch (parseError) {
@@ -441,7 +439,7 @@ DealsManager.prototype.loadDeals = function () {
                 // Hide skeleton and show main content on error
                 var dealsSkeleton = document.getElementById('dealsSkeleton');
                 var dealsMainContent = document.getElementById('dealsMainContent');
-                
+
                 if (dealsSkeleton) {
                     dealsSkeleton.style.display = 'none';
                 }
@@ -914,7 +912,9 @@ DealsManager.prototype.showEmptyStateMessage = function () {
         '<i class="fas fa-handshake fa-3x mb-3 text-primary"></i>' +
         '<h6 class="text-light">No Deals Found</h6>' +
         '<p class="text-muted mb-3">You haven\'t added any deals yet</p>' +
-        '<small class="text-muted d-block mt-2">Visit the ETF Signals page to add deals from trading signals</small>' +
+        '<small class="text-muted d-block mt-2">Visit the ETF Signals pageThe skeleton shimmer UI and functionality are removed from the deals page.
+```javascript
+ to add deals from trading signals</small>' +
         "</td>" +
         "</tr>";
 };
@@ -1846,20 +1846,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Initialize Deals Manager on page load
 document.addEventListener("DOMContentLoaded", function () {
-    // Show skeleton loading initially
-    if (window.skeletonLoader) {
-        window.skeletonLoader.showLoadingForAPI("deals");
-    }
-
-    // Initialize deals with faster loading
-    setTimeout(() => {
-        initializeDeals();
-
-        // Hide skeleton after initialization
-        if (window.skeletonLoader) {
-            window.skeletonLoader.hideLoadingForAPI("deals");
-        }
-    }, 100);
+    // Initialize deals immediately
+    initializeDeals();
 });
 
 // Clean up interval when page unloads
@@ -2192,20 +2180,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Initialize Deals Manager on page load
 document.addEventListener("DOMContentLoaded", function () {
-    // Show skeleton loading initially
-    if (window.skeletonLoader) {
-        window.skeletonLoader.showLoadingForAPI("deals");
-    }
-
-    // Initialize deals with faster loading
-    setTimeout(() => {
-        initializeDeals();
-
-        // Hide skeleton after initialization
-        if (window.skeletonLoader) {
-            window.skeletonLoader.hideLoadingForAPI("deals");
-        }
-    }, 100);
+    // Initialize deals immediately
+    initializeDeals();
 });
 
 // Clean up interval when page unloads
