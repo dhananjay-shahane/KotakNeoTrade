@@ -912,7 +912,7 @@ this.checkPriceUpdateStatusAdvanced = function () {
     // Implementation logic here
 };
 
-function applyFilters() {
+function applyFilters(){
     var orderType = document.getElementById("orderTypeFilter").value;
     var status = document.getElementById("statusFilter").value;
     var symbol = document.getElementById("symbolFilter").value.toLowerCase();
@@ -1912,7 +1912,7 @@ function initializeDeals() {
             var menuHeight = 200;
             var menuWidth = 160;
 
-The code has been updated to include the latest fixes and enhancements.            menu.style.position = "fixed";
+            menu.style.position = "fixed";
             menu.style.zIndex = "10000";
             menu.style.transform = "none";
             menu.style.margin = "0";
