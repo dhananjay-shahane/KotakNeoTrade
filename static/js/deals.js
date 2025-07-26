@@ -295,7 +295,7 @@ DealsManager.prototype.loadDeals = function () {
                                     deal.id || deal.trade_signal_id || "",
                                 symbol:
                                     deal.symbol || deal.trading_symbol || "",
-                                pos: deal.pos || deal.position_type || "LONG",
+                                pos: "1",
                                 qty: parseInt(deal.quantity || deal.qty || 0),
                                 ep: parseFloat(
                                     deal.entry_price || deal.ep || 0,
@@ -355,7 +355,7 @@ DealsManager.prototype.loadDeals = function () {
                                 ),
                                 pnl_percent: parseFloat(deal.pnl_percent || 0),
                                 deal_type: deal.deal_type || "MANUAL",
-                                position_type: deal.position_type || "LONG",
+                                position_type: 1,
                                 trading_symbol:
                                     deal.trading_symbol || deal.symbol,
                                 exchange: deal.exchange || "NSE",
@@ -409,14 +409,6 @@ DealsManager.prototype.loadDeals = function () {
                         xhr.status +
                         ")",
                 );
-                // Hide skeleton and show content on error
-                if (window.skeletonLoader) {
-                    window.skeletonLoader.hideDealsSkeleton();
-                }
-                var mainContent = document.getElementById("dealsMainContent");
-                if (mainContent) {
-                    mainContent.style.display = "block";
-                }
             }
         }
     };
@@ -785,7 +777,7 @@ DealsManager.prototype.renderDealsTable = function () {
                         (deal.id || deal.trade_signal_id || "") +
                         "', '" +
                         (deal.symbol || "") +
-                        '\')">' +
+                        "')\">" +
                         '<i class="fas fa-times"></i> Close' +
                         "</button>" +
                         "</div>";
@@ -905,7 +897,6 @@ function applyFilters() {
     var symbol = document.getElementById("symbolFilter").value.toLowerCase();
     var minPnl =
         parseFloat(document.getElementById("minPnlFilter").value) || -Infinity;
-    ```text
     var maxPnl =
         parseFloat(document.getElementById("maxPnlFilter").value) || Infinity;
 
@@ -1715,22 +1706,33 @@ function showNotification(message, type) {
 
 // Inline Search Functions
 function performInlineSearch() {
-    var searchTerm = document.getElementById('symbolSearchInput').value.trim().toLowerCase();
+    var searchTerm = document
+        .getElementById("symbolSearchInput")
+        .value.trim()
+        .toLowerCase();
 
     if (!searchTerm) {
         // Reset to show all deals if search is empty
         window.dealsManager.filteredDeals = window.dealsManager.deals.slice();
     } else {
         // Filter deals by multiple fields
-        window.dealsManager.filteredDeals = window.dealsManager.deals.filter(function(deal) {
-            return (
-                (deal.symbol && deal.symbol.toLowerCase().includes(searchTerm)) ||
-                (deal.status && deal.status.toLowerCase().includes(searchTerm)) ||
-                (deal.deal_type && deal.deal_type.toLowerCase().includes(searchTerm)) ||
-                (deal.position_type && deal.position_type.toLowerCase().includes(searchTerm)) ||
-                (deal.date && deal.date.toLowerCase().includes(searchTerm))
-            );
-        });
+        window.dealsManager.filteredDeals = window.dealsManager.deals.filter(
+            function (deal) {
+                return (
+                    (deal.symbol &&
+                        deal.symbol.toLowerCase().includes(searchTerm)) ||
+                    (deal.status &&
+                        deal.status.toLowerCase().includes(searchTerm)) ||
+                    (deal.deal_type &&
+                        deal.deal_type.toLowerCase().includes(searchTerm)) ||
+                    (deal.position_type &&
+                        deal.position_type
+                            .toLowerCase()
+                            .includes(searchTerm)) ||
+                    (deal.date && deal.date.toLowerCase().includes(searchTerm))
+                );
+            },
+        );
     }
 
     // Reset to first page and refresh table
@@ -1740,32 +1742,33 @@ function performInlineSearch() {
 }
 
 function clearInlineSearch() {
-    var searchInput = document.getElementById('symbolSearchInput');
+    var searchInput = document.getElementById("symbolSearchInput");
     if (searchInput) {
-        searchInput.value = '';
+        searchInput.value = "";
         performInlineSearch(); // This will reset to show all deals
         // Optionally hide the search input after clearing
         toggleSearchInput();
     }
 }
 
-
-
 // Toggle search input visibility
 function toggleSearchInput() {
-    var searchInputGroup = document.getElementById('searchInputGroup');
-    var searchToggleBtn = document.getElementById('searchToggleBtn');
-    var searchInput = document.getElementById('symbolSearchInput');
+    var searchInputGroup = document.getElementById("searchInputGroup");
+    var searchToggleBtn = document.getElementById("searchToggleBtn");
+    var searchInput = document.getElementById("symbolSearchInput");
 
-    if (searchInputGroup.style.display === 'none' || searchInputGroup.style.display === '') {
+    if (
+        searchInputGroup.style.display === "none" ||
+        searchInputGroup.style.display === ""
+    ) {
         // Show search input
-        searchInputGroup.style.display = 'flex';
+        searchInputGroup.style.display = "flex";
         searchInput.focus();
         searchToggleBtn.innerHTML = '<i class="fas fa-times text-white"></i>';
     } else {
         // Hide search input
-        searchInputGroup.style.display = 'none';
-        searchInput.value = '';
+        searchInputGroup.style.display = "none";
+        searchInput.value = "";
         searchToggleBtn.innerHTML = '<i class="fas fa-search text-white"></i>';
         // Reset search results
         performInlineSearch();
@@ -1774,10 +1777,10 @@ function toggleSearchInput() {
 
 // Close search input when clicking outside
 function closeSearchOnClickOutside(event) {
-    var searchContainer = document.querySelector('.search-container');
-    var searchInputGroup = document.getElementById('searchInputGroup');
+    var searchContainer = document.querySelector(".search-container");
+    var searchInputGroup = document.getElementById("searchInputGroup");
 
-    if (searchInputGroup && searchInputGroup.style.display === 'flex') {
+    if (searchInputGroup && searchInputGroup.style.display === "flex") {
         if (!searchContainer.contains(event.target)) {
             toggleSearchInput();
         }
@@ -1785,35 +1788,35 @@ function closeSearchOnClickOutside(event) {
 }
 
 // Add real-time search support
-document.addEventListener('DOMContentLoaded', function() {
-    var searchInput = document.getElementById('symbolSearchInput');
+document.addEventListener("DOMContentLoaded", function () {
+    var searchInput = document.getElementById("symbolSearchInput");
     if (searchInput) {
         // Real-time search as user types
-        searchInput.addEventListener('input', function(e) {
+        searchInput.addEventListener("input", function (e) {
             clearTimeout(window.searchTimeout);
-            window.searchTimeout = setTimeout(function() {
+            window.searchTimeout = setTimeout(function () {
                 performInlineSearch();
             }, 300); // 300ms delay for better performance
         });
 
         // Also support enter key
-        searchInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
+        searchInput.addEventListener("keypress", function (e) {
+            if (e.key === "Enter") {
                 clearTimeout(window.searchTimeout);
                 performInlineSearch();
             }
         });
 
         // Close search on escape key
-        searchInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
+        searchInput.addEventListener("keydown", function (e) {
+            if (e.key === "Escape") {
                 toggleSearchInput();
             }
         });
     }
 
     // Add click outside listener
-    document.addEventListener('click', closeSearchOnClickOutside);
+    document.addEventListener("click", closeSearchOnClickOutside);
 });
 
 // Initialize Deals Manager on page load
@@ -1983,13 +1986,15 @@ function closeDeal(dealId, symbol) {
     }
 
     // Confirmation dialog
-    if (confirm("Are you sure you want to close the deal for " + symbol + "?")) {
+    if (
+        confirm("Are you sure you want to close the deal for " + symbol + "?")
+    ) {
         // Submit close deal request via AJAX
         var xhr = new XMLHttpRequest();
         xhr.open("POST", "/api/close-deal", true);
         xhr.setRequestHeader("Content-Type", "application/json");
 
-        xhr.onreadystatechange = function() {
+        xhr.onreadystatechange = function () {
             if (xhr.readyState === 4) {
                 if (xhr.status === 200) {
                     alert("Deal closed successfully for " + symbol);
@@ -2001,10 +2006,12 @@ function closeDeal(dealId, symbol) {
             }
         };
 
-        xhr.send(JSON.stringify({
-            deal_id: dealId,
-            symbol: symbol
-        }));
+        xhr.send(
+            JSON.stringify({
+                deal_id: dealId,
+                symbol: symbol,
+            }),
+        );
     }
 }
 
@@ -2012,19 +2019,25 @@ function showEditDealModal(dealId, symbol, entryPrice, targetPrice) {
     // Set values in the edit modal
     document.getElementById("editDealId").value = dealId;
     document.getElementById("editSymbol").value = symbol;
-    document.getElementById("editEntryPrice").value = entryPrice || '';
-    document.getElementById("editTargetPrice").value = targetPrice || '';
+    document.getElementById("editEntryPrice").value = entryPrice || "";
+    document.getElementById("editTargetPrice").value = targetPrice || "";
 
     // Show the modal
-    var editModal = new bootstrap.Modal(document.getElementById('editDealModal'));
+    var editModal = new bootstrap.Modal(
+        document.getElementById("editDealModal"),
+    );
     editModal.show();
 }
 
 function submitEditDeal() {
     var dealId = document.getElementById("editDealId").value;
     var symbol = document.getElementById("editSymbol").value;
-    var entryPrice = parseFloat(document.getElementById("editEntryPrice").value);
-    var targetPrice = parseFloat(document.getElementById("editTargetPrice").value);
+    var entryPrice = parseFloat(
+        document.getElementById("editEntryPrice").value,
+    );
+    var targetPrice = parseFloat(
+        document.getElementById("editTargetPrice").value,
+    );
 
     // Validation
     if (!dealId || !symbol) {
@@ -2047,12 +2060,14 @@ function submitEditDeal() {
     xhr.open("POST", "/api/edit-deal", true);
     xhr.setRequestHeader("Content-Type", "application/json");
 
-    xhr.onreadystatechange = function() {
+    xhr.onreadystatechange = function () {
         if (xhr.readyState === 4) {
             if (xhr.status === 200) {
                 alert("Deal updated successfully for " + symbol);
                 // Hide modal
-                var editModal = bootstrap.Modal.getInstance(document.getElementById('editDealModal'));
+                var editModal = bootstrap.Modal.getInstance(
+                    document.getElementById("editDealModal"),
+                );
                 editModal.hide();
                 // Refresh deals table
                 refreshDeals();
@@ -2062,10 +2077,12 @@ function submitEditDeal() {
         }
     };
 
-    xhr.send(JSON.stringify({
-        deal_id: dealId,
-        symbol: symbol,
-        entry_price: entryPrice,
-        target_price: targetPrice
-    }));
+    xhr.send(
+        JSON.stringify({
+            deal_id: dealId,
+            symbol: symbol,
+            entry_price: entryPrice,
+            target_price: targetPrice,
+        }),
+    );
 }

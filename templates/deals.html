@@ -73,12 +73,13 @@ endblock %} {% block head %}
         </div>
 
         <!-- Deals Table -->
-        <div class="card bg-secondary border-0 shadow-lg" id="dealsMainContent" style="display: none;">
+        <div class="card bg-secondary border-0 shadow-lg content-loading" id="dealsMainContent">
         <div
             class="card-header bg-dark border-0 d-flex justify-content-between align-items-center"
         >
             <h5 class="mb-0 text-light">
                 <i class="fas fa-chart-line me-2 text-primary"></i>Deals
+                Signals
                 <span class="badge bg-primary ms-2" id="dealsCountBadge"
                     >0</span
                 >
@@ -155,7 +156,7 @@ endblock %} {% block head %}
         </div>
 
         <div class="card-body p-0">
-            <div class="table-responsive" style="min-height: 500px; overflow-y: auto;">
+            <div class="table-responsive" style="height: 500px; overflow-y: auto;">
                 <table
                     class="table table-dark table-hover mb-0 signals-table"
                     id="dealsTable"
@@ -590,38 +591,6 @@ endblock %} {% block head %}
                                     min="0"
                                     required
                                 />
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">Exit Date</label>
-                                <input
-                                    type="date"
-                                    class="form-control bg-secondary text-light"
-                                    id="editExitDate"
-                                />
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">TPR (%)</label>
-                                <input
-                                    type="number"
-                                    class="form-control bg-secondary text-light"
-                                    id="editTPR"
-                                    step="0.01"
-                                    placeholder="15.00"
-                                />
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">Position</label>
-                                <select
-                                    class="form-select bg-secondary text-light"
-                                    id="editPos"
-                                >
-                                    <option value="1" selected>Long (1)</option>
-                                    <option value="0">Short (0)</option>
-                                </select>
                             </div>
                         </div>
                     </form>
