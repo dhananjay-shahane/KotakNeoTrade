@@ -6,12 +6,14 @@ import logging
 from flask import Blueprint, request, jsonify, session
 import psycopg2
 import psycopg2.extras
-from datetime import datetime
+from psycopg2 import sql
+from datetime import datetime, timedelta
 import traceback
 import os
 import sys
+import pandas as pd
+from typing import List, Dict, Optional
 sys.path.append('Scripts')
-from price_fetcher import PriceFetcher, HistoricalFetcher, try_percent
 from db_connector import DatabaseConnector
 
 # Configure logging
@@ -19,6 +21,201 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 deals_api = Blueprint('deals_api', __name__, url_prefix='/api')
+
+class PriceFetcher:
+    def __init__(self, db_connector):
+        self.db = db_connector
+        self.logger = logger
+
+    def table_exists(self, table_name: str) -> bool:
+        """Check if table exists in symbols schema"""
+        query = """
+        SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'symbols' 
+            AND table_name = %s
+        )
+        """
+        result = self.db.execute_query(query, (table_name, ))
+        return result and result[0]['exists']
+
+    def get_cmp(self, symbol: str) -> Optional[float]:
+        """
+        Get current market price from _5min table
+        Args:
+            symbol: Stock symbol
+        Returns:
+            Last price or None if not available
+        """
+        try:
+            table_name = f"{symbol.lower()}_5m"
+
+            if not self.table_exists(table_name):
+                self.logger.warning(f"5min table not found: {table_name}")
+                return None
+
+            query = sql.SQL("""
+                SELECT close 
+                FROM symbols.{} 
+                ORDER BY datetime DESC 
+                LIMIT 1
+            """).format(sql.Identifier(table_name))
+
+            result = self.db.execute_query(query)
+            if result and len(result) > 0 and 'close' in result[0]:
+                return float(result[0]['close'])
+            return None
+
+        except Exception as e:
+            self.logger.error(f"Error fetching CMP: {str(e)}")
+            return None
+
+class HistoricalFetcher:
+    def __init__(self, db_connector):
+        self.db = db_connector
+
+    def table_exists(self, table_name: str) -> bool:
+        query = """
+        SELECT EXISTS (
+            SELECT 1 FROM information_schema.tables 
+            WHERE table_schema = 'symbols' 
+            AND table_name = %s
+        )
+        """
+        result = self.db.execute_query(query, (table_name, ))
+        return result and result[0]['exists']
+
+    def get_offset_price(self, symbol: str, offset: int) -> Optional[float]:
+        """
+        Return close price for N trading days ago (offset=7 or 30).
+        If not enough data, return None.
+        """
+        try:
+            table_name = f"{symbol.lower()}_daily"
+            if not self.table_exists(table_name):
+                logger.warning(f"Table not found: symbols.{table_name}")
+                return None
+
+            # Count rows
+            count_query = sql.SQL(
+                "SELECT COUNT(*) as cnt FROM symbols.{}").format(
+                    sql.Identifier(table_name))
+            count_result = self.db.execute_query(count_query)
+            if count_result and len(count_result) > 0 and 'cnt' in count_result[0]:
+                row_count = count_result[0]['cnt']
+            else:
+                row_count = 0
+
+            if row_count <= offset:
+                return None  # Not enough rows
+
+            # Get Nth previous close: 0 = latest, 1 = 1 trading day ago, ...
+            price_query = sql.SQL("""
+                SELECT close FROM symbols.{}
+                ORDER BY datetime DESC
+                OFFSET %s LIMIT 1
+            """).format(sql.Identifier(table_name))
+            result = self.db.execute_query(price_query, (offset, ))
+            if result and len(result) > 0 and 'close' in result[0]:
+                return float(result[0]['close'])
+            return None
+        except Exception as e:
+            logger.error(f"Error fetching offset={offset} price: {e}")
+            return None
+
+    def get_latest_close(self, symbol: str) -> Optional[float]:
+        """
+        Return close price for latest available trading day.
+        """
+        try:
+            table_name = f"{symbol.lower()}_daily"
+            if not self.table_exists(table_name):
+                logger.warning(f"Table not found: symbols.{table_name}")
+                return None
+            price_query = sql.SQL("""
+                SELECT close FROM symbols.{}
+                ORDER BY datetime DESC
+                LIMIT 1
+            """).format(sql.Identifier(table_name))
+            result = self.db.execute_query(price_query)
+            if result and len(result) > 0 and 'close' in result[0]:
+                return float(result[0]['close'])
+            return None
+        except Exception as e:
+            logger.error(f"Error fetching latest close price: {e}")
+            return None
+
+class SignalsFetcher:
+    def __init__(self, db_connector):
+        self.db = db_connector
+        self.logger = logger
+
+    def get_user_deals(self, user_id: int = 1, days_back: int = 30) -> pd.DataFrame:
+        """
+        Fetch user deals as DataFrame
+        
+        Args:
+            user_id: User ID to fetch deals for
+            days_back: Number of days to look back for deals
+            
+        Returns:
+            DataFrame with columns: trade_signal_id, symbol, qty, entry_date, entry_price, position_type, ed
+        """
+        try:
+            query = """
+                SELECT 
+                    id as trade_signal_id,
+                    symbol, 
+                    qty, 
+                    entry_date as date,
+                    entry_price as ep,
+                    position_type as pos,
+                    '--' as ed
+                FROM user_deals
+                WHERE user_id = %s AND entry_date >= %s AND status != 'CLOSED'
+                ORDER BY entry_date DESC
+            """
+
+            params = [user_id, datetime.now() - timedelta(days=days_back)]
+
+            self.logger.debug("Executing user deals query")
+            results = self.db.execute_query(query, params)
+
+            if not results:
+                self.logger.warning("No user deals found")
+                return pd.DataFrame()
+
+            df = pd.DataFrame(results)
+
+            # Convert data types
+            numeric_cols = ['qty', 'ep']
+            df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce')
+
+            # Clean symbol names
+            df['symbol'] = df['symbol'].str.upper().str.strip()
+
+            return df.dropna(subset=numeric_cols)
+
+        except Exception as e:
+            self.logger.error(f"Error fetching user deals: {str(e)}")
+            return pd.DataFrame()
+
+def try_percent(cmp_val, hist_val):
+    """
+    Calculate percent change if both are numbers, else '--'.
+    """
+    try:
+        if (cmp_val is not None and hist_val is not None
+                and isinstance(cmp_val, (int, float))
+                and isinstance(hist_val, (int, float)) and hist_val != 0
+                and not pd.isna(cmp_val) and not pd.isna(hist_val)):
+            pct_change = (float(cmp_val) -
+                          float(hist_val)) / float(hist_val) * 100
+            return f"{pct_change:.2f}%"
+        else:
+            return '--'
+    except Exception:
+        return '--'
 
 @deals_api.route('/test-deals', methods=['GET'])
 def test_deals():
@@ -130,26 +327,184 @@ def get_user_deals_from_db():
         traceback.print_exc()
         return []
 
+def get_all_deals_data_metrics():
+    """
+    Fetches all user deals from DB and enriches with price, target, and derived fields.
+    Returns list of dicts for DataFrame/display.
+    """
+    db_connector = None
+    formatted_deals = []
+
+    try:
+        # 1. Connect to database
+        db_connector = DatabaseConnector(os.environ.get('DATABASE_URL'))
+        if not db_connector:
+            logger.error("Database connection failed!")
+            return []
+
+        # 2. Initialize helper/fetcher objects
+        price_fetcher = PriceFetcher(db_connector)
+        signals_fetcher = SignalsFetcher(db_connector)
+        hist_fetcher = HistoricalFetcher(db_connector)
+
+        # 3. Get user_id from session
+        user_id = session.get('user_id')
+        if not user_id or not isinstance(user_id, int):
+            user_id = 1
+
+        # 4. Fetch all user deals as DataFrame
+        df_deals = signals_fetcher.get_user_deals(user_id)
+        if df_deals.empty:
+            logger.info("No user deals in database!")
+            return []
+
+        # 5. For each deal, enrich and calculate all desired metrics
+        for count, deal in enumerate(df_deals.to_dict(orient='records'), start=1):
+            # --- Extract basic trading info ---
+            symbol = str(deal.get('symbol') or 'N/A').upper()
+            trade_signal_id = deal.get('trade_signal_id') or count
+            qty = float(deal.get('qty') or 0)
+            entry_price = float(deal.get('ep') or 0)
+
+            # --- Format the date as dd-mm-yy HH:MM ---
+            raw_date = deal.get('date', '') or ''
+            if raw_date:
+                try:
+                    dt_obj = pd.to_datetime(raw_date)
+                    date_fmt = dt_obj.strftime("%d-%m-%y %H:%M")
+                except Exception:
+                    date_fmt = str(raw_date)
+            else:
+                date_fmt = ''
+
+            # --- Fetch prices (CMP, 7D, 30D) ---
+            cmp_val = price_fetcher.get_cmp(symbol)
+            if cmp_val not in (None, "--"):
+                try:
+                    cmp_numeric = float(cmp_val)
+                    cmp_display = cmp_numeric
+                    cmp_is_num = True
+                except Exception:
+                    cmp_numeric = 0.0
+                    cmp_display = "--"
+                    cmp_is_num = False
+            else:
+                cmp_numeric = 0.0
+                cmp_display = "--"
+                cmp_is_num = False
+
+            d7_val = hist_fetcher.get_offset_price(symbol, 7)
+            d30_val = hist_fetcher.get_offset_price(symbol, 30)
+            p7 = try_percent(cmp_numeric, d7_val)
+            p30 = try_percent(cmp_numeric, d30_val)
+
+            # --- Investment/Profit/Loss calculations ---
+            investment = qty * entry_price
+            current_value = qty * cmp_numeric if cmp_is_num else 0
+            profit_loss = current_value - investment if cmp_is_num else 0
+            change_percent = (
+                (cmp_numeric - entry_price) /
+                entry_price) * 100 if cmp_is_num and entry_price > 0 else 0
+
+            # --- Format deal with all required fields ---
+            formatted_deal = {
+                'trade_signal_id': trade_signal_id,
+                'symbol': symbol,
+                'seven': d7_val if d7_val else '--',
+                'seven_percent': p7,
+                'thirty': d30_val if d30_val else '--', 
+                'thirty_percent': p30,
+                'date': date_fmt,
+                'qty': qty,
+                'ep': entry_price,
+                'cmp': cmp_display,
+                'pos': deal.get('pos', 'BUY'),
+                'chan_percent': round(change_percent, 2),
+                'inv': investment,
+                'tp': 0,  # Target price - will be set from database if available
+                'tpr': '--',  # Target profit return
+                'tva': '--',  # Target value amount  
+                'pl': round(profit_loss, 2),
+                'qt': '--',   # Quote time
+                'ed': deal.get('ed', '--'),   # Entry date
+                'exp': '--',  # Expiry
+                'pr': '--',   # Price range
+                'pp': '--',   # Performance points
+                'iv': investment,   # Investment value
+                'ip': entry_price,   # Entry price
+                'status': 'ACTIVE',
+                'deal_type': 'MANUAL',
+                'notes': '',
+                'tags': '',
+                'created_at': '',
+                'updated_at': ''
+            }
+            formatted_deals.append(formatted_deal)
+        
+        # Close database connection
+        if db_connector:
+            db_connector.close()
+        
+        return formatted_deals
+
+    except Exception as e:
+        logger.error(f"Error in get_all_deals_data_metrics: {e}")
+        if db_connector:
+            db_connector.close()
+        return []
+
 @deals_api.route('/user-deals-data')
 @deals_api.route('/user-deals')
 def get_user_deals_data():
-    """API endpoint to get user deals data from external database with historical price data"""
+    """API endpoint to get user deals data using the new get_all_deals_data_metrics function"""
     try:
-        # Setup database connection for price fetching
-        database_url = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com:5432/kotak_trading_db"
-        db_connector = DatabaseConnector(database_url)
+        deals = get_all_deals_data_metrics()
         
-        # Initialize price fetchers
-        price_fetcher = PriceFetcher(db_connector)
-        historical_fetcher = HistoricalFetcher(db_connector)
+        if not deals:
+            return jsonify({
+                'success': True,
+                'deals': [],
+                'summary': {
+                    'total_deals': 0,
+                    'total_invested': 0,
+                    'total_current_value': 0,
+                    'total_pnl': 0,
+                    'total_pnl_percent': 0
+                }
+            })
         
-        # Get basic deals data
-        raw_deals = get_user_deals_from_db()
+        # Calculate summary from deals
+        total_invested = sum(deal.get('inv', 0) for deal in deals)
+        total_current = sum(deal.get('qty', 0) * deal.get('cmp', 0) if isinstance(deal.get('cmp'), (int, float)) else 0 for deal in deals)
+        total_pnl = sum(deal.get('pl', 0) for deal in deals)
+        total_pnl_percent = (total_pnl / total_invested * 100) if total_invested > 0 else 0
         
-        # Process deals with historical data
-        deals = []
-        total_invested = 0
-        total_current = 0
+        return jsonify({
+            'success': True,
+            'deals': deals,
+            'summary': {
+                'total_deals': len(deals),
+                'total_invested': total_invested,
+                'total_current_value': total_current,
+                'total_pnl': total_pnl,
+                'total_pnl_percent': total_pnl_percent
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in user deals API: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'deals': [],
+            'summary': {
+                'total_deals': 0,
+                'total_invested': 0,
+                'total_current_value': 0,
+                'total_pnl': 0,
+                'total_pnl_percent': 0
+            }
+        }), 500
         
         for deal in raw_deals:
             symbol = deal.get('symbol', '').upper()
