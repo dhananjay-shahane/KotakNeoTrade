@@ -295,11 +295,7 @@ DealsManager.prototype.loadDeals = function () {
                                     deal.id || deal.trade_signal_id || "",
                                 symbol:
                                     deal.symbol || deal.trading_symbol || "",
-                                pos:
-                                    deal.position_type === "LONG" ||
-                                    deal.pos === 1
-                                        ? 1
-                                        : 0,
+                                pos: deal.pos || deal.position_type || "LONG",
                                 qty: parseInt(deal.quantity || deal.qty || 0),
                                 ep: parseFloat(
                                     deal.entry_price || deal.ep || 0,
@@ -317,17 +313,9 @@ DealsManager.prototype.loadDeals = function () {
                                 inv: parseFloat(
                                     deal.invested_amount || deal.inv || 0,
                                 ),
-                                tp: parseFloat(
-                                    deal.target_price || deal.tp || 0,
-                                ),
-                                tva:
-                                    parseFloat(
-                                        deal.target_price || deal.tp || 0,
-                                    ) *
-                                    parseInt(deal.quantity || deal.qty || 0),
-                                tpr: parseFloat(
-                                    deal.pnl_amount || deal.pl || 0,
-                                ),
+                                tp: parseFloat(deal.tp || 0),
+                                tva: parseFloat(deal.tva || 0),
+                                tpr: deal.tpr || "15.00%",
                                 date:
                                     deal.entry_date ||
                                     deal.date ||
@@ -343,15 +331,13 @@ DealsManager.prototype.loadDeals = function () {
                                 seven_percent: deal.seven_percent || "--",
                                 thirty: deal.thirty || "--",
                                 thirty_percent: deal.thirty_percent || "--",
+                                qt: deal.qt || 1,
                                 ed: "--", // Always "--" as requested
                                 exp: deal.exp || "--",
                                 pr: deal.pr || "--",
                                 pp: deal.pp || "--",
                                 iv: deal.iv || "--",
                                 ip: deal.ip || "--",
-                                tpr: deal.tpr || "--",
-                                tva: deal.tva || "--",
-                                qt: deal.qt || "--",
                                 entry_price: parseFloat(
                                     deal.entry_price || deal.ep || 0,
                                 ),

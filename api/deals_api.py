@@ -492,7 +492,7 @@ def get_all_deals_data_metrics():
                 'qty': qty,
                 'ep': entry_price,
                 'cmp': cmp_display,
-                'pos': deal.get('pos', 'BUY'),
+                'pos': deal.get('pos', 'LONG'),
                 'chan_percent': round(change_percent, 2),
                 'inv': investment,
                 'tp': tp_value,  # Target price with business logic

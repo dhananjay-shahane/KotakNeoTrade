@@ -156,12 +156,12 @@ endblock %} {% block head %}
         </div>
 
         <div class="card-body p-0">
-            <div class="table-responsive">
+            <div class="table-responsive" style="height: 500px; overflow-y: auto;">
                 <table
                     class="table table-dark table-hover mb-0 signals-table"
                     id="dealsTable"
                 >
-                    <thead>
+                    <thead class="sticky-top">
                         <tr id="tableHeaders">
                             <!-- Dynamic headers will be generated here with sorting functionality -->
                         </tr>
