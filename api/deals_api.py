@@ -48,22 +48,25 @@ class PriceFetcher:
             Last price or None if not available
         """
         try:
+            if not symbol or not isinstance(symbol, str):
+                return None
+                
             table_name = f"{symbol.lower()}_5m"
 
             if not self.table_exists(table_name):
                 self.logger.warning(f"5min table not found: {table_name}")
                 return None
 
-            query = sql.SQL("""
+            query = f"""
                 SELECT close 
-                FROM symbols.{} 
+                FROM symbols.{table_name} 
                 ORDER BY datetime DESC 
                 LIMIT 1
-            """).format(sql.Identifier(table_name))
+            """
 
             result = self.db.execute_query(query)
             if result and len(result) > 0 and 'close' in result[0]:
-                return float(result[0]['close'])
+                return round(float(result[0]['close']), 2)
             return None
 
         except Exception as e:
@@ -97,9 +100,7 @@ class HistoricalFetcher:
                 return None
 
             # Count rows
-            count_query = sql.SQL(
-                "SELECT COUNT(*) as cnt FROM symbols.{}").format(
-                    sql.Identifier(table_name))
+            count_query = f"SELECT COUNT(*) as cnt FROM symbols.{table_name}"
             count_result = self.db.execute_query(count_query)
             if count_result and len(count_result) > 0 and 'cnt' in count_result[0]:
                 row_count = count_result[0]['cnt']
@@ -110,14 +111,14 @@ class HistoricalFetcher:
                 return None  # Not enough rows
 
             # Get Nth previous close: 0 = latest, 1 = 1 trading day ago, ...
-            price_query = sql.SQL("""
-                SELECT close FROM symbols.{}
+            price_query = f"""
+                SELECT close FROM symbols.{table_name}
                 ORDER BY datetime DESC
-                OFFSET %s LIMIT 1
-            """).format(sql.Identifier(table_name))
-            result = self.db.execute_query(price_query, (offset, ))
+                OFFSET {offset} LIMIT 1
+            """
+            result = self.db.execute_query(price_query)
             if result and len(result) > 0 and 'close' in result[0]:
-                return float(result[0]['close'])
+                return round(float(result[0]['close']), 2)
             return None
         except Exception as e:
             logger.error(f"Error fetching offset={offset} price: {e}")
@@ -132,14 +133,14 @@ class HistoricalFetcher:
             if not self.table_exists(table_name):
                 logger.warning(f"Table not found: symbols.{table_name}")
                 return None
-            price_query = sql.SQL("""
-                SELECT close FROM symbols.{}
+            price_query = f"""
+                SELECT close FROM symbols.{table_name}
                 ORDER BY datetime DESC
                 LIMIT 1
-            """).format(sql.Identifier(table_name))
+            """
             result = self.db.execute_query(price_query)
             if result and len(result) > 0 and 'close' in result[0]:
-                return float(result[0]['close'])
+                return round(float(result[0]['close']), 2)
             return None
         except Exception as e:
             logger.error(f"Error fetching latest close price: {e}")
