@@ -86,11 +86,6 @@ DealsManager.prototype.getDefaultColumns = function () {
 };
 
 DealsManager.prototype.init = function () {
-    // Show skeleton loading while data loads
-    if (window.skeletonLoader) {
-        window.skeletonLoader.showDealsSkeleton();
-    }
-
     this.updateTableHeaders();
     this.loadDeals();
     this.startAutoRefresh();
@@ -260,6 +255,9 @@ DealsManager.prototype.loadDeals = function () {
     self.isLoading = true;
     console.log("Loading deals from user_deals database...");
 
+    // Show loading spinner inside table
+    self.showLoadingSpinner();
+
     var xhr = new XMLHttpRequest();
     xhr.open("GET", "/api/user-deals-data", true);
     xhr.setRequestHeader("Content-Type", "application/json");
@@ -367,11 +365,6 @@ DealsManager.prototype.loadDeals = function () {
                         self.renderDealsTable();
                         self.updatePagination();
 
-                        // Hide skeleton and show content
-                        if (window.skeletonLoader) {
-                            window.skeletonLoader.hideDealsSkeleton();
-                        }
-
                         console.log(
                             "Successfully loaded " +
                                 uniqueDeals.length +
@@ -384,11 +377,6 @@ DealsManager.prototype.loadDeals = function () {
                         self.renderDealsTable();
                         self.updatePagination();
                         self.showEmptyStateMessage();
-
-                        // Hide skeleton and show content even when empty
-                        if (window.skeletonLoader) {
-                            window.skeletonLoader.hideDealsSkeleton();
-                        }
                     }
                 } catch (parseError) {
                     console.error(
@@ -861,6 +849,25 @@ DealsManager.prototype.showError = function (message) {
         '<button class="btn btn-outline-primary btn-sm mt-2" onclick="window.dealsManager.loadDeals()">' +
         '<i class="fas fa-sync me-1"></i>Retry' +
         "</button>" +
+        "</td>" +
+        "</tr>";
+};
+
+DealsManager.prototype.showLoadingSpinner = function () {
+    var tbody = document.getElementById("dealsTableBody");
+    tbody.innerHTML =
+        "<tr>" +
+        '<td colspan="' +
+        this.selectedColumns.length +
+        '" class="text-center py-5" style="background: var(--card-bg); min-height: 300px;">' +
+        '<div class="d-flex flex-column justify-content-center align-items-center" style="min-height: 250px;">' +
+        '<div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem; border-width: 4px;">' +
+        '<span class="visually-hidden">Loading...</span>' +
+        '</div>' +
+        '<h6 class="text-light mb-2">Loading Deals Data</h6>' +
+        '<p class="text-muted mb-3">Fetching data from database...</p>' +
+        '<small class="text-warning">This may take up to 15 seconds</small>' +
+        '</div>' +
         "</td>" +
         "</tr>";
 };
@@ -1821,20 +1828,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Initialize Deals Manager on page load
 document.addEventListener("DOMContentLoaded", function () {
-    // Show skeleton loading initially
-    if (window.skeletonLoader) {
-        window.skeletonLoader.showLoadingForAPI("deals");
-    }
-
-    // Initialize deals with faster loading
-    setTimeout(() => {
-        initializeDeals();
-
-        // Hide skeleton after initialization
-        if (window.skeletonLoader) {
-            window.skeletonLoader.hideLoadingForAPI("deals");
-        }
-    }, 100);
+    // Initialize deals
+    initializeDeals();
 });
 
 // Clean up interval when page unloads
