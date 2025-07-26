@@ -409,6 +409,14 @@ DealsManager.prototype.loadDeals = function () {
                         xhr.status +
                         ")",
                 );
+                // Hide skeleton and show content on error
+                if (window.skeletonLoader) {
+                    window.skeletonLoader.hideDealsSkeleton();
+                }
+                var mainContent = document.getElementById("dealsMainContent");
+                if (mainContent) {
+                    mainContent.style.display = "block";
+                }
             }
         }
     };
@@ -897,6 +905,7 @@ function applyFilters() {
     var symbol = document.getElementById("symbolFilter").value.toLowerCase();
     var minPnl =
         parseFloat(document.getElementById("minPnlFilter").value) || -Infinity;
+    ```text
     var maxPnl =
         parseFloat(document.getElementById("maxPnlFilter").value) || Infinity;
 
@@ -1979,7 +1988,7 @@ function closeDeal(dealId, symbol) {
         var xhr = new XMLHttpRequest();
         xhr.open("POST", "/api/close-deal", true);
         xhr.setRequestHeader("Content-Type", "application/json");
-        
+
         xhr.onreadystatechange = function() {
             if (xhr.readyState === 4) {
                 if (xhr.status === 200) {
@@ -1991,7 +2000,7 @@ function closeDeal(dealId, symbol) {
                 }
             }
         };
-        
+
         xhr.send(JSON.stringify({
             deal_id: dealId,
             symbol: symbol
@@ -2005,7 +2014,7 @@ function showEditDealModal(dealId, symbol, entryPrice, targetPrice) {
     document.getElementById("editSymbol").value = symbol;
     document.getElementById("editEntryPrice").value = entryPrice || '';
     document.getElementById("editTargetPrice").value = targetPrice || '';
-    
+
     // Show the modal
     var editModal = new bootstrap.Modal(document.getElementById('editDealModal'));
     editModal.show();
@@ -2016,28 +2025,28 @@ function submitEditDeal() {
     var symbol = document.getElementById("editSymbol").value;
     var entryPrice = parseFloat(document.getElementById("editEntryPrice").value);
     var targetPrice = parseFloat(document.getElementById("editTargetPrice").value);
-    
+
     // Validation
     if (!dealId || !symbol) {
         alert("Deal ID and Symbol are required");
         return;
     }
-    
+
     if (isNaN(entryPrice) || entryPrice <= 0) {
         alert("Please enter a valid entry price");
         return;
     }
-    
+
     if (isNaN(targetPrice) || targetPrice <= 0) {
         alert("Please enter a valid target price");
         return;
     }
-    
+
     // Submit edit request via AJAX
     var xhr = new XMLHttpRequest();
     xhr.open("POST", "/api/edit-deal", true);
     xhr.setRequestHeader("Content-Type", "application/json");
-    
+
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
             if (xhr.status === 200) {
@@ -2052,7 +2061,7 @@ function submitEditDeal() {
             }
         }
     };
-    
+
     xhr.send(JSON.stringify({
         deal_id: dealId,
         symbol: symbol,

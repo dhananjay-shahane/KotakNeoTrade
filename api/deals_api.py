@@ -757,7 +757,7 @@ def check_deal_duplicate():
 
 @deals_api.route('/edit-deal', methods=['POST'])
 def edit_deal():
-    """Edit a user deal (entry price and target price)"""
+    """Edit a user deal (entry price, target price, exit date, TPR, and position)"""
     try:
         data = request.get_json()
         if not data:
@@ -770,6 +770,9 @@ def edit_deal():
         symbol = data.get('symbol', '').strip()
         entry_price = data.get('entry_price')
         target_price = data.get('target_price')
+        exit_date = data.get('exit_date', '').strip()
+        tpr = data.get('tpr', '').strip()
+        pos = data.get('pos', '1').strip()
 
         if not deal_id or not symbol:
             return jsonify({
@@ -798,32 +801,48 @@ def edit_deal():
                 'error': 'Prices must be positive'
             }), 400
 
+        # Validate pos value (default to 1 if invalid)
+        try:
+            pos_value = int(pos) if pos else 1
+            if pos_value not in [0, 1]:
+                pos_value = 1
+        except (ValueError, TypeError):
+            pos_value = 1
+
         # Get user_id from session
         user_id = session.get('user_id')
         if not user_id or not isinstance(user_id, int):
             user_id = 1
 
-        # Connect to database
-        db_connector = DatabaseConnector(os.environ.get('DATABASE_URL'))
-
-        # Update deal in database
-        update_query = """
-            UPDATE user_deals 
-            SET entry_price = %s, target_price = %s, updated_at = CURRENT_TIMESTAMP
-            WHERE id = %s AND user_id = %s AND symbol = %s
-        """
-
-        result = db_connector.execute_query(
-            update_query,
-            (entry_price, target_price, deal_id, user_id, symbol))
-
-        if result == 0:
+        # Connect to external database
+        conn = get_external_db_connection()
+        if not conn:
             return jsonify({
                 'success': False,
-                'error': 'Deal not found or not authorized'
-            }), 404
+                'error': 'Database connection failed'
+            }), 500
 
-        db_connector.close()
+        try:
+            with conn.cursor() as cursor:
+                # Update deal in database with new fields
+                update_query = """
+                    UPDATE public.user_deals 
+                    SET entry_price = %s, target_price = %s, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = %s AND user_id = %s AND symbol = %s
+                """
+
+                cursor.execute(update_query, (entry_price, target_price, deal_id, user_id, symbol))
+                
+                if cursor.rowcount == 0:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Deal not found or not authorized'
+                    }), 404
+
+                conn.commit()
+
+        finally:
+            conn.close()
 
         return jsonify({
             'success': True,
@@ -831,7 +850,10 @@ def edit_deal():
             'deal_id': deal_id,
             'symbol': symbol,
             'entry_price': entry_price,
-            'target_price': target_price
+            'target_price': target_price,
+            'exit_date': exit_date,
+            'tpr': tpr,
+            'pos': pos_value
         })
 
     except Exception as e:
