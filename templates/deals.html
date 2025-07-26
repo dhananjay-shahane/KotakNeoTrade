@@ -542,6 +542,78 @@ endblock %} {% block head %}
             </div>
         </div>
     </div>
+
+    <!-- Edit Deal Modal -->
+    <div class="modal fade" id="editDealModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark">
+                <div class="modal-header border-bottom border-secondary">
+                    <h5 class="modal-title text-light">
+                        <i class="fas fa-edit me-2 text-warning"></i>Edit Deal
+                    </h5>
+                    <button
+                        type="button"
+                        class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"
+                    ></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editDealForm">
+                        <input type="hidden" id="editDealId" />
+                        <div class="mb-3">
+                            <label class="form-label text-light">Symbol</label>
+                            <input
+                                type="text"
+                                class="form-control bg-secondary text-light"
+                                id="editSymbol"
+                                readonly
+                            />
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-light">Entry Price</label>
+                                <input
+                                    type="number"
+                                    class="form-control bg-secondary text-light"
+                                    id="editEntryPrice"
+                                    step="0.01"
+                                    min="0"
+                                    required
+                                />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-light">Target Price</label>
+                                <input
+                                    type="number"
+                                    class="form-control bg-secondary text-light"
+                                    id="editTargetPrice"
+                                    step="0.01"
+                                    min="0"
+                                    required
+                                />
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer border-top border-secondary">
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        class="btn btn-warning"
+                        onclick="submitEditDeal()"
+                    >
+                        Update Deal
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
     </div>
     </div>

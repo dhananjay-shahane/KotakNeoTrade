@@ -23,7 +23,9 @@ class DatabaseConnector:
             conn = self.get_connection()
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
                 cursor.execute(query, params)
-                if query.strip().upper().startswith('SELECT'):
+                # Convert query to string if it's a Composed object
+                query_str = str(query) if hasattr(query, '__str__') else query
+                if query_str.strip().upper().startswith('SELECT'):
                     return cursor.fetchall()
                 else:
                     conn.commit()

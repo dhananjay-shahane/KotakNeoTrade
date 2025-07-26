@@ -273,6 +273,121 @@ def check_deal_duplicate():
             'duplicate': is_duplicate,
             'symbol': symbol
         })
+        
+    except Exception as e:
+        logger.error(f"Error checking deal duplicate: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@deals_api.route('/edit-deal', methods=['POST'])
+def edit_deal():
+    """Edit a user deal (entry price and target price)"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+
+        deal_id = data.get('deal_id', '').strip()
+        symbol = data.get('symbol', '').strip()
+        entry_price = data.get('entry_price')
+        target_price = data.get('target_price')
+        
+        if not deal_id or not symbol:
+            return jsonify({'success': False, 'error': 'Deal ID and symbol are required'}), 400
+            
+        if not entry_price or not target_price:
+            return jsonify({'success': False, 'error': 'Entry price and target price are required'}), 400
+            
+        try:
+            entry_price = float(entry_price)
+            target_price = float(target_price)
+        except (ValueError, TypeError):
+            return jsonify({'success': False, 'error': 'Invalid price values'}), 400
+            
+        if entry_price <= 0 or target_price <= 0:
+            return jsonify({'success': False, 'error': 'Prices must be positive'}), 400
+
+        # Get user_id from session
+        user_id = session.get('user_id')
+        if not user_id or not isinstance(user_id, int):
+            user_id = 1
+
+        # Connect to database
+        db_connector = DatabaseConnector(os.environ.get('DATABASE_URL'))
+        
+        # Update deal in database
+        update_query = """
+            UPDATE user_deals 
+            SET entry_price = %s, target_price = %s, updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s AND user_id = %s AND symbol = %s
+        """
+        
+        result = db_connector.execute_query(update_query, (entry_price, target_price, deal_id, user_id, symbol))
+        
+        if result == 0:
+            return jsonify({'success': False, 'error': 'Deal not found or not authorized'}), 404
+            
+        db_connector.close()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Deal updated successfully for {symbol}',
+            'deal_id': deal_id,
+            'symbol': symbol,
+            'entry_price': entry_price,
+            'target_price': target_price
+        })
+        
+    except Exception as e:
+        logger.error(f"Error editing deal: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@deals_api.route('/close-deal', methods=['POST'])
+def close_deal():
+    """Close a user deal by updating its status"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+
+        deal_id = data.get('deal_id', '').strip()
+        symbol = data.get('symbol', '').strip()
+        
+        if not deal_id or not symbol:
+            return jsonify({'success': False, 'error': 'Deal ID and symbol are required'}), 400
+
+        # Get user_id from session
+        user_id = session.get('user_id')
+        if not user_id or not isinstance(user_id, int):
+            user_id = 1
+
+        # Connect to database
+        db_connector = DatabaseConnector(os.environ.get('DATABASE_URL'))
+        
+        # Update deal status to CLOSED
+        update_query = """
+            UPDATE user_deals 
+            SET status = 'CLOSED', updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s AND user_id = %s AND symbol = %s
+        """
+        
+        result = db_connector.execute_query(update_query, (deal_id, user_id, symbol))
+        
+        if result == 0:
+            return jsonify({'success': False, 'error': 'Deal not found or not authorized'}), 404
+            
+        db_connector.close()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Deal closed successfully for {symbol}',
+            'deal_id': deal_id,
+            'symbol': symbol,
+            'status': 'CLOSED'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error closing deal: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
     except Exception as e:
         logger.error(f"Error checking duplicate deal: {e}")
