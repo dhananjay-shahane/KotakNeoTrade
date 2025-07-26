@@ -87,7 +87,9 @@ DealsManager.prototype.getDefaultColumns = function () {
 
 DealsManager.prototype.init = function () {
     // Show skeleton loading while data loads
-
+    if (window.skeletonLoader) {
+        window.skeletonLoader.showDealsSkeleton();
+    }
 
     this.updateTableHeaders();
     this.loadDeals();
@@ -258,17 +260,6 @@ DealsManager.prototype.loadDeals = function () {
     self.isLoading = true;
     console.log("Loading deals from user_deals database...");
 
-    // Show skeleton loader and hide main content
-    var dealsSkeleton = document.getElementById('dealsSkeleton');
-    var dealsMainContent = document.getElementById('dealsMainContent');
-
-    if (dealsSkeleton) {
-        dealsSkeleton.style.display = 'block';
-    }
-    if (dealsMainContent) {
-        dealsMainContent.style.display = 'none';
-    }
-
     var xhr = new XMLHttpRequest();
     xhr.open("GET", "/api/user-deals-data", true);
     xhr.setRequestHeader("Content-Type", "application/json");
@@ -277,8 +268,6 @@ DealsManager.prototype.loadDeals = function () {
     xhr.onreadystatechange = function () {
         if (xhr.readyState === 4) {
             self.isLoading = false;
-
-
 
             if (xhr.status === 200) {
                 try {
@@ -306,7 +295,7 @@ DealsManager.prototype.loadDeals = function () {
                                     deal.id || deal.trade_signal_id || "",
                                 symbol:
                                     deal.symbol || deal.trading_symbol || "",
-                                pos: deal.pos || deal.position_type || 1,
+                                pos: deal.pos || deal.position_type || "LONG",
                                 qty: parseInt(deal.quantity || deal.qty || 0),
                                 ep: parseFloat(
                                     deal.entry_price || deal.ep || 0,
@@ -378,18 +367,10 @@ DealsManager.prototype.loadDeals = function () {
                         self.renderDealsTable();
                         self.updatePagination();
 
-                        // Hide skeleton and show main content
-                        var dealsSkeleton = document.getElementById('dealsSkeleton');
-                        var dealsMainContent = document.getElementById('dealsMainContent');
-
-                        if (dealsSkeleton) {
-                            dealsSkeleton.style.display = 'none';
+                        // Hide skeleton and show content
+                        if (window.skeletonLoader) {
+                            window.skeletonLoader.hideDealsSkeleton();
                         }
-                        if (dealsMainContent) {
-                            dealsMainContent.style.display = 'block';
-                        }
-
-                        self.updateDealsCountInHeading();
 
                         console.log(
                             "Successfully loaded " +
@@ -404,18 +385,10 @@ DealsManager.prototype.loadDeals = function () {
                         self.updatePagination();
                         self.showEmptyStateMessage();
 
-                        // Hide skeleton and show main content even when empty
-                        var dealsSkeleton = document.getElementById('dealsSkeleton');
-                        var dealsMainContent = document.getElementById('dealsMainContent');
-
-                        if (dealsSkeleton) {
-                            dealsSkeleton.style.display = 'none';
+                        // Hide skeleton and show content even when empty
+                        if (window.skeletonLoader) {
+                            window.skeletonLoader.hideDealsSkeleton();
                         }
-                        if (dealsMainContent) {
-                            dealsMainContent.style.display = 'block';
-                        }
-
-                        self.updateDealsCountInHeading();
                     }
                 } catch (parseError) {
                     console.error(
@@ -436,15 +409,13 @@ DealsManager.prototype.loadDeals = function () {
                         xhr.status +
                         ")",
                 );
-                // Hide skeleton and show main content on error
-                var dealsSkeleton = document.getElementById('dealsSkeleton');
-                var dealsMainContent = document.getElementById('dealsMainContent');
-
-                if (dealsSkeleton) {
-                    dealsSkeleton.style.display = 'none';
+                // Hide skeleton and show content on error
+                if (window.skeletonLoader) {
+                    window.skeletonLoader.hideDealsSkeleton();
                 }
-                if (dealsMainContent) {
-                    dealsMainContent.style.display = 'block';
+                var mainContent = document.getElementById("dealsMainContent");
+                if (mainContent) {
+                    mainContent.style.display = "block";
                 }
             }
         }
@@ -912,8 +883,7 @@ DealsManager.prototype.showEmptyStateMessage = function () {
         '<i class="fas fa-handshake fa-3x mb-3 text-primary"></i>' +
         '<h6 class="text-light">No Deals Found</h6>' +
         '<p class="text-muted mb-3">You haven\'t added any deals yet</p>' +
-        '<small class="text-muted d-block mt-2">Visit the ETF Signals page```text
- to add deals from trading signals</small>' +
+        '<small class="text-muted d-block mt-2">Visit the ETF Signals page to add deals from trading signals</small>' +
         "</td>" +
         "</tr>";
 };
@@ -929,12 +899,13 @@ this.checkPriceUpdateStatusAdvanced = function () {
     // Implementation logic here
 };
 
-function applyFilters(){
+function applyFilters() {
     var orderType = document.getElementById("orderTypeFilter").value;
     var status = document.getElementById("statusFilter").value;
     var symbol = document.getElementById("symbolFilter").value.toLowerCase();
     var minPnl =
         parseFloat(document.getElementById("minPnlFilter").value) || -Infinity;
+    ```text
     var maxPnl =
         parseFloat(document.getElementById("maxPnlFilter").value) || Infinity;
 
@@ -1778,6 +1749,8 @@ function clearInlineSearch() {
     }
 }
 
+
+
 // Toggle search input visibility
 function toggleSearchInput() {
     var searchInputGroup = document.getElementById('searchInputGroup');
@@ -1845,8 +1818,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Initialize Deals Manager on page load
 document.addEventListener("DOMContentLoaded", function () {
-    // Initialize deals immediately
-    initializeDeals();
+    // Show skeleton loading initially
+    if (window.skeletonLoader) {
+        window.skeletonLoader.showLoadingForAPI("deals");
+    }
+
+    // Initialize deals with faster loading
+    setTimeout(() => {
+        initializeDeals();
+
+        // Hide skeleton after initialization
+        if (window.skeletonLoader) {
+            window.skeletonLoader.hideLoadingForAPI("deals");
+        }
+    }, 100);
 });
 
 // Clean up interval when page unloads
@@ -1968,17 +1953,6 @@ DealsManager.prototype.updateDealsCountBadge = function () {
     }
 };
 
-DealsManager.prototype.updateDealsCountInHeading = function () {
-    // Update deals count in page heading
-    var pageHeading = document.querySelector('h4');
-    if (pageHeading && pageHeading.textContent.includes('Deals')) {
-        pageHeading.innerHTML = '<i class="fas fa-handshake me-2"></i>Deals (' + this.filteredDeals.length + ')';
-    }
-
-    // Also update badge if it exists
-    this.updateDealsCountBadge();
-};
-
 // Edit and Close Deal functions
 function editDeal(dealId, symbol, entryPrice, targetPrice) {
     // Input validation
@@ -2035,21 +2009,11 @@ function closeDeal(dealId, symbol) {
 }
 
 function showEditDealModal(dealId, symbol, entryPrice, targetPrice) {
-    // Find the deal data to populate all fields
-    var deal = null;
-    if (window.dealsManager && window.dealsManager.deals) {
-        deal = window.dealsManager.deals.find(function(d) {
-            return d.id == dealId || d.trade_signal_id == dealId;
-        });
-    }
-
     // Set values in the edit modal
     document.getElementById("editDealId").value = dealId;
     document.getElementById("editSymbol").value = symbol;
     document.getElementById("editEntryPrice").value = entryPrice || '';
     document.getElementById("editTargetPrice").value = targetPrice || '';
-    document.getElementById("editExitDate").value = deal ? (deal.ed || '') : '';
-    document.getElementById("editTPR").value = deal ? (deal.tpr || '15.00%') : '15.00%';
 
     // Show the modal
     var editModal = new bootstrap.Modal(document.getElementById('editDealModal'));
@@ -2061,8 +2025,6 @@ function submitEditDeal() {
     var symbol = document.getElementById("editSymbol").value;
     var entryPrice = parseFloat(document.getElementById("editEntryPrice").value);
     var targetPrice = parseFloat(document.getElementById("editTargetPrice").value);
-    var exitDate = document.getElementById("editExitDate").value;
-    var tpr = document.getElementById("editTPR").value;
 
     // Validation
     if (!dealId || !symbol) {
@@ -2104,8 +2066,6 @@ function submitEditDeal() {
         deal_id: dealId,
         symbol: symbol,
         entry_price: entryPrice,
-        target_price: targetPrice,
-        exit_date: exitDate,
-        tpr: tpr
+        target_price: targetPrice
     }));
 }

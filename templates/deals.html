@@ -8,7 +8,9 @@ endblock %} {% block head %}
         class="d-flex justify-content-between align-items-center mb-4 flex-wrap"
     >
         <div>
-            <h4 class="mb-1"><i class="fas fa-handshake me-2"></i>Deals (<span id="dealsCount">0</span>)</h4>
+            <h1 class="h3 mb-1">
+                Deals 
+            </h1>
             <p class="text-muted mb-0">Orders placed from trading signals</p>
         </div>
         <div class="d-flex gap-2">
@@ -27,7 +29,7 @@ endblock %} {% block head %}
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
-
+                
                 <!-- Search Button -->
                 <button 
                     class="btn btn-primary" 
@@ -62,8 +64,16 @@ endblock %} {% block head %}
         </div>
     </div>
 
-    <!-- Deals Table -->
-    <div class="card bg-secondary border-0 shadow-lg" id="dealsMainContent"></div>
+    <!-- Content Container with relative positioning -->
+    <div style="position: relative; min-height: 600px;">
+        <!-- Deals Skeleton Loading -->
+        <div id="dealsSkeleton" class="skeleton-loading">
+            <!-- Table Skeleton -->
+            <div class="skeleton skeleton-deals-table"></div>
+        </div>
+
+        <!-- Deals Table -->
+        <div class="card bg-secondary border-0 shadow-lg" id="dealsMainContent" style="display: none;">
         <div
             class="card-header bg-dark border-0 d-flex justify-content-between align-items-center"
         >
@@ -73,7 +83,7 @@ endblock %} {% block head %}
                     >0</span
                 >
             </h5>
-
+            
             <div class="d-flex gap-2 align-items-center">
                 <div class="form-check form-switch">
                     <input
@@ -202,7 +212,7 @@ endblock %} {% block head %}
         </div>
     </div>
 
-
+    
 
     <!-- Column Settings Modal -->
     <div class="modal fade" id="columnSettingsModal" tabindex="-1">
