@@ -172,32 +172,41 @@ class SignalsFetcher:
                     position_type as pos,
                     '--' as ed
                 FROM user_deals
-                WHERE user_id = %s AND entry_date >= %s AND status != 'CLOSED'
+                WHERE user_id = %s AND status != 'CLOSED'
                 ORDER BY entry_date DESC
             """
 
-            params = [user_id, datetime.now() - timedelta(days=days_back)]
+            params = [user_id]
 
             self.logger.debug("Executing user deals query")
+            self.logger.debug(f"Query params: user_id={user_id}")
             results = self.db.execute_query(query, params)
+            
+            self.logger.debug(f"Query results: {results}")
 
             if not results:
                 self.logger.warning("No user deals found")
                 return pd.DataFrame()
 
+            self.logger.info(f"Found {len(results)} user deals")
             df = pd.DataFrame(results)
 
             # Convert data types
             numeric_cols = ['qty', 'ep']
-            df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce')
+            for col in numeric_cols:
+                if col in df.columns:
+                    df[col] = pd.to_numeric(df[col], errors='coerce')
 
             # Clean symbol names
-            df['symbol'] = df['symbol'].str.upper().str.strip()
+            if 'symbol' in df.columns:
+                df['symbol'] = df['symbol'].str.upper().str.strip()
 
-            return df.dropna(subset=numeric_cols)
+            return df.dropna(subset=[col for col in numeric_cols if col in df.columns])
 
         except Exception as e:
             self.logger.error(f"Error fetching user deals: {str(e)}")
+            import traceback
+            self.logger.error(f"Traceback: {traceback.format_exc()}")
             return pd.DataFrame()
 
 def try_percent(cmp_val, hist_val):
