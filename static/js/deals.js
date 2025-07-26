@@ -912,8 +912,8 @@ DealsManager.prototype.showEmptyStateMessage = function () {
         '<i class="fas fa-handshake fa-3x mb-3 text-primary"></i>' +
         '<h6 class="text-light">No Deals Found</h6>' +
         '<p class="text-muted mb-3">You haven\'t added any deals yet</p>' +
-        '<small class="text-muted d-block mt-2">Visit the ETF Signals page to add deals```text
- from trading signals</small>' +
+        '<small class="text-muted d-block mt-2">Visit the ETF Signals page```text
+ to add deals from trading signals</small>' +
         "</td>" +
         "</tr>";
 };
