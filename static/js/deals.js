@@ -260,10 +260,15 @@ DealsManager.prototype.loadDeals = function () {
     self.isLoading = true;
     console.log("Loading deals from user_deals database...");
 
-    // Show deals loading indicator
-    var dealsLoadingIndicator = document.getElementById('dealsLoadingIndicator');
-    if (dealsLoadingIndicator) {
-        dealsLoadingIndicator.style.display = 'block';
+    // Show skeleton loader and hide main content
+    var dealsSkeleton = document.getElementById('dealsSkeleton');
+    var dealsMainContent = document.getElementById('dealsMainContent');
+    
+    if (dealsSkeleton) {
+        dealsSkeleton.style.display = 'block';
+    }
+    if (dealsMainContent) {
+        dealsMainContent.style.display = 'none';
     }
 
     var xhr = new XMLHttpRequest();
@@ -275,10 +280,7 @@ DealsManager.prototype.loadDeals = function () {
         if (xhr.readyState === 4) {
             self.isLoading = false;
 
-            // Hide deals loading indicator
-            if (dealsLoadingIndicator) {
-                dealsLoadingIndicator.style.display = 'none';
-            }
+            
 
             if (xhr.status === 200) {
                 try {
@@ -378,10 +380,17 @@ DealsManager.prototype.loadDeals = function () {
                         self.renderDealsTable();
                         self.updatePagination();
 
-                        // Hide skeleton and show content
-                        if (window.skeletonLoader) {
-                            window.skeletonLoader.hideDealsSkeleton();
+                        // Hide skeleton and show main content
+                        var dealsSkeleton = document.getElementById('dealsSkeleton');
+                        var dealsMainContent = document.getElementById('dealsMainContent');
+                        
+                        if (dealsSkeleton) {
+                            dealsSkeleton.style.display = 'none';
                         }
+                        if (dealsMainContent) {
+                            dealsMainContent.style.display = 'block';
+                        }
+                        
                         self.updateDealsCountInHeading();
 
                         console.log(
@@ -397,10 +406,17 @@ DealsManager.prototype.loadDeals = function () {
                         self.updatePagination();
                         self.showEmptyStateMessage();
 
-                        // Hide skeleton and show content even when empty
-                        if (window.skeletonLoader) {
-                            window.skeletonLoader.hideDealsSkeleton();
+                        // Hide skeleton and show main content even when empty
+                        var dealsSkeleton = document.getElementById('dealsSkeleton');
+                        var dealsMainContent = document.getElementById('dealsMainContent');
+                        
+                        if (dealsSkeleton) {
+                            dealsSkeleton.style.display = 'none';
                         }
+                        if (dealsMainContent) {
+                            dealsMainContent.style.display = 'block';
+                        }
+                        
                         self.updateDealsCountInHeading();
                     }
                 } catch (parseError) {
@@ -422,13 +438,15 @@ DealsManager.prototype.loadDeals = function () {
                         xhr.status +
                         ")",
                 );
-                // Hide skeleton and show content on error
-                if (window.skeletonLoader) {
-                    window.skeletonLoader.hideDealsSkeleton();
+                // Hide skeleton and show main content on error
+                var dealsSkeleton = document.getElementById('dealsSkeleton');
+                var dealsMainContent = document.getElementById('dealsMainContent');
+                
+                if (dealsSkeleton) {
+                    dealsSkeleton.style.display = 'none';
                 }
-                var mainContent = document.getElementById("dealsMainContent");
-                if (mainContent) {
-                    mainContent.style.display = "block";
+                if (dealsMainContent) {
+                    dealsMainContent.style.display = 'block';
                 }
             }
         }
