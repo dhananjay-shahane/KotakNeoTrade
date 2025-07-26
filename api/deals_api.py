@@ -166,7 +166,7 @@ class SignalsFetcher:
                 SELECT 
                     id as trade_signal_id,
                     symbol, 
-                    qty, 
+                    quantity as qty, 
                     entry_date as date,
                     entry_price as ep,
                     position_type as pos,
@@ -345,10 +345,11 @@ def get_all_deals_data_metrics():
     formatted_deals = []
 
     try:
-        # 1. Connect to database
-        db_connector = DatabaseConnector(os.environ.get('DATABASE_URL'))
+        # 1. Connect to external database
+        external_db_url = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com:5432/kotak_trading_db"
+        db_connector = DatabaseConnector(external_db_url)
         if not db_connector:
-            logger.error("Database connection failed!")
+            logger.error("External database connection failed!")
             return []
 
         # 2. Initialize helper/fetcher objects
