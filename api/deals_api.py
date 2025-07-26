@@ -586,136 +586,7 @@ def get_user_deals_data():
             }
         }), 500
 
-        for deal in raw_deals:
-            symbol = deal.get('symbol', '').upper()
-
-            # Get historical and current price data
-            cmp = price_fetcher.get_cmp(symbol)
-            seven_day_price = historical_fetcher.get_offset_price(symbol, 7)
-            thirty_day_price = historical_fetcher.get_offset_price(symbol, 30)
-
-            # Use stored current_price if CMP fetch fails
-            if cmp is None:
-                cmp = float(deal.get('current_price', 0))
-
-            # Calculate percentages
-            seven_percent = try_percent(cmp, seven_day_price)
-            thirty_percent = try_percent(cmp, thirty_day_price)
-
-            # Calculate values
-            entry_price = float(deal.get('entry_price', 0))
-            quantity = int(deal.get('quantity', 0))
-            invested = entry_price * quantity
-            current = cmp * quantity if cmp else 0
-            pnl = current - invested if current else 0
-            pnl_percent = (pnl / invested * 100) if invested > 0 else 0
-
-            # Update running totals
-            total_invested += invested
-            total_current += current
-
-            # Format deal with all new columns
-            formatted_deal = {
-                'trade_signal_id':
-                deal.get('id', 0),
-                'symbol':
-                symbol,
-                'seven':
-                seven_day_price if seven_day_price else '--',
-                'seven_percent':
-                seven_percent,
-                'thirty':
-                thirty_day_price if thirty_day_price else '--',
-                'thirty_percent':
-                thirty_percent,
-                'date':
-                deal.get('entry_date', '').strftime('%Y-%m-%d')
-                if deal.get('entry_date') else '',
-                'qty':
-                quantity,
-                'ep':
-                entry_price,
-                'cmp':
-                cmp if cmp else '--',
-                'pos':
-                deal.get('position_type', 'BUY'),
-                'chan_percent':
-                round(pnl_percent, 2),
-                'inv':
-                invested,
-                'tp':
-                float(deal.get('target_price', 0)),
-                'tpr':
-                '--',  # Target profit return
-                'tva':
-                '--',  # Target value amount  
-                'pl':
-                round(pnl, 2),
-                'qt':
-                '--',  # Quote time
-                'ed':
-                '--',  # Entry date - set to "--" as requested
-                'exp':
-                '--',  # Expiry
-                'pr':
-                '--',  # Price range
-                'pp':
-                '--',  # Performance points
-                'iv':
-                '--',  # Implied volatility
-                'ip':
-                '--',  # Intraday performance
-                'status':
-                deal.get('status', 'ACTIVE'),
-                'deal_type':
-                deal.get('deal_type', 'MANUAL'),
-                'notes':
-                deal.get('notes', ''),
-                'tags':
-                deal.get('tags', ''),
-                'created_at':
-                deal.get('created_at', '').isoformat()
-                if deal.get('created_at') else '',
-                'updated_at':
-                deal.get('updated_at', '').isoformat()
-                if deal.get('updated_at') else ''
-            }
-            deals.append(formatted_deal)
-
-        # Close database connection
-        db_connector.close()
-
-        # Calculate summary
-        total_pnl = total_current - total_invested
-        total_pnl_percent = (total_pnl / total_invested *
-                             100) if total_invested > 0 else 0
-
-        return jsonify({
-            'success': True,
-            'deals': deals,
-            'summary': {
-                'total_deals': len(deals),
-                'total_invested': total_invested,
-                'total_current_value': total_current,
-                'total_pnl': total_pnl,
-                'total_pnl_percent': total_pnl_percent
-            }
-        })
-
-    except Exception as e:
-        logger.error(f"Error in user deals API: {e}")
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'deals': [],
-            'summary': {
-                'total_deals': 0,
-                'total_invested': 0,
-                'total_current_value': 0,
-                'total_pnl': 0,
-                'total_pnl_percent': 0
-            }
-        }), 500
+        
 
 
 @deals_api.route('/deals/check-duplicate', methods=['POST'])
@@ -897,9 +768,7 @@ def close_deal():
         logger.error(f"Error closing deal: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-    except Exception as e:
-        logger.error(f"Error checking duplicate deal: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+    
 
 
 @deals_api.route('/deals/create-from-signal', methods=['POST'])
