@@ -1,4 +1,3 @@
-
 /**
  * ETF Signals Manager - ES5 Compatible
  * Manages real-time ETF trading signals display and updates
@@ -95,6 +94,26 @@ ETFSignalsManager.prototype.setupEventListeners = function () {
             }
         });
     }
+
+    // Search functionality
+    var searchInput = document.getElementById("signalSearch");
+    if (searchInput) {
+        searchInput.addEventListener("input", function () {
+            clearTimeout(self.searchTimeout);
+            self.searchTimeout = setTimeout(function() {
+                self.applyFilters();
+            }, 300);
+        });
+
+        searchInput.addEventListener("keypress", function(e) {
+            if (e.key === "Enter") {
+                self.applyFilters();
+            }
+        });
+    }
+
+
+    // Remove filter dropdowns - keeping only search functionality
 
     // Items per page selector
     var itemsPerPageSelect = document.getElementById("itemsPerPage");
@@ -356,6 +375,7 @@ ETFSignalsManager.prototype.loadSignals = function (resetData) {
                         // Reset to first page when loading new data
                         if (resetData === true) {
                             self.currentPage = 1;
+                            window.currentPage = 1;
                         }
 
                         // Update displayed signals based on current page
@@ -411,13 +431,6 @@ ETFSignalsManager.prototype.loadSignals = function (resetData) {
     xhr.send();
 };
 
-ETFSignalsManager.prototype.updateDisplayedSignals = function () {
-    var startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    var endIndex = startIndex + this.itemsPerPage;
-    this.displayedSignals = this.filteredSignals.slice(startIndex, endIndex);
-    this.totalPages = Math.ceil(this.filteredSignals.length / this.itemsPerPage);
-};
-
 ETFSignalsManager.prototype.renderSignalsTable = function () {
     var tbody =
         document.getElementById("signalsTableBody") ||
@@ -442,7 +455,6 @@ ETFSignalsManager.prototype.renderSignalsTable = function () {
                 '<tr><td colspan="' +
                 visibleColumnCount +
                 '" class="text-center text-muted">No ETF signals found</td></tr>';
-            this.updateCounts();
             return;
         }
     }
@@ -456,7 +468,6 @@ ETFSignalsManager.prototype.renderSignalsTable = function () {
         tbody.appendChild(row);
     }
 
-    this.updateCounts();
     console.log("Rendered", this.displayedSignals.length, "signals in table");
 };
 
@@ -634,6 +645,9 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
             case "nt":
                 cellValue = signal.nt || "--";
                 break;
+            // case "qt":
+            //     cellValue = signal.qt || quantity;
+            //     break;
             case "seven":
                 var sevenValue = signal["7D"] || signal.seven || signal.d7 || 0;
                 if (typeof sevenValue === "string") {
@@ -733,6 +747,33 @@ ETFSignalsManager.prototype.getGradientBackgroundColor = function (value) {
     return "";
 };
 
+ETFSignalsManager.prototype.updateTableHeaders = function () {
+    var headerRow = document.getElementById("tableHeaders");
+    if (!headerRow) return;
+
+    headerRow.innerHTML = "";
+
+    for (var i = 0; i < this.availableColumns.length; i++) {
+        var column = this.availableColumns[i];
+        if (column.visible) {
+            var th = document.createElement("th");
+            th.style.cursor = "pointer";
+            th.title = column.label + " - Click to sort";
+            if (column.key !== "actions") {
+                th.setAttribute(
+                    "onclick",
+                    "sortSignalsByColumn('" + column.key + "')",
+                );
+                th.innerHTML =
+                    column.label + ' <i class="fas fa-sort ms-1"></i>';
+            } else {
+                th.innerHTML = column.label;
+            }
+            headerRow.appendChild(th);
+        }
+    }
+};
+
 // Column Management Functions
 ETFSignalsManager.prototype.loadColumnSettings = function () {
     var savedSettings = localStorage.getItem("etfSignalsColumnSettings");
@@ -751,275 +792,80 @@ ETFSignalsManager.prototype.loadColumnSettings = function () {
     }
 };
 
-ETFSignalsManager.prototype.setupColumnSettings = function () {
-    var self = this;
-    var checkboxContainer = document.getElementById("columnCheckboxes");
-    if (!checkboxContainer) return;
-
-    checkboxContainer.innerHTML = "";
-
-    for (var i = 0; i < this.availableColumns.length; i++) {
-        var column = this.availableColumns[i];
-        var div = document.createElement("div");
-        div.className = "col-md-6 mb-2";
-        
-        div.innerHTML = '<div class="form-check">' +
-            '<input class="form-check-input" type="checkbox" id="col_' + column.key + '" ' +
-            (column.visible ? 'checked' : '') + '>' +
-            '<label class="form-check-label text-light" for="col_' + column.key + '">' +
-            column.label + '</label>' +
-            '</div>';
-        
-        checkboxContainer.appendChild(div);
-    }
+// Enhanced sorting functionality for ETF signals table
+var sortState = {
+    column: null,
+    direction: "asc",
 };
 
-ETFSignalsManager.prototype.createPaginationControls = function () {
-    // Create pagination if it doesn't exist
-    var footerElement = document.querySelector('.card-footer');
-    if (footerElement && !document.getElementById('pagination-container')) {
-        var paginationHtml = '<div id="pagination-container" class="d-flex justify-content-between align-items-center">' +
-            '<div><button class="btn btn-sm btn-outline-light" onclick="previousPage()">Previous</button></div>' +
-            '<div id="page-info">Page 1 of 1</div>' +
-            '<div><button class="btn btn-sm btn-outline-light" onclick="nextPage()">Next</button></div>' +
-            '</div>';
-        footerElement.innerHTML = paginationHtml;
-    }
-};
+function sortTable(column) {
+    var tbody = document.getElementById("etfSignalsTableBody");
+    if (!tbody) return;
 
-ETFSignalsManager.prototype.updatePagination = function () {
-    var pageInfo = document.getElementById('page-info');
-    if (pageInfo) {
-        pageInfo.textContent = 'Page ' + this.currentPage + ' of ' + this.totalPages;
-    }
-};
+    var rows = Array.from(tbody.querySelectorAll("tr"));
 
-ETFSignalsManager.prototype.updateCounts = function () {
-    var totalCount = document.getElementById('totalCount');
-    var visibleSignalsCount = document.getElementById('visibleSignalsCount');
-    var showingCount = document.getElementById('showingCount');
-    
-    if (totalCount) totalCount.textContent = this.signals.length;
-    if (visibleSignalsCount) visibleSignalsCount.textContent = this.filteredSignals.length;
-    if (showingCount) showingCount.textContent = this.displayedSignals.length;
-};
-
-ETFSignalsManager.prototype.showLoadingState = function () {
-    var tbody = document.getElementById("signalsTableBody");
-    if (tbody) {
-        var visibleColumns = this.availableColumns.filter(function(col) { return col.visible; });
-        var colspanCount = visibleColumns.length;
-        tbody.innerHTML = '<tr><td colspan="' + colspanCount + '" class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading signals...</p></td></tr>';
-    }
-};
-
-ETFSignalsManager.prototype.hideLoadingState = function () {
-    // Loading state will be hidden when table is rendered
-};
-
-ETFSignalsManager.prototype.showErrorMessage = function (message) {
-    var tbody = document.getElementById("signalsTableBody");
-    if (tbody) {
-        var visibleColumns = this.availableColumns.filter(function(col) { return col.visible; });
-        var colspanCount = visibleColumns.length;
-        tbody.innerHTML = '<tr><td colspan="' + colspanCount + '" class="text-center py-4 text-danger"><i class="fas fa-exclamation-triangle mb-2"></i><br>' + message + '</td></tr>';
-    }
-};
-
-ETFSignalsManager.prototype.showSuccessMessage = function (message) {
-    console.log("Success: " + message);
-};
-
-ETFSignalsManager.prototype.startAutoRefresh = function () {
-    var self = this;
-    this.stopAutoRefresh();
-    
-    this.refreshInterval = setInterval(function () {
-        self.loadSignals();
-    }, 30000); // Refresh every 30 seconds
-};
-
-ETFSignalsManager.prototype.stopAutoRefresh = function () {
-    if (this.refreshInterval) {
-        clearInterval(this.refreshInterval);
-        this.refreshInterval = null;
-    }
-};
-
-// Global functions for pagination and other controls
-function refreshSignals() {
-    if (window.etfSignalsManager) {
-        window.etfSignalsManager.loadSignals(true);
-    }
-}
-
-function previousPage() {
-    if (window.etfSignalsManager && window.etfSignalsManager.currentPage > 1) {
-        window.etfSignalsManager.currentPage--;
-        window.etfSignalsManager.updateDisplayedSignals();
-        window.etfSignalsManager.renderSignalsTable();
-        window.etfSignalsManager.updatePagination();
-    }
-}
-
-function nextPage() {
-    if (window.etfSignalsManager && window.etfSignalsManager.currentPage < window.etfSignalsManager.totalPages) {
-        window.etfSignalsManager.currentPage++;
-        window.etfSignalsManager.updateDisplayedSignals();
-        window.etfSignalsManager.renderSignalsTable();
-        window.etfSignalsManager.updatePagination();
-    }
-}
-
-function selectAllColumns() {
-    var checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
-    for (var i = 0; i < checkboxes.length; i++) {
-        checkboxes[i].checked = true;
-    }
-}
-
-function resetDefaultColumns() {
-    if (window.etfSignalsManager) {
-        // Reset to default visibility
-        for (var i = 0; i < window.etfSignalsManager.availableColumns.length; i++) {
-            var column = window.etfSignalsManager.availableColumns[i];
-            var checkbox = document.getElementById('col_' + column.key);
-            if (checkbox) {
-                checkbox.checked = column.key !== 'ed' && column.key !== 'exp' && column.key !== 'pr' && column.key !== 'pp' && column.key !== 'iv' && column.key !== 'ip';
-            }
-        }
-    }
-}
-
-function applyColumnSettings() {
-    if (window.etfSignalsManager) {
-        var settings = {};
-        for (var i = 0; i < window.etfSignalsManager.availableColumns.length; i++) {
-            var column = window.etfSignalsManager.availableColumns[i];
-            var checkbox = document.getElementById('col_' + column.key);
-            if (checkbox) {
-                column.visible = checkbox.checked;
-                settings[column.key] = checkbox.checked;
-            }
-        }
-        
-        localStorage.setItem("etfSignalsColumnSettings", JSON.stringify(settings));
-        
-        window.etfSignalsManager.generateDynamicHeaders();
-        window.etfSignalsManager.renderSignalsTable();
-        
-        // Close modal
-        var modal = bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal'));
-        if (modal) modal.hide();
-    }
-}
-
-function applyFilters() {
-    // Apply filters from modal
-    var positionType = document.getElementById('positionTypeFilter');
-    var status = document.getElementById('modalStatusFilter');
-    var symbol = document.getElementById('modalSymbolFilter');
-    var minInvestment = document.getElementById('minInvestmentFilter');
-    var maxInvestment = document.getElementById('maxInvestmentFilter');
-    var minPnl = document.getElementById('minPnlFilter');
-    var maxPnl = document.getElementById('maxPnlFilter');
-
-    if (window.etfSignalsManager) {
-        var positionValue = positionType ? positionType.value : '';
-        var statusValue = status ? status.value : '';
-        var symbolValue = symbol ? symbol.value.toLowerCase() : '';
-        var minInvValue = minInvestment ? parseFloat(minInvestment.value) || 0 : 0;
-        var maxInvValue = maxInvestment ? parseFloat(maxInvestment.value) || Infinity : Infinity;
-        var minPnlValue = minPnl ? parseFloat(minPnl.value) || -Infinity : -Infinity;
-        var maxPnlValue = maxPnl ? parseFloat(maxPnl.value) || Infinity : Infinity;
-
-        window.etfSignalsManager.filteredSignals = window.etfSignalsManager.signals.filter(function(signal) {
-            var matchesPosition = !positionValue || 
-                (positionValue === 'BUY' && signal.pos === 1) ||
-                (positionValue === 'SELL' && signal.pos === 0);
-            var matchesStatus = !statusValue || signal.status === statusValue;
-            var matchesSymbol = !symbolValue || 
-                (signal.symbol || '').toLowerCase().includes(symbolValue);
-            var investment = parseFloat(signal.inv || signal.investment_amount || 0);
-            var matchesInvestment = investment >= minInvValue && investment <= maxInvValue;
-            var pnl = parseFloat(signal.pl || signal.pnl || 0);
-            var matchesPnl = pnl >= minPnlValue && pnl <= maxPnlValue;
-
-            return matchesPosition && matchesStatus && matchesSymbol && matchesInvestment && matchesPnl;
-        });
-
-        window.etfSignalsManager.currentPage = 1;
-        window.etfSignalsManager.updateDisplayedSignals();
-        window.etfSignalsManager.renderSignalsTable();
-        window.etfSignalsManager.updatePagination();
-    }
-}
-
-function clearFilters() {
-    var filters = ['positionTypeFilter', 'modalStatusFilter', 'modalSymbolFilter', 
-                   'minInvestmentFilter', 'maxInvestmentFilter', 'minPnlFilter', 'maxPnlFilter'];
-    
-    for (var i = 0; i < filters.length; i++) {
-        var element = document.getElementById(filters[i]);
-        if (element) element.value = '';
+    // Toggle sort direction
+    if (sortState.column === column) {
+        sortState.direction = sortState.direction === "asc" ? "desc" : "asc";
+    } else {
+        sortState.column = column;
+        sortState.direction = "asc";
     }
 
-    if (window.etfSignalsManager) {
-        window.etfSignalsManager.filteredSignals = window.etfSignalsManager.signals.slice();
-        window.etfSignalsManager.currentPage = 1;
-        window.etf SignalsManager.updateDisplayedSignals();
-        window.etfSignalsManager.renderSignalsTable();
-        window.etfSignalsManager.updatePagination();
-    }
-}
+    // Sort rows based on column
+    rows.sort(function (a, b) {
+        var aValue, bValue;
 
-function addDeal(signalId) {
-    console.log("Adding deal for signal ID:", signalId);
-    // Implement deal creation logic here
-    alert("Deal creation functionality will be implemented for signal " + signalId);
-}
-
-function exportSignals() {
-    if (window.etfSignalsManager && window.etfSignalsManager.signals.length > 0) {
-        var csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "ID,Symbol,Entry Price,Current Price,Quantity,Investment,P&L\n";
-        
-        for (var i = 0; i < window.etfSignalsManager.signals.length; i++) {
-            var signal = window.etfSignalsManager.signals[i];
-            csvContent += [
-                signal.id || signal.trade_signal_id,
-                signal.symbol || signal.etf,
-                signal.ep || signal.entry_price,
-                signal.cmp || signal.current_price,
-                signal.qty || signal.quantity,
-                signal.inv || signal.investment_amount,
-                signal.pl || signal.pnl
-            ].join(",") + "\n";
-        }
-        
-        var encodedUri = encodeURI(csvContent);
-        var link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "trading_signals.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-}
-
-function setRefreshInterval(interval, label) {
-    document.getElementById('currentInterval').textContent = label;
-    document.getElementById('refreshIntervalDropdown').textContent = label;
-    
-    if (window.etfSignalsManager) {
-        window.etfSignalsManager.stopAutoRefresh();
-        if (interval > 0) {
-            window.etfSignalsManager.refreshInterval = setInterval(function() {
-                window.etfSignalsManager.loadSignals();
-            }, interval);
-        }
-    }
-}
-
-// Initialize the manager when the script loads
-window.etfSignalsManager = new ETFSignalsManager();
+        switch (column) {
+            case "symbol":
+            case "etf":
+                aValue = (
+                    a.dataset.symbol ||
+                    a.dataset.etf ||
+                    ""
+                ).toLowerCase();
+                bValue = (
+                    b.dataset.symbol ||
+                    b.dataset.etf ||
+                    ""
+                ).toLowerCase();
+                break;
+            case "quantity":
+            case "qty":
+                aValue = parseFloat(a.dataset.quantity || a.dataset.qty) || 0;
+                bValue = parseFloat(b.dataset.quantity || b.dataset.qty) || 0;
+                break;
+            case "entryPrice":
+            case "ep":
+                aValue = parseFloat(a.dataset.entryPrice || a.dataset.ep) || 0;
+                bValue = parseFloat(b.dataset.entryPrice || b.dataset.ep) || 0;
+                break;
+            case "currentPrice":
+            case "cmp":
+                aValue =
+                    parseFloat(a.dataset.currentPrice || a.dataset.cmp) || 0;
+                bValue =
+                    parseFloat(b.dataset.currentPrice || b.dataset.cmp) || 0;
+                break;
+            case "pnl":
+            case "cpl":
+                aValue = parseFloat(a.dataset.pnl || a.dataset.cpl) || 0;
+                bValue = parseFloat(b.dataset.pnl || b.dataset.cpl) || 0;
+                break;
+            case "investment":
+            case "inv":
+                aValue = parseFloat(a.dataset.investment || a.dataset.inv) || 0;
+                bValue = parseFloat(b.dataset.investment || b.dataset.inv) || 0;
+                break;
+            case "currentValue":
+            case "tva":
+                aValue =
+                    parseFloat(a.dataset.currentValue || a.dataset.tva) || 0;
+                bValue =
+                    parseFloat(b.dataset.currentValue || b.dataset.tva) || 0;
+                break;
+            case "chanPercent":
+            case "ch":
+                aValue = parseFloat(a.dataset.chanPercent || a.dataset.ch) || 0;
+                bValue = parseFloat(b.dataset.chanPercent || a.dataset.ch) || 0;
+                break;
