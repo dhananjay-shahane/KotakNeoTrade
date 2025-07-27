@@ -22,28 +22,34 @@ function ETFSignalsManager() {
 
     // Column visibility settings
     this.availableColumns = [
-        { key: "trade_signal_id", label: "ID", visible: true },
-        { key: "etf", label: "Symbol", visible: true },
-        { key: "seven", label: "7D", visible: true },
-        { key: "ch", label: "7D%", visible: true },
-        { key: "thirty", label: "30D", visible: true },
-        { key: "dh", label: "30D%", visible: true },
-        { key: "date", label: "DATE", visible: true },
-        { key: "qty", label: "QTY", visible: true },
-        { key: "ep", label: "EP", visible: true },
-        { key: "cmp", label: "CMP", visible: true },
-        { key: "chan", label: "%CHAN", visible: true },
-        { key: "inv", label: "INV.", visible: true },
-        { key: "tp", label: "TP", visible: false },
-        { key: "tpr", label: "TPR", visible: false },
+        { key: "trade_signal_id", label: "ID", width: "10px", visible: true },
+        { key: "etf", label: "Symbol", width: "50px", visible: true },
+        { key: "seven", label: "7D", width: "50px", visible: true },
+        { key: "ch", label: "7D%", width: "50px", visible: true },
+        { key: "thirty", label: "30D", width: "50px", visible: true },
+        { key: "dh", label: "30D%", width: "50px", visible: true },
+        { key: "date", label: "DATE", width: "50px", visible: true },
+        { key: "qty", label: "QTY", width: "50px", visible: true },
+        { key: "ep", label: "EP", width: "50px", visible: true },
+        { key: "cmp", label: "CMP", width: "50px", visible: true },
+        { key: "chan", label: "%CHAN", width: "50px", visible: true },
+        { key: "inv", label: "INV.", width: "50px", visible: true },
+        { key: "tp", label: "TP", width: "50px", visible: false },
+        { key: "tpr", label: "TPR", width: "50px", visible: false },
         { key: "tva", label: "TVA", visible: false },
-        { key: "cpl", label: "CPL", visible: true },
-        { key: "ed", label: "ED", visible: false },
-        { key: "exp", label: "EXP", visible: false },
-        { key: "pr", label: "PR", visible: false },
-        { key: "pp", label: "PP", visible: false },
-        { key: "iv", label: "IV", visible: false },
-        { key: "ip", label: "IP", visible: false },
+        { key: "cpl", label: "CPL", width: "50px", visible: true },
+        { key: "ed", label: "ED", width: "50px", visible: false },
+        { key: "exp", label: "EXP", width: "50px", visible: false },
+        {
+            key: "pr",
+            label: "PR",
+            width: "50px",
+            width: "50px",
+            visible: false,
+        },
+        { key: "pp", label: "PP", width: "50px", visible: false },
+        { key: "iv", label: "IV", width: "50px", visible: false },
+        { key: "ip", label: "IP", width: "50px", visible: false },
 
         // { key: "qt", label: "QT", visible: false },
         { key: "actions", label: "ACTIONS", visible: true },
@@ -64,7 +70,7 @@ ETFSignalsManager.prototype.init = function () {
     this.loadColumnSettings();
     this.setupEventListeners();
     this.setupColumnSettings();
-    this.updateTableHeaders(); // Update headers based on column settings
+    this.generateDynamicHeaders(); // Generate dynamic headers with sorting
     this.createPaginationControls(); // Create pagination controls
 
     // Show skeleton loading while data loads
@@ -120,6 +126,194 @@ ETFSignalsManager.prototype.setupEventListeners = function () {
             self.updatePagination();
         });
     }
+};
+
+// Generate dynamic table headers with sorting functionality
+ETFSignalsManager.prototype.generateDynamicHeaders = function () {
+    var self = this;
+    var headersRow = document.getElementById("tableHeaders");
+    if (!headersRow) {
+        console.error("Table headers row not found");
+        return;
+    }
+
+    // Clear existing headers
+    headersRow.innerHTML = "";
+
+    // Generate headers for visible columns
+    for (var i = 0; i < this.availableColumns.length; i++) {
+        var column = this.availableColumns[i];
+        if (!column.visible) continue;
+
+        var th = document.createElement("th");
+        th.style.width = column.width;
+        th.className = "text-center";
+        th.style.backgroundColor = "var(--secondary-color)";
+        th.style.color = "var(--text-primary)";
+        th.style.fontWeight = "600";
+        th.style.fontSize = "0.85rem";
+        th.style.padding = "8px 4px";
+        th.style.border = "1px solid var(--border-color)";
+        th.style.position = "sticky";
+        th.style.top = "0";
+        th.style.zIndex = "10";
+        th.style.whiteSpace = "nowrap";
+        th.style.cursor = "pointer";
+
+        // Add sorting functionality for most columns
+        if (column.key !== "actions") {
+            th.onclick = (function (columnKey) {
+                return function () {
+                    self.sortSignalsByColumn(columnKey);
+                };
+            })(column.key);
+            th.innerHTML = column.label + ' <i class="fas fa-sort ms-1"></i>';
+            th.title = self.getColumnTooltip(column.key) + " - Click to sort";
+        } else {
+            th.innerHTML = column.label;
+            th.title = self.getColumnTooltip(column.key);
+            th.style.cursor = "default";
+        }
+
+        headersRow.appendChild(th);
+    }
+
+    console.log("Dynamic headers generated for", this.availableColumns.filter(c => c.visible).length, "visible columns");
+};
+
+// Add sorting functionality for signals
+ETFSignalsManager.prototype.sortSignalsByColumn = function (columnKey) {
+    var self = this;
+    
+    // Toggle sort direction if clicking the same column
+    if (this.sortField === columnKey) {
+        this.sortDirection = this.sortDirection === "asc" ? "desc" : "asc";
+    } else {
+        this.sortField = columnKey;
+        this.sortDirection = "asc";
+    }
+
+    // Sort the filtered signals
+    this.filteredSignals.sort(function (a, b) {
+        var aValue = self.getSortValue(a, columnKey);
+        var bValue = self.getSortValue(b, columnKey);
+
+        // Handle numeric comparisons
+        if (!isNaN(aValue) && !isNaN(bValue)) {
+            return self.sortDirection === "asc" ? aValue - bValue : bValue - aValue;
+        }
+
+        // Handle string comparisons
+        aValue = String(aValue).toLowerCase();
+        bValue = String(bValue).toLowerCase();
+        
+        if (aValue < bValue) return self.sortDirection === "asc" ? -1 : 1;
+        if (aValue > bValue) return self.sortDirection === "asc" ? 1 : -1;
+        return 0;
+    });
+
+    // Update displayed signals and re-render
+    this.updateDisplayedSignals();
+    this.renderSignalsTable();
+    this.updateSortIcons(columnKey);
+
+    console.log("Sorted signals by", columnKey, "in", this.sortDirection, "order");
+};
+
+// Get sortable value from signal object
+ETFSignalsManager.prototype.getSortValue = function (signal, columnKey) {
+    switch (columnKey) {
+        case "trade_signal_id":
+            return parseInt(signal.ID || signal.trade_signal_id || signal.id || 0);
+        case "etf":
+            return signal.Symbol || signal.etf || signal.symbol || "";
+        case "seven":
+            return parseFloat(signal["7D"] || signal.seven || 0);
+        case "ch":
+            var chValue = signal["7D%"] || signal.ch || "0%";
+            return parseFloat(String(chValue).replace("%", ""));
+        case "thirty":
+            return parseFloat(signal["30D"] || signal.thirty || 0);
+        case "dh":
+            var dhValue = signal["30D%"] || signal.dh || "0%";
+            return parseFloat(String(dhValue).replace("%", ""));
+        case "date":
+            return signal.DATE || signal.date || "";
+        case "qty":
+            return parseInt(signal.QTY || signal.qty || 0);
+        case "ep":
+            return parseFloat(signal.EP || signal.ep || 0);
+        case "cmp":
+            return parseFloat(signal.CMP || signal.cmp || 0);
+        case "chan":
+            var chanValue = signal["%CHAN"] || signal.chan || "0%";
+            return parseFloat(String(chanValue).replace("%", ""));
+        case "inv":
+            return parseFloat(signal.INV || signal.inv || 0);
+        case "tp":
+            return parseFloat(signal.TP || signal.tp || 0);
+        case "cpl":
+            return parseFloat(signal.CPL || signal.pl || 0);
+        default:
+            return signal[columnKey] || "";
+    }
+};
+
+// Update sort icons in headers
+ETFSignalsManager.prototype.updateSortIcons = function (sortedColumn) {
+    var headers = document.querySelectorAll("#tableHeaders th");
+    for (var i = 0; i < headers.length; i++) {
+        var th = headers[i];
+        var icon = th.querySelector("i");
+        if (icon) {
+            // Reset all icons to default sort
+            icon.className = "fas fa-sort ms-1";
+        }
+    }
+
+    // Update the sorted column icon
+    var sortedHeader = Array.from(headers).find(function (th) {
+        return th.onclick && th.onclick.toString().includes(sortedColumn);
+    });
+    
+    if (sortedHeader) {
+        var icon = sortedHeader.querySelector("i");
+        if (icon) {
+            icon.className = this.sortDirection === "asc" 
+                ? "fas fa-sort-up ms-1" 
+                : "fas fa-sort-down ms-1";
+        }
+    }
+};
+
+// Get column tooltip for better UX
+ETFSignalsManager.prototype.getColumnTooltip = function (columnKey) {
+    var tooltips = {
+        trade_signal_id: "Trade Signal ID",
+        etf: "ETF Symbol", 
+        seven: "7 Day Performance",
+        ch: "7 Day Change Percentage",
+        thirty: "30 Day Performance",
+        dh: "30 Day Change Percentage",
+        date: "Entry Date",
+        qty: "Quantity",
+        ep: "Entry Price",
+        cmp: "Current Market Price",
+        chan: "Percentage Change",
+        inv: "Investment Amount",
+        tp: "Target Price",
+        tpr: "Target Profit Return",
+        tva: "Target Value Amount",
+        cpl: "Current Profit/Loss",
+        ed: "Exit Date",
+        exp: "Expiry Date",
+        pr: "Price Range",
+        pp: "Performance Points",
+        iv: "Implied Volatility",
+        ip: "Intraday Performance",
+        actions: "Available Actions"
+    };
+    return tooltips[columnKey] || columnKey.toUpperCase();
 };
 
 ETFSignalsManager.prototype.loadSignals = function (resetData) {
@@ -922,7 +1116,7 @@ ETFSignalsManager.prototype.updatePortfolioSummary = function (portfolio) {
         totalPositions: portfolio.total_positions || 0,
         activePositions: portfolio.active_positions || 0,
         totalInvestment:
-            "₹" + (portfolio.total_investment || 0).toLocaleString(),
+            "yP�" + (portfolio.total_investment || 0).toLocaleString(),
         currentValue: "₹" + (portfolio.current_value || 0).toLocaleString(),
         totalPnl: "₹" + (portfolio.total_pnl || 0).toLocaleString(),
         returnPercent: (portfolio.return_percent || 0).toFixed(2) + "%",
@@ -946,16 +1140,31 @@ ETFSignalsManager.prototype.applyFilters = function () {
 
     var searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
     var modalStatusValue = modalStatusFilter ? modalStatusFilter.value : "";
-    var modalSymbolValue = modalSymbolFilter ? modalSymbolFilter.value.toLowerCase() : "";
+    var modalSymbolValue = modalSymbolFilter
+        ? modalSymbolFilter.value.toLowerCase()
+        : "";
     var positionTypeValue = positionTypeFilter ? positionTypeFilter.value : "";
-    var minInvestment = minInvestmentFilter ? parseFloat(minInvestmentFilter.value) || 0 : 0;
-    var maxInvestment = maxInvestmentFilter ? parseFloat(maxInvestmentFilter.value) || Infinity : Infinity;
-    var minPnl = minPnlFilter ? parseFloat(minPnlFilter.value) || -Infinity : -Infinity;
-    var maxPnl = maxPnlFilter ? parseFloat(maxPnlFilter.value) || Infinity : Infinity;
+    var minInvestment = minInvestmentFilter
+        ? parseFloat(minInvestmentFilter.value) || 0
+        : 0;
+    var maxInvestment = maxInvestmentFilter
+        ? parseFloat(maxInvestmentFilter.value) || Infinity
+        : Infinity;
+    var minPnl = minPnlFilter
+        ? parseFloat(minPnlFilter.value) || -Infinity
+        : -Infinity;
+    var maxPnl = maxPnlFilter
+        ? parseFloat(maxPnlFilter.value) || Infinity
+        : Infinity;
 
     var self = this;
     this.filteredSignals = this.signals.filter(function (signal) {
-        var symbol = (signal.Symbol || signal.etf || signal.symbol || "").toLowerCase();
+        var symbol = (
+            signal.Symbol ||
+            signal.etf ||
+            signal.symbol ||
+            ""
+        ).toLowerCase();
         var status = (signal.status || "ACTIVE").toUpperCase();
         var investment = parseFloat(signal.INV || signal.inv || 0);
         var pnl = parseFloat(signal.CPL || signal.cpl || signal.pl || 0);
@@ -969,9 +1178,9 @@ ETFSignalsManager.prototype.applyFilters = function () {
                 (signal.DATE || signal.date || "").toLowerCase(),
                 (signal.EP || signal.ep || "").toString(),
                 (signal.CMP || signal.cmp || "").toString(),
-                (signal.QTY || signal.qty || "").toString()
+                (signal.QTY || signal.qty || "").toString(),
             ].join(" ");
-            
+
             if (searchFields.indexOf(searchTerm) === -1) {
                 return false;
             }
@@ -1309,18 +1518,25 @@ function applyFilters() {
 function clearFilters() {
     // Clear all filter inputs
     var filterInputs = [
-        'signalSearch', 'statusFilter', 'profitFilter', 'modalStatusFilter',
-        'modalSymbolFilter', 'positionTypeFilter', 'minInvestmentFilter',
-        'maxInvestmentFilter', 'minPnlFilter', 'maxPnlFilter'
+        "signalSearch",
+        "statusFilter",
+        "profitFilter",
+        "modalStatusFilter",
+        "modalSymbolFilter",
+        "positionTypeFilter",
+        "minInvestmentFilter",
+        "maxInvestmentFilter",
+        "minPnlFilter",
+        "maxPnlFilter",
     ];
-    
-    filterInputs.forEach(function(inputId) {
+
+    filterInputs.forEach(function (inputId) {
         var element = document.getElementById(inputId);
         if (element) {
-            element.value = '';
+            element.value = "";
         }
     });
-    
+
     // Apply filters to reset the view
     if (window.etfSignalsManager) {
         window.etfSignalsManager.applyFilters();
@@ -1570,14 +1786,21 @@ function findAndProcessSignal(signalId) {
     }
 }
 
-function proceedWithAddingDeal(signal, symbol, price, quantity, investment, forceAdd) {
+function proceedWithAddingDeal(
+    signal,
+    symbol,
+    price,
+    quantity,
+    investment,
+    forceAdd,
+) {
     console.log("Proceeding with adding deal:", {
         signal: signal,
         symbol: symbol,
         price: price,
         quantity: quantity,
         investment: investment,
-        forceAdd: forceAdd
+        forceAdd: forceAdd,
     });
 
     // Show loading indicator
@@ -1714,7 +1937,9 @@ function proceedWithAddingDeal(signal, symbol, price, quantity, investment, forc
                         if (typeof Swal !== "undefined") {
                             Swal.fire({
                                 title: "Duplicate Deal",
-                                text: response.message || "This trade is already added, you want add?",
+                                text:
+                                    response.message ||
+                                    "This trade is already added, you want add?",
                                 icon: "question",
                                 showCancelButton: true,
                                 confirmButtonColor: "#28a745",
@@ -1729,19 +1954,41 @@ function proceedWithAddingDeal(signal, symbol, price, quantity, investment, forc
                             }).then((result) => {
                                 if (result.isConfirmed) {
                                     // Retry with force_add = true
-                                    proceedWithAddingDeal(signal, symbol, price, quantity, investment, true);
+                                    proceedWithAddingDeal(
+                                        signal,
+                                        symbol,
+                                        price,
+                                        quantity,
+                                        investment,
+                                        true,
+                                    );
                                 }
                             });
                         } else {
                             // Fallback to regular confirm if SweetAlert2 is not available
-                            if (confirm(response.message || "This trade is already added, you want add?")) {
-                                proceedWithAddingDeal(signal, symbol, price, quantity, investment, true);
+                            if (
+                                confirm(
+                                    response.message ||
+                                        "This trade is already added, you want add?",
+                                )
+                            ) {
+                                proceedWithAddingDeal(
+                                    signal,
+                                    symbol,
+                                    price,
+                                    quantity,
+                                    investment,
+                                    true,
+                                );
                             }
                         }
                         return;
                     }
                 } catch (parseError) {
-                    console.error("Failed to parse duplicate response:", parseError);
+                    console.error(
+                        "Failed to parse duplicate response:",
+                        parseError,
+                    );
                 }
             } else {
                 if (typeof Swal !== "undefined") {
@@ -1789,10 +2036,12 @@ function proceedWithAddingDeal(signal, symbol, price, quantity, investment, forc
         }
     };
 
-    xhr.send(JSON.stringify({ 
-        signal_data: signalData,
-        force_add: forceAdd || false 
-    }));
+    xhr.send(
+        JSON.stringify({
+            signal_data: signalData,
+            force_add: forceAdd || false,
+        }),
+    );
 }
 
 function createUserDealFromSignal(

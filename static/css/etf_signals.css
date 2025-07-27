@@ -1,447 +1,95 @@
 .signals-table {
-        font-size: 0.75rem;
-        background: var(--card-bg);
-    }
-    .signals-table th {
-        background: var(--secondary-color);
-        color: var(--text-primary);
-        font-weight: 600;
-        font-size: 0.7rem;
-        text-align: center;
-        padding: 6px 3px;
-        border: 1px solid var(--border-color);
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        white-space: nowrap;
-    }
-    .signals-table td {
-        padding: 4px 3px;
-        text-align: center;
-        border: 1px solid var(--border-color);
-        vertical-align: middle;
-        white-space: nowrap;
-        font-size: 0.75rem;
-    }
-    .profit { color: var(--success-color); }
-    .loss { color: var(--danger-color); }
-    .neutral { color: var(--warning-color); }
-    .table-container {
-        height: 70vh;
-        overflow-x: auto;
-        overflow-y: auto;
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        position: relative;
-    }
-    .portfolio-summary {
-        background: var(--card-bg);
-        border-radius: 8px;
-        padding: 15px;
-        margin-bottom: 20px;
-        border: 1px solid var(--border-color);
-    }
-    .summary-card {
-        background: var(--dark-bg);
-        border-radius: 6px;
-        padding: 10px;
-        text-align: center;
-        border: 1px solid var(--border-color);
-    }
-    .live-indicator {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        display: inline-block;
-        margin-right: 5px;
-    }
-    .live-indicator.connected {
-        background: var(--success-color);
-        animation: pulse 2s infinite;
-    }
-    .live-indicator.disconnected {
-        background: var(--danger-color);
-    }
-    @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.5; }
-        100% { opacity: 1; }
-    }
-
-/* ETF Signals Specific Styles */
-.etf-signals-container {
-    padding: 20px;
-}
-
-.signals-header {
-    margin-bottom: 20px;
-}
-
-/* Price change animations */
-.cmp-value {
-    transition: all 0.3s ease;
-}
-
-.cmp-value.price-up {
-    background-color: rgba(40, 167, 69, 0.3);
-    color: #28a745;
-    font-weight: bold;
-}
-
-.cmp-value.price-down {
-    background-color: rgba(220, 53, 69, 0.3);
-    color: #dc3545;
-    font-weight: bold;
-}
-
-/* CMP update button styles */
-.cmp-update-btn {
-    background: linear-gradient(45deg, #28a745, #20c997);
-    border: none;
-    color: white;
-    padding: 8px 16px;
-    border-radius: 5px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-}
-
-.cmp-update-btn:hover {
-    background: linear-gradient(45deg, #218838, #1ba085);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
-}
-
-.cmp-update-btn:active {
-    transform: translateY(0);
-}
-
-/* Live update indicator */
-.live-indicator {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    background-color: #28a745;
-    border-radius: 50%;
-    margin-right: 5px;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
-}
-
-/* ETF Signals Table Styles */
-.etf-signals-table {
+    font-size: 0.75rem;
     background: var(--card-bg);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-/* Enhanced Loading Styles */
-.loading-container {
-    min-height: 300px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background: var(--card-bg);
-    border-radius: 12px;
-    padding: 2rem;
-}
-
-.loading-spinner-large {
-    width: 3rem !important;
-    height: 3rem !important;
-    border-width: 4px;
-}
-
-.loading-spinner-medium {
-    width: 2.5rem !important;
-    height: 2.5rem !important;
-    border-width: 3px;
-}
-
-/* Pulse animation for loading text */
-.loading-text {
-    animation: loadingPulse 1.5s ease-in-out infinite;
-}
-
-@keyframes loadingPulse {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.6;
-    }
-}
-
-/* Center alignment utilities */
-.center-content {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-}
-
-/* Improved table loading state */
-.table-loading {
-    background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%);
-    border: 1px solid rgba(37, 99, 235, 0.1);
-    border-radius: 8px;
-}
-
-.loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.8);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 10000;
-    backdrop-filter: blur(2px);
-}
-
-.loading-message {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 25px 35px;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-    text-align: center;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    max-width: 350px;
-    min-width: 280px;
-    transform: scale(1);
-    animation: pulse 2s ease-in-out infinite;
-}
-
-/* ETF Signals Styling */
-
-/* SweetAlert2 Dark Theme Customization */
-.swal-dark-theme {
-    border-radius: 10px !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
-}
-
-.swal-dark-theme .swal2-title {
-    color: #fff !important;
-    font-weight: 600 !important;
-}
-
-.swal-dark-theme .swal2-html-container {
-    color: #e2e8f0 !important;
-}
-
-.swal-dark-theme .swal2-confirm {
-    background: linear-gradient(45deg, #28a745, #20c997) !important;
-    border: none !important;
-    border-radius: 8px !important;
-    padding: 10px 20px !important;
-    font-weight: 500 !important;
-    transition: all 0.3s ease !important;
-}
-
-.swal-dark-theme .swal2-confirm:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4) !important;
-}
-
-.swal-dark-theme .swal2-cancel {
-    background: linear-gradient(45deg, #6c757d, #495057) !important;
-    border: none !important;
-    border-radius: 8px !important;
-    padding: 10px 20px !important;
-    font-weight: 500 !important;
-    transition: all 0.3s ease !important;
-}
-
-.swal-dark-theme .swal2-cancel:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4) !important;
-}
-/* ETF Signals specific styles */
-.etf-signals-content {
-    min-height: 100vh;
-}
-
-.signals-table {
-    font-size: 0.85rem;
 }
 
 .signals-table th {
-    background-color: #1a1a1a !important;
-    border-bottom: 2px solid #333 !important;
+    background: var(--secondary-color);
+    color: var(--text-primary);
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    white-space: nowrap;
+    font-size: 0.7rem;
+    text-align: center;
+    padding: 6px 3px;
+    border: 1px solid var(--border-color);
     position: sticky;
     top: 0;
     z-index: 10;
-}
-
-.signals-table td {
-    border-color: #333 !important;
-    vertical-align: middle;
     white-space: nowrap;
 }
 
-.badge {
+.signals-table td {
+    padding: 4px 3px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+    vertical-align: middle;
+    white-space: nowrap;
     font-size: 0.75rem;
 }
 
-/* Enhanced search bar styles */
-.input-group-lg .form-control {
-    border-radius: 0 8px 8px 0 !important;
-    transition: all 0.3s ease;
+.profit {
+    color: var(--success-color);
 }
 
-.input-group-lg .form-control:focus {
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-    border-color: #007bff;
+.loss {
+    color: var(--danger-color);
 }
 
-.input-group-lg .input-group-text {
-    border-radius: 8px 0 0 8px !important;
-    background: linear-gradient(135deg, #007bff, #0056b3);
-    border: none;
+.neutral {
+    color: var(--warning-color);
 }
 
-/* Horizontal scroll styling - Top positioned scrollbar */
-.table-responsive {
-    position: relative;
+.table-container {
+    height: 70vh;
     overflow-x: auto;
-    overflow-y: visible;
-}
-
-/* Custom scrollbar wrapper to position at top */
-.table-responsive::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 12px;
-    background: #1a1a1a;
-    border-bottom: 1px solid #333;
-    z-index: 20;
-}
-
-/* Scrollbar styling */
-.table-responsive::-webkit-scrollbar {
-    height: 12px;
-}
-
-.table-responsive::-webkit-scrollbar-track {
-    background: #1a1a1a;
-    border-radius: 0;
-}
-
-.table-responsive::-webkit-scrollbar-thumb {
-    background: linear-gradient(90deg, #007bff, #0056b3);
-    border-radius: 6px;
-    border: 2px solid #1a1a1a;
-}
-
-.table-responsive::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(90deg, #0056b3, #004085);
-}
-
-/* Alternative approach for better top scrollbar visibility */
-.scroll-container {
-    position: relative;
-}
-
-.scroll-container::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 17px; /* Account for vertical scrollbar */
-    height: 12px;
-    background: linear-gradient(90deg, transparent 0%, #007bff 50%, transparent 100%);
-    opacity: 0.3;
-    z-index: 15;
-    pointer-events: none;
-}
-
-/* Loading states */
-.content-loading {
-    position: relative;
-}
-
-/* Search Results Styling */
-.search-results {
-    max-height: 300px;
     overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    position: relative;
 }
 
-.search-result-item {
-    transition: all 0.2s ease;
+.portfolio-summary {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
     border: 1px solid var(--border-color);
 }
 
-.search-result-item:hover {
-    background-color: var(--primary-color) !important;
-    transform: translateY(-1px);
-}
-
-.search-result-item .btn-primary {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
-}
-
-/* Modal styling improvements */
-.modal-content.bg-dark {
+.summary-card {
+    background: var(--dark-bg);
+    border-radius: 6px;
+    padding: 10px;
+    text-align: center;
     border: 1px solid var(--border-color);
 }
 
-.modal-header.border-bottom.border-secondary {
-    border-color: var(--border-color) !important;
+.live-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
 }
 
-.modal-footer.border-top.border-secondary {
-    border-color: var(--border-color) !important;
+.live-indicator.connected {
+    background: var(--success-color);
+    animation: pulse 2s infinite;
 }
 
-/* Popular symbols styling */
-.btn-outline-light {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
-    margin: 0.125rem;
+.live-indicator.disconnected {
+    background: var(--danger-color);
 }
 
-/* Loading states */
-.skeleton-loading {
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.08));
-    animation: skeleton-loading 1.5s linear infinite;
-}
-
-@keyframes skeleton-loading {
+@keyframes pulse {
     0% {
-        background-position: 200% 0;
+        opacity: 1;
     }
+
+    50% {
+        opacity: 0.5;
+    }
+
     100% {
-        background-position: -200% 0;
+        opacity: 1;
     }
 }
-
-/* Badge animation */
-.badge-pulse {
-    animation: badgePulse 0.5s ease-in-out;
-}
-
-@keyframes badgePulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.2); }
-    100% { transform: scale(1); }
-}
-
-/* Loading states */
