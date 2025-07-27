@@ -31,31 +31,28 @@ endblock %} {% block extra_css %}
                     autocomplete="off"
                     style="font-size: 14px;"
                 />
-                <button class="btn btn-outline-light" type="button" onclick="clearSignalSearch()" title="Clear search">
+                <button class="btn btn-sm btn-outline-light" type="button" onclick="clearSignalSearch()" title="Clear search">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             
             <button
-                class="btn btn-outline-secondary"
+                class="btn btn-sm btn-outline-secondary"
                 onclick="refreshSignals()"
-                style="min-width: 90px; height: 38px;"
             >
                 <i class="fas fa-sync-alt me-1"></i>Refresh
             </button>
             <button
-                class="btn btn-outline-primary"
+                class="btn btn-sm btn-outline-primary"
                 data-bs-toggle="modal"
                 data-bs-target="#columnSettingsModal"
-                style="min-width: 90px; height: 38px;"
             >
                 <i class="fas fa-cog me-1"></i>Columns
             </button>
             <button
-                class="btn btn-primary"
+                class="btn btn-sm btn-primary"
                 data-bs-toggle="modal"
                 data-bs-target="#signalFiltersModal"
-                style="min-width: 80px; height: 38px;"
             >
                 <i class="fas fa-filter me-1"></i>Filters
             </button>
