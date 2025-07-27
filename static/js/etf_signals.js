@@ -1112,8 +1112,45 @@ ETFSignalsManager.prototype.updatePortfolioSummary = function (portfolio) {
     }
 };
 
+// Add applySearch method for search functionality
+ETFSignalsManager.prototype.applySearch = function () {
+    var searchInput = document.getElementById("signalSearchInput");
+    var searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : "";
+    
+    if (!searchTerm) {
+        // Reset to show all signals when search is empty
+        this.filteredSignals = this.signals.slice();
+    } else {
+        // Filter signals based on search term
+        var self = this;
+        this.filteredSignals = this.signals.filter(function (signal) {
+            var symbol = (signal.Symbol || signal.etf || signal.symbol || "").toLowerCase();
+            var status = (signal.status || "ACTIVE").toLowerCase();
+            var date = (signal.DATE || signal.date || "").toString().toLowerCase();
+            var ep = (signal.EP || signal.ep || "").toString().toLowerCase();
+            var cmp = (signal.CMP || signal.cmp || "").toString().toLowerCase();
+            var qty = (signal.QTY || signal.qty || "").toString().toLowerCase();
+            var signalId = (signal.signal_id || signal.id || "").toString().toLowerCase();
+            
+            return symbol.includes(searchTerm) || 
+                   status.includes(searchTerm) || 
+                   date.includes(searchTerm) ||
+                   ep.includes(searchTerm) ||
+                   cmp.includes(searchTerm) ||
+                   qty.includes(searchTerm) ||
+                   signalId.includes(searchTerm);
+        });
+    }
+    
+    // Reset to first page and update display
+    this.currentPage = 1;
+    this.updateDisplayedSignals();
+    this.renderSignalsTable();
+    this.updatePagination();
+};
+
 ETFSignalsManager.prototype.applyFilters = function () {
-    var searchInput = document.getElementById("signalSearch");
+    var searchInput = document.getElementById("signalSearchInput");
     var modalStatusFilter = document.getElementById("modalStatusFilter");
     var modalSymbolFilter = document.getElementById("modalSymbolFilter");
     var positionTypeFilter = document.getElementById("positionTypeFilter");
@@ -1494,6 +1531,63 @@ function clearSignalSearch() {
         searchInput.value = "";
         if (window.etfSignalsManager) {
             window.etfSignalsManager.applySearch();
+        }
+    }
+}
+
+// Column settings functions
+function selectAllColumns() {
+    if (window.etfSignalsManager) {
+        var checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
+        checkboxes.forEach(function(checkbox) {
+            checkbox.checked = true;
+            var columnKey = checkbox.getAttribute('data-column');
+            var column = window.etfSignalsManager.availableColumns.find(function(col) {
+                return col.key === columnKey;
+            });
+            if (column) {
+                column.visible = true;
+            }
+        });
+    }
+}
+
+function resetDefaultColumns() {
+    if (window.etfSignalsManager) {
+        // Reset to default visibility
+        window.etfSignalsManager.availableColumns.forEach(function(column) {
+            column.visible = column.key === 'symbol' || column.key === 'ep' || 
+                           column.key === 'cmp' || column.key === 'qty' || 
+                           column.key === 'date' || column.key === 'chan' || 
+                           column.key === 'inv' || column.key === 'tp' || 
+                           column.key === 'tpr' || column.key === 'tva' || 
+                           column.key === 'cpl' || column.key === 'actions';
+        });
+        
+        // Update checkboxes
+        var checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
+        checkboxes.forEach(function(checkbox) {
+            var columnKey = checkbox.getAttribute('data-column');
+            var column = window.etfSignalsManager.availableColumns.find(function(col) {
+                return col.key === columnKey;
+            });
+            checkbox.checked = column ? column.visible : false;
+        });
+    }
+}
+
+function applyColumnSettings() {
+    if (window.etfSignalsManager) {
+        // Save settings and update display
+        window.etfSignalsManager.saveColumnSettings();
+        window.etfSignalsManager.updateTableHeaders();
+        window.etfSignalsManager.renderSignalsTable();
+        window.etfSignalsManager.updatePagination();
+        
+        // Close modal
+        var modal = bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal'));
+        if (modal) {
+            modal.hide();
         }
     }
 }

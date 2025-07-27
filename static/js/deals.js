@@ -907,26 +907,31 @@ this.checkPriceUpdateStatusAdvanced = function () {
 // Search functionality for deals
 function performSearch() {
     var searchInput = document.getElementById("symbolSearchInput");
-    if (!searchInput) return;
+    if (!searchInput || !window.dealsManager) return;
     
     var query = searchInput.value.toLowerCase().trim();
-    if (!window.dealsManager) return;
     
     if (query === "") {
         // Reset to show all deals
         window.dealsManager.filteredDeals = window.dealsManager.deals.slice();
     } else {
-        // Filter deals based on search query
+        // Filter deals based on search query - comprehensive search
         window.dealsManager.filteredDeals = window.dealsManager.deals.filter(function(deal) {
             var symbol = (deal.symbol || "").toLowerCase();
-            var status = (deal.status || "").toLowerCase();
+            var status = (deal.status || "EXECUTED").toLowerCase();
             var tradeId = String(deal.trade_signal_id || deal.id || "").toLowerCase();
-            var pos = (deal.pos === 1 ? "long" : "short").toLowerCase();
+            var pos = (deal.pos === "LONG" ? "long" : deal.pos === 1 ? "long" : "short").toLowerCase();
+            var date = (deal.date || "").toString().toLowerCase();
+            var ep = (deal.ep || deal.entry_price || "").toString().toLowerCase();
+            var qty = (deal.qty || deal.quantity || "").toString().toLowerCase();
             
             return symbol.includes(query) || 
                    status.includes(query) || 
                    tradeId.includes(query) ||
-                   pos.includes(query);
+                   pos.includes(query) ||
+                   date.includes(query) ||
+                   ep.includes(query) ||
+                   qty.includes(query);
         });
     }
     
@@ -934,6 +939,7 @@ function performSearch() {
     window.dealsManager.currentPage = 1;
     window.dealsManager.renderDealsTable();
     window.dealsManager.updatePagination();
+    window.dealsManager.updateDealsCountBadge();
 }
 
 // Clear search function
@@ -995,6 +1001,62 @@ function clearFilters() {
     window.dealsManager.renderDealsTable();
     window.dealsManager.updatePagination();
     window.dealsManager.updateDealsCountBadge();
+}
+
+// Column settings functions for deals page
+function selectAllColumns() {
+    if (window.dealsManager) {
+        var checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
+        checkboxes.forEach(function(checkbox) {
+            checkbox.checked = true;
+            var columnKey = checkbox.getAttribute('data-column');
+            var column = window.dealsManager.availableColumns.find(function(col) {
+                return col.key === columnKey;
+            });
+            if (column) {
+                column.visible = true;
+            }
+        });
+    }
+}
+
+function resetDefaultColumns() {
+    if (window.dealsManager) {
+        // Reset to default visibility
+        window.dealsManager.availableColumns.forEach(function(column) {
+            column.visible = column.key === 'symbol' || column.key === 'td' || 
+                           column.key === 'ep' || column.key === 'qty' || 
+                           column.key === 'date' || column.key === 'cmp' || 
+                           column.key === 'inv' || column.key === 'pl' || 
+                           column.key === 'actions';
+        });
+        
+        // Update checkboxes
+        var checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
+        checkboxes.forEach(function(checkbox) {
+            var columnKey = checkbox.getAttribute('data-column');
+            var column = window.dealsManager.availableColumns.find(function(col) {
+                return col.key === columnKey;
+            });
+            checkbox.checked = column ? column.visible : false;
+        });
+    }
+}
+
+function applyColumnSettings() {
+    if (window.dealsManager) {
+        // Save settings and update display
+        window.dealsManager.saveColumnSettings();
+        window.dealsManager.updateTableHeaders();
+        window.dealsManager.renderDealsTable();
+        window.dealsManager.updatePagination();
+        
+        // Close modal
+        var modal = bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal'));
+        if (modal) {
+            modal.hide();
+        }
+    }
 }
 
 function refreshDeals() {
