@@ -17,19 +17,7 @@ endblock %} {% block extra_css %}
             <p class="text-muted mb-0">Trading trading signals management</p>
         </div>
         <div class="d-flex gap-2 align-items-center">
-            <!-- Search Input UI -->
-            <div class="input-group" style="width: 250px;">
-                <span class="input-group-text bg-secondary border-secondary">
-                    <i class="fas fa-search text-muted"></i>
-                </span>
-                <input 
-                    type="text" 
-                    class="form-control bg-secondary text-light border-secondary" 
-                    id="signalSearch" 
-                    placeholder="Search signals..."
-                    style="font-size: 0.9rem;"
-                >
-            </div>
+            
             <button
                 class="btn btn-sm btn-outline-secondary"
                 onclick="refreshSignals()"
