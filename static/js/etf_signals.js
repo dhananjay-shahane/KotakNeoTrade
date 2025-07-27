@@ -59,7 +59,9 @@ function ETFSignalsManager() {
 
 ETFSignalsManager.prototype.init = function () {
     console.log("ETF Signals Manager initialized");
+    this.loadColumnSettings();
     this.setupEventListeners();
+    this.setupColumnSettings();
     this.generateDynamicHeaders(); // Generate dynamic headers with sorting
     this.createPaginationControls(); // Create pagination controls
 
@@ -1485,9 +1487,21 @@ function refreshSignals() {
     }
 }
 
+// Clear search function for signals
+function clearSignalSearch() {
+    var searchInput = document.getElementById("signalSearchInput");
+    if (searchInput) {
+        searchInput.value = "";
+        if (window.etfSignalsManager) {
+            window.etfSignalsManager.applySearch();
+        }
+    }
+}
+
+// Global search function for backward compatibility
 function applySearch() {
     if (window.etfSignalsManager) {
-        window.etfSignalsManager.applyFilters();
+        window.etfSignalsManager.applySearch();
     }
 }
 
