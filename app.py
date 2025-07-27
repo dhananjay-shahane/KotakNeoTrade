@@ -999,7 +999,7 @@ try:
     # Initialize LoginManager properly
     login_manager = LoginManager()
     login_manager.init_app(app)
-    login_manager.login_view = 'auth_routes.trading_account_login'
+    login_manager.login_view = 'auth_routes.trading_account_login'  # type: ignore
 
     # Initialize Mail
     mail = Mail(app)
@@ -1010,7 +1010,7 @@ except Exception as e:
     try:
         login_manager = LoginManager()
         login_manager.init_app(app)
-        login_manager.login_view = 'auth_routes.trading_account_login'
+        login_manager.login_view = 'auth_routes.trading_account_login'  # type: ignore
         print("✓ Basic login manager initialized")
     except Exception as login_error:
         print(f"Login manager error: {login_error}")
