@@ -1001,9 +1001,22 @@ try:
     login_manager.init_app(app)
     login_manager.login_view = 'auth_routes.trading_account_login'  # type: ignore
 
-    # Initialize Mail
-    mail = Mail(app)
-    print("✓ Email and login extensions initialized")
+    # Configure email settings first
+    app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+    app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
+    app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
+    app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME') or os.environ.get('EMAIL_USER')
+    app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD') or os.environ.get('EMAIL_PASSWORD')
+    app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER') or app.config['MAIL_USERNAME']
+
+    # Initialize Mail with configured app
+    if app.config['MAIL_USERNAME'] and app.config['MAIL_PASSWORD']:
+        mail = Mail(app)
+        print(f"✅ Email service configured for: {app.config['MAIL_USERNAME']}")
+        print("✓ Email and login extensions initialized")
+    else:
+        print("❌ Email credentials missing. Email service disabled.")
+        mail = None
 except Exception as e:
     print(f"Email extensions optional: {e}")
     # Initialize basic LoginManager even if email fails
@@ -1031,25 +1044,13 @@ if login_manager:
     except Exception as e:
         print(f"User loader optional: {e}")
 
-# Email configuration for registration functionality
+# Import User model for registration functionality
 User = None
 try:
-    app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
-    app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
-    app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS',
-                                                'True').lower() == 'true'
-    app.config['MAIL_USERNAME'] = os.environ.get('EMAIL_USER')
-    app.config['MAIL_PASSWORD'] = os.environ.get('EMAIL_PASSWORD')
-    app.config['MAIL_DEFAULT_SENDER'] = os.environ.get(
-        'MAIL_DEFAULT_SENDER', os.environ.get('EMAIL_USER'))
-
-    # Import User model from models.py
     from models import User
-
-    print("✓ Email configuration loaded")
     print("✓ User model imported from models.py")
 except Exception as e:
-    print(f"Email configuration optional: {e}")
+    print(f"User model import error: {e}")
 
 
 def send_registration_email(user_email, username, password):
