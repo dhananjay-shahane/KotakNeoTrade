@@ -164,11 +164,11 @@ class SignalsFetcher:
                        days_back: int = 30) -> pd.DataFrame:
         """
         Fetch user deals as DataFrame
-
+        
         Args:
             user_id: User ID to fetch deals for
             days_back: Number of days to look back for deals
-
+            
         Returns:
             DataFrame with columns: trade_signal_id, symbol, qty, entry_date, entry_price, position_type, ed
         """
@@ -500,7 +500,7 @@ def get_all_deals_data_metrics():
                 'tva': tva_value,  # Target value amount
                 'pl': round(profit_loss, 2),
                 'qt': qt_value,  # Symbol repeat count
-                'ed': deal.get('exit_date', '--') if deal.get('status') == 'CLOSED' else '--',  # Exit date for closed deals
+                'ed': deal.get('ed', '--'),  # Entry date
                 'exp': '--',  # Expiry
                 'pr': '--',  # Price range
                 'pp': '--',  # Performance points
@@ -586,7 +586,7 @@ def get_user_deals_data():
             }
         }), 500
 
-
+        
 
 
 @deals_api.route('/deals/check-duplicate', methods=['POST'])
@@ -712,7 +712,7 @@ def edit_deal():
 
 @deals_api.route('/close-deal', methods=['POST'])
 def close_deal():
-    """Close a user deal by updating its status and adding exit date"""
+    """Close a user deal by updating its status"""
     try:
         data = request.get_json()
         if not data:
@@ -735,56 +735,40 @@ def close_deal():
         if not user_id or not isinstance(user_id, int):
             user_id = 1
 
-        # Connect to external database
-        conn = get_external_db_connection()
-        if not conn:
+        # Connect to database
+        db_connector = DatabaseConnector(os.environ.get('DATABASE_URL'))
+
+        # Update deal status to CLOSED
+        update_query = """
+            UPDATE user_deals 
+            SET status = 'CLOSED', updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s AND user_id = %s AND symbol = %s
+        """
+
+        result = db_connector.execute_query(update_query,
+                                            (deal_id, user_id, symbol))
+
+        if result == 0:
             return jsonify({
                 'success': False,
-                'error': 'Database connection failed'
-            }), 500
+                'error': 'Deal not found or not authorized'
+            }), 404
 
-        try:
-            with conn.cursor() as cursor:
-                # Update deal status to CLOSED and set exit_date
-                current_date = datetime.now().strftime('%Y-%m-%d')
-                update_query = """
-                    UPDATE public.user_deals 
-                    SET status = 'CLOSED', 
-                        updated_at = CURRENT_TIMESTAMP,
-                        exit_date = %s
-                    WHERE id = %s AND user_id = %s AND symbol = %s
-                """
+        db_connector.close()
 
-                cursor.execute(update_query, (current_date, deal_id, user_id, symbol))
-
-                if cursor.rowcount == 0:
-                    return jsonify({
-                        'success': False,
-                        'error': 'Deal not found or not authorized'
-                    }), 404
-
-                conn.commit()
-
-                logger.info(f"✓ Closed deal: {symbol} - Deal ID: {deal_id} for user: {user_id}")
-
-                return jsonify({
-                    'success': True,
-                    'message': f'Deal closed successfully for {symbol}',
-                    'deal_id': deal_id,
-                    'symbol': symbol,
-                    'status': 'CLOSED',
-                    'exit_date': current_date
-                })
-
-        finally:
-            if conn:
-                conn.close()
+        return jsonify({
+            'success': True,
+            'message': f'Deal closed successfully for {symbol}',
+            'deal_id': deal_id,
+            'symbol': symbol,
+            'status': 'CLOSED'
+        })
 
     except Exception as e:
         logger.error(f"Error closing deal: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-
+    
 
 
 @deals_api.route('/deals/create-from-signal', methods=['POST'])
@@ -918,8 +902,7 @@ def create_deal_from_signal():
                 INSERT INTO public.user_deals (
                     user_id, symbol, trading_symbol, entry_date, position_type,
                     quantity, entry_price, current_price, target_price, stop_loss,
-                    invested_amount,```python
-                    current_value, pnl_amount, pnl_percent,
+                    invested_amount, current_value, pnl_amount, pnl_percent,
                     status, deal_type, notes, tags, created_at, updated_at
                 ) VALUES (
                     %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,

@@ -330,7 +330,7 @@ DealsManager.prototype.loadDeals = function () {
                                 thirty: deal.thirty || "--",
                                 thirty_percent: deal.thirty_percent || "--",
                                 qt: deal.qt || 1,
-                                ed: deal.exit_date || "--", // Show exit date for closed deals
+                                ed: "--", // Always "--" as requested
                                 exp: deal.exp || "--",
                                 pr: deal.pr || "--",
                                 pp: deal.pp || "--",
@@ -501,12 +501,6 @@ DealsManager.prototype.renderDealsTable = function () {
         var deal = pageDeals[i];
         var row = document.createElement("tr");
 
-        // Add disabled styling for closed deals
-        if (deal.status === 'CLOSED' || deal.status === 'DISABLED') {
-            row.style.opacity = "0.6";
-            row.style.backgroundColor = "rgba(108, 117, 125, 0.2)";
-        }
-
         for (var j = 0; j < self.selectedColumns.length; j++) {
             var columnKey = self.selectedColumns[j];
             var cell = document.createElement("td");
@@ -617,17 +611,7 @@ DealsManager.prototype.renderDealsTable = function () {
                     cellContent = deal.qt || "--";
                     break;
                 case "ed":
-                    if (deal.status === 'CLOSED' || deal.status === 'DISABLED') {
-                        // Show exit date for closed deals
-                        var exitDate = deal.exit_date || deal.ed || new Date().toLocaleDateString('en-GB');
-                        if (exitDate !== '--' && exitDate !== '') {
-                            cellContent = exitDate;
-                        } else {
-                            cellContent = new Date().toLocaleDateString('en-GB');
-                        }
-                    } else {
-                        cellContent = "--"; // Show "--" for active deals
-                    }
+                    cellContent = "--"; // Always show "--" as requested
                     break;
                 case "exp":
                     cellContent = deal.exp || "--";
@@ -765,30 +749,26 @@ DealsManager.prototype.renderDealsTable = function () {
                     }
                     break;
                 case "actions":
-                    if (deal.status === 'CLOSED' || deal.status === 'DISABLED') {
-                        cellContent = '<span class="badge bg-secondary">Closed</span>';
-                    } else {
-                        cellContent =
-                            '<div class="btn-group btn-group-sm">' +
-                            '<button class="btn btn-warning btn-sm" onclick="editDeal(\'' +
-                            (deal.id || deal.trade_signal_id || "") +
-                            "', '" +
-                            (deal.symbol || "") +
-                            "', " +
-                            (deal.ep || 0) +
-                            ", " +
-                            (deal.tp || 0) +
-                            ')">' +
-                            '<i class="fas fa-edit"></i> Edit </button>' +
-                            '<button class="btn btn-danger btn-sm" onclick="closeDeal(\'' +
-                            (deal.id || deal.trade_signal_id || "") +
-                            "', '" +
-                            (deal.symbol || "") +
-                            "')\">" +
-                            '<i class="fas fa-times"></i> Close' +
-                            "</button>" +
-                            "</div>";
-                    }
+                    cellContent =
+                        '<div class="btn-group btn-group-sm">' +
+                        '<button class="btn btn-warning btn-sm" onclick="editDeal(\'' +
+                        (deal.id || deal.trade_signal_id || "") +
+                        "', '" +
+                        (deal.symbol || "") +
+                        "', " +
+                        (deal.ep || 0) +
+                        ", " +
+                        (deal.tp || 0) +
+                        ')">' +
+                        '<i class="fas fa-edit"></i> Edit </button>' +
+                        '<button class="btn btn-danger btn-sm" onclick="closeDeal(\'' +
+                        (deal.id || deal.trade_signal_id || "") +
+                        "', '" +
+                        (deal.symbol || "") +
+                        "')\">" +
+                        '<i class="fas fa-times"></i> Close' +
+                        "</button>" +
+                        "</div>";
                     break;
                 default:
                     cellContent = "";
@@ -2100,71 +2080,43 @@ function editDeal(dealId, symbol, entryPrice, targetPrice) {
 function closeDeal(dealId, symbol) {
     // Input validation
     if (!dealId || dealId.trim() === "") {
-        showNotification("Invalid deal ID provided", "error");
+        alert("Invalid deal ID provided");
         return;
     }
 
     if (!symbol || symbol.trim() === "") {
-        showNotification("Invalid symbol provided", "error");
+        alert("Invalid symbol provided");
         return;
     }
 
-    // Use SweetAlert for confirmation
-    Swal.fire({
-        title: 'Close Deal',
-        text: 'Are you sure you want to close the deal for ' + symbol + '?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#dc3545',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Yes',
-        cancelButtonText: 'Cancel',
-        background: '#2d3748',
-        color: '#ffffff'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Submit close deal request via AJAX
-            var xhr = new XMLHttpRequest();
-            xhr.open("POST", "/api/close-deal", true);
-            xhr.setRequestHeader("Content-Type", "application/json");
+    // Confirmation dialog
+    if (
+        confirm("Are you sure you want to close the deal for " + symbol + "?")
+    ) {
+        // Submit close deal request via AJAX
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/close-deal", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
 
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === 4) {
-                    if (xhr.status === 200) {
-                        try {
-                            var response = JSON.parse(xhr.responseText);
-                            if (response.success) {
-                                Swal.fire({
-                                    title: 'Success!',
-                                    text: 'Deal closed successfully for ' + symbol,
-                                    icon: 'success',
-                                    background: '#2d3748',
-                                    color: '#ffffff',
-                                    timer: 2000,
-                                    showConfirmButton: false
-                                });
-                                // Refresh deals table
-                                refreshDeals();
-                            } else {
-                                showNotification("Failed to close deal: " + (response.message || "Unknown error"), "error");
-                            }
-                        } catch (e) {
-                            showNotification("Failed to close deal. Invalid response from server.", "error");
-                        }
-                    } else {
-                        showNotification("Failed to close deal. Please try again.", "error");
-                    }
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    alert("Deal closed successfully for " + symbol);
+                    // Refresh deals table
+                    refreshDeals();
+                } else {
+                    alert("Failed to close deal. Please try again.");
                 }
-            };
+            }
+        };
 
-            xhr.send(
-                JSON.stringify({
-                    deal_id: dealId,
-                    symbol: symbol,
-                }),
-            );
-        }
-    });
+        xhr.send(
+            JSON.stringify({
+                deal_id: dealId,
+                symbol: symbol,
+            }),
+        );
+    }
 }
 
 function showEditDealModal(dealId, symbol, entryPrice, targetPrice) {

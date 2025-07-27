@@ -18,7 +18,7 @@ endblock %} {% block extra_css %}
         </div>
         <div class="d-flex gap-2 align-items-center">
             <!-- Search Input UI -->
-            <div class="input-group w-full" style="min-width: 200px;">
+            <div class="input-group" style="width: 250px;">
                 <span class="input-group-text bg-secondary border-secondary">
                     <i class="fas fa-search text-muted"></i>
                 </span>
@@ -41,7 +41,14 @@ endblock %} {% block extra_css %}
                 data-bs-toggle="modal"
                 data-bs-target="#columnSettingsModal"
             >
-                <i class="fas fa-cog me-1"></i> Columns
+                <i class="fas fa-cog me-1"></i>Columns
+            </button>
+            <button
+                class="btn btn-sm btn-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#signalFiltersModal"
+            >
+                <i class="fas fa-filter me-1"></i>Filters
             </button>
         </div>
     </div>
@@ -113,7 +120,7 @@ endblock %} {% block extra_css %}
                 <table
                     class="table table-dark table-hover mb-0 signals-table"
                     id="signalsTable"
-                    
+                    style="min-height: 400px;"
                 >
                             <thead class="sticky-top">
                                 <tr id="tableHeaders">
