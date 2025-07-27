@@ -892,8 +892,8 @@ DealsManager.prototype.showLoadingSpinner = function () {
         "</tr>";
 };
 
-DealsManager.prototype.```python
-showEmptyStateMessage = function () {
+DealsManager.prototype.showEmptyStateMessage = function ()```python
+ {
     var tbody = document.getElementById("dealsTableBody");
     tbody.innerHTML =
         "<tr>" +
