@@ -357,7 +357,7 @@ DealsManager.prototype.loadDeals = function () {
                                 trading_symbol:
                                     deal.trading_symbol || deal.symbol,
                                 exchange: deal.exchange || "NSE",
-                            };</old_str>
+                            };
                         });
 
                         self.deals = uniqueDeals;
@@ -788,7 +788,7 @@ DealsManager.prototype.renderDealsTable = function () {
                             '<i class="fas fa-times"></i> Close' +
                             "</button>" +
                             "</div>";
-                    }</old_str>
+                    }
                     break;
                 default:
                     cellContent = "";
@@ -892,7 +892,8 @@ DealsManager.prototype.showLoadingSpinner = function () {
         "</tr>";
 };
 
-DealsManager.prototype.showEmptyStateMessage = function () {
+DealsManager.prototype.```python
+showEmptyStateMessage = function () {
     var tbody = document.getElementById("dealsTableBody");
     tbody.innerHTML =
         "<tr>" +
@@ -928,9 +929,9 @@ this.checkPriceUpdateStatusAdvanced = function () {
 function performSearch() {
     var searchInput = document.getElementById("symbolSearchInput");
     if (!searchInput || !window.dealsManager) return;
-    
+
     var query = searchInput.value.toLowerCase().trim();
-    
+
     if (query === "") {
         // Reset to show all deals
         window.dealsManager.filteredDeals = window.dealsManager.deals.slice();
@@ -944,7 +945,7 @@ function performSearch() {
             var date = (deal.date || "").toString().toLowerCase();
             var ep = (deal.ep || deal.entry_price || "").toString().toLowerCase();
             var qty = (deal.qty || deal.quantity || "").toString().toLowerCase();
-            
+
             return symbol.includes(query) || 
                    status.includes(query) || 
                    tradeId.includes(query) ||
@@ -954,7 +955,7 @@ function performSearch() {
                    qty.includes(query);
         });
     }
-    
+
     // Reset to page 1 and re-render
     window.dealsManager.currentPage = 1;
     window.dealsManager.renderDealsTable();
@@ -1050,7 +1051,7 @@ function resetDefaultColumns() {
                            column.key === 'inv' || column.key === 'pl' || 
                            column.key === 'actions';
         });
-        
+
         // Update checkboxes
         var checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
         checkboxes.forEach(function(checkbox) {
@@ -1070,7 +1071,7 @@ function applyColumnSettings() {
         window.dealsManager.updateTableHeaders();
         window.dealsManager.renderDealsTable();
         window.dealsManager.updatePagination();
-        
+
         // Close modal
         var modal = bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal'));
         if (modal) {

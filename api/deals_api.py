@@ -1,3 +1,4 @@
+
 from flask import Blueprint, jsonify, request
 from Scripts.models import db, UserDeals
 from datetime import datetime
@@ -140,4 +141,3 @@ def edit_deal():
             'success': False,
             'message': str(e)
         }), 500
-```
