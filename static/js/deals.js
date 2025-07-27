@@ -898,6 +898,47 @@ this.checkPriceUpdateStatusAdvanced = function () {
     // Implementation logic here
 };
 
+// Search functionality for deals
+function performSearch() {
+    var searchInput = document.getElementById("symbolSearchInput");
+    if (!searchInput) return;
+    
+    var query = searchInput.value.toLowerCase().trim();
+    if (!window.dealsManager) return;
+    
+    if (query === "") {
+        // Reset to show all deals
+        window.dealsManager.filteredDeals = window.dealsManager.deals.slice();
+    } else {
+        // Filter deals based on search query
+        window.dealsManager.filteredDeals = window.dealsManager.deals.filter(function(deal) {
+            var symbol = (deal.symbol || "").toLowerCase();
+            var status = (deal.status || "").toLowerCase();
+            var tradeId = String(deal.trade_signal_id || deal.id || "").toLowerCase();
+            var pos = (deal.pos === 1 ? "long" : "short").toLowerCase();
+            
+            return symbol.includes(query) || 
+                   status.includes(query) || 
+                   tradeId.includes(query) ||
+                   pos.includes(query);
+        });
+    }
+    
+    // Reset to page 1 and re-render
+    window.dealsManager.currentPage = 1;
+    window.dealsManager.renderDealsTable();
+    window.dealsManager.updatePagination();
+}
+
+// Clear search function
+function clearSearch() {
+    var searchInput = document.getElementById("symbolSearchInput");
+    if (searchInput) {
+        searchInput.value = "";
+        performSearch(); // Trigger search to reset results
+    }
+}
+
 function applyFilters() {
     var orderType = document.getElementById("orderTypeFilter").value;
     var status = document.getElementById("statusFilter").value;

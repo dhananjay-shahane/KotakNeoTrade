@@ -923,6 +923,25 @@ function updateSortIndicators(activeColumn, direction) {
     var activeHeader = document.querySelector(
         '.sortable[onclick*="' + activeColumn + '"] .fa-sort',
     );
+}
+
+// Clear search function for signals
+function clearSignalSearch() {
+    var searchInput = document.getElementById("signalSearchInput");
+    if (searchInput) {
+        searchInput.value = "";
+        if (window.etfSignalsManager) {
+            window.etfSignalsManager.applySearch();
+        }
+    }
+}
+
+// Global search function for backward compatibility
+function applySearch() {
+    if (window.etfSignalsManager) {
+        window.etfSignalsManager.applySearch();
+    }
+}
     if (activeHeader) {
         activeHeader.classList.remove("text-muted");
         activeHeader.classList.add("text-primary");
