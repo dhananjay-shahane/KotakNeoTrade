@@ -59,9 +59,7 @@ function ETFSignalsManager() {
 
 ETFSignalsManager.prototype.init = function () {
     console.log("ETF Signals Manager initialized");
-    this.loadColumnSettings();
     this.setupEventListeners();
-    this.setupColumnSettings();
     this.generateDynamicHeaders(); // Generate dynamic headers with sorting
     this.createPaginationControls(); // Create pagination controls
 
@@ -95,16 +93,7 @@ ETFSignalsManager.prototype.setupEventListeners = function () {
         });
     }
 
-    // Search functionality
-    var searchInput = document.getElementById("signalSearch");
-    if (searchInput) {
-        searchInput.addEventListener("input", function () {
-            self.applyFilters();
-        });
-        searchInput.addEventListener("keyup", function () {
-            self.applyFilters();
-        });
-    }
+
 
     // Remove filter dropdowns - keeping only search functionality
 
@@ -923,25 +912,7 @@ function updateSortIndicators(activeColumn, direction) {
     var activeHeader = document.querySelector(
         '.sortable[onclick*="' + activeColumn + '"] .fa-sort',
     );
-}
-
-// Clear search function for signals
-function clearSignalSearch() {
-    var searchInput = document.getElementById("signalSearchInput");
-    if (searchInput) {
-        searchInput.value = "";
-        if (window.etfSignalsManager) {
-            window.etfSignalsManager.applySearch();
-        }
-    }
-}
-
-// Global search function for backward compatibility
-function applySearch() {
-    if (window.etfSignalsManager) {
-        window.etfSignalsManager.applySearch();
-    }
-}
+    
     if (activeHeader) {
         activeHeader.classList.remove("text-muted");
         activeHeader.classList.add("text-primary");
