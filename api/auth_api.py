@@ -181,24 +181,171 @@ class EmailService:
                 sender=mail.app.config.get('MAIL_DEFAULT_SENDER') or mail.app.config.get('MAIL_USERNAME'),
                 recipients=[user_email])
 
-            # Email HTML template
+            # Beautiful email template matching the design
             msg.html = f"""
             <!DOCTYPE html>
-            <html>
+            <html lang="en">
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Welcome to Trading Platform</title>
+                <style>
+                    body {{
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                        margin: 0;
+                        padding: 0;
+                        background-color: #f8f9fa;
+                        line-height: 1.6;
+                    }}
+                    .email-container {{
+                        max-width: 600px;
+                        margin: 0 auto;
+                        background-color: #ffffff;
+                        border-radius: 8px;
+                        overflow: hidden;
+                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                    }}
+                    .header {{
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                        padding: 40px 30px;
+                        text-align: center;
+                    }}
+                    .header h1 {{
+                        margin: 0;
+                        font-size: 24px;
+                        font-weight: 600;
+                    }}
+                    .header p {{
+                        margin: 10px 0 0 0;
+                        font-size: 16px;
+                        opacity: 0.9;
+                    }}
+                    .content {{
+                        padding: 40px 30px;
+                    }}
+                    .greeting {{
+                        font-size: 18px;
+                        font-weight: 600;
+                        color: #333;
+                        margin-bottom: 10px;
+                    }}
+                    .message {{
+                        color: #666;
+                        margin-bottom: 30px;
+                    }}
+                    .credentials-section {{
+                        background-color: #f8f9fa;
+                        border-radius: 8px;
+                        padding: 25px;
+                        margin: 20px 0;
+                        border-left: 4px solid #667eea;
+                    }}
+                    .credentials-title {{
+                        font-size: 16px;
+                        font-weight: 600;
+                        color: #333;
+                        margin-bottom: 15px;
+                        display: flex;
+                        align-items: center;
+                    }}
+                    .credentials-subtitle {{
+                        font-size: 14px;
+                        color: #666;
+                        margin-bottom: 20px;
+                    }}
+                    .credential-item {{
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 10px 0;
+                        border-bottom: 1px solid #e9ecef;
+                    }}
+                    .credential-item:last-child {{
+                        border-bottom: none;
+                    }}
+                    .credential-label {{
+                        font-weight: 500;
+                        color: #333;
+                    }}
+                    .credential-value {{
+                        color: #667eea;
+                        font-weight: 600;
+                        font-family: monospace;
+                        background-color: #e3f2fd;
+                        padding: 4px 8px;
+                        border-radius: 4px;
+                    }}
+                    .security-notice {{
+                        background-color: #fff3cd;
+                        border: 1px solid #ffeaa7;
+                        border-radius: 6px;
+                        padding: 15px;
+                        margin-top: 25px;
+                    }}
+                    .security-title {{
+                        font-weight: 600;
+                        color: #856404;
+                        margin-bottom: 5px;
+                    }}
+                    .security-text {{
+                        color: #856404;
+                        font-size: 14px;
+                        margin: 0;
+                    }}
+                    .footer {{
+                        padding: 20px 30px;
+                        text-align: center;
+                        color: #666;
+                        font-size: 12px;
+                        border-top: 1px solid #e9ecef;
+                    }}
+                </style>
             </head>
             <body>
-                <h2>Welcome to Trading Platform!</h2>
-                <p>Your login credentials:</p>
-                <ul>
-                    <li>Username: {username}</li>
-                    <li>Password: {password}</li>
-                    <li>Email: {user_email}</li>
-                </ul>
-                <p>Please keep these credentials safe and secure.</p>
+                <div class="email-container">
+                    <div class="header">
+                        <h1>📈 Trading Platform</h1>
+                        <p>Welcome to Our Trading Platform!</p>
+                        <p style="font-size: 14px; margin-top: 15px;">Your account has been successfully created</p>
+                    </div>
+                    
+                    <div class="content">
+                        <div class="greeting">Hello {username.upper()}!</div>
+                        <div class="message">
+                            Congratulations! Your trading platform account has been successfully registered.<br><br>
+                            <strong>IMPORTANT:</strong> Below are your login credentials. Please store them securely as you will need them to access your account.
+                        </div>
+                        
+                        <div class="credentials-section">
+                            <div class="credentials-title">🔐 Your Login Credentials</div>
+                            <div class="credentials-subtitle">Use these credentials to login to the trading platform:</div>
+                            
+                            <div class="credential-item">
+                                <span class="credential-label">Username:</span>
+                                <span class="credential-value">{username}</span>
+                            </div>
+                            <div class="credential-item">
+                                <span class="credential-label">Password:</span>
+                                <span class="credential-value">{password}</span>
+                            </div>
+                            <div class="credential-item">
+                                <span class="credential-label">Registered Email:</span>
+                                <span class="credential-value">{user_email}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="security-notice">
+                            <div class="security-title">⚠️ Important Security Notice:</div>
+                            <p class="security-text">Please keep these credentials safe and secure. We recommend changing your password after your first login for enhanced security.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="footer">
+                        <p>© 2025 Trading Platform. All rights reserved.</p>
+                        <p>This is an automated message. Please do not reply to this email.</p>
+                    </div>
+                </div>
             </body>
             </html>
             """
