@@ -130,15 +130,13 @@ endblock %} {% block extra_css %}
         </div>
 
         <div class="card-body p-0">
-            <div class="scroll-container">
-                <div class="table-responsive" style="overflow-x: auto; border-top: 12px solid #1a1a1a;">
-
-                    <table
-                        class="table table-dark table-hover mb-0 signals-table"
-                        id="signalsTable"
-                        style="overflow:auto !important;"
-                    >
-                            <thead style="position: sticky; top: 0; z-index: 100;">
+            <div class="table-responsive" style="overflow-y: auto;">
+                <table
+                    class="table table-dark table-hover mb-0 signals-table"
+                    id="signalsTable"
+                    style="min-height: 400px;"
+                >
+                            <thead class="sticky-top">
                                 <tr id="tableHeaders">
                                     <!-- Dynamic headers will be generated here with sorting functionality -->
                                 </tr>
@@ -146,12 +144,9 @@ endblock %} {% block extra_css %}
                             <tbody id="signalsTableBody">
                                 <!-- Dynamic content will be loaded here -->
                             </tbody>
-                            </table>
+                        </table>
                     </div>
-            </div>
-            
                 </div>
-            </div>
         </div>
 
         <div

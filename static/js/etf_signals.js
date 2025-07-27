@@ -20,39 +20,31 @@ function ETFSignalsManager() {
     this.sortField = "id"; // Current sort field
     this.sortDirection = "asc"; // Sort direction (asc/desc)
 
-    // Column visibility settings
+    // Column visibility settings - using compact widths like deals page
     this.availableColumns = [
-        { key: "trade_signal_id", label: "ID", width: "10px", visible: true },
-        { key: "etf", label: "Symbol", width: "50px", visible: true },
+        { key: "trade_signal_id", label: "ID", width: "50px", visible: true },
+        { key: "etf", label: "SYMBOL", width: "80px", visible: true },
         { key: "seven", label: "7D", width: "50px", visible: true },
         { key: "ch", label: "7D%", width: "50px", visible: true },
         { key: "thirty", label: "30D", width: "50px", visible: true },
         { key: "dh", label: "30D%", width: "50px", visible: true },
-        { key: "date", label: "DATE", width: "50px", visible: true },
-        { key: "qty", label: "QTY", width: "50px", visible: true },
-        { key: "ep", label: "EP", width: "50px", visible: true },
-        { key: "cmp", label: "CMP", width: "50px", visible: true },
-        { key: "chan", label: "%CHAN", width: "50px", visible: true },
-        { key: "inv", label: "INV.", width: "50px", visible: true },
-        { key: "tp", label: "TP", width: "50px", visible: false },
-        { key: "tpr", label: "TPR", width: "50px", visible: false },
-        { key: "tva", label: "TVA", visible: false },
-        { key: "cpl", label: "CPL", width: "50px", visible: true },
-        { key: "ed", label: "ED", width: "50px", visible: false },
-        { key: "exp", label: "EXP", width: "50px", visible: false },
-        {
-            key: "pr",
-            label: "PR",
-            width: "50px",
-            width: "50px",
-            visible: false,
-        },
+        { key: "date", label: "DATE", width: "80px", visible: true },
+        { key: "qty", label: "QTY", width: "60px", visible: true },
+        { key: "ep", label: "EP", width: "70px", visible: true },
+        { key: "cmp", label: "CMP", width: "70px", visible: true },
+        { key: "chan", label: "%CHAN", width: "60px", visible: true },
+        { key: "inv", label: "INV.", width: "70px", visible: true },
+        { key: "tp", label: "TP", width: "60px", visible: true },
+        { key: "tpr", label: "TPR", width: "70px", visible: true },
+        { key: "tva", label: "TVA", width: "70px", visible: true },
+        { key: "cpl", label: "CPL", width: "60px", visible: true },
+        { key: "ed", label: "ED", width: "70px", visible: false },
+        { key: "exp", label: "EXP", width: "70px", visible: false },
+        { key: "pr", label: "PR", width: "80px", visible: false },
         { key: "pp", label: "PP", width: "50px", visible: false },
-        { key: "iv", label: "IV", width: "50px", visible: false },
-        { key: "ip", label: "IP", width: "50px", visible: false },
-
-        // { key: "qt", label: "QT", visible: false },
-        { key: "actions", label: "ACTIONS", visible: true },
+        { key: "iv", label: "IV", width: "60px", visible: false },
+        { key: "ip", label: "IP", width: "60px", visible: false },
+        { key: "actions", label: "ACTION", width: "80px", visible: true },
     ];
 
     // Initialize when DOM is ready
@@ -151,8 +143,8 @@ ETFSignalsManager.prototype.generateDynamicHeaders = function () {
         th.style.backgroundColor = "var(--secondary-color)";
         th.style.color = "var(--text-primary)";
         th.style.fontWeight = "600";
-        th.style.fontSize = "0.85rem";
-        th.style.padding = "8px 4px";
+        th.style.fontSize = "0.7rem";
+        th.style.padding = "6px 3px";
         th.style.border = "1px solid var(--border-color)";
         th.style.position = "sticky";
         th.style.top = "0";
@@ -685,7 +677,7 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                 cellValue = "--";
         }
 
-        cells += '<td style="' + cellStyle + '">' + cellValue + "</td>";
+        cells += '<td class="text-center" style="padding: 4px 3px; border: 1px solid var(--border-color); font-size: 0.75rem; ' + cellStyle + '">' + cellValue + "</td>";
     }
 
     row.innerHTML = cells;
