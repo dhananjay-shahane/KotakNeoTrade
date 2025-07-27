@@ -330,7 +330,7 @@ DealsManager.prototype.loadDeals = function () {
                                 thirty: deal.thirty || "--",
                                 thirty_percent: deal.thirty_percent || "--",
                                 qt: deal.qt || 1,
-                                ed: deal.exit_date || "--", // Show exit date for closed deals
+                                ed: deal.status === 'CLOSED' ? (deal.ed || deal.exit_date || new Date().toLocaleDateString('en-GB')) : "--",
                                 exp: deal.exp || "--",
                                 pr: deal.pr || "--",
                                 pp: deal.pp || "--",
@@ -357,7 +357,7 @@ DealsManager.prototype.loadDeals = function () {
                                 trading_symbol:
                                     deal.trading_symbol || deal.symbol,
                                 exchange: deal.exchange || "NSE",
-                            };
+                            };</old_str>
                         });
 
                         self.deals = uniqueDeals;
@@ -788,7 +788,7 @@ DealsManager.prototype.renderDealsTable = function () {
                             '<i class="fas fa-times"></i> Close' +
                             "</button>" +
                             "</div>";
-                    }
+                    }</old_str>
                     break;
                 default:
                     cellContent = "";
