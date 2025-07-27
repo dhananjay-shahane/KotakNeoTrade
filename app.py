@@ -1097,10 +1097,13 @@ def send_registration_email(user_email, username, password):
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        email = request.form.get('email')
-        mobile = request.form.get('mobile')
-        password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
+        # Import auth functions
+        from api.auth_api import store_user_in_external_db, EmailService
+        
+        email = request.form.get('email', '').strip()
+        mobile = request.form.get('mobile', '').strip()
+        password = request.form.get('password', '').strip()
+        confirm_password = request.form.get('confirm_password', '').strip()
 
         # Validate input
         if not all([email, mobile, password, confirm_password]):
@@ -1111,41 +1114,41 @@ def register():
             flash('Passwords do not match.', 'error')
             return render_template('auth/register.html')
 
-        # Check if user already exists
+        if len(password) < 6:
+            flash('Password must be at least 6 characters long.', 'error')
+            return render_template('auth/register.html')
+
+        # Generate unique username from email and mobile
         try:
-            if not User:
-                flash('User model not available.', 'error')
-                return render_template('auth/register.html')
-                
-            existing_user = User.query.filter_by(email=email).first()
-            if existing_user:
-                flash('Email already registered.', 'error')
-                return render_template('auth/register.html')
+            # Extract first 3 letters from email (before @)
+            email_part = email.split('@')[0][:3].lower()
+            # Extract last 2 digits from mobile
+            mobile_digits = ''.join(filter(str.isdigit, mobile))[-2:]
+            username = email_part + mobile_digits
+            
+            # Ensure username is exactly 5 characters
+            if len(username) < 5:
+                username = username.ljust(5, '0')
+            username = username[:5]
 
-            # Generate unique username from email and mobile
-            username = User.generate_username(email, mobile)
+            # Store user in external database
+            if store_user_in_external_db(username, password, email, mobile):
+                # Send registration email with credentials (if mail service is configured)
+                try:
+                    if mail:
+                        EmailService.send_registration_email(mail, email, username, password)
+                except Exception as email_error:
+                    print(f"Email sending failed: {email_error}")
 
-            # Create new user
-            user = User(email=email, mobile=mobile, username=username)
-            user.set_password(password)
-
-            db.session.add(user)
-            db.session.commit()
-
-            # Send registration email with credentials
-            email_sent = send_registration_email(email, username, password)
-
-            if email_sent:
-                flash(
-                    'Registration successful! Please check your email for login credentials.',
-                    'success')
+                flash('Registration successful! Please check your email for login credentials.', 'success')
+                flash(f'Your username is: {username}', 'info')
+                return redirect(url_for('auth_routes.trading_account_login'))
             else:
-                flash('Registration successful! Your username is: ' + username,
-                      'success')
+                flash('Registration failed. Email might already be registered.', 'error')
+                return render_template('auth/register.html')
 
-            return redirect(url_for('auth_routes.trading_account_login'))
         except Exception as e:
-            db.session.rollback()
+            print(f"Registration error: {e}")
             flash('Registration failed. Please try again.', 'error')
             return render_template('auth/register.html')
 
