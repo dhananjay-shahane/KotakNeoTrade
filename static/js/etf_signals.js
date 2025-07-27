@@ -95,22 +95,7 @@ ETFSignalsManager.prototype.setupEventListeners = function () {
         });
     }
 
-    // Search functionality
-    var searchInput = document.getElementById("signalSearch");
-    if (searchInput) {
-        searchInput.addEventListener("input", function () {
-            clearTimeout(self.searchTimeout);
-            self.searchTimeout = setTimeout(function() {
-                self.applyFilters();
-            }, 300);
-        });
-
-        searchInput.addEventListener("keypress", function(e) {
-            if (e.key === "Enter") {
-                self.applyFilters();
-            }
-        });
-    }
+    
 
 
     // Remove filter dropdowns - keeping only search functionality
