@@ -330,7 +330,7 @@ DealsManager.prototype.loadDeals = function () {
                                 thirty: deal.thirty || "--",
                                 thirty_percent: deal.thirty_percent || "--",
                                 qt: deal.qt || 1,
-                                ed: deal.status === 'CLOSED' ? (deal.ed || deal.exit_date || new Date().toLocaleDateString('en-GB')) : "--",
+                                ed: deal.exit_date || "--", // Show exit date for closed deals
                                 exp: deal.exp || "--",
                                 pr: deal.pr || "--",
                                 pp: deal.pp || "--",
@@ -892,8 +892,7 @@ DealsManager.prototype.showLoadingSpinner = function () {
         "</tr>";
 };
 
-DealsManager.prototype.showEmptyStateMessage = function ()```python
- {
+DealsManager.prototype.showEmptyStateMessage = function () {
     var tbody = document.getElementById("dealsTableBody");
     tbody.innerHTML =
         "<tr>" +
@@ -929,9 +928,9 @@ this.checkPriceUpdateStatusAdvanced = function () {
 function performSearch() {
     var searchInput = document.getElementById("symbolSearchInput");
     if (!searchInput || !window.dealsManager) return;
-
+    
     var query = searchInput.value.toLowerCase().trim();
-
+    
     if (query === "") {
         // Reset to show all deals
         window.dealsManager.filteredDeals = window.dealsManager.deals.slice();
@@ -945,7 +944,7 @@ function performSearch() {
             var date = (deal.date || "").toString().toLowerCase();
             var ep = (deal.ep || deal.entry_price || "").toString().toLowerCase();
             var qty = (deal.qty || deal.quantity || "").toString().toLowerCase();
-
+            
             return symbol.includes(query) || 
                    status.includes(query) || 
                    tradeId.includes(query) ||
@@ -955,7 +954,7 @@ function performSearch() {
                    qty.includes(query);
         });
     }
-
+    
     // Reset to page 1 and re-render
     window.dealsManager.currentPage = 1;
     window.dealsManager.renderDealsTable();
@@ -1051,7 +1050,7 @@ function resetDefaultColumns() {
                            column.key === 'inv' || column.key === 'pl' || 
                            column.key === 'actions';
         });
-
+        
         // Update checkboxes
         var checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
         checkboxes.forEach(function(checkbox) {
@@ -1071,7 +1070,7 @@ function applyColumnSettings() {
         window.dealsManager.updateTableHeaders();
         window.dealsManager.renderDealsTable();
         window.dealsManager.updatePagination();
-
+        
         // Close modal
         var modal = bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal'));
         if (modal) {
