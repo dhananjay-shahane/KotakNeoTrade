@@ -39,8 +39,7 @@
 }
 
 .table-container {
-    max-height: 600px;
-    height: auto;
+    height: 70vh;
     overflow-x: auto;
     overflow-y: auto;
     border: 1px solid var(--border-color);
