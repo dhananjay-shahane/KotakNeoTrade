@@ -27,7 +27,8 @@
     .loss { color: var(--danger-color); }
     .neutral { color: var(--warning-color); }
     .table-container {
-        height: 70vh;
+        max-height: 600px;
+        height: auto;
         overflow-x: auto;
         overflow-y: auto;
         border: 1px solid var(--border-color);
