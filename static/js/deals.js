@@ -904,7 +904,52 @@ this.checkPriceUpdateStatusAdvanced = function () {
 
 
 
+// Search functionality for deals
+function performSearch() {
+    var searchInput = document.getElementById("symbolSearchInput");
+    if (!searchInput || !window.dealsManager) return;
+    
+    var query = searchInput.value.toLowerCase().trim();
+    
+    if (query === "") {
+        // Reset to show all deals
+        window.dealsManager.filteredDeals = window.dealsManager.deals.slice();
+    } else {
+        // Filter deals based on search query - comprehensive search
+        window.dealsManager.filteredDeals = window.dealsManager.deals.filter(function(deal) {
+            var symbol = (deal.symbol || "").toLowerCase();
+            var status = (deal.status || "EXECUTED").toLowerCase();
+            var tradeId = String(deal.trade_signal_id || deal.id || "").toLowerCase();
+            var pos = (deal.pos === "LONG" ? "long" : deal.pos === 1 ? "long" : "short").toLowerCase();
+            var date = (deal.date || "").toString().toLowerCase();
+            var ep = (deal.ep || deal.entry_price || "").toString().toLowerCase();
+            var qty = (deal.qty || deal.quantity || "").toString().toLowerCase();
+            
+            return symbol.includes(query) || 
+                   status.includes(query) || 
+                   tradeId.includes(query) ||
+                   pos.includes(query) ||
+                   date.includes(query) ||
+                   ep.includes(query) ||
+                   qty.includes(query);
+        });
+    }
+    
+    // Reset to page 1 and re-render
+    window.dealsManager.currentPage = 1;
+    window.dealsManager.renderDealsTable();
+    window.dealsManager.updatePagination();
+    window.dealsManager.updateDealsCountBadge();
+}
 
+// Clear search function
+function clearSearch() {
+    var searchInput = document.getElementById("symbolSearchInput");
+    if (searchInput) {
+        searchInput.value = "";
+        performSearch(); // Trigger search to reset results
+    }
+}
 
 function applyFilters() {
     var orderType = document.getElementById("orderTypeFilter").value;
@@ -945,7 +990,11 @@ function clearFilters() {
     document.getElementById("minPnlFilter").value = "";
     document.getElementById("maxPnlFilter").value = "";
 
-    
+    // Also clear search input if exists
+    var searchInput = document.getElementById("symbolSearchInput");
+    if (searchInput) {
+        searchInput.value = "";
+    }
 
     window.dealsManager.filteredDeals = window.dealsManager.deals.slice();
     window.dealsManager.currentPage = 1;
@@ -1771,9 +1820,120 @@ function showNotification(message, type) {
     }, 5000);
 }
 
+// Inline Search Functions
+function performInlineSearch() {
+    var searchTerm = document
+        .getElementById("symbolSearchInput")
+        .value.trim()
+        .toLowerCase();
 
+    if (!searchTerm) {
+        // Reset to show all deals if search is empty
+        window.dealsManager.filteredDeals = window.dealsManager.deals.slice();
+    } else {
+        // Filter deals by multiple fields
+        window.dealsManager.filteredDeals = window.dealsManager.deals.filter(
+            function (deal) {
+                return (
+                    (deal.symbol &&
+                        deal.symbol.toLowerCase().includes(searchTerm)) ||
+                    (deal.status &&
+                        deal.status.toLowerCase().includes(searchTerm)) ||
+                    (deal.deal_type &&
+                        deal.deal_type.toLowerCase().includes(searchTerm)) ||
+                    (deal.position_type &&
+                        deal.position_type
+                            .toLowerCase()
+                            .includes(searchTerm)) ||
+                    (deal.date && deal.date.toLowerCase().includes(searchTerm))
+                );
+            },
+        );
+    }
 
+    // Reset to first page and refresh table
+    window.dealsManager.currentPage = 1;
+    window.dealsManager.renderDealsTable();
+    window.dealsManager.updatePagination();
+}
 
+function clearInlineSearch() {
+    var searchInput = document.getElementById("symbolSearchInput");
+    if (searchInput) {
+        searchInput.value = "";
+        performInlineSearch(); // This will reset to show all deals
+        // Optionally hide the search input after clearing
+        toggleSearchInput();
+    }
+}
+
+// Toggle search input visibility
+function toggleSearchInput() {
+    var searchInputGroup = document.getElementById("searchInputGroup");
+    var searchToggleBtn = document.getElementById("searchToggleBtn");
+    var searchInput = document.getElementById("symbolSearchInput");
+
+    if (
+        searchInputGroup.style.display === "none" ||
+        searchInputGroup.style.display === ""
+    ) {
+        // Show search input
+        searchInputGroup.style.display = "flex";
+        searchInput.focus();
+        searchToggleBtn.innerHTML = '<i class="fas fa-times text-white"></i>';
+    } else {
+        // Hide search input
+        searchInputGroup.style.display = "none";
+        searchInput.value = "";
+        searchToggleBtn.innerHTML = '<i class="fas fa-search text-white"></i>';
+        // Reset search results
+        performInlineSearch();
+    }
+}
+
+// Close search input when clicking outside
+function closeSearchOnClickOutside(event) {
+    var searchContainer = document.querySelector(".search-container");
+    var searchInputGroup = document.getElementById("searchInputGroup");
+
+    if (searchInputGroup && searchInputGroup.style.display === "flex") {
+        if (!searchContainer.contains(event.target)) {
+            toggleSearchInput();
+        }
+    }
+}
+
+// Add real-time search support
+document.addEventListener("DOMContentLoaded", function () {
+    var searchInput = document.getElementById("symbolSearchInput");
+    if (searchInput) {
+        // Real-time search as user types
+        searchInput.addEventListener("input", function (e) {
+            clearTimeout(window.searchTimeout);
+            window.searchTimeout = setTimeout(function () {
+                performInlineSearch();
+            }, 300); // 300ms delay for better performance
+        });
+
+        // Also support enter key
+        searchInput.addEventListener("keypress", function (e) {
+            if (e.key === "Enter") {
+                clearTimeout(window.searchTimeout);
+                performInlineSearch();
+            }
+        });
+
+        // Close search on escape key
+        searchInput.addEventListener("keydown", function (e) {
+            if (e.key === "Escape") {
+                toggleSearchInput();
+            }
+        });
+    }
+
+    // Add click outside listener
+    document.addEventListener("click", closeSearchOnClickOutside);
+});
 
 // Initialize Deals Manager on page load
 document.addEventListener("DOMContentLoaded", function () {
