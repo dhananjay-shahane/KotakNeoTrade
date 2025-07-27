@@ -27,6 +27,14 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Import main Flask application
 from app import app
 
+try:
+    from api.deals_api import deals_api
+    app.register_blueprint(deals_api)
+    print("✓ Deals blueprint registered")
+except Exception as e:
+    print(f"✗ Error registering deals_api: {e}")
+    # Continue without deals_api for now
+
 if __name__ == '__main__':
     try:
         print("🚀 Starting Kotak Neo Trading Platform...")

@@ -164,11 +164,11 @@ class SignalsFetcher:
                        days_back: int = 30) -> pd.DataFrame:
         """
         Fetch user deals as DataFrame
-        
+
         Args:
             user_id: User ID to fetch deals for
             days_back: Number of days to look back for deals
-            
+
         Returns:
             DataFrame with columns: trade_signal_id, symbol, qty, entry_date, entry_price, position_type, ed
         """
@@ -586,7 +586,7 @@ def get_user_deals_data():
             }
         }), 500
 
-        
+
 
 
 @deals_api.route('/deals/check-duplicate', methods=['POST'])
@@ -756,7 +756,7 @@ def close_deal():
                 """
 
                 cursor.execute(update_query, (current_date, deal_id, user_id, symbol))
-                
+
                 if cursor.rowcount == 0:
                     return jsonify({
                         'success': False,
@@ -784,7 +784,7 @@ def close_deal():
         logger.error(f"Error closing deal: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-    
+
 
 
 @deals_api.route('/deals/create-from-signal', methods=['POST'])
@@ -918,7 +918,8 @@ def create_deal_from_signal():
                 INSERT INTO public.user_deals (
                     user_id, symbol, trading_symbol, entry_date, position_type,
                     quantity, entry_price, current_price, target_price, stop_loss,
-                    invested_amount, current_value, pnl_amount, pnl_percent,
+                    invested_amount,```python
+                    current_value, pnl_amount, pnl_percent,
                     status, deal_type, notes, tags, created_at, updated_at
                 ) VALUES (
                     %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
