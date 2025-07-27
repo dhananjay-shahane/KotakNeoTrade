@@ -992,11 +992,14 @@ except Exception as e:
     trading_functions = None
 
 # Initialize extensions for email functionality
+login_manager = None
+mail = None
+
 try:
     # Initialize LoginManager properly
     login_manager = LoginManager()
     login_manager.init_app(app)
-    login_manager.login_view = 'trading_account_login'
+    login_manager.login_view = 'auth_routes.trading_account_login'
 
     # Initialize Mail
     mail = Mail(app)
@@ -1007,28 +1010,29 @@ except Exception as e:
     try:
         login_manager = LoginManager()
         login_manager.init_app(app)
-        login_manager.login_view = 'trading_account_login'
+        login_manager.login_view = 'auth_routes.trading_account_login'
         print("✓ Basic login manager initialized")
     except Exception as login_error:
         print(f"Login manager error: {login_error}")
 
 # User loader for login functionality
-try:
+if login_manager:
+    try:
+        @login_manager.user_loader
+        def load_user(user_id):
+            try:
+                from models import User
+                return User.query.get(int(user_id))
+            except Exception as e:
+                print(f"User loader error: {e}")
+                return None
 
-    @login_manager.user_loader
-    def load_user(user_id):
-        try:
-            from models import User
-            return User.query.get(int(user_id))
-        except Exception as e:
-            print(f"User loader error: {e}")
-            return None
-
-    print("✓ User loader defined")
-except Exception as e:
-    print(f"User loader optional: {e}")
+        print("✓ User loader defined")
+    except Exception as e:
+        print(f"User loader optional: {e}")
 
 # Email configuration for registration functionality
+User = None
 try:
     app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
     app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
@@ -1050,6 +1054,9 @@ except Exception as e:
 
 def send_registration_email(user_email, username, password):
     """Send registration confirmation email with credentials"""
+    if not mail:
+        return False
+        
     try:
         msg = Message(
             subject="Welcome to Trading Platform - Your Account Details",
@@ -1106,6 +1113,10 @@ def register():
 
         # Check if user already exists
         try:
+            if not User:
+                flash('User model not available.', 'error')
+                return render_template('auth/register.html')
+                
             existing_user = User.query.filter_by(email=email).first()
             if existing_user:
                 flash('Email already registered.', 'error')
@@ -1148,6 +1159,10 @@ def login():
         password = request.form.get('password')
 
         try:
+            if not User:
+                flash('User model not available.', 'error')
+                return render_template('auth/login.html')
+                
             user = User.query.filter_by(username=username).first()
 
             if user and user.check_password(password):
