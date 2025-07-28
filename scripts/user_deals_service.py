@@ -131,6 +131,11 @@ class UserDealsService:
                         else:
                             deal['symbol'] = ''
 
+                        # Set pos to 0 if deal is closed
+                        deal_status = str(deal.get('status', 'ACTIVE')).upper()
+                        if deal_status == 'CLOSED':
+                            deal['pos'] = '0'
+
                         # Set default CMP if not available
                         if not deal.get('cmp'):
                             deal['cmp'] = 0.0

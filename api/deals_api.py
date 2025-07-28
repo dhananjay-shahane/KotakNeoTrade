@@ -484,6 +484,10 @@ def get_all_deals_data_metrics():
                 tpr_value = "--"
                 tva_value = "--"
 
+            # --- Set pos to 0 if deal is closed, otherwise use original value ---
+            deal_status = str(deal.get('status', 'ACTIVE')).upper()
+            pos_value = '0' if deal_status == 'CLOSED' else deal.get('pos', '1')
+
             # --- Format deal with all required fields ---
             formatted_deal = {
                 'trade_signal_id': trade_signal_id,
@@ -496,7 +500,7 @@ def get_all_deals_data_metrics():
                 'qty': qty,
                 'ep': entry_price,
                 'cmp': cmp_display,
-                'pos': deal.get('pos', '1'),
+                'pos': pos_value,
                 'chan_percent': round(change_percent, 2),
                 'inv': investment,
                 'tp': tp_value,  # Target price with business logic
@@ -510,7 +514,7 @@ def get_all_deals_data_metrics():
                 'pp': '--',  # Performance points
                 'iv': investment,  # Investment value
                 'ip': entry_price,  # Entry price
-                'status': deal.get('status', 'ACTIVE'),  # Use actual status from database
+                'status': deal_status,  # Use actual status from database
                 'deal_type': 'MANUAL',
                 'notes': '',
                 'tags': '',
