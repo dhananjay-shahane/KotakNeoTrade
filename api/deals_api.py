@@ -738,10 +738,10 @@ def close_deal():
         # Connect to database
         db_connector = DatabaseConnector(os.environ.get('DATABASE_URL'))
 
-        # Update deal status to CLOSED
+        # Update deal status to CLOSED and set exit date
         update_query = """
             UPDATE user_deals 
-            SET status = 'CLOSED', updated_at = CURRENT_TIMESTAMP
+            SET status = 'CLOSED', ed = CURRENT_DATE, updated_at = CURRENT_TIMESTAMP
             WHERE id = %s AND user_id = %s AND symbol = %s
         """
 

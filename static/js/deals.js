@@ -330,7 +330,7 @@ DealsManager.prototype.loadDeals = function () {
                                 thirty: deal.thirty || "--",
                                 thirty_percent: deal.thirty_percent || "--",
                                 qt: deal.qt || 1,
-                                ed: "--", // Always "--" as requested
+                                ed: deal.ed || "--", // Show exit date from database
                                 exp: deal.exp || "--",
                                 pr: deal.pr || "--",
                                 pp: deal.pp || "--",
@@ -611,7 +611,8 @@ DealsManager.prototype.renderDealsTable = function () {
                     cellContent = deal.qt || "--";
                     break;
                 case "ed":
-                    cellContent = "--"; // Always show "--" as requested
+                    // Show exit date if deal is closed, otherwise show "--"
+                    cellContent = (deal.ed && deal.ed !== '--' && deal.ed !== null) ? deal.ed : "--";
                     break;
                 case "exp":
                     cellContent = deal.exp || "--";
@@ -749,26 +750,42 @@ DealsManager.prototype.renderDealsTable = function () {
                     }
                     break;
                 case "actions":
-                    cellContent =
-                        '<div class="btn-group btn-group-sm">' +
-                        '<button class="btn btn-warning btn-sm" onclick="editDeal(\'' +
-                        (deal.id || deal.trade_signal_id || "") +
-                        "', '" +
-                        (deal.symbol || "") +
-                        "', " +
-                        (deal.ep || 0) +
-                        ", " +
-                        (deal.tp || 0) +
-                        ')">' +
-                        '<i class="fas fa-edit"></i> Edit </button>' +
-                        '<button class="btn btn-danger btn-sm" onclick="closeDeal(\'' +
-                        (deal.id || deal.trade_signal_id || "") +
-                        "', '" +
-                        (deal.symbol || "") +
-                        "')\">" +
-                        '<i class="fas fa-times"></i> Close' +
-                        "</button>" +
-                        "</div>";
+                    // Check if deal is closed
+                    var isClosed = deal.status === 'CLOSED' || (deal.ed && deal.ed !== '--' && deal.ed !== null);
+                    
+                    if (isClosed) {
+                        // Show disabled buttons for closed deals
+                        cellContent =
+                            '<div class="btn-group btn-group-sm">' +
+                            '<button class="btn btn-warning btn-sm" disabled title="Deal is closed">' +
+                            '<i class="fas fa-edit"></i> Edit </button>' +
+                            '<button class="btn btn-danger btn-sm" disabled title="Deal is closed">' +
+                            '<i class="fas fa-times"></i> Close' +
+                            '</button>' +
+                            '</div>';
+                    } else {
+                        // Show enabled buttons for active deals
+                        cellContent =
+                            '<div class="btn-group btn-group-sm">' +
+                            '<button class="btn btn-warning btn-sm" onclick="editDeal(\'' +
+                            (deal.id || deal.trade_signal_id || "") +
+                            "', '" +
+                            (deal.symbol || "") +
+                            "', " +
+                            (deal.ep || 0) +
+                            ", " +
+                            (deal.tp || 0) +
+                            ')">' +
+                            '<i class="fas fa-edit"></i> Edit </button>' +
+                            '<button class="btn btn-danger btn-sm" onclick="closeDeal(\'' +
+                            (deal.id || deal.trade_signal_id || "") +
+                            "', '" +
+                            (deal.symbol || "") +
+                            "')\">" +
+                            '<i class="fas fa-times"></i> Close' +
+                            "</button>" +
+                            "</div>";
+                    }
                     break;
                 default:
                     cellContent = "";
@@ -782,6 +799,14 @@ DealsManager.prototype.renderDealsTable = function () {
             }
             cell.innerHTML = cellContent;
             row.appendChild(cell);
+        }
+
+        // Add styling for closed deals
+        var isClosed = deal.status === 'CLOSED' || (deal.ed && deal.ed !== '--' && deal.ed !== null);
+        if (isClosed) {
+            row.style.opacity = '0.6';
+            row.style.backgroundColor = 'rgba(108, 117, 125, 0.1)';
+            row.classList.add('deal-closed');
         }
 
         tbody.appendChild(row);
@@ -2080,43 +2105,70 @@ function editDeal(dealId, symbol, entryPrice, targetPrice) {
 function closeDeal(dealId, symbol) {
     // Input validation
     if (!dealId || dealId.trim() === "") {
-        alert("Invalid deal ID provided");
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Invalid deal ID provided'
+        });
         return;
     }
 
     if (!symbol || symbol.trim() === "") {
-        alert("Invalid symbol provided");
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Invalid symbol provided'
+        });
         return;
     }
 
-    // Confirmation dialog
-    if (
-        confirm("Are you sure you want to close the deal for " + symbol + "?")
-    ) {
-        // Submit close deal request via AJAX
-        var xhr = new XMLHttpRequest();
-        xhr.open("POST", "/api/close-deal", true);
-        xhr.setRequestHeader("Content-Type", "application/json");
+    // SweetAlert confirmation dialog
+    Swal.fire({
+        title: 'Close Deal',
+        text: `Are you sure you want to close the deal for ${symbol}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, Close Deal',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Submit close deal request via AJAX
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/api/close-deal", true);
+            xhr.setRequestHeader("Content-Type", "application/json");
 
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4) {
-                if (xhr.status === 200) {
-                    alert("Deal closed successfully for " + symbol);
-                    // Refresh deals table
-                    refreshDeals();
-                } else {
-                    alert("Failed to close deal. Please try again.");
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success',
+                            text: `Deal closed successfully for ${symbol}`,
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                        // Refresh deals table
+                        refreshDeals();
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to close deal. Please try again.'
+                        });
+                    }
                 }
-            }
-        };
+            };
 
-        xhr.send(
-            JSON.stringify({
-                deal_id: dealId,
-                symbol: symbol,
-            }),
-        );
-    }
+            xhr.send(
+                JSON.stringify({
+                    deal_id: dealId,
+                    symbol: symbol,
+                }),
+            );
+        }
+    });
 }
 
 function showEditDealModal(dealId, symbol, entryPrice, targetPrice) {

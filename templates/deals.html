@@ -1,6 +1,8 @@
 {% extends "base.html" %} {% block title %}Deals - ETF Trading Signals{%
 endblock %} {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton_animation.css') }}"/>
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 {% endblock %} {% block content %}
 <!-- Actual Deals Content -->
 <div class="deals-content" id="dealsContent">
