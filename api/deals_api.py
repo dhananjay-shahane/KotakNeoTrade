@@ -181,9 +181,13 @@ class SignalsFetcher:
                     entry_date as date,
                     entry_price as ep,
                     position_type as pos,
-                    '--' as ed
+                    CASE 
+                        WHEN status = 'CLOSED' AND ed IS NOT NULL THEN ed::text
+                        ELSE '--'
+                    END as ed,
+                    COALESCE(status, 'ACTIVE') as status
                 FROM user_deals
-                WHERE user_id = %s AND status != 'CLOSED'
+                WHERE user_id = %s
                 ORDER BY entry_date DESC
             """
 
@@ -500,13 +504,13 @@ def get_all_deals_data_metrics():
                 'tva': tva_value,  # Target value amount
                 'pl': round(profit_loss, 2),
                 'qt': qt_value,  # Symbol repeat count
-                'ed': deal.get('ed', '--'),  # Entry date
+                'ed': deal.get('ed', '--'),  # Exit date
                 'exp': '--',  # Expiry
                 'pr': '--',  # Price range
                 'pp': '--',  # Performance points
                 'iv': investment,  # Investment value
                 'ip': entry_price,  # Entry price
-                'status': 'ACTIVE',
+                'status': deal.get('status', 'ACTIVE'),  # Use actual status from database
                 'deal_type': 'MANUAL',
                 'notes': '',
                 'tags': '',
