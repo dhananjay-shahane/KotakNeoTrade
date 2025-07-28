@@ -293,7 +293,7 @@ DealsManager.prototype.loadDeals = function () {
                                     deal.id || deal.trade_signal_id || "",
                                 symbol:
                                     deal.symbol || deal.trading_symbol || "",
-                                pos: (deal.status && deal.status.toUpperCase() === 'CLOSED') ? 0 : (deal.position_type === "LONG" || deal.pos === 1 ? 1 : 0),
+                                pos: "1",
                                 qty: parseInt(deal.quantity || deal.qty || 0),
                                 ep: parseFloat(
                                     deal.entry_price || deal.ep || 0,
@@ -558,12 +558,7 @@ DealsManager.prototype.renderDealsTable = function () {
                     cellContent = deal.date || "";
                     break;
                 case "pos":
-                    // Show 0 if deal is closed, otherwise show original pos value
-                    if (deal.status && deal.status.toUpperCase() === 'CLOSED') {
-                        cellContent = "0";
-                    } else {
-                        cellContent = deal.pos === 1 ? "1" : "0";
-                    }
+                    cellContent = deal.pos === "Long" ? "1" : "1";
                     break;
                 case "qty":
                     cellContent = deal.qty
@@ -757,7 +752,7 @@ DealsManager.prototype.renderDealsTable = function () {
                 case "actions":
                     // Check if deal is closed
                     var isClosed = deal.status === 'CLOSED' || (deal.ed && deal.ed !== '--' && deal.ed !== null);
-
+                    
                     if (isClosed) {
                         // Show disabled buttons for closed deals
                         cellContent =
@@ -938,9 +933,9 @@ this.checkPriceUpdateStatusAdvanced = function () {
 function performSearch() {
     var searchInput = document.getElementById("symbolSearchInput");
     if (!searchInput || !window.dealsManager) return;
-
+    
     var query = searchInput.value.toLowerCase().trim();
-
+    
     if (query === "") {
         // Reset to show all deals
         window.dealsManager.filteredDeals = window.dealsManager.deals.slice();
@@ -954,7 +949,7 @@ function performSearch() {
             var date = (deal.date || "").toString().toLowerCase();
             var ep = (deal.ep || deal.entry_price || "").toString().toLowerCase();
             var qty = (deal.qty || deal.quantity || "").toString().toLowerCase();
-
+            
             return symbol.includes(query) || 
                    status.includes(query) || 
                    tradeId.includes(query) ||
@@ -964,7 +959,7 @@ function performSearch() {
                    qty.includes(query);
         });
     }
-
+    
     // Reset to page 1 and re-render
     window.dealsManager.currentPage = 1;
     window.dealsManager.renderDealsTable();
@@ -1060,7 +1055,7 @@ function resetDefaultColumns() {
                            column.key === 'inv' || column.key === 'pl' || 
                            column.key === 'actions';
         });
-
+        
         // Update checkboxes
         var checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
         checkboxes.forEach(function(checkbox) {
@@ -1080,7 +1075,7 @@ function applyColumnSettings() {
         window.dealsManager.updateTableHeaders();
         window.dealsManager.renderDealsTable();
         window.dealsManager.updatePagination();
-
+        
         // Close modal
         var modal = bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal'));
         if (modal) {
@@ -1877,7 +1872,7 @@ function performInlineSearch() {
                             .includes(searchTerm)) ||
                     (deal.date && deal.date.toLowerCase().includes(searchTerm))
                 );
-                        },
+            },
         );
     }
 
