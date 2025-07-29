@@ -575,6 +575,13 @@ endblock %} {% block head %}
                 updatePortfolioDisplay();
                 updateCharts();
                 loadSymbolOptions();
+                
+                // Auto-select first symbol if available
+                if (portfolioData.symbols && portfolioData.symbols.length > 0) {
+                    const symbolSelector = document.getElementById("symbolSelector");
+                    symbolSelector.value = portfolioData.symbols[0];
+                    loadSymbolData(); // Load data for the first symbol
+                }
             } else {
                 console.error("Failed to load portfolio data:", result.error);
                 console.log("Using empty data structure");
@@ -627,24 +634,31 @@ endblock %} {% block head %}
 
     // Update charts with loaded data
     function updateCharts() {
-        // Update pie chart with P&L data
-        if (progressChart && portfolioData.status_chart_data) {
-            const chartData = portfolioData.status_chart_data;
+        // Update pie chart with Investment vs Profit/Loss data
+        if (progressChart && portfolioData.total_investment) {
+            const totalInvestment = portfolioData.total_investment || 0;
+            const totalPnL = Math.abs(portfolioData.total_pnl || 0);
+            
+            // Prepare chart data for Investment vs P&L
+            const labels = ["Total Investment", totalPnL > 0 ? "Profit" : "Loss"];
+            const data = [totalInvestment, totalPnL];
+            const colors = [
+                "#3B82F6", // Blue for Investment
+                portfolioData.total_pnl >= 0 ? "#10B981" : "#EF4444" // Green for profit, Red for loss
+            ];
 
-            if (
-                chartData.labels &&
-                chartData.data &&
-                chartData.labels.length > 0
-            ) {
-                progressChart.data.labels = chartData.labels;
-                progressChart.data.datasets[0].data = chartData.data;
-                progressChart.data.datasets[0].backgroundColor =
-                    chartData.colors || ["#3B82F6", "#10B981"];
-                progressChart.data.datasets[0].borderColor = "#ffffff";
-                progressChart.data.datasets[0].borderWidth = 2;
-                progressChart.update("active");
-                console.log("Pie chart updated with data:", chartData);
-            }
+            progressChart.data.labels = labels;
+            progressChart.data.datasets[0].data = data;
+            progressChart.data.datasets[0].backgroundColor = colors;
+            progressChart.data.datasets[0].borderColor = "#ffffff";
+            progressChart.data.datasets[0].borderWidth = 2;
+            progressChart.update("active");
+            
+            console.log("Pie chart updated with Investment vs P&L:", {
+                labels,
+                data,
+                colors
+            });
         }
 
         // Update symbol chart if available
@@ -728,16 +742,7 @@ endblock %} {% block head %}
                             label: function (context) {
                                 const label = context.label || "";
                                 const value = context.parsed;
-                                if (
-                                    label.includes("Investment") ||
-                                    label.includes("Profit") ||
-                                    label.includes("Loss")
-                                ) {
-                                    return (
-                                        label + ": ₹" + value.toLocaleString()
-                                    );
-                                }
-                                return label + ": " + value;
+                                return label + ": ₹" + value.toLocaleString();
                             },
                         },
                     },

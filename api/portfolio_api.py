@@ -28,6 +28,20 @@ def get_portfolio_stats():
 
         logger.info(f"Portfolio stats result: {deals_stats}")
 
+        # Extract necessary data
+        total_investment = deals_stats.get('total_investment', 0)
+        total_pnl = deals_stats.get('total_pnl', 0)
+
+        # Create charts data for Investment vs P&L
+        pnl_label = 'Profit' if total_pnl >= 0 else 'Loss'
+        status_chart_data = {
+            'labels': ['Total Investment', pnl_label],
+            'data': [total_investment, abs(total_pnl)],
+            'colors': ['#3B82F6', '#10B981' if total_pnl >= 0 else '#EF4444']
+        }
+
+        deals_stats['status_chart_data'] = status_chart_data
+
         return jsonify({
             'success': True,
             'data': deals_stats
@@ -103,7 +117,7 @@ def get_symbol_data(symbol):
                 try:
                     entry_price = float(deal.get('ep', 0)) if deal.get('ep') else 0
                     qty = int(deal.get('qty', 0)) if deal.get('qty') else 0
-                    
+
                     # If no valid price/qty data, generate fallback values
                     if not entry_price or not qty:
                         import random
@@ -116,7 +130,7 @@ def get_symbol_data(symbol):
                         else:
                             entry_price = random.uniform(50, 1000)
                             qty = random.randint(10, 100)
-                    
+
                     investment_value = entry_price * qty
                     # Add some variation for current value
                     import random
