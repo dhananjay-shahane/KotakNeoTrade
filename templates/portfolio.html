@@ -510,30 +510,44 @@ endblock %} {% block head %}
     // Load portfolio data from API
     async function loadPortfolioData() {
         try {
+            console.log('Fetching portfolio stats...');
             const response = await fetch('/api/portfolio/stats');
-            const result = await response.json();
+            console.log('Response status:', response.status);
             
-            if (result.success) {
+            const result = await response.json();
+            console.log('Portfolio API response:', result);
+            
+            if (result.success && result.data) {
                 portfolioData = result.data;
+                console.log('Portfolio data loaded:', portfolioData);
                 updatePortfolioDisplay();
                 updateCharts();
                 loadSymbolOptions();
             } else {
                 console.error('Failed to load portfolio data:', result.error);
+                console.log('Using empty data structure');
                 updatePortfolioDisplay(); // Show with empty data
             }
         } catch (error) {
             console.error('Error loading portfolio data:', error);
+            console.log('Using empty data structure due to error');
             updatePortfolioDisplay(); // Show with empty data
         }
     }
 
     // Update portfolio display with loaded data
     function updatePortfolioDisplay() {
-        document.getElementById("totalDeals").textContent = portfolioData.total_deals || 0;
-        document.getElementById("totalInvestment").textContent = `₹${(portfolioData.total_investment || 0).toLocaleString()}`;
+        console.log('Updating portfolio display with data:', portfolioData);
         
+        const totalDeals = portfolioData.total_deals || 0;
+        const totalInvestment = portfolioData.total_investment || 0;
         const totalPnL = portfolioData.total_pnl || 0;
+        
+        console.log('Values:', { totalDeals, totalInvestment, totalPnL });
+        
+        document.getElementById("totalDeals").textContent = totalDeals;
+        document.getElementById("totalInvestment").textContent = `₹${totalInvestment.toLocaleString()}`;
+        
         const pnlElement = document.getElementById("totalPnL");
         const pnlIcon = document.getElementById("pnlIcon");
         

@@ -21,8 +21,12 @@ def get_portfolio_stats():
         # Get user ID from session
         user_id = session.get('user_id', 1)
         
+        logger.info(f"Fetching portfolio stats for user_id: {user_id}")
+        
         # Fetch deals statistics
         deals_stats = user_deals_service.get_deals_statistics(user_id)
+        
+        logger.info(f"Portfolio stats result: {deals_stats}")
         
         return jsonify({
             'success': True,
