@@ -16,7 +16,18 @@ candlestick_bp = Blueprint('candlestick_api', __name__)
 
 def table_exists(db_connector, table_name):
     """Check if a table exists in the symbols schema"""
-    return db_connector.table_exists(table_name, 'symbols')
+    try:
+        query = """
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'symbols' 
+                AND table_name = %s
+            )
+        """
+        result = db_connector.execute_query(query, (table_name,))
+        return result[0]['exists'] if result else False
+    except:
+        return False
 
 
 def get_cmp(db_connector, symbol):
@@ -133,7 +144,7 @@ def get_ohlc_data(db_connector, symbol, period='1M'):
         return []
 
 
-@candlestick_bp.route('/api/candlestick-data')
+@candlestick_bp.route('/candlestick-data')
 def get_candlestick_data():
     """Get candlestick chart data for a symbol with aggressive performance optimization"""
     try:
@@ -225,17 +236,20 @@ def get_candlestick_data():
         finally:
             if db_connector:
                 try:
-                    db_connector.close()
+                    if hasattr(db_connector, 'close'):
+                        db_connector.close()
                 except:
                     pass
 
     except Exception as e:
+        symbol_name = locals().get('symbol', 'unknown')
+        period_name = locals().get('period', 'unknown')
         logger.error(
-            f"Error in candlestick data API for {symbol} {period}: {e}")
+            f"Error in candlestick data API for {symbol_name} {period_name}: {e}")
         return jsonify({'error': f'Service temporarily unavailable'}), 503
 
 
-@candlestick_bp.route('/api/symbol-metrics')
+@candlestick_bp.route('/symbol-metrics')
 def get_symbol_metrics():
     """Get symbol metrics (current price, changes)"""
     try:
@@ -279,14 +293,18 @@ def get_symbol_metrics():
 
         finally:
             if db_connector:
-                db_connector.close()
+                try:
+                    if hasattr(db_connector, 'close'):
+                        db_connector.close()
+                except:
+                    pass
 
     except Exception as e:
         logger.error(f"Error in symbol metrics API: {e}")
         return jsonify({'error': 'Internal server error'}), 500
 
 
-@candlestick_bp.route('/api/available-symbols')
+@candlestick_bp.route('/available-symbols')
 def get_available_symbols():
     """Get list of available symbols for charting with search support"""
     try:
@@ -313,11 +331,12 @@ def get_available_symbols():
 
             # Extract symbol names (remove _daily suffix and convert to uppercase)
             all_symbols = []
-            for row in result:
-                table_name = row['table_name']
-                if table_name.endswith('_daily'):
-                    symbol = table_name[:-6].upper()  # Remove '_daily' suffix
-                    all_symbols.append(symbol)
+            if result and hasattr(result, '__iter__'):
+                for row in result:
+                    table_name = row['table_name']
+                    if table_name.endswith('_daily'):
+                        symbol = table_name[:-6].upper()  # Remove '_daily' suffix
+                        all_symbols.append(symbol)
 
             # Filter by categories (basic filtering - you can enhance this)
             category_filtered_symbols = []
@@ -353,7 +372,11 @@ def get_available_symbols():
 
         finally:
             if db_connector:
-                db_connector.close()
+                try:
+                    if hasattr(db_connector, 'close'):
+                        db_connector.close()
+                except:
+                    pass
 
     except Exception as e:
         logger.error(f"Error in available symbols API: {e}")
