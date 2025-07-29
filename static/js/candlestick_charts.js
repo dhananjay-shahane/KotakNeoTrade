@@ -17,6 +17,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     bindEventListeners();
     hideChart();
+    // Ensure chart container is hidden by default
+    hideChartContainer();
 });
 
 function bindEventListeners() {
@@ -31,15 +33,18 @@ function bindEventListeners() {
             // Clear previous timeout
             clearTimeout(searchTimeout);
 
-            if (query.length >= 2) {
-                // Add debouncing to reduce API calls
+            if (query.length === 0) {
+                // When search box is cleared, hide everything
+                hideSearchResults();
+                clearSymbolSearchAndChart();
+                hideChartContainer();
+            } else if (query.length >= 1) {
+                // Search for any character input (reduced from 2 to 1)
                 searchTimeout = setTimeout(() => {
                     fetchSymbolSuggestions(query);
                 }, 300);
             } else {
                 hideSearchResults();
-                // Clear chart when search is empty or too short
-                clearSymbolSearchAndChart();
             }
         });
 
@@ -192,6 +197,7 @@ function selectSymbol(symbol) {
     // Validate symbol exists (you can add more validation here)
     if (!symbol || symbol.trim() === "") {
         clearSymbolSearchAndChart();
+        hideChartContainer();
         return;
     }
     
@@ -211,11 +217,13 @@ function selectSymbol(symbol) {
     ])
         .then(() => {
             hideLoading();
+            // Chart container should remain visible on success
         })
         .catch((error) => {
             hideLoading();
             showErrorState(error.message);
-            // If there's an error loading the symbol, clear the chart
+            // If there's an error loading the symbol, hide chart container
+            hideChartContainer();
             clearSymbolSearchAndChart();
         });
 }
@@ -239,6 +247,7 @@ function removeSymbol(symbol) {
     }
     document.getElementById("symbolSearch").value = "";
     hideChart();
+    hideChartContainer();
     currentSymbol = null;
 }
 
@@ -633,6 +642,7 @@ function clearSymbolSearchAndChart() {
     
     // Hide chart container and show "No Charts Selected" message
     hideChart();
+    hideChartContainer();
     
     // Clear selected symbols display
     const selectedSymbolsDiv = document.getElementById("selectedSymbols");
