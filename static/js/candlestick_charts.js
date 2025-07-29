@@ -42,7 +42,7 @@ function bindEventListeners() {
                 // Search for any character input (reduced from 2 to 1)
                 searchTimeout = setTimeout(() => {
                     fetchSymbolSuggestions(query);
-                }, 300);
+                }, 150); // Reduced delay for faster response
             } else {
                 hideSearchResults();
             }
@@ -57,6 +57,26 @@ function bindEventListeners() {
                     selectSymbol(symbol);
                     hideSearchResults();
                 }
+            }
+        });
+
+        // Auto-load chart when user stops typing for known symbols
+        symbolInput.addEventListener("input", function (e) {
+            const query = e.target.value.trim().toUpperCase();
+            
+            // If user typed a complete symbol name (3+ chars), try to load it automatically
+            if (query.length >= 3) {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    // Check if this looks like a complete symbol
+                    const commonSymbols = ['ITC', 'TCS', 'INFY', 'HDFC', 'ICICI', 'SBI', 'RELIANCE', 'WIPRO', 'NIFTY', 'SENSEX'];
+                    const isKnownSymbol = commonSymbols.some(symbol => symbol.startsWith(query));
+                    
+                    if (query.length >= 4 || isKnownSymbol) {
+                        // Try to load the symbol directly
+                        selectSymbol(query);
+                    }
+                }, 500); // Wait for user to stop typing
             }
         });
     }
@@ -144,6 +164,13 @@ function fetchSymbolSuggestions(query) {
         .then((data) => {
             if (data.success) {
                 showSearchResults(data.symbols);
+                // Auto-select first result if there's an exact match
+                if (data.symbols.length > 0 && data.symbols[0].toUpperCase() === query.toUpperCase()) {
+                    setTimeout(() => {
+                        selectSymbol(data.symbols[0]);
+                        hideSearchResults();
+                    }, 100);
+                }
             } else {
                 showSearchResults([]);
             }
@@ -163,8 +190,8 @@ function showSearchResults(symbols) {
     } else {
         searchResults.innerHTML = symbols
             .map(
-                (symbol) =>
-                    `<div class="search-result-item" data-symbol="${symbol}">${symbol}</div>`,
+                (symbol, index) =>
+                    `<div class="search-result-item ${index === 0 ? 'highlighted' : ''}" data-symbol="${symbol}">${symbol}</div>`,
             )
             .join("");
 
@@ -178,6 +205,23 @@ function showSearchResults(symbols) {
                         document.getElementById("symbolSearch").value = symbol;
                         selectSymbol(symbol);
                         hideSearchResults();
+                    });
+
+                    // Add hover effect to auto-preview chart
+                    item.addEventListener("mouseenter", function () {
+                        const symbol = this.dataset.symbol;
+                        // Remove previous highlights
+                        searchResults.querySelectorAll('.search-result-item').forEach(el => 
+                            el.classList.remove('highlighted')
+                        );
+                        // Highlight current item
+                        this.classList.add('highlighted');
+                        
+                        // Optional: Preview chart on hover (uncomment if desired)
+                        // clearTimeout(previewTimeout);
+                        // previewTimeout = setTimeout(() => {
+                        //     selectSymbol(symbol);
+                        // }, 300);
                     });
                 }
             });

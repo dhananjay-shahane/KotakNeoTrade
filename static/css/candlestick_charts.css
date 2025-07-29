@@ -251,15 +251,15 @@
     .chart-controls {
         justify-content: center;
     }
-    
+
     .symbol-metrics {
         justify-content: center;
     }
-    
+
     .chart-container {
         height: 400px;
     }
-    
+
     .search-results {
         max-height: 150px;
     }
@@ -300,4 +300,14 @@
 
 #chartDisplay.visible {
     display: block;
+}
+
+.search-result-item:hover {
+    background-color: var(--bs-secondary-bg);
+}
+
+.search-result-item.highlighted {
+    background-color: var(--bs-primary);
+    color: white;
+    font-weight: 500;
 }
