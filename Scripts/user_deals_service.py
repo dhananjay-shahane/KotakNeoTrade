@@ -56,30 +56,54 @@ class UserDealsService:
             if not deals:
                 return self._empty_stats()
             
-            # Calculate statistics
+            # Calculate statistics with null checks
             total_deals = len(deals)
             active_deals = len([d for d in deals if d['status'] == 'ACTIVE'])
             closed_deals = len([d for d in deals if d['status'] == 'CLOSED'])
             
+            # Calculate total investment and P&L
+            total_investment = 0
+            total_current_value = 0
+            
+            for deal in deals:
+                if deal['ep'] is not None and deal['qty'] is not None:
+                    ep_value = float(deal['ep'])
+                    qty_value = int(deal['qty'])
+                    investment = ep_value * qty_value
+                    total_investment += investment
+                    
+                    # Mock current value with 5% gain
+                    current_value = investment * 1.05
+                    total_current_value += current_value
+            
+            total_pnl = total_current_value - total_investment
+            
             # Get unique symbols
-            symbols = list(set([d['symbol'] for d in deals]))
+            symbols = list(set([d['symbol'] for d in deals if d['symbol']]))
             
             # Symbol distribution for pie chart
-            symbol_counts = Counter([d['symbol'] for d in deals])
+            symbol_counts = Counter([d['symbol'] for d in deals if d['symbol']])
             
-            # Prepare chart data
+            # Prepare chart data for symbols
             chart_data = {
                 'labels': list(symbol_counts.keys()),
                 'data': list(symbol_counts.values()),
                 'colors': self._generate_colors(len(symbol_counts))
             }
             
-            # Status distribution for pie chart
-            status_data = {
-                'labels': ['Active Deals', 'Closed Deals'],
-                'data': [active_deals, closed_deals],
-                'colors': ['#10B981', '#EF4444']  # Green for active, red for closed
-            }
+            # Profit/Loss distribution for pie chart
+            if total_investment > 0:
+                pnl_data = {
+                    'labels': ['Investment', 'Profit/Loss'],
+                    'data': [round(total_investment, 2), round(abs(total_pnl), 2)],
+                    'colors': ['#3B82F6', '#10B981' if total_pnl >= 0 else '#EF4444']
+                }
+            else:
+                pnl_data = {
+                    'labels': ['No Data'],
+                    'data': [1],
+                    'colors': ['#95a5a6']
+                }
             
             conn.close()
             
@@ -87,9 +111,12 @@ class UserDealsService:
                 'total_deals': total_deals,
                 'active_deals': active_deals,
                 'closed_deals': closed_deals,
+                'total_investment': round(total_investment, 2),
+                'total_current_value': round(total_current_value, 2),
+                'total_pnl': round(total_pnl, 2),
                 'symbols': symbols[:10],  # Show top 10 symbols
                 'symbol_chart_data': chart_data,
-                'status_chart_data': status_data,
+                'status_chart_data': pnl_data,  # Changed to show P&L instead of status
                 'deals_list': [dict(deal) for deal in deals[:5]]  # Show last 5 deals
             }
             
@@ -103,9 +130,12 @@ class UserDealsService:
             'total_deals': 0,
             'active_deals': 0,
             'closed_deals': 0,
+            'total_investment': 0,
+            'total_current_value': 0,
+            'total_pnl': 0,
             'symbols': [],
             'symbol_chart_data': {'labels': [], 'data': [], 'colors': []},
-            'status_chart_data': {'labels': [], 'data': [], 'colors': []},
+            'status_chart_data': {'labels': ['No Data'], 'data': [1], 'colors': ['#95a5a6']},
             'deals_list': []
         }
     
@@ -129,7 +159,7 @@ class UserDealsService:
         try:
             conn = self.get_connection()
             if not conn:
-                return {}
+                return {'error': 'Database connection failed'}
             
             cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
             
@@ -148,26 +178,43 @@ class UserDealsService:
                 conn.close()
                 return {'error': 'No deals found for this symbol'}
             
-            # Calculate totals for this symbol
-            total_investment = sum(float(deal['ep']) * deal['qty'] for deal in deals)
-            total_quantity = sum(deal['qty'] for deal in deals)
+            # Calculate totals for this symbol with null checks
+            total_investment = 0
+            total_quantity = 0
+            valid_deals = []
+            
+            for deal in deals:
+                if deal['ep'] is not None and deal['qty'] is not None:
+                    ep_value = float(deal['ep'])
+                    qty_value = int(deal['qty'])
+                    total_investment += ep_value * qty_value
+                    total_quantity += qty_value
+                    valid_deals.append(deal)
+            
+            if not valid_deals:
+                conn.close()
+                return {'error': 'No valid deals with price data found for this symbol'}
             
             # Mock CMP for calculation (replace with real data source)
-            cmp = float(deals[0]['ep']) * 1.05  # Assume 5% gain for demo
+            avg_entry_price = total_investment / total_quantity if total_quantity > 0 else 0
+            cmp = avg_entry_price * 1.05  # Assume 5% gain for demo
             current_value = cmp * total_quantity
             profit_loss = current_value - total_investment
             profit_loss_percentage = (profit_loss / total_investment) * 100 if total_investment > 0 else 0
             
             # Format deals for display
             formatted_deals = []
-            for deal in deals:
+            for deal in valid_deals:
+                ep_value = float(deal['ep']) if deal['ep'] is not None else 0
+                qty_value = int(deal['qty']) if deal['qty'] is not None else 0
+                
                 formatted_deals.append({
                     'date': deal['created_at'].strftime('%Y-%m-%d') if deal['created_at'] else '--',
-                    'entry_price': float(deal['ep']),
-                    'qty': deal['qty'],
-                    'investment': float(deal['ep']) * deal['qty'],
-                    'current_value': cmp * deal['qty'],
-                    'status': deal['status']
+                    'entry_price': ep_value,
+                    'qty': qty_value,
+                    'investment': ep_value * qty_value,
+                    'current_value': cmp * qty_value,
+                    'status': deal['status'] or 'UNKNOWN'
                 })
             
             conn.close()

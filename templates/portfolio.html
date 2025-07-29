@@ -339,17 +339,17 @@ endblock %} {% block head %}
                                 >
                                     <div>
                                         <h6 class="text-muted mb-2">
-                                            Active Deals
+                                            Total Investment
                                         </h6>
                                         <h2
                                             class="text-info mb-0"
-                                            id="activeDeals"
+                                            id="totalInvestment"
                                         >
-                                            0
+                                            ₹0
                                         </h2>
                                     </div>
                                     <div class="project-icon">
-                                        <i class="fas fa-tasks text-info"></i>
+                                        <i class="fas fa-coins text-info"></i>
                                     </div>
                                 </div>
                             </div>
@@ -364,19 +364,17 @@ endblock %} {% block head %}
                                 >
                                     <div>
                                         <h6 class="text-muted mb-2">
-                                            Closed Deals
+                                            Profit/Loss
                                         </h6>
                                         <h2
-                                            class="text-success mb-0"
-                                            id="closedDeals"
+                                            class="mb-0"
+                                            id="totalPnL"
                                         >
-                                            0
+                                            ₹0
                                         </h2>
                                     </div>
                                     <div class="project-icon">
-                                        <i
-                                            class="fas fa-check-circle text-success"
-                                        ></i>
+                                        <i class="fas fa-chart-line" id="pnlIcon"></i>
                                     </div>
                                 </div>
                             </div>
@@ -388,7 +386,7 @@ endblock %} {% block head %}
                 <div class="col-md-4 mb-4">
                     <div class="card h-100">
                         <div class="card-header">
-                            <h6 class="mb-0">Deal Progress</h6>
+                            <h6 class="mb-0">Investment vs P&L</h6>
                         </div>
                         <div class="card-body">
                             <!-- Symbol Selector -->
@@ -533,27 +531,32 @@ endblock %} {% block head %}
     // Update portfolio display with loaded data
     function updatePortfolioDisplay() {
         document.getElementById("totalDeals").textContent = portfolioData.total_deals || 0;
-        document.getElementById("activeDeals").textContent = portfolioData.active_deals || 0;
-        document.getElementById("closedDeals").textContent = portfolioData.closed_deals || 0;
+        document.getElementById("totalInvestment").textContent = `₹${(portfolioData.total_investment || 0).toLocaleString()}`;
+        
+        const totalPnL = portfolioData.total_pnl || 0;
+        const pnlElement = document.getElementById("totalPnL");
+        const pnlIcon = document.getElementById("pnlIcon");
+        
+        pnlElement.textContent = `₹${totalPnL.toLocaleString()}`;
+        
+        if (totalPnL >= 0) {
+            pnlElement.className = "text-success mb-0";
+            pnlIcon.className = "fas fa-chart-line text-success";
+        } else {
+            pnlElement.className = "text-danger mb-0";
+            pnlIcon.className = "fas fa-chart-line text-danger";
+        }
     }
 
     // Update charts with loaded data
     function updateCharts() {
-        // Update pie chart with real data
-        if (progressChart) {
-            const activeDeals = portfolioData.active_deals || 0;
-            const closedDeals = portfolioData.closed_deals || 0;
-
-            // Always show the chart with meaningful data
-            if (activeDeals === 0 && closedDeals === 0) {
-                progressChart.data.datasets[0].data = [1];
-                progressChart.data.labels = ["No Deals Available"];
-                progressChart.data.datasets[0].backgroundColor = ["#95a5a6"];
-            } else {
-                progressChart.data.datasets[0].data = [activeDeals, closedDeals];
-                progressChart.data.labels = ["Active Deals", "Closed Deals"];
-                progressChart.data.datasets[0].backgroundColor = ["#10B981", "#EF4444"];
-            }
+        // Update pie chart with P&L data
+        if (progressChart && portfolioData.status_chart_data) {
+            const chartData = portfolioData.status_chart_data;
+            
+            progressChart.data.labels = chartData.labels;
+            progressChart.data.datasets[0].data = chartData.data;
+            progressChart.data.datasets[0].backgroundColor = chartData.colors;
             progressChart.update("active");
         }
         
@@ -583,16 +586,16 @@ endblock %} {% block head %}
 
     // Initialize charts function
     function initializeCharts() {
-        // Progress Chart (Pie chart for deal status)
+        // Progress Chart (Pie chart for Investment vs P&L)
         const progressCtx = document.getElementById("projectProgressChart").getContext("2d");
         progressChart = new Chart(progressCtx, {
             type: "doughnut",
             data: {
-                labels: ["Active Deals", "Closed Deals"],
+                labels: ["Loading..."],
                 datasets: [
                     {
-                        data: [1, 0],
-                        backgroundColor: ["#10B981", "#EF4444"],
+                        data: [1],
+                        backgroundColor: ["#95a5a6"],
                         borderWidth: 0,
                         hoverOffset: 4,
                     },
@@ -609,7 +612,12 @@ endblock %} {% block head %}
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                return context.label + ": " + context.parsed;
+                                const label = context.label || '';
+                                const value = context.parsed;
+                                if (label.includes('Investment') || label.includes('Profit') || label.includes('Loss')) {
+                                    return label + ": ₹" + value.toLocaleString();
+                                }
+                                return label + ": " + value;
                             }
                         }
                     }
