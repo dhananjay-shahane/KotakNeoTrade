@@ -6,12 +6,14 @@ import logging
 from flask import Blueprint, render_template, session, flash, redirect, url_for
 from core.auth import require_auth, validate_current_session
 from Scripts.trading_functions import TradingFunctions
+from Scripts.user_deals_service import UserDealsService
 
 # Create blueprint for main routes
 main_bp = Blueprint('main_routes', __name__)
 
-# Initialize trading functions
+# Initialize trading functions and services
 trading_functions = TradingFunctions()
+user_deals_service = UserDealsService()
 
 
 @main_bp.route('/')
@@ -175,17 +177,11 @@ def show_holdings():
 def portfolio():
     """Portfolio page with user deals statistics"""
     try:
-        # Import user deals service to get deal statistics
-        import sys
-        sys.path.append('Scripts')
-        from user_deals_service import UserDealsService
-        
         # Get user ID from session
         user_id = session.get('user_id', 1)  # Default to 1 for authenticated users
         
         # Fetch deals statistics
-        deals_service = UserDealsService()
-        deals_stats = deals_service.get_deals_statistics(user_id)
+        deals_stats = user_deals_service.get_deals_statistics(user_id)
         
         # Prepare account data for sidebar
         kotak_account_data = None
@@ -220,7 +216,9 @@ def portfolio():
             'active_deals': 0,
             'closed_deals': 0,
             'symbols': [],
-            'chart_data': {'labels': [], 'data': []}
+            'symbol_chart_data': {'labels': [], 'data': [], 'colors': []},
+            'status_chart_data': {'labels': [], 'data': [], 'colors': []},
+            'deals_list': []
         }
         return render_template('portfolio.html', 
                              kotak_account=kotak_account_data,

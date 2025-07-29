@@ -504,8 +504,8 @@ endblock %} {% block head %}
         total_deals: {{ deals_stats.total_deals if deals_stats else 0 }},
         active_deals: {{ deals_stats.active_deals if deals_stats else 0 }},
         closed_deals: {{ deals_stats.closed_deals if deals_stats else 0 }},
-        status_chart_data: {{ deals_stats.status_chart_data|tojson if deals_stats else '{"labels": [], "data": [], "colors": []}' }},
-        symbol_chart_data: {{ deals_stats.symbol_chart_data|tojson if deals_stats else '{"labels": [], "data": [], "colors": []}' }}
+        status_chart_data: {{ deals_stats.status_chart_data|tojson|safe if deals_stats else '{"labels": [], "data": [], "colors": []}' }},
+        symbol_chart_data: {{ deals_stats.symbol_chart_data|tojson|safe if deals_stats else '{"labels": [], "data": [], "colors": []}' }}
     };
 
     // Load portfolio data on page load
