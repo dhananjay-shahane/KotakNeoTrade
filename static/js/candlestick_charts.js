@@ -405,34 +405,53 @@ function updateLoadingMessage(message) {
 }
 
 function renderCandlestickChart(data, symbol) {
+    console.log('renderCandlestickChart called with', data.length, 'data points for', symbol);
+    
     const chartDiv = document.getElementById("candlestickChart");
+    if (!chartDiv) {
+        console.error('Chart div not found');
+        return;
+    }
 
-    if (!chartDiv) return;
+    // Set minimum dimensions for chart container
+    chartDiv.style.height = '400px';
+    chartDiv.style.minHeight = '400px';
+    chartDiv.style.width = '100%';
 
     // Limit data points for better performance
     const maxDataPoints = 500;
     let chartData = data;
 
     if (data.length > maxDataPoints) {
-        // Sample data to reduce rendering load
         const step = Math.ceil(data.length / maxDataPoints);
         chartData = data.filter((_, index) => index % step === 0);
+        console.log('Data reduced from', data.length, 'to', chartData.length, 'points');
     }
 
     // Clear previous chart
     chartDiv.innerHTML = "";
 
+    // Debug data structure
+    console.log('Sample data point:', chartData[0]);
+    console.log('Total data points to render:', chartData.length);
+
     const trace = {
         x: chartData.map((d) => d.x),
-        close: chartData.map((d) => d.close),
-        high: chartData.map((d) => d.high),
-        low: chartData.map((d) => d.low),
-        open: chartData.map((d) => d.open),
+        close: chartData.map((d) => parseFloat(d.close)),
+        high: chartData.map((d) => parseFloat(d.high)),
+        low: chartData.map((d) => parseFloat(d.low)),
+        open: chartData.map((d) => parseFloat(d.open)),
         type: "candlestick",
         name: symbol,
         increasing: { line: { color: "#16a34a", width: 1 } },
         decreasing: { line: { color: "#dc2626", width: 1 } },
     };
+
+    console.log('Trace prepared:', {
+        xLength: trace.x.length,
+        closeLength: trace.close.length,
+        sampleClose: trace.close[0]
+    });
 
     const layout = {
         paper_bgcolor: "transparent",
@@ -441,24 +460,33 @@ function renderCandlestickChart(data, symbol) {
             color: "#ffffff",
             size: 11,
         },
+        title: {
+            text: `${symbol} Candlestick Chart`,
+            font: { color: "#ffffff", size: 14 }
+        },
         xaxis: {
             gridcolor: "#444444",
             color: "#cccccc",
             showgrid: true,
             zeroline: false,
+            type: 'date',
+            tickformat: '%Y-%m-%d'
         },
         yaxis: {
             gridcolor: "#444444",
             color: "#cccccc",
             showgrid: true,
             zeroline: false,
+            title: { text: 'Price', font: { color: "#cccccc" } }
         },
         margin: {
-            l: 45,
-            r: 45,
-            t: 25,
-            b: 45,
+            l: 60,
+            r: 30,
+            t: 50,
+            b: 60,
         },
+        height: 400,
+        autosize: true,
         showlegend: false,
         dragmode: "zoom",
     };
@@ -471,22 +499,30 @@ function renderCandlestickChart(data, symbol) {
         scrollZoom: true,
     };
 
-    // Use Plotly.react for better performance with error handling
+    // Use Plotly.react for better performance with comprehensive error handling
     try {
         if (typeof Plotly !== 'undefined') {
+            console.log('Plotly available, rendering chart...');
             Plotly.react(chartDiv, [trace], layout, config).then(() => {
-                console.log('Chart rendered successfully for', symbol);
+                console.log('✓ Chart rendered successfully for', symbol);
+                // Update chart title after successful render
+                const chartTitle = document.getElementById("chartTitle");
+                if (chartTitle) {
+                    chartTitle.textContent = `${symbol} Chart`;
+                }
             }).catch((error) => {
-                console.error('Plotly rendering error:', error);
-                showErrorState('Chart rendering failed. Please try again.');
+                console.error('✗ Plotly rendering error:', error);
+                showErrorState(`Chart rendering failed: ${error.message}`);
             });
         } else {
-            console.error('Plotly not loaded');
+            console.error('✗ Plotly not loaded - checking script tags');
+            const plotlyScript = document.querySelector('script[src*="plotly"]');
+            console.log('Plotly script found:', !!plotlyScript);
             showErrorState('Chart library not loaded. Please refresh the page.');
         }
     } catch (error) {
-        console.error('Error rendering chart:', error);
-        showErrorState('Chart rendering failed. Please try again.');
+        console.error('✗ Error in chart rendering function:', error);
+        showErrorState(`Chart rendering failed: ${error.message}`);
     }
 }
 

@@ -74,6 +74,30 @@
     flex-wrap: wrap;
 }
 
+/* Candlestick Chart Specific Styles */
+#candlestickChart {
+    height: 400px !important;
+    min-height: 400px !important;
+    width: 100% !important;
+    position: relative;
+    background: transparent;
+}
+
+#candlestickChartContainer {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+    min-height: 450px;
+}
+
+.chart-content {
+    background: transparent;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
 .timeframe-btn {
     padding: 0.375rem 0.75rem;
     border: 1px solid var(--bs-border-color);
