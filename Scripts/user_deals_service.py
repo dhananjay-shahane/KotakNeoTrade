@@ -310,3 +310,39 @@ class UserDealsService:
         except Exception as e:
             logger.error(f"Error getting symbol details for {symbol}: {e}")
             return {'error': str(e)}
+    
+    def get_deals_by_symbol(self, user_id: int, symbol: str) -> List[Dict]:
+        """
+        Get all deals for a specific symbol
+        Args:
+            user_id: User ID
+            symbol: Trading symbol
+        Returns:
+            List of deals for the symbol
+        """
+        try:
+            conn = self.get_connection()
+            if not conn:
+                return []
+            
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            
+            # Query to get symbol-specific deals
+            query = """
+                SELECT trade_signal_id, symbol, qty, created_at, ep, pos, ed, status
+                FROM public.user_deals 
+                WHERE user_id = %s AND symbol = %s
+                ORDER BY created_at DESC
+            """
+            
+            cursor.execute(query, (user_id, symbol))
+            deals = cursor.fetchall()
+            
+            conn.close()
+            
+            # Convert to list of dictionaries
+            return [dict(deal) for deal in deals]
+            
+        except Exception as e:
+            logger.error(f"Error getting deals for symbol {symbol}: {e}")
+            return []
