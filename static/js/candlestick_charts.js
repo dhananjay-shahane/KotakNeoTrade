@@ -422,6 +422,9 @@ function updateLoadingMessage(message) {
 function renderCandlestickChart(data, symbol, period = '1D') {
     console.log('renderCandlestickChart called with', data.length, 'data points for', symbol);
     
+    // Show chart container when rendering
+    showChartContainer();
+    
     const chartDiv = document.getElementById("candlestickChart");
     if (!chartDiv) {
         console.error('Chart div not found');
@@ -612,41 +615,47 @@ function clearSymbolSearchAndChart() {
     // Clear the chart
     clearChart();
     
-    // Hide symbol info section
-    const symbolInfo = document.getElementById("symbolInfo");
-    if (symbolInfo) {
-        symbolInfo.style.display = "none";
-    }
-    
-    // Hide price info
-    const priceInfo = document.getElementById("priceInfo");
-    if (priceInfo) {
-        priceInfo.style.display = "none";
-    }
-    
-    // Reset chart title
-    const chartTitle = document.getElementById("chartTitle");
-    if (chartTitle) {
-        chartTitle.textContent = "Chart";
-    }
-    
-    // Show the "No Charts Selected" message
+    // Hide chart container and show "No Charts Selected" message
+    hideChartContainer();
     showNoChartsMessage();
+    
+    // Reset global state
+    currentSymbol = null;
+}
+
+// Function to show chart container and hide "No Charts Selected" message
+function showChartContainer() {
+    const chartContainer = document.getElementById("candlestickChartContainer");
+    const noChartsMessage = document.getElementById("noChartsMessage");
+    
+    if (chartContainer) {
+        chartContainer.style.display = "block";
+    }
+    
+    if (noChartsMessage) {
+        noChartsMessage.style.display = "none";
+    }
+}
+
+// Function to hide chart container and show "No Charts Selected" message  
+function hideChartContainer() {
+    const chartContainer = document.getElementById("candlestickChartContainer");
+    const noChartsMessage = document.getElementById("noChartsMessage");
+    
+    if (chartContainer) {
+        chartContainer.style.display = "none";
+    }
+    
+    if (noChartsMessage) {
+        noChartsMessage.style.display = "block";
+    }
 }
 
 // Function to show "No Charts Selected" message
 function showNoChartsMessage() {
-    const chartContainer = document.getElementById("candlestickChartContainer");
-    if (chartContainer) {
-        chartContainer.innerHTML = `
-            <div class="d-flex justify-content-center align-items-center" style="height: 400px;">
-                <div class="text-center text-muted">
-                    <i class="fas fa-chart-line fa-3x mb-3" style="opacity: 0.3;"></i>
-                    <h5>No Charts Selected</h5>
-                    <p>Search and select symbols from the left panel to display charts</p>
-                </div>
-            </div>
-        `;
+    const noChartsMessage = document.getElementById("noChartsMessage");
+    if (noChartsMessage) {
+        noChartsMessage.style.display = "block";
     }
 }
 
@@ -667,5 +676,23 @@ function showErrorState(message) {
 document.addEventListener("click", function (e) {
     if (!e.target.closest(".search-container")) {
         hideSearchResults();
+    }
+});
+
+// Add input event listener to handle search clearing
+document.addEventListener("DOMContentLoaded", function() {
+    const searchInput = document.getElementById("symbolSearch");
+    if (searchInput) {
+        searchInput.addEventListener("input", function(e) {
+            const searchTerm = e.target.value.trim();
+            
+            // If search is completely cleared, hide chart container
+            if (searchTerm === "") {
+                hideChartContainer();
+                showNoChartsMessage();
+                currentSymbol = null;
+                hideSearchResults();
+            }
+        });
     }
 });
