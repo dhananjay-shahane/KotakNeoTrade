@@ -952,6 +952,14 @@ try:
 except Exception as e:
     print(f"✗ Error registering deals_api: {e}")
 
+# Register portfolio API blueprint
+try:
+    from api.portfolio_api import portfolio_api
+    app.register_blueprint(portfolio_api)
+    print("✓ Registered portfolio_api blueprint")
+except Exception as e:
+    print(f"✗ Error registering portfolio_api: {e}")
+
 # Initialize auto-sync triggers
 try:
     from Scripts.sync_default_deals import setup_auto_sync_triggers

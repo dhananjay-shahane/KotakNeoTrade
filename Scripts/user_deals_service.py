@@ -116,3 +116,73 @@ class UserDealsService:
             '#06B6D4', '#EC4899', '#84CC16', '#F97316', '#6366F1'
         ]
         return (colors * ((count // len(colors)) + 1))[:count]
+    
+    def get_symbol_details(self, user_id: int, symbol: str) -> Dict:
+        """
+        Get detailed information for a specific symbol
+        Args:
+            user_id: User ID
+            symbol: Trading symbol
+        Returns:
+            Dictionary with symbol details
+        """
+        try:
+            conn = self.get_connection()
+            if not conn:
+                return {}
+            
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            
+            # Query to get symbol-specific deals
+            query = """
+                SELECT trade_signal_id, symbol, qty, date, ep, pos, ed, status
+                FROM user_deals 
+                WHERE user_id = %s AND symbol = %s
+                ORDER BY date DESC
+            """
+            
+            cursor.execute(query, (user_id, symbol))
+            deals = cursor.fetchall()
+            
+            if not deals:
+                conn.close()
+                return {'error': 'No deals found for this symbol'}
+            
+            # Calculate totals for this symbol
+            total_investment = sum(float(deal['ep']) * deal['qty'] for deal in deals)
+            total_quantity = sum(deal['qty'] for deal in deals)
+            
+            # Mock CMP for calculation (replace with real data source)
+            cmp = float(deals[0]['ep']) * 1.05  # Assume 5% gain for demo
+            current_value = cmp * total_quantity
+            profit_loss = current_value - total_investment
+            profit_loss_percentage = (profit_loss / total_investment) * 100 if total_investment > 0 else 0
+            
+            # Format deals for display
+            formatted_deals = []
+            for deal in deals:
+                formatted_deals.append({
+                    'date': deal['date'].strftime('%Y-%m-%d') if deal['date'] else '--',
+                    'entry_price': float(deal['ep']),
+                    'qty': deal['qty'],
+                    'investment': float(deal['ep']) * deal['qty'],
+                    'current_value': cmp * deal['qty'],
+                    'status': deal['status']
+                })
+            
+            conn.close()
+            
+            return {
+                'symbol': symbol,
+                'cmp': round(cmp, 2),
+                'total_investment': round(total_investment, 2),
+                'current_value': round(current_value, 2),
+                'profit_loss': round(profit_loss, 2),
+                'profit_loss_percentage': round(profit_loss_percentage, 2),
+                'total_quantity': total_quantity,
+                'deals': formatted_deals
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting symbol details for {symbol}: {e}")
+            return {'error': str(e)}
