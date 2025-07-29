@@ -261,7 +261,7 @@ endblock %} {% block head %}
                                         </div>
                                         <div>
                                             <h3 class="text-white mb-1">
-                                                Portfolio
+                                                User Portfolio
                                             </h3>
                                             <p class="text-white-50 mb-0">
                                                 <i
@@ -349,7 +349,9 @@ endblock %} {% block head %}
                                         </h2>
                                     </div>
                                     <div class="project-icon">
-                                        <i class="fas fa-chart-line text-success"></i>
+                                        <i
+                                            class="fas fa-chart-line text-success"
+                                        ></i>
                                     </div>
                                 </div>
                             </div>
@@ -374,14 +376,16 @@ endblock %} {% block head %}
                                         </h2>
                                     </div>
                                     <div class="project-icon">
-                                        <i class="fas fa-check-circle text-secondary"></i>
+                                        <i
+                                            class="fas fa-check-circle text-secondary"
+                                        ></i>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="mb-3">
+                    <div class="mb-3 d-none">
                         <div class="card border-0 h-100 project-summary-card">
                             <div class="card-body">
                                 <div
@@ -406,7 +410,7 @@ endblock %} {% block head %}
                         </div>
                     </div>
 
-                    <div class="mb-3">
+                    <div class="mb-3 d-none">
                         <div class="card border-0 h-100 project-summary-card">
                             <div class="card-body">
                                 <div
@@ -416,15 +420,13 @@ endblock %} {% block head %}
                                         <h6 class="text-muted mb-2">
                                             Profit/Loss
                                         </h6>
-                                        <h2
-                                            class="mb-0"
-                                            id="totalPnL"
-                                        >
-                                            ₹0
-                                        </h2>
+                                        <h2 class="mb-0" id="totalPnL">₹0</h2>
                                     </div>
                                     <div class="project-icon">
-                                        <i class="fas fa-chart-line" id="pnlIcon"></i>
+                                        <i
+                                            class="fas fa-chart-line"
+                                            id="pnlIcon"
+                                        ></i>
                                     </div>
                                 </div>
                             </div>
@@ -547,8 +549,8 @@ endblock %} {% block head %}
         total_deals: 0,
         active_deals: 0,
         closed_deals: 0,
-        status_chart_data: {labels: [], data: [], colors: []},
-        symbol_chart_data: {labels: [], data: [], colors: []}
+        status_chart_data: { labels: [], data: [], colors: [] },
+        symbol_chart_data: { labels: [], data: [], colors: [] },
     };
 
     // Load portfolio data on page load
@@ -560,53 +562,60 @@ endblock %} {% block head %}
     // Load portfolio data from API
     async function loadPortfolioData() {
         try {
-            console.log('Fetching portfolio stats...');
-            const response = await fetch('/api/portfolio/stats');
-            console.log('Response status:', response.status);
-            
+            console.log("Fetching portfolio stats...");
+            const response = await fetch("/api/portfolio/stats");
+            console.log("Response status:", response.status);
+
             const result = await response.json();
-            console.log('Portfolio API response:', result);
-            
+            console.log("Portfolio API response:", result);
+
             if (result.success && result.data) {
                 portfolioData = result.data;
-                console.log('Portfolio data loaded:', portfolioData);
+                console.log("Portfolio data loaded:", portfolioData);
                 updatePortfolioDisplay();
                 updateCharts();
                 loadSymbolOptions();
             } else {
-                console.error('Failed to load portfolio data:', result.error);
-                console.log('Using empty data structure');
+                console.error("Failed to load portfolio data:", result.error);
+                console.log("Using empty data structure");
                 updatePortfolioDisplay(); // Show with empty data
             }
         } catch (error) {
-            console.error('Error loading portfolio data:', error);
-            console.log('Using empty data structure due to error');
+            console.error("Error loading portfolio data:", error);
+            console.log("Using empty data structure due to error");
             updatePortfolioDisplay(); // Show with empty data
         }
     }
 
     // Update portfolio display with loaded data
     function updatePortfolioDisplay() {
-        console.log('Updating portfolio display with data:', portfolioData);
-        
+        console.log("Updating portfolio display with data:", portfolioData);
+
         const totalDeals = portfolioData.total_deals || 0;
         const activeDeals = portfolioData.active_deals || 0;
         const closedDeals = portfolioData.closed_deals || 0;
         const totalInvestment = portfolioData.total_investment || 0;
         const totalPnL = portfolioData.total_pnl || 0;
-        
-        console.log('Values:', { totalDeals, activeDeals, closedDeals, totalInvestment, totalPnL });
-        
+
+        console.log("Values:", {
+            totalDeals,
+            activeDeals,
+            closedDeals,
+            totalInvestment,
+            totalPnL,
+        });
+
         document.getElementById("totalDeals").textContent = totalDeals;
         document.getElementById("activeDeals").textContent = activeDeals;
         document.getElementById("closedDeals").textContent = closedDeals;
-        document.getElementById("totalInvestment").textContent = `₹${totalInvestment.toLocaleString()}`;
-        
+        document.getElementById("totalInvestment").textContent =
+            `₹${totalInvestment.toLocaleString()}`;
+
         const pnlElement = document.getElementById("totalPnL");
         const pnlIcon = document.getElementById("pnlIcon");
-        
+
         pnlElement.textContent = `₹${totalPnL.toLocaleString()}`;
-        
+
         if (totalPnL >= 0) {
             pnlElement.className = "text-success mb-0";
             pnlIcon.className = "fas fa-chart-line text-success";
@@ -621,23 +630,34 @@ endblock %} {% block head %}
         // Update pie chart with P&L data
         if (progressChart && portfolioData.status_chart_data) {
             const chartData = portfolioData.status_chart_data;
-            
-            if (chartData.labels && chartData.data && chartData.labels.length > 0) {
+
+            if (
+                chartData.labels &&
+                chartData.data &&
+                chartData.labels.length > 0
+            ) {
                 progressChart.data.labels = chartData.labels;
                 progressChart.data.datasets[0].data = chartData.data;
-                progressChart.data.datasets[0].backgroundColor = chartData.colors || ['#3B82F6', '#10B981'];
-                progressChart.data.datasets[0].borderColor = '#ffffff';
+                progressChart.data.datasets[0].backgroundColor =
+                    chartData.colors || ["#3B82F6", "#10B981"];
+                progressChart.data.datasets[0].borderColor = "#ffffff";
                 progressChart.data.datasets[0].borderWidth = 2;
-                progressChart.update('active');
-                console.log('Pie chart updated with data:', chartData);
+                progressChart.update("active");
+                console.log("Pie chart updated with data:", chartData);
             }
         }
-        
+
         // Update symbol chart if available
-        if (barChart && portfolioData.symbol_chart_data && portfolioData.symbol_chart_data.labels.length > 0) {
+        if (
+            barChart &&
+            portfolioData.symbol_chart_data &&
+            portfolioData.symbol_chart_data.labels.length > 0
+        ) {
             barChart.data.labels = portfolioData.symbol_chart_data.labels;
-            barChart.data.datasets[0].data = portfolioData.symbol_chart_data.data;
-            barChart.data.datasets[0].backgroundColor = portfolioData.symbol_chart_data.colors || ['#3B82F6'];
+            barChart.data.datasets[0].data =
+                portfolioData.symbol_chart_data.data;
+            barChart.data.datasets[0].backgroundColor = portfolioData
+                .symbol_chart_data.colors || ["#3B82F6"];
             barChart.update("active");
         }
     }
@@ -646,9 +666,10 @@ endblock %} {% block head %}
     function loadSymbolOptions() {
         if (portfolioData.symbols && portfolioData.symbols.length > 0) {
             const symbolSelector = document.getElementById("symbolSelector");
-            symbolSelector.innerHTML = '<option value="">Choose a symbol...</option>';
-            
-            portfolioData.symbols.forEach(symbol => {
+            symbolSelector.innerHTML =
+                '<option value="">Choose a symbol...</option>';
+
+            portfolioData.symbols.forEach((symbol) => {
                 const option = document.createElement("option");
                 option.value = symbol;
                 option.textContent = symbol;
@@ -660,7 +681,9 @@ endblock %} {% block head %}
     // Initialize charts function
     function initializeCharts() {
         // Progress Chart (Pie chart for Investment vs P&L)
-        const progressCtx = document.getElementById("projectProgressChart").getContext("2d");
+        const progressCtx = document
+            .getElementById("projectProgressChart")
+            .getContext("2d");
         progressChart = new Chart(progressCtx, {
             type: "doughnut",
             data: {
@@ -669,7 +692,7 @@ endblock %} {% block head %}
                     {
                         data: [1],
                         backgroundColor: ["#95a5a6"],
-                        borderColor: '#ffffff',
+                        borderColor: "#ffffff",
                         borderWidth: 2,
                         hoverOffset: 4,
                         hoverBorderWidth: 3,
@@ -681,48 +704,56 @@ endblock %} {% block head %}
                 maintainAspectRatio: false,
                 interaction: {
                     intersect: false,
-                    mode: 'index'
+                    mode: "index",
                 },
                 plugins: {
                     legend: {
                         position: "bottom",
-                        labels: { 
-                            usePointStyle: true, 
+                        labels: {
+                            usePointStyle: true,
                             color: "#ffffff",
                             padding: 15,
                             font: {
-                                size: 12
-                            }
+                                size: 12,
+                            },
                         },
                     },
                     tooltip: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        titleColor: '#ffffff',
-                        bodyColor: '#ffffff',
-                        borderColor: '#ffffff',
+                        backgroundColor: "rgba(0, 0, 0, 0.8)",
+                        titleColor: "#ffffff",
+                        bodyColor: "#ffffff",
+                        borderColor: "#ffffff",
                         borderWidth: 1,
                         callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
+                            label: function (context) {
+                                const label = context.label || "";
                                 const value = context.parsed;
-                                if (label.includes('Investment') || label.includes('Profit') || label.includes('Loss')) {
-                                    return label + ": ₹" + value.toLocaleString();
+                                if (
+                                    label.includes("Investment") ||
+                                    label.includes("Profit") ||
+                                    label.includes("Loss")
+                                ) {
+                                    return (
+                                        label + ": ₹" + value.toLocaleString()
+                                    );
                                 }
                                 return label + ": " + value;
-                            }
-                        }
-                    }
+                            },
+                        },
+                    },
                 },
                 cutout: "50%",
                 animation: {
                     animateRotate: true,
-                    animateScale: true
-                }
+                    animateScale: true,
+                },
             },
         });
 
         // Bar Chart (Symbol distribution)
-        const barCtx = document.getElementById("tasksByProjectChart").getContext("2d");
+        const barCtx = document
+            .getElementById("tasksByProjectChart")
+            .getContext("2d");
         barChart = new Chart(barCtx, {
             type: "bar",
             data: {
@@ -765,39 +796,54 @@ endblock %} {% block head %}
 
         if (!selectedSymbol) {
             document.getElementById("symbolDataDisplay").style.display = "none";
-            document.getElementById("symbolDetailsSection").style.display = "none";
+            document.getElementById("symbolDetailsSection").style.display =
+                "none";
             return;
         }
 
         try {
             // Show loading state
-            document.getElementById("symbolDataDisplay").style.display = "block";
+            document.getElementById("symbolDataDisplay").style.display =
+                "block";
             document.getElementById("symbolCMP").textContent = "Loading...";
             document.getElementById("symbolPL").textContent = "Loading...";
-            document.getElementById("symbolInvestment").textContent = "Loading...";
+            document.getElementById("symbolInvestment").textContent =
+                "Loading...";
 
-            const response = await fetch(`/api/portfolio/symbol-data/${selectedSymbol}`);
+            const response = await fetch(
+                `/api/portfolio/symbol-data/${selectedSymbol}`,
+            );
             const result = await response.json();
 
             if (result.success) {
                 const data = result.data;
-                
+
                 // Update symbol data display
-                document.getElementById("symbolCMP").textContent = `₹${data.cmp}`;
-                
+                document.getElementById("symbolCMP").textContent =
+                    `₹${data.cmp}`;
+
                 const plElement = document.getElementById("symbolPL");
                 plElement.textContent = `₹${data.profit_loss} (${data.profit_loss_percentage}%)`;
-                plElement.className = data.profit_loss >= 0 ? 
-                    "fw-bold text-success" : "fw-bold text-danger";
-                
-                document.getElementById("symbolInvestment").textContent = `₹${data.total_investment}`;
+                plElement.className =
+                    data.profit_loss >= 0
+                        ? "fw-bold text-success"
+                        : "fw-bold text-danger";
+
+                document.getElementById("symbolInvestment").textContent =
+                    `₹${data.total_investment}`;
 
                 // Show symbol details section
-                document.getElementById("symbolDetailsSection").style.display = "block";
-                document.getElementById("selectedSymbolName").textContent = selectedSymbol;
+                document.getElementById("symbolDetailsSection").style.display =
+                    "block";
+                document.getElementById("selectedSymbolName").textContent =
+                    selectedSymbol;
 
                 // Create deals table
-                if (data.deals && Array.isArray(data.deals) && data.deals.length > 0) {
+                if (
+                    data.deals &&
+                    Array.isArray(data.deals) &&
+                    data.deals.length > 0
+                ) {
                     const dealsTableHTML = `
                         <div class="table-responsive">
                             <table class="table table-sm table-hover">
@@ -812,21 +858,26 @@ endblock %} {% block head %}
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${data.deals.map(deal => `
+                                    ${data.deals
+                                        .map(
+                                            (deal) => `
                                         <tr>
-                                            <td>${deal.date || 'N/A'}</td>
-                                            <td>₹${deal.entry_price || '0'}</td>
-                                            <td>${deal.qty || '0'}</td>
-                                            <td>₹${deal.investment || '0'}</td>
+                                            <td>${deal.date || "N/A"}</td>
+                                            <td>₹${deal.entry_price || "0"}</td>
+                                            <td>${deal.qty || "0"}</td>
+                                            <td>₹${deal.investment || "0"}</td>
                                             <td>₹${(deal.current_value || 0).toFixed(2)}</td>
-                                            <td><span class="badge ${deal.status === "ACTIVE" ? "bg-success" : "bg-secondary"}">${deal.status || 'Unknown'}</span></td>
+                                            <td><span class="badge ${deal.status === "ACTIVE" ? "bg-success" : "bg-secondary"}">${deal.status || "Unknown"}</span></td>
                                         </tr>
-                                    `).join('')}
+                                    `,
+                                        )
+                                        .join("")}
                                 </tbody>
                             </table>
                         </div>
                     `;
-                    document.getElementById("symbolDealsTable").innerHTML = dealsTableHTML;
+                    document.getElementById("symbolDealsTable").innerHTML =
+                        dealsTableHTML;
                 } else {
                     // Show message when no deals are available
                     document.getElementById("symbolDealsTable").innerHTML = `
@@ -839,34 +890,43 @@ endblock %} {% block head %}
 
                 // Update bar chart
                 if (barChart && data.total_investment) {
-                    barChart.data.labels = ["Investment", "Current Value", "P&L"];
+                    barChart.data.labels = [
+                        "Investment",
+                        "Current Value",
+                        "P&L",
+                    ];
                     barChart.data.datasets[0].data = [
                         data.total_investment,
                         data.current_value,
-                        Math.abs(data.profit_loss)
+                        Math.abs(data.profit_loss),
                     ];
                     barChart.data.datasets[0].backgroundColor = [
-                        "#3498db", "#2ecc71",
-                        data.profit_loss >= 0 ? "#2ecc71" : "#e74c3c"
+                        "#3498db",
+                        "#2ecc71",
+                        data.profit_loss >= 0 ? "#2ecc71" : "#e74c3c",
                     ];
                     barChart.update("active");
                 }
-
             } else {
-                console.error('Failed to load symbol data:', result.error);
-                document.getElementById("symbolCMP").textContent = "Error loading";
-                document.getElementById("symbolPL").textContent = "Error loading";
-                document.getElementById("symbolInvestment").textContent = "Error loading";
+                console.error("Failed to load symbol data:", result.error);
+                document.getElementById("symbolCMP").textContent =
+                    "Error loading";
+                document.getElementById("symbolPL").textContent =
+                    "Error loading";
+                document.getElementById("symbolInvestment").textContent =
+                    "Error loading";
             }
         } catch (error) {
-            console.error('Error loading symbol data:', error);
+            console.error("Error loading symbol data:", error);
             document.getElementById("symbolCMP").textContent = "Error loading";
             document.getElementById("symbolPL").textContent = "Error loading";
-            document.getElementById("symbolInvestment").textContent = "Error loading";
-            
+            document.getElementById("symbolInvestment").textContent =
+                "Error loading";
+
             // Hide symbol details section on error
-            document.getElementById("symbolDetailsSection").style.display = "none";
-            
+            document.getElementById("symbolDetailsSection").style.display =
+                "none";
+
             // Show error message in deals table
             document.getElementById("symbolDealsTable").innerHTML = `
                 <div class="text-center text-danger py-4">
