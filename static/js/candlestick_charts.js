@@ -356,12 +356,12 @@ function updateMetricsDisplay(metrics) {
     }
 }
 
-function loadCandlestickData(symbol, period) {
-    console.log(`🔄 Loading candlestick data for ${symbol} with period ${period}`);
+function loadCandlestickData(symbol, period, retryCount = 0) {
+    console.log(`🔄 Loading candlestick data for ${symbol} with period ${period} (attempt ${retryCount + 1})`);
 
     // Shorter timeout for better UX
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
     // Show specific loading message based on period
     const loadingMessages = {
@@ -375,11 +375,20 @@ function loadCandlestickData(symbol, period) {
 
     updateLoadingMessage(loadingMessages[period] || "Loading chart data...");
 
-    return fetch(`/api/candlestick-data?symbol=${symbol}&period=${period}`, {
+    // Construct absolute URL to avoid relative path issues
+    const baseUrl = window.location.origin;
+    const apiUrl = `${baseUrl}/api/candlestick-data?symbol=${symbol}&period=${period}`;
+    
+    console.log(`📡 Fetching from: ${apiUrl}`);
+
+    return fetch(apiUrl, {
         signal: controller.signal,
         headers: {
             "Cache-Control": "max-age=60", // 1 minute cache
+            "Accept": "application/json",
+            "Content-Type": "application/json"
         },
+        method: 'GET'
     })
         .then((response) => {
             clearTimeout(timeoutId);
@@ -420,10 +429,25 @@ function loadCandlestickData(symbol, period) {
         })
         .catch((error) => {
             clearTimeout(timeoutId);
-            console.error(`💥 Error in loadCandlestickData:`, error);
+            console.error(`💥 Error in loadCandlestickData (attempt ${retryCount + 1}):`, error);
+            
+            // Retry logic for network errors
+            if (retryCount < 2 && (error.name === "TypeError" || error.message.includes("Failed to fetch"))) {
+                console.log(`🔄 Retrying request for ${symbol} ${period} in 2 seconds...`);
+                updateLoadingMessage(`Connection failed, retrying... (${retryCount + 2}/3)`);
+                setTimeout(() => {
+                    loadCandlestickData(symbol, period, retryCount + 1);
+                }, 2000);
+                return;
+            }
+            
             if (error.name === "AbortError") {
                 showErrorState(
                     "Request timed out. Try selecting a shorter time period for faster loading.",
+                );
+            } else if (error.message.includes("Failed to fetch")) {
+                showErrorState(
+                    "Network connection failed. Please check your internet connection and try again.",
                 );
             } else {
                 console.error("Error loading chart data:", error);
