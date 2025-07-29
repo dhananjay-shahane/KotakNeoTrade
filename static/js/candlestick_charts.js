@@ -383,7 +383,7 @@ function loadCandlestickData(symbol, period) {
             
             if (data.success && data.data && data.data.length > 0) {
                 console.log(`✅ Calling renderCandlestickChart with ${data.data.length} data points`);
-                renderCandlestickChart(data.data, symbol);
+                renderCandlestickChart(data.data, symbol, period);
             } else if (data.error) {
                 console.log(`❌ API returned error: ${data.error}`);
                 showErrorState(data.error);
@@ -419,7 +419,7 @@ function updateLoadingMessage(message) {
     }
 }
 
-function renderCandlestickChart(data, symbol) {
+function renderCandlestickChart(data, symbol, period = '1D') {
     console.log('renderCandlestickChart called with', data.length, 'data points for', symbol);
     
     const chartDiv = document.getElementById("candlestickChart");
@@ -490,7 +490,8 @@ function renderCandlestickChart(data, symbol) {
             showgrid: true,
             zeroline: false,
             type: 'date',
-            tickformat: '%Y-%m-%d'
+            // For 1D period, show only dates. For other periods, show date and time
+            tickformat: period === '1D' ? '%Y-%m-%d' : '%Y-%m-%d %H:%M'
         },
         yaxis: {
             gridcolor: "#444444",
@@ -591,6 +592,61 @@ function renderCandlestickChart(data, symbol) {
             stack: error.stack
         });
         showErrorState(`Chart rendering failed: ${error.message}`);
+    }
+}
+
+// Function to clear search and chart
+function clearSymbolSearchAndChart() {
+    const searchInput = document.getElementById("symbolSearch");
+    const searchResults = document.getElementById("searchResults");
+    
+    if (searchInput) {
+        searchInput.value = "";
+    }
+    
+    if (searchResults) {
+        searchResults.innerHTML = "";
+        searchResults.style.display = "none";
+    }
+    
+    // Clear the chart
+    clearChart();
+    
+    // Hide symbol info section
+    const symbolInfo = document.getElementById("symbolInfo");
+    if (symbolInfo) {
+        symbolInfo.style.display = "none";
+    }
+    
+    // Hide price info
+    const priceInfo = document.getElementById("priceInfo");
+    if (priceInfo) {
+        priceInfo.style.display = "none";
+    }
+    
+    // Reset chart title
+    const chartTitle = document.getElementById("chartTitle");
+    if (chartTitle) {
+        chartTitle.textContent = "Chart";
+    }
+    
+    // Show the "No Charts Selected" message
+    showNoChartsMessage();
+}
+
+// Function to show "No Charts Selected" message
+function showNoChartsMessage() {
+    const chartContainer = document.getElementById("candlestickChartContainer");
+    if (chartContainer) {
+        chartContainer.innerHTML = `
+            <div class="d-flex justify-content-center align-items-center" style="height: 400px;">
+                <div class="text-center text-muted">
+                    <i class="fas fa-chart-line fa-3x mb-3" style="opacity: 0.3;"></i>
+                    <h5>No Charts Selected</h5>
+                    <p>Search and select symbols from the left panel to display charts</p>
+                </div>
+            </div>
+        `;
     }
 }
 
