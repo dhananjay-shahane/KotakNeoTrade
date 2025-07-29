@@ -525,8 +525,8 @@ function renderCandlestickChart(data, symbol, period = '1D') {
             showgrid: true,
             zeroline: false,
             type: 'date',
-            // For 1D period, show time. For other periods, show date and time
-            tickformat: period === '1D' ? '%H:%M' : '%Y-%m-%d %H:%M'
+            // For 1D period, show IST time with date. For other periods, show date and time
+            tickformat: period === '1D' ? '%Y-%m-%d %H:%M IST' : '%Y-%m-%d %H:%M'
         },
         yaxis: {
             gridcolor: "#444444",
