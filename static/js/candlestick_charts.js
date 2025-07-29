@@ -254,12 +254,16 @@ function removeSymbol(symbol) {
 function showChartContainer() {
     const noChartsMessage = document.getElementById("noChartsMessage");
     const chartContainer = document.getElementById("candlestickChartContainer");
+    const noChartsInContainer = document.getElementById("noChartsInContainer");
 
     if (noChartsMessage) {
         noChartsMessage.style.display = "none";
     }
     if (chartContainer) {
         chartContainer.style.display = "block";
+    }
+    if (noChartsInContainer) {
+        noChartsInContainer.style.display = "none";
     }
     
     // Also show price info container when showing chart
@@ -446,6 +450,12 @@ function renderCandlestickChart(data, symbol, period = '1D') {
     
     // Show chart container when rendering
     showChartContainer();
+    
+    // Hide the no charts message inside container
+    const noChartsInContainer = document.getElementById("noChartsInContainer");
+    if (noChartsInContainer) {
+        noChartsInContainer.style.display = "none";
+    }
     
     const chartDiv = document.getElementById("candlestickChart");
     if (!chartDiv) {
@@ -644,6 +654,12 @@ function clearSymbolSearchAndChart() {
     hideChart();
     hideChartContainer();
     
+    // Show no charts message inside container
+    const noChartsInContainer = document.getElementById("noChartsInContainer");
+    if (noChartsInContainer) {
+        noChartsInContainer.style.display = "block";
+    }
+    
     // Clear selected symbols display
     const selectedSymbolsDiv = document.getElementById("selectedSymbols");
     if (selectedSymbolsDiv) {
@@ -684,13 +700,18 @@ function showChartContainer() {
 function hideChartContainer() {
     const chartContainer = document.getElementById("candlestickChartContainer");
     const noChartsMessage = document.getElementById("noChartsMessage");
+    const noChartsInContainer = document.getElementById("noChartsInContainer");
     
     if (chartContainer) {
-        chartContainer.style.display = "none";
+        chartContainer.style.display = "block"; // Keep container visible
     }
     
     if (noChartsMessage) {
-        noChartsMessage.style.display = "block";
+        noChartsMessage.style.display = "none"; // Hide external message
+    }
+    
+    if (noChartsInContainer) {
+        noChartsInContainer.style.display = "block"; // Show internal message
     }
 }
 
