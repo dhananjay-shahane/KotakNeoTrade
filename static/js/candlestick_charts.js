@@ -38,9 +38,8 @@ function bindEventListeners() {
                 }, 300);
             } else {
                 hideSearchResults();
-                if (query.length === 0) {
-                    hideChart();
-                }
+                // Clear chart when search is empty or too short
+                clearSymbolSearchAndChart();
             }
         });
 
@@ -190,10 +189,16 @@ function hideSearchResults() {
 }
 
 function selectSymbol(symbol) {
-    currentSymbol = symbol;
+    // Validate symbol exists (you can add more validation here)
+    if (!symbol || symbol.trim() === "") {
+        clearSymbolSearchAndChart();
+        return;
+    }
+    
+    currentSymbol = symbol.toUpperCase();
 
     // Update selected symbols display
-    updateSelectedSymbolsDisplay(symbol);
+    updateSelectedSymbolsDisplay(currentSymbol);
 
     // Show chart container and loading
     showChartContainer();
@@ -201,8 +206,8 @@ function selectSymbol(symbol) {
 
     // Load both metrics and chart data
     Promise.all([
-        loadSymbolMetrics(symbol),
-        loadCandlestickData(symbol, currentPeriod),
+        loadSymbolMetrics(currentSymbol),
+        loadCandlestickData(currentSymbol, currentPeriod),
     ])
         .then(() => {
             hideLoading();
@@ -210,6 +215,8 @@ function selectSymbol(symbol) {
         .catch((error) => {
             hideLoading();
             showErrorState(error.message);
+            // If there's an error loading the symbol, clear the chart
+            clearSymbolSearchAndChart();
         });
 }
 
@@ -244,6 +251,12 @@ function showChartContainer() {
     }
     if (chartContainer) {
         chartContainer.style.display = "block";
+    }
+    
+    // Also show price info container when showing chart
+    const priceInfo = document.getElementById("priceInfo");
+    if (priceInfo) {
+        priceInfo.style.display = "flex";
     }
 }
 
@@ -612,12 +625,32 @@ function clearSymbolSearchAndChart() {
         searchResults.style.display = "none";
     }
     
-    // Clear the chart
-    clearChart();
+    // Clear chart content
+    const chartDiv = document.getElementById("candlestickChart");
+    if (chartDiv) {
+        chartDiv.innerHTML = "";
+    }
     
     // Hide chart container and show "No Charts Selected" message
-    hideChartContainer();
-    showNoChartsMessage();
+    hideChart();
+    
+    // Clear selected symbols display
+    const selectedSymbolsDiv = document.getElementById("selectedSymbols");
+    if (selectedSymbolsDiv) {
+        selectedSymbolsDiv.innerHTML = "";
+    }
+    
+    // Clear price info
+    const priceInfo = document.getElementById("priceInfo");
+    if (priceInfo) {
+        priceInfo.style.display = "none";
+    }
+    
+    // Reset chart title
+    const chartTitle = document.getElementById("chartTitle");
+    if (chartTitle) {
+        chartTitle.textContent = "Chart";
+    }
     
     // Reset global state
     currentSymbol = null;
@@ -672,27 +705,11 @@ function showErrorState(message) {
     }
 }
 
-// Hide search results when clicking outside
+
+
+// Additional cleanup when clicking outside search container
 document.addEventListener("click", function (e) {
     if (!e.target.closest(".search-container")) {
         hideSearchResults();
-    }
-});
-
-// Add input event listener to handle search clearing
-document.addEventListener("DOMContentLoaded", function() {
-    const searchInput = document.getElementById("symbolSearch");
-    if (searchInput) {
-        searchInput.addEventListener("input", function(e) {
-            const searchTerm = e.target.value.trim();
-            
-            // If search is completely cleared, hide chart container
-            if (searchTerm === "") {
-                hideChartContainer();
-                showNoChartsMessage();
-                currentSymbol = null;
-                hideSearchResults();
-            }
-        });
     }
 });
