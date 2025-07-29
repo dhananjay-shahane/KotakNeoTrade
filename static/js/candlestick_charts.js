@@ -428,10 +428,15 @@ function renderCandlestickChart(data, symbol) {
         return;
     }
 
-    // Set minimum dimensions for chart container
+    // Ensure chart container is visible and properly sized
     chartDiv.style.height = '400px';
     chartDiv.style.minHeight = '400px';
     chartDiv.style.width = '100%';
+    chartDiv.style.display = 'block';
+    chartDiv.style.position = 'relative';
+    
+    // Force layout recalculation
+    chartDiv.offsetHeight;
 
     // Limit data points for better performance
     const maxDataPoints = 500;
@@ -534,7 +539,8 @@ function renderCandlestickChart(data, symbol) {
                 lastClose: trace.close[trace.close.length - 1]
             });
             
-            Plotly.react(chartDiv, [trace], layout, config).then(() => {
+            // Use newPlot instead of react for more reliable rendering
+            Plotly.newPlot(chartDiv, [trace], layout, config).then(() => {
                 console.log('🎉 Chart rendered successfully for', symbol);
                 // Update chart title after successful render
                 const chartTitle = document.getElementById("chartTitle");
@@ -545,6 +551,19 @@ function renderCandlestickChart(data, symbol) {
                 // Verify chart was actually rendered
                 const plotlyDiv = chartDiv.querySelector('.plotly-graph-div');
                 console.log('📈 Plotly chart div created:', !!plotlyDiv);
+                
+                if (!plotlyDiv) {
+                    console.error('⚠️ Chart div not created, trying alternative approach...');
+                    // Force resize and redraw
+                    setTimeout(() => {
+                        try {
+                            Plotly.Plots.resize(chartDiv);
+                            console.log('🔄 Forced chart resize');
+                        } catch (e) {
+                            console.error('Resize failed:', e);
+                        }
+                    }, 100);
+                }
                 
             }).catch((error) => {
                 console.error('💥 Plotly rendering error:', error);

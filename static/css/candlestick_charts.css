@@ -81,6 +81,8 @@
     width: 100% !important;
     position: relative;
     background: transparent;
+    display: block !important;
+    visibility: visible !important;
 }
 
 #candlestickChartContainer {
@@ -89,6 +91,8 @@
     padding: 1rem;
     margin-top: 1rem;
     min-height: 450px;
+    display: block !important;
+    visibility: visible !important;
 }
 
 .chart-content {
