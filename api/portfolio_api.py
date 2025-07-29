@@ -118,34 +118,20 @@ def get_symbol_data(symbol):
                     entry_price = float(deal.get('ep', 0)) if deal.get('ep') else 0
                     qty = int(deal.get('qty', 0)) if deal.get('qty') else 0
 
-                    # If no valid price/qty data, generate fallback values
-                    if not entry_price or not qty:
-                        import random
-                        if 'ETF' in symbol.upper():
-                            entry_price = random.uniform(100, 500)
-                            qty = random.randint(10, 50)
-                        elif any(x in symbol.upper() for x in ['NIFTY', 'SENSEX', 'INDEX']):
-                            entry_price = random.uniform(200, 800)
-                            qty = random.randint(5, 30)
-                        else:
-                            entry_price = random.uniform(50, 1000)
-                            qty = random.randint(10, 100)
+                    # Only process deals with valid real data
+                    if entry_price and qty and entry_price > 0 and qty > 0:
+                        investment_value = entry_price * qty
+                        # Use entry price as current value (conservative approach)
+                        current_value = investment_value
 
-                    investment_value = entry_price * qty
-                    # Add some variation for current value
-                    import random
-                    variation = random.uniform(-0.10, 0.15)
-                    current_price = entry_price * (1 + variation)
-                    current_value = current_price * qty
-
-                    deals_data.append({
-                        'date': deal.get('created_at').strftime('%Y-%m-%d') if deal.get('created_at') else 'N/A',
-                        'entry_price': round(entry_price, 2),
-                        'qty': qty,
-                        'investment': round(investment_value, 2),
-                        'current_value': round(current_value, 2),
-                        'status': deal.get('status', 'Unknown')
-                    })
+                        deals_data.append({
+                            'date': deal.get('created_at').strftime('%Y-%m-%d') if deal.get('created_at') else 'N/A',
+                            'entry_price': round(entry_price, 2),
+                            'qty': qty,
+                            'investment': round(investment_value, 2),
+                            'current_value': round(current_value, 2),
+                            'status': deal.get('status', 'Unknown')
+                        })
                 except (ValueError, TypeError) as e:
                     logger.warning(f"Error processing deal data: {e}")
                     continue

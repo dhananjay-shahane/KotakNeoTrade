@@ -13,11 +13,11 @@ logger = logging.getLogger(__name__)
 
 class UserDealsService:
     """Service for fetching user deals statistics"""
-    
+
     def __init__(self):
         # Use the same external database connection as deals API
         self.db_url = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com:5432/kotak_trading_db"
-    
+
     def get_connection(self):
         """Get database connection"""
         try:
@@ -26,7 +26,7 @@ class UserDealsService:
         except Exception as e:
             logger.error(f"Database connection error: {e}")
             return None
-    
+
     def get_deals_statistics(self, user_id: int = 1) -> Dict:
         """
         Get comprehensive deals statistics for portfolio page
@@ -39,113 +39,74 @@ class UserDealsService:
             conn = self.get_connection()
             if not conn:
                 return self._empty_stats()
-            
+
             cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-            
-            # Query to get all user deals - using same structure as working deals API
+
+            # Query to get all user deals with proper fields
             query = """
                 SELECT trade_signal_id, symbol, qty, created_at, ep, pos, ed, status
                 FROM public.user_deals 
-                WHERE user_id = %s
+                WHERE user_id = %s AND symbol IS NOT NULL AND symbol != ''
                 ORDER BY created_at DESC
             """
-            
+
             cursor.execute(query, (user_id,))
             deals = cursor.fetchall()
-            
+
             if not deals:
                 return self._empty_stats()
-            
-            # Calculate statistics with null checks
+
+            # Calculate statistics with only real data
             total_deals = len(deals)
             active_deals = len([d for d in deals if d['status'] == 'ACTIVE'])
             closed_deals = len([d for d in deals if d['status'] == 'CLOSED'])
-            
-            # Calculate total investment and P&L
+
+            # Calculate total investment and P&L using only real data
             total_investment = 0
             total_current_value = 0
-            
+
             for deal in deals:
                 try:
-                    # Handle different possible field names and formats
-                    ep_value = None
-                    qty_value = None
-                    
-                    # Try to get entry price from different possible fields
-                    if deal.get('ep') is not None:
-                        ep_value = float(deal['ep'])
-                    elif deal.get('entry_price') is not None:
-                        ep_value = float(deal['entry_price'])
-                    elif deal.get('price') is not None:
-                        ep_value = float(deal['price'])
-                    
-                    # Try to get quantity from different possible fields
-                    if deal.get('qty') is not None:
-                        qty_value = int(deal['qty'])
-                    elif deal.get('quantity') is not None:
-                        qty_value = int(deal['quantity'])
-                    
-                    # If we have both values, calculate investment
-                    if ep_value is not None and qty_value is not None and ep_value > 0 and qty_value > 0:
-                        investment = ep_value * qty_value
-                        total_investment += investment
-                        
-                        # Calculate current value with realistic price simulation
-                        # Use random variation between -10% to +15%
-                        import random
-                        variation = random.uniform(-0.10, 0.15)
-                        current_price = ep_value * (1 + variation)
-                        current_value = current_price * qty_value
-                        total_current_value += current_value
-                    else:
-                        # Provide fallback values for deals without price/qty data
-                        # Use realistic random values based on symbol type
-                        symbol = deal.get('symbol', '')
-                        if symbol:
-                            import random
-                            # Generate realistic entry price based on symbol type
-                            if 'ETF' in symbol.upper():
-                                fallback_price = random.uniform(100, 500)
-                                fallback_qty = random.randint(10, 100)
-                            elif any(x in symbol.upper() for x in ['NIFTY', 'SENSEX', 'INDEX']):
-                                fallback_price = random.uniform(200, 800)
-                                fallback_qty = random.randint(5, 50)
-                            else:
-                                fallback_price = random.uniform(50, 1000)
-                                fallback_qty = random.randint(10, 200)
-                            
-                            investment = fallback_price * fallback_qty
+                    # Only process deals with valid entry price and quantity
+                    ep_value = deal.get('ep')
+                    qty_value = deal.get('qty')
+
+                    if ep_value is not None and qty_value is not None:
+                        ep_value = float(ep_value)
+                        qty_value = int(qty_value)
+
+                        if ep_value > 0 and qty_value > 0:
+                            investment = ep_value * qty_value
                             total_investment += investment
-                            
-                            # Calculate current value with variation
-                            variation = random.uniform(-0.15, 0.20)
-                            current_price = fallback_price * (1 + variation)
-                            current_value = current_price * fallback_qty
+
+                            # For current value, use entry price if CMP not available
+                            # This gives realistic portfolio value without fake data
+                            current_value = investment  # Conservative approach
                             total_current_value += current_value
-                        
+
                 except (ValueError, TypeError) as e:
                     logger.warning(f"Error processing deal: {e}")
                     continue
-            
+
             total_pnl = total_current_value - total_investment
-            
-            # Get unique symbols
+
+            # Get unique symbols from real data only
             symbols = list(set([d['symbol'] for d in deals if d['symbol']]))
-            
-            # Symbol distribution for pie chart
+
+            # Symbol distribution for pie chart - real data only
             symbol_counts = Counter([d['symbol'] for d in deals if d['symbol']])
-            
+
             # Prepare chart data for symbols
             chart_data = {
                 'labels': list(symbol_counts.keys()),
                 'data': list(symbol_counts.values()),
                 'colors': self._generate_colors(len(symbol_counts))
             }
-            
-            # Profit/Loss distribution for pie chart
+
+            # Investment vs P&L chart with real data
             if total_investment > 0:
                 pnl_data = {
-                    'labels': ['Investment', 'Profit/Loss'],
+                    'labels': ['Investment', 'P&L'],
                     'data': [round(total_investment, 2), round(abs(total_pnl), 2)],
                     'colors': ['#3B82F6', '#10B981' if total_pnl >= 0 else '#EF4444']
                 }
@@ -155,9 +116,9 @@ class UserDealsService:
                     'data': [1],
                     'colors': ['#95a5a6']
                 }
-            
+
             conn.close()
-            
+
             return {
                 'total_deals': total_deals,
                 'active_deals': active_deals,
@@ -167,14 +128,14 @@ class UserDealsService:
                 'total_pnl': round(total_pnl, 2),
                 'symbols': symbols[:10],  # Show top 10 symbols
                 'symbol_chart_data': chart_data,
-                'status_chart_data': pnl_data,  # Changed to show P&L instead of status
+                'status_chart_data': pnl_data,
                 'deals_list': [dict(deal) for deal in deals[:5]]  # Show last 5 deals
             }
-            
+
         except Exception as e:
             logger.error(f"Error getting deals statistics: {e}")
             return self._empty_stats()
-    
+
     def _empty_stats(self) -> Dict:
         """Return empty statistics structure"""
         return {
@@ -189,7 +150,7 @@ class UserDealsService:
             'status_chart_data': {'labels': ['No Data'], 'data': [1], 'colors': ['#95a5a6']},
             'deals_list': []
         }
-    
+
     def _generate_colors(self, count: int) -> List[str]:
         """Generate colors for pie chart"""
         colors = [
@@ -197,10 +158,10 @@ class UserDealsService:
             '#06B6D4', '#EC4899', '#84CC16', '#F97316', '#6366F1'
         ]
         return (colors * ((count // len(colors)) + 1))[:count]
-    
+
     def get_symbol_details(self, user_id: int, symbol: str) -> Dict:
         """
-        Get detailed information for a specific symbol
+        Get detailed information for a specific symbol using only real data
         Args:
             user_id: User ID
             symbol: Trading symbol
@@ -211,136 +172,84 @@ class UserDealsService:
             conn = self.get_connection()
             if not conn:
                 return {'error': 'Database connection failed'}
-            
+
             cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-            
-            # Query to get symbol-specific deals - using same structure as working deals API
+
+            # Query to get symbol-specific deals
             query = """
                 SELECT trade_signal_id, symbol, qty, created_at, ep, pos, ed, status
                 FROM public.user_deals 
-                WHERE user_id = %s AND symbol = %s
+                WHERE user_id = %s AND symbol = %s AND ep IS NOT NULL AND qty IS NOT NULL
                 ORDER BY created_at DESC
             """
-            
+
             cursor.execute(query, (user_id, symbol))
             deals = cursor.fetchall()
-            
+
             if not deals:
                 conn.close()
                 return {'error': 'No deals found for this symbol'}
-            
-            # Calculate totals for this symbol with null checks
+
+            # Calculate totals for this symbol using only real data
             total_investment = 0
             total_quantity = 0
             valid_deals = []
-            
+
             for deal in deals:
                 try:
-                    # Handle different possible field names and formats
-                    ep_value = None
-                    qty_value = None
-                    
-                    # Try to get entry price from different possible fields
-                    if deal.get('ep') is not None:
-                        ep_value = float(deal['ep'])
-                    elif deal.get('entry_price') is not None:
-                        ep_value = float(deal['entry_price'])
-                    elif deal.get('price') is not None:
-                        ep_value = float(deal['price'])
-                    
-                    # Try to get quantity from different possible fields
-                    if deal.get('qty') is not None:
-                        qty_value = int(deal['qty'])
-                    elif deal.get('quantity') is not None:
-                        qty_value = int(deal['quantity'])
-                    
-                    # If we have both values, process the deal
-                    if ep_value is not None and qty_value is not None and ep_value > 0 and qty_value > 0:
+                    ep_value = float(deal.get('ep', 0))
+                    qty_value = int(deal.get('qty', 0))
+
+                    if ep_value > 0 and qty_value > 0:
                         total_investment += ep_value * qty_value
                         total_quantity += qty_value
                         valid_deals.append(deal)
-                    else:
-                        # Generate fallback values for deals without proper data
-                        import random
-                        if 'ETF' in symbol.upper():
-                            fallback_price = random.uniform(100, 500)
-                            fallback_qty = random.randint(10, 50)
-                        elif any(x in symbol.upper() for x in ['NIFTY', 'SENSEX', 'INDEX']):
-                            fallback_price = random.uniform(200, 800)
-                            fallback_qty = random.randint(5, 30)
-                        else:
-                            fallback_price = random.uniform(50, 1000)
-                            fallback_qty = random.randint(10, 100)
-                        
-                        total_investment += fallback_price * fallback_qty
-                        total_quantity += fallback_qty
-                        # Create a copy of deal with fallback values
-                        deal_copy = dict(deal)
-                        deal_copy['ep'] = fallback_price
-                        deal_copy['qty'] = fallback_qty
-                        valid_deals.append(deal_copy)
-                        
+
                 except (ValueError, TypeError) as e:
                     logger.warning(f"Error processing deal for symbol {symbol}: {e}")
                     continue
-            
+
             if not valid_deals:
                 conn.close()
                 return {'error': 'No valid deals with price data found for this symbol'}
-            
-            # Calculate CMP and current values
+
+            # Calculate metrics using real data only
             if total_quantity > 0 and total_investment > 0:
                 avg_entry_price = total_investment / total_quantity
-                
-                # Generate realistic current price with variation
-                import random
-                variation = random.uniform(-0.15, 0.20)  # -15% to +20% variation
-                cmp = avg_entry_price * (1 + variation)
+                # Use entry price as CMP since we don't have live market data
+                cmp = avg_entry_price
                 current_value = cmp * total_quantity
-                profit_loss = current_value - total_investment
-                profit_loss_percentage = (profit_loss / total_investment) * 100
+                profit_loss = current_value - total_investment  # Will be 0 without live data
+                profit_loss_percentage = (profit_loss / total_investment) * 100 if total_investment > 0 else 0
             else:
                 avg_entry_price = 0
                 cmp = 0
                 current_value = 0
                 profit_loss = 0
                 profit_loss_percentage = 0
-            
-            # Format deals for display
+
+            # Format deals for display with real data only
             formatted_deals = []
             for deal in valid_deals:
                 try:
-                    # Get entry price and quantity with fallbacks
-                    ep_value = 0
-                    qty_value = 0
-                    
-                    if deal.get('ep') is not None:
-                        ep_value = float(deal['ep'])
-                    elif deal.get('entry_price') is not None:
-                        ep_value = float(deal['entry_price'])
-                    elif deal.get('price') is not None:
-                        ep_value = float(deal['price'])
-                    
-                    if deal.get('qty') is not None:
-                        qty_value = int(deal['qty'])
-                    elif deal.get('quantity') is not None:
-                        qty_value = int(deal['quantity'])
-                    
+                    ep_value = float(deal.get('ep', 0))
+                    qty_value = int(deal.get('qty', 0))
+
                     if ep_value > 0 and qty_value > 0:
                         formatted_deals.append({
                             'date': deal['created_at'].strftime('%Y-%m-%d') if deal.get('created_at') else '--',
                             'entry_price': ep_value,
                             'qty': qty_value,
                             'investment': ep_value * qty_value,
-                            'current_value': cmp * qty_value if cmp > 0 else ep_value * qty_value,
+                            'current_value': ep_value * qty_value,  # Using entry price as current
                             'status': deal.get('status', 'UNKNOWN')
                         })
                 except (ValueError, TypeError) as e:
                     logger.warning(f"Error formatting deal: {e}")
                     continue
-            
+
             conn.close()
-            
+
             return {
                 'symbol': symbol,
                 'cmp': round(cmp, 2),
@@ -351,14 +260,14 @@ class UserDealsService:
                 'total_quantity': total_quantity,
                 'deals': formatted_deals
             }
-            
+
         except Exception as e:
             logger.error(f"Error getting symbol details for {symbol}: {e}")
             return {'error': str(e)}
-    
+
     def get_deals_by_symbol(self, user_id: int, symbol: str) -> List[Dict]:
         """
-        Get all deals for a specific symbol
+        Get all deals for a specific symbol using only real data
         Args:
             user_id: User ID
             symbol: Trading symbol
@@ -369,25 +278,25 @@ class UserDealsService:
             conn = self.get_connection()
             if not conn:
                 return []
-            
+
             cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-            
-            # Query to get symbol-specific deals
+
+            # Query to get symbol-specific deals with real data only
             query = """
                 SELECT trade_signal_id, symbol, qty, created_at, ep, pos, ed, status
                 FROM public.user_deals 
-                WHERE user_id = %s AND symbol = %s
+                WHERE user_id = %s AND symbol = %s AND ep IS NOT NULL AND qty IS NOT NULL
                 ORDER BY created_at DESC
             """
-            
+
             cursor.execute(query, (user_id, symbol))
             deals = cursor.fetchall()
-            
+
             conn.close()
-            
-            # Convert to list of dictionaries
+
+            # Convert to list of dictionaries with real data only
             return [dict(deal) for deal in deals]
-            
+
         except Exception as e:
             logger.error(f"Error getting deals for symbol {symbol}: {e}")
             return []
