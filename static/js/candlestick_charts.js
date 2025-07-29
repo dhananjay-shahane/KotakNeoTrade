@@ -331,6 +331,8 @@ function updateMetricsDisplay(metrics) {
 }
 
 function loadCandlestickData(symbol, period) {
+    console.log(`🔄 Loading candlestick data for ${symbol} with period ${period}`);
+    
     // Shorter timeout for better UX
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
@@ -355,6 +357,7 @@ function loadCandlestickData(symbol, period) {
     })
         .then((response) => {
             clearTimeout(timeoutId);
+            console.log(`📡 API response status: ${response.status}`);
             if (!response.ok) {
                 if (response.status === 500) {
                     throw new Error(
@@ -370,16 +373,28 @@ function loadCandlestickData(symbol, period) {
             return response.json();
         })
         .then((data) => {
+            console.log(`📊 Received data:`, {
+                success: data.success,
+                dataCount: data.data ? data.data.length : 0,
+                error: data.error,
+                symbol: data.symbol,
+                period: data.period
+            });
+            
             if (data.success && data.data && data.data.length > 0) {
+                console.log(`✅ Calling renderCandlestickChart with ${data.data.length} data points`);
                 renderCandlestickChart(data.data, symbol);
             } else if (data.error) {
+                console.log(`❌ API returned error: ${data.error}`);
                 showErrorState(data.error);
             } else {
+                console.log(`⚠️ No data available for ${symbol} ${period}`);
                 showErrorState("No data available for this symbol and period");
             }
         })
         .catch((error) => {
             clearTimeout(timeoutId);
+            console.error(`💥 Error in loadCandlestickData:`, error);
             if (error.name === "AbortError") {
                 showErrorState(
                     "Request timed out. Try selecting a shorter time period for faster loading.",
@@ -501,27 +516,61 @@ function renderCandlestickChart(data, symbol) {
 
     // Use Plotly.react for better performance with comprehensive error handling
     try {
+        console.log('🎯 Attempting to render chart...');
+        console.log('📋 Chart div dimensions:', {
+            width: chartDiv.offsetWidth,
+            height: chartDiv.offsetHeight,
+            display: window.getComputedStyle(chartDiv).display
+        });
+        
         if (typeof Plotly !== 'undefined') {
-            console.log('Plotly available, rendering chart...');
+            console.log('✅ Plotly library is available, proceeding with render...');
+            console.log('📊 Final trace data preview:', {
+                xCount: trace.x.length,
+                closeCount: trace.close.length,
+                firstX: trace.x[0],
+                firstClose: trace.close[0],
+                lastX: trace.x[trace.x.length - 1],
+                lastClose: trace.close[trace.close.length - 1]
+            });
+            
             Plotly.react(chartDiv, [trace], layout, config).then(() => {
-                console.log('✓ Chart rendered successfully for', symbol);
+                console.log('🎉 Chart rendered successfully for', symbol);
                 // Update chart title after successful render
                 const chartTitle = document.getElementById("chartTitle");
                 if (chartTitle) {
                     chartTitle.textContent = `${symbol} Chart`;
                 }
+                
+                // Verify chart was actually rendered
+                const plotlyDiv = chartDiv.querySelector('.plotly-graph-div');
+                console.log('📈 Plotly chart div created:', !!plotlyDiv);
+                
             }).catch((error) => {
-                console.error('✗ Plotly rendering error:', error);
+                console.error('💥 Plotly rendering error:', error);
+                console.error('Error details:', {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                });
                 showErrorState(`Chart rendering failed: ${error.message}`);
             });
         } else {
-            console.error('✗ Plotly not loaded - checking script tags');
+            console.error('❌ Plotly not loaded - checking script tags');
             const plotlyScript = document.querySelector('script[src*="plotly"]');
             console.log('Plotly script found:', !!plotlyScript);
+            if (plotlyScript) {
+                console.log('Plotly script src:', plotlyScript.src);
+            }
             showErrorState('Chart library not loaded. Please refresh the page.');
         }
     } catch (error) {
-        console.error('✗ Error in chart rendering function:', error);
+        console.error('💥 Exception in chart rendering function:', error);
+        console.error('Error details:', {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+        });
         showErrorState(`Chart rendering failed: ${error.message}`);
     }
 }
