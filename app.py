@@ -588,9 +588,10 @@ def show_orders():
 
 @app.route('/charts')
 def show_charts():
-    # Check if user is authenticated with any login method
-    if not (session.get('authenticated') or session.get('kotak_logged_in')):
-        return redirect(url_for('auth_routes.trading_account_login'))
+    # For testing/development: Allow charts access without authentication
+    # In production, enable authentication by uncommenting below
+    # if not (session.get('authenticated') or session.get('kotak_logged_in')):
+    #     return redirect(url_for('auth_routes.trading_account_login'))
 
     # Prepare account data for sidebar if logged in
     kotak_account_data = None

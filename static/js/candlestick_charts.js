@@ -471,8 +471,23 @@ function renderCandlestickChart(data, symbol) {
         scrollZoom: true,
     };
 
-    // Use Plotly.react for better performance
-    Plotly.react(chartDiv, [trace], layout, config);
+    // Use Plotly.react for better performance with error handling
+    try {
+        if (typeof Plotly !== 'undefined') {
+            Plotly.react(chartDiv, [trace], layout, config).then(() => {
+                console.log('Chart rendered successfully for', symbol);
+            }).catch((error) => {
+                console.error('Plotly rendering error:', error);
+                showErrorState('Chart rendering failed. Please try again.');
+            });
+        } else {
+            console.error('Plotly not loaded');
+            showErrorState('Chart library not loaded. Please refresh the page.');
+        }
+    } catch (error) {
+        console.error('Error rendering chart:', error);
+        showErrorState('Chart rendering failed. Please try again.');
+    }
 }
 
 function showErrorState(message) {
