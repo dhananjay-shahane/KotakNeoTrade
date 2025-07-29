@@ -31,7 +31,7 @@ def table_exists(db_connector, table_name):
 
 
 def get_cmp(db_connector, symbol):
-    """Get current market price from 5m table"""
+    """Get current market price from 5m table (from most recent trading day)"""
     table_name = f"{symbol.lower()}_5m"
     if not table_exists(db_connector, table_name):
         logger.warning(f"Table not found: symbols.{table_name}")
@@ -41,6 +41,7 @@ def get_cmp(db_connector, symbol):
         query = f"""
             SELECT close 
             FROM symbols.{table_name}
+            WHERE EXTRACT(DOW FROM datetime) BETWEEN 1 AND 5
             ORDER BY datetime DESC 
             LIMIT 1
         """
@@ -52,7 +53,7 @@ def get_cmp(db_connector, symbol):
 
 
 def get_historical_cmp(db_connector, symbol, offset):
-    """Get historical close price N trading days ago"""
+    """Get historical close price N trading days ago (excluding weekends)"""
     table_name = f"{symbol.lower()}_daily"
     if not table_exists(db_connector, table_name):
         return None
@@ -64,6 +65,7 @@ def get_historical_cmp(db_connector, symbol, offset):
                 SELECT datetime, close,
                        ROW_NUMBER() OVER (ORDER BY datetime DESC) as rn
                 FROM symbols.{table_name}
+                WHERE EXTRACT(DOW FROM datetime) BETWEEN 1 AND 5
             ) t
             WHERE rn = {offset + 1}
         """
@@ -84,16 +86,24 @@ def get_ohlc_data(db_connector, symbol, period='1M'):
         today = datetime.date.today()
 
         if period == '1D':
-            # Intraday data for current day only with IST time
+            # Intraday data for current trading day only with IST time
             if not table_exists(db_connector, intraday_table):
                 return []
 
+            # Get the most recent trading day (excluding weekends)
             query = f"""
+                WITH latest_trading_day AS (
+                    SELECT MAX(datetime::date) as trading_date
+                    FROM symbols.{intraday_table}
+                    WHERE datetime::date <= CURRENT_DATE
+                    AND EXTRACT(DOW FROM datetime) NOT IN (0, 6)
+                    AND datetime >= CURRENT_DATE - INTERVAL '7 days'
+                )
                 SELECT 
                     datetime AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata' as datetime,
                     open, high, low, close, volume
-                FROM symbols.{intraday_table}
-                WHERE datetime::date = CURRENT_DATE
+                FROM symbols.{intraday_table}, latest_trading_day
+                WHERE datetime::date = latest_trading_day.trading_date
                 AND EXTRACT(DOW FROM datetime) NOT IN (0, 6)
                 ORDER BY datetime ASC
                 LIMIT 200
@@ -125,13 +135,18 @@ def get_ohlc_data(db_connector, symbol, period='1M'):
             else:  # MAX
                 limit_rows = 1000  # Reduced from 2500
 
-            # Ultra-optimized query - get latest N records directly, exclude weekends
+            # Ultra-optimized query - get latest N trading days, strictly exclude weekends
             query = f"""
                 SELECT datetime, open, high, low, close, volume
                 FROM (
                     SELECT datetime, open, high, low, close, volume
                     FROM symbols.{daily_table}
-                    WHERE EXTRACT(DOW FROM datetime) NOT IN (0, 6)
+                    WHERE EXTRACT(DOW FROM datetime) BETWEEN 1 AND 5
+                    AND datetime <= (
+                        SELECT MAX(datetime) 
+                        FROM symbols.{daily_table} 
+                        WHERE EXTRACT(DOW FROM datetime) BETWEEN 1 AND 5
+                    )
                     ORDER BY datetime DESC
                     LIMIT {limit_rows}
                 ) t
