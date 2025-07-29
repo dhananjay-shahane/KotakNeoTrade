@@ -44,10 +44,10 @@ class UserDealsService:
             
             # Query to get all user deals - using same structure as working deals API
             query = """
-                SELECT trade_signal_id, symbol, qty, date, ep, pos, ed, status
+                SELECT trade_signal_id, symbol, qty, created_at, ep, pos, ed, status
                 FROM public.user_deals 
                 WHERE user_id = %s
-                ORDER BY date DESC
+                ORDER BY created_at DESC
             """
             
             cursor.execute(query, (user_id,))
@@ -135,10 +135,10 @@ class UserDealsService:
             
             # Query to get symbol-specific deals - using same structure as working deals API
             query = """
-                SELECT trade_signal_id, symbol, qty, date, ep, pos, ed, status
+                SELECT trade_signal_id, symbol, qty, created_at, ep, pos, ed, status
                 FROM public.user_deals 
                 WHERE user_id = %s AND symbol = %s
-                ORDER BY date DESC
+                ORDER BY created_at DESC
             """
             
             cursor.execute(query, (user_id, symbol))
@@ -162,7 +162,7 @@ class UserDealsService:
             formatted_deals = []
             for deal in deals:
                 formatted_deals.append({
-                    'date': deal['date'].strftime('%Y-%m-%d') if deal['date'] else '--',
+                    'date': deal['created_at'].strftime('%Y-%m-%d') if deal['created_at'] else '--',
                     'entry_price': float(deal['ep']),
                     'qty': deal['qty'],
                     'investment': float(deal['ep']) * deal['qty'],
