@@ -339,6 +339,56 @@ endblock %} {% block head %}
                                 >
                                     <div>
                                         <h6 class="text-muted mb-2">
+                                            Active Deals
+                                        </h6>
+                                        <h2
+                                            class="text-success mb-0"
+                                            id="activeDeals"
+                                        >
+                                            0
+                                        </h2>
+                                    </div>
+                                    <div class="project-icon">
+                                        <i class="fas fa-chart-line text-success"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="card border-0 h-100 project-summary-card">
+                            <div class="card-body">
+                                <div
+                                    class="d-flex justify-content-between align-items-start"
+                                >
+                                    <div>
+                                        <h6 class="text-muted mb-2">
+                                            Closed Deals
+                                        </h6>
+                                        <h2
+                                            class="text-secondary mb-0"
+                                            id="closedDeals"
+                                        >
+                                            0
+                                        </h2>
+                                    </div>
+                                    <div class="project-icon">
+                                        <i class="fas fa-check-circle text-secondary"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="card border-0 h-100 project-summary-card">
+                            <div class="card-body">
+                                <div
+                                    class="d-flex justify-content-between align-items-start"
+                                >
+                                    <div>
+                                        <h6 class="text-muted mb-2">
                                             Total Investment
                                         </h6>
                                         <h2
@@ -540,12 +590,16 @@ endblock %} {% block head %}
         console.log('Updating portfolio display with data:', portfolioData);
         
         const totalDeals = portfolioData.total_deals || 0;
+        const activeDeals = portfolioData.active_deals || 0;
+        const closedDeals = portfolioData.closed_deals || 0;
         const totalInvestment = portfolioData.total_investment || 0;
         const totalPnL = portfolioData.total_pnl || 0;
         
-        console.log('Values:', { totalDeals, totalInvestment, totalPnL });
+        console.log('Values:', { totalDeals, activeDeals, closedDeals, totalInvestment, totalPnL });
         
         document.getElementById("totalDeals").textContent = totalDeals;
+        document.getElementById("activeDeals").textContent = activeDeals;
+        document.getElementById("closedDeals").textContent = closedDeals;
         document.getElementById("totalInvestment").textContent = `₹${totalInvestment.toLocaleString()}`;
         
         const pnlElement = document.getElementById("totalPnL");
@@ -568,10 +622,15 @@ endblock %} {% block head %}
         if (progressChart && portfolioData.status_chart_data) {
             const chartData = portfolioData.status_chart_data;
             
-            progressChart.data.labels = chartData.labels;
-            progressChart.data.datasets[0].data = chartData.data;
-            progressChart.data.datasets[0].backgroundColor = chartData.colors;
-            progressChart.update("active");
+            if (chartData.labels && chartData.data && chartData.labels.length > 0) {
+                progressChart.data.labels = chartData.labels;
+                progressChart.data.datasets[0].data = chartData.data;
+                progressChart.data.datasets[0].backgroundColor = chartData.colors || ['#3B82F6', '#10B981'];
+                progressChart.data.datasets[0].borderColor = '#ffffff';
+                progressChart.data.datasets[0].borderWidth = 2;
+                progressChart.update('active');
+                console.log('Pie chart updated with data:', chartData);
+            }
         }
         
         // Update symbol chart if available
@@ -610,20 +669,38 @@ endblock %} {% block head %}
                     {
                         data: [1],
                         backgroundColor: ["#95a5a6"],
-                        borderWidth: 0,
+                        borderColor: '#ffffff',
+                        borderWidth: 2,
                         hoverOffset: 4,
+                        hoverBorderWidth: 3,
                     },
                 ],
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
                 plugins: {
                     legend: {
                         position: "bottom",
-                        labels: { usePointStyle: true, color: "#6b7280" },
+                        labels: { 
+                            usePointStyle: true, 
+                            color: "#ffffff",
+                            padding: 15,
+                            font: {
+                                size: 12
+                            }
+                        },
                     },
                     tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#ffffff',
+                        borderWidth: 1,
                         callbacks: {
                             label: function(context) {
                                 const label = context.label || '';
@@ -636,7 +713,11 @@ endblock %} {% block head %}
                         }
                     }
                 },
-                cutout: "60%",
+                cutout: "50%",
+                animation: {
+                    animateRotate: true,
+                    animateScale: true
+                }
             },
         });
 
