@@ -15,8 +15,8 @@ class UserDealsService:
     """Service for fetching user deals statistics"""
     
     def __init__(self):
-        self.db_url = os.environ.get("DATABASE_URL", 
-                                   "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com:5432/kotak_trading_db")
+        # Use the same external database connection as deals API
+        self.db_url = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com:5432/kotak_trading_db"
     
     def get_connection(self):
         """Get database connection"""
@@ -42,10 +42,10 @@ class UserDealsService:
             
             cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
             
-            # Query to get all user deals
+            # Query to get all user deals - using same structure as working deals API
             query = """
                 SELECT trade_signal_id, symbol, qty, date, ep, pos, ed, status
-                FROM user_deals 
+                FROM public.user_deals 
                 WHERE user_id = %s
                 ORDER BY date DESC
             """
@@ -133,10 +133,10 @@ class UserDealsService:
             
             cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
             
-            # Query to get symbol-specific deals
+            # Query to get symbol-specific deals - using same structure as working deals API
             query = """
                 SELECT trade_signal_id, symbol, qty, date, ep, pos, ed, status
-                FROM user_deals 
+                FROM public.user_deals 
                 WHERE user_id = %s AND symbol = %s
                 ORDER BY date DESC
             """
