@@ -136,6 +136,79 @@ endblock %} {% block head %}
         color: var(--danger-color);
         font-weight: 600;
     }
+
+    /* Project Management Dashboard Styles */
+    .project-summary-card {
+        border-left: 4px solid var(--primary-color);
+        transition: all 0.3s ease;
+    }
+
+    .project-summary-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .project-icon {
+        font-size: 1.5rem;
+        opacity: 0.7;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 250px;
+        padding: 1rem 0;
+    }
+
+    .progress-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 120px;
+    }
+
+    .progress-container .progress {
+        flex: 1;
+        border-radius: 10px;
+    }
+
+    .progress-text {
+        font-size: 0.8rem;
+        font-weight: 600;
+        min-width: 35px;
+    }
+
+    #projectTable {
+        font-size: 0.875rem;
+    }
+
+    #projectTable th {
+        font-weight: 600;
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+        font-size: 0.8rem;
+        padding: 0.75rem 0.5rem;
+    }
+
+    #projectTable td {
+        padding: 0.75rem 0.5rem;
+        vertical-align: middle;
+    }
+
+    .badge {
+        font-size: 0.7rem;
+        padding: 0.3rem 0.5rem;
+    }
+
+    /* Light theme adjustments */
+    :root[data-theme="light"] .project-summary-card {
+        background: #ffffff;
+        border-color: var(--primary-color);
+    }
+
+    :root[data-theme="light"] #projectTable th {
+        background-color: #f8f9fa;
+        color: #495057;
+    }
 </style>
 {% endblock %} {% block content %}
 <div class="container-fluid">
@@ -278,259 +351,367 @@ endblock %} {% block head %}
                     </div>
                 </div>
             </div>
-            <!-- Trading Signals Summary Cards -->
-            <div class="row portfolio-summary-cards mb-4">
-                <div class="col-md-3 mb-3">
-                    <div class="card border-0 h-100">
-                        <div class="card-body text-center">
-                            <div
-                                class="stats-icon bg-primary text-white mx-auto mb-3"
-                            >
-                                <i class="fas fa-chart-line"></i>
-                            </div>
-                            <h5 class="card-title">Total Signals</h5>
-                            <div
-                                class="metric-value text-primary"
-                                id="totalSignals"
-                            >
-                                0
-                            </div>
-                            <div class="metric-label">
-                                <span class="text-success" id="activeSignals"
-                                    >0 Active</span
-                                >
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="col-md-3 mb-3">
-                    <div class="card border-0 h-100">
-                        <div class="card-body text-center">
-                            <div
-                                class="stats-icon bg-success text-white mx-auto mb-3"
-                            >
-                                <i class="fas fa-arrow-up"></i>
-                            </div>
-                            <h5 class="card-title">Total P&L</h5>
-                            <div
-                                class="metric-value text-success"
-                                id="totalPnl"
-                            >
-                                ₹0.00
-                            </div>
-                            <div class="metric-label">
-                                <span
-                                    class="change-positive"
-                                    id="totalPnlPercent"
-                                    >+0.00%</span
-                                >
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-3 mb-3">
-                    <div class="card border-0 h-100">
-                        <div class="card-body text-center">
-                            <div
-                                class="stats-icon bg-warning text-dark mx-auto mb-3"
-                            >
-                                <i class="fas fa-coins"></i>
-                            </div>
-                            <h5 class="card-title">Total Investment</h5>
-                            <div
-                                class="metric-value text-warning"
-                                id="totalInvestment"
-                            >
-                                ₹0.00
-                            </div>
-                            <div class="metric-label">Invested amount</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-3 mb-3">
-                    <div class="card border-0 h-100">
-                        <div class="card-body text-center">
-                            <div
-                                class="stats-icon bg-info text-white mx-auto mb-3"
-                            >
-                                <i class="fas fa-trophy"></i>
-                            </div>
-                            <h5 class="card-title">Win Rate</h5>
-                            <div class="metric-value text-info" id="winRate">
-                                0%
-                            </div>
-                            <div class="metric-label">Success ratio</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Active Trading Signals Table -->
-            <div class="row">
-                <div class="col-12 mb-4">
-                    <div class="card">
-                        <div
-                            class="card-header d-flex justify-content-between align-items-center"
-                        >
-                            <h5 class="mb-0">
-                                <i class="fas fa-signal me-2"></i>Active Trading
-                                Signals
-                            </h5>
-                            <div class="d-flex gap-2">
-                                <button
-                                    class="btn btn-sm btn-outline-primary"
-                                    onclick="filterSignals('ALL')"
-                                >
-                                    <i class="fas fa-list me-1"></i>All
-                                </button>
-                                <button
-                                    class="btn btn-sm btn-outline-success"
-                                    onclick="filterSignals('BUY')"
-                                >
-                                    <i class="fas fa-arrow-up me-1"></i>Buy
-                                </button>
-                                <button
-                                    class="btn btn-sm btn-outline-danger"
-                                    onclick="filterSignals('SELL')"
-                                >
-                                    <i class="fas fa-arrow-down me-1"></i>Sell
-                                </button>
-                                <button
-                                    class="btn btn-sm btn-outline-primary"
-                                    onclick="loadSignals()"
-                                >
-                                    <i class="fas fa-sync me-1"></i>Refresh
-                                </button>
-                            </div>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive signals-table">
-                                <table
-                                    class="table table-dark mb-0"
-                                    id="signalsTable"
-                                >
-                                    <thead>
-                                        <tr>
-                                            <th>Symbol</th>
-                                            <th>Signal Type</th>
-                                            <th>Entry Price</th>
-                                            <th>Current Price</th>
-                                            <th>Quantity</th>
-                                            <th>Investment</th>
-                                            <th>P&L</th>
-                                            <th>P&L %</th>
-                                            <th>Status</th>
-                                            <th>Date</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="signalsTableBody">
-                                        <tr>
-                                            <td
-                                                colspan="11"
-                                                class="text-center py-4"
-                                            >
-                                                <div
-                                                    class="spinner-border text-primary"
-                                                    role="status"
-                                                >
-                                                    <span
-                                                        class="visually-hidden"
-                                                        >Loading...</span
-                                                    >
-                                                </div>
-                                                <p class="mt-2 mb-0 text-muted">
-                                                    Loading trading signals...
-                                                </p>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Charts and Quick Actions Row -->
+            <!-- Charts Row -->
             <div class="row mb-4">
-                <!-- Portfolio Performance Chart -->
-                <!-- <div class="col-md-8 mb-4">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="fas fa-chart-area me-2"></i>Signals Performance
-                    </h5>
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-primary active" data-period="1D">1D</button>
-                        <button class="btn btn-outline-primary" data-period="1W">1W</button>
-                        <button class="btn btn-outline-primary" data-period="1M">1M</button>
-                        <button class="btn btn-outline-primary" data-period="3M">3M</button>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container">
-                        <canvas id="signalsChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div> -->
-
-                <!-- Recent Signal Activity -->
-                <div class="col-md-8 mb-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">
-                                <i class="fas fa-history me-2"></i>Recent Signal
-                                Activity
-                            </h5>
+                <div class="col-md-4 mb-4">
+                    <div class="mb-3">
+                        <div class="card border-0 h-100 project-summary-card">
+                            <div class="card-body">
+                                <div
+                                    class="d-flex justify-content-between align-items-start"
+                                >
+                                    <div>
+                                        <h6 class="text-muted mb-2">Project</h6>
+                                        <h2 class="text-primary mb-0">20</h2>
+                                    </div>
+                                    <div class="project-icon">
+                                        <i
+                                            class="fas fa-project-diagram text-primary"
+                                        ></i>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <div id="recentActivity">
-                                <div class="text-center py-4">
-                                    <i
-                                        class="fas fa-clock fa-2x text-muted mb-3"
-                                    ></i>
-                                    <p class="text-muted mb-0">
-                                        Loading recent signal activity...
-                                    </p>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="card border-0 h-100 project-summary-card">
+                            <div class="card-body">
+                                <div
+                                    class="d-flex justify-content-between align-items-start"
+                                >
+                                    <div>
+                                        <h6 class="text-muted mb-2">Tasks</h6>
+                                        <h2 class="text-info mb-0">18K</h2>
+                                        <small class="text-muted">Hours</small>
+                                    </div>
+                                    <div class="project-icon">
+                                        <i class="fas fa-tasks text-info"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="card border-0 h-100 project-summary-card">
+                            <div class="card-body">
+                                <div
+                                    class="d-flex justify-content-between align-items-start"
+                                >
+                                    <div>
+                                        <h6 class="text-muted mb-2">
+                                            Tasks Completed
+                                        </h6>
+                                        <h2 class="text-success mb-0">6,596</h2>
+                                        <small class="text-muted">Hours</small>
+                                    </div>
+                                    <div class="project-icon">
+                                        <i
+                                            class="fas fa-check-circle text-success"
+                                        ></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Quick Actions -->
+                <!-- Project Progress Pie Chart -->
                 <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h6 class="mb-0">Project progress</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas
+                                    id="projectProgressChart"
+                                    width="200"
+                                    height="200"
+                                ></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tasks by Project Bar Chart -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h6 class="mb-0">Tasks by Project</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas
+                                    id="tasksByProjectChart"
+                                    width="300"
+                                    height="200"
+                                ></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project by Manager Donut Chart -->
+                <!-- <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h6 class="mb-0">Project by Project Manager</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="projectByManagerChart" width="200" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div> -->
+            </div>
+
+            <!-- Project Management Table -->
+            <div class="row">
+                <div class="col-12 mb-4">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="mb-0">
-                                <i class="fas fa-bolt me-2"></i>Signal Actions
-                            </h5>
+                            <h6 class="mb-0">Project Management Overview</h6>
                         </div>
-                        <div class="card-body quick-actions">
-                            <div class="d-grid gap-2">
-                                <a
-                                    href="/trading-signals"
-                                    class="btn btn-primary"
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table
+                                    class="table table-hover mb-0"
+                                    id="projectTable"
                                 >
-                                    <i class="fas fa-signal me-2"></i>View All
-                                    Signals
-                                </a>
-                                <a href="/deals" class="btn btn-success">
-                                    <i class="fas fa-handshake me-2"></i>Active
-                                    Deals
-                                </a>
-                                <button
-                                    class="btn btn-info"
-                                    onclick="loadActiveSignals()"
-                                >
-                                    <i class="fas fa-chart-pie me-2"></i>Active
-                                    Signals Only
-                                </button>
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Project</th>
+                                            <th>Project Manager</th>
+                                            <th>Start</th>
+                                            <th>Finish</th>
+                                            <th>Progress</th>
+                                            <th>Effort(hours)</th>
+                                            <th>Task Count</th>
+                                            <th>Overdue Tasks</th>
+                                            <th>Late Tasks</th>
+                                            <th>On Track Tasks</th>
+                                            <th>Future Tasks</th>
+                                            <th>Completed Tasks</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="projectTableBody">
+                                        <tr>
+                                            <td>
+                                                <strong
+                                                    >Community Survey Light rail
+                                                    P2</strong
+                                                >
+                                            </td>
+                                            <td>Eva Hebert</td>
+                                            <td>07-Nov-22</td>
+                                            <td>20-Dec-22</td>
+                                            <td>
+                                                <div class="progress-container">
+                                                    <div
+                                                        class="progress"
+                                                        style="height: 8px"
+                                                    >
+                                                        <div
+                                                            class="progress-bar bg-primary"
+                                                            style="width: 0%"
+                                                        ></div>
+                                                    </div>
+                                                    <span class="progress-text"
+                                                        >0%</span
+                                                    >
+                                                </div>
+                                            </td>
+                                            <td>440</td>
+                                            <td>24</td>
+                                            <td>
+                                                <span class="badge bg-danger"
+                                                    >24</span
+                                                >
+                                            </td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <strong
+                                                    >Email Campaign Wave
+                                                    1</strong
+                                                >
+                                            </td>
+                                            <td>Eva Hebert</td>
+                                            <td>18-Sep-22</td>
+                                            <td>22-Oct-22</td>
+                                            <td>
+                                                <div class="progress-container">
+                                                    <div
+                                                        class="progress"
+                                                        style="height: 8px"
+                                                    >
+                                                        <div
+                                                            class="progress-bar bg-success"
+                                                            style="width: 100%"
+                                                        ></div>
+                                                    </div>
+                                                    <span class="progress-text"
+                                                        >100%</span
+                                                    >
+                                                </div>
+                                            </td>
+                                            <td>206</td>
+                                            <td>25</td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                            <td>
+                                                <span class="badge bg-success"
+                                                    >25</span
+                                                >
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <strong>Rider Survey</strong>
+                                            </td>
+                                            <td>Eva Hebert</td>
+                                            <td>02-Sep-22</td>
+                                            <td>31-Oct-22</td>
+                                            <td>
+                                                <div class="progress-container">
+                                                    <div
+                                                        class="progress"
+                                                        style="height: 8px"
+                                                    >
+                                                        <div
+                                                            class="progress-bar bg-warning"
+                                                            style="width: 18%"
+                                                        ></div>
+                                                    </div>
+                                                    <span class="progress-text"
+                                                        >18%</span
+                                                    >
+                                                </div>
+                                            </td>
+                                            <td>1,217</td>
+                                            <td>25</td>
+                                            <td>
+                                                <span class="badge bg-danger"
+                                                    >17</span
+                                                >
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info"
+                                                    >2</span
+                                                >
+                                            </td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                            <td>
+                                                <span class="badge bg-success"
+                                                    >1</span
+                                                >
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <strong
+                                                    >Support mobile account
+                                                    inquiry</strong
+                                                >
+                                            </td>
+                                            <td>Eva Hebert</td>
+                                            <td>29-Aug-22</td>
+                                            <td>25-Nov-22</td>
+                                            <td>
+                                                <div class="progress-container">
+                                                    <div
+                                                        class="progress"
+                                                        style="height: 8px"
+                                                    >
+                                                        <div
+                                                            class="progress-bar bg-info"
+                                                            style="width: 75%"
+                                                        ></div>
+                                                    </div>
+                                                    <span class="progress-text"
+                                                        >75%</span
+                                                    >
+                                                </div>
+                                            </td>
+                                            <td>2,596</td>
+                                            <td>7</td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                            <td>
+                                                <span class="badge bg-primary"
+                                                    >3</span
+                                                >
+                                            </td>
+                                            <td>-</td>
+                                            <td>
+                                                <span class="badge bg-success"
+                                                    >5</span
+                                                >
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <strong
+                                                    >Track upgrades (miles 3
+                                                    thru 6)</strong
+                                                >
+                                            </td>
+                                            <td>Eva Hebert</td>
+                                            <td>07-Oct-22</td>
+                                            <td>04-Nov-22</td>
+                                            <td>
+                                                <div class="progress-container">
+                                                    <div
+                                                        class="progress"
+                                                        style="height: 8px"
+                                                    >
+                                                        <div
+                                                            class="progress-bar bg-warning"
+                                                            style="width: 29%"
+                                                        ></div>
+                                                    </div>
+                                                    <span class="progress-text"
+                                                        >29%</span
+                                                    >
+                                                </div>
+                                            </td>
+                                            <td>764</td>
+                                            <td>22</td>
+                                            <td>
+                                                <span class="badge bg-danger"
+                                                    >9</span
+                                                >
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info"
+                                                    >3</span
+                                                >
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-primary"
+                                                    >5</span
+                                                >
+                                            </td>
+                                            <td>-</td>
+                                            <td>
+                                                <span class="badge bg-success"
+                                                    >5</span
+                                                >
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -565,309 +746,183 @@ endblock %} {% block head %}
             if (accountLogin) accountLogin.style.display = "block";
         }
 
-        // Initialize signals chart
-        initializeSignalsChart();
+        // Initialize project management charts
+        initializeProjectCharts();
 
-        // Auto-refresh functionality
-        setInterval(refreshSignals, 30000);
-
-        // Initial data load
-        loadSignals();
-        loadRecentActivity();
+        // Auto-refresh functionality can be added here for project data
+        // setInterval(refreshProjectData, 30000);
     });
 
-    function initializeSignalsChart() {
-        const ctx = document.getElementById("signalsChart");
-        if (!ctx) return;
-
-        // Sample data for signals performance
-        const chartData = {
-            labels: [
-                "9:15",
-                "10:00",
-                "11:00",
-                "12:00",
-                "13:00",
-                "14:00",
-                "15:00",
-                "15:30",
-            ],
-            datasets: [
-                {
-                    label: "Cumulative P&L",
-                    data: [0, 2500, -1000, 5000, 7500, 3000, 10000, 12000],
-                    borderColor: "#0d6efd",
-                    backgroundColor: "rgba(13, 110, 253, 0.1)",
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4,
+    function initializeProjectCharts() {
+        // Project Progress Pie Chart
+        const progressCtx = document.getElementById("projectProgressChart");
+        if (progressCtx) {
+            new Chart(progressCtx, {
+                type: "doughnut",
+                data: {
+                    labels: ["Not Started", "In Progress", "Completed"],
+                    datasets: [
+                        {
+                            data: [2, 15, 3],
+                            backgroundColor: ["#dc3545", "#6c757d", "#198754"],
+                            borderWidth: 0,
+                            cutout: "60%",
+                        },
+                    ],
                 },
-            ],
-        };
-
-        new Chart(ctx, {
-            type: "line",
-            data: chartData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false,
-                    },
-                },
-                scales: {
-                    x: {
-                        grid: {
-                            color: "rgba(255, 255, 255, 0.1)",
-                        },
-                        ticks: {
-                            color: "#adb5bd",
-                        },
-                    },
-                    y: {
-                        grid: {
-                            color: "rgba(255, 255, 255, 0.1)",
-                        },
-                        ticks: {
-                            color: "#adb5bd",
-                            callback: function (value) {
-                                return "₹" + value / 1000 + "K";
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: "bottom",
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: {
+                                    size: 11,
+                                },
                             },
                         },
                     },
                 },
-                interaction: {
-                    intersect: false,
-                    mode: "index",
-                },
-            },
-        });
-    }
-
-    function loadSignals() {
-        const tableBody = document.getElementById("signalsTableBody");
-
-        // Show loading state
-        tableBody.innerHTML = `
-        <tr>
-            <td colspan="11" class="text-center py-4">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-2 mb-0 text-muted">Loading signals...</p>
-            </td>
-        </tr>
-    `;
-
-        // Fetch signals from API
-        fetch("/api/etf-signals-data")
-            .then((response) => response.json())
-            .then((data) => {
-                if (data.success && data.data) {
-                    displaySignals(data.data);
-                    updateSummaryCards(data.data);
-                } else {
-                    showErrorState("Failed to load signals");
-                }
-            })
-            .catch((error) => {
-                console.error("Error loading signals:", error);
-                showErrorState("Error loading signals");
             });
-    }
-
-    function displaySignals(signals) {
-        const tableBody = document.getElementById("signalsTableBody");
-
-        if (!signals || signals.length === 0) {
-            tableBody.innerHTML = `
-            <tr>
-                <td colspan="11" class="text-center py-4">
-                    <i class="fas fa-chart-line fa-2x text-muted mb-3"></i>
-                    <p class="text-muted mb-0">No trading signals found</p>
-                </td>
-            </tr>
-        `;
-            return;
         }
 
-        let html = "";
-        signals.slice(0, 10).forEach((signal) => {
-            const pnlClass =
-                signal.pl >= 0 ? "signal-pnl-positive" : "signal-pnl-negative";
-            const statusClass =
-                signal.status === "ACTIVE" ? "signal-active" : "signal-closed";
-            const signalTypeIcon =
-                signal.pos > 0
-                    ? "fa-arrow-up text-success"
-                    : "fa-arrow-down text-danger";
+        // Tasks by Project Bar Chart
+        const tasksCtx = document.getElementById("tasksByProjectChart");
+        if (tasksCtx) {
+            new Chart(tasksCtx, {
+                type: "bar",
+                data: {
+                    labels: [
+                        "Onboarding",
+                        "Supervisor",
+                        "Technical",
+                        "Survey",
+                        "Lab",
+                        "Training",
+                        "Migration",
+                        "Onboarding",
+                        "Helpdesk",
+                        "Events",
+                    ],
+                    datasets: [
+                        {
+                            label: "Not Completed",
+                            data: [
+                                1200, 1400, 1300, 1100, 900, 1100, 1500, 800,
+                                700, 600,
+                            ],
+                            backgroundColor: "#dc3545",
+                        },
+                        {
+                            label: "Not Remaining",
+                            data: [
+                                800, 600, 700, 900, 1100, 900, 500, 1200, 1300,
+                                1400,
+                            ],
+                            backgroundColor: "#6c757d",
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            ticks: {
+                                font: {
+                                    size: 10,
+                                },
+                            },
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                font: {
+                                    size: 10,
+                                },
+                            },
+                        },
+                    },
+                    plugins: {
+                        legend: {
+                            position: "top",
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: {
+                                    size: 11,
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+        }
 
-            html += `
-            <tr>
-                <td><strong>${signal.symbol || "N/A"}</strong></td>
-                <td>
-                    <i class="fas ${signalTypeIcon} me-1"></i>
-                    ${signal.pos > 0 ? "BUY" : "SELL"}
-                </td>
-                <td>₹${(signal.ep || 0).toFixed(2)}</td>
-                <td>₹${(signal.cmp || 0).toFixed(2)}</td>
-                <td>${signal.qty || 0}</td>
-                <td>₹${(signal.inv || 0).toFixed(2)}</td>
-                <td class="${pnlClass}">₹${(signal.pl || 0).toFixed(2)}</td>
-                <td class="${pnlClass}">${signal.chan || "0.00%"}</td>
-                <td>
-                    <span class="signal-status ${statusClass}">
-                        ${signal.status || "ACTIVE"}
-                    </span>
-                </td>
-                <td>${signal.date || "N/A"}</td>
-                <td>
-                    <button class="btn btn-sm btn-outline-primary me-1" onclick="viewSignalDetails('${signal.id}')">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-success" onclick="createDeal('${signal.id}')">
-                        <i class="fas fa-handshake"></i>
-                    </button>
-                </td>
-            </tr>
-        `;
-        });
-
-        tableBody.innerHTML = html;
-    }
-
-    function updateSummaryCards(signals) {
-        const totalSignals = signals.length;
-        const activeSignals = signals.filter(
-            (s) => s.status === "ACTIVE",
-        ).length;
-        const totalPnl = signals.reduce((sum, s) => sum + (s.pl || 0), 0);
-        const totalInvestment = signals.reduce(
-            (sum, s) => sum + (s.inv || 0),
-            0,
-        );
-        const totalPnlPercent =
-            totalInvestment > 0 ? (totalPnl / totalInvestment) * 100 : 0;
-        const winningSignals = signals.filter((s) => (s.pl || 0) > 0).length;
-        const winRate =
-            totalSignals > 0 ? (winningSignals / totalSignals) * 100 : 0;
-
-        document.getElementById("totalSignals").textContent = totalSignals;
-        document.getElementById("activeSignals").textContent =
-            `${activeSignals} Active`;
-        document.getElementById("totalPnl").textContent =
-            `₹${totalPnl.toFixed(2)}`;
-        document.getElementById("totalPnlPercent").textContent =
-            `${totalPnlPercent >= 0 ? "+" : ""}${totalPnlPercent.toFixed(2)}%`;
-        document.getElementById("totalInvestment").textContent =
-            `₹${totalInvestment.toFixed(2)}`;
-        document.getElementById("winRate").textContent =
-            `${winRate.toFixed(1)}%`;
-
-        // Update P&L color
-        const pnlElement = document.getElementById("totalPnl");
-        const pnlPercentElement = document.getElementById("totalPnlPercent");
-        if (totalPnl >= 0) {
-            pnlElement.className = "metric-value text-success";
-            pnlPercentElement.className = "metric-label change-positive";
-        } else {
-            pnlElement.className = "metric-value text-danger";
-            pnlPercentElement.className = "metric-label change-negative";
+        // Project by Manager Donut Chart
+        const managerCtx = document.getElementById("projectByManagerChart");
+        if (managerCtx) {
+            new Chart(managerCtx, {
+                type: "doughnut",
+                data: {
+                    labels: [
+                        "360 listeners",
+                        "Madelyn",
+                        "Greta Othman",
+                        "Kasey Ba",
+                        "Marco Christmas",
+                        "Eva Hebert",
+                    ],
+                    datasets: [
+                        {
+                            data: [1, 1, 2, 10, 3, 3],
+                            backgroundColor: [
+                                "#ff6b6b",
+                                "#4ecdc4",
+                                "#45b7d1",
+                                "#96ceb4",
+                                "#feca57",
+                                "#ff9ff3",
+                            ],
+                            borderWidth: 0,
+                            cutout: "60%",
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: "right",
+                            labels: {
+                                usePointStyle: true,
+                                padding: 10,
+                                font: {
+                                    size: 10,
+                                },
+                            },
+                        },
+                    },
+                },
+            });
         }
     }
 
-    function showErrorState(message) {
-        const tableBody = document.getElementById("signalsTableBody");
-        tableBody.innerHTML = `
-        <tr>
-            <td colspan="11" class="text-center py-4">
-                <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>
-                <p class="text-muted mb-0">${message}</p>
-            </td>
-        </tr>
-    `;
+    // Project Management Dashboard Functions
+    function refreshProjectData() {
+        // Function to refresh project data if needed
+        console.log("Refreshing project data...");
+        // This can be implemented to fetch real project data from API
     }
 
-    function refreshSignals() {
-        document.getElementById("lastUpdateTime").textContent =
-            new Date().toLocaleTimeString();
-        loadSignals();
-        loadRecentActivity();
-    }
-
-    function filterSignals(type) {
-        // Implement signal filtering logic
-        console.log("Filtering signals by:", type);
-        // Reload signals with filter
-        loadSignals();
-    }
-
-    function loadActiveSignals() {
-        // Load only active signals
-        filterSignals("ACTIVE");
-    }
-
-    function loadRecentActivity() {
-        const activityContainer = document.getElementById("recentActivity");
-
-        // Sample recent activity
-        const activities = [
-            {
-                type: "BUY",
-                symbol: "RELIANCE",
-                time: "2 minutes ago",
-                pnl: "+₹1,250",
-            },
-            {
-                type: "SELL",
-                symbol: "TCS",
-                time: "15 minutes ago",
-                pnl: "-₹850",
-            },
-            { type: "BUY", symbol: "INFY", time: "1 hour ago", pnl: "+₹2,100" },
-        ];
-
-        let html = "";
-        activities.forEach((activity) => {
-            const typeClass =
-                activity.type === "BUY" ? "text-success" : "text-danger";
-            const pnlClass = activity.pnl.startsWith("+")
-                ? "text-success"
-                : "text-danger";
-
-            html += `
-            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                <div>
-                    <span class="${typeClass} fw-bold">${activity.type}</span>
-                    <strong class="ms-2">${activity.symbol}</strong>
-                    <small class="text-muted ms-2">${activity.time}</small>
-                </div>
-                <span class="${pnlClass} fw-bold">${activity.pnl}</span>
-            </div>
-        `;
-        });
-
-        activityContainer.innerHTML =
-            html ||
-            `
-        <div class="text-center py-4">
-            <i class="fas fa-clock fa-2x text-muted mb-3"></i>
-            <p class="text-muted mb-0">No recent activity to display</p>
-        </div>
-    `;
-    }
-
-    function viewSignalDetails(signalId) {
-        // Redirect to signal details or open modal
-        window.location.href = `/trading-signals?signal=${signalId}`;
-    }
-
-    function createDeal(signalId) {
-        // Create a deal from signal
-        if (confirm("Create a deal from this signal?")) {
-            window.location.href = `/deals?signal=${signalId}`;
-        }
+    function viewProjectDetails(projectId) {
+        // Function to view project details
+        console.log("Viewing project details for:", projectId);
+        // This can be implemented to show project details modal or navigate to project page
     }
 
     // Chart period selection

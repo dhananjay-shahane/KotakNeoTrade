@@ -933,9 +933,12 @@ try:
     from api.signals_datatable import datatable_bp
     from api.enhanced_etf_signals import enhanced_etf_bp
     from api.admin_signals_api import admin_signals_bp
+    from api.candlestick_api import candlestick_bp
 
     # Register ETF signals blueprint
     app.register_blueprint(etf_bp, url_prefix='/api')
+    # Register candlestick charts API
+    app.register_blueprint(candlestick_bp, url_prefix='/api')
     print("✓ Additional blueprints available")
 
     # Initialize realtime quotes scheduler

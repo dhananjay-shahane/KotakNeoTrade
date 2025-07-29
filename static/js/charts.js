@@ -6,10 +6,10 @@
 var advancedChart;
 
 // Initialize charts when page loads
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", function () {
     // Load LightweightCharts first, then initialize the chart
     loadLightweightCharts()
-        .then(function() {
+        .then(function () {
             advancedChart = new AdvancedTradingChart();
 
             // Hide skeleton and show content
@@ -17,10 +17,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.skeletonLoader.hideChartsSkeleton();
             }
 
-            console.log('Advanced Trading Chart initialized successfully');
+            console.log("Advanced Trading Chart initialized successfully");
         })
-        .catch(function(error) {
-            console.error('Failed to initialize Advanced Trading Chart:', error);
+        .catch(function (error) {
+            console.error(
+                "Failed to initialize Advanced Trading Chart:",
+                error,
+            );
 
             // Hide skeleton even on error
             if (window.skeletonLoader) {
@@ -28,7 +31,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             // Show error message to user
-            var chartsMainContent = document.getElementById('chartsMainContent');
+            var chartsMainContent =
+                document.getElementById("chartsMainContent");
             if (chartsMainContent) {
                 chartsMainContent.innerHTML = `
                     <div class="col-12">
@@ -44,36 +48,39 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                 `;
-                chartsMainContent.style.display = 'block';
+                chartsMainContent.style.display = "block";
             }
         });
 });
 
 // Function to check if LightweightCharts is loaded
 function checkLightweightChartsLoaded() {
-    return typeof LightweightCharts !== 'undefined' && 
-           typeof LightweightCharts.createChart === 'function';
+    return (
+        typeof LightweightCharts !== "undefined" &&
+        typeof LightweightCharts.createChart === "function"
+    );
 }
 
 // Function to load LightweightCharts if not already loaded
 function loadLightweightCharts() {
-    return new Promise(function(resolve, reject) {
+    return new Promise(function (resolve, reject) {
         if (checkLightweightChartsLoaded()) {
             resolve();
             return;
         }
 
-        var script = document.createElement('script');
-        script.src = 'https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js';
-        script.onload = function() {
+        var script = document.createElement("script");
+        script.src =
+            "https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js";
+        script.onload = function () {
             if (checkLightweightChartsLoaded()) {
                 resolve();
             } else {
-                reject(new Error('Failed to load LightweightCharts library'));
+                reject(new Error("Failed to load LightweightCharts library"));
             }
         };
-        script.onerror = function() {
-            reject(new Error('Failed to load LightweightCharts library'));
+        script.onerror = function () {
+            reject(new Error("Failed to load LightweightCharts library"));
         };
         document.head.appendChild(script);
     });
@@ -83,7 +90,7 @@ function loadLightweightCharts() {
 function AdvancedTradingChart() {
     this.charts = new Map();
     this.selectedSymbols = new Set();
-    this.currentPeriod = '1W';
+    this.currentPeriod = "1W";
 
-    console.log('AdvancedTradingChart initialized');
+    console.log("AdvancedTradingChart initialized");
 }
