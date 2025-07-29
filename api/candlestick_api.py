@@ -84,24 +84,16 @@ def get_ohlc_data(db_connector, symbol, period='1M'):
         today = datetime.date.today()
 
         if period == '1D':
-            # Intraday data for recent trading days - show more data with IST time
+            # Intraday data for current day only with IST time
             if not table_exists(db_connector, intraday_table):
                 return []
 
             query = f"""
-                WITH recent_trading_days AS (
-                    SELECT DISTINCT datetime::date as trading_date
-                    FROM symbols.{intraday_table}
-                    WHERE EXTRACT(DOW FROM datetime) NOT IN (0, 6)
-                    AND datetime >= CURRENT_DATE - INTERVAL '7 days'
-                    ORDER BY trading_date DESC
-                    LIMIT 3
-                )
                 SELECT 
                     datetime AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata' as datetime,
                     open, high, low, close, volume
                 FROM symbols.{intraday_table}
-                WHERE datetime::date IN (SELECT trading_date FROM recent_trading_days)
+                WHERE datetime::date = CURRENT_DATE
                 AND EXTRACT(DOW FROM datetime) NOT IN (0, 6)
                 ORDER BY datetime ASC
                 LIMIT 200
