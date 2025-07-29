@@ -88,10 +88,10 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1,
 # Database configuration - use Replit PostgreSQL
 database_url = os.environ.get("DATABASE_URL")
 if database_url:
-    print("✓ Using Replit PostgreSQL database")
+    print("✓ Using PostgreSQL database")
 else:
     # Fallback to SQLite for development only
-    database_url = "sqlite:///instance/trading_platform.db" 
+    database_url = "sqlite:///instance/trading_platform.db"
     print("⚠️ Using SQLite fallback - PostgreSQL not available")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
@@ -189,9 +189,8 @@ with app.app_context():
             print("✓ Models imported successfully")
         except ImportError as e:
             print(f"Model imports optional: {e}")
-
-        db.create_all()
-        print("✅ Database tables created successfully")
+        # db.create_all()
+        # print("✅ Database tables created successfully")
     except Exception as e:
         print(f"⚠️ Database initialization warning: {e}")
         # Continue running even if database creation fails
@@ -823,7 +822,7 @@ def get_basic_trade_signals_data():
     """API endpoint to get basic trade signals data from external admin_trade_signals table"""
     try:
         from Scripts.external_db_service import get_etf_signals_data_json
-        # Use ETF signals data as basic trade signals 
+        # Use ETF signals data as basic trade signals
         return jsonify(get_etf_signals_data_json())
     except Exception as e:
         logging.error(f"Basic trade signals API error: {e}")
@@ -942,14 +941,6 @@ try:
     app.register_blueprint(candlestick_bp, url_prefix='/api')
     print("✓ Additional blueprints available")
 
-    # Initialize realtime quotes scheduler
-    try:
-        from Scripts.realtime_quotes_manager import start_quotes_scheduler
-        start_quotes_scheduler()
-        print("✓ Realtime quotes scheduler started")
-    except Exception as e:
-        print(f"Warning: Could not start quotes scheduler: {e}")
-
 except ImportError as e:
     print(f"Warning: Could not import additional blueprint: {e}")
 
@@ -1008,10 +999,14 @@ try:
     # Configure email settings first
     app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
     app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
-    app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
-    app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME') or os.environ.get('EMAIL_USER')
-    app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD') or os.environ.get('EMAIL_PASSWORD')
-    app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER') or app.config['MAIL_USERNAME']
+    app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS',
+                                                'True').lower() == 'true'
+    app.config['MAIL_USERNAME'] = os.environ.get(
+        'MAIL_USERNAME') or os.environ.get('EMAIL_USER')
+    app.config['MAIL_PASSWORD'] = os.environ.get(
+        'MAIL_PASSWORD') or os.environ.get('EMAIL_PASSWORD')
+    app.config['MAIL_DEFAULT_SENDER'] = os.environ.get(
+        'MAIL_DEFAULT_SENDER') or app.config['MAIL_USERNAME']
 
     # Initialize Mail with configured app
     if app.config['MAIL_USERNAME'] and app.config['MAIL_PASSWORD']:
@@ -1035,6 +1030,7 @@ except Exception as e:
 # User loader for login functionality
 if login_manager:
     try:
+
         @login_manager.user_loader
         def load_user(user_id):
             try:
@@ -1061,7 +1057,7 @@ def send_registration_email(user_email, username, password):
     """Send registration confirmation email with credentials"""
     if not mail:
         return False
-        
+
     try:
         msg = Message(
             subject="Welcome to Trading Platform - Your Account Details",
@@ -1104,7 +1100,7 @@ def register():
     if request.method == 'POST':
         # Import auth functions
         from api.auth_api import store_user_in_external_db, EmailService
-        
+
         email = request.form.get('email', '').strip()
         mobile = request.form.get('mobile', '').strip()
         password = request.form.get('password', '').strip()
@@ -1130,7 +1126,7 @@ def register():
             # Extract last 2 digits from mobile
             mobile_digits = ''.join(filter(str.isdigit, mobile))[-2:]
             username = email_part + mobile_digits
-            
+
             # Ensure username is exactly 5 characters
             if len(username) < 5:
                 username = username.ljust(5, '0')
@@ -1141,15 +1137,20 @@ def register():
                 # Send registration email with credentials (if mail service is configured)
                 try:
                     if mail:
-                        EmailService.send_registration_email(mail, email, username, password)
+                        EmailService.send_registration_email(
+                            mail, email, username, password)
                 except Exception as email_error:
                     print(f"Email sending failed: {email_error}")
 
-                flash('Registration successful! Please check your email for login credentials.', 'success')
+                flash(
+                    'Registration successful! Please check your email for login credentials.',
+                    'success')
                 flash(f'Your username is: {username}', 'info')
                 return redirect(url_for('auth_routes.trading_account_login'))
             else:
-                flash('Registration failed. Email might already be registered.', 'error')
+                flash(
+                    'Registration failed. Email might already be registered.',
+                    'error')
                 return render_template('auth/register.html')
 
         except Exception as e:
@@ -1170,7 +1171,7 @@ def login():
             if not User:
                 flash('User model not available.', 'error')
                 return render_template('auth/login.html')
-                
+
             user = User.query.filter_by(username=username).first()
 
             if user and user.check_password(password):
@@ -1217,32 +1218,4 @@ def health_check():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-
-    # Start ETF data scheduler for real-time quotes
-    try:
-        from Scripts.etf_data_scheduler import start_etf_data_scheduler
-        start_etf_data_scheduler()
-        logging.info("✅ ETF Data Scheduler initialized")
-    except Exception as e:
-        logging.error(f"❌ Failed to start ETF scheduler: {str(e)}")
-
-    # Initialize admin signals scheduler for comprehensive Kotak Neo data updates
-    try:
-        logging.info(
-            "Starting admin signals scheduler with Kotak Neo integration...")
-        from Scripts.admin_signals_scheduler import start_admin_signals_scheduler
-        start_admin_signals_scheduler()
-        logging.info(
-            "✅ Admin signals scheduler started - automatic updates every 5 minutes"
-        )
-    except Exception as e:
-        logging.error(f"❌ Failed to start admin signals scheduler: {e}")
-
-    # Ensure the instance folder exists for SQLite fallback
-    try:
-        os.makedirs(os.path.dirname('instance/trading_platform.db'),
-                    exist_ok=True)
-    except Exception as e:
-        pass
-
     app.run(host='0.0.0.0', port=5000, debug=True)

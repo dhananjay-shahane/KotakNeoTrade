@@ -252,26 +252,24 @@ endblock %} {% block head %}
                 </div>
             </div>
 
-            <!-- Summary Cards Skeleton -->
-            <div class="row mb-4">
-                <div class="col-md-3 mb-3">
-                    <div class="skeleton skeleton-summary-card"></div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="skeleton skeleton-summary-card"></div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="skeleton skeleton-summary-card"></div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="skeleton skeleton-summary-card"></div>
-                </div>
-            </div>
-
             <!-- Table Header Skeleton -->
             <div class="row mb-4">
-                <div class="col-12">
-                    <div class="skeleton skeleton-table-header"></div>
+                <div class="col-4">
+                    <div class="skeleton skeleton-summary-card"></div>
+                    <div class="skeleton skeleton-summary-card"></div>
+                    <div class="skeleton skeleton-summary-card"></div>
+                </div>
+                <div class="col-4">
+                    <div
+                        class="skeleton skeleton-portfolio-card"
+                        style="height: 400px"
+                    ></div>
+                </div>
+                <div class="col-4">
+                    <div
+                        class="skeleton skeleton-portfolio-card"
+                        style="height: 400px"
+                    ></div>
                 </div>
             </div>
 
@@ -362,7 +360,9 @@ endblock %} {% block head %}
                                     class="d-flex justify-content-between align-items-start"
                                 >
                                     <div>
-                                        <h6 class="text-muted mb-2">Project</h6>
+                                        <h6 class="text-muted mb-2">
+                                            Total Deals
+                                        </h6>
                                         <h2 class="text-primary mb-0">20</h2>
                                     </div>
                                     <div class="project-icon">
@@ -382,9 +382,10 @@ endblock %} {% block head %}
                                     class="d-flex justify-content-between align-items-start"
                                 >
                                     <div>
-                                        <h6 class="text-muted mb-2">Tasks</h6>
-                                        <h2 class="text-info mb-0">18K</h2>
-                                        <small class="text-muted">Hours</small>
+                                        <h6 class="text-muted mb-2">
+                                            Active Deals
+                                        </h6>
+                                        <h2 class="text-info mb-0">10</h2>
                                     </div>
                                     <div class="project-icon">
                                         <i class="fas fa-tasks text-info"></i>
@@ -402,10 +403,9 @@ endblock %} {% block head %}
                                 >
                                     <div>
                                         <h6 class="text-muted mb-2">
-                                            Tasks Completed
+                                            Close Deals
                                         </h6>
-                                        <h2 class="text-success mb-0">6,596</h2>
-                                        <small class="text-muted">Hours</small>
+                                        <h2 class="text-danger mb-0">6</h2>
                                     </div>
                                     <div class="project-icon">
                                         <i
@@ -422,7 +422,7 @@ endblock %} {% block head %}
                 <div class="col-md-4 mb-4">
                     <div class="card h-100">
                         <div class="card-header">
-                            <h6 class="mb-0">Project progress</h6>
+                            <h6 class="mb-0">Deals progress</h6>
                         </div>
                         <div class="card-body">
                             <div class="chart-container">
@@ -440,7 +440,7 @@ endblock %} {% block head %}
                 <div class="col-md-4 mb-4">
                     <div class="card h-100">
                         <div class="card-header">
-                            <h6 class="mb-0">Tasks by Project</h6>
+                            <h6 class="mb-0">Deals Data</h6>
                         </div>
                         <div class="card-body">
                             <div class="chart-container">
