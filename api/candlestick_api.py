@@ -84,7 +84,7 @@ def get_ohlc_data(db_connector, symbol, period='1M'):
         today = datetime.date.today()
 
         if period == '1D':
-            # Intraday data for today - minimal data
+            # Intraday data for today - minimal data, exclude weekends
             if not table_exists(db_connector, intraday_table):
                 return []
 
@@ -92,6 +92,7 @@ def get_ohlc_data(db_connector, symbol, period='1M'):
                 SELECT datetime, open, high, low, close, volume
                 FROM symbols.{intraday_table}
                 WHERE datetime::date = CURRENT_DATE
+                AND EXTRACT(DOW FROM datetime) NOT IN (0, 6)
                 ORDER BY datetime DESC
                 LIMIT 50
             """
@@ -124,12 +125,13 @@ def get_ohlc_data(db_connector, symbol, period='1M'):
             else:  # MAX
                 limit_rows = 1000  # Reduced from 2500
 
-            # Ultra-optimized query - get latest N records directly
+            # Ultra-optimized query - get latest N records directly, exclude weekends
             query = f"""
                 SELECT datetime, open, high, low, close, volume
                 FROM (
                     SELECT datetime, open, high, low, close, volume
                     FROM symbols.{daily_table}
+                    WHERE EXTRACT(DOW FROM datetime) NOT IN (0, 6)
                     ORDER BY datetime DESC
                     LIMIT {limit_rows}
                 ) t

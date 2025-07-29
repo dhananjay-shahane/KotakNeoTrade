@@ -200,7 +200,7 @@ function selectSymbol(symbol) {
         hideChartContainer();
         return;
     }
-    
+
     currentSymbol = symbol.toUpperCase();
 
     // Update selected symbols display
@@ -265,7 +265,7 @@ function showChartContainer() {
     if (noChartsInContainer) {
         noChartsInContainer.style.display = "none";
     }
-    
+
     // Also show price info container when showing chart
     const priceInfo = document.getElementById("priceInfo");
     if (priceInfo) {
@@ -358,7 +358,7 @@ function updateMetricsDisplay(metrics) {
 
 function loadCandlestickData(symbol, period) {
     console.log(`🔄 Loading candlestick data for ${symbol} with period ${period}`);
-    
+
     // Shorter timeout for better UX
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
@@ -406,7 +406,7 @@ function loadCandlestickData(symbol, period) {
                 symbol: data.symbol,
                 period: data.period
             });
-            
+
             if (data.success && data.data && data.data.length > 0) {
                 console.log(`✅ Calling renderCandlestickChart with ${data.data.length} data points`);
                 renderCandlestickChart(data.data, symbol, period);
@@ -447,16 +447,16 @@ function updateLoadingMessage(message) {
 
 function renderCandlestickChart(data, symbol, period = '1D') {
     console.log('renderCandlestickChart called with', data.length, 'data points for', symbol);
-    
+
     // Show chart container when rendering
     showChartContainer();
-    
+
     // Hide the no charts message inside container
     const noChartsInContainer = document.getElementById("noChartsInContainer");
     if (noChartsInContainer) {
         noChartsInContainer.style.display = "none";
     }
-    
+
     const chartDiv = document.getElementById("candlestickChart");
     if (!chartDiv) {
         console.error('Chart div not found');
@@ -469,7 +469,7 @@ function renderCandlestickChart(data, symbol, period = '1D') {
     chartDiv.style.width = '100%';
     chartDiv.style.display = 'block';
     chartDiv.style.position = 'relative';
-    
+
     // Force layout recalculation
     chartDiv.offsetHeight;
 
@@ -563,7 +563,7 @@ function renderCandlestickChart(data, symbol, period = '1D') {
             height: chartDiv.offsetHeight,
             display: window.getComputedStyle(chartDiv).display
         });
-        
+
         if (typeof Plotly !== 'undefined') {
             console.log('✅ Plotly library is available, proceeding with render...');
             console.log('📊 Final trace data preview:', {
@@ -574,7 +574,7 @@ function renderCandlestickChart(data, symbol, period = '1D') {
                 lastX: trace.x[trace.x.length - 1],
                 lastClose: trace.close[trace.close.length - 1]
             });
-            
+
             // Use newPlot instead of react for more reliable rendering
             Plotly.newPlot(chartDiv, [trace], layout, config).then(() => {
                 console.log('🎉 Chart rendered successfully for', symbol);
@@ -583,11 +583,11 @@ function renderCandlestickChart(data, symbol, period = '1D') {
                 if (chartTitle) {
                     chartTitle.textContent = `${symbol} Chart`;
                 }
-                
+
                 // Verify chart was actually rendered
                 const plotlyDiv = chartDiv.querySelector('.plotly-graph-div');
                 console.log('📈 Plotly chart div created:', !!plotlyDiv);
-                
+
                 if (!plotlyDiv) {
                     console.error('⚠️ Chart div not created, trying alternative approach...');
                     // Force resize and redraw
@@ -600,7 +600,7 @@ function renderCandlestickChart(data, symbol, period = '1D') {
                         }
                     }, 100);
                 }
-                
+
             }).catch((error) => {
                 console.error('💥 Plotly rendering error:', error);
                 console.error('Error details:', {
@@ -634,50 +634,50 @@ function renderCandlestickChart(data, symbol, period = '1D') {
 function clearSymbolSearchAndChart() {
     const searchInput = document.getElementById("symbolSearch");
     const searchResults = document.getElementById("searchResults");
-    
+
     if (searchInput) {
         searchInput.value = "";
     }
-    
+
     if (searchResults) {
         searchResults.innerHTML = "";
         searchResults.style.display = "none";
     }
-    
+
     // Clear chart content
     const chartDiv = document.getElementById("candlestickChart");
     if (chartDiv) {
         chartDiv.innerHTML = "";
     }
-    
+
     // Hide chart container and show "No Charts Selected" message
     hideChart();
     hideChartContainer();
-    
+
     // Show no charts message inside container
     const noChartsInContainer = document.getElementById("noChartsInContainer");
     if (noChartsInContainer) {
         noChartsInContainer.style.display = "block";
     }
-    
+
     // Clear selected symbols display
     const selectedSymbolsDiv = document.getElementById("selectedSymbols");
     if (selectedSymbolsDiv) {
         selectedSymbolsDiv.innerHTML = "";
     }
-    
+
     // Clear price info
     const priceInfo = document.getElementById("priceInfo");
     if (priceInfo) {
         priceInfo.style.display = "none";
     }
-    
+
     // Reset chart title
     const chartTitle = document.getElementById("chartTitle");
     if (chartTitle) {
         chartTitle.textContent = "Chart";
     }
-    
+
     // Reset global state
     currentSymbol = null;
 }
@@ -686,11 +686,11 @@ function clearSymbolSearchAndChart() {
 function showChartContainer() {
     const chartContainer = document.getElementById("candlestickChartContainer");
     const noChartsMessage = document.getElementById("noChartsMessage");
-    
+
     if (chartContainer) {
         chartContainer.style.display = "block";
     }
-    
+
     if (noChartsMessage) {
         noChartsMessage.style.display = "none";
     }
@@ -701,15 +701,15 @@ function hideChartContainer() {
     const chartContainer = document.getElementById("candlestickChartContainer");
     const noChartsMessage = document.getElementById("noChartsMessage");
     const noChartsInContainer = document.getElementById("noChartsInContainer");
-    
+
     if (chartContainer) {
         chartContainer.style.display = "block"; // Keep container visible
     }
-    
+
     if (noChartsMessage) {
         noChartsMessage.style.display = "none"; // Hide external message
     }
-    
+
     if (noChartsInContainer) {
         noChartsInContainer.style.display = "block"; // Show internal message
     }
