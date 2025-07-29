@@ -106,7 +106,7 @@ def get_symbol_data(symbol):
                     current_value = entry_price * qty if entry_price and qty else 0
 
                     deals_data.append({
-                        'date': deal.get('created_at', '').split(' ')[0] if deal.get('created_at') else 'N/A',
+                        'date': deal.get('created_at').strftime('%Y-%m-%d') if deal.get('created_at') else 'N/A',
                         'entry_price': entry_price,
                         'qty': qty,
                         'investment': current_value,
