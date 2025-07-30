@@ -46,7 +46,7 @@ if __name__ == '__main__':
         app.register_blueprint(default_deals_api)
         print("✓ Registered default_deals_api blueprint")
 
-        app.register_blueprint(password_reset_bp)
+        app.register_blueprint(password_reset_bp, url_prefix='')
         print("✓ Registered password_reset_bp blueprint")
 
         # Start Flask application server
