@@ -32,11 +32,6 @@
     transition: background-color 0.2s ease;
 }
 
-.sortable-header:hover {
-    background: var(--primary-color) !important;
-    color: white !important;
-}
-
 .btn-group-sm .btn {
     font-size: 0.7rem;
     padding: 2px 6px;
