@@ -946,7 +946,7 @@ function togglePasswordVisibility(inputIdOrButton) {
         var wrapper = input.parentElement;
         toggleButton = wrapper.querySelector('.password-toggle');
         icon = toggleButton ? toggleButton.querySelector('i') : null;
-    } else if (inputIdOrButton && inputIdOrButton.nodeType) {
+    } else if (inputIdOrButton && inputIdOrButton.nodeType === Node.ELEMENT_NODE) {
         // Handle button element
         toggleButton = inputIdOrButton;
         icon = toggleButton.querySelector('i');
@@ -980,6 +980,7 @@ function togglePasswordVisibility(inputIdOrButton) {
 
 // Submit password reset with enhanced validation
 function submitPasswordReset() {
+    var oldPassword = document.getElementById('oldPassword').value;
     var newPassword = document.getElementById('newPassword').value;
     var confirmPassword = document.getElementById('confirmPassword').value;
     var submitBtn = document.getElementById('resetPasswordBtn');
@@ -989,11 +990,11 @@ function submitPasswordReset() {
     var currentUsername = usernameElement ? usernameElement.textContent.trim() : '';
     
     // Validation
-    if (!newPassword || !confirmPassword) {
+    if (!oldPassword || !newPassword || !confirmPassword) {
         Swal.fire({
             icon: 'error',
             title: 'Validation Error',
-            text: 'Please fill in both password fields.',
+            text: 'Please fill in all password fields.',
             background: 'var(--card-bg)',
             color: 'var(--text-primary)'
         });
@@ -1048,6 +1049,7 @@ function submitPasswordReset() {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+            oldPassword: oldPassword,
             newPassword: newPassword,
             confirmPassword: confirmPassword,
             username: currentUsername

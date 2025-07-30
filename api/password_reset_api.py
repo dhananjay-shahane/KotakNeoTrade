@@ -39,21 +39,22 @@ def reset_password():
                 'message': 'No data provided'
             }), 400
         
+        old_password = data.get('oldPassword')
         new_password = data.get('newPassword')
         confirm_password = data.get('confirmPassword')
         username = session.get('username')
         
         # Validation
-        if not new_password or not confirm_password:
+        if not old_password or not new_password or not confirm_password:
             return jsonify({
                 'success': False,
-                'message': 'Both password fields are required'
+                'message': 'All password fields are required'
             }), 400
         
         if new_password != confirm_password:
             return jsonify({
                 'success': False,
-                'message': 'Passwords do not match'
+                'message': 'New password and confirm password do not match'
             }), 400
         
         if len(new_password) < 6:
@@ -79,7 +80,7 @@ def reset_password():
         try:
             cursor = conn.cursor()
             
-            # First, get the current password to check if it's the same
+            # First, verify the old password
             cursor.execute('''
                 SELECT password FROM public.external_users 
                 WHERE username = %s
@@ -95,6 +96,15 @@ def reset_password():
                 }), 404
             
             current_password = current_user[0]
+            
+            # Verify old password matches
+            if old_password != current_password:
+                cursor.close()
+                conn.close()
+                return jsonify({
+                    'success': False,
+                    'message': 'Current password is incorrect'
+                }), 400
             
             # Check if new password is same as current password
             if new_password == current_password:
