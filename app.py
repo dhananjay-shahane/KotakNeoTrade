@@ -994,6 +994,14 @@ try:
 except Exception as e:
     print(f"✗ Error registering default_deals_api: {e}")
 
+# Register password reset API blueprint
+try:
+    from api.password_reset_api import password_reset_bp
+    app.register_blueprint(password_reset_bp)
+    print("✓ Registered password_reset_api blueprint")
+except Exception as e:
+    print(f"✗ Error registering password_reset_api: {e}")
+
 # ================================= berjumpa=======
 # KOTAK NEO PROJECT INTEGRATION
 # ========================================
