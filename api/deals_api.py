@@ -877,6 +877,8 @@ def edit_deal():
         symbol = data.get('symbol', '').strip()
         qty = data.get('qty')
         target_price = data.get('target_price')
+        entry_price = data.get('entry_price')
+        tpr_percent = data.get('tpr_percent')
 
         if not deal_id or not symbol:
             return jsonify({
@@ -884,25 +886,75 @@ def edit_deal():
                 'error': 'Deal ID and symbol are required'
             }), 400
 
-        if qty is None or target_price is None:
-            return jsonify({
-                'success': False,
-                'error': 'Quantity and target price are required'
-            }), 400
+        # Check if at least one field is provided for update
+        fields_to_update = {}
+        update_count = 0
 
-        try:
-            qty = float(qty)
-            target_price = float(target_price)
-        except (ValueError, TypeError):
-            return jsonify({
-                'success': False,
-                'error': 'Invalid quantity or target price values'
-            }), 400
+        # Validate and collect fields to update
+        if qty is not None:
+            try:
+                qty = float(qty)
+                if qty <= 0:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Quantity must be a positive number'
+                    }), 400
+                fields_to_update['qty'] = qty
+                update_count += 1
+            except (ValueError, TypeError):
+                return jsonify({
+                    'success': False,
+                    'error': 'Invalid quantity value'
+                }), 400
 
-        if qty <= 0 or target_price <= 0:
+        if target_price is not None:
+            try:
+                target_price = float(target_price)
+                if target_price <= 0:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Target price must be a positive number'
+                    }), 400
+                fields_to_update['target_price'] = target_price
+                update_count += 1
+            except (ValueError, TypeError):
+                return jsonify({
+                    'success': False,
+                    'error': 'Invalid target price value'
+                }), 400
+
+        if entry_price is not None:
+            try:
+                entry_price = float(entry_price)
+                if entry_price <= 0:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Entry price must be a positive number'
+                    }), 400
+                fields_to_update['ep'] = entry_price  # Map to database column name
+                update_count += 1
+            except (ValueError, TypeError):
+                return jsonify({
+                    'success': False,
+                    'error': 'Invalid entry price value'
+                }), 400
+
+        if tpr_percent is not None:
+            try:
+                tpr_percent = float(tpr_percent)
+                fields_to_update['tpr_percent'] = tpr_percent
+                update_count += 1
+            except (ValueError, TypeError):
+                return jsonify({
+                    'success': False,
+                    'error': 'Invalid TPR percentage value'
+                }), 400
+
+        # Ensure at least one field is being updated
+        if update_count == 0:
             return jsonify({
                 'success': False,
-                'error': 'Quantity and target price must be positive'
+                'error': 'At least one field must be provided for update'
             }), 400
 
         # Get username from session
@@ -928,10 +980,7 @@ def edit_deal():
             }), 404
 
         # Update deal in user's dynamic table
-        success = dynamic_deals_service.update_deal(username, deal_id, {
-            'qty': qty,
-            'target_price': target_price
-        })
+        success = dynamic_deals_service.update_deal(username, deal_id, fields_to_update)
 
         if not success:
             return jsonify({
@@ -941,11 +990,11 @@ def edit_deal():
 
         return jsonify({
             'success': True,
-            'message': f'Deal updated successfully for {symbol}',
+            'message': f'Deal updated successfully for {symbol} ({update_count} field{"s" if update_count > 1 else ""} changed)',
             'deal_id': deal_id,
             'symbol': symbol,
-            'qty': qty,
-            'target_price': target_price
+            'updated_fields': list(fields_to_update.keys()),
+            'update_count': update_count
         })
 
     except Exception as e:

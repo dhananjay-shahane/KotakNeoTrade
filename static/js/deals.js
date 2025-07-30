@@ -132,7 +132,9 @@ DealsManager.prototype.setupDealButtonListeners = function () {
             var symbol = btn.getAttribute('data-symbol');
             var qty = btn.getAttribute('data-qty');
             var targetPrice = btn.getAttribute('data-target-price');
-            editDeal(dealId, symbol, qty, targetPrice);
+            var entryPrice = btn.getAttribute('data-entry-price');
+            var tprPercent = btn.getAttribute('data-tpr-percent');
+            editDeal(dealId, symbol, qty, targetPrice, entryPrice, tprPercent);
         }
         
         if (e.target.closest('.close-deal-btn')) {
@@ -854,9 +856,12 @@ DealsManager.prototype.renderDealsTable = function () {
                         var qty = deal.qty || 0;
                         var targetPrice = deal.target_price || deal.tpr || 0;
                         
+                        var entryPrice = deal.entry_price || deal.ep || 0;
+                        var tprPercent = deal.tpr_percent || deal.pp || 0;
+                        
                         cellContent = 
                             '<div class="btn-group btn-group-sm">' +
-                            '<button class="btn btn-warning btn-sm edit-deal-btn" data-deal-id="' + dealId + '" data-symbol="' + symbol + '" data-qty="' + qty + '" data-target-price="' + targetPrice + '">' +
+                            '<button class="btn btn-warning btn-sm edit-deal-btn" data-deal-id="' + dealId + '" data-symbol="' + symbol + '" data-qty="' + qty + '" data-target-price="' + targetPrice + '" data-entry-price="' + entryPrice + '" data-tpr-percent="' + tprPercent + '">' +
                             '<i class="fas fa-edit"></i> Edit </button>' +
                             '<button class="btn btn-danger btn-sm close-deal-btn" data-deal-id="' + dealId + '" data-symbol="' + symbol + '">' +
                             '<i class="fas fa-times"></i> Close' +
@@ -1244,8 +1249,8 @@ function cancelOrder(dealId) {
 }
 
 // Edit Deal Functions
-function editDeal(dealId, symbol, qty, targetPrice) {
-    console.log("editDeal function called with:", dealId, symbol, qty, targetPrice);
+function editDeal(dealId, symbol, qty, targetPrice, entryPrice, tprPercent) {
+    console.log("editDeal function called with:", dealId, symbol, qty, targetPrice, entryPrice, tprPercent);
     
     // Validate input parameters
     if (!dealId || !symbol) {
@@ -1261,45 +1266,26 @@ function editDeal(dealId, symbol, qty, targetPrice) {
         alert("Modal not found - check console for errors");
         return;
     }
-    console.log("Modal element found:", modalElement);
     
-    // Check if Bootstrap is available
-    if (typeof bootstrap === 'undefined') {
-        console.error("Bootstrap is not loaded!");
-        alert("Bootstrap is not loaded properly");
-        return;
-    }
-    console.log("Bootstrap is available");
+    // Set modal values with current deal data
+    document.getElementById('editDealId').value = dealId;
+    document.getElementById('editSymbol').value = symbol;
+    document.getElementById('editQuantity').value = qty || '';
+    document.getElementById('editTargetPrice').value = targetPrice || '';
+    document.getElementById('editEntryPrice').value = entryPrice || '';
+    document.getElementById('editTPRPercent').value = tprPercent || '';
     
-    // Set modal values
-    var editDealIdField = document.getElementById('editDealId');
-    var editSymbolField = document.getElementById('editSymbol');
-    var editQuantityField = document.getElementById('editQuantity');
-    var editTargetPriceField = document.getElementById('editTargetPrice');
-    
-    if (!editDealIdField || !editSymbolField || !editQuantityField || !editTargetPriceField) {
-        console.error("Modal form fields not found!");
-        alert("Modal form fields are missing");
-        return;
-    }
-    
-    editDealIdField.value = dealId;
-    editSymbolField.value = symbol;
-    editQuantityField.value = qty || 1;
-    editTargetPriceField.value = targetPrice || '';
-    
-    console.log("Form fields populated successfully");
+    // Store original values for comparison
+    window.originalDealData = {
+        quantity: qty || '',
+        targetPrice: targetPrice || '',
+        entryPrice: entryPrice || '',
+        tprPercent: tprPercent || ''
+    };
     
     // Show modal
-    try {
-        var modal = new bootstrap.Modal(modalElement);
-        console.log("Modal instance created:", modal);
-        modal.show();
-        console.log("Modal show() called");
-    } catch (error) {
-        console.error("Error showing modal:", error);
-        alert("Error showing modal: " + error.message);
-    }
+    var modal = new bootstrap.Modal(modalElement);
+    modal.show();
 }
 
 function submitEditDeal() {
@@ -1307,27 +1293,56 @@ function submitEditDeal() {
     var symbol = document.getElementById('editSymbol').value;
     var qty = document.getElementById('editQuantity').value;
     var targetPrice = document.getElementById('editTargetPrice').value;
+    var entryPrice = document.getElementById('editEntryPrice').value;
+    var tprPercent = document.getElementById('editTPRPercent').value;
     
-    if (!qty || !targetPrice) {
+    // Check if at least one field has been changed
+    var currentData = {
+        quantity: qty,
+        targetPrice: targetPrice,
+        entryPrice: entryPrice,
+        tprPercent: tprPercent
+    };
+    
+    var hasChanges = false;
+    for (var key in currentData) {
+        if (currentData[key] !== window.originalDealData[key]) {
+            hasChanges = true;
+            break;
+        }
+    }
+    
+    if (!hasChanges) {
         Swal.fire({
-            icon: 'error',
-            title: 'Validation Error',
-            text: 'Please fill in all required fields',
+            icon: 'warning',
+            title: 'No Changes',
+            text: 'Please modify at least one field to update the deal',
             background: '#1e1e1e',
             color: '#fff'
         });
         return;
     }
     
-    if (parseFloat(qty) <= 0 || parseFloat(targetPrice) <= 0) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Validation Error',
-            text: 'Quantity and target price must be positive numbers',
-            background: '#1e1e1e',
-            color: '#fff'
-        });
-        return;
+    // Validate numeric fields if they have values
+    var fieldsToValidate = [
+        {value: qty, name: 'Quantity'},
+        {value: targetPrice, name: 'Target Price'},
+        {value: entryPrice, name: 'Entry Price'},
+        {value: tprPercent, name: 'TPR Percentage'}
+    ];
+    
+    for (var i = 0; i < fieldsToValidate.length; i++) {
+        var field = fieldsToValidate[i];
+        if (field.value && (isNaN(parseFloat(field.value)) || parseFloat(field.value) <= 0)) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Validation Error',
+                text: field.name + ' must be a positive number',
+                background: '#1e1e1e',
+                color: '#fff'
+            });
+            return;
+        }
     }
     
     // Show loading
@@ -1342,18 +1357,24 @@ function submitEditDeal() {
         color: '#fff'
     });
     
+    // Prepare data for API call
+    var updateData = {
+        deal_id: dealId,
+        symbol: symbol
+    };
+    
+    if (qty) updateData.qty = parseFloat(qty);
+    if (targetPrice) updateData.target_price = parseFloat(targetPrice);
+    if (entryPrice) updateData.entry_price = parseFloat(entryPrice);
+    if (tprPercent) updateData.tpr_percent = parseFloat(tprPercent);
+    
     // Make API call
     fetch('/api/edit-deal', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-            deal_id: dealId,
-            symbol: symbol,
-            qty: parseFloat(qty),
-            target_price: parseFloat(targetPrice)
-        })
+        body: JSON.stringify(updateData)
     })
     .then(response => response.json())
     .then(data => {
@@ -1393,22 +1414,7 @@ function submitEditDeal() {
 }
 
 // Close Deal Functions
-function closeDeal(dealId, symbol) {
-    console.log("Opening close deal modal for:", dealId, symbol);
-    
-    // Set modal values
-    document.getElementById('closeDealId').value = dealId;
-    document.getElementById('closeSymbol').value = symbol;
-    
-    // Set max date to today
-    var today = new Date().toISOString().split('T')[0];
-    document.getElementById('exitDate').setAttribute('max', today);
-    document.getElementById('exitDate').value = today; // Default to today
-    
-    // Show modal
-    var modal = new bootstrap.Modal(document.getElementById('closeDealModal'));
-    modal.show();
-}
+
 
 function submitCloseDeal() {
     var dealId = document.getElementById('closeDealId').value;
@@ -2580,72 +2586,99 @@ DealsManager.prototype.updateDealsCountBadge = function () {
 
 
 function closeDeal(dealId, symbol) {
-    // Input validation
-    if (!dealId || dealId.trim() === "") {
+    // Set modal values
+    document.getElementById('closeDealId').value = dealId;
+    document.getElementById('closeDealSymbol').value = symbol;
+    
+    // Set default exit date to today
+    var today = new Date().toISOString().split('T')[0];
+    document.getElementById('closeDealExitDate').value = today;
+    
+    // Show close deal modal
+    var modal = new bootstrap.Modal(document.getElementById('closeDealModal'));
+    modal.show();
+}
+
+function submitCloseDeal() {
+    var dealId = document.getElementById('closeDealId').value;
+    var symbol = document.getElementById('closeDealSymbol').value;
+    var exitDate = document.getElementById('closeDealExitDate').value;
+    
+    if (!exitDate) {
         Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: "Invalid deal ID provided",
+            icon: 'error',
+            title: 'Validation Error',
+            text: 'Please select an exit date',
+            background: '#1e1e1e',
+            color: '#fff'
         });
         return;
     }
-
-    if (!symbol || symbol.trim() === "") {
-        Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: "Invalid symbol provided",
-        });
-        return;
-    }
-
-    // SweetAlert confirmation dialog
+    
+    // Show loading
     Swal.fire({
-        title: "Close Deal",
-        text: `Are you sure you want to close the deal for ${symbol}?`,
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#d33",
-        cancelButtonColor: "#6c757d",
-        confirmButtonText: "Yes, Close Deal",
-        cancelButtonText: "Cancel",
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Submit close deal request via AJAX
-            var xhr = new XMLHttpRequest();
-            xhr.open("POST", "/api/close-deal", true);
-            xhr.setRequestHeader("Content-Type", "application/json");
-
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === 4) {
-                    if (xhr.status === 200) {
-                        Swal.fire({
-                            icon: "success",
-                            title: "Success",
-                            text: `Deal closed successfully for ${symbol}`,
-                            timer: 2000,
-                            showConfirmButton: false,
-                        });
-                        // Refresh deals table
-                        refreshDeals();
-                    } else {
-                        Swal.fire({
-                            icon: "error",
-                            title: "Error",
-                            text: "Failed to close deal. Please try again.",
-                        });
-                    }
-                }
-            };
-
-            xhr.send(
-                JSON.stringify({
-                    deal_id: dealId,
-                    symbol: symbol,
-                }),
-            );
-        }
+        title: 'Closing Deal...',
+        text: 'Please wait while we close your deal',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+        background: '#1e1e1e',
+        color: '#fff'
     });
+    
+    // Make API call to close deal
+    fetch('/api/close-deal', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            deal_id: dealId,
+            symbol: symbol,
+            exit_date: exitDate
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Deal Closed!',
+                text: `Deal closed successfully for ${symbol}`,
+                background: '#1e1e1e',
+                color: '#fff',
+                timer: 2000,
+                showConfirmButton: false
+            });
+            
+            // Hide modal
+            var modal = bootstrap.Modal.getInstance(document.getElementById('closeDealModal'));
+            modal.hide();
+            
+            // Refresh deals table
+            if (window.dealsManager) {
+                window.dealsManager.loadDeals();
+            }
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message || 'Failed to close deal. Please try again.',
+                background: '#1e1e1e',
+                color: '#fff'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error closing deal:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Network Error',
+            text: 'Failed to close deal. Please check your connection.',
+            background: '#1e1e1e',
+            color: '#fff'
+        });
 }
 
 

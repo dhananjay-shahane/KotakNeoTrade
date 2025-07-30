@@ -560,6 +560,16 @@ endblock %} {% block head %}
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
+                                <label class="form-label text-light">Entry Price</label>
+                                <input
+                                    type="number"
+                                    class="form-control bg-secondary text-light"
+                                    id="editEntryPrice"
+                                    step="0.01"
+                                    min="0"
+                                />
+                            </div>
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label text-light">Quantity</label>
                                 <input
                                     type="number"
@@ -567,9 +577,10 @@ endblock %} {% block head %}
                                     id="editQuantity"
                                     step="1"
                                     min="1"
-                                    required
                                 />
                             </div>
+                        </div>
+                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label text-light">Target Price</label>
                                 <input
@@ -578,9 +589,22 @@ endblock %} {% block head %}
                                     id="editTargetPrice"
                                     step="0.01"
                                     min="0"
-                                    required
                                 />
                             </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-light">TPR (%)</label>
+                                <input
+                                    type="number"
+                                    class="form-control bg-secondary text-light"
+                                    id="editTPRPercent"
+                                    step="0.01"
+                                    placeholder="Enter percentage"
+                                />
+                            </div>
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            You can modify one or more fields. At least one field must be changed to update the deal.
                         </div>
                     </form>
                 </div>
@@ -623,6 +647,47 @@ endblock %} {% block head %}
                         <input type="hidden" id="closeDealId" />
                         <div class="mb-3">
                             <label class="form-label text-light">Symbol</label>
+                            <input
+                                type="text"
+                                class="form-control bg-secondary text-light"
+                                id="closeDealSymbol"
+                                readonly
+                            />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-light">Exit Date</label>
+                            <input
+                                type="date"
+                                class="form-control bg-secondary text-light"
+                                id="closeDealExitDate"
+                                required
+                            />
+                        </div>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Closing this deal will set position to 0 and disable the row. This action cannot be undone.
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer border-top border-secondary">
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        class="btn btn-danger"
+                        onclick="submitCloseDeal()"
+                    >
+                        <i class="fas fa-times me-1"></i>Close Deal
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
                             <input
                                 type="text"
                                 class="form-control bg-secondary text-light"
