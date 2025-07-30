@@ -13,33 +13,43 @@ endblock %} {% block head %}
     >
         <div>
             <h1 class="h3 mb-1">Default Deals</h1>
-            <p class="text-muted mb-0">All trading deals and positions</p>
+            <p class="text-muted mb-0">Orders placed from trading signals</p>
         </div>
-        <div class="d-flex gap-2">
-            <button class="btn btn-outline-info" onclick="forceCMPUpdate()">
-                <i class="fas fa-chart-line me-1"></i>Update CMP
-            </button>
+        <div class="d-flex gap-2 align-items-center">
+            <!-- Search Input UI -->
+            <div class="input-group" style="min-width: 300px;">
+                <span class="input-group-text bg-secondary border-0">
+                    <i class="fas fa-search text-light"></i>
+                </span>
+                <input
+                    type="text"
+                    class="form-control bg-dark text-light border-0"
+                    id="symbolSearchInput"
+                    placeholder="Search by symbol, status, or any field..."
+                    onkeyup="performSearch()"
+                    autocomplete="off"
+                    style="font-size: 14px;"
+                />
+                <button class="btn btn-sm btn-outline-light" type="button" onclick="clearSearch()" title="Clear search">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
             <button
-                class="btn btn-outline-success"
-                onclick="syncDefaultDeals()"
-            >
-                <i class="fas fa-database me-1"></i>Sync from Admin Signals
-            </button>
-            <button
-                class="btn btn-outline-secondary text-muted"
+                class="btn btn-sm btn-outline-secondary"
                 onclick="refreshDeals()"
             >
                 <i class="fas fa-sync-alt me-1"></i>Refresh
             </button>
             <button
-                class="btn btn-outline-primary"
+                class="btn btn-sm btn-outline-primary"
                 data-bs-toggle="modal"
                 data-bs-target="#columnSettingsModal"
             >
                 <i class="fas fa-cog me-1"></i>Columns
             </button>
             <button
-                class="btn btn-primary"
+                class="btn btn-sm btn-primary"
                 data-bs-toggle="modal"
                 data-bs-target="#dealFiltersModal"
             >
@@ -53,15 +63,26 @@ endblock %} {% block head %}
             class="card-header bg-dark border-0 d-flex justify-content-between align-items-center"
         >
             <h5 class="mb-0 text-light">
-                <i class="fas fa-list me-2 text-primary"></i>All Trading Deals
-                <span class="badge bg-primary ms-2" id="visibleDealsCount"
+                <i class="fas fa-chart-line me-2 text-primary"></i>Default Deals
+                <span class="badge bg-primary ms-2" id="totalCount"
                     >0</span
                 >
-                <span class="badge bg-success ms-2" id="priceUpdateStatus">
-                    <i class="fas fa-sync-alt fa-spin me-1"></i>Live CMP Updates
-                </span>
             </h5>
             <div class="d-flex gap-2 align-items-center">
+                <div class="form-check form-switch">
+                    <input
+                        class="form-check-input"
+                        type="checkbox"
+                        id="autoRefreshToggle"
+                        checked
+                    />
+                    <label
+                        class="form-check-label text-light"
+                        for="autoRefreshToggle"
+                    >
+                        Auto Refresh
+                    </label>
+                </div>
                 <div class="dropdown">
                     <button
                         class="btn btn-sm btn-outline-light dropdown-toggle"
@@ -94,22 +115,6 @@ endblock %} {% block head %}
                             <a
                                 class="dropdown-item"
                                 href="#"
-                                onclick="setRefreshInterval(30000, '30s')"
-                                >30 seconds</a
-                            >
-                        </li>
-                        <li>
-                            <a
-                                class="dropdown-item"
-                                href="#"
-                                onclick="setRefreshInterval(60000, '1m')"
-                                >1 minute</a
-                            >
-                        </li>
-                        <li>
-                            <a
-                                class="dropdown-item"
-                                href="#"
                                 onclick="setRefreshInterval(300000, '5m')"
                                 >5 minutes</a
                             >
@@ -134,14 +139,13 @@ endblock %} {% block head %}
         </div>
 
         <div class="card-body p-0">
-            <div class="table-responsive">
+            <div class="table-responsive" style="overflow-y: auto;">
                 <table
                     class="table table-dark table-hover mb-0 signals-table"
-                    id="dealsTable"
-                >
-                    <thead>
+                    id="dealsTable">
+                    <thead class="sticky-top">
                         <tr id="tableHeaders">
-                            <!-- Dynamic headers will be generated here -->
+                            <!-- Dynamic headers will be generated here with sorting functionality -->
                         </tr>
                     </thead>
                     <tbody id="dealsTableBody">

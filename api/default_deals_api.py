@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 import logging
 from Scripts.external_db_service import SignalsFetcher
-import Scripts.db_connector as db_connector
+from core.database import get_db_connection
 
 # Create blueprint
 default_deals_api = Blueprint('default_deals_api', __name__)
@@ -20,7 +20,7 @@ def get_default_deals():
         logger.info("📊 Fetching default deals data...")
         
         # Get database connection
-        conn = db_connector.get_db_connection()
+        conn = get_db_connection()
         if not conn:
             logger.error("❌ Database connection failed")
             return jsonify({
@@ -140,7 +140,7 @@ def sync_default_deals():
         logger.info("🔄 Starting default deals sync from admin_trade_signals...")
         
         # Get database connection
-        conn = db_connector.get_db_connection()
+        conn = get_db_connection()
         if not conn:
             logger.error("❌ Database connection failed")
             return jsonify({
@@ -259,7 +259,7 @@ def update_default_deals_cmp():
         signals_fetcher = SignalsFetcher()
         
         # Get database connection
-        conn = db_connector.get_db_connection()
+        conn = get_db_connection()
         if not conn:
             logger.error("❌ Database connection failed")
             return jsonify({
@@ -350,7 +350,7 @@ def get_default_deals_stats():
         logger.info("📊 Fetching default deals statistics...")
         
         # Get database connection
-        conn = db_connector.get_db_connection()
+        conn = get_db_connection()
         if not conn:
             logger.error("❌ Database connection failed")
             return jsonify({
