@@ -1222,30 +1222,61 @@ function cancelOrder(dealId) {
 
 // Edit Deal Functions
 function editDeal(dealId, symbol, qty, targetPrice) {
-    console.log("Opening edit deal modal for:", dealId, symbol, qty, targetPrice);
+    console.log("editDeal function called with:", dealId, symbol, qty, targetPrice);
     
     // Validate input parameters
     if (!dealId || !symbol) {
         console.error("Invalid deal parameters:", dealId, symbol);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Invalid deal information provided',
-            background: '#1e1e1e',
-            color: '#fff'
-        });
+        alert("Invalid deal information provided");
         return;
     }
     
+    // Check if modal element exists
+    var modalElement = document.getElementById('editDealModal');
+    if (!modalElement) {
+        console.error("Edit deal modal element not found!");
+        alert("Modal not found - check console for errors");
+        return;
+    }
+    console.log("Modal element found:", modalElement);
+    
+    // Check if Bootstrap is available
+    if (typeof bootstrap === 'undefined') {
+        console.error("Bootstrap is not loaded!");
+        alert("Bootstrap is not loaded properly");
+        return;
+    }
+    console.log("Bootstrap is available");
+    
     // Set modal values
-    document.getElementById('editDealId').value = dealId;
-    document.getElementById('editSymbol').value = symbol;
-    document.getElementById('editQuantity').value = qty || 1;
-    document.getElementById('editTargetPrice').value = targetPrice || '';
+    var editDealIdField = document.getElementById('editDealId');
+    var editSymbolField = document.getElementById('editSymbol');
+    var editQuantityField = document.getElementById('editQuantity');
+    var editTargetPriceField = document.getElementById('editTargetPrice');
+    
+    if (!editDealIdField || !editSymbolField || !editQuantityField || !editTargetPriceField) {
+        console.error("Modal form fields not found!");
+        alert("Modal form fields are missing");
+        return;
+    }
+    
+    editDealIdField.value = dealId;
+    editSymbolField.value = symbol;
+    editQuantityField.value = qty || 1;
+    editTargetPriceField.value = targetPrice || '';
+    
+    console.log("Form fields populated successfully");
     
     // Show modal
-    var modal = new bootstrap.Modal(document.getElementById('editDealModal'));
-    modal.show();
+    try {
+        var modal = new bootstrap.Modal(modalElement);
+        console.log("Modal instance created:", modal);
+        modal.show();
+        console.log("Modal show() called");
+    } catch (error) {
+        console.error("Error showing modal:", error);
+        alert("Error showing modal: " + error.message);
+    }
 }
 
 function submitEditDeal() {
