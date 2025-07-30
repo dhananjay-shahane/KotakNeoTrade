@@ -27,6 +27,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Import main Flask application
 from app import app
 
+# Import additional API blueprints
+from api.default_deals_api import default_deals_api_bp
+from api.password_reset_api import password_reset_bp
+
 if __name__ == '__main__':
     try:
         print("🚀 Starting Kotak Neo Trading Platform...")
@@ -37,6 +41,13 @@ if __name__ == '__main__':
         print(f"   Local: http://0.0.0.0:{port}")
         if os.environ.get('REPLIT_DOMAINS'):
             print(f"   External: https://{os.environ.get('REPLIT_DOMAINS')}")
+
+        # Register blueprints
+        app.register_blueprint(default_deals_api_bp)
+        print("✓ Registered default_deals_api blueprint")
+
+        app.register_blueprint(password_reset_bp)
+        print("✓ Registered password_reset_api blueprint")
 
         # Start Flask application server
         app.run(host='0.0.0.0', port=port, debug=True, threaded=True)

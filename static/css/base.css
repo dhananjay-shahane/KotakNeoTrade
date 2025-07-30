@@ -2278,6 +2278,37 @@ body,
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
+/* Password input wrapper styling */
+.password-input-wrapper {
+    position: relative;
+}
+
+.password-input-wrapper .form-control {
+    padding-right: 3rem;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: color 0.2s ease;
+}
+
+.password-toggle:hover {
+    color: var(--text-primary);
+}
+
+.password-toggle i {
+    font-size: 0.875rem;
+}
+
 :root[data-theme="light"] .form-control {
     background: #f9fafb;
     border: 2px solid #e5e7eb;

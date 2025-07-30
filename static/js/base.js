@@ -924,6 +924,114 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
+// Show forget password modal
+function showForgetPasswordModal() {
+    var modal = new bootstrap.Modal(document.getElementById('forgetPasswordModal'));
+    modal.show();
+}
+
+// Toggle password visibility
+function togglePasswordVisibility(inputId) {
+    var input = document.getElementById(inputId);
+    var icon = input.nextElementSibling.querySelector('i');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
+// Submit password reset
+function submitPasswordReset() {
+    var newPassword = document.getElementById('newPassword').value;
+    var confirmPassword = document.getElementById('confirmPassword').value;
+    var submitBtn = document.getElementById('resetPasswordBtn');
+    
+    // Validation
+    if (!newPassword || !confirmPassword) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Validation Error',
+            text: 'Please fill in both password fields.'
+        });
+        return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Password Mismatch',
+            text: 'New password and confirm password do not match.'
+        });
+        return;
+    }
+    
+    if (newPassword.length < 6) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Invalid Password',
+            text: 'Password must be at least 6 characters long.'
+        });
+        return;
+    }
+    
+    // Show loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating...';
+    
+    // Send password reset request
+    fetch('/api/reset-password', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            newPassword: newPassword,
+            confirmPassword: confirmPassword
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Password Updated',
+                text: 'Your password has been successfully updated.',
+                timer: 2000,
+                showConfirmButton: false
+            });
+            
+            // Close modal and reset form
+            bootstrap.Modal.getInstance(document.getElementById('forgetPasswordModal')).hide();
+            document.getElementById('forgetPasswordForm').reset();
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Update Failed',
+                text: data.message || 'Failed to update password. Please try again.'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Network Error',
+            text: 'Failed to connect to server. Please try again.'
+        });
+    })
+    .finally(() => {
+        // Reset button state
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-save me-1"></i>Update Password';
+    });
+}
+
 // Password visibility toggle function
 function togglePassword(fieldId) {
     const passwordField = document.getElementById(fieldId);
