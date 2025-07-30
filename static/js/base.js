@@ -76,23 +76,23 @@ function showToaster(title, message, type = "info", duration = 3000) {
 function setActiveNavigation() {
     const currentPath = window.location.pathname;
     const navLinks = document.querySelectorAll('.sidebar .nav-link');
-    
+
     console.log('Setting active navigation for path:', currentPath);
     console.log('Found nav links:', navLinks.length);
-    
+
     // Remove active class from all nav links
     navLinks.forEach(link => {
         link.classList.remove('active');
         link.parentElement.classList.remove('active');
     });
-    
+
     let found = false;
-    
+
     // Add active class to current page link
     navLinks.forEach((link, index) => {
         const href = link.getAttribute('href');
         console.log(`Link ${index}: href="${href}", currentPath="${currentPath}"`);
-        
+
         if (href && currentPath === href) {
             console.log('Exact match found for:', href);
             link.classList.add('active');
@@ -100,13 +100,13 @@ function setActiveNavigation() {
             found = true;
         }
     });
-    
+
     // Force portfolio page active if not found
     if (!found && currentPath === '/portfolio') {
         console.log('Forcing portfolio active state');
         const portfolioLinks = document.querySelectorAll('a[href*="portfolio"]');
         console.log('Found portfolio links:', portfolioLinks.length);
-        
+
         portfolioLinks.forEach(link => {
             console.log('Portfolio link href:', link.getAttribute('href'));
             if (link.getAttribute('href').includes('portfolio')) {
@@ -116,7 +116,7 @@ function setActiveNavigation() {
             }
         });
     }
-    
+
     console.log('Active navigation setup complete');
 }
 
@@ -131,12 +131,12 @@ function showLoginModal() {
 // Handle Kotak-only logout
 function logoutKotakOnly(event) {
     event.preventDefault();
-    
+
     // Check if we're in a login flow to prevent duplicate notifications
     if (window.location.pathname.includes('/login')) {
         return;
     }
-    
+
     // Make AJAX request to logout only from Kotak
     fetch('/logout-kotak', {
         method: 'GET',
@@ -305,14 +305,14 @@ document.addEventListener("DOMContentLoaded", function () {
         themeToggle.checked = savedTheme === "light";
         themeToggle.addEventListener("change", toggleTheme);
     }
-    
+
     // Initialize font size
     const savedFontSize = localStorage.getItem('website-font-size') || '14';
     document.documentElement.style.setProperty('--global-font-size', savedFontSize + 'px');
-    
+
     // Initialize settings modal
     initializeSettingsModal();
-    
+
     // Initialize notification system
     initializeNotifications();
 });
@@ -343,7 +343,7 @@ function adjustFontSize(action) {
     const root = document.documentElement;
     const currentSize = parseInt(getComputedStyle(root).getPropertyValue('--global-font-size')) || 14;
     let newSize = currentSize;
-    
+
     if (action === 'increase' && currentSize < 20) {
         newSize = currentSize + 1;
     } else if (action === 'decrease' && currentSize > 10) {
@@ -351,16 +351,16 @@ function adjustFontSize(action) {
     } else if (action === 'reset') {
         newSize = 14;
     }
-    
+
     root.style.setProperty('--global-font-size', newSize + 'px');
     localStorage.setItem('website-font-size', newSize);
-    
+
     // Update display
     const fontSizeDisplay = document.getElementById('fontSizeDisplay');
     if (fontSizeDisplay) {
         fontSizeDisplay.textContent = newSize + 'px';
     }
-    
+
     if (typeof showToaster === 'function') {
         showToaster('Font Size', `Font size set to ${newSize}px`, 'success');
     }
@@ -381,12 +381,12 @@ function applySettings() {
         const newSize = parseInt(fontSizeSelect.value);
         document.documentElement.style.setProperty('--global-font-size', newSize + 'px');
         localStorage.setItem('website-font-size', newSize);
-        
+
         if (typeof showToaster === 'function') {
             showToaster('Settings Applied', `Font size set to ${newSize}px`, 'success');
         }
     }
-    
+
     // Close modal
     const modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
     if (modal) {
@@ -400,7 +400,7 @@ function initializeSettingsModal() {
     const fontSizeSelect = document.getElementById('fontSizeSelect');
     if (fontSizeSelect) {
         fontSizeSelect.value = savedFontSize;
-        
+
         // Add event listener for live preview
         fontSizeSelect.addEventListener('change', function() {
             const preview = document.querySelector('.font-size-preview');
@@ -418,7 +418,7 @@ function showKotakLoginForm() {
         card.classList.remove('active');
     });
     document.getElementById('kotakCard')?.classList.add('active');
-    
+
     // Show Kotak login form
     const loginForm = document.getElementById('kotakLoginForm');
     if (loginForm) {
@@ -433,12 +433,12 @@ function initializeNotifications() {
     if (notificationCount) {
         notificationCount.textContent = '0';
     }
-    
+
     // Close notification inbox when clicking outside
     document.addEventListener('click', function(event) {
         const inbox = document.getElementById('notificationInbox');
         const notificationBtn = document.querySelector('.notification-btn');
-        
+
         if (inbox && notificationBtn && 
             !inbox.contains(event.target) && 
             !notificationBtn.contains(event.target) &&
@@ -855,7 +855,7 @@ let notificationInterval = null;
 function initializeNotifications() {
     // Start monitoring for notifications
     startNotificationMonitoring();
-    
+
     // Load initial notifications
     loadNotifications();
 }
@@ -865,7 +865,7 @@ function startNotificationMonitoring() {
     if (notificationInterval) {
         clearInterval(notificationInterval);
     }
-    
+
     notificationInterval = setInterval(function() {
         updateNotificationCount();
     }, 30000); // 30 seconds
@@ -917,10 +917,10 @@ function closeNotificationInbox() {
 function loadNotifications() {
     const notificationList = document.getElementById('notificationList');
     if (!notificationList) return;
-    
+
     // Show loading state
     notificationList.innerHTML = '<div class="notification-loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
-    
+
     fetch('/api/notifications')
         .then(response => response.json())
         .then(data => {
@@ -940,50 +940,43 @@ function loadNotifications() {
 function displayNotifications(notifications) {
     const notificationList = document.getElementById('notificationList');
     if (!notificationList) return;
-    
+
     if (!notifications || notifications.length === 0) {
-        notificationList.innerHTML = `
-            <div class="no-notifications">
-                <i class="fas fa-bell-slash"></i>
-                <p>No new notifications</p>
-            </div>
-        `;
+        notificationList.innerHTML = '<div class="no-notifications"><i class="fas fa-bell-slash"></i><p>No new notifications</p></div>';
         return;
     }
-    
-    let html = '';
-    notifications.forEach(notification => {
-        const timeAgo = getTimeAgo(notification.created_at);
-        html += `
-            <div class="notification-item">
+
+    const notificationHTML = notifications.map(notification => {
+        const actionColor = notification.action === 'BUY' ? 'text-success' : 'text-danger';
+        const actionIcon = notification.action === 'BUY' ? 'fa-arrow-up' : 'fa-arrow-down';
+
+        return `
+            <div class="notification-item" data-id="${notification.id}">
                 <div class="notification-icon">
-                    <i class="fas fa-chart-line text-success"></i>
+                    <i class="fas ${actionIcon} ${actionColor}"></i>
                 </div>
                 <div class="notification-content">
-                    <div class="notification-message">
-                        <strong>New Trade Signal Added</strong>
-                    </div>
+                    <div class="notification-message">${notification.message}</div>
                     <div class="notification-details">
-                        ${notification.symbol} - ${notification.action} ${notification.qty} shares
+                        <strong>${notification.action}</strong> ${notification.symbol} - Qty: ${notification.qty}
+                        ${notification.entry_price > 0 ? `- Price: ₹${notification.entry_price}` : ''}
                     </div>
-                    <div class="notification-time">
-                        ${timeAgo}
-                    </div>
+                    <div class="notification-time">${notification.time_ago}</div>
                 </div>
             </div>
         `;
+    }).join('');
+
+    notificationList.innerHTML = notificationHTML;
+
+    // Add click handlers for notification items
+    notificationList.querySelectorAll('.notification-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const notificationId = this.dataset.id;
+            console.log('Clicked notification:', notificationId);
+            // You can add functionality to mark as read or navigate to details
+        });
     });
-    
-    // Add clear button at the bottom
-    html += `
-        <div class="notification-footer">
-            <button class="btn btn-sm btn-outline-secondary w-100" onclick="clearInbox()">
-                <i class="fas fa-trash-alt me-1"></i>Clear Inbox
-            </button>
-        </div>
-    `;
-    
-    notificationList.innerHTML = html;
 }
 
 function clearInbox() {
@@ -1002,7 +995,7 @@ function clearInbox() {
                 countElement.textContent = '0';
                 countElement.style.display = 'none';
             }
-            
+
             // Show empty state
             const notificationList = document.getElementById('notificationList');
             if (notificationList) {
@@ -1013,7 +1006,7 @@ function clearInbox() {
                     </div>
                 `;
             }
-            
+
             // Close inbox after a moment
             setTimeout(() => {
                 closeNotificationInbox();
@@ -1029,7 +1022,7 @@ function getTimeAgo(dateString) {
     const now = new Date();
     const date = new Date(dateString);
     const diffInSeconds = Math.floor((now - date) / 1000);
-    
+
     if (diffInSeconds < 60) {
         return 'Just now';
     } else if (diffInSeconds < 3600) {
@@ -1112,7 +1105,7 @@ function showForgetPasswordModal() {
 // Toggle password visibility - handles both input ID and button element
 function togglePasswordVisibility(inputIdOrButton) {
     var input, toggleButton, icon;
-    
+
     // Check if it's a string (inputId) or button element
     if (typeof inputIdOrButton === 'string') {
         // Handle input ID
@@ -1121,7 +1114,7 @@ function togglePasswordVisibility(inputIdOrButton) {
             console.error('Password input not found:', inputIdOrButton);
             return;
         }
-        
+
         var wrapper = input.parentElement;
         toggleButton = wrapper.querySelector('.password-toggle');
         icon = toggleButton ? toggleButton.querySelector('i') : null;
@@ -1129,16 +1122,16 @@ function togglePasswordVisibility(inputIdOrButton) {
         // Handle button element
         toggleButton = inputIdOrButton;
         icon = toggleButton.querySelector('i');
-        
+
         // Find the input field - it should be the previous sibling or in the same wrapper
         input = toggleButton.previousElementSibling;
-        
+
         if (!input || input.tagName !== 'INPUT') {
             // Try to find input in parent wrapper
             var wrapper = toggleButton.parentElement;
             input = wrapper.querySelector('input[type="password"], input[type="text"]');
         }
-        
+
         if (!input || input.tagName !== 'INPUT') {
             // Try to find input as sibling in wrapper
             var parentWrapper = toggleButton.parentElement;
@@ -1151,17 +1144,17 @@ function togglePasswordVisibility(inputIdOrButton) {
         console.error('Invalid parameter for togglePasswordVisibility:', inputIdOrButton);
         return;
     }
-    
+
     if (!input) {
         console.error('Password input not found for toggle button');
         return;
     }
-    
+
     if (!icon) {
         console.error('Icon not found in toggle button');
         return;
     }
-    
+
     // Toggle password visibility
     if (input.type === 'password') {
         input.type = 'text';
@@ -1179,11 +1172,11 @@ function submitPasswordReset() {
     var newPassword = document.getElementById('newPassword').value;
     var confirmPassword = document.getElementById('confirmPassword').value;
     var submitBtn = document.getElementById('resetPasswordBtn');
-    
+
     // Get username from session or modal display
     var usernameElement = document.querySelector('#forgetPasswordModal .bg-secondary');
     var currentUsername = usernameElement ? usernameElement.textContent.trim() : '';
-    
+
     // Validation
     if (!newPassword || !confirmPassword) {
         Swal.fire({
@@ -1195,7 +1188,7 @@ function submitPasswordReset() {
         });
         return;
     }
-    
+
     if (newPassword !== confirmPassword) {
         Swal.fire({
             icon: 'error',
@@ -1206,7 +1199,7 @@ function submitPasswordReset() {
         });
         return;
     }
-    
+
     if (newPassword.length < 6) {
         Swal.fire({
             icon: 'error',
@@ -1217,7 +1210,7 @@ function submitPasswordReset() {
         });
         return;
     }
-    
+
     // Check for common weak passwords
     var weakPasswords = ['123456', 'password', '123456789', 'qwerty', 'abc123'];
     if (weakPasswords.includes(newPassword.toLowerCase())) {
@@ -1230,13 +1223,13 @@ function submitPasswordReset() {
         });
         return;
     }
-    
+
     // Show loading state
     if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating...';
     }
-    
+
     // Send password reset request
     fetch('/api/reset-password', {
         method: 'POST',
@@ -1267,7 +1260,7 @@ function submitPasswordReset() {
                 background: 'var(--card-bg)',
                 color: 'var(--text-primary)'
             });
-            
+
             // Close modal and reset form
             const modal = bootstrap.Modal.getInstance(document.getElementById('forgetPasswordModal'));
             if (modal) {
