@@ -92,6 +92,7 @@ DealsManager.prototype.init = function () {
     this.startAutoRefresh();
     this.setupEventListeners();
     this.setupColumnSettingsModal();
+    this.setupDealButtonListeners();
 
     var autoRefreshToggle = document.getElementById("autoRefreshToggle");
     var self = this;
@@ -119,6 +120,28 @@ DealsManager.prototype.setupColumnSettingsModal = function () {
         // Also generate checkboxes immediately to ensure they exist
         self.generateColumnCheckboxes();
     }
+};
+
+DealsManager.prototype.setupDealButtonListeners = function () {
+    var self = this;
+    // Use event delegation to handle dynamically generated buttons
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.edit-deal-btn')) {
+            var btn = e.target.closest('.edit-deal-btn');
+            var dealId = btn.getAttribute('data-deal-id');
+            var symbol = btn.getAttribute('data-symbol');
+            var qty = btn.getAttribute('data-qty');
+            var targetPrice = btn.getAttribute('data-target-price');
+            editDeal(dealId, symbol, qty, targetPrice);
+        }
+        
+        if (e.target.closest('.close-deal-btn')) {
+            var btn = e.target.closest('.close-deal-btn');
+            var dealId = btn.getAttribute('data-deal-id');
+            var symbol = btn.getAttribute('data-symbol');
+            closeDeal(dealId, symbol);
+        }
+    });
 };
 
 DealsManager.prototype.generateColumnCheckboxes = function () {
@@ -831,11 +854,11 @@ DealsManager.prototype.renderDealsTable = function () {
                         var qty = deal.qty || 0;
                         var targetPrice = deal.target_price || deal.tpr || 0;
                         
-                        cellContent =
+                        cellContent = 
                             '<div class="btn-group btn-group-sm">' +
-                            '<button class="btn btn-warning btn-sm" onclick="editDeal(\'' + dealId + '\', \'' + symbol + '\', ' + qty + ', ' + targetPrice + ')">' +
+                            '<button class="btn btn-warning btn-sm edit-deal-btn" data-deal-id="' + dealId + '" data-symbol="' + symbol + '" data-qty="' + qty + '" data-target-price="' + targetPrice + '">' +
                             '<i class="fas fa-edit"></i> Edit </button>' +
-                            '<button class="btn btn-danger btn-sm" onclick="closeDeal(\'' + dealId + '\', \'' + symbol + '\')">' +
+                            '<button class="btn btn-danger btn-sm close-deal-btn" data-deal-id="' + dealId + '" data-symbol="' + symbol + '">' +
                             '<i class="fas fa-times"></i> Close' +
                             "</button>" +
                             "</div>";
