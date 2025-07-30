@@ -1231,11 +1231,24 @@ function cancelOrder(dealId) {
 function editDeal(dealId, symbol, qty, targetPrice) {
     console.log("Opening edit deal modal for:", dealId, symbol, qty, targetPrice);
     
+    // Validate input parameters
+    if (!dealId || !symbol) {
+        console.error("Invalid deal parameters:", dealId, symbol);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Invalid deal information provided',
+            background: '#1e1e1e',
+            color: '#fff'
+        });
+        return;
+    }
+    
     // Set modal values
     document.getElementById('editDealId').value = dealId;
     document.getElementById('editSymbol').value = symbol;
-    document.getElementById('editQuantity').value = qty;
-    document.getElementById('editTargetPrice').value = targetPrice;
+    document.getElementById('editQuantity').value = qty || 1;
+    document.getElementById('editTargetPrice').value = targetPrice || '';
     
     // Show modal
     var modal = new bootstrap.Modal(document.getElementById('editDealModal'));
@@ -2517,21 +2530,7 @@ DealsManager.prototype.updateDealsCountBadge = function () {
 };
 
 // Edit and Close Deal functions
-function editDeal(dealId, symbol, entryPrice, targetPrice) {
-    // Input validation
-    if (!dealId || dealId.trim() === "") {
-        alert("Invalid deal ID provided");
-        return;
-    }
 
-    if (!symbol || symbol.trim() === "") {
-        alert("Invalid symbol provided");
-        return;
-    }
-
-    // Show edit modal
-    showEditDealModal(dealId, symbol, entryPrice, targetPrice);
-}
 
 function closeDeal(dealId, symbol) {
     // Input validation
@@ -2602,74 +2601,4 @@ function closeDeal(dealId, symbol) {
     });
 }
 
-function showEditDealModal(dealId, symbol, entryPrice, targetPrice) {
-    // Set values in the edit modal
-    document.getElementById("editDealId").value = dealId;
-    document.getElementById("editSymbol").value = symbol;
-    document.getElementById("editEntryPrice").value = entryPrice || "";
-    document.getElementById("editTargetPrice").value = targetPrice || "";
 
-    // Show the modal
-    var editModal = new bootstrap.Modal(
-        document.getElementById("editDealModal"),
-    );
-    editModal.show();
-}
-
-function submitEditDeal() {
-    var dealId = document.getElementById("editDealId").value;
-    var symbol = document.getElementById("editSymbol").value;
-    var entryPrice = parseFloat(
-        document.getElementById("editEntryPrice").value,
-    );
-    var targetPrice = parseFloat(
-        document.getElementById("editTargetPrice").value,
-    );
-
-    // Validation
-    if (!dealId || !symbol) {
-        alert("Deal ID and Symbol are required");
-        return;
-    }
-
-    if (isNaN(entryPrice) || entryPrice <= 0) {
-        alert("Please enter a valid entry price");
-        return;
-    }
-
-    if (isNaN(targetPrice) || targetPrice <= 0) {
-        alert("Please enter a valid target price");
-        return;
-    }
-
-    // Submit edit request via AJAX
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", "/api/edit-deal", true);
-    xhr.setRequestHeader("Content-Type", "application/json");
-
-    xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4) {
-            if (xhr.status === 200) {
-                alert("Deal updated successfully for " + symbol);
-                // Hide modal
-                var editModal = bootstrap.Modal.getInstance(
-                    document.getElementById("editDealModal"),
-                );
-                editModal.hide();
-                // Refresh deals table
-                refreshDeals();
-            } else {
-                alert("Failed to update deal. Please try again.");
-            }
-        }
-    };
-
-    xhr.send(
-        JSON.stringify({
-            deal_id: dealId,
-            symbol: symbol,
-            entry_price: entryPrice,
-            target_price: targetPrice,
-        }),
-    );
-}
