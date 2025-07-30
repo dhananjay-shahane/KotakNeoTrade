@@ -310,9 +310,19 @@ DealsManager.prototype.loadDeals = function () {
                                         0,
                                 ),
                                 pl: parseFloat(deal.pnl_amount || deal.pl || 0),
-                                chan_percent: deal.chan_percent
-                                    ? deal.chan_percent.toFixed(2) + "%"
-                                    : "0%",
+                                chan_percent: (function() {
+                                    var chanVal = deal.chan_percent || deal.pnl_percent || 0;
+                                    if (typeof chanVal === 'string') {
+                                        // If it's already a string with %, return as is
+                                        if (chanVal.includes('%')) return chanVal;
+                                        // If it's a string number, parse it
+                                        chanVal = parseFloat(chanVal);
+                                    }
+                                    if (typeof chanVal === 'number' && !isNaN(chanVal)) {
+                                        return chanVal.toFixed(2) + "%";
+                                    }
+                                    return "0.00%";
+                                })(),
                                 inv: parseFloat(
                                     deal.invested_amount || deal.inv || 0,
                                 ),
