@@ -46,9 +46,6 @@ if __name__ == '__main__':
         app.register_blueprint(default_deals_api)
         print("✓ Registered default_deals_api blueprint")
 
-        app.register_blueprint(password_reset_bp)
-        print("✓ Registered password_reset_api blueprint")
-
         # Start Flask application server
         app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
 
@@ -56,3 +53,4 @@ if __name__ == '__main__':
         print(f"❌ Application startup failed: {str(e)}")
         import traceback
         traceback.print_exc()
+`

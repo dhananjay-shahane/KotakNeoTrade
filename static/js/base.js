@@ -938,11 +938,12 @@ function togglePasswordVisibility(inputId) {
         return;
     }
     
-    var toggleButton = input.parentElement.querySelector('.password-toggle');
+    var wrapper = input.parentElement;
+    var toggleButton = wrapper.querySelector('.password-toggle');
     var icon = toggleButton ? toggleButton.querySelector('i') : null;
     
-    if (!icon) {
-        console.error('Password toggle icon not found for:', inputId);
+    if (!toggleButton || !icon) {
+        console.error('Password toggle button or icon not found for:', inputId);
         return;
     }
     
@@ -962,7 +963,10 @@ function submitPasswordReset() {
     var newPassword = document.getElementById('newPassword').value;
     var confirmPassword = document.getElementById('confirmPassword').value;
     var submitBtn = document.getElementById('resetPasswordBtn');
-    var currentUsername = document.querySelector('#forgetPasswordModal .bg-secondary').textContent.trim();
+    
+    // Get username from session or modal display
+    var usernameElement = document.querySelector('#forgetPasswordModal .bg-secondary');
+    var currentUsername = usernameElement ? usernameElement.textContent.trim() : '';
     
     // Validation
     if (!newPassword || !confirmPassword) {
@@ -999,8 +1003,10 @@ function submitPasswordReset() {
     }
     
     // Show loading state
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating...';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating...';
+    }
     
     // Send password reset request
     fetch('/api/reset-password', {
@@ -1037,7 +1043,10 @@ function submitPasswordReset() {
             if (modal) {
                 modal.hide();
             }
-            document.getElementById('forgetPasswordForm').reset();
+            const form = document.getElementById('forgetPasswordForm');
+            if (form) {
+                form.reset();
+            }
         } else {
             Swal.fire({
                 icon: 'error',
@@ -1050,34 +1059,42 @@ function submitPasswordReset() {
     })
     .catch(error => {
         console.error('Error:', error);
+        let errorMessage = 'Failed to connect to server. Please try again.';
+        if (error.message.includes('404')) {
+            errorMessage = 'Password reset service not available. Please contact support.';
+        }
         Swal.fire({
             icon: 'error',
             title: 'Network Error',
-            text: 'Failed to connect to server. Please try again.',
+            text: errorMessage,
             background: 'var(--card-bg)',
             color: 'var(--text-primary)'
         });
     })
     .finally(() => {
         // Reset button state
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-save me-1"></i>Update Password';
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-save me-1"></i>Update Password';
+        }
     });
 }
 
-// Password visibility toggle function
+// Password visibility toggle function (alternative implementation)
 function togglePassword(fieldId) {
     const passwordField = document.getElementById(fieldId);
     const eyeIcon = document.getElementById(fieldId + "-eye");
 
-    if (passwordField.type === "password") {
-        passwordField.type = "text";
-        eyeIcon.classList.remove("fa-eye");
-        eyeIcon.classList.add("fa-eye-slash");
-    } else {
-        passwordField.type = "password";
-        eyeIcon.classList.remove("fa-eye-slash");
-        eyeIcon.classList.add("fa-eye");
+    if (passwordField && eyeIcon) {
+        if (passwordField.type === "password") {
+            passwordField.type = "text";
+            eyeIcon.classList.remove("fa-eye");
+            eyeIcon.classList.add("fa-eye-slash");
+        } else {
+            passwordField.type = "password";
+            eyeIcon.classList.remove("fa-eye-slash");
+            eyeIcon.classList.add("fa-eye");
+        }
     }
 }
 

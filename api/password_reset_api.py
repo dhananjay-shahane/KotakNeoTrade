@@ -102,7 +102,7 @@ def reset_password():
                 conn.close()
                 return jsonify({
                     'success': False,
-                    'message': 'New password cannot be the same as your current password'
+                    'message': 'New password cannot be the same as your current password. Please choose a different password.'
                 }), 400
             
             # Update password in external_users table
