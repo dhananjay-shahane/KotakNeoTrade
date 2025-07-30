@@ -717,3 +717,26 @@ def admin_panel():
         logging.error(f"Admin panel error: {str(e)}")
         flash('Error loading admin panel', 'error')
         return redirect(url_for('main.dashboard'))
+
+
+@main_bp.route('/portfolio')
+@login_required
+def portfolio():
+    """Portfolio page with deals checking"""
+    try:
+        # Get username from session
+        username = session.get('username')
+
+        # Check if user has deals table and data
+        has_deals = False
+        if username:
+            from scripts.dynamic_user_deals import dynamic_deals_service
+            table_exists = dynamic_deals_service.table_exists(username)
+            if table_exists:
+                deals = dynamic_deals_service.get_user_deals(username)
+                has_deals = len(deals) > 0
+
+        return render_template('portfolio.html', has_deals=has_deals, username=username)
+    except Exception as e:
+        logging.error(f"Portfolio error: {str(e)}")
+        return render_template('portfolio.html', has_deals=False, username=None)

@@ -22,7 +22,7 @@ def setup_library_paths():
 setup_library_paths()
 
 # Add current directory to Python path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))
 
 # Import main Flask application
 from app import app
@@ -37,6 +37,20 @@ if __name__ == '__main__':
         print(f"   Local: http://0.0.0.0:{port}")
         if os.environ.get('REPLIT_DOMAINS'):
             print(f"   External: https://{os.environ.get('REPLIT_DOMAINS')}")
+
+        # Register API blueprints
+        from api.signals import signals_api
+        from api.deals import deals_api
+        app.register_blueprint(signals_api)
+        app.register_blueprint(deals_api)
+
+        # Register user deals table check API
+        try:
+            from api.user_deals_table_check import user_deals_table_check_bp
+            app.register_blueprint(user_deals_table_check_bp)
+            print("✓ Registered user_deals_table_check blueprint")
+        except ImportError as e:
+            print(f"⚠️ user_deals_table_check blueprint not available: {e}")
 
         # Start Flask application server
         app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
