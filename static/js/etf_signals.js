@@ -1836,7 +1836,7 @@ function findAndProcessSignal(signalId) {
                 " (Qty: " +
                 quantity +
                 ")?",
-            icon: ""question",
+            icon: "question",
             showCancelButton: true,
             confirmButtonColor: "#28a745",
             cancelButtonColor: "#6c757d",
