@@ -2558,7 +2558,7 @@ function addDealFromSignal(symbol, signalData) {
         showMessage("Creating deal for " + symbol + "...", "info");
 
         var xhr = new XMLHttpRequest();
-        xhr.open("POST", "/api/deals/create-from-signal", true);
+        xhr.open("POST", "/api/dynamic/add-deal", true);
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.timeout = 10000; // 10 second timeout
 
