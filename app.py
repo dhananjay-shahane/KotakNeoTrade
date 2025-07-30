@@ -1002,6 +1002,14 @@ try:
 except Exception as e:
     print(f"✗ Error registering password_reset_api: {e}")
 
+# Register notifications API blueprint
+try:
+    from api.notifications_api import notifications_api
+    app.register_blueprint(notifications_api)
+    print("✓ Registered notifications_api blueprint")
+except Exception as e:
+    print(f"✗ Error registering notifications_api: {e}")
+
 # ================================= berjumpa=======
 # KOTAK NEO PROJECT INTEGRATION
 # ========================================

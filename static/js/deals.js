@@ -686,11 +686,18 @@ DealsManager.prototype.renderDealsTable = function () {
                     cellContent = deal.qt || "--";
                     break;
                 case "ed":
-                    // Show exit date if deal is closed, otherwise show "--"
-                    cellContent =
-                        deal.ed && deal.ed !== "--" && deal.ed !== null
-                            ? deal.ed
-                            : "--";
+                    // Format exit date to show only date without time
+                    if (deal.ed && deal.ed !== "--" && deal.ed !== null) {
+                        // Parse the date string and format it as YYYY-MM-DD
+                        var exitDate = new Date(deal.ed);
+                        if (!isNaN(exitDate.getTime())) {
+                            cellContent = exitDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+                        } else {
+                            cellContent = deal.ed;
+                        }
+                    } else {
+                        cellContent = "--";
+                    }
                     break;
                 case "exp":
                     cellContent = deal.exp || "--";
@@ -726,7 +733,17 @@ DealsManager.prototype.renderDealsTable = function () {
                     }
                     break;
                 case "ed":
-                    cellContent = deal.ed || "";
+                    // Format exit date to show only date without time (second occurrence)
+                    if (deal.ed && deal.ed !== "--" && deal.ed !== null) {
+                        var exitDate = new Date(deal.ed);
+                        if (!isNaN(exitDate.getTime())) {
+                            cellContent = exitDate.toLocaleDateString('en-CA');
+                        } else {
+                            cellContent = deal.ed;
+                        }
+                    } else {
+                        cellContent = "--";
+                    }
                     break;
                 case "pr":
                     cellContent = deal.pr || "-";

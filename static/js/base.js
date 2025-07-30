@@ -849,21 +849,199 @@ function applySettings() {
     }
 }
 
-// Notification functionality
+// Notification inbox functionality
+let notificationInterval = null;
+
+function initializeNotifications() {
+    // Start monitoring for notifications
+    startNotificationMonitoring();
+    
+    // Load initial notifications
+    loadNotifications();
+}
+
+function startNotificationMonitoring() {
+    // Check for new notifications every 30 seconds
+    if (notificationInterval) {
+        clearInterval(notificationInterval);
+    }
+    
+    notificationInterval = setInterval(function() {
+        updateNotificationCount();
+    }, 30000); // 30 seconds
+}
+
+function stopNotificationMonitoring() {
+    if (notificationInterval) {
+        clearInterval(notificationInterval);
+        notificationInterval = null;
+    }
+}
+
+function updateNotificationCount() {
+    fetch('/api/notifications/count')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const countElement = document.getElementById('notificationCount');
+                if (countElement) {
+                    countElement.textContent = data.count || 0;
+                    countElement.style.display = data.count > 0 ? 'block' : 'none';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error updating notification count:', error);
+        });
+}
+
 function toggleNotificationInbox() {
     const inbox = document.getElementById("notificationInbox");
-    const isVisible = inbox.style.display !== "none";
-
-    if (isVisible) {
-        inbox.style.display = "none";
-    } else {
-        inbox.style.display = "block";
+    if (inbox) {
+        if (inbox.style.display === 'none' || inbox.style.display === '') {
+            inbox.style.display = 'block';
+            loadNotifications();
+        } else {
+            inbox.style.display = 'none';
+        }
     }
 }
 
 function closeNotificationInbox() {
     const inbox = document.getElementById("notificationInbox");
-    inbox.style.display = "none";
+    if (inbox) {
+        inbox.style.display = "none";
+    }
+}
+
+function loadNotifications() {
+    const notificationList = document.getElementById('notificationList');
+    if (!notificationList) return;
+    
+    // Show loading state
+    notificationList.innerHTML = '<div class="notification-loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+    
+    fetch('/api/notifications')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayNotifications(data.notifications);
+                updateNotificationCount();
+            } else {
+                notificationList.innerHTML = '<div class="no-notifications"><i class="fas fa-exclamation-circle"></i><p>Failed to load notifications</p></div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading notifications:', error);
+            notificationList.innerHTML = '<div class="no-notifications"><i class="fas fa-exclamation-circle"></i><p>Error loading notifications</p></div>';
+        });
+}
+
+function displayNotifications(notifications) {
+    const notificationList = document.getElementById('notificationList');
+    if (!notificationList) return;
+    
+    if (!notifications || notifications.length === 0) {
+        notificationList.innerHTML = `
+            <div class="no-notifications">
+                <i class="fas fa-bell-slash"></i>
+                <p>No new notifications</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    notifications.forEach(notification => {
+        const timeAgo = getTimeAgo(notification.created_at);
+        html += `
+            <div class="notification-item">
+                <div class="notification-icon">
+                    <i class="fas fa-chart-line text-success"></i>
+                </div>
+                <div class="notification-content">
+                    <div class="notification-message">
+                        <strong>New Trade Signal Added</strong>
+                    </div>
+                    <div class="notification-details">
+                        ${notification.symbol} - ${notification.action} ${notification.qty} shares
+                    </div>
+                    <div class="notification-time">
+                        ${timeAgo}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    // Add clear button at the bottom
+    html += `
+        <div class="notification-footer">
+            <button class="btn btn-sm btn-outline-secondary w-100" onclick="clearInbox()">
+                <i class="fas fa-trash-alt me-1"></i>Clear Inbox
+            </button>
+        </div>
+    `;
+    
+    notificationList.innerHTML = html;
+}
+
+function clearInbox() {
+    fetch('/api/notifications/clear', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reset notification count
+            const countElement = document.getElementById('notificationCount');
+            if (countElement) {
+                countElement.textContent = '0';
+                countElement.style.display = 'none';
+            }
+            
+            // Show empty state
+            const notificationList = document.getElementById('notificationList');
+            if (notificationList) {
+                notificationList.innerHTML = `
+                    <div class="no-notifications">
+                        <i class="fas fa-check-circle text-success"></i>
+                        <p>Inbox cleared</p>
+                    </div>
+                `;
+            }
+            
+            // Close inbox after a moment
+            setTimeout(() => {
+                closeNotificationInbox();
+            }, 1500);
+        }
+    })
+    .catch(error => {
+        console.error('Error clearing inbox:', error);
+    });
+}
+
+function getTimeAgo(dateString) {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) {
+        return 'Just now';
+    } else if (diffInSeconds < 3600) {
+        const minutes = Math.floor(diffInSeconds / 60);
+        return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    } else if (diffInSeconds < 86400) {
+        const hours = Math.floor(diffInSeconds / 3600);
+        return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    } else {
+        const days = Math.floor(diffInSeconds / 86400);
+        return `${days} day${days > 1 ? 's' : ''} ago`;
+    }
 }
 
 // Close notification inbox when clicking outside
@@ -888,6 +1066,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Small delay to ensure DOM is fully rendered
     setTimeout(() => {
         setActiveNavigation();
+        initializeNotifications();
     }, 100);
 });
 
