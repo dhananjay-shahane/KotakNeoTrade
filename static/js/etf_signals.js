@@ -95,8 +95,6 @@ ETFSignalsManager.prototype.setupEventListeners = function () {
         });
     }
 
-
-
     // Remove filter dropdowns - keeping only search functionality
 
     // Items per page selector
@@ -161,7 +159,11 @@ ETFSignalsManager.prototype.generateDynamicHeaders = function () {
         headersRow.appendChild(th);
     }
 
-    console.log("Dynamic headers generated for", this.availableColumns.filter(c => c.visible).length, "visible columns");
+    console.log(
+        "Dynamic headers generated for",
+        this.availableColumns.filter((c) => c.visible).length,
+        "visible columns",
+    );
 };
 
 // Add sorting functionality for signals
@@ -183,7 +185,9 @@ ETFSignalsManager.prototype.sortSignalsByColumn = function (columnKey) {
 
         // Handle numeric comparisons
         if (!isNaN(aValue) && !isNaN(bValue)) {
-            return self.sortDirection === "asc" ? aValue - bValue : bValue - aValue;
+            return self.sortDirection === "asc"
+                ? aValue - bValue
+                : bValue - aValue;
         }
 
         // Handle string comparisons
@@ -200,14 +204,22 @@ ETFSignalsManager.prototype.sortSignalsByColumn = function (columnKey) {
     this.renderSignalsTable();
     this.updateSortIcons(columnKey);
 
-    console.log("Sorted signals by", columnKey, "in", this.sortDirection, "order");
+    console.log(
+        "Sorted signals by",
+        columnKey,
+        "in",
+        this.sortDirection,
+        "order",
+    );
 };
 
 // Get sortable value from signal object
 ETFSignalsManager.prototype.getSortValue = function (signal, columnKey) {
     switch (columnKey) {
         case "trade_signal_id":
-            return parseInt(signal.ID || signal.trade_signal_id || signal.id || 0);
+            return parseInt(
+                signal.ID || signal.trade_signal_id || signal.id || 0,
+            );
         case "etf":
             return signal.Symbol || signal.etf || signal.symbol || "";
         case "seven":
@@ -262,9 +274,10 @@ ETFSignalsManager.prototype.updateSortIcons = function (sortedColumn) {
     if (sortedHeader) {
         var icon = sortedHeader.querySelector("i");
         if (icon) {
-            icon.className = this.sortDirection === "asc" 
-                ? "fas fa-sort-up ms-1" 
-                : "fas fa-sort-down ms-1";
+            icon.className =
+                this.sortDirection === "asc"
+                    ? "fas fa-sort-up ms-1"
+                    : "fas fa-sort-down ms-1";
         }
     }
 };
@@ -273,7 +286,7 @@ ETFSignalsManager.prototype.updateSortIcons = function (sortedColumn) {
 ETFSignalsManager.prototype.getColumnTooltip = function (columnKey) {
     var tooltips = {
         trade_signal_id: "Trade Signal ID",
-        etf: "ETF Symbol", 
+        etf: "ETF Symbol",
         seven: "7 Day Performance",
         ch: "7 Day Change Percentage",
         thirty: "30 Day Performance",
@@ -294,7 +307,7 @@ ETFSignalsManager.prototype.getColumnTooltip = function (columnKey) {
         pp: "Performance Points",
         iv: "Implied Volatility",
         ip: "Intraday Performance",
-        actions: "Available Actions"
+        actions: "Available Actions",
     };
     return tooltips[columnKey] || columnKey.toUpperCase();
 };
@@ -668,7 +681,12 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                 cellValue = "--";
         }
 
-        cells += '<td class="text-center" style="padding: 4px 3px; border: 1px solid var(--border-color); font-size: 0.75rem; ' + cellStyle + '">' + cellValue + "</td>";
+        cells +=
+            '<td class="text-center" style="padding: 4px 3px; border: 1px solid var(--border-color); font-size: 0.75rem; ' +
+            cellStyle +
+            '">' +
+            cellValue +
+            "</td>";
     }
 
     row.innerHTML = cells;
@@ -1124,21 +1142,32 @@ ETFSignalsManager.prototype.applySearch = function () {
         // Filter signals based on search term
         var self = this;
         this.filteredSignals = this.signals.filter(function (signal) {
-            var symbol = (signal.Symbol || signal.etf || signal.symbol || "").toLowerCase();
+            var symbol = (
+                signal.Symbol ||
+                signal.etf ||
+                signal.symbol ||
+                ""
+            ).toLowerCase();
             var status = (signal.status || "ACTIVE").toLowerCase();
-            var date = (signal.DATE || signal.date || "").toString().toLowerCase();
+            var date = (signal.DATE || signal.date || "")
+                .toString()
+                .toLowerCase();
             var ep = (signal.EP || signal.ep || "").toString().toLowerCase();
             var cmp = (signal.CMP || signal.cmp || "").toString().toLowerCase();
             var qty = (signal.QTY || signal.qty || "").toString().toLowerCase();
-            var signalId = (signal.signal_id || signal.id || "").toString().toLowerCase();
+            var signalId = (signal.signal_id || signal.id || "")
+                .toString()
+                .toLowerCase();
 
-            return symbol.includes(searchTerm) || 
-                   status.includes(searchTerm) || 
-                   date.includes(searchTerm) ||
-                   ep.includes(searchTerm) ||
-                   cmp.includes(searchTerm) ||
-                   qty.includes(searchTerm) ||
-                   signalId.includes(searchTerm);
+            return (
+                symbol.includes(searchTerm) ||
+                status.includes(searchTerm) ||
+                date.includes(searchTerm) ||
+                ep.includes(searchTerm) ||
+                cmp.includes(searchTerm) ||
+                qty.includes(searchTerm) ||
+                signalId.includes(searchTerm)
+            );
         });
     }
 
@@ -1538,13 +1567,17 @@ function clearSignalSearch() {
 // Column settings functions
 function selectAllColumns() {
     if (window.etfSignalsManager) {
-        var checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
-        checkboxes.forEach(function(checkbox) {
+        var checkboxes = document.querySelectorAll(
+            '#columnCheckboxes input[type="checkbox"]',
+        );
+        checkboxes.forEach(function (checkbox) {
             checkbox.checked = true;
-            var columnKey = checkbox.getAttribute('data-column');
-            var column = window.etfSignalsManager.availableColumns.find(function(col) {
-                return col.key === columnKey;
-            });
+            var columnKey = checkbox.getAttribute("data-column");
+            var column = window.etfSignalsManager.availableColumns.find(
+                function (col) {
+                    return col.key === columnKey;
+                },
+            );
             if (column) {
                 column.visible = true;
             }
@@ -1555,22 +1588,33 @@ function selectAllColumns() {
 function resetDefaultColumns() {
     if (window.etfSignalsManager) {
         // Reset to default visibility
-        window.etfSignalsManager.availableColumns.forEach(function(column) {
-            column.visible = column.key === 'symbol' || column.key === 'ep' || 
-                           column.key === 'cmp' || column.key === 'qty' || 
-                           column.key === 'date' || column.key === 'chan' || 
-                           column.key === 'inv' || column.key === 'tp' || 
-                           column.key === 'tpr' || column.key === 'tva' || 
-                           column.key === 'cpl' || column.key === 'actions';
+        window.etfSignalsManager.availableColumns.forEach(function (column) {
+            column.visible =
+                column.key === "symbol" ||
+                column.key === "ep" ||
+                column.key === "cmp" ||
+                column.key === "qty" ||
+                column.key === "date" ||
+                column.key === "chan" ||
+                column.key === "inv" ||
+                column.key === "tp" ||
+                column.key === "tpr" ||
+                column.key === "tva" ||
+                column.key === "cpl" ||
+                column.key === "actions";
         });
 
         // Update checkboxes
-        var checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
-        checkboxes.forEach(function(checkbox) {
-            var columnKey = checkbox.getAttribute('data-column');
-            var column = window.etfSignalsManager.availableColumns.find(function(col) {
-                return col.key === columnKey;
-            });
+        var checkboxes = document.querySelectorAll(
+            '#columnCheckboxes input[type="checkbox"]',
+        );
+        checkboxes.forEach(function (checkbox) {
+            var columnKey = checkbox.getAttribute("data-column");
+            var column = window.etfSignalsManager.availableColumns.find(
+                function (col) {
+                    return col.key === columnKey;
+                },
+            );
             checkbox.checked = column ? column.visible : false;
         });
     }
@@ -1585,7 +1629,9 @@ function applyColumnSettings() {
         window.etfSignalsManager.updatePagination();
 
         // Close modal
-        var modal = bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal'));
+        var modal = bootstrap.Modal.getInstance(
+            document.getElementById("columnSettingsModal"),
+        );
         if (modal) {
             modal.hide();
         }
@@ -1951,8 +1997,8 @@ function proceedWithAddingDeal(
             cmp: signal.cmp || signal.CMP || signal.ep || signal.EP || 0,
             pos: signal.pos || 1,
             tp: signal.tp || signal.TP || 0,
-            date: signal.date || new Date().toISOString().split('T')[0]
-        }
+            date: signal.date || new Date().toISOString().split("T")[0],
+        },
     };
 
     var xhr = new XMLHttpRequest();
@@ -1969,44 +2015,58 @@ function proceedWithAddingDeal(
                     var response = JSON.parse(xhr.responseText);
                     if (response.success) {
                         showSwalMessage(
-                            "✓ Deal created successfully for " + symbol + 
-                            " - Deal ID: " + response.deal_id +
-                            " - Investment: ₹" + (response.invested_amount || 0).toFixed(2),
-                            "success"
+                            "Deal created successfully for " +
+                                symbol +
+                                " - Deal ID: " +
+                                response.deal_id +
+                                " - Investment: ₹" +
+                                (response.invested_amount || 0).toFixed(2),
+                            "success",
                         );
-
-                        // Optionally redirect to deals page after 3 seconds
-                        setTimeout(function() {
-                            if (confirm("Deal created! View your deals page?")) {
-                                window.location.href = "/deals";
-                            }
-                        }, 2000);
                     } else {
                         showSwalMessage(
-                            "Failed to create deal: " + (response.error || response.message || "Unknown error"),
-                            "error"
+                            "Failed to create deal: " +
+                                (response.error ||
+                                    response.message ||
+                                    "Unknown error"),
+                            "error",
                         );
                     }
                 } catch (parseError) {
                     console.error("Failed to parse response:", parseError);
-                    showSwalMessage("Server returned invalid response", "error");
+                    showSwalMessage(
+                        "Server returned invalid response",
+                        "error",
+                    );
                 }
             } else if (xhr.status === 500) {
-                showSwalMessage("Server error occurred. Please try again.", "error");
+                showSwalMessage(
+                    "Server error occurred. Please try again.",
+                    "error",
+                );
             } else if (xhr.status === 404) {
-                showSwalMessage("API endpoint not found. Please contact support.", "error");
+                showSwalMessage(
+                    "API endpoint not found. Please contact support.",
+                    "error",
+                );
             } else {
-                showSwalMessage("Request failed with status: " + xhr.status, "error");
+                showSwalMessage(
+                    "Request failed with status: " + xhr.status,
+                    "error",
+                );
             }
         }
     };
 
-    xhr.ontimeout = function() {
+    xhr.ontimeout = function () {
         showSwalMessage("Request timed out. Please try again.", "error");
     };
 
-    xhr.onerror = function() {
-        showSwalMessage("Network error occurred. Please check your connection.", "error");
+    xhr.onerror = function () {
+        showSwalMessage(
+            "Network error occurred. Please check your connection.",
+            "error",
+        );
     };
 
     xhr.timeout = 10000;

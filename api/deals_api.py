@@ -275,20 +275,20 @@ def check_duplicate_deal(symbol, username):
         import sys
         sys.path.append('scripts')
         from scripts.dynamic_user_deals import DynamicUserDealsService
-        
+
         dynamic_deals_service = DynamicUserDealsService()
-        
+
         # Check if user table exists
         if not dynamic_deals_service.table_exists(username):
             return False  # No table means no duplicates
-        
+
         # Get user deals and check for duplicates
         existing_deals = dynamic_deals_service.get_user_deals(username)
         for deal in existing_deals:
-            if (deal.get('symbol', '').upper() == symbol.upper() and 
-                deal.get('status') == 'ACTIVE'):
+            if (deal.get('symbol', '').upper() == symbol.upper()
+                    and deal.get('status') == 'ACTIVE'):
                 return True
-        
+
         return False
 
     except Exception as e:
@@ -491,7 +491,8 @@ def get_all_deals_data_metrics():
 
             # --- Set pos to 0 if deal is closed, otherwise use original value ---
             deal_status = str(deal.get('status', 'ACTIVE')).upper()
-            pos_value = '0' if deal_status == 'CLOSED' else deal.get('pos', '1')
+            pos_value = '0' if deal_status == 'CLOSED' else deal.get(
+                'pos', '1')
 
             # --- Format deal with all required fields ---
             formatted_deal = {
@@ -541,8 +542,8 @@ def get_all_deals_data_metrics():
         return []
 
 
+#  ************* USER DEALS API **************
 @deals_api.route('/user-deals-data')
-@deals_api.route('/user-deals')
 def get_user_deals_data():
     """API endpoint to get user deals data from logged-in user's dynamic table"""
     try:
@@ -566,9 +567,9 @@ def get_user_deals_data():
         import sys
         sys.path.append('scripts')
         from scripts.dynamic_user_deals import DynamicUserDealsService
-        
+
         dynamic_deals_service = DynamicUserDealsService()
-        
+
         # Check if user table exists
         if not dynamic_deals_service.table_exists(username):
             return jsonify({
@@ -586,7 +587,7 @@ def get_user_deals_data():
 
         # Get deals from user's dynamic table
         user_deals = dynamic_deals_service.get_user_deals(username)
-        
+
         if not user_deals:
             return jsonify({
                 'success': True,
@@ -614,80 +615,181 @@ def get_user_deals_data():
                 external_db_url = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com:5432/kotak_trading_db"
                 from Scripts.db_connector import DatabaseConnector
                 db_connector = DatabaseConnector(external_db_url)
-                
-                price_fetcher = PriceFetcher(db_connector)
-                cmp = price_fetcher.get_cmp(deal.get('symbol', ''))
-                
+
                 if db_connector:
                     db_connector.close()
             except Exception as e:
-                logger.warning(f"Could not fetch CMP for {deal.get('symbol', '')}: {e}")
-                cmp = deal.get('ep', 0)  # Fallback to entry price
+                logger.warning(
+                    f"Could not fetch CMP for {deal.get('symbol', '')}: {e}")
+                # cmp = deal.get('ep', 0)  # Fallback to entry price
+
+            # --- Extract basic trading info ---
+
+            symbol_counts = {}
+
+            # 2. Initialize helper/fetcher objects
+            price_fetcher = PriceFetcher(db_connector)
+            signals_fetcher = SignalsFetcher(db_connector)
+            hist_fetcher = HistoricalFetcher(db_connector)
+
+            symbol = str(deal.get('symbol') or 'N/A').upper()
+            trade_signal_id = deal.get('trade_signal_id')
+            qty = float(deal.get('qty') or 0)
+            entry_price = float(deal.get('ep') or 0)
+
+            # --- QT = Symbol repeat count ---
+            qt_value = symbol_counts.get(symbol, 1)
+
+            # --- Format the date as dd-mm-yy HH:MM ---
+            raw_date = deal.get('date', '') or ''
+            if raw_date:
+                try:
+                    dt_obj = pd.to_datetime(raw_date)
+                    date_fmt = dt_obj.strftime("%d-%m-%y %H:%M")
+                except Exception:
+                    date_fmt = str(raw_date)
+            else:
+                date_fmt = ''
+
+            # --- Fetch prices (CMP, 7D, 30D) ---
+            cmp_val = price_fetcher.get_cmp(symbol)
+            if cmp_val not in (None, "--"):
+                try:
+                    cmp_numeric = float(cmp_val)
+                    cmp_display = cmp_numeric
+                    cmp_is_num = True
+                except Exception:
+                    cmp_numeric = 0.0
+                    cmp_display = "--"
+                    cmp_is_num = False
+            else:
+                cmp_numeric = 0.0
+                cmp_display = "--"
+                cmp_is_num = False
+
+            d7_val = hist_fetcher.get_offset_price(symbol, 5)
+            d30_val = hist_fetcher.get_offset_price(symbol, 20)
+            p7 = try_percent(cmp_numeric, d7_val)
+            p30 = try_percent(cmp_numeric, d30_val)
+
+            # --- Investment/Profit/Loss calculations ---
+            investment = qty * entry_price
+            current_value = qty * cmp_numeric if cmp_is_num else 0
+            profit_loss = current_value - investment if cmp_is_num else 0
+            change_percent = (
+                (cmp_numeric - entry_price) /
+                entry_price) * 100 if cmp_is_num and entry_price > 0 else 0
+
+            # --- Target Price, TPR, TVA calculation (business logic) ---
+            if entry_price > 0:
+                if cmp_numeric > 0 and cmp_is_num:
+                    current_gain_percent = (
+                        (cmp_numeric - entry_price) / entry_price) * 100
+                    if current_gain_percent > 10:
+                        target_price = entry_price * 1.25  # 25% from entry price
+                    elif current_gain_percent > 5:
+                        target_price = entry_price * 1.20
+                    elif current_gain_percent > 0:
+                        target_price = entry_price * 1.15
+                    elif current_gain_percent > -5:
+                        target_price = entry_price * 1.12
+                    else:
+                        target_price = entry_price * 1.10
+                else:
+                    target_price = entry_price * 1.15  # Default 15% target
+                tpr_percent = (
+                    (target_price - entry_price) / entry_price) * 100
+                tp_value = round(target_price, 2)
+                tpr_value = f"{tpr_percent:.2f}%"
+                tva_value = round(target_price * qty, 2)
+            else:
+                tp_value = "--"
+                tpr_value = "--"
+                tva_value = "--"
+
+            # --- Set pos to 0 if deal is closed, otherwise use original value ---
+            deal_status = str(deal.get('status', 'ACTIVE')).upper()
+            pos_value = '0' if deal_status == 'CLOSED' else deal.get(
+                'pos', '1')
+
+            cmp = price_fetcher.get_cmp(deal.get('symbol', ''))
 
             # Calculate values
             qty = float(deal.get('qty', 0))
             ep = float(deal.get('ep', 0))
-            current_price = float(cmp) if cmp else ep
-            
+            current_price = float(cmp)
+
             invested_amount = qty * ep
             current_value = qty * current_price
             pnl_amount = current_value - invested_amount
-            pnl_percent = (pnl_amount / invested_amount * 100) if invested_amount > 0 else 0
-            
+            pnl_percent = (pnl_amount / invested_amount *
+                           100) if invested_amount > 0 else 0
+
+            # date
+            created_at = deal.get('created_at')
+            date_str = '--'
+            if created_at:
+                try:
+                    if isinstance(created_at, str):
+                        if created_at.endswith('Z'):
+                            created_at = created_at[:-1]
+                        dt = datetime.fromisoformat(created_at)
+                    else:
+                        dt = created_at
+                    date_str = dt.strftime('%Y-%m-%d')
+                except Exception:
+                    pass
+
             # Format deal
             formatted_deal = {
                 'id': deal.get('id'),
-                'trade_signal_id': deal.get('id'),
-                'symbol': deal.get('symbol', ''),
-                'qty': int(qty),
-                'ep': round(ep, 2),
-                'cmp': round(current_price, 2),
-                'pos': deal.get('pos', '1'),
-                'inv': round(invested_amount, 2),
-                'pl': round(pnl_amount, 2),
-                'chan_percent': f"{pnl_percent:.2f}%",
-                'tp': round(float(deal.get('tp', ep * 1.05)), 2),
-                'tpr': f"{((float(deal.get('tp', ep * 1.05)) - ep) / ep * 100):.2f}%" if ep > 0 else "0.00%",
-                'tva': round(float(deal.get('tp', ep * 1.05)) * qty, 2),
-                'date': deal.get('created_at').strftime('%Y-%m-%d') if deal.get('created_at') else '',
-                'created_at': deal.get('created_at').isoformat() if deal.get('created_at') else '',
-                'status': deal.get('status', 'ACTIVE'),
-                'seven': '--',
-                'seven_percent': '--',
-                'thirty': '--',
-                'thirty_percent': '--',
-                'qt': 1,
-                'ed': deal.get('ed', '--'),
-                'exp': '--',
-                'pr': '--',
-                'pp': '--',
-                'iv': round(invested_amount, 2),
-                'ip': round(ep, 2),
-                'entry_price': ep,
-                'current_price': current_price,
-                'invested_amount': invested_amount,
-                'pnl_amount': pnl_amount,
-                'pnl_percent': pnl_percent,
-                'deal_type': deal.get('deal_type', 'MANUAL'),
-                'position_type': 1,
-                'trading_symbol': deal.get('symbol', ''),
-                'exchange': 'NSE'
+                'trade_signal_id': trade_signal_id,
+                'symbol': symbol,
+                'seven': d7_val if d7_val else '--',
+                'seven_percent': p7,
+                'thirty': d30_val if d30_val else '--',
+                'thirty_percent': p30,
+                'date': date_str,
+                'qty': qty,
+                'ep': entry_price,
+                'cmp': cmp_display,
+                'pos': pos_value,
+                'chan_percent': round(change_percent, 2),
+                'inv': investment,
+                'tp': tp_value,  # Target price with business logic
+                'tpr': tpr_value,  # Target profit return percentage
+                'tva': tva_value,  # Target value amount
+                'pl': round(profit_loss, 2),
+                'qt': qt_value,  # Symbol repeat count
+                'ed': deal.get('ed', '--'),  # Exit date
+                'exp': '--',  # Expiry
+                'pr': '--',  # Price range
+                'pp': '--',  # Performance points
+                'iv': investment,  # Investment value
+                'ip': entry_price,  # Entry price
+                'status': deal_status,  # Use actual status from database
+                'deal_type': 'MANUAL',
+                'tags': '',
+                'created_at': '',
+                'updated_at': ''
             }
-            
+
             formatted_deals.append(formatted_deal)
-            
+
             # Add to totals
             total_invested += invested_amount
             total_current_value += current_value
             total_pnl += pnl_amount
 
-        total_pnl_percent = (total_pnl / total_invested * 100) if total_invested > 0 else 0
+        total_pnl_percent = (total_pnl / total_invested *
+                             100) if total_invested > 0 else 0
 
         return jsonify({
             'success': True,
             'deals': formatted_deals,
             'data': formatted_deals,  # For compatibility
-            'message': f'Successfully loaded {len(formatted_deals)} deals for user {username}',
+            'message':
+            f'Successfully loaded {len(formatted_deals)} deals for user {username}',
             'summary': {
                 'total_deals': len(formatted_deals),
                 'total_invested': round(total_invested, 2),
@@ -711,8 +813,6 @@ def get_user_deals_data():
                 'total_pnl_percent': 0
             }
         }), 500
-
-
 
 
 @deals_api.route('/deals/check-duplicate', methods=['POST'])
@@ -895,8 +995,6 @@ def close_deal():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-
-
 @deals_api.route('/deals/create-from-signal', methods=['POST'])
 @deals_api.route('/dynamic/add-deal', methods=['POST'])
 def create_deal_from_signal():
@@ -906,9 +1004,9 @@ def create_deal_from_signal():
         import sys
         sys.path.append('scripts')
         from scripts.dynamic_user_deals import DynamicUserDealsService
-        
+
         dynamic_deals_service = DynamicUserDealsService()
-        
+
         data = request.get_json()
         if not data:
             return jsonify({
@@ -981,19 +1079,23 @@ def create_deal_from_signal():
         if not dynamic_deals_service.table_exists(username):
             if not dynamic_deals_service.create_user_deals_table(username):
                 return jsonify({
-                    'success': False,
-                    'error': f'Failed to create deals table for user {username}'
+                    'success':
+                    False,
+                    'error':
+                    f'Failed to create deals table for user {username}'
                 }), 500
 
         # Check for duplicate unless force_add is True
         if not force_add:
             existing_deals = dynamic_deals_service.get_user_deals(username)
             for deal in existing_deals:
-                if deal.get('symbol', '').upper() == symbol.upper() and deal.get('status') == 'ACTIVE':
+                if deal.get('symbol', '').upper() == symbol.upper(
+                ) and deal.get('status') == 'ACTIVE':
                     return jsonify({
                         'success': False,
                         'duplicate': True,
-                        'message': f'This trade is already added, you want add?',
+                        'message':
+                        f'This trade is already added, you want add?',
                         'symbol': symbol
                     }), 409  # Conflict status code
 
@@ -1006,7 +1108,8 @@ def create_deal_from_signal():
         invested_amount = ep * qty
         current_value = cmp * qty
         pnl_amount = current_value - invested_amount
-        pnl_percent = (pnl_amount / invested_amount * 100) if invested_amount > 0 else 0
+        pnl_percent = (pnl_amount / invested_amount *
+                       100) if invested_amount > 0 else 0
 
         # Prepare deal data for dynamic table
         deal_data = {
@@ -1028,10 +1131,13 @@ def create_deal_from_signal():
         }
 
         # Add deal to user-specific table
-        deal_id = dynamic_deals_service.add_deal_to_user_table(username, deal_data)
+        deal_id = dynamic_deals_service.add_deal_to_user_table(
+            username, deal_data)
 
         if deal_id:
-            logger.info(f"✓ Created deal from signal: {symbol} - Deal ID: {deal_id} for user: {username}")
+            logger.info(
+                f"✓ Created deal from signal: {symbol} - Deal ID: {deal_id} for user: {username}"
+            )
             return jsonify({
                 'success': True,
                 'message': f'Deal created successfully for {symbol}',

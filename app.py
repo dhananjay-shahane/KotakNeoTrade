@@ -616,6 +616,13 @@ def basic_trade_signals():
     return render_template('basic_etf_signals.html')
 
 
+@app.route('/defult-deals')
+@require_auth
+def defult_deals():
+    """defult deals page"""
+    return render_template('defult_deals.html')
+
+
 # ========================================
 # API ENDPOINTS
 # ========================================
@@ -1164,7 +1171,6 @@ def register():
                 flash(
                     'Registration successful! Please check your email for login credentials.',
                     'success')
-                flash(f'Your username is: {username}', 'info')
                 return redirect(url_for('auth_routes.trading_account_login'))
             else:
                 flash(
