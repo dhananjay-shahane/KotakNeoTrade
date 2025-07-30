@@ -1176,10 +1176,12 @@ def register():
                 except Exception as email_error:
                     print(f"Email sending failed: {email_error}")
 
+                # Flash success message for SweetAlert to detect and display
                 flash(
                     'Registration successful! Please check your email for login credentials.',
                     'success')
-                return redirect(url_for('auth_routes.trading_account_login'))
+                # Don't redirect immediately - let the template handle the SweetAlert popup
+                return render_template('auth/register.html')
             else:
                 flash(
                     'Registration failed. Email might already be registered.',
