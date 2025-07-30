@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from app import app
 
 # Import additional API blueprints
-from api.default_deals_api import default_deals_api_bp
+from api.default_deals_api import default_deals_api
 from api.password_reset_api import password_reset_bp
 
 if __name__ == '__main__':
@@ -43,7 +43,7 @@ if __name__ == '__main__':
             print(f"   External: https://{os.environ.get('REPLIT_DOMAINS')}")
 
         # Register blueprints
-        app.register_blueprint(default_deals_api_bp)
+        app.register_blueprint(default_deals_api)
         print("✓ Registered default_deals_api blueprint")
 
         app.register_blueprint(password_reset_bp)
