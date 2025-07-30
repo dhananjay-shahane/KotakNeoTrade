@@ -559,19 +559,19 @@ endblock %} {% block head %}
         loadPortfolioData();
     });
 
-    // Load portfolio data from API
+    // Load portfolio data from user deals API
     async function loadPortfolioData() {
         try {
-            console.log("Fetching portfolio stats...");
-            const response = await fetch("/api/portfolio/stats");
+            console.log("Fetching user deals data...");
+            const response = await fetch("/api/user-deals-data");
             console.log("Response status:", response.status);
 
             const result = await response.json();
-            console.log("Portfolio API response:", result);
+            console.log("User deals API response:", result);
 
-            if (result.success && result.data) {
-                portfolioData = result.data;
-                console.log("Portfolio data loaded:", portfolioData);
+            if (result.success && result.data && result.data.length > 0) {
+                // Process user deals data
+                processUserDealsData(result.data);
                 updatePortfolioDisplay();
                 updateCharts();
                 loadSymbolOptions();
@@ -583,15 +583,106 @@ endblock %} {% block head %}
                     loadSymbolData(); // Load data for the first symbol
                 }
             } else {
-                console.error("Failed to load portfolio data:", result.error);
-                console.log("Using empty data structure");
-                updatePortfolioDisplay(); // Show with empty data
+                console.log("No deals data available");
+                showNoDealsMessage();
             }
         } catch (error) {
             console.error("Error loading portfolio data:", error);
-            console.log("Using empty data structure due to error");
-            updatePortfolioDisplay(); // Show with empty data
+            showNoDealsMessage();
         }
+    }
+
+    // Process user deals data into portfolio format
+    function processUserDealsData(deals) {
+        let totalInvestment = 0;
+        let totalCurrentValue = 0;
+        let totalPnL = 0;
+        let activeDeals = 0;
+        let closedDeals = 0;
+        let symbols = [];
+        let symbolData = {};
+
+        deals.forEach(deal => {
+            const symbol = deal.symbol;
+            const investment = parseFloat(deal.inv) || 0;
+            const currentValue = parseFloat(deal.cmp) * parseFloat(deal.qty) || 0;
+            const pnl = parseFloat(deal.pl) || 0;
+            const isActive = deal.status === 'ACTIVE';
+
+            totalInvestment += investment;
+            totalCurrentValue += currentValue;
+            totalPnL += pnl;
+
+            if (isActive) {
+                activeDeals++;
+            } else {
+                closedDeals++;
+            }
+
+            // Track symbols
+            if (!symbols.includes(symbol)) {
+                symbols.push(symbol);
+                symbolData[symbol] = {
+                    investment: 0,
+                    currentValue: 0,
+                    pnl: 0,
+                    deals: []
+                };
+            }
+
+            symbolData[symbol].investment += investment;
+            symbolData[symbol].currentValue += currentValue;
+            symbolData[symbol].pnl += pnl;
+            symbolData[symbol].deals.push(deal);
+        });
+
+        portfolioData = {
+            total_deals: deals.length,
+            active_deals: activeDeals,
+            closed_deals: closedDeals,
+            total_investment: totalInvestment,
+            total_current_value: totalCurrentValue,
+            total_pnl: totalPnL,
+            symbols: symbols,
+            symbol_data: symbolData,
+            deals_list: deals
+        };
+    }
+
+    // Show no deals message
+    function showNoDealsMessage() {
+        // Hide skeleton loader
+        document.getElementById("portfolioSkeleton").style.display = "none";
+        
+        // Show main content area but with no deals message
+        document.getElementById("portfolioContent").style.display = "block";
+        
+        // Replace the charts row with no deals message
+        const chartsRow = document.querySelector('.row.mb-4:nth-child(2)');
+        if (chartsRow) {
+            chartsRow.innerHTML = `
+                <div class="col-12">
+                    <div class="card h-100 text-center py-5">
+                        <div class="card-body">
+                            <i class="fas fa-chart-line fa-4x text-muted mb-4"></i>
+                            <h4 class="text-muted mb-3">No Deals Available</h4>
+                            <p class="text-muted mb-4">You haven't added any deals yet. Start by adding deals from trading signals.</p>
+                            <div class="d-flex gap-2 justify-content-center">
+                                <a href="/trading-signals" class="btn btn-primary">
+                                    <i class="fas fa-signal me-2"></i>View Trading Signals
+                                </a>
+                                <a href="/deals" class="btn btn-outline-primary">
+                                    <i class="fas fa-plus me-2"></i>Add Deals
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Hide symbol details section
+        document.getElementById("symbolDetailsSection").style.display = "none";
     }
 
     // Update portfolio display with loaded data
@@ -680,8 +771,7 @@ endblock %} {% block head %}
     function loadSymbolOptions() {
         if (portfolioData.symbols && portfolioData.symbols.length > 0) {
             const symbolSelector = document.getElementById("symbolSelector");
-            symbolSelector.innerHTML =
-                '<option value="">Choose a symbol...</option>';
+            symbolSelector.innerHTML = '<option value="">Choose a symbol...</option>';
 
             portfolioData.symbols.forEach((symbol) => {
                 const option = document.createElement("option");
@@ -794,257 +884,112 @@ endblock %} {% block head %}
         });
     }
 
-    // Load symbol-specific data from API
+    // Load symbol-specific data from processed user deals
     async function loadSymbolData() {
         const symbolSelector = document.getElementById("symbolSelector");
         const selectedSymbol = symbolSelector.value;
 
-        if (!selectedSymbol) {
+        if (!selectedSymbol || !portfolioData.symbol_data) {
             document.getElementById("symbolDataDisplay").style.display = "none";
-            document.getElementById("symbolDetailsSection").style.display =
-                "none";
+            document.getElementById("symbolDetailsSection").style.display = "none";
             return;
         }
 
-        try {
-            // Show loading state
-            document.getElementById("symbolDataDisplay").style.display =
-                "block";
-            document.getElementById("symbolCMP").textContent = "Loading...";
-            document.getElementById("symbolPL").textContent = "Loading...";
-            document.getElementById("symbolInvestment").textContent =
-                "Loading...";
+        const symbolData = portfolioData.symbol_data[selectedSymbol];
+        if (!symbolData) {
+            document.getElementById("symbolDataDisplay").style.display = "none";
+            return;
+        }
 
-            const response = await fetch(
-                `/api/portfolio/symbol-data/${selectedSymbol}`,
-            );
-            const result = await response.json();
+        // Show symbol data display
+        document.getElementById("symbolDataDisplay").style.display = "block";
 
-            if (result.success) {
-                const data = result.data;
+        // Calculate average CMP from deals
+        let totalQty = 0;
+        let weightedCMP = 0;
+        symbolData.deals.forEach(deal => {
+            const qty = parseFloat(deal.qty) || 0;
+            const cmp = parseFloat(deal.cmp) || 0;
+            totalQty += qty;
+            weightedCMP += (cmp * qty);
+        });
+        const avgCMP = totalQty > 0 ? (weightedCMP / totalQty).toFixed(2) : 0;
 
-                // Update symbol data display
-                document.getElementById("symbolCMP").textContent =
-                    `₹${data.cmp}`;
+        // Update symbol data
+        document.getElementById("symbolCMP").textContent = `₹${avgCMP}`;
 
-                const plElement = document.getElementById("symbolPL");
-                plElement.textContent = `₹${data.profit_loss} (${data.profit_loss_percentage}%)`;
-                plElement.className =
-                    data.profit_loss >= 0
-                        ? "fw-bold text-success"
-                        : "fw-bold text-danger";
+        const plElement = document.getElementById("symbolPL");
+        const profitLossPercent = symbolData.investment > 0 ? 
+            ((symbolData.pnl / symbolData.investment) * 100).toFixed(2) : 0;
+        plElement.textContent = `₹${symbolData.pnl.toFixed(2)} (${profitLossPercent}%)`;
+        plElement.className = symbolData.pnl >= 0 ? "fw-bold text-success" : "fw-bold text-danger";
 
-                document.getElementById("symbolInvestment").textContent =
-                    `₹${data.total_investment}`;
+        document.getElementById("symbolInvestment").textContent = `₹${symbolData.investment.toFixed(2)}`;
 
-                // Show symbol details section
-                document.getElementById("symbolDetailsSection").style.display =
-                    "block";
-                document.getElementById("selectedSymbolName").textContent =
-                    selectedSymbol;
+        // Show symbol details section
+        document.getElementById("symbolDetailsSection").style.display = "block";
+        document.getElementById("selectedSymbolName").textContent = selectedSymbol;
 
-                // Create deals table
-                if (
-                    data.deals &&
-                    Array.isArray(data.deals) &&
-                    data.deals.length > 0
-                ) {
-                    const dealsTableHTML = `
-                        <div class="table-responsive">
-                            <table class="table table-sm table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Entry Price</th>
-                                        <th>Quantity</th>
-                                        <th>Investment</th>
-                                        <th>Current Value</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${data.deals
-                                        .map(
-                                            (deal) => `
-                                        <tr>
-                                            <td>${deal.date || "N/A"}</td>
-                                            <td>₹${deal.entry_price || "0"}</td>
-                                            <td>${deal.qty || "0"}</td>
-                                            <td>₹${deal.investment || "0"}</td>
-                                            <td>₹${(deal.current_value || 0).toFixed(2)}</td>
-                                            <td><span class="badge ${deal.status === "ACTIVE" ? "bg-success" : "bg-secondary"}">${deal.status || "Unknown"}</span></td>
-                                        </tr>
-                                    `,
-                                        )
-                                        .join("")}
-                                </tbody>
-                            </table>
-                        </div>
-                    `;
-                    document.getElementById("symbolDealsTable").innerHTML =
-                        dealsTableHTML;
-                } else {
-                    // Show message when no deals are available
-                    document.getElementById("symbolDealsTable").innerHTML = `
-                        <div class="text-center text-muted py-4">
-                            <i class="fas fa-info-circle mb-2"></i>
-                            <p>No deals found for this symbol</p>
-                        </div>
-                    `;
-                }
-
-                // Update bar chart
-                if (barChart && data.total_investment) {
-                    barChart.data.labels = [
-                        "Investment",
-                        "Current Value",
-                        "P&L",
-                    ];
-                    barChart.data.datasets[0].data = [
-                        data.total_investment,
-                        data.current_value,
-                        Math.abs(data.profit_loss),
-                    ];
-                    barChart.data.datasets[0].backgroundColor = [
-                        "#3498db",
-                        "#2ecc71",
-                        data.profit_loss >= 0 ? "#2ecc71" : "#e74c3c",
-                    ];
-                    barChart.update("active");
-                }
-            } else {
-                console.error("Failed to load symbol data:", result.error);
-                document.getElementById("symbolCMP").textContent =
-                    "Error loading";
-                document.getElementById("symbolPL").textContent =
-                    "Error loading";
-                document.getElementById("symbolInvestment").textContent =
-                    "Error loading";
-            }
-        } catch (error) {
-            console.error("Error loading symbol data:", error);
-            document.getElementById("symbolCMP").textContent = "Error loading";
-            document.getElementById("symbolPL").textContent = "Error loading";
-            document.getElementById("symbolInvestment").textContent =
-                "Error loading";
-
-            // Hide symbol details section on error
-            document.getElementById("symbolDetailsSection").style.display =
-                "none";
-
-            // Show error message in deals table
+        // Create deals table
+        if (symbolData.deals && symbolData.deals.length > 0) {
+            const dealsTableHTML = `
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Entry Price</th>
+                                <th>Quantity</th>
+                                <th>Investment</th>
+                                <th>Current Value</th>
+                                <th>P&L</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${symbolData.deals.map(deal => `
+                                <tr>
+                                    <td>${deal.date || deal.created_at || "N/A"}</td>
+                                    <td>₹${deal.ep || deal.entry_price || "0"}</td>
+                                    <td>${deal.qty || "0"}</td>
+                                    <td>₹${deal.inv || deal.investment || "0"}</td>
+                                    <td>₹${(parseFloat(deal.cmp || 0) * parseFloat(deal.qty || 0)).toFixed(2)}</td>
+                                    <td class="${parseFloat(deal.pl || 0) >= 0 ? 'text-success' : 'text-danger'}">₹${deal.pl || "0"}</td>
+                                    <td><span class="badge ${deal.status === "ACTIVE" ? "bg-success" : "bg-secondary"}">${deal.status || "Unknown"}</span></td>
+                                </tr>
+                            `).join("")}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            document.getElementById("symbolDealsTable").innerHTML = dealsTableHTML;
+        } else {
             document.getElementById("symbolDealsTable").innerHTML = `
-                <div class="text-center text-danger py-4">
-                    <i class="fas fa-exclamation-triangle mb-2"></i>
-                    <p>Error loading symbol data: ${error.message}</p>
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-info-circle mb-2"></i>
+                    <p>No deals found for this symbol</p>
                 </div>
             `;
         }
-    }
 
-    // Load symbol-specific data
-    async function loadSymbolData() {
-        const symbolSelector = document.getElementById("symbolSelector");
-        const selectedSymbol = symbolSelector.value;
-
-        if (!selectedSymbol) {
-            document.getElementById("symbolDataDisplay").style.display = "none";
-            return;
-        }
-
-        try {
-            const response = await fetch(
-                `/api/portfolio/symbol-data/${selectedSymbol}`,
-            );
-            const result = await response.json();
-
-            if (result.success) {
-                const data = result.data;
-
-                // Show symbol data display
-                document.getElementById("symbolDataDisplay").style.display =
-                    "block";
-
-                // Update symbol data
-                document.getElementById("symbolCMP").textContent =
-                    `₹${data.cmp}`;
-
-                const plElement = document.getElementById("symbolPL");
-                plElement.textContent = `₹${data.profit_loss} (${data.profit_loss_percentage}%)`;
-                plElement.className =
-                    data.profit_loss >= 0
-                        ? "fw-bold text-success"
-                        : "fw-bold text-danger";
-
-                document.getElementById("symbolInvestment").textContent =
-                    `₹${data.total_investment}`;
-
-                // Show symbol details section and update name
-                document.getElementById("symbolDetailsSection").style.display =
-                    "block";
-                document.getElementById("selectedSymbolName").textContent =
-                    selectedSymbol;
-
-                // Create deals table
-                const dealsTableHTML = `
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Entry Price</th>
-                                    <th>Quantity</th>
-                                    <th>Investment</th>
-                                    <th>Current Value</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${data.deals
-                                    .map(
-                                        (deal) => `
-                                    <tr>
-                                        <td>${deal.date}</td>
-                                        <td>₹${deal.entry_price}</td>
-                                        <td>${deal.qty}</td>
-                                        <td>₹${deal.investment}</td>
-                                        <td>₹${deal.current_value}</td>
-                                        <td><span class="badge ${deal.status === "ACTIVE" ? "bg-success" : "bg-secondary"}">${deal.status}</span></td>
-                                    </tr>
-                                `,
-                                    )
-                                    .join("")}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-                document.getElementById("symbolDealsTable").innerHTML =
-                    dealsTableHTML;
-
-                // Update bar chart with symbol data
-                if (barChart) {
-                    barChart.data.labels = [
-                        "Investment",
-                        "Current Value",
-                        "P&L",
-                    ];
-                    barChart.data.datasets[0].data = [
-                        data.total_investment,
-                        data.current_value,
-                        Math.abs(data.profit_loss),
-                    ];
-                    barChart.data.datasets[0].backgroundColor = [
-                        "#3498db",
-                        "#2ecc71",
-                        data.profit_loss >= 0 ? "#2ecc71" : "#e74c3c",
-                    ];
-                    barChart.update();
-                }
-            }
-        } catch (error) {
-            console.error("Error loading symbol data:", error);
+        // Update bar chart with symbol data
+        if (barChart && symbolData.investment > 0) {
+            barChart.data.labels = ["Investment", "Current Value", "P&L"];
+            barChart.data.datasets[0].data = [
+                symbolData.investment,
+                symbolData.currentValue,
+                Math.abs(symbolData.pnl)
+            ];
+            barChart.data.datasets[0].backgroundColor = [
+                "#3498db",
+                "#2ecc71", 
+                symbolData.pnl >= 0 ? "#2ecc71" : "#e74c3c"
+            ];
+            barChart.update("active");
         }
     }
+
+    
 
     // Initialize charts
     function initializeCharts() {
@@ -1131,8 +1076,7 @@ endblock %} {% block head %}
 
     // Refresh function
     function refreshSignals() {
-        loadPortfolioStats();
-        loadSymbolOptions();
+        loadPortfolioData();
         document.getElementById("lastUpdateTime").textContent = "Just now";
     }
 </script>
