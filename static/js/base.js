@@ -950,6 +950,8 @@ function togglePasswordVisibility(inputIdOrButton) {
         // Handle button element
         toggleButton = inputIdOrButton;
         icon = toggleButton.querySelector('i');
+        
+        // Find the input field - it should be the previous sibling or in the same wrapper
         input = toggleButton.previousElementSibling;
         
         if (!input || input.tagName !== 'INPUT') {
@@ -957,16 +959,31 @@ function togglePasswordVisibility(inputIdOrButton) {
             var wrapper = toggleButton.parentElement;
             input = wrapper.querySelector('input[type="password"], input[type="text"]');
         }
+        
+        if (!input || input.tagName !== 'INPUT') {
+            // Try to find input as sibling in wrapper
+            var parentWrapper = toggleButton.parentElement;
+            var inputs = parentWrapper.querySelectorAll('input[type="password"], input[type="text"]');
+            if (inputs.length > 0) {
+                input = inputs[0];
+            }
+        }
     } else {
         console.error('Invalid parameter for togglePasswordVisibility:', inputIdOrButton);
         return;
     }
     
-    if (!input || !toggleButton || !icon) {
-        console.error('Required elements not found for password toggle');
+    if (!input) {
+        console.error('Password input not found for toggle button');
         return;
     }
     
+    if (!icon) {
+        console.error('Icon not found in toggle button');
+        return;
+    }
+    
+    // Toggle password visibility
     if (input.type === 'password') {
         input.type = 'text';
         icon.classList.remove('fa-eye');
@@ -1048,6 +1065,7 @@ function submitPasswordReset() {
         headers: {
             'Content-Type': 'application/json',
         },
+        credentials: 'same-origin',
         body: JSON.stringify({
             oldPassword: oldPassword,
             newPassword: newPassword,
