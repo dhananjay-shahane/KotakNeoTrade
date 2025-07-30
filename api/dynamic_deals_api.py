@@ -32,7 +32,7 @@ def get_user_deals():
         username = current_user.username
         
         # Get deals from user table
-        deals = dynamic_deals_service.get_user_deals(username, current_user.id)
+        deals = dynamic_deals_service.get_user_deals(username)
         
         return jsonify({
             'success': True,
@@ -126,9 +126,8 @@ def add_user_deal():
             if not dynamic_deals_service.create_user_deals_table(username):
                 return jsonify({'success': False, 'error': 'Failed to create user deals table'}), 500
         
-        # Prepare deal data
+        # Prepare deal data (removed user_id and notes, username will be added automatically)
         deal_data = {
-            'user_id': current_user.id,
             'trade_signal_id': data.get('trade_signal_id'),
             'symbol': data.get('symbol'),
             'qty': data.get('qty'),
@@ -136,8 +135,7 @@ def add_user_deal():
             'pos': data.get('pos'),
             'status': data.get('status', 'ACTIVE'),
             'target_price': data.get('target_price'),
-            'stop_loss': data.get('stop_loss'),
-            'notes': data.get('notes', '')
+            'stop_loss': data.get('stop_loss')
         }
         
         # Add deal to user table

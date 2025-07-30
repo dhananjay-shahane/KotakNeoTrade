@@ -43,11 +43,11 @@ class DynamicUserDealsService:
             cursor = conn.cursor()
             table_name = f"{username}_deals"
             
-            # Create table with same structure as user_deals
+            # Create table with updated structure (removed notes, user_id; added username)
             create_table_query = sql.SQL("""
                 CREATE TABLE IF NOT EXISTS {} (
                     id SERIAL PRIMARY KEY,
-                    user_id INTEGER,
+                    username VARCHAR(50),
                     trade_signal_id INTEGER,
                     symbol VARCHAR(50) NOT NULL,
                     qty INTEGER,
@@ -57,8 +57,7 @@ class DynamicUserDealsService:
                     ed DATE,
                     status VARCHAR(20) DEFAULT 'ACTIVE',
                     target_price DECIMAL(10, 2),
-                    stop_loss DECIMAL(10, 2),
-                    notes TEXT
+                    stop_loss DECIMAL(10, 2)
                 );
             """).format(sql.Identifier(table_name))
             
@@ -66,8 +65,8 @@ class DynamicUserDealsService:
             
             # Create indexes for better performance
             index_queries = [
-                sql.SQL("CREATE INDEX IF NOT EXISTS {} ON {} (user_id);").format(
-                    sql.Identifier(f"idx_{table_name}_user_id"), sql.Identifier(table_name)
+                sql.SQL("CREATE INDEX IF NOT EXISTS {} ON {} (username);").format(
+                    sql.Identifier(f"idx_{table_name}_username"), sql.Identifier(table_name)
                 ),
                 sql.SQL("CREATE INDEX IF NOT EXISTS {} ON {} (symbol);").format(
                     sql.Identifier(f"idx_{table_name}_symbol"), sql.Identifier(table_name)
@@ -111,13 +110,13 @@ class DynamicUserDealsService:
             
             # Insert deal into user's table
             insert_query = sql.SQL("""
-                INSERT INTO {} (user_id, trade_signal_id, symbol, qty, ep, pos, status, target_price, stop_loss, notes)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO {} (username, trade_signal_id, symbol, qty, ep, pos, status, target_price, stop_loss)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id;
             """).format(sql.Identifier(table_name))
             
             cursor.execute(insert_query, (
-                deal_data.get('user_id'),
+                username,
                 deal_data.get('trade_signal_id'),
                 deal_data.get('symbol'),
                 deal_data.get('qty'),
@@ -125,8 +124,7 @@ class DynamicUserDealsService:
                 deal_data.get('pos'),
                 deal_data.get('status', 'ACTIVE'),
                 deal_data.get('target_price'),
-                deal_data.get('stop_loss'),
-                deal_data.get('notes', '')
+                deal_data.get('stop_loss')
             ))
             
             deal_id = cursor.fetchone()['id']
@@ -144,7 +142,7 @@ class DynamicUserDealsService:
                 conn.close()
             return None
     
-    def get_user_deals(self, username, user_id=None):
+    def get_user_deals(self, username):
         """
         Get all deals from user-specific table
         """
