@@ -649,7 +649,7 @@ def get_user_deals_data():
                 'tp': round(float(deal.get('tp', ep * 1.05)), 2),
                 'tpr': f"{((float(deal.get('tp', ep * 1.05)) - ep) / ep * 100):.2f}%" if ep > 0 else "0.00%",
                 'tva': round(float(deal.get('tp', ep * 1.05)) * qty, 2),
-                'date': deal.get('created_at', '').split('T')[0] if deal.get('created_at') else '',
+                'date': deal.get('created_at').strftime('%Y-%m-%d') if deal.get('created_at') else '',
                 'status': deal.get('status', 'ACTIVE'),
                 'seven': '--',
                 'seven_percent': '--',
