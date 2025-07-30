@@ -139,16 +139,33 @@ ETFSignalsManager.prototype.generateDynamicHeaders = function () {
         th.style.top = "0";
         th.style.zIndex = "10";
         th.style.whiteSpace = "nowrap";
-        th.style.cursor = "pointer";
 
         // Add sorting functionality for most columns
         if (column.key !== "actions") {
+            th.className += " sortable-header";
+            
+            // Check if this column is currently being sorted
+            var isActiveSort = (self.sortField === column.key);
+            if (isActiveSort) {
+                th.className += " active";
+            }
+            
             th.onclick = (function (columnKey) {
                 return function () {
                     self.sortSignalsByColumn(columnKey);
                 };
             })(column.key);
-            th.innerHTML = column.label + ' <i class="fas fa-sort ms-1"></i>';
+            
+            var sortIcon = '';
+            if (isActiveSort) {
+                sortIcon = self.sortDirection === "asc" 
+                    ? '<i class="fas fa-sort-up sort-icon sort-asc"></i>'
+                    : '<i class="fas fa-sort-down sort-icon sort-desc"></i>';
+            } else {
+                sortIcon = '<i class="fas fa-sort sort-icon"></i>';
+            }
+            
+            th.innerHTML = column.label + ' ' + sortIcon;
             th.title = self.getColumnTooltip(column.key) + " - Click to sort";
         } else {
             th.innerHTML = column.label;
@@ -202,7 +219,7 @@ ETFSignalsManager.prototype.sortSignalsByColumn = function (columnKey) {
     // Update displayed signals and re-render
     this.updateDisplayedSignals();
     this.renderSignalsTable();
-    this.updateSortIcons(columnKey);
+    this.generateDynamicHeaders(); // Refresh headers to show active sort state
 
     console.log(
         "Sorted signals by",

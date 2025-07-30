@@ -188,21 +188,27 @@ DefaultDealsManager.prototype.renderHeaders = function () {
         const column = this.availableColumns[columnKey];
         if (column) {
             let sortIcon = "";
+            let headerClass = "";
+            
             if (column.sortable) {
+                headerClass = "sortable-header";
+                
                 if (this.currentSortColumn === columnKey) {
-                    // Show active sort direction
+                    // Show active sort direction with colored icons
+                    headerClass += " active";
                     sortIcon = this.sortDirection === "asc" 
-                        ? '<i class="fas fa-sort-up text-primary ms-1"></i>'
-                        : '<i class="fas fa-sort-down text-primary ms-1"></i>';
+                        ? '<i class="fas fa-sort-up sort-icon sort-asc"></i>'
+                        : '<i class="fas fa-sort-down sort-icon sort-desc"></i>';
                 } else {
                     // Show default sort icon
-                    sortIcon = '<i class="fas fa-sort text-muted ms-1"></i>';
+                    sortIcon = '<i class="fas fa-sort sort-icon"></i>';
                 }
             }
             
             headersHTML += `
-                <th style="width: ${column.width}; min-width: ${column.width}; cursor: ${column.sortable ? 'pointer' : 'default'};" 
-                    ${column.sortable ? `class="sortable-header" onclick="defaultDealsManager.sortBy('${columnKey}')"` : ""}>
+                <th style="width: ${column.width}; min-width: ${column.width};" 
+                    class="${headerClass}" 
+                    ${column.sortable ? `onclick="defaultDealsManager.sortBy('${columnKey}')" title="Click to sort by ${column.label}"` : ""}>
                     ${column.label}${sortIcon}
                 </th>
             `;
@@ -302,23 +308,23 @@ DefaultDealsManager.prototype.formatCellValue = function (deal, columnKey) {
             return deal.pos === 0 || deal.pos === "0" ? "0" : "1";
 
         case "actions":
-            // Check if deal is closed
+            // Check if deal is closed (pos = 0 means closed, pos = 1 means active)
             const isClosed = deal.pos === 0 || deal.pos === "0";
 
             if (isClosed) {
                 // Show disabled buttons for closed deals
                 return `
                     <div class="btn-group btn-group-sm" style="white-space: nowrap;">
-                        <button class="btn btn-outline-warning btn-sm" disabled title="Deal is closed" style="font-size: 0.7rem; padding: 2px 6px;">
+                        <button class="btn btn-outline-secondary btn-sm" disabled title="Deal is closed" style="font-size: 0.7rem; padding: 2px 6px; opacity: 0.5;">
                             <i class="fas fa-edit"></i> Edit
                         </button>
-                        <button class="btn btn-outline-danger btn-sm" disabled title="Deal is closed" style="font-size: 0.7rem; padding: 2px 6px;">
+                        <button class="btn btn-outline-secondary btn-sm" disabled title="Deal is closed" style="font-size: 0.7rem; padding: 2px 6px; opacity: 0.5;">
                             <i class="fas fa-times"></i> Close
                         </button>
                     </div>
                 `;
             } else {
-                // Show enabled buttons for active deals
+                // Show enabled buttons for active deals (pos = 1)
                 return `
                     <div class="btn-group btn-group-sm" style="white-space: nowrap;">
                         <button class="btn btn-warning btn-sm" onclick="editDefaultDeal('${deal.id || deal.trade_signal_id || ""}', '${deal.symbol || ""}', ${deal.ep || 0}, ${deal.tp || 0})" title="Edit Deal" style="font-size: 0.7rem; padding: 2px 6px;">

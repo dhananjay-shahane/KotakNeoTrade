@@ -8,6 +8,7 @@ function DealsManager() {
     this.refreshIntervalTime = 300000; // 5 minutes
     this.searchTimeout = null;
     this.sortDirection = "asc";
+    this.currentSortColumn = null;
     this.isLoading = false;
 
     this.availableColumns = {
@@ -192,13 +193,32 @@ DealsManager.prototype.updateTableHeaders = function () {
         th.style.whiteSpace = "nowrap";
 
         if (colInfo.sortable) {
-            th.style.cursor = "pointer";
+            th.className += " sortable-header";
+            
+            // Check if this column is currently being sorted
+            var isActiveSort = (self.currentSortColumn === column);
+            if (isActiveSort) {
+                th.className += " active";
+            }
+            
             th.onclick = (function (col) {
                 return function () {
+                    self.currentSortColumn = col;
                     sortDealsByColumn(col);
+                    self.updateTableHeaders(); // Refresh headers to show active state
                 };
             })(column);
-            th.innerHTML = colInfo.label + ' <i class="fas fa-sort ms-1"></i>';
+            
+            var sortIcon = '';
+            if (isActiveSort) {
+                sortIcon = self.sortDirection === "asc" 
+                    ? '<i class="fas fa-sort-up sort-icon sort-asc"></i>'
+                    : '<i class="fas fa-sort-down sort-icon sort-desc"></i>';
+            } else {
+                sortIcon = '<i class="fas fa-sort sort-icon"></i>';
+            }
+            
+            th.innerHTML = colInfo.label + ' ' + sortIcon;
             th.title = self.getColumnTooltip(column) + " - Click to sort";
         } else {
             th.textContent = colInfo.label;
