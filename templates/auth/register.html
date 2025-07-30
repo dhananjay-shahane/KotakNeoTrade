@@ -1,157 +1,189 @@
 {% extends "auth/base_auth.html" %} {% block title %}Register - Trading
 Platform{% endblock %} {% block content %}
 <div class="auth-card">
-        <div class="auth-header">
-            <h4><i class="fas fa-user-plus me-2"></i>Create Account</h4>
-            <div class="subtitle">Join our trading platform today</div>
-        </div>
-
-        <div class="auth-body"></div>
-        <!-- Flash messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %} {% if
-        messages %} {% for category, message in messages %}
-        <div
-            class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }} alert-dismissible fade show"
-            role="alert"
-        >
-            {{ message }}
-            <button
-                type="button"
-                class="btn-close"
-                data-bs-dismiss="alert"
-            ></button>
-        </div>
-        {% endfor %} {% endif %} {% endwith %}
-
-        <form
-            method="POST"
-            action="{{ url_for('register') }}"
-            id="registerForm"
-        >
-            <div class="form-group">
-                <label for="email" class="form-label">
-                    <i class="fas fa-envelope"></i>Email Address
-                </label>
-                <input
-                    type="email"
-                    class="form-control"
-                    id="email"
-                    name="email"
-                    placeholder="Enter your email address"
-                    required
-                    autocomplete="email"
-                />
-                <div class="form-text">Your email will be used for login</div>
-            </div>
-
-            <div class="form-group">
-                <label for="mobile" class="form-label">
-                    <i class="fas fa-mobile-alt"></i>Mobile Number
-                </label>
-                <input
-                    type="tel"
-                    class="form-control"
-                    id="mobile"
-                    name="mobile"
-                    placeholder="Enter 10-digit mobile number"
-                    required
-                    pattern="[0-9]{10}"
-                    maxlength="10"
-                    autocomplete="tel"
-                />
-                <div class="form-text">10-digit mobile number</div>
-            </div>
-
-            <div class="form-group">
-                <label for="password" class="form-label">
-                    <i class="fas fa-lock"></i>Password
-                </label>
-                <div class="password-input-container">
-                    <input
-                        type="password"
-                        class="form-control"
-                        id="password"
-                        name="password"
-                        placeholder="Enter your password"
-                        required
-                        minlength="6"
-                        autocomplete="new-password"
-                    />
-                    <button
-                        type="button"
-                        class="password-toggle-btn"
-                        onclick="togglePassword('password')"
-                    >
-                        <i class="fas fa-eye" id="password-eye"></i>
-                    </button>
-                </div>
-                <div class="form-text">Minimum 6 characters</div>
-            </div>
-
-            <div class="form-group">
-                <label for="confirm_password" class="form-label">
-                    <i class="fas fa-lock"></i>Confirm Password
-                </label>
-                <div class="password-input-container">
-                    <input
-                        type="password"
-                        class="form-control"
-                        id="confirm_password"
-                        name="confirm_password"
-                        placeholder="Confirm your password"
-                        required
-                        autocomplete="new-password"
-                    />
-                    <button
-                        type="button"
-                        class="password-toggle-btn"
-                        onclick="togglePassword('confirm_password')"
-                    >
-                        <i class="fas fa-eye" id="confirm_password-eye"></i>
-                    </button>
-                </div>
-                <div id="passwordMatch" class="form-text"></div>
-            </div>
-
-            <div class="form-check mb-3">
-                <input
-                    class="form-check-input"
-                    type="checkbox"
-                    id="terms"
-                    required
-                />
-                <label
-                    class="form-check-label"
-                    for="terms"
-                    style="font-size: 0.75rem; color: var(--gray-600)"
-                >
-                    By continuing, I accept the
-                    <a href="#" style="color: var(--primary-blue)"
-                        >Terms and Conditions</a
-                    >
-                    and
-                    <a href="#" style="color: var(--primary-blue)"
-                        >Privacy Policy</a
-                    >
-                </label>
-            </div>
-
-            <button type="submit" class="btn-auth" id="submitBtn">
-                <i class="fas fa-user-plus me-2"></i>CREATE ACCOUNT
-            </button>
-        </form>
-
-        <div class="auth-divider">
-            <span>Already have an account?</span>
-        </div>
-
-        <div class="auth-links">
-            <a href="{{ url_for('auth_routes.trading_account_login') }}" class="btn-outline-auth">
-                <i class="fas fa-sign-in-alt"></i>Login
-            </a>
-        </div>
+    <div class="auth-header">
+        <h4><i class="fas fa-user-plus me-2"></i>Create Account</h4>
+        <div class="subtitle">Join our trading platform today</div>
     </div>
+
+    <div class="auth-body"></div>
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %} {% for category, message in messages %}
+    <div
+        class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }} alert-dismissible fade show"
+        role="alert"
+    >
+        {{ message }}
+        <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="alert"
+        ></button>
+    </div>
+    {% endfor %} {% endif %} {% endwith %}
+
+    <form method="POST" action="{{ url_for('register') }}" id="registerForm">
+        <div class="form-group">
+            <label for="email" class="form-label">
+                <i class="fas fa-envelope"></i>Email Address
+            </label>
+            <input
+                type="email"
+                class="form-control"
+                id="email"
+                name="email"
+                placeholder="Enter your email address"
+                required
+                autocomplete="email"
+            />
+            <div class="form-text">Your email will be used for login</div>
+        </div>
+
+        <div class="form-group">
+            <label for="mobile" class="form-label">
+                <i class="fas fa-mobile-alt"></i>Mobile Number
+            </label>
+            <input
+                type="tel"
+                class="form-control"
+                id="mobile"
+                name="mobile"
+                placeholder="Enter 10-digit mobile number"
+                required
+                pattern="[0-9]{10}"
+                maxlength="10"
+                autocomplete="tel"
+            />
+            <div class="form-text">10-digit mobile number</div>
+        </div>
+
+        <div class="form-group">
+            <label for="password" class="form-label">
+                <i class="fas fa-lock"></i>Password
+            </label>
+            <div class="password-input-container">
+                <input
+                    type="password"
+                    class="form-control"
+                    id="password"
+                    name="password"
+                    placeholder="Enter your password"
+                    required
+                    minlength="6"
+                    autocomplete="new-password"
+                />
+                <button
+                    type="button"
+                    class="password-toggle-btn"
+                    onclick="togglePassword('password')"
+                >
+                    <i class="fas fa-eye" id="password-eye"></i>
+                </button>
+            </div>
+            <div class="form-text">Minimum 6 characters</div>
+        </div>
+
+        <div class="form-group">
+            <label for="confirm_password" class="form-label">
+                <i class="fas fa-lock"></i>Confirm Password
+            </label>
+            <div class="password-input-container">
+                <input
+                    type="password"
+                    class="form-control"
+                    id="confirm_password"
+                    name="confirm_password"
+                    placeholder="Confirm your password"
+                    required
+                    autocomplete="new-password"
+                />
+                <button
+                    type="button"
+                    class="password-toggle-btn"
+                    onclick="togglePassword('confirm_password')"
+                >
+                    <i class="fas fa-eye" id="confirm_password-eye"></i>
+                </button>
+            </div>
+            <div id="passwordMatch" class="form-text"></div>
+        </div>
+
+        <div class="form-check mb-3">
+            <input
+                class="form-check-input"
+                type="checkbox"
+                id="terms"
+                required
+            />
+            <label
+                class="form-check-label"
+                for="terms"
+                style="font-size: 0.75rem; color: var(--gray-600)"
+            >
+                By continuing, I accept the
+                <a href="#" style="color: var(--primary-blue)"
+                    >Terms and Conditions</a
+                >
+                and
+                <a href="#" style="color: var(--primary-blue)"
+                    >Privacy Policy</a
+                >
+            </label>
+        </div>
+
+        <button type="submit" class="btn-auth" id="submitBtn">
+            <i class="fas fa-user-plus me-2"></i>CREATE ACCOUNT
+        </button>
+    </form>
+
+    <div class="auth-divider">
+        <span>Already have an account?</span>
+    </div>
+
+    <div class="auth-links">
+        <a
+            href="{{ url_for('auth_routes.trading_account_login') }}"
+            class="btn-outline-auth"
+        >
+            <i class="fas fa-sign-in-alt"></i>Login
+        </a>
+    </div>
+</div>
+{% endblock %} {% block extra_css %}
+<style>
+    /* SweetAlert2 Dark Theme Customization */
+    .swal-dark-theme {
+        border-radius: 10px !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    .swal-dark-theme .swal2-title {
+        color: #fff !important;
+        font-weight: 600 !important;
+    }
+
+    .swal-dark-theme .swal2-html-container {
+        color: #e2e8f0 !important;
+    }
+
+    .swal-dark-theme .swal2-confirm {
+        background: linear-gradient(45deg, #28a745, #20c997) !important;
+        border: none !important;
+        border-radius: 8px !important;
+        padding: 10px 20px !important;
+        font-weight: 500 !important;
+        transition: all 0.3s ease !important;
+    }
+
+    .swal-dark-theme .swal2-confirm:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4) !important;
+    }
+</style>
 {% endblock %} {% block extra_js %}
+<!-- SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const form = document.getElementById("registerForm");
@@ -326,19 +358,55 @@ Platform{% endblock %} {% block content %}
             submitBtn.innerHTML =
                 '<i class="fas fa-spinner fa-spin me-2"></i>Creating Account...';
             submitBtn.disabled = true;
-            
+
             // Add hidden field to ensure redirect to login
-            const redirectInput = document.createElement('input');
-            redirectInput.type = 'hidden';
-            redirectInput.name = 'redirect_to_login';
-            redirectInput.value = 'true';
+            const redirectInput = document.createElement("input");
+            redirectInput.type = "hidden";
+            redirectInput.name = "redirect_to_login";
+            redirectInput.value = "true";
             form.appendChild(redirectInput);
         });
 
-        // Auto-dismiss success alerts
+        // Check for success message and show SweetAlert
+        const successAlerts = document.querySelectorAll(".alert-success");
+        if (successAlerts.length > 0) {
+            // Hide the regular alert
+            successAlerts.forEach((alert) => (alert.style.display = "none"));
+
+            // Show SweetAlert popup
+            if (typeof Swal !== "undefined") {
+                Swal.fire({
+                    title: "Registration Successful!",
+                    text: "Please check your email for login credentials.",
+                    icon: "success",
+                    confirmButtonColor: "#28a745",
+                    confirmButtonText: "OK",
+                    background: "#2c3e50",
+                    color: "#fff",
+                    customClass: {
+                        popup: "swal-dark-theme",
+                    },
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Redirect to login page
+                        window.location.href =
+                            "{{ url_for('auth_routes.trading_account_login') }}";
+                    }
+                });
+            } else {
+                // Fallback if SweetAlert is not available
+                alert(
+                    "Registration successful! Please check your email for login credentials.",
+                );
+                window.location.href =
+                    "{{ url_for('auth_routes.trading_account_login') }}";
+            }
+        }
+
+        // Auto-dismiss other alerts
         setTimeout(function () {
             const alerts = document.querySelectorAll(
-                ".alert-success, .alert-info",
+                ".alert-info, .alert-danger",
             );
             alerts.forEach((alert) => {
                 alert.classList.remove("show");
@@ -350,16 +418,16 @@ Platform{% endblock %} {% block content %}
     // Password visibility toggle function
     function togglePassword(fieldId) {
         const passwordField = document.getElementById(fieldId);
-        const eyeIcon = document.getElementById(fieldId + '-eye');
+        const eyeIcon = document.getElementById(fieldId + "-eye");
 
-        if (passwordField.type === 'password') {
-            passwordField.type = 'text';
-            eyeIcon.classList.remove('fa-eye');
-            eyeIcon.classList.add('fa-eye-slash');
+        if (passwordField.type === "password") {
+            passwordField.type = "text";
+            eyeIcon.classList.remove("fa-eye");
+            eyeIcon.classList.add("fa-eye-slash");
         } else {
-            passwordField.type = 'password';
-            eyeIcon.classList.remove('fa-eye-slash');
-            eyeIcon.classList.add('fa-eye');
+            passwordField.type = "password";
+            eyeIcon.classList.remove("fa-eye-slash");
+            eyeIcon.classList.add("fa-eye");
         }
     }
 </script>
