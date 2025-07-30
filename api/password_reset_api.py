@@ -4,7 +4,7 @@ import psycopg2
 import logging
 import os
 
-password_reset_bp = Blueprint('password_reset', __name__)
+password_reset_bp = Blueprint('password_reset', __name__, url_prefix='/api')
 
 def get_external_db_connection():
     """Get connection to external PostgreSQL database"""
@@ -21,7 +21,7 @@ def get_external_db_connection():
         logging.error(f"Failed to connect to external database: {e}")
         return None
 
-@password_reset_bp.route('/api/reset-password', methods=['POST'])
+@password_reset_bp.route('/reset-password', methods=['POST'])
 def reset_password():
     """Reset user password in external database with enhanced validation"""
     try:

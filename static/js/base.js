@@ -930,20 +930,40 @@ function showForgetPasswordModal() {
     modal.show();
 }
 
-// Toggle password visibility
-function togglePasswordVisibility(inputId) {
-    var input = document.getElementById(inputId);
-    if (!input) {
-        console.error('Password input not found:', inputId);
+// Toggle password visibility - handles both input ID and button element
+function togglePasswordVisibility(inputIdOrButton) {
+    var input, toggleButton, icon;
+    
+    // Check if it's a string (inputId) or button element
+    if (typeof inputIdOrButton === 'string') {
+        // Handle input ID
+        input = document.getElementById(inputIdOrButton);
+        if (!input) {
+            console.error('Password input not found:', inputIdOrButton);
+            return;
+        }
+        
+        var wrapper = input.parentElement;
+        toggleButton = wrapper.querySelector('.password-toggle');
+        icon = toggleButton ? toggleButton.querySelector('i') : null;
+    } else if (inputIdOrButton && inputIdOrButton.nodeType) {
+        // Handle button element
+        toggleButton = inputIdOrButton;
+        icon = toggleButton.querySelector('i');
+        input = toggleButton.previousElementSibling;
+        
+        if (!input || input.tagName !== 'INPUT') {
+            // Try to find input in parent wrapper
+            var wrapper = toggleButton.parentElement;
+            input = wrapper.querySelector('input[type="password"], input[type="text"]');
+        }
+    } else {
+        console.error('Invalid parameter for togglePasswordVisibility:', inputIdOrButton);
         return;
     }
     
-    var wrapper = input.parentElement;
-    var toggleButton = wrapper.querySelector('.password-toggle');
-    var icon = toggleButton ? toggleButton.querySelector('i') : null;
-    
-    if (!toggleButton || !icon) {
-        console.error('Password toggle button or icon not found for:', inputId);
+    if (!input || !toggleButton || !icon) {
+        console.error('Required elements not found for password toggle');
         return;
     }
     
@@ -996,6 +1016,19 @@ function submitPasswordReset() {
             icon: 'error',
             title: 'Invalid Password',
             text: 'Password must be at least 6 characters long.',
+            background: 'var(--card-bg)',
+            color: 'var(--text-primary)'
+        });
+        return;
+    }
+    
+    // Check for common weak passwords
+    var weakPasswords = ['123456', 'password', '123456789', 'qwerty', 'abc123'];
+    if (weakPasswords.includes(newPassword.toLowerCase())) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Weak Password',
+            text: 'Please choose a stronger password.',
             background: 'var(--card-bg)',
             color: 'var(--text-primary)'
         });
@@ -1081,20 +1114,26 @@ function submitPasswordReset() {
 }
 
 // Password visibility toggle function (alternative implementation)
-function togglePassword(fieldId) {
-    const passwordField = document.getElementById(fieldId);
-    const eyeIcon = document.getElementById(fieldId + "-eye");
+function togglePassword(fieldIdOrButton) {
+    // Handle both fieldId string and button element
+    if (typeof fieldIdOrButton === 'string') {
+        const passwordField = document.getElementById(fieldIdOrButton);
+        const eyeIcon = document.getElementById(fieldIdOrButton + "-eye");
 
-    if (passwordField && eyeIcon) {
-        if (passwordField.type === "password") {
-            passwordField.type = "text";
-            eyeIcon.classList.remove("fa-eye");
-            eyeIcon.classList.add("fa-eye-slash");
-        } else {
-            passwordField.type = "password";
-            eyeIcon.classList.remove("fa-eye-slash");
-            eyeIcon.classList.add("fa-eye");
+        if (passwordField && eyeIcon) {
+            if (passwordField.type === "password") {
+                passwordField.type = "text";
+                eyeIcon.classList.remove("fa-eye");
+                eyeIcon.classList.add("fa-eye-slash");
+            } else {
+                passwordField.type = "password";
+                eyeIcon.classList.remove("fa-eye-slash");
+                eyeIcon.classList.add("fa-eye");
+            }
         }
+    } else if (fieldIdOrButton && fieldIdOrButton.nodeType) {
+        // Handle button element directly
+        togglePasswordVisibility(fieldIdOrButton);
     }
 }
 
