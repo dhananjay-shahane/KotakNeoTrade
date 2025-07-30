@@ -568,15 +568,18 @@
                                         name="newPassword"
                                         required
                                         placeholder="Enter new password"
+                                        minlength="6"
                                     />
                                     <button
                                         type="button"
                                         class="password-toggle"
                                         onclick="togglePasswordVisibility('newPassword')"
+                                        tabindex="-1"
                                     >
                                         <i class="fas fa-eye"></i>
                                     </button>
                                 </div>
+                                <div class="form-text">Minimum 6 characters, must be different from current password</div>
                             </div>
                             <div class="mb-3">
                                 <label for="confirmPassword" class="form-label">Confirm Password</label>
@@ -588,11 +591,13 @@
                                         name="confirmPassword"
                                         required
                                         placeholder="Confirm new password"
+                                        minlength="6"
                                     />
                                     <button
                                         type="button"
                                         class="password-toggle"
                                         onclick="togglePasswordVisibility('confirmPassword')"
+                                        tabindex="-1"
                                     >
                                         <i class="fas fa-eye"></i>
                                     </button>

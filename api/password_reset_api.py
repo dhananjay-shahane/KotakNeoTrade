@@ -23,7 +23,7 @@ def get_external_db_connection():
 
 @password_reset_bp.route('/api/reset-password', methods=['POST'])
 def reset_password():
-    """Reset user password in external database"""
+    """Reset user password in external database with enhanced validation"""
     try:
         # Check if user is authenticated
         if not session.get('authenticated'):
@@ -79,6 +79,32 @@ def reset_password():
         try:
             cursor = conn.cursor()
             
+            # First, get the current password to check if it's the same
+            cursor.execute('''
+                SELECT password FROM public.external_users 
+                WHERE username = %s
+            ''', (username,))
+            
+            current_user = cursor.fetchone()
+            if not current_user:
+                cursor.close()
+                conn.close()
+                return jsonify({
+                    'success': False,
+                    'message': 'User not found'
+                }), 404
+            
+            current_password = current_user[0]
+            
+            # Check if new password is same as current password
+            if new_password == current_password:
+                cursor.close()
+                conn.close()
+                return jsonify({
+                    'success': False,
+                    'message': 'New password cannot be the same as your current password'
+                }), 400
+            
             # Update password in external_users table
             cursor.execute('''
                 UPDATE public.external_users 
@@ -88,10 +114,12 @@ def reset_password():
             
             # Check if update was successful
             if cursor.rowcount == 0:
+                cursor.close()
+                conn.close()
                 return jsonify({
                     'success': False,
-                    'message': 'User not found or password not updated'
-                }), 404
+                    'message': 'Password not updated'
+                }), 400
             
             conn.commit()
             cursor.close()
@@ -105,9 +133,10 @@ def reset_password():
             })
             
         except Exception as e:
-            conn.rollback()
-            cursor.close()
-            conn.close()
+            if conn:
+                conn.rollback()
+                cursor.close()
+                conn.close()
             logging.error(f"Database error during password update: {e}")
             return jsonify({
                 'success': False,

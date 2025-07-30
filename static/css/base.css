@@ -2146,35 +2146,49 @@ body,
     position: relative;
     display: flex;
     align-items: center;
+    width: 100%;
 }
 
 .password-input-wrapper .form-control {
-    padding-right: 2.5rem;
+    padding-right: 3rem;
+    width: 100%;
 }
 
 .password-toggle {
     position: absolute;
-    right: 0.5rem;
+    right: 0.75rem;
     top: 50%;
     transform: translateY(-50%);
     background: none;
     border: none;
     color: var(--text-secondary);
     cursor: pointer;
-    padding: 0.25rem;
-    width: 1.5rem;
-    height: 1.5rem;
+    padding: 0.375rem;
+    width: 2rem;
+    height: 2rem;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 4px;
     transition: all 0.2s ease;
-    font-size: 0.75rem;
+    font-size: 0.875rem;
+    z-index: 10;
 }
 
 .password-toggle:hover {
     color: var(--text-primary);
     background: rgba(255, 255, 255, 0.1);
+}
+
+.password-toggle:focus {
+    outline: none;
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.password-toggle i {
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
 }
 
 .btn-primary {

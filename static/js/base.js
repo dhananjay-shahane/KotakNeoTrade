@@ -933,7 +933,18 @@ function showForgetPasswordModal() {
 // Toggle password visibility
 function togglePasswordVisibility(inputId) {
     var input = document.getElementById(inputId);
-    var icon = input.nextElementSibling.querySelector('i');
+    if (!input) {
+        console.error('Password input not found:', inputId);
+        return;
+    }
+    
+    var toggleButton = input.parentElement.querySelector('.password-toggle');
+    var icon = toggleButton ? toggleButton.querySelector('i') : null;
+    
+    if (!icon) {
+        console.error('Password toggle icon not found for:', inputId);
+        return;
+    }
     
     if (input.type === 'password') {
         input.type = 'text';
@@ -946,18 +957,21 @@ function togglePasswordVisibility(inputId) {
     }
 }
 
-// Submit password reset
+// Submit password reset with enhanced validation
 function submitPasswordReset() {
     var newPassword = document.getElementById('newPassword').value;
     var confirmPassword = document.getElementById('confirmPassword').value;
     var submitBtn = document.getElementById('resetPasswordBtn');
+    var currentUsername = document.querySelector('#forgetPasswordModal .bg-secondary').textContent.trim();
     
     // Validation
     if (!newPassword || !confirmPassword) {
         Swal.fire({
             icon: 'error',
             title: 'Validation Error',
-            text: 'Please fill in both password fields.'
+            text: 'Please fill in both password fields.',
+            background: 'var(--card-bg)',
+            color: 'var(--text-primary)'
         });
         return;
     }
@@ -966,7 +980,9 @@ function submitPasswordReset() {
         Swal.fire({
             icon: 'error',
             title: 'Password Mismatch',
-            text: 'New password and confirm password do not match.'
+            text: 'New password and confirm password do not match.',
+            background: 'var(--card-bg)',
+            color: 'var(--text-primary)'
         });
         return;
     }
@@ -975,7 +991,9 @@ function submitPasswordReset() {
         Swal.fire({
             icon: 'error',
             title: 'Invalid Password',
-            text: 'Password must be at least 6 characters long.'
+            text: 'Password must be at least 6 characters long.',
+            background: 'var(--card-bg)',
+            color: 'var(--text-primary)'
         });
         return;
     }
@@ -992,10 +1010,16 @@ function submitPasswordReset() {
         },
         body: JSON.stringify({
             newPassword: newPassword,
-            confirmPassword: confirmPassword
+            confirmPassword: confirmPassword,
+            username: currentUsername
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             Swal.fire({
@@ -1003,17 +1027,24 @@ function submitPasswordReset() {
                 title: 'Password Updated',
                 text: 'Your password has been successfully updated.',
                 timer: 2000,
-                showConfirmButton: false
+                showConfirmButton: false,
+                background: 'var(--card-bg)',
+                color: 'var(--text-primary)'
             });
             
             // Close modal and reset form
-            bootstrap.Modal.getInstance(document.getElementById('forgetPasswordModal')).hide();
+            const modal = bootstrap.Modal.getInstance(document.getElementById('forgetPasswordModal'));
+            if (modal) {
+                modal.hide();
+            }
             document.getElementById('forgetPasswordForm').reset();
         } else {
             Swal.fire({
                 icon: 'error',
                 title: 'Update Failed',
-                text: data.message || 'Failed to update password. Please try again.'
+                text: data.message || 'Failed to update password. Please try again.',
+                background: 'var(--card-bg)',
+                color: 'var(--text-primary)'
             });
         }
     })
@@ -1022,7 +1053,9 @@ function submitPasswordReset() {
         Swal.fire({
             icon: 'error',
             title: 'Network Error',
-            text: 'Failed to connect to server. Please try again.'
+            text: 'Failed to connect to server. Please try again.',
+            background: 'var(--card-bg)',
+            color: 'var(--text-primary)'
         });
     })
     .finally(() => {
