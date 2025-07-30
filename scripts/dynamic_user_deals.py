@@ -89,9 +89,12 @@ class DynamicUserDealsService:
             
         except Exception as e:
             logger.error(f"❌ Failed to create user deals table for {username}: {e}")
-            if 'conn' in locals() and conn:
-                conn.rollback()
-                conn.close()
+            try:
+                if 'conn' in locals() and conn is not None:
+                    conn.rollback()
+                    conn.close()
+            except:
+                pass
             return False
     
     def add_deal_to_user_table(self, username, deal_data):

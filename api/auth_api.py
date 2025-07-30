@@ -14,7 +14,10 @@ import secrets
 
 # Add scripts to path for dynamic deals service
 sys.path.append('scripts')
-from dynamic_user_deals import dynamic_deals_service
+from scripts.dynamic_user_deals import DynamicUserDealsService
+
+# Initialize dynamic deals service
+dynamic_deals_service = DynamicUserDealsService()
 
 
 def get_external_db_connection():

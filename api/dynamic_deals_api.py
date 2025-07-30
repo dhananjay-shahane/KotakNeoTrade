@@ -9,7 +9,10 @@ from flask_login import current_user, login_required
 
 # Add scripts to path
 sys.path.append('scripts')
-from dynamic_user_deals import dynamic_deals_service
+from scripts.dynamic_user_deals import DynamicUserDealsService
+
+# Initialize dynamic deals service
+dynamic_deals_service = DynamicUserDealsService()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
