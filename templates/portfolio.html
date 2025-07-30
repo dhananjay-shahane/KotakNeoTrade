@@ -570,6 +570,10 @@ endblock %} {% block head %}
             console.log("User deals API response:", result);
 
             if (result.success && result.data && result.data.length > 0) {
+                // Hide skeleton loader and show content
+                document.getElementById("portfolioSkeleton").style.display = "none";
+                document.getElementById("portfolioContent").style.display = "block";
+                
                 // Process user deals data
                 processUserDealsData(result.data);
                 updatePortfolioDisplay();
@@ -583,7 +587,10 @@ endblock %} {% block head %}
                     loadSymbolData(); // Load data for the first symbol
                 }
             } else {
-                console.log("No deals data available");
+                console.log("No deals data available or empty response");
+                // Hide skeleton loader
+                document.getElementById("portfolioSkeleton").style.display = "none";
+                document.getElementById("portfolioContent").style.display = "block";
                 showNoDealsMessage();
             }
         } catch (error) {
@@ -594,6 +601,8 @@ endblock %} {% block head %}
 
     // Process user deals data into portfolio format
     function processUserDealsData(deals) {
+        console.log("Processing deals data:", deals);
+        
         let totalInvestment = 0;
         let totalCurrentValue = 0;
         let totalPnL = 0;
@@ -602,42 +611,56 @@ endblock %} {% block head %}
         let symbols = [];
         let symbolData = {};
 
-        deals.forEach(deal => {
-            const symbol = deal.symbol;
-            const investment = parseFloat(deal.inv) || 0;
-            const currentValue = parseFloat(deal.cmp) * parseFloat(deal.qty) || 0;
-            const pnl = parseFloat(deal.pl) || 0;
-            const isActive = deal.status === 'ACTIVE';
+        if (!deals || !Array.isArray(deals)) {
+            console.warn("Invalid deals data received:", deals);
+            deals = [];
+        }
 
-            totalInvestment += investment;
-            totalCurrentValue += currentValue;
-            totalPnL += pnl;
+        deals.forEach((deal, index) => {
+            try {
+                const symbol = deal.symbol || 'Unknown';
+                const investment = parseFloat(deal.inv) || 0;
+                const qty = parseFloat(deal.qty) || 0;
+                const cmp = parseFloat(deal.cmp) || 0;
+                const currentValue = cmp * qty;
+                const pnl = parseFloat(deal.pl) || 0;
+                const isActive = deal.status === 'ACTIVE';
 
-            if (isActive) {
-                activeDeals++;
-            } else {
-                closedDeals++;
+                // Only process deals with valid data
+                if (symbol !== 'Unknown' && (investment > 0 || qty > 0)) {
+                    totalInvestment += investment;
+                    totalCurrentValue += currentValue;
+                    totalPnL += pnl;
+
+                    if (isActive) {
+                        activeDeals++;
+                    } else {
+                        closedDeals++;
+                    }
+
+                    // Track symbols
+                    if (!symbols.includes(symbol)) {
+                        symbols.push(symbol);
+                        symbolData[symbol] = {
+                            investment: 0,
+                            currentValue: 0,
+                            pnl: 0,
+                            deals: []
+                        };
+                    }
+
+                    symbolData[symbol].investment += investment;
+                    symbolData[symbol].currentValue += currentValue;
+                    symbolData[symbol].pnl += pnl;
+                    symbolData[symbol].deals.push(deal);
+                }
+            } catch (error) {
+                console.error(`Error processing deal at index ${index}:`, error, deal);
             }
-
-            // Track symbols
-            if (!symbols.includes(symbol)) {
-                symbols.push(symbol);
-                symbolData[symbol] = {
-                    investment: 0,
-                    currentValue: 0,
-                    pnl: 0,
-                    deals: []
-                };
-            }
-
-            symbolData[symbol].investment += investment;
-            symbolData[symbol].currentValue += currentValue;
-            symbolData[symbol].pnl += pnl;
-            symbolData[symbol].deals.push(deal);
         });
 
         portfolioData = {
-            total_deals: deals.length,
+            total_deals: activeDeals + closedDeals, // Only count valid deals
             active_deals: activeDeals,
             closed_deals: closedDeals,
             total_investment: totalInvestment,
@@ -647,6 +670,8 @@ endblock %} {% block head %}
             symbol_data: symbolData,
             deals_list: deals
         };
+        
+        console.log("Processed portfolio data:", portfolioData);
     }
 
     // Show no deals message
@@ -726,44 +751,83 @@ endblock %} {% block head %}
     // Update charts with loaded data
     function updateCharts() {
         // Update pie chart with Active vs Closed deals data
-        if (progressChart && portfolioData.total_deals > 0) {
+        if (progressChart) {
             const activeDeals = portfolioData.active_deals || 0;
             const closedDeals = portfolioData.closed_deals || 0;
+            const totalDeals = activeDeals + closedDeals;
             
-            // Prepare chart data for Active vs Closed deals
-            const labels = ["Active Deals", "Closed Deals"];
-            const data = [activeDeals, closedDeals];
-            const colors = [
-                "#10B981", // Green for Active deals
-                "#6B7280"  // Gray for Closed deals
-            ];
+            if (totalDeals > 0) {
+                // Prepare chart data for Active vs Closed deals
+                const labels = ["Active Deals", "Closed Deals"];
+                const data = [activeDeals, closedDeals];
+                const colors = [
+                    "#10B981", // Green for Active deals
+                    "#6B7280"  // Gray for Closed deals
+                ];
 
-            progressChart.data.labels = labels;
-            progressChart.data.datasets[0].data = data;
-            progressChart.data.datasets[0].backgroundColor = colors;
-            progressChart.data.datasets[0].borderColor = "#ffffff";
-            progressChart.data.datasets[0].borderWidth = 2;
-            progressChart.update("active");
-            
-            console.log("Pie chart updated with Active vs Closed deals:", {
-                labels,
-                data,
-                colors
-            });
+                progressChart.data.labels = labels;
+                progressChart.data.datasets[0].data = data;
+                progressChart.data.datasets[0].backgroundColor = colors;
+                progressChart.data.datasets[0].borderColor = "#ffffff";
+                progressChart.data.datasets[0].borderWidth = 2;
+                progressChart.update("active");
+                
+                console.log("Pie chart updated with Active vs Closed deals:", {
+                    labels,
+                    data,
+                    colors,
+                    totalDeals
+                });
+            } else {
+                // Show "No Data" when there are no deals
+                progressChart.data.labels = ["No Deals Available"];
+                progressChart.data.datasets[0].data = [1];
+                progressChart.data.datasets[0].backgroundColor = ["#95a5a6"];
+                progressChart.data.datasets[0].borderColor = "#ffffff";
+                progressChart.data.datasets[0].borderWidth = 2;
+                progressChart.update("active");
+                
+                console.log("Pie chart updated with no data message");
+            }
         }
 
-        // Update symbol chart if available
-        if (
-            barChart &&
-            portfolioData.symbol_chart_data &&
-            portfolioData.symbol_chart_data.labels.length > 0
-        ) {
-            barChart.data.labels = portfolioData.symbol_chart_data.labels;
-            barChart.data.datasets[0].data =
-                portfolioData.symbol_chart_data.data;
-            barChart.data.datasets[0].backgroundColor = portfolioData
-                .symbol_chart_data.colors || ["#3B82F6"];
-            barChart.update("active");
+        // Update symbol chart with symbol distribution
+        if (barChart && portfolioData.symbols && portfolioData.symbols.length > 0) {
+            // Create symbol distribution data
+            const symbolCounts = {};
+            if (portfolioData.deals_list && portfolioData.deals_list.length > 0) {
+                portfolioData.deals_list.forEach(deal => {
+                    const symbol = deal.symbol;
+                    if (symbol) {
+                        symbolCounts[symbol] = (symbolCounts[symbol] || 0) + 1;
+                    }
+                });
+            }
+            
+            const symbolLabels = Object.keys(symbolCounts);
+            const symbolData = Object.values(symbolCounts);
+            const symbolColors = symbolLabels.map((_, index) => {
+                const colors = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4"];
+                return colors[index % colors.length];
+            });
+            
+            if (symbolLabels.length > 0) {
+                barChart.data.labels = symbolLabels;
+                barChart.data.datasets[0].data = symbolData;
+                barChart.data.datasets[0].backgroundColor = symbolColors;
+                barChart.update("active");
+                
+                console.log("Bar chart updated with symbol distribution:", {
+                    labels: symbolLabels,
+                    data: symbolData
+                });
+            } else {
+                // Show "No Data" when there are no symbols
+                barChart.data.labels = ["No Symbols"];
+                barChart.data.datasets[0].data = [1];
+                barChart.data.datasets[0].backgroundColor = ["#95a5a6"];
+                barChart.update("active");
+            }
         }
     }
 
