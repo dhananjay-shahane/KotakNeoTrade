@@ -1,7 +1,6 @@
 from flask import Blueprint, jsonify, request
 import logging
-from Scripts.external_db_service import SignalsFetcher, PriceFetcher, HistoricalFetcher
-from Scripts.db_connector import DatabaseConnector
+from Scripts.external_db_service import SignalsFetcher, PriceFetcher, HistoricalFetcher, DatabaseConnector
 import pandas as pd
 from datetime import datetime
 
@@ -33,9 +32,8 @@ def get_default_deals():
     try:
         logger.info("📊 Fetching default deals data from admin_trade_signals...")
         
-        # Get external database connection
-        external_db_url = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com:5432/kotak_trading_db"
-        db_connector = DatabaseConnector(external_db_url)
+        # Get external database connection using DatabaseConnector from external_db_service
+        db_connector = DatabaseConnector()
         
         if not db_connector.connect():
             logger.error("❌ Failed to connect to external database")
