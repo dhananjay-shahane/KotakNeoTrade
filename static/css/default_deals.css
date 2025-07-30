@@ -26,6 +26,38 @@
     font-size: 0.75rem;
 }
 
+.sortable-header {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s ease;
+}
+
+.sortable-header:hover {
+    background: var(--primary-color) !important;
+    color: white !important;
+}
+
+.btn-group-sm .btn {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    margin: 0 1px;
+}
+
+.btn-group-sm .btn i {
+    font-size: 0.6rem;
+}
+
+/* Ensure action buttons are always visible */
+.signals-table td .btn-group {
+    display: inline-flex;
+    gap: 2px;
+}
+
+.closed-deal {
+    opacity: 0.7;
+    background-color: rgba(108, 117, 125, 0.1);
+}
+
 .profit {
     color: var(--success-color);
 }

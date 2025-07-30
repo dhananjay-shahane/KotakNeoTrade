@@ -8,6 +8,7 @@ function DefaultDealsManager() {
     this.refreshIntervalTime = 300000; // 5 minutes
     this.searchTimeout = null;
     this.sortDirection = "asc";
+    this.currentSortColumn = null;
     this.isLoading = false;
 
     this.availableColumns = {
@@ -186,11 +187,21 @@ DefaultDealsManager.prototype.renderHeaders = function () {
     this.selectedColumns.forEach((columnKey) => {
         const column = this.availableColumns[columnKey];
         if (column) {
-            const sortIcon = column.sortable
-                ? '<i class="fas fa-sort sort-icon"></i>'
-                : "";
+            let sortIcon = "";
+            if (column.sortable) {
+                if (this.currentSortColumn === columnKey) {
+                    // Show active sort direction
+                    sortIcon = this.sortDirection === "asc" 
+                        ? '<i class="fas fa-sort-up text-primary ms-1"></i>'
+                        : '<i class="fas fa-sort-down text-primary ms-1"></i>';
+                } else {
+                    // Show default sort icon
+                    sortIcon = '<i class="fas fa-sort text-muted ms-1"></i>';
+                }
+            }
+            
             headersHTML += `
-                <th style="width: ${column.width}; min-width: ${column.width};" 
+                <th style="width: ${column.width}; min-width: ${column.width}; cursor: ${column.sortable ? 'pointer' : 'default'};" 
                     ${column.sortable ? `class="sortable-header" onclick="defaultDealsManager.sortBy('${columnKey}')"` : ""}>
                     ${column.label}${sortIcon}
                 </th>
@@ -297,11 +308,11 @@ DefaultDealsManager.prototype.formatCellValue = function (deal, columnKey) {
             if (isClosed) {
                 // Show disabled buttons for closed deals
                 return `
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-warning btn-sm" disabled title="Deal is closed">
+                    <div class="btn-group btn-group-sm" style="white-space: nowrap;">
+                        <button class="btn btn-outline-warning btn-sm" disabled title="Deal is closed" style="font-size: 0.7rem; padding: 2px 6px;">
                             <i class="fas fa-edit"></i> Edit
                         </button>
-                        <button class="btn btn-danger btn-sm" disabled title="Deal is closed">
+                        <button class="btn btn-outline-danger btn-sm" disabled title="Deal is closed" style="font-size: 0.7rem; padding: 2px 6px;">
                             <i class="fas fa-times"></i> Close
                         </button>
                     </div>
@@ -309,11 +320,11 @@ DefaultDealsManager.prototype.formatCellValue = function (deal, columnKey) {
             } else {
                 // Show enabled buttons for active deals
                 return `
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-warning btn-sm" onclick="editDefaultDeal('${deal.id || deal.trade_signal_id || ""}', '${deal.symbol || ""}', ${deal.ep || 0}, ${deal.tp || 0})">
+                    <div class="btn-group btn-group-sm" style="white-space: nowrap;">
+                        <button class="btn btn-warning btn-sm" onclick="editDefaultDeal('${deal.id || deal.trade_signal_id || ""}', '${deal.symbol || ""}', ${deal.ep || 0}, ${deal.tp || 0})" title="Edit Deal" style="font-size: 0.7rem; padding: 2px 6px;">
                             <i class="fas fa-edit"></i> Edit
                         </button>
-                        <button class="btn btn-danger btn-sm" onclick="closeDefaultDeal('${deal.id || deal.trade_signal_id || ""}', '${deal.symbol || ""}')">
+                        <button class="btn btn-danger btn-sm" onclick="closeDefaultDeal('${deal.id || deal.trade_signal_id || ""}', '${deal.symbol || ""}', event)" title="Close Deal" style="font-size: 0.7rem; padding: 2px 6px;">
                             <i class="fas fa-times"></i> Close
                         </button>
                     </div>
@@ -441,6 +452,14 @@ DefaultDealsManager.prototype.clearSearch = function () {
 DefaultDealsManager.prototype.sortBy = function (columnKey) {
     console.log(`🔄 Sorting by ${columnKey}`);
 
+    // If clicking the same column, toggle direction; otherwise, start with asc
+    if (this.currentSortColumn === columnKey) {
+        this.sortDirection = this.sortDirection === "asc" ? "desc" : "asc";
+    } else {
+        this.currentSortColumn = columnKey;
+        this.sortDirection = "asc";
+    }
+
     this.filteredDeals.sort((a, b) => {
         let valueA = a[columnKey];
         let valueB = b[columnKey];
@@ -462,8 +481,7 @@ DefaultDealsManager.prototype.sortBy = function (columnKey) {
         }
     });
 
-    this.sortDirection = this.sortDirection === "asc" ? "desc" : "asc";
-    this.renderRows();
+    this.renderTable(); // Re-render entire table to update headers
 };
 
 DefaultDealsManager.prototype.setupColumnSettings = function () {
@@ -742,7 +760,13 @@ function editDefaultDeal(dealId, symbol, entryPrice, targetPrice) {
 }
 
 // Close Deal Function for Default Deals
-function closeDefaultDeal(dealId, symbol) {
+function closeDefaultDeal(dealId, symbol, event) {
+    // Prevent event bubbling if event is passed
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
     // Input validation
     if (!dealId || dealId.trim() === "") {
         Swal.fire({
