@@ -267,24 +267,29 @@ def get_external_db_connection():
 
 def check_duplicate_deal(symbol, username):
     """
-    Check if a deal with the same symbol already exists for the user
+    Check if a deal with the same symbol already exists for the user in their dynamic table
     Returns True if duplicate exists, False otherwise
     """
     try:
-        conn = get_external_db_connection()
-        if not conn:
-            return False
-
-        with conn.cursor() as cursor:
-            query = """
-            SELECT COUNT(*) FROM public.user_deals 
-            WHERE symbol = %s AND user_id = %s AND status = 'ACTIVE'
-            """
-            cursor.execute(query, (symbol.upper(), username))
-            count = cursor.fetchone()[0]
-
-        conn.close()
-        return count > 0
+        # Import dynamic deals service
+        import sys
+        sys.path.append('scripts')
+        from scripts.dynamic_user_deals import DynamicUserDealsService
+        
+        dynamic_deals_service = DynamicUserDealsService()
+        
+        # Check if user table exists
+        if not dynamic_deals_service.table_exists(username):
+            return False  # No table means no duplicates
+        
+        # Get user deals and check for duplicates
+        existing_deals = dynamic_deals_service.get_user_deals(username)
+        for deal in existing_deals:
+            if (deal.get('symbol', '').upper() == symbol.upper() and 
+                deal.get('status') == 'ACTIVE'):
+                return True
+        
+        return False
 
     except Exception as e:
         logger.error(f"Error checking duplicate deal: {e}")
@@ -782,10 +787,16 @@ def close_deal():
 @deals_api.route('/deals/create-from-signal', methods=['POST'])
 @deals_api.route('/dynamic/add-deal', methods=['POST'])
 def create_deal_from_signal():
-    """Create a new deal from trading signal with duplicate detection"""
+    """Create a new deal from trading signal using dynamic user tables"""
     try:
+        # Import dynamic deals service
+        import sys
+        sys.path.append('scripts')
+        from scripts.dynamic_user_deals import DynamicUserDealsService
+        
+        dynamic_deals_service = DynamicUserDealsService()
+        
         data = request.get_json()
-
         if not data:
             return jsonify({
                 'success': False,
@@ -812,6 +823,14 @@ def create_deal_from_signal():
             except (ValueError, TypeError):
                 return default
 
+        # Get username from session
+        username = session.get('username')
+        if not username:
+            return jsonify({
+                'success': False,
+                'error': 'Username is required - please log in'
+            }), 400
+
         # Get required fields with safe conversion
         symbol = signal_data.get('symbol') or signal_data.get('etf', '')
         if not symbol or symbol == 'UNKNOWN':
@@ -832,49 +851,6 @@ def create_deal_from_signal():
 
         pos = safe_int(signal_data.get('pos'), 1)
 
-        # Set user_id - handle both string and integer user_ids safely
-        session_user_id = session.get('user_id', 1)
-
-        # Convert user_id to integer safely, fallback to 1 if invalid
-        try:
-            if isinstance(session_user_id, str):
-                if session_user_id.isdigit():
-                    user_id = int(session_user_id)
-                else:
-                    logger.info(
-                        f"Non-numeric user_id in session: {session_user_id}, using default user_id = 1"
-                    )
-                    user_id = 1
-            elif isinstance(session_user_id, int):
-                user_id = session_user_id
-            else:
-                user_id = 1
-        except (ValueError, TypeError):
-            logger.warning(
-                f"Invalid user_id in session: {session_user_id}, using default user_id = 1"
-            )
-            user_id = 1
-
-        # Get username from session
-        username = session.get('username')
-        if not username:
-            return jsonify({
-                'success': False,
-                'error': 'Username is required'
-            }), 400
-
-        # Check for force_add flag to bypass duplicate check
-        force_add = data.get('force_add', False)
-
-        # Check for duplicate unless force_add is True
-        if not force_add and check_duplicate_deal(symbol, username):
-            return jsonify({
-                'success': False,
-                'duplicate': True,
-                'message': f'This trade is already added, you want add?',
-                'symbol': symbol
-            }), 409  # Conflict status code
-
         # Validate required data
         if ep <= 0 or qty <= 0:
             return jsonify({
@@ -885,8 +861,28 @@ def create_deal_from_signal():
         if not symbol or len(symbol.strip()) == 0:
             return jsonify({'success': False, 'error': 'Invalid symbol'}), 400
 
-        if user_id <= 0:
-            return jsonify({'success': False, 'error': 'Invalid user ID'}), 400
+        # Check for force_add flag to bypass duplicate check
+        force_add = data.get('force_add', False)
+
+        # Check if user table exists, create if not
+        if not dynamic_deals_service.table_exists(username):
+            if not dynamic_deals_service.create_user_deals_table(username):
+                return jsonify({
+                    'success': False,
+                    'error': f'Failed to create deals table for user {username}'
+                }), 500
+
+        # Check for duplicate unless force_add is True
+        if not force_add:
+            existing_deals = dynamic_deals_service.get_user_deals(username)
+            for deal in existing_deals:
+                if deal.get('symbol', '').upper() == symbol.upper() and deal.get('status') == 'ACTIVE':
+                    return jsonify({
+                        'success': False,
+                        'duplicate': True,
+                        'message': f'This trade is already added, you want add?',
+                        'symbol': symbol
+                    }), 409  # Conflict status code
 
         # Calculate target price safely
         tp = safe_float(signal_data.get('tp'), ep * 1.05)
@@ -897,87 +893,51 @@ def create_deal_from_signal():
         invested_amount = ep * qty
         current_value = cmp * qty
         pnl_amount = current_value - invested_amount
-        pnl_percent = (pnl_amount / invested_amount *
-                       100) if invested_amount > 0 else 0
+        pnl_percent = (pnl_amount / invested_amount * 100) if invested_amount > 0 else 0
 
-        # Connect to external database
-        conn = get_external_db_connection()
-        if not conn:
+        # Prepare deal data for dynamic table
+        deal_data = {
+            'trade_signal_id': signal_data.get('id'),
+            'symbol': symbol.upper(),
+            'qty': qty,
+            'ep': float(ep),
+            'pos': str(pos),
+            'cmp': float(cmp),
+            'tp': float(tp),
+            'status': 'ACTIVE',
+            'invested_amount': float(invested_amount),
+            'current_value': float(current_value),
+            'pnl_amount': float(pnl_amount),
+            'pnl_percent': float(pnl_percent),
+            'deal_type': 'SIGNAL',
+            'notes': f'Added from ETF signal - {symbol}',
+            'tags': 'ETF,SIGNAL'
+        }
+
+        # Add deal to user-specific table
+        deal_id = dynamic_deals_service.add_deal_to_user_table(username, deal_data)
+
+        if deal_id:
+            logger.info(f"✓ Created deal from signal: {symbol} - Deal ID: {deal_id} for user: {username}")
+            return jsonify({
+                'success': True,
+                'message': f'Deal created successfully for {symbol}',
+                'deal_id': deal_id,
+                'symbol': symbol,
+                'entry_price': ep,
+                'quantity': qty,
+                'invested_amount': invested_amount,
+                'table_name': f'{username}_deals'
+            })
+        else:
             return jsonify({
                 'success': False,
-                'error': 'External database connection failed'
+                'error': f'Failed to add deal to {username} table'
             }), 500
-
-        # Ensure user_id is positive
-        if not user_id or user_id <= 0:
-            user_id = 1
-
-        try:
-            with conn.cursor() as cursor:
-                # Insert new deal into public.user_deals table
-                insert_query = """
-                INSERT INTO public.user_deals (
-                    user_id, symbol, trading_symbol, entry_date, position_type,
-                    quantity, entry_price, current_price, target_price, stop_loss,
-                    invested_amount, current_value, pnl_amount, pnl_percent,
-                    status, deal_type, notes, tags, created_at, updated_at
-                ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-                ) RETURNING id;
-                """
-
-                values = (
-                    user_id,
-                    symbol.upper(),
-                    symbol.upper(),
-                    datetime.now().strftime('%Y-%m-%d'),
-                    'LONG' if pos == 1 else 'SHORT',
-                    qty,
-                    float(ep),
-                    float(cmp),
-                    float(tp),
-                    float(ep * 0.95),  # Default 5% stop loss
-                    float(invested_amount),
-                    float(current_value),
-                    float(pnl_amount),
-                    float(pnl_percent),
-                    'ACTIVE',
-                    'SIGNAL',
-                    f'Added from ETF signal - {symbol}',
-                    'ETF,SIGNAL',
-                    datetime.now(),
-                    datetime.now())
-
-                logger.info(f"Executing insert query with values: {values}")
-                cursor.execute(insert_query, values)
-                deal_id = cursor.fetchone()[0]
-                conn.commit()
-
-                logger.info(
-                    f"✓ Created deal from signal: {symbol} - Deal ID: {deal_id} for user: {user_id}"
-                )
-
-                return jsonify({
-                    'success': True,
-                    'message': f'Deal created successfully for {symbol}',
-                    'deal_id': deal_id,
-                    'symbol': symbol,
-                    'entry_price': ep,
-                    'quantity': qty,
-                    'invested_amount': invested_amount
-                })
-
-        finally:
-            if conn:
-                conn.close()
 
     except Exception as db_error:
         logger.error(f"Database error creating deal: {db_error}")
         logger.error(f"Signal data was: {signal_data}")
-        logger.error(
-            f"Processed values were: user_id={user_id}, symbol={symbol}, qty={qty}, ep={ep}, cmp={cmp}"
-        )
         return jsonify({
             'success': False,
             'error': f'Failed to create deal: {str(db_error)}'
