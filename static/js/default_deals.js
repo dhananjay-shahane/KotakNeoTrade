@@ -14,7 +14,7 @@ function DefaultDealsManager() {
     this.availableColumns = {
         id: {
             label: "ID",
-            default: false,
+            default: true,
             width: "50px",
             sortable: true,
         },
@@ -24,38 +24,38 @@ function DefaultDealsManager() {
             width: "80px",
             sortable: true,
         },
-        seven: { label: "7D", default: false, width: "50px", sortable: true },
+        seven: { label: "7D", default: true, width: "50px", sortable: true },
         seven_percent: {
             label: "7D%",
-            default: false,
+            default: true,
             width: "50px",
             sortable: true,
         },
-        thirty: { label: "30D", default: false, width: "50px", sortable: true },
+        thirty: { label: "30D", default: true, width: "50px", sortable: true },
         thirty_percent: {
             label: "30D%",
-            default: false,
+            default: true,
             width: "50px",
             sortable: true,
         },
-        date: { label: "DATE", default: false, width: "80px", sortable: true },
+        date: { label: "DATE", default: true, width: "80px", sortable: true },
         qty: { label: "QTY", default: true, width: "60px", sortable: true },
         ep: { label: "EP", default: true, width: "70px", sortable: true },
         cmp: { label: "CMP", default: true, width: "70px", sortable: true },
         pos: { label: "POS", default: true, width: "50px", sortable: true },
         chan_percent: {
             label: "%CHAN",
-            default: false,
+            default: true,
             width: "60px",
             sortable: true,
         },
-        inv: { label: "INV.", default: false, width: "70px", sortable: true },
-        tp: { label: "TP", default: false, width: "60px", sortable: true },
-        tpr: { label: "TPR", default: false, width: "70px", sortable: true },
-        tva: { label: "TVA", default: false, width: "70px", sortable: true },
+        inv: { label: "INV.", default: true, width: "70px", sortable: true },
+        tp: { label: "TP", default: true, width: "60px", sortable: true },
+        tpr: { label: "TPR", default: true, width: "70px", sortable: true },
+        tva: { label: "TVA", default: true, width: "70px", sortable: true },
         pl: { label: "CPL", default: true, width: "60px", sortable: true },
-        qt: { label: "QT", default: false, width: "60px", sortable: true },
-        ed: { label: "ED", default: false, width: "70px", sortable: true },
+        qt: { label: "QT", default: true, width: "60px", sortable: true },
+        ed: { label: "ED", default: true, width: "70px", sortable: true },
         exp: { label: "EXP", default: false, width: "70px", sortable: true },
         pr: { label: "PR", default: false, width: "80px", sortable: true },
         pp: { label: "PP", default: false, width: "50px", sortable: true },
@@ -63,7 +63,7 @@ function DefaultDealsManager() {
         ip: { label: "IP", default: false, width: "60px", sortable: true },
         status: {
             label: "STATUS",
-            default: false,
+            default: true,
             width: "80px",
             sortable: true,
         },
@@ -501,9 +501,8 @@ DefaultDealsManager.prototype.setupColumnSettings = function () {
         checkboxHTML += `
             <div class="col-md-4 mb-2">
                 <div class="form-check">
-                    <input class="form-check-input column-checkbox" type="checkbox" 
-                           id="col_${key}" value="${key}" ${isChecked}
-                           onchange="defaultDealsManager.updateColumnSelection('${key}', this.checked)">
+                    <input class="form-check-input" type="checkbox" 
+                           id="col_${key}" value="${key}" ${isChecked}>
                     <label class="form-check-label" for="col_${key}">
                         ${column.label}
                     </label>
@@ -514,49 +513,31 @@ DefaultDealsManager.prototype.setupColumnSettings = function () {
     checkboxContainer.innerHTML = checkboxHTML;
 };
 
-DefaultDealsManager.prototype.updateColumnSelection = function(columnKey, isChecked) {
-    if (isChecked && !this.selectedColumns.includes(columnKey)) {
-        this.selectedColumns.push(columnKey);
-    } else if (!isChecked && this.selectedColumns.includes(columnKey)) {
-        const index = this.selectedColumns.indexOf(columnKey);
-        if (index > -1) {
-            this.selectedColumns.splice(index, 1);
-        }
-    }
-};
-
 DefaultDealsManager.prototype.applyColumnSettings = function () {
-    // selectedColumns is already updated through updateColumnSelection
+    const checkboxes = document.querySelectorAll(
+        '#columnCheckboxes input[type="checkbox"]',
+    );
+    this.selectedColumns = [];
+
+    checkboxes.forEach((checkbox) => {
+        if (checkbox.checked) {
+            this.selectedColumns.push(checkbox.value);
+        }
+    });
+
     this.renderTable();
-    
-    // Close the modal
     const modal = bootstrap.Modal.getInstance(
         document.getElementById("columnSettingsModal"),
     );
-    if (modal) {
-        modal.hide();
-    } else {
-        // Fallback method to close modal
-        const modalElement = document.getElementById("columnSettingsModal");
-        if (modalElement) {
-            modalElement.classList.remove('show');
-            modalElement.style.display = 'none';
-            document.body.classList.remove('modal-open');
-            const backdrop = document.querySelector('.modal-backdrop');
-            if (backdrop) backdrop.remove();
-        }
-    }
+    if (modal) modal.hide();
 };
 
 DefaultDealsManager.prototype.selectAllColumns = function () {
     const checkboxes = document.querySelectorAll(
         '#columnCheckboxes input[type="checkbox"]',
     );
-    this.selectedColumns = [];
-    
     checkboxes.forEach((checkbox) => {
         checkbox.checked = true;
-        this.selectedColumns.push(checkbox.value);
     });
 };
 
@@ -565,12 +546,9 @@ DefaultDealsManager.prototype.resetDefaultColumns = function () {
     const checkboxes = document.querySelectorAll(
         '#columnCheckboxes input[type="checkbox"]',
     );
-    
-    this.selectedColumns = [...defaultColumns];
 
     checkboxes.forEach((checkbox) => {
-        const shouldBeChecked = defaultColumns.includes(checkbox.value);
-        checkbox.checked = shouldBeChecked;
+        checkbox.checked = defaultColumns.includes(checkbox.value);
     });
 };
 
