@@ -1,5 +1,10 @@
 {% extends "base.html" %} {% block title %}Default Deals - Kotak Neo Trading{%
-endblock %} {% block extra_css %} {% endblock %} {% block head %} {% endblock %}
+endblock %} {% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/default_deals.css') }}"/>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton_animation.css') }}"/>
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% endblock %}
 {% block content %}
 <!-- Actual Default Deals Content -->
 <div class="default-deals-content" id="defaultDealsContent">
@@ -547,6 +552,9 @@ endblock %} {% block extra_css %} {% endblock %} {% block head %} {% endblock %}
     </div>
 </div>
 
-{% endblock %} {% block scripts %}
+{% endblock %}
+
+{% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/default_deals.js') }}"></script>
 {% endblock %}

@@ -616,11 +616,11 @@ def basic_trade_signals():
     return render_template('basic_etf_signals.html')
 
 
-@app.route('/defult-deals')
+@app.route('/default-deals')
 @require_auth
-def defult_deals():
-    """defult deals page"""
-    return render_template('defult_deals.html')
+def default_deals():
+    """Default deals page - shows all deals from default_deals table"""
+    return render_template('default_deals.html')
 
 
 # ========================================
@@ -985,6 +985,14 @@ try:
     print("✓ Auto-sync triggers initialized")
 except Exception as e:
     print(f"Auto-sync setup optional: {e}")
+
+# Register default deals API blueprint
+try:
+    from api.default_deals_api import default_deals_api
+    app.register_blueprint(default_deals_api)
+    print("✓ Registered default_deals_api blueprint")
+except Exception as e:
+    print(f"✗ Error registering default_deals_api: {e}")
 
 # ================================= berjumpa=======
 # KOTAK NEO PROJECT INTEGRATION
