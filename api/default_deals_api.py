@@ -33,35 +33,16 @@ def get_default_deals():
             cursor = conn.cursor()
             
             # Query to get all deals from default_deals table
+            # Using the same structure as admin_trade_signals based on external_db_service.py
             query = """
             SELECT 
                 id,
                 symbol,
-                seven,
-                seven_percent,
-                thirty,
-                thirty_percent,
-                date,
                 qty,
                 ep,
-                cmp,
+                date,
                 pos,
-                chan_percent,
-                inv,
-                tp,
-                tpr,
-                tva,
-                pl,
-                qt,
-                ed,
-                exp,
-                pr,
-                pp,
-                iv,
-                ip,
-                status,
-                created_at,
-                updated_at
+                created_at
             FROM default_deals 
             ORDER BY created_at DESC
             """
