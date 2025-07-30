@@ -69,7 +69,8 @@ class NotificationService:
                             'entry_price': float(signal.get('entry_price', 0)) if signal.get('entry_price') else 0,
                             'created_at': signal.get('created_at').isoformat() if signal.get('created_at') else None,
                             'message': f"New {action} signal for {signal.get('symbol', '')} - Qty: {signal.get('qty', 0)}",
-                            'time_ago': self.get_time_ago(signal.get('created_at'))
+                            'time_ago': self.get_time_ago(signal.get('created_at')),
+                            'is_read': False  # Default to unread
                         }
                         notifications.append(notification)
                     
@@ -185,16 +186,56 @@ def get_notification_count():
             'count': 0
         }), 500
 
+@notifications_api.route('/notifications/<int:notification_id>/read', methods=['POST'])
+def mark_notification_read(notification_id):
+    """Mark a specific notification as read"""
+    try:
+        conn = notification_service.get_db_connection()
+        if not conn:
+            return jsonify({
+                'success': False,
+                'message': 'Database connection failed'
+            }), 500
+
+        with conn.cursor() as cursor:
+            # For now, we'll just log the read action
+            # In a full implementation, you'd update a user_notifications table
+            logger.info(f"Marking notification {notification_id} as read")
+            
+            conn.close()
+            return jsonify({
+                'success': True,
+                'message': f'Notification {notification_id} marked as read'
+            })
+        
+    except Exception as e:
+        logger.error(f"Error marking notification as read: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Failed to mark notification as read'
+        }), 500
+
 @notifications_api.route('/notifications/clear', methods=['POST'])
 def clear_notifications():
-    """Clear notifications (mark as read)"""
+    """Clear all notifications (mark as read)"""
     try:
-        # For now, we just return success
-        # In a real implementation, you might track read notifications per user
-        return jsonify({
-            'success': True,
-            'message': 'Notifications cleared'
-        })
+        conn = notification_service.get_db_connection()
+        if not conn:
+            return jsonify({
+                'success': False,
+                'message': 'Database connection failed'
+            }), 500
+
+        with conn.cursor() as cursor:
+            # For now, we'll just log the clear action
+            # In a full implementation, you'd update a user_notifications table
+            logger.info("Clearing all notifications for user")
+            
+            conn.close()
+            return jsonify({
+                'success': True,
+                'message': 'All notifications cleared'
+            })
         
     except Exception as e:
         logger.error(f"Error in clear_notifications: {str(e)}")

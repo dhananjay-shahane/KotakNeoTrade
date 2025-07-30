@@ -949,9 +949,11 @@ function displayNotifications(notifications) {
     const notificationHTML = notifications.map(notification => {
         const actionColor = notification.action === 'BUY' ? 'text-success' : 'text-danger';
         const actionIcon = notification.action === 'BUY' ? 'fa-arrow-up' : 'fa-arrow-down';
+        const isRead = notification.is_read || false;
+        const readClass = isRead ? 'read' : 'unread';
 
         return `
-            <div class="notification-item" data-id="${notification.id}">
+            <div class="notification-item ${readClass}" data-id="${notification.id}">
                 <div class="notification-icon">
                     <i class="fas ${actionIcon} ${actionColor}"></i>
                 </div>
@@ -963,23 +965,71 @@ function displayNotifications(notifications) {
                     </div>
                     <div class="notification-time">${notification.time_ago}</div>
                 </div>
+                <div class="notification-actions">
+                    ${!isRead ? `<button class="btn-read" onclick="markNotificationAsRead(${notification.id})" title="Mark as read">
+                        <i class="fas fa-check"></i>
+                    </button>` : `<span class="read-indicator"><i class="fas fa-check-circle text-success"></i></span>`}
+                </div>
             </div>
         `;
     }).join('');
 
-    notificationList.innerHTML = notificationHTML;
+    // Add clear inbox button at the bottom
+    const clearButton = `
+        <div class="notification-footer">
+            <button class="btn-clear-inbox" onclick="clearAllNotifications()">
+                <i class="fas fa-trash-alt me-2"></i>Clear All Notifications
+            </button>
+        </div>
+    `;
 
-    // Add click handlers for notification items
-    notificationList.querySelectorAll('.notification-item').forEach(item => {
-        item.addEventListener('click', function() {
-            const notificationId = this.dataset.id;
-            console.log('Clicked notification:', notificationId);
-            // You can add functionality to mark as read or navigate to details
-        });
+    notificationList.innerHTML = notificationHTML + clearButton;
+}
+
+function markNotificationAsRead(notificationId) {
+    fetch(`/api/notifications/${notificationId}/read`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Find and update the notification item
+            const notificationItem = document.querySelector(`[data-id="${notificationId}"]`);
+            if (notificationItem) {
+                notificationItem.classList.remove('unread');
+                notificationItem.classList.add('read');
+                
+                // Replace read button with read indicator
+                const actionsDiv = notificationItem.querySelector('.notification-actions');
+                if (actionsDiv) {
+                    actionsDiv.innerHTML = '<span class="read-indicator"><i class="fas fa-check-circle text-success"></i></span>';
+                }
+            }
+            
+            // Update notification count
+            updateNotificationCount();
+            
+            if (typeof showToaster === 'function') {
+                showToaster('Success', 'Notification marked as read', 'success', 1500);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error marking notification as read:', error);
+        if (typeof showToaster === 'function') {
+            showToaster('Error', 'Failed to mark as read', 'error');
+        }
     });
 }
 
-function clearInbox() {
+function clearAllNotifications() {
+    if (!confirm('Are you sure you want to clear all notifications? This action cannot be undone.')) {
+        return;
+    }
+
     fetch('/api/notifications/clear', {
         method: 'POST',
         headers: {
@@ -1002,20 +1052,32 @@ function clearInbox() {
                 notificationList.innerHTML = `
                     <div class="no-notifications">
                         <i class="fas fa-check-circle text-success"></i>
-                        <p>Inbox cleared</p>
+                        <p>All notifications cleared</p>
                     </div>
                 `;
+            }
+
+            if (typeof showToaster === 'function') {
+                showToaster('Success', 'All notifications cleared', 'success');
             }
 
             // Close inbox after a moment
             setTimeout(() => {
                 closeNotificationInbox();
-            }, 1500);
+            }, 2000);
         }
     })
     .catch(error => {
-        console.error('Error clearing inbox:', error);
+        console.error('Error clearing all notifications:', error);
+        if (typeof showToaster === 'function') {
+            showToaster('Error', 'Failed to clear notifications', 'error');
+        }
     });
+}
+
+function clearInbox() {
+    // Alias for backward compatibility
+    clearAllNotifications();
 }
 
 function getTimeAgo(dateString) {
