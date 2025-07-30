@@ -842,7 +842,7 @@ DealsManager.prototype.renderDealsTable = function () {
                             (deal.id || deal.trade_signal_id || "") +
                             "', '" +
                             (deal.symbol || "") +
-                            "')\">" +
+                            "')">" +
                             '<i class="fas fa-times"></i> Close' +
                             "</button>" +
                             "</div>";
