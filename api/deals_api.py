@@ -605,6 +605,13 @@ def get_user_deals_data():
                 }
             })
 
+        # Calculate symbol counts for QT (repeated symbol count)
+        symbol_counts = {}
+        for deal in user_deals:
+            symbol = str(deal.get('symbol', '')).upper()
+            if symbol:
+                symbol_counts[symbol] = symbol_counts.get(symbol, 0) + 1
+
         # Format deals for frontend
         formatted_deals = []
         total_invested = 0
@@ -857,7 +864,7 @@ def check_deal_duplicate():
 
 @deals_api.route('/edit-deal', methods=['POST'])
 def edit_deal():
-    """Edit a user deal (entry price and target price)"""
+    """Edit a user deal (quantity and target price) using dynamic user tables"""
     try:
         data = request.get_json()
         if not data:
@@ -868,7 +875,7 @@ def edit_deal():
 
         deal_id = data.get('deal_id', '').strip()
         symbol = data.get('symbol', '').strip()
-        entry_price = data.get('entry_price')
+        qty = data.get('qty')
         target_price = data.get('target_price')
 
         if not deal_id or not symbol:
@@ -877,60 +884,67 @@ def edit_deal():
                 'error': 'Deal ID and symbol are required'
             }), 400
 
-        if not entry_price or not target_price:
+        if qty is None or target_price is None:
             return jsonify({
                 'success': False,
-                'error': 'Entry price and target price are required'
+                'error': 'Quantity and target price are required'
             }), 400
 
         try:
-            entry_price = float(entry_price)
+            qty = float(qty)
             target_price = float(target_price)
         except (ValueError, TypeError):
             return jsonify({
                 'success': False,
-                'error': 'Invalid price values'
+                'error': 'Invalid quantity or target price values'
             }), 400
 
-        if entry_price <= 0 or target_price <= 0:
+        if qty <= 0 or target_price <= 0:
             return jsonify({
                 'success': False,
-                'error': 'Prices must be positive'
+                'error': 'Quantity and target price must be positive'
             }), 400
 
-        # Get user_id from session
-        user_id = session.get('user_id')
-        if not user_id or not isinstance(user_id, int):
-            user_id = 1
-
-        # Connect to database
-        db_connector = DatabaseConnector(os.environ.get('DATABASE_URL'))
-
-        # Update deal in database
-        update_query = """
-            UPDATE user_deals 
-            SET entry_price = %s, target_price = %s, updated_at = CURRENT_TIMESTAMP
-            WHERE id = %s AND user_id = %s AND symbol = %s
-        """
-
-        result = db_connector.execute_query(
-            update_query,
-            (entry_price, target_price, deal_id, user_id, symbol))
-
-        if result == 0:
+        # Get username from session
+        username = session.get('username')
+        if not username:
             return jsonify({
                 'success': False,
-                'error': 'Deal not found or not authorized'
+                'error': 'Username is required - please log in'
+            }), 400
+
+        # Import dynamic deals service
+        import sys
+        sys.path.append('scripts')
+        from scripts.dynamic_user_deals import DynamicUserDealsService
+
+        dynamic_deals_service = DynamicUserDealsService()
+
+        # Check if user table exists
+        if not dynamic_deals_service.table_exists(username):
+            return jsonify({
+                'success': False,
+                'error': f'No deals table found for user {username}'
             }), 404
 
-        db_connector.close()
+        # Update deal in user's dynamic table
+        success = dynamic_deals_service.update_deal(username, deal_id, {
+            'qty': qty,
+            'target_price': target_price
+        })
+
+        if not success:
+            return jsonify({
+                'success': False,
+                'error': 'Deal not found or update failed'
+            }), 404
 
         return jsonify({
             'success': True,
             'message': f'Deal updated successfully for {symbol}',
             'deal_id': deal_id,
             'symbol': symbol,
-            'entry_price': entry_price,
+            'qty': qty,
             'target_price': target_price
         })
 
@@ -941,7 +955,7 @@ def edit_deal():
 
 @deals_api.route('/close-deal', methods=['POST'])
 def close_deal():
-    """Close a user deal by updating its status"""
+    """Close a user deal by updating its status and exit date using dynamic user tables"""
     try:
         data = request.get_json()
         if not data:
@@ -952,6 +966,7 @@ def close_deal():
 
         deal_id = data.get('deal_id', '').strip()
         symbol = data.get('symbol', '').strip()
+        exit_date = data.get('exit_date', '').strip()
 
         if not deal_id or not symbol:
             return jsonify({
@@ -959,38 +974,72 @@ def close_deal():
                 'error': 'Deal ID and symbol are required'
             }), 400
 
-        # Get user_id from session
-        user_id = session.get('user_id')
-        if not user_id or not isinstance(user_id, int):
-            user_id = 1
-
-        # Connect to database
-        db_connector = DatabaseConnector(os.environ.get('DATABASE_URL'))
-
-        # Update deal status to CLOSED and set exit date
-        update_query = """
-            UPDATE user_deals 
-            SET status = 'CLOSED', ed = CURRENT_DATE, updated_at = CURRENT_TIMESTAMP
-            WHERE id = %s AND user_id = %s AND symbol = %s
-        """
-
-        result = db_connector.execute_query(update_query,
-                                            (deal_id, user_id, symbol))
-
-        if result == 0:
+        if not exit_date:
             return jsonify({
                 'success': False,
-                'error': 'Deal not found or not authorized'
+                'error': 'Exit date is required'
+            }), 400
+
+        # Validate exit date format and ensure it's not in the future
+        try:
+            from datetime import datetime, date
+            exit_date_obj = datetime.strptime(exit_date, '%Y-%m-%d').date()
+            today = date.today()
+            
+            if exit_date_obj > today:
+                return jsonify({
+                    'success': False,
+                    'error': 'Exit date cannot be in the future'
+                }), 400
+                
+        except ValueError:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid exit date format. Use YYYY-MM-DD'
+            }), 400
+
+        # Get username from session
+        username = session.get('username')
+        if not username:
+            return jsonify({
+                'success': False,
+                'error': 'Username is required - please log in'
+            }), 400
+
+        # Import dynamic deals service
+        import sys
+        sys.path.append('scripts')
+        from scripts.dynamic_user_deals import DynamicUserDealsService
+
+        dynamic_deals_service = DynamicUserDealsService()
+
+        # Check if user table exists
+        if not dynamic_deals_service.table_exists(username):
+            return jsonify({
+                'success': False,
+                'error': f'No deals table found for user {username}'
             }), 404
 
-        db_connector.close()
+        # Update deal status to CLOSED, set exit date and pos to 0
+        success = dynamic_deals_service.update_deal(username, deal_id, {
+            'status': 'CLOSED',
+            'ed': exit_date,
+            'pos': '0'
+        })
+
+        if not success:
+            return jsonify({
+                'success': False,
+                'error': 'Deal not found or update failed'
+            }), 404
 
         return jsonify({
             'success': True,
             'message': f'Deal closed successfully for {symbol}',
             'deal_id': deal_id,
             'symbol': symbol,
-            'status': 'CLOSED'
+            'status': 'CLOSED',
+            'exit_date': exit_date
         })
 
     except Exception as e:

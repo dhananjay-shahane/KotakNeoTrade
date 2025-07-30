@@ -809,13 +809,19 @@ DealsManager.prototype.renderDealsTable = function () {
                         (deal.ed && deal.ed !== "--" && deal.ed !== null);
 
                     if (isClosed) {
-                        // Show disabled buttons for closed deals
+                        // Show only exit date edit button for closed deals
                         cellContent =
                             '<div class="btn-group btn-group-sm">' +
-                            '<button class="btn btn-warning btn-sm" disabled title="Deal is closed">' +
-                            '<i class="fas fa-edit"></i> Edit </button>' +
-                            '<button class="btn btn-danger btn-sm" disabled title="Deal is closed">' +
-                            '<i class="fas fa-times"></i> Close' +
+                            '<button class="btn btn-secondary btn-sm" onclick="editExitDate(\'' +
+                            (deal.id || deal.trade_signal_id || "") +
+                            "', '" +
+                            (deal.symbol || "") +
+                            "', '" +
+                            (deal.ed || "") +
+                            '\')" title="Edit exit date only">' +
+                            '<i class="fas fa-calendar-alt"></i> Edit Date</button>' +
+                            '<button class="btn btn-danger btn-sm" disabled title="Deal already closed">' +
+                            '<i class="fas fa-times"></i> Closed' +
                             "</button>" +
                             "</div>";
                     } else {
@@ -827,9 +833,9 @@ DealsManager.prototype.renderDealsTable = function () {
                             "', '" +
                             (deal.symbol || "") +
                             "', " +
-                            (deal.ep || 0) +
+                            (deal.qty || 0) +
                             ", " +
-                            (deal.tp || 0) +
+                            (deal.target_price || deal.tpr || 0) +
                             ')">' +
                             '<i class="fas fa-edit"></i> Edit </button>' +
                             '<button class="btn btn-danger btn-sm" onclick="closeDeal(\'' +
@@ -1219,6 +1225,333 @@ function cancelOrder(dealId) {
             "Cancel order functionality for " + dealId + " - to be implemented",
         );
     }
+}
+
+// Edit Deal Functions
+function editDeal(dealId, symbol, qty, targetPrice) {
+    console.log("Opening edit deal modal for:", dealId, symbol, qty, targetPrice);
+    
+    // Set modal values
+    document.getElementById('editDealId').value = dealId;
+    document.getElementById('editSymbol').value = symbol;
+    document.getElementById('editQuantity').value = qty;
+    document.getElementById('editTargetPrice').value = targetPrice;
+    
+    // Show modal
+    var modal = new bootstrap.Modal(document.getElementById('editDealModal'));
+    modal.show();
+}
+
+function submitEditDeal() {
+    var dealId = document.getElementById('editDealId').value;
+    var symbol = document.getElementById('editSymbol').value;
+    var qty = document.getElementById('editQuantity').value;
+    var targetPrice = document.getElementById('editTargetPrice').value;
+    
+    if (!qty || !targetPrice) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Validation Error',
+            text: 'Please fill in all required fields',
+            background: '#1e1e1e',
+            color: '#fff'
+        });
+        return;
+    }
+    
+    if (parseFloat(qty) <= 0 || parseFloat(targetPrice) <= 0) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Validation Error',
+            text: 'Quantity and target price must be positive numbers',
+            background: '#1e1e1e',
+            color: '#fff'
+        });
+        return;
+    }
+    
+    // Show loading
+    Swal.fire({
+        title: 'Updating Deal...',
+        text: 'Please wait while we update your deal',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+        background: '#1e1e1e',
+        color: '#fff'
+    });
+    
+    // Make API call
+    fetch('/api/edit-deal', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            deal_id: dealId,
+            symbol: symbol,
+            qty: parseFloat(qty),
+            target_price: parseFloat(targetPrice)
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Deal Updated!',
+                text: data.message,
+                background: '#1e1e1e',
+                color: '#fff'
+            }).then(() => {
+                // Close modal and refresh deals
+                var modal = bootstrap.Modal.getInstance(document.getElementById('editDealModal'));
+                modal.hide();
+                window.dealsManager.loadDeals();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Update Failed',
+                text: data.error || 'Failed to update deal',
+                background: '#1e1e1e',
+                color: '#fff'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error updating deal:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Network Error',
+            text: 'Failed to update deal. Please try again.',
+            background: '#1e1e1e',
+            color: '#fff'
+        });
+    });
+}
+
+// Close Deal Functions
+function closeDeal(dealId, symbol) {
+    console.log("Opening close deal modal for:", dealId, symbol);
+    
+    // Set modal values
+    document.getElementById('closeDealId').value = dealId;
+    document.getElementById('closeSymbol').value = symbol;
+    
+    // Set max date to today
+    var today = new Date().toISOString().split('T')[0];
+    document.getElementById('exitDate').setAttribute('max', today);
+    document.getElementById('exitDate').value = today; // Default to today
+    
+    // Show modal
+    var modal = new bootstrap.Modal(document.getElementById('closeDealModal'));
+    modal.show();
+}
+
+function submitCloseDeal() {
+    var dealId = document.getElementById('closeDealId').value;
+    var symbol = document.getElementById('closeSymbol').value;
+    var exitDate = document.getElementById('exitDate').value;
+    
+    if (!exitDate) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Validation Error',
+            text: 'Please select an exit date',
+            background: '#1e1e1e',
+            color: '#fff'
+        });
+        return;
+    }
+    
+    // Validate exit date is not in the future
+    var selectedDate = new Date(exitDate);
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (selectedDate > today) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Invalid Date',
+            text: 'Exit date cannot be in the future',
+            background: '#1e1e1e',
+            color: '#fff'
+        });
+        return;
+    }
+    
+    // Show loading
+    Swal.fire({
+        title: 'Closing Deal...',
+        text: 'Please wait while we close your deal',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+        background: '#1e1e1e',
+        color: '#fff'
+    });
+    
+    // Make API call
+    fetch('/api/close-deal', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            deal_id: dealId,
+            symbol: symbol,
+            exit_date: exitDate
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Deal Closed!',
+                text: data.message,
+                background: '#1e1e1e',
+                color: '#fff'
+            }).then(() => {
+                // Close modal and refresh deals
+                var modal = bootstrap.Modal.getInstance(document.getElementById('closeDealModal'));
+                modal.hide();
+                window.dealsManager.loadDeals();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Close Failed',
+                text: data.error || 'Failed to close deal',
+                background: '#1e1e1e',
+                color: '#fff'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error closing deal:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Network Error',
+            text: 'Failed to close deal. Please try again.',
+            background: '#1e1e1e',
+            color: '#fff'
+        });
+    });
+}
+
+// Edit Exit Date for Closed Deals
+function editExitDate(dealId, symbol, currentExitDate) {
+    console.log("Opening edit exit date modal for:", dealId, symbol, currentExitDate);
+    
+    // Set modal values
+    document.getElementById('editExitDealId').value = dealId;
+    document.getElementById('editExitSymbol').value = symbol;
+    document.getElementById('editExitDateInput').value = currentExitDate || '';
+    
+    // Set max date to today
+    var today = new Date().toISOString().split('T')[0];
+    document.getElementById('editExitDateInput').setAttribute('max', today);
+    
+    // Show modal
+    var modal = new bootstrap.Modal(document.getElementById('editExitDateModal'));
+    modal.show();
+}
+
+function submitEditExitDate() {
+    var dealId = document.getElementById('editExitDealId').value;
+    var symbol = document.getElementById('editExitSymbol').value;
+    var exitDate = document.getElementById('editExitDateInput').value;
+    
+    if (!exitDate) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Validation Error',
+            text: 'Please select an exit date',
+            background: '#1e1e1e',
+            color: '#fff'
+        });
+        return;
+    }
+    
+    // Validate exit date is not in the future
+    var selectedDate = new Date(exitDate);
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (selectedDate > today) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Invalid Date',
+            text: 'Exit date cannot be in the future',
+            background: '#1e1e1e',
+            color: '#fff'
+        });
+        return;
+    }
+    
+    // Show loading
+    Swal.fire({
+        title: 'Updating Exit Date...',
+        text: 'Please wait while we update the exit date',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+        background: '#1e1e1e',
+        color: '#fff'
+    });
+    
+    // Make API call to update exit date
+    fetch('/api/close-deal', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            deal_id: dealId,
+            symbol: symbol,
+            exit_date: exitDate
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Exit Date Updated!',
+                text: 'Exit date has been successfully updated',
+                background: '#1e1e1e',
+                color: '#fff'
+            }).then(() => {
+                // Close modal and refresh deals
+                var modal = bootstrap.Modal.getInstance(document.getElementById('editExitDateModal'));
+                modal.hide();
+                window.dealsManager.loadDeals();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Update Failed',
+                text: data.error || 'Failed to update exit date',
+                background: '#1e1e1e',
+                color: '#fff'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error updating exit date:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Network Error',
+            text: 'Failed to update exit date. Please try again.',
+            background: '#1e1e1e',
+            color: '#fff'
+        });
+    });
 }
 
 function buyTrade(symbol, currentPrice) {
