@@ -1943,7 +1943,7 @@ function proceedWithAddingDeal(
     console.log("Sending signal data:", signalData);
 
     var xhr = new XMLHttpRequest();
-    xhr.open("POST", "/api/deals/create-from-signal", true);
+    xhr.open("POST", "/api/dynamic/add-deal", true);
     xhr.setRequestHeader("Content-Type", "application/json");
 
     xhr.onreadystatechange = function () {

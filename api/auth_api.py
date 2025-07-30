@@ -473,8 +473,7 @@ def handle_register(mail=None):
                 if mail:
                     EmailService.send_registration_email(mail, email, username, password)
 
-                flash('Registration successful! Please check your email for login credentials.', 'success')
-                flash(f'Your username is: {username}', 'info')
+                flash('Registration successful! Please check your email for login credentials. Do not close this message until you have received the email.', 'success')
                 return redirect(url_for('login'))
             else:
                 flash('Registration failed. Email might already be registered.', 'error')

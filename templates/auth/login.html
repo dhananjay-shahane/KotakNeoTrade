@@ -11,15 +11,27 @@ endblock %} {% block content %}
         {% with messages = get_flashed_messages(with_categories=true) %} {% if
         messages %} {% for category, message in messages %}
         <div
-            class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }} alert-dismissible fade show"
+            class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }} fade show"
             role="alert"
+            id="flash-message-{{ loop.index }}"
         >
             {{ message }}
+            {% if category == 'success' and 'email' in message %}
+            <button
+                type="button"
+                class="btn btn-sm btn-outline-primary ms-2"
+                onclick="closeFlashMessage('flash-message-{{ loop.index }}')"
+                style="font-size: 0.75rem; padding: 0.25rem 0.5rem;"
+            >
+                Close
+            </button>
+            {% else %}
             <button
                 type="button"
                 class="btn-close"
                 data-bs-dismiss="alert"
             ></button>
+            {% endif %}
         </div>
         {% endfor %} {% endif %} {% endwith %}
 
@@ -104,6 +116,14 @@ endblock %} {% block content %}
 </div>
 {% endblock %} {% block extra_js %}
 <script>
+    // Function to close flash messages manually
+    function closeFlashMessage(messageId) {
+        const messageElement = document.getElementById(messageId);
+        if (messageElement) {
+            messageElement.style.display = 'none';
+        }
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
         const form = document.getElementById("loginForm");
         const usernameInput = document.getElementById("username");

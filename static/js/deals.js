@@ -253,13 +253,13 @@ DealsManager.prototype.loadDeals = function () {
     }
 
     self.isLoading = true;
-    console.log("Loading deals from user_deals database...");
+    console.log("Loading deals from dynamic user deals table...");
 
     // Show loading spinner inside table
     self.showLoadingSpinner();
 
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", "/api/user-deals-data", true);
+    xhr.open("GET", "/api/dynamic/user-deals", true);
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.timeout = 15000; // 15 second timeout
 
