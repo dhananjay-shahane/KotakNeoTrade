@@ -2679,6 +2679,7 @@ function submitCloseDeal() {
             background: '#1e1e1e',
             color: '#fff'
         });
+    });
 }
 
 
