@@ -167,7 +167,7 @@ ETFSignalsManager.prototype.generateDynamicHeaders = function () {
 // Add sorting functionality for signals
 ETFSignalsManager.prototype.sortSignalsByColumn = function (columnKey) {
     var self = this;
-    
+
     // Toggle sort direction if clicking the same column
     if (this.sortField === columnKey) {
         this.sortDirection = this.sortDirection === "asc" ? "desc" : "asc";
@@ -189,7 +189,7 @@ ETFSignalsManager.prototype.sortSignalsByColumn = function (columnKey) {
         // Handle string comparisons
         aValue = String(aValue).toLowerCase();
         bValue = String(bValue).toLowerCase();
-        
+
         if (aValue < bValue) return self.sortDirection === "asc" ? -1 : 1;
         if (aValue > bValue) return self.sortDirection === "asc" ? 1 : -1;
         return 0;
@@ -258,7 +258,7 @@ ETFSignalsManager.prototype.updateSortIcons = function (sortedColumn) {
     var sortedHeader = Array.from(headers).find(function (th) {
         return th.onclick && th.onclick.toString().includes(sortedColumn);
     });
-    
+
     if (sortedHeader) {
         var icon = sortedHeader.querySelector("i");
         if (icon) {
@@ -914,7 +914,7 @@ function updateSortIndicators(activeColumn, direction) {
     var activeHeader = document.querySelector(
         '.sortable[onclick*="' + activeColumn + '"] .fa-sort',
     );
-    
+
     if (activeHeader) {
         activeHeader.classList.remove("text-muted");
         activeHeader.classList.add("text-primary");
@@ -1100,7 +1100,7 @@ ETFSignalsManager.prototype.updatePortfolioSummary = function (portfolio) {
         totalPositions: portfolio.total_positions || 0,
         activePositions: portfolio.active_positions || 0,
         totalInvestment:
-            "yP�" + (portfolio.total_investment || 0).toLocaleString(),
+            "yP" + (portfolio.total_investment || 0).toLocaleString(),
         currentValue: "₹" + (portfolio.current_value || 0).toLocaleString(),
         totalPnl: "₹" + (portfolio.total_pnl || 0).toLocaleString(),
         returnPercent: (portfolio.return_percent || 0).toFixed(2) + "%",
@@ -1116,7 +1116,7 @@ ETFSignalsManager.prototype.updatePortfolioSummary = function (portfolio) {
 ETFSignalsManager.prototype.applySearch = function () {
     var searchInput = document.getElementById("signalSearchInput");
     var searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : "";
-    
+
     if (!searchTerm) {
         // Reset to show all signals when search is empty
         this.filteredSignals = this.signals.slice();
@@ -1131,7 +1131,7 @@ ETFSignalsManager.prototype.applySearch = function () {
             var cmp = (signal.CMP || signal.cmp || "").toString().toLowerCase();
             var qty = (signal.QTY || signal.qty || "").toString().toLowerCase();
             var signalId = (signal.signal_id || signal.id || "").toString().toLowerCase();
-            
+
             return symbol.includes(searchTerm) || 
                    status.includes(searchTerm) || 
                    date.includes(searchTerm) ||
@@ -1141,7 +1141,7 @@ ETFSignalsManager.prototype.applySearch = function () {
                    signalId.includes(searchTerm);
         });
     }
-    
+
     // Reset to first page and update display
     this.currentPage = 1;
     this.updateDisplayedSignals();
@@ -1563,7 +1563,7 @@ function resetDefaultColumns() {
                            column.key === 'tpr' || column.key === 'tva' || 
                            column.key === 'cpl' || column.key === 'actions';
         });
-        
+
         // Update checkboxes
         var checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
         checkboxes.forEach(function(checkbox) {
@@ -1583,7 +1583,7 @@ function applyColumnSettings() {
         window.etfSignalsManager.updateTableHeaders();
         window.etfSignalsManager.renderSignalsTable();
         window.etfSignalsManager.updatePagination();
-        
+
         // Close modal
         var modal = bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal'));
         if (modal) {
@@ -1836,7 +1836,7 @@ function findAndProcessSignal(signalId) {
                 " (Qty: " +
                 quantity +
                 ")?",
-            icon: "question",
+            icon: ""question",
             showCancelButton: true,
             confirmButtonColor: "#28a745",
             cancelButtonColor: "#6c757d",
@@ -1963,7 +1963,7 @@ function proceedWithAddingDeal(
         if (xhr.readyState === 4) {
             console.log("Response status:", xhr.status);
             console.log("Response text:", xhr.responseText);
-            
+
             if (xhr.status === 200) {
                 try {
                     var response = JSON.parse(xhr.responseText);
@@ -1974,7 +1974,7 @@ function proceedWithAddingDeal(
                             " - Investment: ₹" + (response.invested_amount || 0).toFixed(2),
                             "success"
                         );
-                        
+
                         // Optionally redirect to deals page after 3 seconds
                         setTimeout(function() {
                             if (confirm("Deal created! View your deals page?")) {
@@ -2010,189 +2010,7 @@ function proceedWithAddingDeal(
     };
 
     xhr.timeout = 10000;
-    xhr.send(JSON.stringify(requestData));esponse text:", xhr.responseText);
-
-            if (xhr.status === 200) {
-                try {
-                    var response = JSON.parse(xhr.responseText);
-                    if (response.success) {
-                        if (typeof Swal !== "undefined") {
-                            Swal.fire({
-                                title: "Success!",
-                                text:
-                                    "Deal created successfully for " +
-                                    symbol +
-                                    "!",
-                                icon: "success",
-                                confirmButtonColor: "#28a745",
-                                background: "#2c3e50",
-                                color: "#fff",
-                                customClass: {
-                                    popup: "swal-dark-theme",
-                                },
-                            }).then(() => {
-                                window.location.href = "/deals";
-                            });
-                        } else {
-                            alert(
-                                "Deal created successfully for " + symbol + "!",
-                            );
-                            window.location.href = "/deals";
-                        }
-                    } else {
-                        if (typeof Swal !== "undefined") {
-                            Swal.fire({
-                                title: "Error!",
-                                text:
-                                    "Failed to create deal: " +
-                                    (response.message || "Unknown error"),
-                                icon: "error",
-                                confirmButtonColor: "#dc3545",
-                                background: "#2c3e50",
-                                color: "#fff",
-                                customClass: {
-                                    popup: "swal-dark-theme",
-                                },
-                            });
-                        } else {
-                            alert(
-                                "Failed to create deal: " +
-                                    (response.message || "Unknown error"),
-                            );
-                        }
-                    }
-                } catch (parseError) {
-                    console.error("Failed to parse API response:", parseError);
-                    if (typeof Swal !== "undefined") {
-                        Swal.fire({
-                            title: "Error!",
-                            text: "Invalid response from server",
-                            icon: "error",
-                            confirmButtonColor: "#dc3545",
-                            background: "#2c3e50",
-                            color: "#fff",
-                            customClass: {
-                                popup: "swal-dark-theme",
-                            },
-                        });
-                    } else {
-                        alert("Invalid response from server");
-                    }
-                }
-            } else if (xhr.status === 409) {
-                // Handle duplicate deal conflict (409 status code)
-                try {
-                    var response = JSON.parse(xhr.responseText);
-                    if (response.duplicate) {
-                        console.log("Duplicate deal detected:", response);
-                        if (typeof Swal !== "undefined") {
-                            Swal.fire({
-                                title: "Duplicate Deal",
-                                text:
-                                    response.message ||
-                                    "This trade is already added, you want add?",
-                                icon: "question",
-                                showCancelButton: true,
-                                confirmButtonColor: "#28a745",
-                                cancelButtonColor: "#dc3545",
-                                confirmButtonText: "Add",
-                                cancelButtonText: "Cancel",
-                                background: "#2c3e50",
-                                color: "#fff",
-                                customClass: {
-                                    popup: "swal-dark-theme",
-                                },
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    // Retry with force_add = true
-                                    proceedWithAddingDeal(
-                                        signal,
-                                        symbol,
-                                        price,
-                                        quantity,
-                                        investment,
-                                        true,
-                                    );
-                                }
-                            });
-                        } else {
-                            // Fallback to regular confirm if SweetAlert2 is not available
-                            if (
-                                confirm(
-                                    response.message ||
-                                        "This trade is already added, you want add?",
-                                )
-                            ) {
-                                proceedWithAddingDeal(
-                                    signal,
-                                    symbol,
-                                    price,
-                                    quantity,
-                                    investment,
-                                    true,
-                                );
-                            }
-                        }
-                        return;
-                    }
-                } catch (parseError) {
-                    console.error(
-                        "Failed to parse duplicate response:",
-                        parseError,
-                    );
-                }
-            } else {
-                if (typeof Swal !== "undefined") {
-                    Swal.fire({
-                        title: "Error!",
-                        text:
-                            "Server returned status: " +
-                            xhr.status +
-                            ". Please try again or contact support.",
-                        icon: "error",
-                        confirmButtonColor: "#dc3545",
-                        background: "#2c3e50",
-                        color: "#fff",
-                        customClass: {
-                            popup: "swal-dark-theme",
-                        },
-                    });
-                } else {
-                    alert(
-                        "Server returned status: " +
-                            xhr.status +
-                            ". Please try again or contact support.",
-                    );
-                }
-            }
-        }
-    };
-
-    xhr.onerror = function () {
-        console.error("Network error occurred");
-        if (typeof Swal !== "undefined") {
-            Swal.fire({
-                title: "Network Error!",
-                text: "Network error occurred. Please check your connection.",
-                icon: "error",
-                confirmButtonColor: "#dc3545",
-                background: "#2c3e50",
-                color: "#fff",
-                customClass: {
-                    popup: "swal-dark-theme",
-                },
-            });
-        } else {
-            alert("Network error occurred. Please check your connection.");
-        }
-    };
-
-    xhr.send(
-        JSON.stringify({
-            signal_data: signalData,
-            force_add: forceAdd || false,
-        }),
-    );
+    xhr.send(JSON.stringify(requestData));
 }
 
 function createUserDealFromSignal(

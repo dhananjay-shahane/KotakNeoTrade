@@ -1691,7 +1691,7 @@ function addDealFromSignal(symbol, signalData) {
         var xhr = new XMLHttpRequest();
         xhr.open("POST", "/api/deals/create-from-signal", true);
         xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.timeout = 10000;ut = 10000; // 10 second timeout
+        xhr.timeout = 10000; // 10 second timeout
 
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4) {

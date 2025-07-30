@@ -780,7 +780,7 @@ def close_deal():
 
 
 @deals_api.route('/deals/create-from-signal', methods=['POST'])
-@deals_api.route('/dynamic/add-deal', methods=['POST'])  # Alternative endpoint
+@deals_api.route('/dynamic/add-deal', methods=['POST'])
 def create_deal_from_signal():
     """Create a new deal from trading signal with duplicate detection"""
     try:
