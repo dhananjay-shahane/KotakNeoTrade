@@ -25,8 +25,11 @@ def get_external_db_connection():
 def reset_password():
     """Reset user password in external database with enhanced validation"""
     try:
+        logging.info("Password reset request received")
+        
         # Check if user is authenticated
         if not session.get('authenticated'):
+            logging.warning("Unauthenticated password reset attempt")
             return jsonify({
                 'success': False,
                 'message': 'User not authenticated'
@@ -34,15 +37,18 @@ def reset_password():
         
         data = request.get_json()
         if not data:
+            logging.warning("No data provided in password reset request")
             return jsonify({
                 'success': False,
                 'message': 'No data provided'
             }), 400
         
-        old_password = data.get('oldPassword')
-        new_password = data.get('newPassword')
-        confirm_password = data.get('confirmPassword')
+        old_password = data.get('oldPassword', '').strip()
+        new_password = data.get('newPassword', '').strip()
+        confirm_password = data.get('confirmPassword', '').strip()
         username = session.get('username')
+        
+        logging.info(f"Password reset attempt for user: {username}")
         
         # Validation
         if not old_password or not new_password or not confirm_password:
@@ -72,6 +78,7 @@ def reset_password():
         # Connect to external database
         conn = get_external_db_connection()
         if not conn:
+            logging.error("Failed to connect to external database")
             return jsonify({
                 'success': False,
                 'message': 'Database connection failed'
@@ -90,6 +97,7 @@ def reset_password():
             if not current_user:
                 cursor.close()
                 conn.close()
+                logging.warning(f"User not found in database: {username}")
                 return jsonify({
                     'success': False,
                     'message': 'User not found'
@@ -97,10 +105,11 @@ def reset_password():
             
             current_password = current_user[0]
             
-            # Verify old password matches
+            # Verify old password matches (case-sensitive comparison)
             if old_password != current_password:
                 cursor.close()
                 conn.close()
+                logging.warning(f"Incorrect current password for user: {username}")
                 return jsonify({
                     'success': False,
                     'message': 'Current password is incorrect'
@@ -110,6 +119,7 @@ def reset_password():
             if new_password == current_password:
                 cursor.close()
                 conn.close()
+                logging.warning(f"User attempted to set same password: {username}")
                 return jsonify({
                     'success': False,
                     'message': 'New password cannot be the same as your current password. Please choose a different password.'
@@ -126,6 +136,7 @@ def reset_password():
             if cursor.rowcount == 0:
                 cursor.close()
                 conn.close()
+                logging.error(f"Password update failed - no rows affected for user: {username}")
                 return jsonify({
                     'success': False,
                     'message': 'Password not updated'
@@ -142,12 +153,22 @@ def reset_password():
                 'message': 'Password updated successfully'
             })
             
+        except psycopg2.Error as e:
+            if conn:
+                conn.rollback()
+                cursor.close()
+                conn.close()
+            logging.error(f"PostgreSQL error during password update: {e}")
+            return jsonify({
+                'success': False,
+                'message': 'Database error occurred'
+            }), 500
         except Exception as e:
             if conn:
                 conn.rollback()
                 cursor.close()
                 conn.close()
-            logging.error(f"Database error during password update: {e}")
+            logging.error(f"Unexpected error during password update: {e}")
             return jsonify({
                 'success': False,
                 'message': 'Database error occurred'
