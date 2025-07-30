@@ -4,12 +4,17 @@ Fixed Authentication API for user login and registration functionality
 import os
 import string
 import psycopg2
+import sys
 from datetime import datetime
 from flask import request, flash, redirect, url_for, render_template, jsonify
 from flask_login import login_user, logout_user, current_user
 from flask_mail import Mail, Message
 from models import db, User
 import secrets
+
+# Add scripts to path for dynamic deals service
+sys.path.append('scripts')
+from dynamic_user_deals import dynamic_deals_service
 
 
 def get_external_db_connection():
@@ -458,6 +463,12 @@ def handle_register(mail=None):
 
             # Store user details in external database
             if store_user_in_external_db(username, password, email, mobile):
+                # Create user-specific deals table
+                if dynamic_deals_service.create_user_deals_table(username):
+                    print(f"✅ Created deals table for user: {username}")
+                else:
+                    print(f"⚠️ Failed to create deals table for user: {username}")
+                
                 # Send registration email if email service is configured
                 if mail:
                     EmailService.send_registration_email(mail, email, username, password)

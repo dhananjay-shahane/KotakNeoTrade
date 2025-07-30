@@ -3,7 +3,13 @@ Trading Signals API endpoints for Kotak Neo Trading Platform
 Handles ETF signals, admin signals, and default deals data
 """
 import logging
-from flask import Blueprint, jsonify, request
+import sys
+from flask import Blueprint, jsonify, request, session
+from flask_login import current_user, login_required
+
+# Add scripts to path
+sys.path.append('scripts')
+from dynamic_user_deals import dynamic_deals_service
 
 # Create blueprint for signals API
 signals_bp = Blueprint('signals_api', __name__, url_prefix='/api')
@@ -177,6 +183,58 @@ def handle_default_deals_data_logic():
     This function contains the business logic separated from the Flask route
     """
     return get_default_deals_data()
+
+
+@signals_bp.route('/add-deal-to-user', methods=['POST'])
+@login_required
+def add_deal_to_user():
+    """Add a deal from trading signals to user-specific deals table"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+        
+        # Get current user information
+        if not current_user.is_authenticated:
+            return jsonify({'success': False, 'error': 'User not authenticated'}), 401
+        
+        username = current_user.username
+        
+        # Check if user deals table exists, create if not
+        if not dynamic_deals_service.table_exists(username):
+            if not dynamic_deals_service.create_user_deals_table(username):
+                return jsonify({'success': False, 'error': 'Failed to create user deals table'}), 500
+        
+        # Prepare deal data
+        deal_data = {
+            'user_id': current_user.id,
+            'trade_signal_id': data.get('signal_id'),
+            'symbol': data.get('symbol'),
+            'qty': data.get('qty'),
+            'ep': data.get('ep'),  # Entry price
+            'pos': data.get('pos'),  # Position (BUY/SELL)
+            'status': 'ACTIVE',
+            'target_price': data.get('target_price'),
+            'stop_loss': data.get('stop_loss'),
+            'notes': data.get('notes', f'Added from trading signals on {data.get("symbol")}')
+        }
+        
+        # Add deal to user table
+        deal_id = dynamic_deals_service.add_deal_to_user_table(username, deal_data)
+        
+        if deal_id:
+            return jsonify({
+                'success': True,
+                'message': f'Deal added successfully to {username}_deals table',
+                'deal_id': deal_id,
+                'table_name': f'{username}_deals'
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Failed to add deal'}), 500
+            
+    except Exception as e:
+        logging.error(f"Add deal to user API error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @signals_bp.route('/initialize-auto-sync', methods=['POST'])

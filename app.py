@@ -85,14 +85,9 @@ app.secret_key = session_secret
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1,
                         x_host=1)  # Enable HTTPS URL generation
 
-# Database configuration - use Replit PostgreSQL
-database_url = os.environ.get("DATABASE_URL")
-if database_url:
-    print("✓ Using PostgreSQL database")
-else:
-    # Fallback to SQLite for development only
-    database_url = "sqlite:///instance/trading_platform.db"
-    print("⚠️ Using SQLite fallback - PostgreSQL not available")
+# Database configuration - use External PostgreSQL Database
+database_url = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com:5432/kotak_trading_db"
+print("✓ Using External PostgreSQL Database")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
@@ -924,6 +919,14 @@ try:
 except Exception as e:
     print(f"Warning: Could not register deals blueprint: {e}")
 
+# Register signals API blueprint with add deal functionality
+try:
+    from api.signals_api import signals_bp
+    app.register_blueprint(signals_bp, url_prefix='/api')
+    print("✓ Registered signals_api blueprint")
+except Exception as e:
+    print(f"✗ Error registering signals_api: {e}")
+
 # Additional blueprints
 try:
     from api.etf_signals import etf_bp
@@ -959,6 +962,14 @@ try:
     print("✓ Registered portfolio_api blueprint")
 except Exception as e:
     print(f"✗ Error registering portfolio_api: {e}")
+
+# Register dynamic deals API blueprint
+try:
+    from api.dynamic_deals_api import dynamic_deals_api
+    app.register_blueprint(dynamic_deals_api)
+    print("✓ Registered dynamic_deals_api blueprint")
+except Exception as e:
+    print(f"✗ Error registering dynamic_deals_api: {e}")
 
 # Initialize auto-sync triggers
 try:
