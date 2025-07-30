@@ -179,8 +179,10 @@ def get_default_deals():
                     tpr_value = "--"
                     tva_value = "--"
 
-                # Position value (default to original pos value)
-                pos_value = deal.get('pos', '1')
+                # Position value (default to 1 for active deals, 0 for closed)
+                pos_value = deal.get('pos', 1)
+                if pos_value is None:
+                    pos_value = 1
 
                 # Format deal
                 formatted_deal = {

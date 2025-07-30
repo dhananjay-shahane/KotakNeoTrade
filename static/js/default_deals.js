@@ -288,7 +288,7 @@ DefaultDealsManager.prototype.formatCellValue = function (deal, columnKey) {
 
         case "pos":
             // Default to 1, becomes 0 when closed
-            return deal.pos === 1 || deal.pos === "1" ? "1api/default-deals" : "1";
+            return deal.pos === 0 || deal.pos === "0" ? "0" : "1";
 
         case "actions":
             // Check if deal is closed
