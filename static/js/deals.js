@@ -826,23 +826,16 @@ DealsManager.prototype.renderDealsTable = function () {
                             "</div>";
                     } else {
                         // Show enabled buttons for active deals
+                        var dealId = deal.id || deal.trade_signal_id || "";
+                        var symbol = deal.symbol || "";
+                        var qty = deal.qty || 0;
+                        var targetPrice = deal.target_price || deal.tpr || 0;
+                        
                         cellContent =
                             '<div class="btn-group btn-group-sm">' +
-                            '<button class="btn btn-warning btn-sm" onclick="editDeal(\'' +
-                            (deal.id || deal.trade_signal_id || "") +
-                            "', '" +
-                            (deal.symbol || "") +
-                            "', " +
-                            (deal.qty || 0) +
-                            ", " +
-                            (deal.target_price || deal.tpr || 0) +
-                            ')">' +
+                            '<button class="btn btn-warning btn-sm" onclick="editDeal(\'' + dealId + '\', \'' + symbol + '\', ' + qty + ', ' + targetPrice + ')">' +
                             '<i class="fas fa-edit"></i> Edit </button>' +
-                            '<button class="btn btn-danger btn-sm" onclick="closeDeal(\'' +
-                            (deal.id || deal.trade_signal_id || "") +
-                            "', '" +
-                            (deal.symbol || "") +
-                            "')">" +
+                            '<button class="btn btn-danger btn-sm" onclick="closeDeal(\'' + dealId + '\', \'' + symbol + '\')">' +
                             '<i class="fas fa-times"></i> Close' +
                             "</button>" +
                             "</div>";
