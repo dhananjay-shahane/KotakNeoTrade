@@ -43,7 +43,6 @@ def reset_password():
                 'message': 'No data provided'
             }), 400
         
-        old_password = data.get('oldPassword', '').strip()
         new_password = data.get('newPassword', '').strip()
         confirm_password = data.get('confirmPassword', '').strip()
         username = session.get('username')
@@ -51,10 +50,10 @@ def reset_password():
         logging.info(f"Password reset attempt for user: {username}")
         
         # Validation
-        if not old_password or not new_password or not confirm_password:
+        if not new_password or not confirm_password:
             return jsonify({
                 'success': False,
-                'message': 'All password fields are required'
+                'message': 'New password and confirm password are required'
             }), 400
         
         if new_password != confirm_password:
@@ -84,10 +83,11 @@ def reset_password():
                 'message': 'Database connection failed'
             }), 500
         
+        cursor = None
         try:
             cursor = conn.cursor()
             
-            # First, verify the old password
+            # Check if user exists
             cursor.execute('''
                 SELECT password FROM public.external_users 
                 WHERE username = %s
@@ -104,16 +104,6 @@ def reset_password():
                 }), 404
             
             current_password = current_user[0]
-            
-            # Verify old password matches (case-sensitive comparison)
-            if old_password != current_password:
-                cursor.close()
-                conn.close()
-                logging.warning(f"Incorrect current password for user: {username}")
-                return jsonify({
-                    'success': False,
-                    'message': 'Current password is incorrect'
-                }), 400
             
             # Check if new password is same as current password
             if new_password == current_password:
@@ -156,7 +146,8 @@ def reset_password():
         except psycopg2.Error as e:
             if conn:
                 conn.rollback()
-                cursor.close()
+                if cursor:
+                    cursor.close()
                 conn.close()
             logging.error(f"PostgreSQL error during password update: {e}")
             return jsonify({
@@ -166,7 +157,8 @@ def reset_password():
         except Exception as e:
             if conn:
                 conn.rollback()
-                cursor.close()
+                if cursor:
+                    cursor.close()
                 conn.close()
             logging.error(f"Unexpected error during password update: {e}")
             return jsonify({

@@ -997,7 +997,6 @@ function togglePasswordVisibility(inputIdOrButton) {
 
 // Submit password reset with enhanced validation
 function submitPasswordReset() {
-    var oldPassword = document.getElementById('oldPassword').value;
     var newPassword = document.getElementById('newPassword').value;
     var confirmPassword = document.getElementById('confirmPassword').value;
     var submitBtn = document.getElementById('resetPasswordBtn');
@@ -1007,7 +1006,7 @@ function submitPasswordReset() {
     var currentUsername = usernameElement ? usernameElement.textContent.trim() : '';
     
     // Validation
-    if (!oldPassword || !newPassword || !confirmPassword) {
+    if (!newPassword || !confirmPassword) {
         Swal.fire({
             icon: 'error',
             title: 'Validation Error',
@@ -1067,7 +1066,6 @@ function submitPasswordReset() {
         },
         credentials: 'same-origin',
         body: JSON.stringify({
-            oldPassword: oldPassword,
             newPassword: newPassword,
             confirmPassword: confirmPassword,
             username: currentUsername
