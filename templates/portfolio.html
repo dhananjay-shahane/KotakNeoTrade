@@ -437,8 +437,14 @@ endblock %} {% block head %}
                 <!-- Symbol Selector and Deal Progress -->
                 <div class="col-md-4 mb-4">
                     <div class="card h-100">
-                        <div class="card-header">
-                            <h6 class="mb-0">Deals Distribution</h6>
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">Portfolio Analysis</h6>
+                            <select class="form-select form-select-sm" id="chartTypeSelector" onchange="updateChartView()" style="width: auto;">
+                                <option value="deals_status">Active vs Closed</option>
+                                <option value="symbols_distribution">Symbols Distribution</option>
+                                <option value="pnl_distribution">Profit vs Loss</option>
+                                <option value="investment_breakdown">Investment Breakdown</option>
+                            </select>
                         </div>
                         <div class="card-body">
                             <!-- Symbol Selector -->
@@ -455,12 +461,30 @@ endblock %} {% block head %}
                                 </select>
                             </div>
 
-                            <!-- Deal Progress Pie Chart -->
+                            <!-- Enhanced Pie Chart -->
                             <div
                                 class="chart-container"
                                 style="position: relative; height: 250px"
                             >
                                 <canvas id="projectProgressChart"></canvas>
+                            </div>
+                            
+                            <!-- Chart Legend/Stats -->
+                            <div id="chartStats" class="mt-3">
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <small class="text-muted">Total</small>
+                                        <div class="fw-bold" id="chartTotal">-</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <small class="text-muted">Best</small>
+                                        <div class="fw-bold text-success" id="chartBest">-</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <small class="text-muted">Worst</small>
+                                        <div class="fw-bold text-danger" id="chartWorst">-</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -750,46 +774,178 @@ endblock %} {% block head %}
 
     // Update charts with loaded data
     function updateCharts() {
-        // Update pie chart with Active vs Closed deals data
-        if (progressChart) {
-            const activeDeals = portfolioData.active_deals || 0;
-            const closedDeals = portfolioData.closed_deals || 0;
-            const totalDeals = activeDeals + closedDeals;
-            
-            if (totalDeals > 0) {
-                // Prepare chart data for Active vs Closed deals
-                const labels = ["Active Deals", "Closed Deals"];
-                const data = [activeDeals, closedDeals];
-                const colors = [
-                    "#10B981", // Green for Active deals
-                    "#6B7280"  // Gray for Closed deals
-                ];
+        // Update chart based on selected view
+        updateChartView();
+    }
 
-                progressChart.data.labels = labels;
-                progressChart.data.datasets[0].data = data;
-                progressChart.data.datasets[0].backgroundColor = colors;
-                progressChart.data.datasets[0].borderColor = "#ffffff";
-                progressChart.data.datasets[0].borderWidth = 2;
-                progressChart.update("active");
-                
-                console.log("Pie chart updated with Active vs Closed deals:", {
-                    labels,
-                    data,
-                    colors,
-                    totalDeals
-                });
-            } else {
-                // Show "No Data" when there are no deals
-                progressChart.data.labels = ["No Deals Available"];
-                progressChart.data.datasets[0].data = [1];
-                progressChart.data.datasets[0].backgroundColor = ["#95a5a6"];
-                progressChart.data.datasets[0].borderColor = "#ffffff";
-                progressChart.data.datasets[0].borderWidth = 2;
-                progressChart.update("active");
-                
-                console.log("Pie chart updated with no data message");
-            }
+    // Update chart view based on selector
+    function updateChartView() {
+        if (!progressChart) return;
+        
+        const chartType = document.getElementById("chartTypeSelector").value;
+        let chartData = getChartDataByType(chartType);
+        
+        if (chartData && chartData.data.length > 0) {
+            progressChart.data.labels = chartData.labels;
+            progressChart.data.datasets[0].data = chartData.data;
+            progressChart.data.datasets[0].backgroundColor = chartData.colors;
+            progressChart.data.datasets[0].borderColor = "#ffffff";
+            progressChart.data.datasets[0].borderWidth = 2;
+            progressChart.update("active");
+            
+            // Update chart stats
+            updateChartStats(chartType, chartData);
+            
+            console.log(`Pie chart updated with ${chartType}:`, chartData);
+        } else {
+            // Show "No Data" when there are no deals
+            progressChart.data.labels = ["No Data Available"];
+            progressChart.data.datasets[0].data = [1];
+            progressChart.data.datasets[0].backgroundColor = ["#95a5a6"];
+            progressChart.data.datasets[0].borderColor = "#ffffff";
+            progressChart.data.datasets[0].borderWidth = 2;
+            progressChart.update("active");
+            
+            // Clear stats
+            document.getElementById("chartTotal").textContent = "-";
+            document.getElementById("chartBest").textContent = "-";
+            document.getElementById("chartWorst").textContent = "-";
         }
+    }
+
+    // Get chart data based on type
+    function getChartDataByType(type) {
+        if (!portfolioData || !portfolioData.deals_list) return null;
+        
+        switch (type) {
+            case 'deals_status':
+                return {
+                    labels: ["Active Deals", "Closed Deals"],
+                    data: [portfolioData.active_deals || 0, portfolioData.closed_deals || 0],
+                    colors: ["#10B981", "#6B7280"]
+                };
+                
+            case 'symbols_distribution':
+                if (portfolioData.symbols && portfolioData.symbols.length > 0) {
+                    const symbolCounts = {};
+                    portfolioData.deals_list.forEach(deal => {
+                        if (deal.symbol) {
+                            symbolCounts[deal.symbol] = (symbolCounts[deal.symbol] || 0) + 1;
+                        }
+                    });
+                    
+                    const symbolLabels = Object.keys(symbolCounts);
+                    const symbolData = Object.values(symbolCounts);
+                    const symbolColors = symbolLabels.map((_, index) => {
+                        const colors = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4", "#F97316", "#84CC16"];
+                        return colors[index % colors.length];
+                    });
+                    
+                    return {
+                        labels: symbolLabels,
+                        data: symbolData,
+                        colors: symbolColors
+                    };
+                }
+                return null;
+                
+            case 'pnl_distribution':
+                const profitDeals = portfolioData.deals_list.filter(deal => parseFloat(deal.pl || 0) > 0).length;
+                const lossDeals = portfolioData.deals_list.filter(deal => parseFloat(deal.pl || 0) < 0).length;
+                const breakEvenDeals = portfolioData.deals_list.filter(deal => parseFloat(deal.pl || 0) === 0).length;
+                
+                const pnlLabels = [];
+                const pnlData = [];
+                const pnlColors = [];
+                
+                if (profitDeals > 0) {
+                    pnlLabels.push("Profit Deals");
+                    pnlData.push(profitDeals);
+                    pnlColors.push("#10B981");
+                }
+                if (lossDeals > 0) {
+                    pnlLabels.push("Loss Deals");
+                    pnlData.push(lossDeals);
+                    pnlColors.push("#EF4444");
+                }
+                if (breakEvenDeals > 0) {
+                    pnlLabels.push("Break-even");
+                    pnlData.push(breakEvenDeals);
+                    pnlColors.push("#6B7280");
+                }
+                
+                return pnlLabels.length > 0 ? {
+                    labels: pnlLabels,
+                    data: pnlData,
+                    colors: pnlColors
+                } : null;
+                
+            case 'investment_breakdown':
+                if (portfolioData.symbol_data) {
+                    const symbolInvestments = Object.entries(portfolioData.symbol_data)
+                        .filter(([_, data]) => data.investment > 0)
+                        .sort(([_,a], [__,b]) => b.investment - a.investment)
+                        .slice(0, 8); // Top 8 symbols
+                    
+                    if (symbolInvestments.length > 0) {
+                        const invLabels = symbolInvestments.map(([symbol, _]) => symbol);
+                        const invData = symbolInvestments.map(([_, data]) => data.investment);
+                        const invColors = invLabels.map((_, index) => {
+                            const colors = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4", "#F97316", "#84CC16"];
+                            return colors[index % colors.length];
+                        });
+                        
+                        return {
+                            labels: invLabels,
+                            data: invData,
+                            colors: invColors
+                        };
+                    }
+                }
+                return null;
+                
+            default:
+                return null;
+        }
+    }
+
+    // Update chart statistics
+    function updateChartStats(type, chartData) {
+        let total = "-", best = "-", worst = "-";
+        
+        switch (type) {
+            case 'deals_status':
+                total = `${portfolioData.total_deals} deals`;
+                best = `${Math.max(...chartData.data)} deals`;
+                worst = `${Math.min(...chartData.data)} deals`;
+                break;
+                
+            case 'symbols_distribution':
+                total = `${portfolioData.symbols.length} symbols`;
+                best = `${Math.max(...chartData.data)} deals`;
+                worst = `${Math.min(...chartData.data)} deals`;
+                break;
+                
+            case 'pnl_distribution':
+                const totalPnLDeals = chartData.data.reduce((a, b) => a + b, 0);
+                total = `${totalPnLDeals} deals`;
+                const winRate = portfolioData.deals_list.filter(d => parseFloat(d.pl || 0) > 0).length / portfolioData.total_deals * 100;
+                best = `${winRate.toFixed(1)}% win`;
+                worst = `${(100 - winRate).toFixed(1)}% loss`;
+                break;
+                
+            case 'investment_breakdown':
+                const totalInv = chartData.data.reduce((a, b) => a + b, 0);
+                total = `₹${totalInv.toLocaleString()}`;
+                best = `₹${Math.max(...chartData.data).toLocaleString()}`;
+                worst = `₹${Math.min(...chartData.data).toLocaleString()}`;
+                break;
+        }
+        
+        document.getElementById("chartTotal").textContent = total;
+        document.getElementById("chartBest").textContent = best;
+        document.getElementById("chartWorst").textContent = worst;
+    }
 
         // Update symbol chart with symbol distribution
         if (barChart && portfolioData.symbols && portfolioData.symbols.length > 0) {
@@ -898,7 +1054,21 @@ endblock %} {% block head %}
                                 const value = context.parsed;
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                 const percentage = ((value / total) * 100).toFixed(1);
-                                return label + ": " + value + " deals (" + percentage + "%)";
+                                
+                                // Get current chart type for appropriate formatting
+                                const chartType = document.getElementById("chartTypeSelector")?.value || 'deals_status';
+                                
+                                switch (chartType) {
+                                    case 'investment_breakdown':
+                                        return label + ": ₹" + value.toLocaleString() + " (" + percentage + "%)";
+                                    case 'pnl_distribution':
+                                        return label + ": " + value + " deals (" + percentage + "%)";
+                                    case 'symbols_distribution':
+                                        return label + ": " + value + " deals (" + percentage + "%)";
+                                    case 'deals_status':
+                                    default:
+                                        return label + ": " + value + " deals (" + percentage + "%)";
+                                }
                             },
                         },
                     },
