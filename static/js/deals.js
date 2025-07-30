@@ -288,6 +288,8 @@ DealsManager.prototype.loadDeals = function () {
                         return;
                     }
 
+                    console.log("Processing deals data:", dealsData);
+                    
                     if (dealsData.length > 0) {
                         var uniqueDeals = dealsData.map(function (deal) {
                             return {
@@ -317,16 +319,14 @@ DealsManager.prototype.loadDeals = function () {
                                 tp: parseFloat(deal.tp || 0),
                                 tva: parseFloat(deal.tva || 0),
                                 tpr: deal.tpr || "15.00%",
-                                date:
-                                    deal.entry_date ||
-                                    deal.date ||
-                                    deal.created_at
-                                        ? (
-                                              deal.entry_date ||
-                                              deal.date ||
-                                              deal.created_at
-                                          ).split("T")[0]
-                                        : "",
+                                date: (function() {
+                                    var dateValue = deal.entry_date || deal.date || deal.created_at;
+                                    if (!dateValue) return "";
+                                    if (typeof dateValue === 'string') {
+                                        return dateValue.split("T")[0];
+                                    }
+                                    return String(dateValue).split("T")[0];
+                                })(),
                                 status: deal.status || "ACTIVE",
                                 seven: deal.seven || "--",
                                 seven_percent: deal.seven_percent || "--",
@@ -386,7 +386,8 @@ DealsManager.prototype.loadDeals = function () {
                         "Failed to parse deals API response:",
                         parseError,
                     );
-                    self.showError("Invalid response from server");
+                    console.error("Raw response:", xhr.responseText);
+                    self.showError("Invalid response from server: " + parseError.message);
                 }
             } else if (xhr.status === 0) {
                 console.error(
