@@ -410,7 +410,7 @@ def handle_login():
                 db.session.commit()
             
             login_user(user)
-            flash(f'Welcome back, {user.username}!', 'success')
+            flash('Login successful! Welcome to the trading platform.', 'success')
             next_page = request.args.get('next')
             return redirect(next_page or url_for('portfolio'))
         else:
@@ -418,7 +418,7 @@ def handle_login():
             user = User.query.filter_by(username=username).first()
             if user and user.check_password(password):
                 login_user(user)
-                flash(f'Welcome back, {user.username}!', 'success')
+                flash('Login successful! Welcome to the trading platform.', 'success')
                 next_page = request.args.get('next')
                 return redirect(next_page or url_for('portfolio'))
             else:
