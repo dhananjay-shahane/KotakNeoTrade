@@ -1229,64 +1229,63 @@ function cancelOrder(dealId) {
 
 // Edit Deal Functions
 function editDeal(dealId, symbol, qty, targetPrice) {
-    console.log("Opening edit deal modal for:", dealId, symbol, qty, targetPrice);
-    console.log("Checking for modal elements...");
-    console.log("Edit modal exists:", !!document.getElementById('editDealModal'));
-    console.log("Bootstrap object:", typeof bootstrap);
+    console.log("Edit Deal clicked for:", dealId, symbol, qty, targetPrice);
     
-    // Set modal values
-    document.getElementById('editDealId').value = dealId;
-    document.getElementById('editSymbol').value = symbol;
-    document.getElementById('editQuantity').value = qty;
-    document.getElementById('editTargetPrice').value = targetPrice;
-    
-    // Show modal using jQuery/Bootstrap 5 compatible approach
-    try {
-        var modalElement = document.getElementById('editDealModal');
-        if (modalElement) {
-            var modal = new bootstrap.Modal(modalElement, {
-                backdrop: 'static',
-                keyboard: false
-            });
-            modal.show();
-        } else {
-            console.error('Edit Deal Modal not found in DOM');
-            alert('Edit Deal modal not available');
+    // Simple SweetAlert2 modal with form inputs
+    Swal.fire({
+        title: 'Edit Deal',
+        html: `
+            <div class="text-start">
+                <div class="mb-3">
+                    <label class="form-label">Symbol: <strong>${symbol}</strong></label>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="swal-quantity" class="form-label">Quantity <span class="text-danger">*</span></label>
+                        <input type="number" id="swal-quantity" class="form-control" value="${qty}" min="1" step="1" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="swal-target-price" class="form-label">Target Price <span class="text-danger">*</span></label>
+                        <input type="number" id="swal-target-price" class="form-control" value="${targetPrice}" min="0" step="0.01" required>
+                    </div>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Update Deal',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#ffc107',
+        background: '#1e1e1e',
+        color: '#fff',
+        preConfirm: () => {
+            const quantity = document.getElementById('swal-quantity').value;
+            const targetPrice = document.getElementById('swal-target-price').value;
+            
+            if (!quantity || !targetPrice) {
+                Swal.showValidationMessage('Please fill in all required fields');
+                return false;
+            }
+            
+            if (parseFloat(quantity) <= 0 || parseFloat(targetPrice) <= 0) {
+                Swal.showValidationMessage('Quantity and target price must be positive numbers');
+                return false;
+            }
+            
+            return {
+                qty: parseFloat(quantity),
+                target_price: parseFloat(targetPrice)
+            };
         }
-    } catch (error) {
-        console.error('Error showing edit deal modal:', error);
-        alert('Error opening edit dialog');
-    }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const { qty, target_price } = result.value;
+            submitEditDealAPI(dealId, symbol, qty, target_price);
+        }
+    });
 }
 
-function submitEditDeal() {
-    var dealId = document.getElementById('editDealId').value;
-    var symbol = document.getElementById('editSymbol').value;
-    var qty = document.getElementById('editQuantity').value;
-    var targetPrice = document.getElementById('editTargetPrice').value;
-    
-    if (!qty || !targetPrice) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Validation Error',
-            text: 'Please fill in all required fields',
-            background: '#1e1e1e',
-            color: '#fff'
-        });
-        return;
-    }
-    
-    if (parseFloat(qty) <= 0 || parseFloat(targetPrice) <= 0) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Validation Error',
-            text: 'Quantity and target price must be positive numbers',
-            background: '#1e1e1e',
-            color: '#fff'
-        });
-        return;
-    }
-    
+function submitEditDealAPI(dealId, symbol, qty, targetPrice) {
+
     // Show loading
     Swal.fire({
         title: 'Updating Deal...',
@@ -1308,8 +1307,8 @@ function submitEditDeal() {
         body: JSON.stringify({
             deal_id: dealId,
             symbol: symbol,
-            qty: parseFloat(qty),
-            target_price: parseFloat(targetPrice)
+            qty: qty,
+            target_price: targetPrice
         })
     })
     .then(response => response.json())
@@ -1322,9 +1321,7 @@ function submitEditDeal() {
                 background: '#1e1e1e',
                 color: '#fff'
             }).then(() => {
-                // Close modal and refresh deals
-                var modal = bootstrap.Modal.getInstance(document.getElementById('editDealModal'));
-                modal.hide();
+                // Refresh deals table
                 window.dealsManager.loadDeals();
             });
         } else {
@@ -1351,70 +1348,62 @@ function submitEditDeal() {
 
 // Close Deal Functions
 function closeDeal(dealId, symbol) {
-    console.log("Opening close deal modal for:", dealId, symbol);
-    console.log("Checking for close modal elements...");
-    console.log("Close modal exists:", !!document.getElementById('closeDealModal'));
+    console.log("Close Deal clicked for:", dealId, symbol);
     
-    // Set modal values
-    document.getElementById('closeDealId').value = dealId;
-    document.getElementById('closeSymbol').value = symbol;
-    
-    // Set max date to today
-    var today = new Date().toISOString().split('T')[0];
-    document.getElementById('exitDate').setAttribute('max', today);
-    document.getElementById('exitDate').value = today; // Default to today
-    
-    // Show modal using jQuery/Bootstrap 5 compatible approach
-    try {
-        var modalElement = document.getElementById('closeDealModal');
-        if (modalElement) {
-            var modal = new bootstrap.Modal(modalElement, {
-                backdrop: 'static',
-                keyboard: false
-            });
-            modal.show();
-        } else {
-            console.error('Close Deal Modal not found in DOM');
-            alert('Close Deal modal not available');
+    // Simple confirmation using SweetAlert2 with date input
+    Swal.fire({
+        title: 'Close Deal',
+        html: `
+            <div class="text-start">
+                <div class="mb-3">
+                    <label class="form-label">Symbol: <strong>${symbol}</strong></label>
+                </div>
+                <div class="mb-3">
+                    <label for="swal-exit-date" class="form-label">Exit Date <span class="text-danger">*</span></label>
+                    <input type="date" id="swal-exit-date" class="form-control" max="${new Date().toISOString().split('T')[0]}" value="${new Date().toISOString().split('T')[0]}" required>
+                    <small class="text-muted">Exit date cannot be in the future</small>
+                </div>
+                <div class="alert alert-warning" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> Closing this deal will disable the row and set position to 0.
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Close Deal',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#dc3545',
+        background: '#1e1e1e',
+        color: '#fff',
+        preConfirm: () => {
+            const exitDate = document.getElementById('swal-exit-date').value;
+            if (!exitDate) {
+                Swal.showValidationMessage('Please select an exit date');
+                return false;
+            }
+            
+            // Validate exit date is not in the future
+            const selectedDate = new Date(exitDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (selectedDate > today) {
+                Swal.showValidationMessage('Exit date cannot be in the future');
+                return false;
+            }
+            
+            return exitDate;
         }
-    } catch (error) {
-        console.error('Error showing close deal modal:', error);
-        alert('Error opening close dialog');
-    }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const exitDate = result.value;
+            submitCloseDealAPI(dealId, symbol, exitDate);
+        }
+    });
 }
 
-function submitCloseDeal() {
-    var dealId = document.getElementById('closeDealId').value;
-    var symbol = document.getElementById('closeSymbol').value;
-    var exitDate = document.getElementById('exitDate').value;
-    
-    if (!exitDate) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Validation Error',
-            text: 'Please select an exit date',
-            background: '#1e1e1e',
-            color: '#fff'
-        });
-        return;
-    }
-    
-    // Validate exit date is not in the future
-    var selectedDate = new Date(exitDate);
-    var today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    if (selectedDate > today) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Invalid Date',
-            text: 'Exit date cannot be in the future',
-            background: '#1e1e1e',
-            color: '#fff'
-        });
-        return;
-    }
-    
+function submitCloseDealAPI(dealId, symbol, exitDate) {
+
     // Show loading
     Swal.fire({
         title: 'Closing Deal...',
@@ -1449,9 +1438,7 @@ function submitCloseDeal() {
                 background: '#1e1e1e',
                 color: '#fff'
             }).then(() => {
-                // Close modal and refresh deals
-                var modal = bootstrap.Modal.getInstance(document.getElementById('closeDealModal'));
-                modal.hide();
+                // Refresh deals table
                 window.dealsManager.loadDeals();
             });
         } else {
