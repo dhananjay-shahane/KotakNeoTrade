@@ -1230,6 +1230,9 @@ function cancelOrder(dealId) {
 // Edit Deal Functions
 function editDeal(dealId, symbol, qty, targetPrice) {
     console.log("Opening edit deal modal for:", dealId, symbol, qty, targetPrice);
+    console.log("Checking for modal elements...");
+    console.log("Edit modal exists:", !!document.getElementById('editDealModal'));
+    console.log("Bootstrap object:", typeof bootstrap);
     
     // Set modal values
     document.getElementById('editDealId').value = dealId;
@@ -1237,9 +1240,23 @@ function editDeal(dealId, symbol, qty, targetPrice) {
     document.getElementById('editQuantity').value = qty;
     document.getElementById('editTargetPrice').value = targetPrice;
     
-    // Show modal
-    var modal = new bootstrap.Modal(document.getElementById('editDealModal'));
-    modal.show();
+    // Show modal using jQuery/Bootstrap 5 compatible approach
+    try {
+        var modalElement = document.getElementById('editDealModal');
+        if (modalElement) {
+            var modal = new bootstrap.Modal(modalElement, {
+                backdrop: 'static',
+                keyboard: false
+            });
+            modal.show();
+        } else {
+            console.error('Edit Deal Modal not found in DOM');
+            alert('Edit Deal modal not available');
+        }
+    } catch (error) {
+        console.error('Error showing edit deal modal:', error);
+        alert('Error opening edit dialog');
+    }
 }
 
 function submitEditDeal() {
@@ -1335,6 +1352,8 @@ function submitEditDeal() {
 // Close Deal Functions
 function closeDeal(dealId, symbol) {
     console.log("Opening close deal modal for:", dealId, symbol);
+    console.log("Checking for close modal elements...");
+    console.log("Close modal exists:", !!document.getElementById('closeDealModal'));
     
     // Set modal values
     document.getElementById('closeDealId').value = dealId;
@@ -1345,9 +1364,23 @@ function closeDeal(dealId, symbol) {
     document.getElementById('exitDate').setAttribute('max', today);
     document.getElementById('exitDate').value = today; // Default to today
     
-    // Show modal
-    var modal = new bootstrap.Modal(document.getElementById('closeDealModal'));
-    modal.show();
+    // Show modal using jQuery/Bootstrap 5 compatible approach
+    try {
+        var modalElement = document.getElementById('closeDealModal');
+        if (modalElement) {
+            var modal = new bootstrap.Modal(modalElement, {
+                backdrop: 'static',
+                keyboard: false
+            });
+            modal.show();
+        } else {
+            console.error('Close Deal Modal not found in DOM');
+            alert('Close Deal modal not available');
+        }
+    } catch (error) {
+        console.error('Error showing close deal modal:', error);
+        alert('Error opening close dialog');
+    }
 }
 
 function submitCloseDeal() {
@@ -1456,9 +1489,23 @@ function editExitDate(dealId, symbol, currentExitDate) {
     var today = new Date().toISOString().split('T')[0];
     document.getElementById('editExitDateInput').setAttribute('max', today);
     
-    // Show modal
-    var modal = new bootstrap.Modal(document.getElementById('editExitDateModal'));
-    modal.show();
+    // Show modal using jQuery/Bootstrap 5 compatible approach
+    try {
+        var modalElement = document.getElementById('editExitDateModal');
+        if (modalElement) {
+            var modal = new bootstrap.Modal(modalElement, {
+                backdrop: 'static',
+                keyboard: false
+            });
+            modal.show();
+        } else {
+            console.error('Edit Exit Date Modal not found in DOM');
+            alert('Edit Exit Date modal not available');
+        }
+    } catch (error) {
+        console.error('Error showing edit exit date modal:', error);
+        alert('Error opening exit date dialog');
+    }
 }
 
 function submitEditExitDate() {
