@@ -164,11 +164,11 @@ class SignalsFetcher:
                        days_back: int = 30) -> pd.DataFrame:
         """
         Fetch user deals as DataFrame
-        
+
         Args:
             user_id: User ID to fetch deals for
             days_back: Number of days to look back for deals
-            
+
         Returns:
             DataFrame with columns: trade_signal_id, symbol, qty, entry_date, entry_price, position_type, ed
         """
@@ -265,7 +265,7 @@ def get_external_db_connection():
         return None
 
 
-def check_duplicate_deal(symbol, user_id=1):
+def check_duplicate_deal(symbol, username):
     """
     Check if a deal with the same symbol already exists for the user
     Returns True if duplicate exists, False otherwise
@@ -280,7 +280,7 @@ def check_duplicate_deal(symbol, user_id=1):
             SELECT COUNT(*) FROM public.user_deals 
             WHERE symbol = %s AND user_id = %s AND status = 'ACTIVE'
             """
-            cursor.execute(query, (symbol.upper(), user_id))
+            cursor.execute(query, (symbol.upper(), username))
             count = cursor.fetchone()[0]
 
         conn.close()
@@ -594,7 +594,7 @@ def get_user_deals_data():
             }
         }), 500
 
-        
+
 
 
 @deals_api.route('/deals/check-duplicate', methods=['POST'])
@@ -776,7 +776,7 @@ def close_deal():
         logger.error(f"Error closing deal: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-    
+
 
 
 @deals_api.route('/deals/create-from-signal', methods=['POST'])
@@ -855,11 +855,19 @@ def create_deal_from_signal():
             )
             user_id = 1
 
+        # Get username from session
+        username = session.get('username')
+        if not username:
+            return jsonify({
+                'success': False,
+                'error': 'Username is required'
+            }), 400
+
         # Check for force_add flag to bypass duplicate check
         force_add = data.get('force_add', False)
 
         # Check for duplicate unless force_add is True
-        if not force_add and check_duplicate_deal(symbol, user_id):
+        if not force_add and check_duplicate_deal(symbol, username):
             return jsonify({
                 'success': False,
                 'duplicate': True,
