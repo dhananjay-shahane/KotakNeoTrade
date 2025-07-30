@@ -438,7 +438,7 @@ endblock %} {% block head %}
                 <div class="col-md-4 mb-4">
                     <div class="card h-100">
                         <div class="card-header">
-                            <h6 class="mb-0">Investment vs P&L</h6>
+                            <h6 class="mb-0">Deals Distribution</h6>
                         </div>
                         <div class="card-body">
                             <!-- Symbol Selector -->
@@ -725,17 +725,17 @@ endblock %} {% block head %}
 
     // Update charts with loaded data
     function updateCharts() {
-        // Update pie chart with Investment vs Profit/Loss data
-        if (progressChart && portfolioData.total_investment) {
-            const totalInvestment = portfolioData.total_investment || 0;
-            const totalPnL = Math.abs(portfolioData.total_pnl || 0);
+        // Update pie chart with Active vs Closed deals data
+        if (progressChart && portfolioData.total_deals > 0) {
+            const activeDeals = portfolioData.active_deals || 0;
+            const closedDeals = portfolioData.closed_deals || 0;
             
-            // Prepare chart data for Investment vs P&L
-            const labels = ["Total Investment", totalPnL > 0 ? "Profit" : "Loss"];
-            const data = [totalInvestment, totalPnL];
+            // Prepare chart data for Active vs Closed deals
+            const labels = ["Active Deals", "Closed Deals"];
+            const data = [activeDeals, closedDeals];
             const colors = [
-                "#3B82F6", // Blue for Investment
-                portfolioData.total_pnl >= 0 ? "#10B981" : "#EF4444" // Green for profit, Red for loss
+                "#10B981", // Green for Active deals
+                "#6B7280"  // Gray for Closed deals
             ];
 
             progressChart.data.labels = labels;
@@ -745,7 +745,7 @@ endblock %} {% block head %}
             progressChart.data.datasets[0].borderWidth = 2;
             progressChart.update("active");
             
-            console.log("Pie chart updated with Investment vs P&L:", {
+            console.log("Pie chart updated with Active vs Closed deals:", {
                 labels,
                 data,
                 colors
@@ -832,7 +832,9 @@ endblock %} {% block head %}
                             label: function (context) {
                                 const label = context.label || "";
                                 const value = context.parsed;
-                                return label + ": ₹" + value.toLocaleString();
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return label + ": " + value + " deals (" + percentage + "%)";
                             },
                         },
                     },
