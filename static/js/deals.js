@@ -253,13 +253,13 @@ DealsManager.prototype.loadDeals = function () {
     }
 
     self.isLoading = true;
-    console.log("Loading deals from dynamic user deals table...");
+    console.log("Loading deals from logged-in user's deals table...");
 
     // Show loading spinner inside table
     self.showLoadingSpinner();
 
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", "/api/dynamic/user-deals", true);
+    xhr.open("GET", "/api/user-deals-data", true);
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.timeout = 15000; // 15 second timeout
 
@@ -272,17 +272,20 @@ DealsManager.prototype.loadDeals = function () {
                     var response = JSON.parse(xhr.responseText);
                     console.log("API Response:", response);
 
-                    // Check for response structure from deals_api.py
+                    // Check for response structure from user deals API
                     var dealsData = [];
-                    if (response.data && Array.isArray(response.data)) {
-                        dealsData = response.data;
-                    } else if (
-                        response.deals &&
-                        Array.isArray(response.deals)
-                    ) {
+                    if (response.deals && Array.isArray(response.deals)) {
                         dealsData = response.deals;
+                    } else if (response.data && Array.isArray(response.data)) {
+                        dealsData = response.data;
                     } else if (Array.isArray(response)) {
                         dealsData = response;
+                    }
+
+                    // Check if user is not logged in
+                    if (response.success === false && response.message && response.message.includes('not logged in')) {
+                        self.showError("Please log in to view your deals");
+                        return;
                     }
 
                     if (dealsData.length > 0) {
@@ -371,12 +374,12 @@ DealsManager.prototype.loadDeals = function () {
                                 " deals from user_deals table",
                         );
                     } else {
-                        console.log("No deals found in database");
+                        console.log("No deals found for logged-in user");
                         self.deals = [];
                         self.filteredDeals = [];
                         self.renderDealsTable();
                         self.updatePagination();
-                        self.showEmptyStateMessage();
+                        self.showEmptyUserDealsMessage();
                     }
                 } catch (parseError) {
                     console.error(
@@ -908,6 +911,22 @@ DealsManager.prototype.showEmptyStateMessage = function () {
         '<h6 class="text-light">No Deals Found</h6>' +
         '<p class="text-muted mb-3">You haven\'t added any deals yet</p>' +
         '<small class="text-muted d-block mt-2">Visit the ETF Signals page to add deals from trading signals</small>' +
+        "</td>" +
+        "</tr>";
+};
+
+DealsManager.prototype.showEmptyUserDealsMessage = function () {
+    var tbody = document.getElementById("dealsTableBody");
+    tbody.innerHTML =
+        "<tr>" +
+        '<td colspan="' +
+        this.selectedColumns.length +
+        '" class="text-center py-4">' +
+        '<i class="fas fa-user-circle fa-3x mb-3 text-info"></i>' +
+        '<h6 class="text-light">No Deals in Your Account</h6>' +
+        '<p class="text-muted mb-3">Your personal deals table is empty</p>' +
+        '<small class="text-muted d-block mt-2">Add deals from the ETF Signals page to see them here</small>' +
+        '<small class="text-warning d-block mt-1">Showing data from your logged-in user account</small>' +
         "</td>" +
         "</tr>";
 };

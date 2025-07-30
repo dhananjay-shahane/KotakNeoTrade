@@ -544,13 +544,36 @@ def get_all_deals_data_metrics():
 @deals_api.route('/user-deals-data')
 @deals_api.route('/user-deals')
 def get_user_deals_data():
-    """API endpoint to get user deals data using the new get_all_deals_data_metrics function"""
+    """API endpoint to get user deals data from logged-in user's dynamic table"""
     try:
-        deals = get_all_deals_data_metrics()
+        # Get username from session
+        username = session.get('username')
+        if not username:
+            return jsonify({
+                'success': False,
+                'message': 'User not logged in',
+                'deals': [],
+                'summary': {
+                    'total_deals': 0,
+                    'total_invested': 0,
+                    'total_current_value': 0,
+                    'total_pnl': 0,
+                    'total_pnl_percent': 0
+                }
+            }), 401
 
-        if not deals:
+        # Import dynamic deals service
+        import sys
+        sys.path.append('scripts')
+        from scripts.dynamic_user_deals import DynamicUserDealsService
+        
+        dynamic_deals_service = DynamicUserDealsService()
+        
+        # Check if user table exists
+        if not dynamic_deals_service.table_exists(username):
             return jsonify({
                 'success': True,
+                'message': f'No deals table found for user {username}',
                 'deals': [],
                 'summary': {
                     'total_deals': 0,
@@ -561,26 +584,115 @@ def get_user_deals_data():
                 }
             })
 
-        # Calculate summary from deals
-        total_invested = sum(deal.get('inv', 0) for deal in deals)
-        total_current = sum(
-            deal.get('qty', 0) *
-            deal.get('cmp', 0) if isinstance(deal.get('cmp'), (int,
-                                                               float)) else 0
-            for deal in deals)
-        total_pnl = sum(deal.get('pl', 0) for deal in deals)
-        total_pnl_percent = (total_pnl / total_invested *
-                             100) if total_invested > 0 else 0
+        # Get deals from user's dynamic table
+        user_deals = dynamic_deals_service.get_user_deals(username)
+        
+        if not user_deals:
+            return jsonify({
+                'success': True,
+                'message': f'No deals found for user {username}',
+                'deals': [],
+                'summary': {
+                    'total_deals': 0,
+                    'total_invested': 0,
+                    'total_current_value': 0,
+                    'total_pnl': 0,
+                    'total_pnl_percent': 0
+                }
+            })
+
+        # Format deals for frontend
+        formatted_deals = []
+        total_invested = 0
+        total_current_value = 0
+        total_pnl = 0
+
+        for deal in user_deals:
+            # Get CMP for the symbol using PriceFetcher
+            db_connector = None
+            try:
+                external_db_url = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com:5432/kotak_trading_db"
+                from Scripts.db_connector import DatabaseConnector
+                db_connector = DatabaseConnector(external_db_url)
+                
+                price_fetcher = PriceFetcher(db_connector)
+                cmp = price_fetcher.get_cmp(deal.get('symbol', ''))
+                
+                if db_connector:
+                    db_connector.close()
+            except Exception as e:
+                logger.warning(f"Could not fetch CMP for {deal.get('symbol', '')}: {e}")
+                cmp = deal.get('ep', 0)  # Fallback to entry price
+
+            # Calculate values
+            qty = float(deal.get('qty', 0))
+            ep = float(deal.get('ep', 0))
+            current_price = float(cmp) if cmp else ep
+            
+            invested_amount = qty * ep
+            current_value = qty * current_price
+            pnl_amount = current_value - invested_amount
+            pnl_percent = (pnl_amount / invested_amount * 100) if invested_amount > 0 else 0
+            
+            # Format deal
+            formatted_deal = {
+                'id': deal.get('id'),
+                'trade_signal_id': deal.get('id'),
+                'symbol': deal.get('symbol', ''),
+                'qty': int(qty),
+                'ep': round(ep, 2),
+                'cmp': round(current_price, 2),
+                'pos': deal.get('pos', '1'),
+                'inv': round(invested_amount, 2),
+                'pl': round(pnl_amount, 2),
+                'chan_percent': f"{pnl_percent:.2f}%",
+                'tp': round(float(deal.get('tp', ep * 1.05)), 2),
+                'tpr': f"{((float(deal.get('tp', ep * 1.05)) - ep) / ep * 100):.2f}%" if ep > 0 else "0.00%",
+                'tva': round(float(deal.get('tp', ep * 1.05)) * qty, 2),
+                'date': deal.get('created_at', '').split('T')[0] if deal.get('created_at') else '',
+                'status': deal.get('status', 'ACTIVE'),
+                'seven': '--',
+                'seven_percent': '--',
+                'thirty': '--',
+                'thirty_percent': '--',
+                'qt': 1,
+                'ed': deal.get('ed', '--'),
+                'exp': '--',
+                'pr': '--',
+                'pp': '--',
+                'iv': round(invested_amount, 2),
+                'ip': round(ep, 2),
+                'entry_price': ep,
+                'current_price': current_price,
+                'invested_amount': invested_amount,
+                'pnl_amount': pnl_amount,
+                'pnl_percent': pnl_percent,
+                'deal_type': deal.get('deal_type', 'MANUAL'),
+                'position_type': 1,
+                'trading_symbol': deal.get('symbol', ''),
+                'exchange': 'NSE'
+            }
+            
+            formatted_deals.append(formatted_deal)
+            
+            # Add to totals
+            total_invested += invested_amount
+            total_current_value += current_value
+            total_pnl += pnl_amount
+
+        total_pnl_percent = (total_pnl / total_invested * 100) if total_invested > 0 else 0
 
         return jsonify({
             'success': True,
-            'deals': deals,
+            'deals': formatted_deals,
+            'data': formatted_deals,  # For compatibility
+            'message': f'Successfully loaded {len(formatted_deals)} deals for user {username}',
             'summary': {
-                'total_deals': len(deals),
-                'total_invested': total_invested,
-                'total_current_value': total_current,
-                'total_pnl': total_pnl,
-                'total_pnl_percent': total_pnl_percent
+                'total_deals': len(formatted_deals),
+                'total_invested': round(total_invested, 2),
+                'total_current_value': round(total_current_value, 2),
+                'total_pnl': round(total_pnl, 2),
+                'total_pnl_percent': round(total_pnl_percent, 2)
             }
         })
 
