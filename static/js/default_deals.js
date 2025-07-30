@@ -93,11 +93,11 @@ DefaultDealsManager.prototype.init = function () {
     this.setupColumnSettings();
     this.loadDeals();
     this.startAutoRefresh();
-    
+
     // Setup search functionality
-    const searchInput = document.getElementById('symbolSearchInput');
+    const searchInput = document.getElementById("symbolSearchInput");
     if (searchInput) {
-        searchInput.addEventListener('input', () => {
+        searchInput.addEventListener("input", () => {
             this.performSearch();
         });
     }
@@ -106,10 +106,10 @@ DefaultDealsManager.prototype.init = function () {
 DefaultDealsManager.prototype.loadDeals = function () {
     console.log("📊 Loading default deals data...");
     this.isLoading = true;
-    
+
     // Show loading state
     this.showLoadingState();
-    
+
     fetch("/api/default-deals")
         .then((response) => {
             if (!response.ok) {
@@ -135,14 +135,21 @@ DefaultDealsManager.prototype.loadDeals = function () {
 DefaultDealsManager.prototype.showLoadingState = function () {
     const tbody = document.getElementById("dealsTableBody");
     if (tbody) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="20" class="text-center text-muted py-4">
-                    <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                    Loading default deals data...
-                </td>
-            </tr>
-        `;
+        tbody.innerHTML =
+            "<tr>" +
+            '<td colspan="' +
+            this.selectedColumns.length +
+            '" class="text-center py-5" style="background: var(--card-bg); min-height: 300px;">' +
+            '<div class="d-flex flex-column justify-content-center align-items-center" style="min-height: 250px;">' +
+            '<div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem; border-width: 4px;">' +
+            '<span class="visually-hidden">Loading...</span>' +
+            "</div>" +
+            '<h6 class="text-light mb-2">Loading Defult Deals Data</h6>' +
+            '<p class="text-muted mb-3">Fetching Defult data from database...</p>' +
+            '<small class="text-warning">This may take up to 15 seconds</small>' +
+            "</div>" +
+            "</td>" +
+            "</tr>";
     }
 };
 
@@ -179,12 +186,12 @@ DefaultDealsManager.prototype.renderHeaders = function () {
     this.selectedColumns.forEach((columnKey) => {
         const column = this.availableColumns[columnKey];
         if (column) {
-            const sortIcon = column.sortable 
-                ? '<i class="fas fa-sort sort-icon"></i>' 
-                : '';
+            const sortIcon = column.sortable
+                ? '<i class="fas fa-sort sort-icon"></i>'
+                : "";
             headersHTML += `
                 <th style="width: ${column.width}; min-width: ${column.width};" 
-                    ${column.sortable ? `class="sortable-header" onclick="defaultDealsManager.sortBy('${columnKey}')"` : ''}>
+                    ${column.sortable ? `class="sortable-header" onclick="defaultDealsManager.sortBy('${columnKey}')"` : ""}>
                     ${column.label}${sortIcon}
                 </th>
             `;
@@ -218,7 +225,7 @@ DefaultDealsManager.prototype.renderRows = function () {
         // Check if deal is closed to apply row styling
         const isClosed = deal.pos === 0 || deal.pos === "0";
         const rowClass = isClosed ? "closed-deal" : "";
-        
+
         rowsHTML += `<tr class="${rowClass}">`;
         this.selectedColumns.forEach((columnKey) => {
             const value = this.formatCellValue(deal, columnKey);
@@ -234,7 +241,7 @@ DefaultDealsManager.prototype.renderRows = function () {
 
 DefaultDealsManager.prototype.formatCellValue = function (deal, columnKey) {
     const value = deal[columnKey];
-    
+
     if (value === null || value === undefined) {
         return "--";
     }
@@ -247,7 +254,7 @@ DefaultDealsManager.prototype.formatCellValue = function (deal, columnKey) {
         case "tva":
         case "inv":
             return typeof value === "number" ? value.toFixed(2) : value;
-        
+
         case "chan_percent":
         case "seven_percent":
         case "thirty_percent":
@@ -256,37 +263,37 @@ DefaultDealsManager.prototype.formatCellValue = function (deal, columnKey) {
                 return value >= 0 ? `+${formatted}` : formatted;
             }
             return value;
-        
+
         case "pl":
             if (typeof value === "number") {
                 const formatted = value.toFixed(2);
                 return value >= 0 ? `+${formatted}` : formatted;
             }
             return value;
-        
+
         case "date":
         case "ed":
             if (value && value !== "--") {
                 try {
                     const date = new Date(value);
-                    return date.toLocaleDateString('en-IN');
+                    return date.toLocaleDateString("en-IN");
                 } catch (e) {
                     return value;
                 }
             }
             return "--";
-        
+
         case "status":
-            return `<span class="status-badge status-${(value || 'active').toLowerCase()}">${value || 'ACTIVE'}</span>`;
-        
+            return `<span class="status-badge status-${(value || "active").toLowerCase()}">${value || "ACTIVE"}</span>`;
+
         case "pos":
             // Default to 1, becomes 0 when closed
-            return deal.pos === 0 || deal.pos === "0" ? "0" : "1";
-        
+            return deal.pos === 1 || deal.pos === "1" ? "1api/default-deals" : "1";
+
         case "actions":
             // Check if deal is closed
             const isClosed = deal.pos === 0 || deal.pos === "0";
-            
+
             if (isClosed) {
                 // Show disabled buttons for closed deals
                 return `
@@ -303,16 +310,16 @@ DefaultDealsManager.prototype.formatCellValue = function (deal, columnKey) {
                 // Show enabled buttons for active deals
                 return `
                     <div class="btn-group btn-group-sm">
-                        <button class="btn btn-warning btn-sm" onclick="editDefaultDeal('${deal.id || deal.trade_signal_id || ''}', '${deal.symbol || ''}', ${deal.ep || 0}, ${deal.tp || 0})">
+                        <button class="btn btn-warning btn-sm" onclick="editDefaultDeal('${deal.id || deal.trade_signal_id || ""}', '${deal.symbol || ""}', ${deal.ep || 0}, ${deal.tp || 0})">
                             <i class="fas fa-edit"></i> Edit
                         </button>
-                        <button class="btn btn-danger btn-sm" onclick="closeDefaultDeal('${deal.id || deal.trade_signal_id || ''}', '${deal.symbol || ''}')">
+                        <button class="btn btn-danger btn-sm" onclick="closeDefaultDeal('${deal.id || deal.trade_signal_id || ""}', '${deal.symbol || ""}')">
                             <i class="fas fa-times"></i> Close
                         </button>
                     </div>
                 `;
             }
-        
+
         default:
             return value;
     }
@@ -320,7 +327,7 @@ DefaultDealsManager.prototype.formatCellValue = function (deal, columnKey) {
 
 DefaultDealsManager.prototype.getCellClass = function (deal, columnKey) {
     let cssClass = "";
-    
+
     switch (columnKey) {
         case "chan_percent":
         case "seven_percent":
@@ -333,15 +340,16 @@ DefaultDealsManager.prototype.getCellClass = function (deal, columnKey) {
                 else cssClass = "neutral";
             }
             break;
-        
+
         case "pos":
-            cssClass = deal[columnKey] === "BUY" ? "text-success" : "text-danger";
+            cssClass =
+                deal[columnKey] === "BUY" ? "text-success" : "text-danger";
             break;
-        
+
         default:
             cssClass = "";
     }
-    
+
     return cssClass;
 };
 
@@ -356,14 +364,14 @@ DefaultDealsManager.prototype.getGradientStyle = function (deal, columnKey) {
                 return this.getGradientBackgroundColor(percentValue);
             }
             break;
-        
+
         case "pl":
             const plValue = deal[columnKey];
             if (typeof plValue === "number") {
                 return this.getGradientBackgroundColor(plValue);
             }
             break;
-        
+
         default:
             return "";
     }
@@ -374,81 +382,86 @@ DefaultDealsManager.prototype.updateStats = function () {
     const totalCount = document.getElementById("totalCount");
     const showingCount = document.getElementById("showingCount");
     const visibleDealsCount = document.getElementById("visibleDealsCount");
-    
+
     if (totalCount) totalCount.textContent = this.deals.length;
-    if (showingCount) showingCount.textContent = Math.min(this.filteredDeals.length, this.pageSize);
-    if (visibleDealsCount) visibleDealsCount.textContent = this.filteredDeals.length;
+    if (showingCount)
+        showingCount.textContent = Math.min(
+            this.filteredDeals.length,
+            this.pageSize,
+        );
+    if (visibleDealsCount)
+        visibleDealsCount.textContent = this.filteredDeals.length;
 };
 
 DefaultDealsManager.prototype.updatePagination = function () {
     const totalPages = Math.ceil(this.filteredDeals.length / this.pageSize);
-    
+
     const currentPageSpan = document.getElementById("currentPage");
     const totalPagesSpan = document.getElementById("totalPages");
     const prevBtn = document.getElementById("prevBtn");
     const nextBtn = document.getElementById("nextBtn");
-    
+
     if (currentPageSpan) currentPageSpan.textContent = this.currentPage;
     if (totalPagesSpan) totalPagesSpan.textContent = totalPages;
-    
+
     if (prevBtn) prevBtn.disabled = this.currentPage <= 1;
     if (nextBtn) nextBtn.disabled = this.currentPage >= totalPages;
 };
 
 DefaultDealsManager.prototype.performSearch = function () {
-    const searchInput = document.getElementById('symbolSearchInput');
+    const searchInput = document.getElementById("symbolSearchInput");
     if (!searchInput) return;
-    
+
     const searchTerm = searchInput.value.toLowerCase().trim();
-    
-    if (searchTerm === '') {
+
+    if (searchTerm === "") {
         this.filteredDeals = [...this.deals];
     } else {
-        this.filteredDeals = this.deals.filter(deal => {
-            return Object.values(deal).some(value => {
+        this.filteredDeals = this.deals.filter((deal) => {
+            return Object.values(deal).some((value) => {
                 if (value === null || value === undefined) return false;
                 return value.toString().toLowerCase().includes(searchTerm);
             });
         });
     }
-    
+
     this.currentPage = 1;
     this.renderTable();
     this.updateStats();
 };
 
 DefaultDealsManager.prototype.clearSearch = function () {
-    const searchInput = document.getElementById('symbolSearchInput');
+    const searchInput = document.getElementById("symbolSearchInput");
     if (searchInput) {
-        searchInput.value = '';
+        searchInput.value = "";
         this.performSearch();
     }
 };
 
 DefaultDealsManager.prototype.sortBy = function (columnKey) {
     console.log(`🔄 Sorting by ${columnKey}`);
-    
+
     this.filteredDeals.sort((a, b) => {
         let valueA = a[columnKey];
         let valueB = b[columnKey];
-        
+
         // Handle null/undefined values
-        if (valueA === null || valueA === undefined) valueA = '';
-        if (valueB === null || valueB === undefined) valueB = '';
-        
+        if (valueA === null || valueA === undefined) valueA = "";
+        if (valueB === null || valueB === undefined) valueB = "";
+
         // Convert to numbers if possible
         if (!isNaN(valueA) && !isNaN(valueB)) {
             valueA = parseFloat(valueA);
             valueB = parseFloat(valueB);
         }
-        
+
         if (this.sortDirection === "asc") {
             return valueA > valueB ? 1 : -1;
         } else {
             return valueA < valueB ? 1 : -1;
         }
     });
-    
+
     this.sortDirection = this.sortDirection === "asc" ? "desc" : "asc";
     this.renderRows();
 };
@@ -477,32 +490,40 @@ DefaultDealsManager.prototype.setupColumnSettings = function () {
 };
 
 DefaultDealsManager.prototype.applyColumnSettings = function () {
-    const checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
+    const checkboxes = document.querySelectorAll(
+        '#columnCheckboxes input[type="checkbox"]',
+    );
     this.selectedColumns = [];
-    
-    checkboxes.forEach(checkbox => {
+
+    checkboxes.forEach((checkbox) => {
         if (checkbox.checked) {
             this.selectedColumns.push(checkbox.value);
         }
     });
-    
+
     this.renderTable();
-    const modal = bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal'));
+    const modal = bootstrap.Modal.getInstance(
+        document.getElementById("columnSettingsModal"),
+    );
     if (modal) modal.hide();
 };
 
 DefaultDealsManager.prototype.selectAllColumns = function () {
-    const checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
-    checkboxes.forEach(checkbox => {
+    const checkboxes = document.querySelectorAll(
+        '#columnCheckboxes input[type="checkbox"]',
+    );
+    checkboxes.forEach((checkbox) => {
         checkbox.checked = true;
     });
 };
 
 DefaultDealsManager.prototype.resetDefaultColumns = function () {
     const defaultColumns = this.getDefaultColumns();
-    const checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
-    
-    checkboxes.forEach(checkbox => {
+    const checkboxes = document.querySelectorAll(
+        '#columnCheckboxes input[type="checkbox"]',
+    );
+
+    checkboxes.forEach((checkbox) => {
         checkbox.checked = defaultColumns.includes(checkbox.value);
     });
 };
@@ -523,50 +544,55 @@ DefaultDealsManager.prototype.stopAutoRefresh = function () {
     }
 };
 
-DefaultDealsManager.prototype.setRefreshInterval = function (interval, displayText) {
+DefaultDealsManager.prototype.setRefreshInterval = function (
+    interval,
+    displayText,
+) {
     this.refreshIntervalTime = interval;
-    const currentIntervalElement = document.getElementById('currentInterval');
+    const currentIntervalElement = document.getElementById("currentInterval");
     if (currentIntervalElement) {
         currentIntervalElement.textContent = displayText;
     }
-    
+
     this.stopAutoRefresh();
     this.startAutoRefresh();
 };
 
 DefaultDealsManager.prototype.exportDeals = function () {
     const csvContent = this.convertToCSV(this.filteredDeals);
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `default_deals_${new Date().getTime()}.csv`);
-    link.style.visibility = 'hidden';
+    link.setAttribute("href", url);
+    link.setAttribute("download", `default_deals_${new Date().getTime()}.csv`);
+    link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 };
 
 DefaultDealsManager.prototype.convertToCSV = function (data) {
-    if (data.length === 0) return '';
-    
-    const headers = this.selectedColumns.map(key => this.availableColumns[key].label);
-    const csvRows = [headers.join(',')];
-    
-    data.forEach(deal => {
-        const row = this.selectedColumns.map(key => {
+    if (data.length === 0) return "";
+
+    const headers = this.selectedColumns.map(
+        (key) => this.availableColumns[key].label,
+    );
+    const csvRows = [headers.join(",")];
+
+    data.forEach((deal) => {
+        const row = this.selectedColumns.map((key) => {
             let value = deal[key];
-            if (value === null || value === undefined) value = '';
+            if (value === null || value === undefined) value = "";
             // Escape quotes and wrap in quotes if contains comma
-            if (typeof value === 'string' && value.includes(',')) {
+            if (typeof value === "string" && value.includes(",")) {
                 value = `"${value.replace(/"/g, '""')}"`;
             }
             return value;
         });
-        csvRows.push(row.join(','));
+        csvRows.push(row.join(","));
     });
-    
-    return csvRows.join('\n');
+
+    return csvRows.join("\n");
 };
 
 // Global functions for template compatibility
@@ -619,7 +645,10 @@ function exportDeals() {
 }
 
 function previousPage() {
-    if (window.defaultDealsManager && window.defaultDealsManager.currentPage > 1) {
+    if (
+        window.defaultDealsManager &&
+        window.defaultDealsManager.currentPage > 1
+    ) {
         window.defaultDealsManager.currentPage--;
         window.defaultDealsManager.renderTable();
     }
@@ -627,7 +656,10 @@ function previousPage() {
 
 function nextPage() {
     if (window.defaultDealsManager) {
-        const totalPages = Math.ceil(window.defaultDealsManager.filteredDeals.length / window.defaultDealsManager.pageSize);
+        const totalPages = Math.ceil(
+            window.defaultDealsManager.filteredDeals.length /
+                window.defaultDealsManager.pageSize,
+        );
         if (window.defaultDealsManager.currentPage < totalPages) {
             window.defaultDealsManager.currentPage++;
             window.defaultDealsManager.renderTable();
@@ -854,7 +886,7 @@ function submitEditDefaultDeal() {
 }
 
 // Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", function () {
     console.log("🎯 DOM loaded, initializing Default Deals Manager");
     window.defaultDealsManager = new DefaultDealsManager();
 });

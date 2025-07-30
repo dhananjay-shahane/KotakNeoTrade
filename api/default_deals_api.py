@@ -11,6 +11,7 @@ default_deals_api = Blueprint('default_deals_api', __name__)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 def try_percent(current, historical):
     """Calculate percentage change"""
     try:
@@ -23,6 +24,7 @@ def try_percent(current, historical):
         pass
     return '--'
 
+
 @default_deals_api.route('/api/default-deals', methods=['GET'])
 def get_default_deals():
     """
@@ -30,11 +32,12 @@ def get_default_deals():
     No authentication required - shows all trading signals for everyone
     """
     try:
-        logger.info("📊 Fetching default deals data from admin_trade_signals...")
-        
+        logger.info(
+            "📊 Fetching default deals data from admin_trade_signals...")
+
         # Get external database connection using DatabaseConnector from external_db_service
         db_connector = DatabaseConnector()
-        
+
         if not db_connector.connect():
             logger.error("❌ Failed to connect to external database")
             return jsonify({
@@ -49,7 +52,7 @@ def get_default_deals():
                     'total_pnl_percent': 0
                 }
             }), 500
-        
+
         try:
             # Query to get all trading signals from admin_trade_signals table
             query = """
@@ -63,9 +66,9 @@ def get_default_deals():
             FROM admin_trade_signals 
             ORDER BY created_at DESC
             """
-            
+
             deals_data = db_connector.execute_query(query)
-            
+
             if not deals_data:
                 return jsonify({
                     'success': True,
@@ -84,7 +87,7 @@ def get_default_deals():
             price_fetcher = PriceFetcher(db_connector)
             signals_fetcher = SignalsFetcher(db_connector)
             hist_fetcher = HistoricalFetcher(db_connector)
-            
+
             # Format deals for frontend
             formatted_deals = []
             total_invested = 0
@@ -200,7 +203,8 @@ def get_default_deals():
                     'tva': tva_value,  # Target value amount
                     'pl': round(profit_loss, 2),
                     'qt': qt_value,  # Symbol repeat count
-                    'ed': '--',  # Exit date (not applicable for trading signals)
+                    'ed':
+                    '--',  # Exit date (not applicable for trading signals)
                     'exp': '--',  # Expiry
                     'pr': '--',  # Price range
                     'pp': '--',  # Performance points
@@ -229,7 +233,8 @@ def get_default_deals():
                 'success': True,
                 'deals': formatted_deals,
                 'data': formatted_deals,  # For compatibility
-                'message': f'Successfully loaded {len(formatted_deals)} trading signals',
+                'message':
+                f'Successfully loaded {len(formatted_deals)} trading signals',
                 'summary': {
                     'total_deals': len(formatted_deals),
                     'total_invested': round(total_invested, 2),
@@ -270,6 +275,7 @@ def get_default_deals():
             }
         }), 500
 
+
 @default_deals_api.route('/api/default-edit-deal', methods=['POST'])
 def edit_default_deal():
     """API endpoint to edit a default deal in admin_trade_signals table"""
@@ -282,20 +288,22 @@ def edit_default_deal():
 
         if not all([deal_id, symbol, entry_price, target_price]):
             return jsonify({
-                "success": False,
-                "error": "Missing required fields: deal_id, symbol, entry_price, target_price"
+                "success":
+                False,
+                "error":
+                "Missing required fields: deal_id, symbol, entry_price, target_price"
             }), 400
 
         # Import and use DatabaseConnector for updates
         from Scripts.external_db_service import DatabaseConnector
-        
+
         db_connector = DatabaseConnector()
         if not db_connector.connect():
             return jsonify({
                 "success": False,
                 "error": "Database connection failed"
             }), 500
-        
+
         try:
             # Update the admin_trade_signals record (using ep for entry_price)
             update_query = """
@@ -303,18 +311,22 @@ def edit_default_deal():
                 SET ep = %s
                 WHERE id = %s AND symbol = %s
             """
-            
+
             cursor = db_connector.connection.cursor()
             cursor.execute(update_query, (entry_price, deal_id, symbol))
             db_connector.connection.commit()
-            
+
             if cursor.rowcount > 0:
-                logger.info(f"✅ Successfully updated deal {deal_id} for symbol {symbol}")
+                logger.info(
+                    f"✅ Successfully updated deal {deal_id} for symbol {symbol}"
+                )
                 cursor.close()
-                
+
                 return jsonify({
-                    "success": True,
-                    "message": f"Deal updated successfully for {symbol}"
+                    "success":
+                    True,
+                    "message":
+                    f"Deal updated successfully for {symbol}"
                 }), 200
             else:
                 cursor.close()
@@ -332,6 +344,7 @@ def edit_default_deal():
             "error": f"Failed to edit deal: {str(e)}"
         }), 500
 
+
 @default_deals_api.route('/api/default-close-deal', methods=['POST'])
 def close_default_deal():
     """API endpoint to close a default deal by setting pos to 0"""
@@ -348,14 +361,14 @@ def close_default_deal():
 
         # Import and use DatabaseConnector for updates
         from Scripts.external_db_service import DatabaseConnector
-        
+
         db_connector = DatabaseConnector()
         if not db_connector.connect():
             return jsonify({
                 "success": False,
                 "error": "Database connection failed"
             }), 500
-        
+
         try:
             # Update the admin_trade_signals record to set pos = 0 (closed)
             update_query = """
@@ -363,18 +376,22 @@ def close_default_deal():
                 SET pos = 0
                 WHERE id = %s AND symbol = %s
             """
-            
+
             cursor = db_connector.connection.cursor()
             cursor.execute(update_query, (deal_id, symbol))
             db_connector.connection.commit()
-            
+
             if cursor.rowcount > 0:
-                logger.info(f"✅ Successfully closed deal {deal_id} for symbol {symbol}")
+                logger.info(
+                    f"✅ Successfully closed deal {deal_id} for symbol {symbol}"
+                )
                 cursor.close()
-                
+
                 return jsonify({
-                    "success": True,
-                    "message": f"Deal closed successfully for {symbol}"
+                    "success":
+                    True,
+                    "message":
+                    f"Deal closed successfully for {symbol}"
                 }), 200
             else:
                 cursor.close()
