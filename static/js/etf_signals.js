@@ -1942,14 +1942,75 @@ function proceedWithAddingDeal(
 
     console.log("Sending signal data:", signalData);
 
+    // Send the request with sanitized data structure
+    var requestData = {
+        signal_data: {
+            symbol: signal.symbol || signal.etf || symbol,
+            qty: signal.qty || signal.QTY || 1,
+            ep: signal.ep || signal.EP || 0,
+            cmp: signal.cmp || signal.CMP || signal.ep || signal.EP || 0,
+            pos: signal.pos || 1,
+            tp: signal.tp || signal.TP || 0,
+            date: signal.date || new Date().toISOString().split('T')[0]
+        }
+    };
+
     var xhr = new XMLHttpRequest();
-    xhr.open("POST", "/api/dynamic/add-deal", true);
+    xhr.open("POST", "/api/deals/create-from-signal", true);
     xhr.setRequestHeader("Content-Type", "application/json");
 
     xhr.onreadystatechange = function () {
         if (xhr.readyState === 4) {
             console.log("Response status:", xhr.status);
             console.log("Response text:", xhr.responseText);
+            
+            if (xhr.status === 200) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        showSwalMessage(
+                            "✓ Deal created successfully for " + symbol + 
+                            " - Deal ID: " + response.deal_id +
+                            " - Investment: ₹" + (response.invested_amount || 0).toFixed(2),
+                            "success"
+                        );
+                        
+                        // Optionally redirect to deals page after 3 seconds
+                        setTimeout(function() {
+                            if (confirm("Deal created! View your deals page?")) {
+                                window.location.href = "/deals";
+                            }
+                        }, 2000);
+                    } else {
+                        showSwalMessage(
+                            "Failed to create deal: " + (response.error || response.message || "Unknown error"),
+                            "error"
+                        );
+                    }
+                } catch (parseError) {
+                    console.error("Failed to parse response:", parseError);
+                    showSwalMessage("Server returned invalid response", "error");
+                }
+            } else if (xhr.status === 500) {
+                showSwalMessage("Server error occurred. Please try again.", "error");
+            } else if (xhr.status === 404) {
+                showSwalMessage("API endpoint not found. Please contact support.", "error");
+            } else {
+                showSwalMessage("Request failed with status: " + xhr.status, "error");
+            }
+        }
+    };
+
+    xhr.ontimeout = function() {
+        showSwalMessage("Request timed out. Please try again.", "error");
+    };
+
+    xhr.onerror = function() {
+        showSwalMessage("Network error occurred. Please check your connection.", "error");
+    };
+
+    xhr.timeout = 10000;
+    xhr.send(JSON.stringify(requestData));esponse text:", xhr.responseText);
 
             if (xhr.status === 200) {
                 try {
