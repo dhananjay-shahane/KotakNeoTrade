@@ -283,13 +283,17 @@ DealsManager.prototype.loadDeals = function () {
                     }
 
                     // Check if user is not logged in
-                    if (response.success === false && response.message && response.message.includes('not logged in')) {
+                    if (
+                        response.success === false &&
+                        response.message &&
+                        response.message.includes("not logged in")
+                    ) {
                         self.showError("Please log in to view your deals");
                         return;
                     }
 
                     console.log("Processing deals data:", dealsData);
-                    
+
                     if (dealsData.length > 0) {
                         var uniqueDeals = dealsData.map(function (deal) {
                             return {
@@ -310,15 +314,22 @@ DealsManager.prototype.loadDeals = function () {
                                         0,
                                 ),
                                 pl: parseFloat(deal.pnl_amount || deal.pl || 0),
-                                chan_percent: (function() {
-                                    var chanVal = deal.chan_percent || deal.pnl_percent || 0;
-                                    if (typeof chanVal === 'string') {
+                                chan_percent: (function () {
+                                    var chanVal =
+                                        deal.chan_percent ||
+                                        deal.pnl_percent ||
+                                        0;
+                                    if (typeof chanVal === "string") {
                                         // If it's already a string with %, return as is
-                                        if (chanVal.includes('%')) return chanVal;
+                                        if (chanVal.includes("%"))
+                                            return chanVal;
                                         // If it's a string number, parse it
                                         chanVal = parseFloat(chanVal);
                                     }
-                                    if (typeof chanVal === 'number' && !isNaN(chanVal)) {
+                                    if (
+                                        typeof chanVal === "number" &&
+                                        !isNaN(chanVal)
+                                    ) {
                                         return chanVal.toFixed(2) + "%";
                                     }
                                     return "0.00%";
@@ -329,10 +340,13 @@ DealsManager.prototype.loadDeals = function () {
                                 tp: parseFloat(deal.tp || 0),
                                 tva: parseFloat(deal.tva || 0),
                                 tpr: deal.tpr || "15.00%",
-                                date: (function() {
-                                    var dateValue = deal.entry_date || deal.date || deal.created_at;
+                                date: (function () {
+                                    var dateValue =
+                                        deal.entry_date ||
+                                        deal.date ||
+                                        deal.created_at;
                                     if (!dateValue) return "";
-                                    if (typeof dateValue === 'string') {
+                                    if (typeof dateValue === "string") {
                                         return dateValue.split("T")[0];
                                     }
                                     return String(dateValue).split("T")[0];
@@ -397,7 +411,9 @@ DealsManager.prototype.loadDeals = function () {
                         parseError,
                     );
                     console.error("Raw response:", xhr.responseText);
-                    self.showError("Invalid response from server: " + parseError.message);
+                    self.showError(
+                        "Invalid response from server: " + parseError.message,
+                    );
                 }
             } else if (xhr.status === 0) {
                 console.error(
@@ -626,7 +642,10 @@ DealsManager.prototype.renderDealsTable = function () {
                     break;
                 case "ed":
                     // Show exit date if deal is closed, otherwise show "--"
-                    cellContent = (deal.ed && deal.ed !== '--' && deal.ed !== null) ? deal.ed : "--";
+                    cellContent =
+                        deal.ed && deal.ed !== "--" && deal.ed !== null
+                            ? deal.ed
+                            : "--";
                     break;
                 case "exp":
                     cellContent = deal.exp || "--";
@@ -765,8 +784,10 @@ DealsManager.prototype.renderDealsTable = function () {
                     break;
                 case "actions":
                     // Check if deal is closed
-                    var isClosed = deal.status === 'CLOSED' || (deal.ed && deal.ed !== '--' && deal.ed !== null);
-                    
+                    var isClosed =
+                        deal.status === "CLOSED" ||
+                        (deal.ed && deal.ed !== "--" && deal.ed !== null);
+
                     if (isClosed) {
                         // Show disabled buttons for closed deals
                         cellContent =
@@ -775,8 +796,8 @@ DealsManager.prototype.renderDealsTable = function () {
                             '<i class="fas fa-edit"></i> Edit </button>' +
                             '<button class="btn btn-danger btn-sm" disabled title="Deal is closed">' +
                             '<i class="fas fa-times"></i> Close' +
-                            '</button>' +
-                            '</div>';
+                            "</button>" +
+                            "</div>";
                     } else {
                         // Show enabled buttons for active deals
                         cellContent =
@@ -816,11 +837,13 @@ DealsManager.prototype.renderDealsTable = function () {
         }
 
         // Add styling for closed deals
-        var isClosed = deal.status === 'CLOSED' || (deal.ed && deal.ed !== '--' && deal.ed !== null);
+        var isClosed =
+            deal.status === "CLOSED" ||
+            (deal.ed && deal.ed !== "--" && deal.ed !== null);
         if (isClosed) {
-            row.style.opacity = '0.6';
-            row.style.backgroundColor = 'rgba(108, 117, 125, 0.1)';
-            row.classList.add('deal-closed');
+            row.style.opacity = "0.6";
+            row.style.backgroundColor = "rgba(108, 117, 125, 0.1)";
+            row.classList.add("deal-closed");
         }
 
         tbody.appendChild(row);
@@ -936,7 +959,7 @@ DealsManager.prototype.showEmptyUserDealsMessage = function () {
         '<i class="fas fa-user-circle fa-3x mb-3 text-info"></i>' +
         '<h6 class="text-light">No Deals in Your Account</h6>' +
         '<p class="text-muted mb-3">Your personal deals table is empty</p>' +
-        '<small class="text-muted d-block mt-2">Add deals from the ETF Signals page to see them here</small>' +
+        '<small class="text-muted d-block mt-2">Add deals from the Trading Signals page to see them here</small>' +
         '<small class="text-warning d-block mt-1">Showing data from your logged-in user account</small>' +
         "</td>" +
         "</tr>";
@@ -953,43 +976,53 @@ this.checkPriceUpdateStatusAdvanced = function () {
     // Implementation logic here
 };
 
-
-
-
-
-
-
 // Search functionality for deals
 function performSearch() {
     var searchInput = document.getElementById("symbolSearchInput");
     if (!searchInput || !window.dealsManager) return;
-    
+
     var query = searchInput.value.toLowerCase().trim();
-    
+
     if (query === "") {
         // Reset to show all deals
         window.dealsManager.filteredDeals = window.dealsManager.deals.slice();
     } else {
         // Filter deals based on search query - comprehensive search
-        window.dealsManager.filteredDeals = window.dealsManager.deals.filter(function(deal) {
-            var symbol = (deal.symbol || "").toLowerCase();
-            var status = (deal.status || "EXECUTED").toLowerCase();
-            var tradeId = String(deal.trade_signal_id || deal.id || "").toLowerCase();
-            var pos = (deal.pos === "LONG" ? "long" : deal.pos === 1 ? "long" : "short").toLowerCase();
-            var date = (deal.date || "").toString().toLowerCase();
-            var ep = (deal.ep || deal.entry_price || "").toString().toLowerCase();
-            var qty = (deal.qty || deal.quantity || "").toString().toLowerCase();
-            
-            return symbol.includes(query) || 
-                   status.includes(query) || 
-                   tradeId.includes(query) ||
-                   pos.includes(query) ||
-                   date.includes(query) ||
-                   ep.includes(query) ||
-                   qty.includes(query);
-        });
+        window.dealsManager.filteredDeals = window.dealsManager.deals.filter(
+            function (deal) {
+                var symbol = (deal.symbol || "").toLowerCase();
+                var status = (deal.status || "EXECUTED").toLowerCase();
+                var tradeId = String(
+                    deal.trade_signal_id || deal.id || "",
+                ).toLowerCase();
+                var pos = (
+                    deal.pos === "LONG"
+                        ? "long"
+                        : deal.pos === 1
+                          ? "long"
+                          : "short"
+                ).toLowerCase();
+                var date = (deal.date || "").toString().toLowerCase();
+                var ep = (deal.ep || deal.entry_price || "")
+                    .toString()
+                    .toLowerCase();
+                var qty = (deal.qty || deal.quantity || "")
+                    .toString()
+                    .toLowerCase();
+
+                return (
+                    symbol.includes(query) ||
+                    status.includes(query) ||
+                    tradeId.includes(query) ||
+                    pos.includes(query) ||
+                    date.includes(query) ||
+                    ep.includes(query) ||
+                    qty.includes(query)
+                );
+            },
+        );
     }
-    
+
     // Reset to page 1 and re-render
     window.dealsManager.currentPage = 1;
     window.dealsManager.renderDealsTable();
@@ -1061,13 +1094,17 @@ function clearFilters() {
 // Column settings functions for deals page
 function selectAllColumns() {
     if (window.dealsManager) {
-        var checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
-        checkboxes.forEach(function(checkbox) {
+        var checkboxes = document.querySelectorAll(
+            '#columnCheckboxes input[type="checkbox"]',
+        );
+        checkboxes.forEach(function (checkbox) {
             checkbox.checked = true;
-            var columnKey = checkbox.getAttribute('data-column');
-            var column = window.dealsManager.availableColumns.find(function(col) {
-                return col.key === columnKey;
-            });
+            var columnKey = checkbox.getAttribute("data-column");
+            var column = window.dealsManager.availableColumns.find(
+                function (col) {
+                    return col.key === columnKey;
+                },
+            );
             if (column) {
                 column.visible = true;
             }
@@ -1078,21 +1115,30 @@ function selectAllColumns() {
 function resetDefaultColumns() {
     if (window.dealsManager) {
         // Reset to default visibility
-        window.dealsManager.availableColumns.forEach(function(column) {
-            column.visible = column.key === 'symbol' || column.key === 'td' || 
-                           column.key === 'ep' || column.key === 'qty' || 
-                           column.key === 'date' || column.key === 'cmp' || 
-                           column.key === 'inv' || column.key === 'pl' || 
-                           column.key === 'actions';
+        window.dealsManager.availableColumns.forEach(function (column) {
+            column.visible =
+                column.key === "symbol" ||
+                column.key === "td" ||
+                column.key === "ep" ||
+                column.key === "qty" ||
+                column.key === "date" ||
+                column.key === "cmp" ||
+                column.key === "inv" ||
+                column.key === "pl" ||
+                column.key === "actions";
         });
-        
+
         // Update checkboxes
-        var checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]');
-        checkboxes.forEach(function(checkbox) {
-            var columnKey = checkbox.getAttribute('data-column');
-            var column = window.dealsManager.availableColumns.find(function(col) {
-                return col.key === columnKey;
-            });
+        var checkboxes = document.querySelectorAll(
+            '#columnCheckboxes input[type="checkbox"]',
+        );
+        checkboxes.forEach(function (checkbox) {
+            var columnKey = checkbox.getAttribute("data-column");
+            var column = window.dealsManager.availableColumns.find(
+                function (col) {
+                    return col.key === columnKey;
+                },
+            );
             checkbox.checked = column ? column.visible : false;
         });
     }
@@ -1105,9 +1151,11 @@ function applyColumnSettings() {
         window.dealsManager.updateTableHeaders();
         window.dealsManager.renderDealsTable();
         window.dealsManager.updatePagination();
-        
+
         // Close modal
-        var modal = bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal'));
+        var modal = bootstrap.Modal.getInstance(
+            document.getElementById("columnSettingsModal"),
+        );
         if (modal) {
             modal.hide();
         }
@@ -2136,32 +2184,32 @@ function closeDeal(dealId, symbol) {
     // Input validation
     if (!dealId || dealId.trim() === "") {
         Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Invalid deal ID provided'
+            icon: "error",
+            title: "Error",
+            text: "Invalid deal ID provided",
         });
         return;
     }
 
     if (!symbol || symbol.trim() === "") {
         Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Invalid symbol provided'
+            icon: "error",
+            title: "Error",
+            text: "Invalid symbol provided",
         });
         return;
     }
 
     // SweetAlert confirmation dialog
     Swal.fire({
-        title: 'Close Deal',
+        title: "Close Deal",
         text: `Are you sure you want to close the deal for ${symbol}?`,
-        icon: 'warning',
+        icon: "warning",
         showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Yes, Close Deal',
-        cancelButtonText: 'Cancel'
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Yes, Close Deal",
+        cancelButtonText: "Cancel",
     }).then((result) => {
         if (result.isConfirmed) {
             // Submit close deal request via AJAX
@@ -2173,19 +2221,19 @@ function closeDeal(dealId, symbol) {
                 if (xhr.readyState === 4) {
                     if (xhr.status === 200) {
                         Swal.fire({
-                            icon: 'success',
-                            title: 'Success',
+                            icon: "success",
+                            title: "Success",
                             text: `Deal closed successfully for ${symbol}`,
                             timer: 2000,
-                            showConfirmButton: false
+                            showConfirmButton: false,
                         });
                         // Refresh deals table
                         refreshDeals();
                     } else {
                         Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: 'Failed to close deal. Please try again.'
+                            icon: "error",
+                            title: "Error",
+                            text: "Failed to close deal. Please try again.",
                         });
                     }
                 }
