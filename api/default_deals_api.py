@@ -269,3 +269,125 @@ def get_default_deals():
                 'total_pnl_percent': 0
             }
         }), 500
+
+@default_deals_api.route('/api/default-edit-deal', methods=['POST'])
+def edit_default_deal():
+    """API endpoint to edit a default deal in admin_trade_signals table"""
+    try:
+        data = request.get_json()
+        deal_id = data.get('deal_id')
+        symbol = data.get('symbol')
+        entry_price = data.get('entry_price')
+        target_price = data.get('target_price')
+
+        if not all([deal_id, symbol, entry_price, target_price]):
+            return jsonify({
+                "success": False,
+                "error": "Missing required fields: deal_id, symbol, entry_price, target_price"
+            }), 400
+
+        # Import and use DatabaseConnector for updates
+        from Scripts.external_db_service import DatabaseConnector
+        
+        db_connector = DatabaseConnector()
+        if not db_connector.connect():
+            return jsonify({
+                "success": False,
+                "error": "Database connection failed"
+            }), 500
+        
+        try:
+            # Update the admin_trade_signals record (using ep for entry_price)
+            update_query = """
+                UPDATE admin_trade_signals 
+                SET ep = %s
+                WHERE id = %s AND symbol = %s
+            """
+            
+            cursor = db_connector.connection.cursor()
+            cursor.execute(update_query, (entry_price, deal_id, symbol))
+            db_connector.connection.commit()
+            
+            if cursor.rowcount > 0:
+                logger.info(f"✅ Successfully updated deal {deal_id} for symbol {symbol}")
+                cursor.close()
+                
+                return jsonify({
+                    "success": True,
+                    "message": f"Deal updated successfully for {symbol}"
+                }), 200
+            else:
+                cursor.close()
+                return jsonify({
+                    "success": False,
+                    "error": "Deal not found or no changes made"
+                }), 404
+        finally:
+            db_connector.disconnect()
+
+    except Exception as e:
+        logger.error(f"❌ Error editing default deal: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": f"Failed to edit deal: {str(e)}"
+        }), 500
+
+@default_deals_api.route('/api/default-close-deal', methods=['POST'])
+def close_default_deal():
+    """API endpoint to close a default deal by setting pos to 0"""
+    try:
+        data = request.get_json()
+        deal_id = data.get('deal_id')
+        symbol = data.get('symbol')
+
+        if not all([deal_id, symbol]):
+            return jsonify({
+                "success": False,
+                "error": "Missing required fields: deal_id, symbol"
+            }), 400
+
+        # Import and use DatabaseConnector for updates
+        from Scripts.external_db_service import DatabaseConnector
+        
+        db_connector = DatabaseConnector()
+        if not db_connector.connect():
+            return jsonify({
+                "success": False,
+                "error": "Database connection failed"
+            }), 500
+        
+        try:
+            # Update the admin_trade_signals record to set pos = 0 (closed)
+            update_query = """
+                UPDATE admin_trade_signals 
+                SET pos = 0
+                WHERE id = %s AND symbol = %s
+            """
+            
+            cursor = db_connector.connection.cursor()
+            cursor.execute(update_query, (deal_id, symbol))
+            db_connector.connection.commit()
+            
+            if cursor.rowcount > 0:
+                logger.info(f"✅ Successfully closed deal {deal_id} for symbol {symbol}")
+                cursor.close()
+                
+                return jsonify({
+                    "success": True,
+                    "message": f"Deal closed successfully for {symbol}"
+                }), 200
+            else:
+                cursor.close()
+                return jsonify({
+                    "success": False,
+                    "error": "Deal not found or already closed"
+                }), 404
+        finally:
+            db_connector.disconnect()
+
+    except Exception as e:
+        logger.error(f"❌ Error closing default deal: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": f"Failed to close deal: {str(e)}"
+        }), 500

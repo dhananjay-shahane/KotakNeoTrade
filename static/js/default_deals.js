@@ -66,6 +66,12 @@ function DefaultDealsManager() {
             width: "80px",
             sortable: true,
         },
+        actions: {
+            label: "ACTION",
+            default: true,
+            width: "120px",
+            sortable: false,
+        },
     };
 
     this.selectedColumns = this.getDefaultColumns();
@@ -209,11 +215,16 @@ DefaultDealsManager.prototype.renderRows = function () {
 
     let rowsHTML = "";
     pageDeals.forEach((deal) => {
-        rowsHTML += "<tr>";
+        // Check if deal is closed to apply row styling
+        const isClosed = deal.pos === 0 || deal.pos === "0";
+        const rowClass = isClosed ? "closed-deal" : "";
+        
+        rowsHTML += `<tr class="${rowClass}">`;
         this.selectedColumns.forEach((columnKey) => {
             const value = this.formatCellValue(deal, columnKey);
             const cssClass = this.getCellClass(deal, columnKey);
-            rowsHTML += `<td class="${cssClass}">${value}</td>`;
+            const gradientStyle = this.getGradientStyle(deal, columnKey);
+            rowsHTML += `<td class="${cssClass}" style="${gradientStyle}">${value}</td>`;
         });
         rowsHTML += "</tr>";
     });
@@ -268,6 +279,40 @@ DefaultDealsManager.prototype.formatCellValue = function (deal, columnKey) {
         case "status":
             return `<span class="status-badge status-${(value || 'active').toLowerCase()}">${value || 'ACTIVE'}</span>`;
         
+        case "pos":
+            // Default to 1, becomes 0 when closed
+            return deal.pos === 0 || deal.pos === "0" ? "0" : "1";
+        
+        case "actions":
+            // Check if deal is closed
+            const isClosed = deal.pos === 0 || deal.pos === "0";
+            
+            if (isClosed) {
+                // Show disabled buttons for closed deals
+                return `
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-warning btn-sm" disabled title="Deal is closed">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="btn btn-danger btn-sm" disabled title="Deal is closed">
+                            <i class="fas fa-times"></i> Close
+                        </button>
+                    </div>
+                `;
+            } else {
+                // Show enabled buttons for active deals
+                return `
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-warning btn-sm" onclick="editDefaultDeal('${deal.id || deal.trade_signal_id || ''}', '${deal.symbol || ''}', ${deal.ep || 0}, ${deal.tp || 0})">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="closeDefaultDeal('${deal.id || deal.trade_signal_id || ''}', '${deal.symbol || ''}')">
+                            <i class="fas fa-times"></i> Close
+                        </button>
+                    </div>
+                `;
+            }
+        
         default:
             return value;
     }
@@ -298,6 +343,31 @@ DefaultDealsManager.prototype.getCellClass = function (deal, columnKey) {
     }
     
     return cssClass;
+};
+
+DefaultDealsManager.prototype.getGradientStyle = function (deal, columnKey) {
+    // Apply gradient colors to percentage and profit/loss columns
+    switch (columnKey) {
+        case "chan_percent":
+        case "seven_percent":
+        case "thirty_percent":
+            const percentValue = deal[columnKey];
+            if (typeof percentValue === "number") {
+                return this.getGradientBackgroundColor(percentValue);
+            }
+            break;
+        
+        case "pl":
+            const plValue = deal[columnKey];
+            if (typeof plValue === "number") {
+                return this.getGradientBackgroundColor(plValue);
+            }
+            break;
+        
+        default:
+            return "";
+    }
+    return "";
 };
 
 DefaultDealsManager.prototype.updateStats = function () {
@@ -563,6 +633,224 @@ function nextPage() {
             window.defaultDealsManager.renderTable();
         }
     }
+}
+
+// Gradient background color function for styling cells based on values
+DefaultDealsManager.prototype.getGradientBackgroundColor = function (value) {
+    var numValue = parseFloat(value);
+    if (isNaN(numValue)) return "";
+
+    var intensity = Math.min(Math.abs(numValue) / 5, 1); // Scale to 0-1, max at 5%
+    var alpha = 0.3 + intensity * 0.5; // Alpha from 0.3 to 0.8
+
+    if (numValue < 0) {
+        // Red gradient for negative values
+        if (intensity <= 0.3) {
+            // Light red for small negative values
+            return (
+                "background-color: rgba(255, 182, 193, " +
+                alpha +
+                "); color: #000;"
+            ); // Light pink
+        } else if (intensity <= 0.6) {
+            // Medium red
+            return (
+                "background-color: rgba(255, 99, 71, " +
+                alpha +
+                "); color: #fff;"
+            ); // Tomato
+        } else {
+            // Dark red for large negative values
+            return (
+                "background-color: rgba(139, 0, 0, " + alpha + "); color: #fff;"
+            ); // Dark red
+        }
+    } else if (numValue > 0) {
+        // Green gradient for positive values
+        if (intensity <= 0.3) {
+            // Light green for small positive values
+            return (
+                "background-color: rgba(144, 238, 144, " +
+                alpha +
+                "); color: #000;"
+            ); // Light green
+        } else if (intensity <= 0.6) {
+            // Medium green
+            return (
+                "background-color: rgba(50, 205, 50, " +
+                alpha +
+                "); color: #fff;"
+            ); // Lime green
+        } else {
+            // Dark green for large positive values
+            return (
+                "background-color: rgba(0, 100, 0, " + alpha + "); color: #fff;"
+            ); // Dark green
+        }
+    }
+
+    return "";
+};
+
+// Edit Deal Function for Default Deals
+function editDefaultDeal(dealId, symbol, entryPrice, targetPrice) {
+    // Input validation
+    if (!dealId || dealId.trim() === "") {
+        alert("Invalid deal ID provided");
+        return;
+    }
+
+    if (!symbol || symbol.trim() === "") {
+        alert("Invalid symbol provided");
+        return;
+    }
+
+    // Show edit modal
+    showEditDefaultDealModal(dealId, symbol, entryPrice, targetPrice);
+}
+
+// Close Deal Function for Default Deals
+function closeDefaultDeal(dealId, symbol) {
+    // Input validation
+    if (!dealId || dealId.trim() === "") {
+        Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Invalid deal ID provided",
+        });
+        return;
+    }
+
+    if (!symbol || symbol.trim() === "") {
+        Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Invalid symbol provided",
+        });
+        return;
+    }
+
+    // SweetAlert confirmation dialog
+    Swal.fire({
+        title: "Close Deal",
+        text: `Are you sure you want to close the deal for ${symbol}?`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Yes, Close Deal",
+        cancelButtonText: "Cancel",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Submit close deal request via AJAX
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/api/default-close-deal", true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        Swal.fire({
+                            icon: "success",
+                            title: "Success",
+                            text: `Deal closed successfully for ${symbol}`,
+                            timer: 2000,
+                            showConfirmButton: false,
+                        });
+                        // Refresh deals table
+                        window.defaultDealsManager.loadDeals();
+                    } else {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Error",
+                            text: "Failed to close deal. Please try again.",
+                        });
+                    }
+                }
+            };
+
+            xhr.send(
+                JSON.stringify({
+                    deal_id: dealId,
+                    symbol: symbol,
+                }),
+            );
+        }
+    });
+}
+
+// Show Edit Modal for Default Deals
+function showEditDefaultDealModal(dealId, symbol, entryPrice, targetPrice) {
+    // Set values in the edit modal
+    document.getElementById("editDefaultDealId").value = dealId;
+    document.getElementById("editDefaultSymbol").value = symbol;
+    document.getElementById("editDefaultEntryPrice").value = entryPrice || "";
+    document.getElementById("editDefaultTargetPrice").value = targetPrice || "";
+
+    // Show the modal
+    var editModal = new bootstrap.Modal(
+        document.getElementById("editDefaultDealModal"),
+    );
+    editModal.show();
+}
+
+// Submit Edit Deal for Default Deals
+function submitEditDefaultDeal() {
+    var dealId = document.getElementById("editDefaultDealId").value;
+    var symbol = document.getElementById("editDefaultSymbol").value;
+    var entryPrice = parseFloat(
+        document.getElementById("editDefaultEntryPrice").value,
+    );
+    var targetPrice = parseFloat(
+        document.getElementById("editDefaultTargetPrice").value,
+    );
+
+    // Validation
+    if (!dealId || !symbol) {
+        alert("Deal ID and Symbol are required");
+        return;
+    }
+
+    if (isNaN(entryPrice) || entryPrice <= 0) {
+        alert("Please enter a valid entry price");
+        return;
+    }
+
+    if (isNaN(targetPrice) || targetPrice <= 0) {
+        alert("Please enter a valid target price");
+        return;
+    }
+
+    // Submit edit request via AJAX
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/default-edit-deal", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                alert("Deal updated successfully for " + symbol);
+                // Hide modal
+                var editModal = bootstrap.Modal.getInstance(
+                    document.getElementById("editDefaultDealModal"),
+                );
+                editModal.hide();
+                // Refresh deals table
+                window.defaultDealsManager.loadDeals();
+            } else {
+                alert("Failed to update deal. Please try again.");
+            }
+        }
+    };
+
+    xhr.send(
+        JSON.stringify({
+            deal_id: dealId,
+            symbol: symbol,
+            entry_price: entryPrice,
+            target_price: targetPrice,
+        }),
+    );
 }
 
 // Initialize when DOM is loaded

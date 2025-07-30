@@ -554,11 +554,92 @@ endblock %} {% block head %}
             </div>
         </div>
     </div>
+
+    <!-- Edit Deal Modal -->
+    <div class="modal fade" id="editDefaultDealModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header bg-warning border-0">
+                    <h5 class="modal-title text-dark fw-bold">
+                        <i class="fas fa-edit me-2"></i>Edit Deal
+                    </h5>
+                    <button
+                        type="button"
+                        class="btn-close btn-close-dark"
+                        data-bs-dismiss="modal"
+                    ></button>
+                </div>
+                <div class="modal-body bg-dark p-4">
+                    <form id="editDefaultDealForm">
+                        <!-- Hidden Deal ID -->
+                        <input type="hidden" id="editDefaultDealId" />
+
+                        <!-- Symbol (Read-only) -->
+                        <div class="mb-3">
+                            <label class="form-label text-light fw-semibold">Symbol</label>
+                            <input
+                                type="text"
+                                class="form-control bg-secondary text-light border-0 py-2"
+                                id="editDefaultSymbol"
+                                readonly
+                                style="font-size: 1rem"
+                            />
+                        </div>
+
+                        <!-- Entry Price -->
+                        <div class="mb-3">
+                            <label class="form-label text-light fw-semibold">Entry Price</label>
+                            <input
+                                type="number"
+                                class="form-control bg-secondary text-light border-0 py-2"
+                                id="editDefaultEntryPrice"
+                                step="0.01"
+                                min="0"
+                                style="font-size: 1rem"
+                                required
+                            />
+                        </div>
+
+                        <!-- Target Price -->
+                        <div class="mb-3">
+                            <label class="form-label text-light fw-semibold">Target Price</label>
+                            <input
+                                type="number"
+                                class="form-control bg-secondary text-light border-0 py-2"
+                                id="editDefaultTargetPrice"
+                                step="0.01"
+                                min="0"
+                                style="font-size: 1rem"
+                                required
+                            />
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer bg-dark border-0 pt-0">
+                    <button
+                        type="button"
+                        class="btn btn-secondary px-4 py-2"
+                        data-bs-dismiss="modal"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        class="btn btn-warning px-4 py-2 fw-semibold text-dark"
+                        onclick="submitEditDefaultDeal()"
+                    >
+                        <i class="fas fa-save me-2"></i>Update Deal
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ url_for('static', filename='js/default_deals.js') }}"></script>
 {% endblock %}
