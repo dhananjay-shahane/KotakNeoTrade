@@ -42,32 +42,61 @@ class NotificationService:
                 return []
 
             with conn.cursor() as cursor:
-                # Fixed query with proper parameterization
-                query = """
-                SELECT id, symbol, qty, pos, entry_price, created_at
-                FROM public.admin_trade_signals 
-                WHERE created_at >= NOW() - INTERVAL %s
-                ORDER BY created_at DESC
-                LIMIT 10
-                """
+                # Try different possible column configurations
+                queries_to_try = [
+                    """
+                    SELECT id, symbol, quantity, signal_type, entry_price, created_at
+                    FROM public.admin_trade_signals 
+                    WHERE created_at >= NOW() - INTERVAL %s
+                    ORDER BY created_at DESC
+                    LIMIT 10
+                    """,
+                    """
+                    SELECT id, symbol, qty, pos, entry_price, created_at
+                    FROM public.admin_trade_signals 
+                    WHERE created_at >= NOW() - INTERVAL %s
+                    ORDER BY created_at DESC
+                    LIMIT 10
+                    """,
+                    """
+                    SELECT id, symbol, quantity as qty, signal_type as pos, entry_price, created_at
+                    FROM public.admin_trade_signals 
+                    WHERE created_at >= NOW() - INTERVAL %s
+                    ORDER BY created_at DESC
+                    LIMIT 10
+                    """
+                ]
                 
-                cursor.execute(query, (f'{hours_ago} hours',))
-                result = cursor.fetchall()
+                result = None
+                for query in queries_to_try:
+                    try:
+                        cursor.execute(query, (f'{hours_ago} hours',))
+                        result = cursor.fetchall()
+                        break
+                    except Exception as e:
+                        self.logger.warning(f"Query failed: {str(e)}")
+                        continue
+                
+                if result is None:
+                    self.logger.error("All queries failed")
+                    conn.close()
+                    return []
                 
                 if result:
                     notifications = []
                     for signal in result:
                         # Format the notification message
-                        action = "BUY" if str(signal.get('pos', '')).upper() in ['LONG', 'BUY', '1'] else "SELL"
+                        signal_type = signal.get('signal_type', 'BUY')
+                        action = signal_type.upper() if signal_type else "BUY"
                         
                         notification = {
                             'id': signal.get('id'),
                             'symbol': signal.get('symbol', ''),
-                            'qty': signal.get('qty', 0),
+                            'qty': signal.get('quantity', 0),
                             'action': action,
                             'entry_price': float(signal.get('entry_price', 0)) if signal.get('entry_price') else 0,
                             'created_at': signal.get('created_at').isoformat() if signal.get('created_at') else None,
-                            'message': f"New {action} signal for {signal.get('symbol', '')} - Qty: {signal.get('qty', 0)}",
+                            'message': f"New {action} signal for {signal.get('symbol', '')} - Qty: {signal.get('quantity', 0)}",
                             'time_ago': self.get_time_ago(signal.get('created_at'))
                         }
                         notifications.append(notification)
