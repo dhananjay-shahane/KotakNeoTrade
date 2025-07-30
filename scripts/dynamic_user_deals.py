@@ -108,24 +108,54 @@ class DynamicUserDealsService:
             cursor = conn.cursor()
             table_name = f"{username}_deals"
             
-            # Insert deal into user's table
-            insert_query = sql.SQL("""
-                INSERT INTO {} (username, trade_signal_id, symbol, qty, ep, pos, status, target_price, stop_loss)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                RETURNING id;
-            """).format(sql.Identifier(table_name))
+            # Check existing table structure to determine which columns exist
+            check_columns_query = """
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = %s
+                ORDER BY ordinal_position;
+            """
+            cursor.execute(check_columns_query, (table_name,))
+            existing_columns = [row['column_name'] for row in cursor.fetchall()]
             
-            cursor.execute(insert_query, (
-                username,
-                deal_data.get('trade_signal_id'),
-                deal_data.get('symbol'),
-                deal_data.get('qty'),
-                deal_data.get('ep'),
-                deal_data.get('pos'),
-                deal_data.get('status', 'ACTIVE'),
-                deal_data.get('target_price'),
-                deal_data.get('stop_loss')
-            ))
+            # Prepare insert based on existing columns
+            if 'username' in existing_columns:
+                # New table structure with username column
+                insert_query = sql.SQL("""
+                    INSERT INTO {} (username, trade_signal_id, symbol, qty, ep, pos, status, target_price, stop_loss)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    RETURNING id;
+                """).format(sql.Identifier(table_name))
+                
+                cursor.execute(insert_query, (
+                    username,
+                    deal_data.get('trade_signal_id'),
+                    deal_data.get('symbol'),
+                    deal_data.get('qty'),
+                    deal_data.get('ep'),
+                    deal_data.get('pos'),
+                    deal_data.get('status', 'ACTIVE'),
+                    deal_data.get('target_price'),
+                    deal_data.get('stop_loss')
+                ))
+            else:
+                # Old table structure without username column
+                insert_query = sql.SQL("""
+                    INSERT INTO {} (trade_signal_id, symbol, qty, ep, pos, status, target_price, stop_loss)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    RETURNING id;
+                """).format(sql.Identifier(table_name))
+                
+                cursor.execute(insert_query, (
+                    deal_data.get('trade_signal_id'),
+                    deal_data.get('symbol'),
+                    deal_data.get('qty'),
+                    deal_data.get('ep'),
+                    deal_data.get('pos'),
+                    deal_data.get('status', 'ACTIVE'),
+                    deal_data.get('target_price'),
+                    deal_data.get('stop_loss')
+                ))
             
             deal_id = cursor.fetchone()['id']
             conn.commit()
