@@ -15,7 +15,10 @@ import pandas as pd
 from typing import List, Dict, Optional
 
 sys.path.append('Scripts')
-from db_connector import DatabaseConnector
+try:
+    from Scripts.db_connector import DatabaseConnector
+except ImportError:
+    from db_connector import DatabaseConnector
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -717,7 +720,7 @@ def get_user_deals_data():
             # Calculate values
             qty = float(deal.get('qty', 0))
             ep = float(deal.get('ep', 0))
-            current_price = float(cmp)
+            current_price = float(cmp if cmp is not None else 0)
 
             invested_amount = qty * ep
             current_value = qty * current_price
@@ -1156,7 +1159,8 @@ def create_deal_from_signal():
 
     except Exception as db_error:
         logger.error(f"Database error creating deal: {db_error}")
-        logger.error(f"Signal data was: {signal_data}")
+        signal_data_str = str(locals().get('signal_data', 'No signal data available'))
+        logger.error(f"Signal data was: {signal_data_str}")
         return jsonify({
             'success': False,
             'error': f'Failed to create deal: {str(db_error)}'

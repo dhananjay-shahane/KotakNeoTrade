@@ -2016,6 +2016,7 @@ function proceedWithAddingDeal(
             tp: signal.tp || signal.TP || 0,
             date: signal.date || new Date().toISOString().split("T")[0],
         },
+        force_add: forceAdd || false
     };
 
     var xhr = new XMLHttpRequest();
@@ -2053,6 +2054,58 @@ function proceedWithAddingDeal(
                     console.error("Failed to parse response:", parseError);
                     showSwalMessage(
                         "Server returned invalid response",
+                        "error",
+                    );
+                }
+            } else if (xhr.status === 409) {
+                // Handle duplicate deal case
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.duplicate) {
+                        // Show confirmation dialog for duplicate
+                        if (typeof Swal !== "undefined") {
+                            Swal.fire({
+                                title: "Duplicate Deal Detected",
+                                html: response.message + "<br><br>Do you want to add it anyway?",
+                                icon: "warning",
+                                showCancelButton: true,
+                                confirmButtonColor: "#ff6b35",
+                                cancelButtonColor: "#6c757d",
+                                confirmButtonText: "Yes, Add Anyway",
+                                cancelButtonText: "Cancel",
+                                background: "#2c3e50",
+                                color: "#fff",
+                                customClass: {
+                                    popup: "swal-dark-theme",
+                                },
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    // Add force_add flag and retry
+                                    var retryRequestData = {
+                                        signal_data: requestData.signal_data,
+                                        force_add: true
+                                    };
+                                    
+                                    // Retry with force_add flag
+                                    proceedWithAddingDeal(signal, symbol, price, quantity, investment, true);
+                                }
+                            });
+                        } else {
+                            // Fallback confirm dialog
+                            if (confirm(response.message + "\n\nDo you want to add it anyway?")) {
+                                proceedWithAddingDeal(signal, symbol, price, quantity, investment, true);
+                            }
+                        }
+                    } else {
+                        showSwalMessage(
+                            response.message || "Conflict occurred",
+                            "error",
+                        );
+                    }
+                } catch (parseError) {
+                    console.error("Failed to parse duplicate response:", parseError);
+                    showSwalMessage(
+                        "Duplicate deal detected but failed to parse response",
                         "error",
                     );
                 }
