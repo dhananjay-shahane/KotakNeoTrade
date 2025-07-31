@@ -391,7 +391,7 @@ def index():
     if session.get('authenticated') or session.get('kotak_logged_in'):
         return redirect(url_for('portfolio'))
     else:
-        return redirect(url_for('auth_routes.trading_account_login'))
+        return redirect(url_for('auth_bp.trading_account_login'))
 
 
 @app.route('/portfolio')
@@ -912,19 +912,25 @@ def place_order():
 
 # Import blueprints
 try:
-    from routes.auth_routes import auth_bp as auth_routes_bp
-    from routes.main_routes import main_bp as main_routes_bp
-    from api.dashboard import dashboard_api
-    from api.trading import trading_api
+    from routes.auth_routes import auth_bp
+    from routes.main_routes import main_bp
 
     # Register blueprints with consistent naming
-    app.register_blueprint(auth_routes_bp)
-    app.register_blueprint(main_routes_bp)
-    app.register_blueprint(dashboard_api, url_prefix='/api')
-    app.register_blueprint(trading_api, url_prefix='/api')
+    app.register_blueprint(auth_bp, name='auth_routes')
+    app.register_blueprint(main_bp, name='main_routes')
     print("✓ Core blueprints registered")
 except ImportError as e:
-    print(f"Core blueprint registration optional: {e}")
+    print(f"Core blueprint registration error: {e}")
+
+# Register API blueprints
+try:
+    from api.dashboard import dashboard_api
+    from api.trading import trading_api
+    app.register_blueprint(dashboard_api, url_prefix='/api')
+    app.register_blueprint(trading_api, url_prefix='/api')
+    print("✓ API blueprints registered")
+except ImportError as e:
+    print(f"API blueprint registration optional: {e}")
 
 # Register additional blueprints
 try:
