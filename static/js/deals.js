@@ -300,13 +300,20 @@ DealsManager.prototype.loadDeals = function () {
     self.isLoading = true;
     console.log("Loading deals from logged-in user's deals table...");
 
+    // Check if online
+    if (!navigator.onLine) {
+        self.isLoading = false;
+        self.showError("No internet connection - Please check your network and try again");
+        return;
+    }
+
     // Show loading spinner inside table
     self.showLoadingSpinner();
 
     var xhr = new XMLHttpRequest();
     xhr.open("GET", "/api/user-deals-data", true);
     xhr.setRequestHeader("Content-Type", "application/json");
-    xhr.timeout = 15000; // 15 second timeout
+    xhr.timeout = 30000; // 30 second timeout
 
     xhr.onreadystatechange = function () {
         if (xhr.readyState === 4) {
@@ -464,13 +471,19 @@ DealsManager.prototype.loadDeals = function () {
                 console.error(
                     "Network error - request was aborted or connection failed",
                 );
-                self.showError("Network connection error");
+                self.showError("Network connection error - Check your internet connection and try again");
+            } else if (xhr.status === 500) {
+                console.error("Server error occurred:", xhr.status);
+                self.showError("Server error - Please try again in a few moments");
+            } else if (xhr.status === 404) {
+                console.error("API endpoint not found:", xhr.status);
+                self.showError("API endpoint not found - Please refresh the page");
             } else {
                 console.error("Deals API call failed with status:", xhr.status);
                 self.showError(
                     "Failed to load deals from server (Status: " +
                         xhr.status +
-                        ")",
+                        ") - Please try refreshing the page",
                 );
             }
         }
@@ -478,14 +491,14 @@ DealsManager.prototype.loadDeals = function () {
 
     xhr.ontimeout = function () {
         self.isLoading = false;
-        console.error("Request timeout");
-        self.showError("Request timeout - please try again");
+        console.error("Request timeout after 30 seconds");
+        self.showError("Request timeout - The server is taking too long to respond. Please try again.");
     };
 
     xhr.onerror = function () {
         self.isLoading = false;
         console.error("Network error occurred");
-        self.showError("Network error occurred");
+        self.showError("Network error occurred - Please check your connection and try again");
     };
 
     xhr.send();
@@ -972,9 +985,14 @@ DealsManager.prototype.showError = function (message) {
         '<h6 class="text-danger">' +
         message +
         "</h6>" +
-        '<button class="btn btn-outline-primary btn-sm mt-2" onclick="window.dealsManager.loadDeals()">' +
-        '<i class="fas fa-sync me-1"></i>Retry' +
+        '<div class="mt-3">' +
+        '<button class="btn btn-outline-primary btn-sm me-2" onclick="window.dealsManager.loadDeals()">' +
+        '<i class="fas fa-sync me-1"></i>Retry Now' +
         "</button>" +
+        '<button class="btn btn-outline-secondary btn-sm" onclick="location.reload()">' +
+        '<i class="fas fa-redo me-1"></i>Refresh Page' +
+        "</button>" +
+        "</div>" +
         "</td>" +
         "</tr>";
 };

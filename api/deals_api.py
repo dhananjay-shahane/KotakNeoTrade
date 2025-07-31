@@ -564,6 +564,14 @@ def get_all_deals_data_metrics():
 def get_user_deals_data():
     """API endpoint to get user deals data from logged-in user's dynamic table"""
     try:
+        # Add request timeout handling
+        import signal
+        
+        def timeout_handler(signum, frame):
+            raise TimeoutError("Request processing timeout")
+        
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(25)  # 25 second timeout
         # Get username from session
         username = session.get('username')
         if not username:
@@ -823,6 +831,20 @@ def get_user_deals_data():
             }
         })
 
+    except TimeoutError as e:
+        logger.error(f"Timeout in user deals API: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Request timeout - operation took too long',
+            'deals': [],
+            'summary': {
+                'total_deals': 0,
+                'total_invested': 0,
+                'total_current_value': 0,
+                'total_pnl': 0,
+                'total_pnl_percent': 0
+            }
+        }), 408
     except Exception as e:
         logger.error(f"Error in user deals API: {e}")
         return jsonify({
@@ -837,6 +859,12 @@ def get_user_deals_data():
                 'total_pnl_percent': 0
             }
         }), 500
+    finally:
+        # Clear the timeout
+        try:
+            signal.alarm(0)
+        except:
+            pass
 
 
 @deals_api.route('/deals/check-duplicate', methods=['POST'])
