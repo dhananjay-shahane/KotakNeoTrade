@@ -7,16 +7,10 @@ import os
 password_reset_bp = Blueprint('password_reset', __name__, url_prefix='/api')
 
 def get_external_db_connection():
-    """Get connection to external PostgreSQL database"""
+    """Get connection to external PostgreSQL database using centralized config"""
     try:
-        # Use environment variables for database connection
-        conn = psycopg2.connect(
-            host=os.environ.get('DB_HOST', 'dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com'),
-            database=os.environ.get('DB_NAME', 'kotak_trading_db'),
-            user=os.environ.get('DB_USER', 'kotak_trading_db_user'),
-            password=os.environ.get('DB_PASSWORD', 'JRUlk8RutdgVcErSiUXqljDUdK8sBsYO'),
-            port=int(os.environ.get('DB_PORT', 5432))
-        )
+        from config.database_config import get_db_connection
+        conn = get_db_connection()
         return conn
     except Exception as e:
         logging.error(f"Failed to connect to external database: {e}")

@@ -13,13 +13,10 @@ logger = logging.getLogger(__name__)
 
 class DynamicUserDealsService:
     def __init__(self):
-        self.db_config = {
-            'host': os.environ.get('DB_HOST', 'dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com'),
-            'database': os.environ.get('DB_NAME', 'kotak_trading_db'),
-            'user': os.environ.get('DB_USER', 'kotak_trading_db_user'),
-            'password': os.environ.get('DB_PASSWORD', 'JRUlk8RutdgVcErSiUXqljDUdK8sBsYO'),
-            'port': int(os.environ.get('DB_PORT', 5432))
-        }
+        # Use centralized database configuration
+        from config.database_config import DatabaseConfig
+        self.db_config_manager = DatabaseConfig()
+        self.db_config = self.db_config_manager.get_config_dict()
     
     def get_connection(self):
         """Get database connection"""

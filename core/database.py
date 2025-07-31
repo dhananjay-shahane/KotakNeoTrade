@@ -36,26 +36,15 @@ def init_db(app):
 def get_db_connection():
     """
     Get a direct PostgreSQL connection for external operations
+    Uses centralized database configuration
     Returns a psycopg2 connection object
     """
     try:
-        # Use PostgreSQL database from environment variables
-        database_url = os.environ.get('DATABASE_URL')
-        if not database_url:
-            # Build URL from individual components
-            host = os.environ.get('DB_HOST', 'dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com')
-            database = os.environ.get('DB_NAME', 'kotak_trading_db')
-            user = os.environ.get('DB_USER', 'kotak_trading_db_user')
-            password = os.environ.get('DB_PASSWORD', 'JRUlk8RutdgVcErSiUXqljDUdK8sBsYO')
-            port = os.environ.get('DB_PORT', '5432')
-            database_url = f"postgresql://{user}:{password}@{host}:{port}/{database}"
-        
+        from config.database_config import get_db_dict_connection
         logger.info("🔗 Connecting to PostgreSQL database")
-        conn = psycopg2.connect(
-            database_url,
-            cursor_factory=RealDictCursor
-        )
-        logger.info("✅ Successfully connected to database")
+        conn = get_db_dict_connection()
+        if conn:
+            logger.info("✅ Successfully connected to database")
         return conn
         
     except Exception as e:
