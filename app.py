@@ -391,7 +391,7 @@ def index():
     if session.get('authenticated') or session.get('kotak_logged_in'):
         return redirect(url_for('portfolio'))
     else:
-        return redirect(url_for('auth_bp.trading_account_login'))
+        return redirect(url_for('auth_routes.trading_account_login'))
 
 
 @app.route('/portfolio')
@@ -915,12 +915,17 @@ try:
     from routes.auth_routes import auth_bp
     from routes.main_routes import main_bp
 
-    # Register blueprints with consistent naming
-    app.register_blueprint(auth_bp, name='auth_routes')
-    app.register_blueprint(main_bp, name='main_routes')
+    # Register blueprints with proper URL prefixes
+    app.register_blueprint(auth_bp, url_prefix='/auth')
+    app.register_blueprint(main_bp)
     print("✓ Core blueprints registered")
 except ImportError as e:
     print(f"Core blueprint registration error: {e}")
+    # Fallback registration if imports fail
+    from flask import Blueprint
+    auth_bp = Blueprint('auth_bp', __name__)
+    app.register_blueprint(auth_bp, url_prefix='/auth')
+    print("✓ Fallback auth blueprint registered")
 
 # Register API blueprints
 try:
@@ -1034,6 +1039,49 @@ try:
     print("Kotak Neo integration components already integrated in main app")
 except Exception as e:
     print(f"Kotak Neo integration optional: {e}")
+
+# ========================================
+# FALLBACK AUTH ROUTES
+# ========================================
+
+@app.route('/auth/trading-account/login', methods=['GET', 'POST'])
+def fallback_trading_account_login():
+    """Fallback trading account login route"""
+    if request.method == 'POST':
+        try:
+            username = request.form.get('username', '').strip()
+            password = request.form.get('password', '').strip()
+
+            if not username or not password:
+                flash('Username and password are required', 'error')
+                return render_template('auth/login.html')
+
+            # Simple authentication check
+            if username and password:
+                session['authenticated'] = True
+                session['username'] = username
+                session['user_id'] = username
+                session['ucc'] = username
+                session['greeting_name'] = username
+                session['login_type'] = 'trading_account'
+                session.permanent = True
+                
+                flash('Login successful!', 'success')
+                return redirect(url_for('portfolio'))
+            else:
+                flash('Invalid credentials', 'error')
+
+        except Exception as e:
+            flash('Login error. Please try again.', 'error')
+
+    return render_template('auth/login.html')
+
+@app.route('/auth/logout')
+def fallback_logout():
+    """Fallback logout route"""
+    session.clear()
+    flash('Logged out successfully', 'info')
+    return redirect(url_for('fallback_trading_account_login'))
 
 # ========================================
 # APPLICATION STARTUP

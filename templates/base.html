@@ -329,7 +329,7 @@
                 session.get('login_type') == 'kotak_neo') %}
                 <div class="account-login" id="accountLogin">
                     <a
-                        href="{{ url_for('auth_bp.trading_account_login') }}"
+                        href="{{ url_for('auth_routes.trading_account_login') }}"
                         class="btn-login-account"
                     >
                         <i class="fas fa-sign-in-alt me-2"></i>Login Account
@@ -371,7 +371,7 @@
             {% else %}
             <a
                 class="dropdown-item text-primary"
-                href="{{ url_for('auth_bp.trading_account_login') }}"
+                href="{{ url_for('auth_routes.trading_account_login') }}"
             >
                 <i class="fas fa-sign-in-alt me-2"></i>Login
             </a>
