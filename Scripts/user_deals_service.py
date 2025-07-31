@@ -15,8 +15,13 @@ class UserDealsService:
     """Service for fetching user deals statistics"""
 
     def __init__(self):
-        # Use the same external database connection as deals API
-        self.db_url = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com:5432/kotak_trading_db"
+        # Use environment variables for database connection
+        self.db_url = os.environ.get('DATABASE_URL', 
+            f"postgresql://{os.environ.get('DB_USER', 'kotak_trading_db_user')}:"
+            f"{os.environ.get('DB_PASSWORD', 'JRUlk8RutdgVcErSiUXqljDUdK8sBsYO')}@"
+            f"{os.environ.get('DB_HOST', 'dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com')}:"
+            f"{os.environ.get('DB_PORT', '5432')}/"
+            f"{os.environ.get('DB_NAME', 'kotak_trading_db')}")
 
     def get_connection(self):
         """Get database connection"""

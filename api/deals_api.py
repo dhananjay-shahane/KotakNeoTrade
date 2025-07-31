@@ -259,7 +259,12 @@ def test_deals():
 def get_external_db_connection():
     """Get connection to external PostgreSQL database"""
     try:
-        database_url = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com:5432/kotak_trading_db"
+        database_url = os.environ.get('DATABASE_URL', 
+            f"postgresql://{os.environ.get('DB_USER', 'kotak_trading_db_user')}:"
+            f"{os.environ.get('DB_PASSWORD', 'JRUlk8RutdgVcErSiUXqljDUdK8sBsYO')}@"
+            f"{os.environ.get('DB_HOST', 'dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com')}:"
+            f"{os.environ.get('DB_PORT', '5432')}/"
+            f"{os.environ.get('DB_NAME', 'kotak_trading_db')}")
         conn = psycopg2.connect(database_url)
         logger.info("✓ Connected to external PostgreSQL database")
         return conn
@@ -385,7 +390,12 @@ def get_all_deals_data_metrics():
 
     try:
         # 1. Connect to external database
-        external_db_url = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com:5432/kotak_trading_db"
+        external_db_url = os.environ.get('DATABASE_URL', 
+            f"postgresql://{os.environ.get('DB_USER', 'kotak_trading_db_user')}:"
+            f"{os.environ.get('DB_PASSWORD', 'JRUlk8RutdgVcErSiUXqljDUdK8sBsYO')}@"
+            f"{os.environ.get('DB_HOST', 'dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com')}:"
+            f"{os.environ.get('DB_PORT', '5432')}/"
+            f"{os.environ.get('DB_NAME', 'kotak_trading_db')}")
         db_connector = DatabaseConnector(external_db_url)
         if not db_connector:
             logger.error("External database connection failed!")
@@ -622,7 +632,12 @@ def get_user_deals_data():
             # Get CMP for the symbol using PriceFetcher
             db_connector = None
             try:
-                external_db_url = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com:5432/kotak_trading_db"
+                external_db_url = os.environ.get('DATABASE_URL', 
+                    f"postgresql://{os.environ.get('DB_USER', 'kotak_trading_db_user')}:"
+                    f"{os.environ.get('DB_PASSWORD', 'JRUlk8RutdgVcErSiUXqljDUdK8sBsYO')}@"
+                    f"{os.environ.get('DB_HOST', 'dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com')}:"
+                    f"{os.environ.get('DB_PORT', '5432')}/"
+                    f"{os.environ.get('DB_NAME', 'kotak_trading_db')}")
                 from Scripts.db_connector import DatabaseConnector
                 db_connector = DatabaseConnector(external_db_url)
 

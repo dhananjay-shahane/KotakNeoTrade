@@ -86,7 +86,12 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1,
                         x_host=1)  # Enable HTTPS URL generation
 
 # Database configuration - use External PostgreSQL Database
-database_url = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com:5432/kotak_trading_db"
+database_url = os.environ.get('DATABASE_URL', 
+    f"postgresql://{os.environ.get('DB_USER', 'kotak_trading_db_user')}:"
+    f"{os.environ.get('DB_PASSWORD', 'JRUlk8RutdgVcErSiUXqljDUdK8sBsYO')}@"
+    f"{os.environ.get('DB_HOST', 'dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com')}:"
+    f"{os.environ.get('DB_PORT', '5432')}/"
+    f"{os.environ.get('DB_NAME', 'kotak_trading_db')}")
 print("✓ Using External PostgreSQL Database")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url

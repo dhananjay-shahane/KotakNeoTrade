@@ -2,7 +2,12 @@
 import pandas as pd
 from sqlalchemy import create_engine, text
 
-EXTERNAL_DB_URL = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
+import os
+EXTERNAL_DB_URL = os.environ.get('DATABASE_URL', 
+    f"postgresql://{os.environ.get('DB_USER', 'kotak_trading_db_user')}:"
+    f"{os.environ.get('DB_PASSWORD', 'JRUlk8RutdgVcErSiUXqljDUdK8sBsYO')}@"
+    f"{os.environ.get('DB_HOST', 'dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com')}/"
+    f"{os.environ.get('DB_NAME', 'kotak_trading_db')}")
 
 def clean_numeric(value):
     if pd.isna(value) or value == '#N/A' or value == '': return None

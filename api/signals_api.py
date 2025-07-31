@@ -65,7 +65,11 @@ def get_default_deals_data():
         logging.info("Default deals API: Fetching data from admin_trade_signals table")
 
         # Connect to external database using the same connection as ETF signals
-        connection_string = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
+        connection_string = os.environ.get('DATABASE_URL', 
+            f"postgresql://{os.environ.get('DB_USER', 'kotak_trading_db_user')}:"
+            f"{os.environ.get('DB_PASSWORD', 'JRUlk8RutdgVcErSiUXqljDUdK8sBsYO')}@"
+            f"{os.environ.get('DB_HOST', 'dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com')}/"
+            f"{os.environ.get('DB_NAME', 'kotak_trading_db')}")
 
         # Connect to external database
         with psycopg2.connect(connection_string) as conn:
