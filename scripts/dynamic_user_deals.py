@@ -52,7 +52,6 @@ class DynamicUserDealsService:
                     pos VARCHAR(20),
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     ed DATE,
-                    exp DATE,
                     status VARCHAR(20) DEFAULT 'ACTIVE',
                     target_price DECIMAL(10, 2),
                     stop_loss DECIMAL(10, 2)

@@ -136,7 +136,7 @@ DealsManager.prototype.setupDealButtonListeners = function () {
             var tprPercent = btn.getAttribute('data-tpr-percent');
             editDeal(dealId, symbol, qty, targetPrice, entryPrice, tprPercent);
         }
-
+        
         if (e.target.closest('.close-deal-btn')) {
             var btn = e.target.closest('.close-deal-btn');
             var dealId = btn.getAttribute('data-deal-id');
@@ -219,13 +219,13 @@ DealsManager.prototype.updateTableHeaders = function () {
 
         if (colInfo.sortable) {
             th.className += " sortable-header";
-
+            
             // Check if this column is currently being sorted
             var isActiveSort = (self.currentSortColumn === column);
             if (isActiveSort) {
                 th.className += " active";
             }
-
+            
             th.onclick = (function (col) {
                 return function () {
                     self.currentSortColumn = col;
@@ -233,7 +233,7 @@ DealsManager.prototype.updateTableHeaders = function () {
                     self.updateTableHeaders(); // Refresh headers to show active state
                 };
             })(column);
-
+            
             var sortIcon = '';
             if (isActiveSort) {
                 sortIcon = self.sortDirection === "asc" 
@@ -242,7 +242,7 @@ DealsManager.prototype.updateTableHeaders = function () {
             } else {
                 sortIcon = '<i class="fas fa-sort sort-icon"></i>';
             }
-
+            
             th.innerHTML = colInfo.label + ' ' + sortIcon;
             th.title = self.getColumnTooltip(column) + " - Click to sort";
         } else {
@@ -588,7 +588,6 @@ DealsManager.prototype.renderDealsTable = function () {
     for (var i = 0; i < pageDeals.length; i++) {
         var deal = pageDeals[i];
         var row = document.createElement("tr");
-        row.setAttribute('data-deal-id', deal.id || deal.trade_signal_id);
 
         for (var j = 0; j < self.selectedColumns.length; j++) {
             var columnKey = self.selectedColumns[j];
@@ -651,11 +650,11 @@ DealsManager.prototype.renderDealsTable = function () {
                     break;
                 case "qty":
                     cellContent = deal.qty
-                        ? '<span class="deal-field-qty">' + deal.qty.toLocaleString("en-IN") + '</span>'
+                        ? deal.qty.toLocaleString("en-IN")
                         : "";
                     break;
                 case "ep":
-                    cellContent = deal.ep ? '<span class="deal-field-ep">₹' + deal.ep.toFixed(2) + '</span>' : "";
+                    cellContent = deal.ep ? "₹" + deal.ep.toFixed(2) : "";
                     break;
                 case "cmp":
                     cellContent = deal.cmp ? "₹" + deal.cmp.toFixed(2) : "";
@@ -683,7 +682,7 @@ DealsManager.prototype.renderDealsTable = function () {
                         : "";
                     break;
                 case "tp":
-                    cellContent = deal.tp ? '<span class="deal-field-tp">₹' + deal.tp.toFixed(2) + '</span>' : "-";
+                    cellContent = deal.tp ? "₹" + deal.tp.toFixed(2) : "-";
                     break;
                 case "tpr":
                     cellContent = deal.tpr || "--";
@@ -705,16 +704,16 @@ DealsManager.prototype.renderDealsTable = function () {
                         // Parse the date string and format it as YYYY-MM-DD
                         var exitDate = new Date(deal.ed);
                         if (!isNaN(exitDate.getTime())) {
-                            cellContent = '<span class="deal-field-ed">' + exitDate.toLocaleDateString('en-CA') + '</span>'; // YYYY-MM-DD format
+                            cellContent = exitDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format
                         } else {
-                            cellContent = '<span class="deal-field-ed">' + deal.ed + '</span>';
+                            cellContent = deal.ed;
                         }
                     } else {
-                        cellContent = '<span class="deal-field-ed">--</span>';
+                        cellContent = "--";
                     }
                     break;
                 case "exp":
-                    cellContent = '<span class="deal-field-exp">' + (deal.exp || "--") + '</span>';
+                    cellContent = deal.exp || "--";
                     break;
                 case "pr":
                     cellContent = deal.pr || "--";
@@ -859,25 +858,46 @@ DealsManager.prototype.renderDealsTable = function () {
                     }
                     break;
                 case "actions":
-                    cellContent =
-                        '<div class="btn-group btn-group-sm deal-actions-' + (deal.id || deal.trade_signal_id) + '">' +
-                        '<button class="btn btn-primary btn-sm edit-btn" onclick="enableInlineEdit(\'' +
-                        (deal.id || deal.trade_signal_id) + '\', \'' +
-                        (deal.symbol || "") + '\', ' +
-                        (deal.qty || 0) + ', ' +
-                        (deal.ep || 0) + ', ' +
-                        (deal.tp || 0) + ', \'' +
-                        (deal.ed || '') + '\', \'' +
-                        (deal.exp || '') + '\')">' +
-                        '<i class="fas fa-edit"></i> Edit</button>' +
-                        '<button class="btn btn-success btn-sm dnone submit-btn" onclick="submitInlineEdit(\'' +
-                        (deal.id || deal.trade_signal_id) + '\', \'' +
-                        (deal.symbol || "") + '\')">' +
-                        '<i class="fas fa-save"></i> Save</button>' +
-                        '<button class="btn btn-secondary btn-sm d-none cancel-btn" onclick="cancelInlineEdit(\'' +
-                        (deal.id || deal.trade_signal_id) + '\')">' +
-                        '<i class="fas fa-times"></i> Cancel</button>' +
-                        '</div>';
+                    // Check if deal is closed
+                    var isClosed =
+                        deal.status === "CLOSED" ||
+                        (deal.ed && deal.ed !== "--" && deal.ed !== null);
+
+                    if (isClosed) {
+                        // Show only exit date edit button for closed deals
+                        cellContent =
+                            '<div class="btn-group btn-group-sm">' +
+                            '<button class="btn btn-secondary btn-sm" onclick="editExitDate(\'' +
+                            (deal.id || deal.trade_signal_id || "") +
+                            "', '" +
+                            (deal.symbol || "") +
+                            "', '" +
+                            (deal.ed || "") +
+                            '\')" title="Edit exit date only">' +
+                            '<i class="fas fa-calendar-alt"></i> Edit Date</button>' +
+                            '<button class="btn btn-danger btn-sm" disabled title="Deal already closed">' +
+                            '<i class="fas fa-times"></i> Closed' +
+                            "</button>" +
+                            "</div>";
+                    } else {
+                        // Show enabled buttons for active deals
+                        var dealId = deal.id || deal.trade_signal_id || "";
+                        var symbol = deal.symbol || "";
+                        var qty = deal.qty || 0;
+                        var targetPrice = deal.target_price || deal.tpr || 0;
+                        
+                        var entryPrice = deal.entry_price || deal.ep || 0;
+                        var tprPercent = deal.tpr_percent || deal.pp || 0;
+                        
+                        cellContent = 
+                            '<div class="btn-group btn-group-sm">' +
+                            '<button class="btn btn-warning btn-sm edit-deal-btn" data-deal-id="' + dealId + '" data-symbol="' + symbol + '" data-qty="' + qty + '" data-target-price="' + targetPrice + '" data-entry-price="' + entryPrice + '" data-tpr-percent="' + tprPercent + '">' +
+                            '<i class="fas fa-edit"></i> Edit </button>' +
+                            '<button class="btn btn-danger btn-sm close-deal-btn" data-deal-id="' + dealId + '" data-symbol="' + symbol + '">' +
+                            '<i class="fas fa-times"></i> Close' +
+                            "</button>" +
+                            "</div>";
+                    }
                     break;
                 default:
                     cellContent = "";
@@ -1266,14 +1286,14 @@ function cancelOrder(dealId) {
 // Edit Deal Functions
 function editDeal(dealId, symbol, qty, targetPrice, entryPrice, tprPercent) {
     console.log("editDeal function called with:", dealId, symbol, qty, targetPrice, entryPrice, tprPercent);
-
+    
     // Validate input parameters
     if (!dealId || !symbol) {
         console.error("Invalid deal parameters:", dealId, symbol);
         alert("Invalid deal information provided");
         return;
     }
-
+    
     // Check if modal element exists
     var modalElement = document.getElementById('editDealModal');
     if (!modalElement) {
@@ -1281,7 +1301,7 @@ function editDeal(dealId, symbol, qty, targetPrice, entryPrice, tprPercent) {
         alert("Modal not found - check console for errors");
         return;
     }
-
+    
     // Set modal values with current deal data
     document.getElementById('editDealId').value = dealId;
     document.getElementById('editSymbol').value = symbol;
@@ -1289,7 +1309,7 @@ function editDeal(dealId, symbol, qty, targetPrice, entryPrice, tprPercent) {
     document.getElementById('editTargetPrice').value = targetPrice || '';
     document.getElementById('editEntryPrice').value = entryPrice || '';
     document.getElementById('editTPRPercent').value = tprPercent || '';
-
+    
     // Store original values for comparison
     window.originalDealData = {
         quantity: qty || '',
@@ -1297,7 +1317,7 @@ function editDeal(dealId, symbol, qty, targetPrice, entryPrice, tprPercent) {
         entryPrice: entryPrice || '',
         tprPercent: tprPercent || ''
     };
-
+    
     // Show modal
     var modal = new bootstrap.Modal(modalElement);
     modal.show();
@@ -1310,7 +1330,7 @@ function submitEditDeal() {
     var targetPrice = document.getElementById('editTargetPrice').value;
     var entryPrice = document.getElementById('editEntryPrice').value;
     var tprPercent = document.getElementById('editTPRPercent').value;
-
+    
     // Check if at least one field has been changed
     var currentData = {
         quantity: qty,
@@ -1318,7 +1338,7 @@ function submitEditDeal() {
         entryPrice: entryPrice,
         tprPercent: tprPercent
     };
-
+    
     var hasChanges = false;
     for (var key in currentData) {
         if (currentData[key] !== window.originalDealData[key]) {
@@ -1326,7 +1346,7 @@ function submitEditDeal() {
             break;
         }
     }
-
+    
     if (!hasChanges) {
         Swal.fire({
             icon: 'warning',
@@ -1337,7 +1357,7 @@ function submitEditDeal() {
         });
         return;
     }
-
+    
     // Validate numeric fields if they have values
     var fieldsToValidate = [
         {value: qty, name: 'Quantity'},
@@ -1345,7 +1365,7 @@ function submitEditDeal() {
         {value: entryPrice, name: 'Entry Price'},
         {value: tprPercent, name: 'TPR Percentage'}
     ];
-
+    
     for (var i = 0; i < fieldsToValidate.length; i++) {
         var field = fieldsToValidate[i];
         if (field.value && (isNaN(parseFloat(field.value)) || parseFloat(field.value) <= 0)) {
@@ -1359,7 +1379,7 @@ function submitEditDeal() {
             return;
         }
     }
-
+    
     // Show loading
     Swal.fire({
         title: 'Updating Deal...',
@@ -1371,18 +1391,18 @@ function submitEditDeal() {
         background: '#1e1e1e',
         color: '#fff'
     });
-
+    
     // Prepare data for API call
     var updateData = {
         deal_id: dealId,
         symbol: symbol
     };
-
+    
     if (qty) updateData.qty = parseFloat(qty);
     if (targetPrice) updateData.target_price = parseFloat(targetPrice);
     if (entryPrice) updateData.entry_price = parseFloat(entryPrice);
     if (tprPercent) updateData.tpr_percent = parseFloat(tprPercent);
-
+    
     // Make API call
     fetch('/api/edit-deal', {
         method: 'POST',
@@ -1435,7 +1455,7 @@ function submitCloseDeal() {
     var dealId = document.getElementById('closeDealId').value;
     var symbol = document.getElementById('closeSymbol').value;
     var exitDate = document.getElementById('exitDate').value;
-
+    
     if (!exitDate) {
         Swal.fire({
             icon: 'error',
@@ -1446,12 +1466,12 @@ function submitCloseDeal() {
         });
         return;
     }
-
+    
     // Validate exit date is not in the future
     var selectedDate = new Date(exitDate);
     var today = new Date();
     today.setHours(0, 0, 0, 0);
-
+    
     if (selectedDate > today) {
         Swal.fire({
             icon: 'error',
@@ -1462,7 +1482,7 @@ function submitCloseDeal() {
         });
         return;
     }
-
+    
     // Show loading
     Swal.fire({
         title: 'Closing Deal...',
@@ -1474,7 +1494,7 @@ function submitCloseDeal() {
         background: '#1e1e1e',
         color: '#fff'
     });
-
+    
     // Make API call
     fetch('/api/close-deal', {
         method: 'POST',
@@ -1527,16 +1547,16 @@ function submitCloseDeal() {
 // Edit Exit Date for Closed Deals
 function editExitDate(dealId, symbol, currentExitDate) {
     console.log("Opening edit exit date modal for:", dealId, symbol, currentExitDate);
-
+    
     // Set modal values
     document.getElementById('editExitDealId').value = dealId;
     document.getElementById('editExitSymbol').value = symbol;
     document.getElementById('editExitDateInput').value = currentExitDate || '';
-
+    
     // Set max date to today
     var today = new Date().toISOString().split('T')[0];
     document.getElementById('editExitDateInput').setAttribute('max', today);
-
+    
     // Show modal
     var modal = new bootstrap.Modal(document.getElementById('editExitDateModal'));
     modal.show();
@@ -1546,7 +1566,7 @@ function submitEditExitDate() {
     var dealId = document.getElementById('editExitDealId').value;
     var symbol = document.getElementById('editExitSymbol').value;
     var exitDate = document.getElementById('editExitDateInput').value;
-
+    
     if (!exitDate) {
         Swal.fire({
             icon: 'error',
@@ -1557,12 +1577,12 @@ function submitEditExitDate() {
         });
         return;
     }
-
+    
     // Validate exit date is not in the future
     var selectedDate = new Date(exitDate);
     var today = new Date();
     today.setHours(0, 0, 0, 0);
-
+    
     if (selectedDate > today) {
         Swal.fire({
             icon: 'error',
@@ -1573,7 +1593,7 @@ function submitEditExitDate() {
         });
         return;
     }
-
+    
     // Show loading
     Swal.fire({
         title: 'Updating Exit Date...',
@@ -1585,7 +1605,7 @@ function submitEditExitDate() {
         background: '#1e1e1e',
         color: '#fff'
     });
-
+    
     // Make API call to update exit date
     fetch('/api/close-deal', {
         method: 'POST',
@@ -1835,8 +1855,6 @@ function submitTrade() {
         "Quantity:",
         quantity,
     );
-
-```text
 
     if (
         !symbol ||
@@ -2606,11 +2624,11 @@ function closeDeal(dealId, symbol) {
     // Set modal values
     document.getElementById('closeDealId').value = dealId;
     document.getElementById('closeDealSymbol').value = symbol;
-
+    
     // Set default exit date to today
     var today = new Date().toISOString().split('T')[0];
     document.getElementById('closeDealExitDate').value = today;
-
+    
     // Show close deal modal
     var modal = new bootstrap.Modal(document.getElementById('closeDealModal'));
     modal.show();
@@ -2620,7 +2638,7 @@ function submitCloseDeal() {
     var dealId = document.getElementById('closeDealId').value;
     var symbol = document.getElementById('closeDealSymbol').value;
     var exitDate = document.getElementById('closeDealExitDate').value;
-
+    
     if (!exitDate) {
         Swal.fire({
             icon: 'error',
@@ -2631,7 +2649,7 @@ function submitCloseDeal() {
         });
         return;
     }
-
+    
     // Show loading
     Swal.fire({
         title: 'Closing Deal...',
@@ -2643,7 +2661,7 @@ function submitCloseDeal() {
         background: '#1e1e1e',
         color: '#fff'
     });
-
+    
     // Make API call to close deal
     fetch('/api/close-deal', {
         method: 'POST',
@@ -2668,11 +2686,11 @@ function submitCloseDeal() {
                 timer: 2000,
                 showConfirmButton: false
             });
-
+            
             // Hide modal
             var modal = bootstrap.Modal.getInstance(document.getElementById('closeDealModal'));
             modal.hide();
-
+            
             // Refresh deals table
             if (window.dealsManager) {
                 window.dealsManager.loadDeals();
@@ -2699,105 +2717,4 @@ function submitCloseDeal() {
     });
 }
 
-// Function to enable inline editing
-function enableInlineEdit(dealId, symbol, qty, ep, tp, ed, exp) {
-    console.log("Enabling inline edit for deal:", dealId);
 
-    // Hide edit button and show submit/cancel buttons
-    document.querySelector('.deal-actions-' + dealId + ' .edit-btn').classList.add('d-none');
-    document.querySelector('.deal-actions-' + dealId + ' .submit-btn').classList.remove('d-none');
-    document.querySelector('.deal-actions-' + dealId + ' .cancel-btn').classList.remove('d-none');
-
-    // Get the row
-    var row = document.querySelector('tr[data-deal-id="' + dealId + '"]');
-
-    // Make QTY editable
-    var qtySpan = row.querySelector('.deal-field-qty');
-    var qtyValue = qtySpan.textContent.replace(/,/g, '');
-    qtySpan.innerHTML = '<input type="number" class="form-control form-control-sm qty-input" value="' + qtyValue + '">';
-
-    // Make EP editable
-    var epSpan = row.querySelector('.deal-field-ep');
-    var epValue = epSpan.textContent.replace('₹', '');
-    epSpan.innerHTML = '<input type="number" class="form-control form-control-sm ep-input" value="' + epValue + '">';
-
-    // Make TP editable
-    var tpSpan = row.querySelector('.deal-field-tp');
-    var tpValue = tpSpan.textContent.replace('₹', '');
-    tpSpan.innerHTML = '<input type="number" class="form-control form-control-sm tp-input" value="' + tpValue + '">';
-
-    // Make ED editable
-    var edSpan = row.querySelector('.deal-field-ed');
-    edSpan.innerHTML = '<input type="date" class="form-control form-control-sm ed-input" value="' + ed + '">';
-
-    // Make EXP editable
-    var expSpan = row.querySelector('.deal-field-exp');
-    expSpan.innerHTML = '<input type="text" class="form-control form-control-sm exp-input" value="' + exp + '">';
-}
-
-// Function to submit inline editing
-function submitInlineEdit(dealId, symbol) {
-    console.log("Submitting inline edit for deal:", dealId);
-
-    // Get the row
-    var row = document.querySelector('tr[data-deal-id="' + dealId + '"]');
-
-    // Get updated values
-    var qtyInput = row.querySelector('.qty-input');
-    var epInput = row.querySelector('.ep-input');
-    var tpInput = row.querySelector('.tp-input');
-    var edInput = row.querySelector('.ed-input');
-    var expInput = row.querySelector('.exp-input');
-
-    var qty = qtyInput.value;
-    var ep = epInput.value;
-    var tp = tpInput.value;
-    var ed = edInput.value;
-    var exp = expInput.value;
-
-    // Validate numeric fields
-    if (isNaN(qty) || isNaN(ep) || isNaN(tp)) {
-        showNotification("Please enter valid numeric values", "error");
-        return;
-    }
-
-    // Prepare data for API call
-    var updateData = {
-        deal_id: dealId,
-        symbol: symbol,
-        qty: qty,
-        ep: ep,
-        tp: tp,
-        ed: ed,
-        exp: exp
-    };
-
-    // Make API call to update data
-    fetch('/api/edit-deal', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updateData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showNotification("Deal updated successfully", "success");
-        } else {
-            showNotification("Failed to update deal", "error");
-        }
-    })
-    .finally(() => {
-        // Re-render the deals table to reflect changes
-        window.dealsManager.loadDeals();
-    });
-}
-
-// Function to cancel inline editing
-function cancelInlineEdit(dealId) {
-    console.log("Canceling inline edit for deal:", dealId);
-
-    // Re-render the deals table to reset changes
-    window.dealsManager.loadDeals();
-}
