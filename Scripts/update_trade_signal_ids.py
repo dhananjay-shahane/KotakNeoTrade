@@ -15,14 +15,11 @@ logger = logging.getLogger(__name__)
 def update_trade_signal_ids():
     """Ensure all records have unique trade_signal_id in external database"""
     
-    # Database connection parameters
-    # Supabase removed - using PostgreSQL only
-    DB_PORT = os.getenv('SUPABASE_DB_PORT', '6543')
-    DB_NAME = os.getenv('SUPABASE_DB_NAME', 'postgres')
-    DB_USER = os.getenv('SUPABASE_DB_USER', 'postgres.crlxmtjhvbnlezfgqvnl')
-    DB_PASSWORD = os.getenv('SUPABASE_DB_PASSWORD', 'Kaushik@123456')
-    
-    connection_string = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    # Use centralized database configuration
+    import sys
+    sys.path.append('.')
+    from config.database_config import get_database_url
+    connection_string = get_database_url()
     
     try:
         with psycopg2.connect(connection_string) as conn:

@@ -10,8 +10,15 @@ class Config:
     SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY')
     SUPABASE_SERVICE_ROLE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
     
-    # Database URI - use Supabase if available, fallback to DATABASE_URL
-    SQLALCHEMY_DATABASE_URI = os.environ.get('SUPABASE_DATABASE_URL') or os.environ.get('DATABASE_URL')
+    # Database URI - use centralized database configuration
+    try:
+        import sys
+        sys.path.append('.')
+        from config.database_config import get_database_url
+        SQLALCHEMY_DATABASE_URI = get_database_url()
+    except ImportError:
+        # Fallback for edge cases
+        SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_recycle": 300,

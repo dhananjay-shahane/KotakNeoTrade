@@ -41,9 +41,11 @@ def parse_date(date_str):
 def import_csv_to_database():
     """Import CSV data into admin_trade_signals table"""
     
-    # Database connection
-    db_url = os.getenv('DATABASE_URL')
-    conn = psycopg2.connect(db_url)
+    # Database connection using centralized config
+    import sys
+    sys.path.append('.')
+    from config.database_config import get_db_connection
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     # Read CSV file, skip first 2 rows (headers)

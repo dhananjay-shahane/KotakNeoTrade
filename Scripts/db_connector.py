@@ -1,5 +1,6 @@
 """
 Database connector for PriceFetcher integration
+Uses centralized database configuration
 """
 import psycopg2
 import psycopg2.extras
@@ -8,7 +9,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 class DatabaseConnector:
-    def __init__(self, database_url):
+    def __init__(self, database_url=None):
+        # Use centralized config if no URL provided
+        if database_url is None:
+            import sys
+            sys.path.append('.')
+            from config.database_config import get_database_url
+            database_url = get_database_url()
         self.database_url = database_url
         self._connection = None
     

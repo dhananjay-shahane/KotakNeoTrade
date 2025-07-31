@@ -93,12 +93,17 @@ app.secret_key = session_secret
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1,
                         x_host=1)  # Enable HTTPS URL generation
 
-# Database configuration with fallback
-database_url = os.environ.get("DATABASE_URL")
-if not database_url:
-    # Fallback to SQLite for development
-    database_url = "sqlite:///trading_platform.db"
-    print("Using SQLite fallback database for development")
+# Database configuration - use centralized configuration
+try:
+    from config.database_config import get_database_url
+    database_url = get_database_url()
+    print("✓ Using centralized database configuration")
+except ImportError:
+    # Fallback for edge cases
+    database_url = os.environ.get("DATABASE_URL")
+    if not database_url:
+        database_url = "sqlite:///trading_platform.db"
+        print("Using SQLite fallback database for development")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
@@ -406,12 +411,13 @@ def get_etf_signals_data():
         page_size = int(request.args.get('page_size', 10))
         
         # Check if database credentials are available first
-        import os
-        db_host = os.getenv('DB_HOST')
-        database_url = os.getenv('DATABASE_URL')
-        
-        if not database_url and not db_host:
-            # No credentials configured
+        try:
+            from config.database_config import get_database_url, test_database_connection
+            database_url = get_database_url()
+            if not test_database_connection():
+                raise Exception("Database connection test failed")
+        except Exception as e:
+            # Database not configured or connection failed
             return jsonify({
                 'success': False,
                 'data': [],
@@ -420,7 +426,7 @@ def get_etf_signals_data():
                 'page': page,
                 'has_more': False,
                 'error': 'Database credentials not configured',
-                'message': 'Please configure database credentials (DATABASE_URL or DB_HOST, DB_NAME, DB_USER, DB_PASSWORD) to access trading data.'
+                'message': f'Database connection failed: {str(e)}. Please verify database credentials.'
             }), 200
         
         # Try to get real data from external database with pagination

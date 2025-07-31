@@ -139,7 +139,7 @@ class BackupManager:
         backup_info = {
             'timestamp': timestamp,
             'json_export': json_file,
-            'database_url': os.environ.get('DATABASE_URL', 'Not available'),
+            'database_url': 'Configured via centralized config',
             'backup_type': 'full'
         }
         

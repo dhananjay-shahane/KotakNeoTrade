@@ -7,10 +7,13 @@ from datetime import datetime
 def export_database():
     """Export database data using pg_dump"""
     try:
-        # Get database URL from environment
-        database_url = os.environ.get('DATABASE_URL')
+        # Get database URL using centralized config
+        import sys
+        sys.path.append('.')
+        from config.database_config import get_database_url
+        database_url = get_database_url()
         if not database_url:
-            print("DATABASE_URL not found in environment variables")
+            print("Database URL not found in centralized configuration")
             return False
         
         # Create export filename with timestamp

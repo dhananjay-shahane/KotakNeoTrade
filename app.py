@@ -85,14 +85,20 @@ app.secret_key = session_secret
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1,
                         x_host=1)  # Enable HTTPS URL generation
 
-# Database configuration - use External PostgreSQL Database
-database_url = os.environ.get('DATABASE_URL', 
-    f"postgresql://{os.environ.get('DB_USER', 'kotak_trading_db_user')}:"
-    f"{os.environ.get('DB_PASSWORD', 'JRUlk8RutdgVcErSiUXqljDUdK8sBsYO')}@"
-    f"{os.environ.get('DB_HOST', 'dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com')}:"
-    f"{os.environ.get('DB_PORT', '5432')}/"
-    f"{os.environ.get('DB_NAME', 'kotak_trading_db')}")
-print("✓ Using External PostgreSQL Database")
+# Database configuration - use centralized configuration
+try:
+    from config.database_config import get_database_url
+    database_url = get_database_url()
+    print("✓ Using External PostgreSQL Database")
+except ImportError:
+    # Fallback for edge cases
+    database_url = os.environ.get('DATABASE_URL', 
+        f"postgresql://{os.environ.get('DB_USER', 'kotak_trading_db_user')}:"
+        f"{os.environ.get('DB_PASSWORD', 'JRUlk8RutdgVcErSiUXqljDUdK8sBsYO')}@"
+        f"{os.environ.get('DB_HOST', 'dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com')}:"
+        f"{os.environ.get('DB_PORT', '5432')}/"
+        f"{os.environ.get('DB_NAME', 'kotak_trading_db')}")
+    print("✓ Using External PostgreSQL Database (fallback)")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
