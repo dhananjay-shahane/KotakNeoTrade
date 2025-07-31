@@ -364,7 +364,7 @@
             {% if session.get('authenticated') %}
             <a
                 class="dropdown-item text-danger"
-                href="{{ url_for('auth_bp.logout') }}"
+                href="{{ url_for('auth_routes.logout') }}"
             >
                 <i class="fas fa-sign-out-alt me-2"></i>Logout
             </a>
