@@ -250,7 +250,7 @@ def require_auth(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not validate_current_session():
-            return redirect(url_for('login', expired='true'))
+            return redirect(url_for('auth_routes.trading_account_login', expired='true'))
         return f(*args, **kwargs)
 
     return decorated_function
@@ -269,7 +269,7 @@ def get_kotak_account_data():
     return None
 
 
-# ========================================
+# ================================= berjumpa=======
 # TRADING PLATFORM ROUTES
 # ========================================
 
@@ -716,7 +716,7 @@ def get_holdings_api():
         # Ensure holdings is always a list and return in expected format
         if isinstance(holdings, dict) and 'holdings' in holdings:
             holdings_list = holdings['holdings']
-        elif isinstance(holdings, list):
+        elif isinstance(positions, list):
             holdings_list = holdings
         else:
             holdings_list = []
