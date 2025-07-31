@@ -65,11 +65,13 @@ def get_default_deals_data():
         logging.info("Default deals API: Fetching data from admin_trade_signals table")
 
         # Connect to external database using centralized configuration
-        from config.database_config import get_database_url
-        connection_string = get_database_url()
+        from config.database_config import get_db_connection
+        conn = get_db_connection()
+        if not conn:
+            raise Exception("Failed to get database connection")
 
-        # Connect to external database
-        with psycopg2.connect(connection_string) as conn:
+        # Use the centralized connection
+        with conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
 
                 query = """

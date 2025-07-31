@@ -14,15 +14,24 @@ import sys
 import pandas as pd
 from typing import List, Dict, Optional
 
-sys.path.append('Scripts')
-try:
-    from Scripts.db_connector import DatabaseConnector
-except ImportError:
-    from db_connector import DatabaseConnector
-
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+sys.path.append('Scripts')
+try:
+    from config.database_config import DatabaseConfig, get_db_connection
+    # Use centralized database configuration
+    logger.info("✓ Using centralized database configuration")
+    USE_CENTRALIZED_CONFIG = True
+except ImportError:
+    # Fallback to old DatabaseConnector if needed
+    logger.warning("Centralized config not available, using fallback")
+    try:
+        from Scripts.db_connector import DatabaseConnector
+    except ImportError:
+        from db_connector import DatabaseConnector
+    USE_CENTRALIZED_CONFIG = False
 
 deals_api = Blueprint('deals_api', __name__, url_prefix='/api')
 
@@ -385,9 +394,13 @@ def get_all_deals_data_metrics():
 
     try:
         # 1. Connect to external database using centralized config
-        from config.database_config import get_database_url
-        external_db_url = get_database_url()
-        db_connector = DatabaseConnector(external_db_url)
+        if USE_CENTRALIZED_CONFIG:
+            from config.database_config import get_database_url
+            external_db_url = get_database_url()
+            db_connector = DatabaseConnector(external_db_url)
+        else:
+            # Use fallback database connector
+            db_connector = DatabaseConnector()
         if not db_connector:
             logger.error("External database connection failed!")
             return []

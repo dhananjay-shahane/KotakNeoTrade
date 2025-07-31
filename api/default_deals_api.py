@@ -35,10 +35,19 @@ def get_default_deals():
         logger.info(
             "📊 Fetching default deals data from admin_trade_signals...")
 
-        # Get external database connection using DatabaseConnector from external_db_service
-        db_connector = DatabaseConnector()
+        # Get external database connection using centralized config
+        try:
+            from config.database_config import get_db_connection
+            conn = get_db_connection()
+            if not conn:
+                raise Exception("Failed to get database connection")
+            db_connector = DatabaseConnector()
+            db_connector._connection = conn  # Use the centralized connection
+        except Exception as e:
+            logger.error(f"❌ Database connection error: {e}")
+            db_connector = None
 
-        if not db_connector.connect():
+        if not db_connector:
             logger.error("❌ Failed to connect to external database")
             return jsonify({
                 'success': False,
