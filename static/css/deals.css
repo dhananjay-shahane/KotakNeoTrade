@@ -99,47 +99,24 @@
     border: 1px solid #4a5568 !important;
     color: #e2e8f0 !important;
     font-size: 0.75rem !important;
-    padding: 3px 5px !important;
-    border-radius: 4px !important;
+    padding: 2px 4px !important;
+    border-radius: 3px !important;
     width: 100% !important;
     min-width: 60px;
-    box-sizing: border-box;
-    transition: border-color 0.2s ease;
 }
 
 .inline-edit-input:focus {
     border-color: #3182ce !important;
-    box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.3) !important;
+    box-shadow: 0 0 0 1px #3182ce !important;
     outline: none !important;
-    background-color: #1a202c !important;
 }
 
 .inline-edit-input[type="date"] {
-    min-width: 120px;
-    color: #e2e8f0 !important;
+    min-width: 100px;
 }
 
 .inline-edit-input[type="number"] {
-    min-width: 80px;
-    text-align: right;
-}
-
-.inline-edit-input[type="text"] {
     min-width: 70px;
-}
-
-/* Style for input validation */
-.inline-edit-input:invalid {
-    border-color: #e53e3e !important;
-    box-shadow: 0 0 0 1px #e53e3e !important;
-}
-
-/* Deal field styling */
-.deal-field-qty, .deal-field-ep, .deal-field-tp, .deal-field-tpr, 
-.deal-field-ed, .deal-field-exp {
-    display: inline-block;
-    min-height: 20px;
-    min-width: 40px;
 }
 
 /* Button transitions */
