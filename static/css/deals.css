@@ -92,3 +92,60 @@
 .sort-desc {
     color: #dc3545 !important;
 }
+
+/* Inline editing styles */
+.inline-edit-input {
+    background-color: #2d3748 !important;
+    border: 1px solid #4a5568 !important;
+    color: #e2e8f0 !important;
+    font-size: 0.75rem !important;
+    padding: 2px 4px !important;
+    border-radius: 3px !important;
+    width: 100% !important;
+    min-width: 60px;
+}
+
+.inline-edit-input:focus {
+    border-color: #3182ce !important;
+    box-shadow: 0 0 0 1px #3182ce !important;
+    outline: none !important;
+}
+
+.inline-edit-input[type="date"] {
+    min-width: 100px;
+}
+
+.inline-edit-input[type="number"] {
+    min-width: 70px;
+}
+
+/* Button transitions */
+.edit-btn, .submit-btn, .cancel-btn {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .deals-table {
+        font-size: 0.65rem;
+    }
+
+    .deals-table th,
+    .deals-table td {
+        padding: 2px 1px;
+    }
+
+    .inline-edit-input {
+        font-size: 0.65rem !important;
+        padding: 1px 2px !important;
+        min-width: 50px;
+    }
+
+    .inline-edit-input[type="date"] {
+        min-width: 80px;
+    }
+
+    .inline-edit-input[type="number"] {
+        min-width: 50px;
+    }
+}

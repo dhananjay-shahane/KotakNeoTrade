@@ -992,6 +992,36 @@ def edit_deal():
                     'error': 'Invalid TPR percentage value'
                 }), 400
 
+        # Handle exit_date
+        exit_date = data.get('exit_date')
+        if exit_date is not None and exit_date.strip():
+            try:
+                from datetime import datetime
+                # Validate date format
+                datetime.strptime(exit_date, '%Y-%m-%d')
+                fields_to_update['ed'] = exit_date
+                update_count += 1
+            except ValueError:
+                return jsonify({
+                    'success': False,
+                    'error': 'Invalid exit date format. Use YYYY-MM-DD'
+                }), 400
+
+        # Handle expiry_date (for future use)
+        expiry_date = data.get('expiry_date')
+        if expiry_date is not None and expiry_date.strip():
+            try:
+                from datetime import datetime
+                # Validate date format
+                datetime.strptime(expiry_date, '%Y-%m-%d')
+                fields_to_update['exp'] = expiry_date
+                update_count += 1
+            except ValueError:
+                return jsonify({
+                    'success': False,
+                    'error': 'Invalid expiry date format. Use YYYY-MM-DD'
+                }), 400
+
         # Ensure at least one field is being updated
         if update_count == 0:
             return jsonify({
