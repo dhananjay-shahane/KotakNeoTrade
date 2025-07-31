@@ -31,6 +31,13 @@ from app import app
 from api.default_deals_api import default_deals_api
 from api.password_reset_api import password_reset_bp
 
+# Import security modules (placed here as per instructions, even if they are used in app.py)
+from security.auth_middleware import add_security_headers, AuthMiddleware
+from security.rate_limiter import rate_limiter
+from security.input_validator import InputValidator
+
+# Security middleware needs to be applied to the app instance within the app.py file (handling that in app.py)
+
 if __name__ == '__main__':
     try:
         print("🚀 Starting Kotak Neo Trading Platform...")

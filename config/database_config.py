@@ -16,11 +16,15 @@ class DatabaseConfig:
     
     def __init__(self):
         """Initialize database configuration from environment variables"""
+        # SECURITY: Never hardcode credentials - always use environment variables
+        if not os.environ.get('DB_PASSWORD'):
+            raise ValueError("Database credentials must be set in environment variables")
+        
         self.config = {
-            'host': os.environ.get('DB_HOST', 'dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com'),
-            'database': os.environ.get('DB_NAME', 'kotak_trading_db'),
-            'user': os.environ.get('DB_USER', 'kotak_trading_db_user'),
-            'password': os.environ.get('DB_PASSWORD', 'JRUlk8RutdgVcErSiUXqljDUdK8sBsYO'),
+            'host': os.environ.get('DB_HOST'),
+            'database': os.environ.get('DB_NAME'),
+            'user': os.environ.get('DB_USER'),
+            'password': os.environ.get('DB_PASSWORD'),
             'port': int(os.environ.get('DB_PORT', 5432))
         }
         
