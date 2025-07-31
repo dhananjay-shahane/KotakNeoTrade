@@ -91,14 +91,11 @@ try:
     database_url = get_database_url()
     print("✓ Using External PostgreSQL Database")
 except ImportError:
-    # Fallback for edge cases
-    database_url = os.environ.get('DATABASE_URL', 
-        f"postgresql://{os.environ.get('DB_USER', 'kotak_trading_db_user')}:"
-        f"{os.environ.get('DB_PASSWORD', 'JRUlk8RutdgVcErSiUXqljDUdK8sBsYO')}@"
-        f"{os.environ.get('DB_HOST', 'dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com')}:"
-        f"{os.environ.get('DB_PORT', '5432')}/"
-        f"{os.environ.get('DB_NAME', 'kotak_trading_db')}")
-    print("✓ Using External PostgreSQL Database (fallback)")
+    # Secure fallback - only use environment variables
+    database_url = os.environ.get('DATABASE_URL')
+    if not database_url:
+        raise Exception("Database configuration not available. Please ensure config/database_config.py is accessible.")
+    print("✓ Using database from environment variables")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {

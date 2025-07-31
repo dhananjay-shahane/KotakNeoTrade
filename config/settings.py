@@ -17,8 +17,10 @@ class Config:
         from config.database_config import get_database_url
         SQLALCHEMY_DATABASE_URI = get_database_url()
     except ImportError:
-        # Fallback for edge cases
+        # Secure fallback - only use environment variables
         SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+        if not SQLALCHEMY_DATABASE_URI:
+            raise Exception("Database configuration not available")
     
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_recycle": 300,

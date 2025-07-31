@@ -366,7 +366,7 @@ def bulk_update_positions():
 #         import psycopg2
 #         from psycopg2.extras import RealDictCursor
 
-#         DATABASE_URL = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
+#         # Use centralized database configuration instead
 
 #         with psycopg2.connect(DATABASE_URL) as conn:
 #             with conn.cursor(cursor_factory=RealDictCursor) as cursor:

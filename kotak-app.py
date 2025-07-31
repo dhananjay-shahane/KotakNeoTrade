@@ -99,11 +99,11 @@ try:
     database_url = get_database_url()
     print("✓ Using centralized database configuration")
 except ImportError:
-    # Fallback for edge cases
+    # Secure fallback - only use environment variables
     database_url = os.environ.get("DATABASE_URL")
     if not database_url:
-        database_url = "sqlite:///trading_platform.db"
-        print("Using SQLite fallback database for development")
+        raise Exception("Database configuration not available. Please ensure config/database_config.py is accessible.")
+    print("✓ Using database from environment variables")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
