@@ -651,11 +651,11 @@ DealsManager.prototype.renderDealsTable = function () {
                     break;
                 case "qty":
                     cellContent = deal.qty
-                        ? '<span class="deal-field-qty">' + deal.qty.toLocaleString("en-IN") + '</span>'
+                        ? '<span class="deal-field-qty" data-original="' + deal.qty + '">' + deal.qty.toLocaleString("en-IN") + '</span>'
                         : "";
                     break;
                 case "ep":
-                    cellContent = deal.ep ? '<span class="deal-field-ep">₹' + deal.ep.toFixed(2) + '</span>' : "";
+                    cellContent = deal.ep ? '<span class="deal-field-ep" data-original="' + deal.ep + '">₹' + deal.ep.toFixed(2) + '</span>' : "";
                     break;
                 case "cmp":
                     cellContent = deal.cmp ? "₹" + deal.cmp.toFixed(2) : "";
@@ -683,10 +683,10 @@ DealsManager.prototype.renderDealsTable = function () {
                         : "";
                     break;
                 case "tp":
-                    cellContent = deal.tp ? '<span class="deal-field-tp">₹' + deal.tp.toFixed(2) + '</span>' : "-";
+                    cellContent = deal.tp ? '<span class="deal-field-tp" data-original="' + deal.tp + '">₹' + deal.tp.toFixed(2) + '</span>' : "-";
                     break;
                 case "tpr":
-                    cellContent = deal.tpr || "--";
+                    cellContent = '<span class="deal-field-tpr" data-original="' + (deal.tpr || '') + '">' + (deal.tpr || "--") + '</span>';
                     break;
                 case "tva":
                     cellContent = deal.tva || "--";
@@ -705,16 +705,16 @@ DealsManager.prototype.renderDealsTable = function () {
                         // Parse the date string and format it as YYYY-MM-DD
                         var exitDate = new Date(deal.ed);
                         if (!isNaN(exitDate.getTime())) {
-                            cellContent = '<span class="deal-field-ed">' + exitDate.toLocaleDateString('en-CA') + '</span>'; // YYYY-MM-DD format
+                            cellContent = '<span class="deal-field-ed" data-original="' + exitDate.toLocaleDateString('en-CA') + '">' + exitDate.toLocaleDateString('en-CA') + '</span>'; // YYYY-MM-DD format
                         } else {
-                            cellContent = '<span class="deal-field-ed">' + deal.ed + '</span>';
+                            cellContent = '<span class="deal-field-ed" data-original="' + deal.ed + '">' + deal.ed + '</span>';
                         }
                     } else {
-                        cellContent = '<span class="deal-field-ed">--</span>';
+                        cellContent = '<span class="deal-field-ed" data-original="">--</span>';
                     }
                     break;
                 case "exp":
-                    cellContent = '<span class="deal-field-exp">' + (deal.exp || "--") + '</span>';
+                    cellContent = '<span class="deal-field-exp" data-original="' + (deal.exp || '') + '">' + (deal.exp || "--") + '</span>';
                     break;
                 case "pr":
                     cellContent = deal.pr || "--";
@@ -859,25 +859,39 @@ DealsManager.prototype.renderDealsTable = function () {
                     }
                     break;
                 case "actions":
-                    cellContent =
-                        '<div class="btn-group btn-group-sm deal-actions-' + (deal.id || deal.trade_signal_id) + '">' +
-                        '<button class="btn btn-primary btn-sm edit-btn" onclick="enableInlineEdit(\'' +
-                        (deal.id || deal.trade_signal_id) + '\', \'' +
-                        (deal.symbol || "") + '\', ' +
-                        (deal.qty || 0) + ', ' +
-                        (deal.ep || 0) + ', ' +
-                        (deal.tp || 0) + ', \'' +
-                        (deal.ed || '') + '\', \'' +
-                        (deal.exp || '') + '\')">' +
-                        '<i class="fas fa-edit"></i> Edit</button>' +
-                        '<button class="btn btn-success btn-sm dnone submit-btn" onclick="submitInlineEdit(\'' +
-                        (deal.id || deal.trade_signal_id) + '\', \'' +
-                        (deal.symbol || "") + '\')">' +
-                        '<i class="fas fa-save"></i> Save</button>' +
-                        '<button class="btn btn-secondary btn-sm d-none cancel-btn" onclick="cancelInlineEdit(\'' +
-                        (deal.id || deal.trade_signal_id) + '\')">' +
-                        '<i class="fas fa-times"></i> Cancel</button>' +
-                        '</div>';
+                    var isDealClosed = deal.status === "CLOSED" || (deal.ed && deal.ed !== "--" && deal.ed !== null);
+                    
+                    if (isDealClosed) {
+                        // Show disabled buttons for closed deals
+                        cellContent = 
+                            '<div class="btn-group btn-group-sm deal-actions-' + (deal.id || deal.trade_signal_id) + '">' +
+                            '<button class="btn btn-outline-secondary btn-sm" disabled title="Deal is closed" style="font-size: 0.7rem; padding: 2px 6px; opacity: 0.5;">' +
+                            '<i class="fas fa-edit"></i> Edit</button>' +
+                            '<button class="btn btn-outline-secondary btn-sm" disabled title="Deal is closed" style="font-size: 0.7rem; padding: 2px 6px; opacity: 0.5;">' +
+                            '<i class="fas fa-times"></i> Close</button>' +
+                            '</div>';
+                    } else {
+                        // Show enabled buttons for active deals
+                        cellContent =
+                            '<div class="btn-group btn-group-sm deal-actions-' + (deal.id || deal.trade_signal_id) + '">' +
+                            '<button class="btn btn-primary btn-sm edit-btn" onclick="enableInlineEdit(\'' +
+                            (deal.id || deal.trade_signal_id) + '\', \'' +
+                            (deal.symbol || "") + '\', ' +
+                            (deal.qty || 0) + ', ' +
+                            (deal.ep || 0) + ', ' +
+                            (deal.tp || 0) + ', \'' +
+                            (deal.ed || '') + '\', \'' +
+                            (deal.exp || '') + '\')" style="font-size: 0.7rem; padding: 2px 6px;">' +
+                            '<i class="fas fa-edit"></i> Edit</button>' +
+                            '<button class="btn btn-success btn-sm d-none submit-btn" onclick="submitInlineEdit(\'' +
+                            (deal.id || deal.trade_signal_id) + '\', \'' +
+                            (deal.symbol || "") + '\')" style="font-size: 0.7rem; padding: 2px 6px;">' +
+                            '<i class="fas fa-save"></i> Save</button>' +
+                            '<button class="btn btn-secondary btn-sm d-none cancel-btn" onclick="cancelInlineEdit(\'' +
+                            (deal.id || deal.trade_signal_id) + '\')" style="font-size: 0.7rem; padding: 2px 6px;">' +
+                            '<i class="fas fa-times"></i> Cancel</button>' +
+                            '</div>';
+                    }
                     break;
                 default:
                     cellContent = "";
@@ -2703,101 +2717,211 @@ function submitCloseDeal() {
 function enableInlineEdit(dealId, symbol, qty, ep, tp, ed, exp) {
     console.log("Enabling inline edit for deal:", dealId);
 
-    // Hide edit button and show submit/cancel buttons
-    document.querySelector('.deal-actions-' + dealId + ' .edit-btn').classList.add('d-none');
-    document.querySelector('.deal-actions-' + dealId + ' .submit-btn').classList.remove('d-none');
-    document.querySelector('.deal-actions-' + dealId + ' .cancel-btn').classList.remove('d-none');
+    try {
+        // Hide edit button and show submit/cancel buttons
+        var actionsDiv = document.querySelector('.deal-actions-' + dealId);
+        if (actionsDiv) {
+            var editBtn = actionsDiv.querySelector('.edit-btn');
+            var submitBtn = actionsDiv.querySelector('.submit-btn');
+            var cancelBtn = actionsDiv.querySelector('.cancel-btn');
+            
+            if (editBtn) editBtn.classList.add('d-none');
+            if (submitBtn) submitBtn.classList.remove('d-none');
+            if (cancelBtn) cancelBtn.classList.remove('d-none');
+        }
 
-    // Get the row
-    var row = document.querySelector('tr[data-deal-id="' + dealId + '"]');
+        // Get the row
+        var row = document.querySelector('tr[data-deal-id="' + dealId + '"]');
+        if (!row) {
+            console.error("Row not found for deal ID:", dealId);
+            return;
+        }
 
-    // Make QTY editable
-    var qtySpan = row.querySelector('.deal-field-qty');
-    var qtyValue = qtySpan.textContent.replace(/,/g, '');
-    qtySpan.innerHTML = '<input type="number" class="form-control form-control-sm qty-input" value="' + qtyValue + '">';
+        // Make QTY editable
+        var qtySpan = row.querySelector('.deal-field-qty');
+        if (qtySpan) {
+            var qtyValue = qtySpan.getAttribute('data-original') || qtySpan.textContent.replace(/,/g, '').replace(/[^0-9.]/g, '');
+            qtySpan.innerHTML = '<input type="number" class="inline-edit-input qty-input" value="' + qtyValue + '" min="1">';
+        }
 
-    // Make EP editable
-    var epSpan = row.querySelector('.deal-field-ep');
-    var epValue = epSpan.textContent.replace('₹', '');
-    epSpan.innerHTML = '<input type="number" class="form-control form-control-sm ep-input" value="' + epValue + '">';
+        // Make EP editable
+        var epSpan = row.querySelector('.deal-field-ep');
+        if (epSpan) {
+            var epValue = epSpan.getAttribute('data-original') || epSpan.textContent.replace('₹', '').replace(/,/g, '');
+            epSpan.innerHTML = '<input type="number" class="inline-edit-input ep-input" value="' + epValue + '" step="0.01" min="0.01">';
+        }
 
-    // Make TP editable
-    var tpSpan = row.querySelector('.deal-field-tp');
-    var tpValue = tpSpan.textContent.replace('₹', '');
-    tpSpan.innerHTML = '<input type="number" class="form-control form-control-sm tp-input" value="' + tpValue + '">';
+        // Make TP editable
+        var tpSpan = row.querySelector('.deal-field-tp');
+        if (tpSpan) {
+            var tpValue = tpSpan.getAttribute('data-original') || tpSpan.textContent.replace('₹', '').replace(/,/g, '');
+            if (tpValue === '-' || tpValue === '--') tpValue = '';
+            tpSpan.innerHTML = '<input type="number" class="inline-edit-input tp-input" value="' + tpValue + '" step="0.01" min="0.01">';
+        }
 
-    // Make ED editable
-    var edSpan = row.querySelector('.deal-field-ed');
-    edSpan.innerHTML = '<input type="date" class="form-control form-control-sm ed-input" value="' + ed + '">';
+        // Make TPR editable
+        var tprSpan = row.querySelector('.deal-field-tpr');
+        if (tprSpan) {
+            var tprValue = tprSpan.getAttribute('data-original') || tprSpan.textContent.replace('%', '');
+            if (tprValue === '-' || tprValue === '--') tprValue = '';
+            tprSpan.innerHTML = '<input type="text" class="inline-edit-input tpr-input" value="' + tprValue + '" placeholder="15.00%">';
+        }
 
-    // Make EXP editable
-    var expSpan = row.querySelector('.deal-field-exp');
-    expSpan.innerHTML = '<input type="text" class="form-control form-control-sm exp-input" value="' + exp + '">';
+        // Make ED editable
+        var edSpan = row.querySelector('.deal-field-ed');
+        if (edSpan) {
+            var edValue = edSpan.getAttribute('data-original') || '';
+            if (edValue === '--' || edValue === '-') edValue = '';
+            edSpan.innerHTML = '<input type="date" class="inline-edit-input ed-input" value="' + edValue + '">';
+        }
+
+        // Make EXP editable
+        var expSpan = row.querySelector('.deal-field-exp');
+        if (expSpan) {
+            var expValue = expSpan.getAttribute('data-original') || '';
+            if (expValue === '--' || expValue === '-') expValue = '';
+            expSpan.innerHTML = '<input type="date" class="inline-edit-input exp-input" value="' + expValue + '">';
+        }
+
+        console.log("Inline editing enabled successfully for deal:", dealId);
+    } catch (error) {
+        console.error("Error enabling inline edit:", error);
+        showNotification("Error enabling edit mode", "error");
+    }
 }
 
 // Function to submit inline editing
 function submitInlineEdit(dealId, symbol) {
     console.log("Submitting inline edit for deal:", dealId);
 
-    // Get the row
-    var row = document.querySelector('tr[data-deal-id="' + dealId + '"]');
-
-    // Get updated values
-    var qtyInput = row.querySelector('.qty-input');
-    var epInput = row.querySelector('.ep-input');
-    var tpInput = row.querySelector('.tp-input');
-    var edInput = row.querySelector('.ed-input');
-    var expInput = row.querySelector('.exp-input');
-
-    var qty = qtyInput.value;
-    var ep = epInput.value;
-    var tp = tpInput.value;
-    var ed = edInput.value;
-    var exp = expInput.value;
-
-    // Validate numeric fields
-    if (isNaN(qty) || isNaN(ep) || isNaN(tp)) {
-        showNotification("Please enter valid numeric values", "error");
-        return;
-    }
-
-    // Prepare data for API call
-    var updateData = {
-        deal_id: dealId,
-        symbol: symbol,
-        qty: qty,
-        ep: ep,
-        tp: tp,
-        ed: ed,
-        exp: exp
-    };
-
-    // Make API call to update data
-    fetch('/api/edit-deal', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updateData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showNotification("Deal updated successfully", "success");
-        } else {
-            showNotification("Failed to update deal", "error");
+    try {
+        // Get the row
+        var row = document.querySelector('tr[data-deal-id="' + dealId + '"]');
+        if (!row) {
+            console.error("Row not found for deal ID:", dealId);
+            showNotification("Error: Deal row not found", "error");
+            return;
         }
-    })
-    .finally(() => {
-        // Re-render the deals table to reflect changes
-        window.dealsManager.loadDeals();
-    });
+
+        // Get updated values
+        var qtyInput = row.querySelector('.qty-input');
+        var epInput = row.querySelector('.ep-input');
+        var tpInput = row.querySelector('.tp-input');
+        var tprInput = row.querySelector('.tpr-input');
+        var edInput = row.querySelector('.ed-input');
+        var expInput = row.querySelector('.exp-input');
+
+        // Prepare data for API call
+        var updateData = {
+            deal_id: dealId,
+            symbol: symbol
+        };
+
+        var hasChanges = false;
+
+        // Add fields that have been changed
+        if (qtyInput && qtyInput.value.trim() !== '') {
+            var qty = parseFloat(qtyInput.value);
+            if (isNaN(qty) || qty <= 0) {
+                showNotification("Please enter a valid quantity greater than 0", "error");
+                return;
+            }
+            updateData.qty = qty;
+            hasChanges = true;
+        }
+
+        if (epInput && epInput.value.trim() !== '') {
+            var ep = parseFloat(epInput.value);
+            if (isNaN(ep) || ep <= 0) {
+                showNotification("Please enter a valid entry price greater than 0", "error");
+                return;
+            }
+            updateData.entry_price = ep;
+            hasChanges = true;
+        }
+
+        if (tpInput && tpInput.value.trim() !== '') {
+            var tp = parseFloat(tpInput.value);
+            if (isNaN(tp) || tp <= 0) {
+                showNotification("Please enter a valid target price greater than 0", "error");
+                return;
+            }
+            updateData.target_price = tp;
+            hasChanges = true;
+        }
+
+        if (tprInput && tprInput.value.trim() !== '') {
+            var tpr = parseFloat(tprInput.value.replace('%', ''));
+            if (isNaN(tpr)) {
+                showNotification("Please enter a valid TPR percentage", "error");
+                return;
+            }
+            updateData.tpr_percent = tpr;
+            hasChanges = true;
+        }
+
+        if (edInput && edInput.value.trim() !== '') {
+            updateData.exit_date = edInput.value;
+            hasChanges = true;
+        }
+
+        if (expInput && expInput.value.trim() !== '') {
+            updateData.expiry_date = expInput.value;
+            hasChanges = true;
+        }
+
+        if (!hasChanges) {
+            showNotification("No changes detected", "warning");
+            return;
+        }
+
+        // Show loading
+        showNotification("Updating deal...", "info");
+
+        // Make API call to update data
+        fetch('/api/edit-deal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(updateData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification("Deal updated successfully", "success");
+                // Re-render the deals table to reflect changes
+                window.dealsManager.loadDeals();
+            } else {
+                showNotification("Failed to update deal: " + (data.error || "Unknown error"), "error");
+            }
+        })
+        .catch(error => {
+            console.error("Error updating deal:", error);
+            showNotification("Network error while updating deal", "error");
+        });
+
+    } catch (error) {
+        console.error("Error in submitInlineEdit:", error);
+        showNotification("Error submitting changes", "error");
+    }
 }
 
 // Function to cancel inline editing
 function cancelInlineEdit(dealId) {
     console.log("Canceling inline edit for deal:", dealId);
 
-    // Re-render the deals table to reset changes
-    window.dealsManager.loadDeals();
+    try {
+        // Re-render the deals table to reset changes
+        if (window.dealsManager) {
+            window.dealsManager.loadDeals();
+        } else {
+            // Fallback: refresh the page
+            location.reload();
+        }
+    } catch (error) {
+        console.error("Error canceling inline edit:", error);
+        // Fallback: refresh the page
+        location.reload();
+    }
 }
