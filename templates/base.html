@@ -719,72 +719,90 @@
         <script src="{{ url_for('static', filename='js/base.js') }}"></script>
 
         <script>
-function logoutKotakOnly(event) {
-    event.preventDefault();
+            function logoutKotakOnly(event) {
+                event.preventDefault();
 
-    // Check if we're in a login flow to prevent duplicate notifications
-    if (window.location.pathname.includes("/login")) {
-        return;
-    }
+                // Check if we're in a login flow to prevent duplicate notifications
+                if (window.location.pathname.includes("/login")) {
+                    return;
+                }
 
-    console.log("Starting Kotak logout...");
+                console.log("Starting Kotak logout...");
 
-    // Show loading state - check if showToaster function exists
-    if (typeof showToaster === 'function') {
-        showToaster("Info", "Logging out from Kotak Neo...", "info");
-    } else {
-        console.log("Logging out from Kotak Neo...");
-    }
+                // Show loading state - check if showToaster function exists
+                if (typeof showToaster === "function") {
+                    showToaster(
+                        "Info",
+                        "Logging out from Kotak Neo...",
+                        "info",
+                    );
+                } else {
+                    console.log("Logging out from Kotak Neo...");
+                }
 
-    // Make AJAX request to logout only from Kotak
-    fetch("/logout-kotak", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-Requested-With": "XMLHttpRequest",
-            "Accept": "application/json"
-        },
-        credentials: "same-origin",
-        body: JSON.stringify({})
-    })
-    .then((response) => {
-        console.log("Logout response status:", response.status);
-        
-        if (response.ok) {
-            return response.json();
-        } else {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-    })
-    .then(data => {
-        console.log("Logout response data:", data);
-        
-        if (data.success) {
-            if (typeof showToaster === 'function') {
-                showToaster("Success", "Logged out from Kotak Neo successfully", "success");
+                // Make AJAX request to logout only from Kotak
+                fetch("/logout-kotak", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-Requested-With": "XMLHttpRequest",
+                        Accept: "application/json",
+                    },
+                    credentials: "same-origin",
+                    body: JSON.stringify({}),
+                })
+                    .then((response) => {
+                        console.log("Logout response status:", response.status);
+
+                        if (response.ok) {
+                            return response.json();
+                        } else {
+                            throw new Error(
+                                `HTTP ${response.status}: ${response.statusText}`,
+                            );
+                        }
+                    })
+                    .then((data) => {
+                        console.log("Logout response data:", data);
+
+                        if (data.success) {
+                            if (typeof showToaster === "function") {
+                                showToaster(
+                                    "Success",
+                                    "Logged out from Kotak Neo successfully",
+                                    "success",
+                                );
+                            }
+
+                            // Reload the page to refresh the UI state
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
+                        } else {
+                            console.error("Logout failed:", data.error);
+                            if (typeof showToaster === "function") {
+                                showToaster(
+                                    "Error",
+                                    data.error || "Failed to logout from Kotak",
+                                    "error",
+                                );
+                            }
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Logout error:", error);
+                        if (typeof showToaster === "function") {
+                            showToaster(
+                                "Error",
+                                "An error occurred during logout",
+                                "error",
+                            );
+                        } else {
+                            alert("An error occurred during logout");
+                        }
+                    });
             }
-            
-            // Reload the page to refresh the UI state
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        } else {
-            console.error("Logout failed:", data.error);
-            if (typeof showToaster === 'function') {
-                showToaster("Error", data.error || "Failed to logout from Kotak", "error");
-            }
-        }
-    })
-    .catch((error) => {
-        console.error("Logout error:", error);
-        if (typeof showToaster === 'function') {
-            showToaster("Error", "An error occurred during logout", "error");
-        } else {
-            alert("An error occurred during logout");
-        }
-    });
-}
-</script>
+        </script>
 
         {% block scripts %}{% endblock %}
     </body>

@@ -133,6 +133,7 @@ function showLoginModal() {
 }
 
 // Handle Kotak-only logout
+// Handle Kotak-only logout
 function logoutKotakOnly(event) {
     event.preventDefault();
 
@@ -166,7 +167,6 @@ function logoutKotakOnly(event) {
             showToaster("Error", "An error occurred during logout", "error");
         });
 }
-
 // Enhanced mobile sidebar toggle with touch handling
 function toggleSidebarEnhanced() {
     var sidebar = document.getElementById("sidebar");

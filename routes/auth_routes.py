@@ -274,62 +274,22 @@ def logout():
     return redirect(url_for('auth_routes.trading_account_login'))
 
 
-@auth_bp.route('/logout-kotak', methods=['GET', 'POST'])
+@auth_bp.route('/logout-kotak')
 def logout_kotak():
     """Logout only from Kotak account while keeping trading account session"""
-    try:
-        logging.info("Starting Kotak logout process...")
-        
-        # Clear only Kotak-specific session data but preserve trading account data
-        kotak_keys = ['kotak_logged_in', 'client', 'mobile_number', 'mpin', 'totp', 'access_token', 'session_token', 'sid']
-        cleared_keys = []
-        
-        for key in kotak_keys:
-            if key in session:
-                session.pop(key, None)
-                cleared_keys.append(key)
-        
-        logging.info(f"Cleared session keys: {cleared_keys}")
+    # Clear only Kotak-specific session data but preserve trading account data
+    kotak_keys = ['kotak_logged_in', 'client', 'mobile_number', 'mpin', 'totp']
+    for key in kotak_keys:
+        session.pop(key, None)
 
-        # If this was a Kotak login, preserve the UCC for trading account functionality
-        if session.get('login_type') == 'kotak_neo':
-            session['login_type'] = 'trading_account'
-            logging.info("Changed login_type from kotak_neo to trading_account")
+    # If this was a Kotak login, preserve the UCC for trading account functionality
+    if session.get('login_type') == 'kotak_neo':
+        session['login_type'] = 'trading_account'
 
-        # Clear any existing flash messages before adding logout message
-        session.pop('_flashes', None)
-        
-        logging.info("Kotak logout successful")
-        
-        # Check if this is an AJAX request
-        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or \
-                 request.headers.get('Content-Type') == 'application/json' or \
-                 'application/json' in request.headers.get('Accept', '')
-        
-        if is_ajax:
-            return jsonify({
-                'success': True, 
-                'message': 'Logged out from Kotak Neo successfully',
-                'redirect': '/dashboard'
-            })
-        
-        # For direct browser requests, redirect with flash message
-        flash('Logged out from Kotak Neo successfully', 'info')
-        return redirect('/dashboard')
-        
-    except Exception as e:
-        logging.error(f"Error during Kotak logout: {str(e)}")
-        
-        # Check if this is an AJAX request
-        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or \
-                 request.headers.get('Content-Type') == 'application/json' or \
-                 'application/json' in request.headers.get('Accept', '')
-        
-        if is_ajax:
-            return jsonify({'success': False, 'error': str(e)}), 500
-            
-        flash('Logout completed with some issues', 'warning')
-        return redirect('/dashboard')
+    # Clear any existing flash messages before adding logout message
+    session.pop('_flashes', None)
+    flash('Logged out from Kotak Neo successfully', 'info')
+    return redirect(url_for('portfolio'))
 
 
 @auth_bp.route('/know-user-id', methods=['GET', 'POST'])
@@ -431,10 +391,12 @@ def send_user_id_email(user_data):
         smtp_port = int(os.environ.get('MAIL_PORT', 587))
         email_user = os.environ.get('MAIL_USERNAME')
         email_password = os.environ.get('MAIL_PASSWORD')
-        
+
         # Validate email configuration
         if not email_user or not email_password:
-            logging.error("Email credentials not configured. Set MAIL_USERNAME and MAIL_PASSWORD in Secrets.")
+            logging.error(
+                "Email credentials not configured. Set MAIL_USERNAME and MAIL_PASSWORD in Secrets."
+            )
             return False
 
         logging.info(
