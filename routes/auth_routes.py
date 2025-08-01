@@ -5,7 +5,7 @@ Handles login, logout, and authentication-related pages
 import logging
 import os
 from datetime import datetime, timedelta
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 from core.auth import login_user, logout_user, validate_current_session
 from Scripts.neo_client import NeoClient
 from Scripts.user_manager import UserManager
