@@ -206,6 +206,19 @@ app.config['SESSION_FILE_THRESHOLD'] = 500
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)
 Session(app)
 
+# Configure Flask-Mail for email functionality
+app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
+app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
+app.config['MAIL_USE_SSL'] = False
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER')
+
+# Initialize Flask-Mail
+from flask_mail import Mail
+mail = Mail(app)
+
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 

@@ -356,9 +356,9 @@ def check_user_exists_by_contact(contact_info):
             
             if result:
                 return {
-                    'username': result['username'],
-                    'email': result['email'],
-                    'mobile_number': result['mobile_number']
+                    'username': result[0],
+                    'email': result[1], 
+                    'mobile_number': result[2]
                 }
                 
         conn.close()
@@ -375,12 +375,8 @@ def send_user_id_email(user_data):
         from flask_mail import Mail, Message
         from flask import current_app
         
-        # Configure Flask-Mail if not already configured
-        if not hasattr(current_app, 'mail'):
-            from flask_mail import Mail
-            mail = Mail(current_app)
-        else:
-            mail = current_app.mail
+        # Create new Mail instance
+        mail = Mail(current_app)
         
         # Create email message
         msg = Message(
