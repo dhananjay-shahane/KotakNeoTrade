@@ -378,22 +378,30 @@ def reset_password():
         UPDATE external_users 
         SET password = %s
         WHERE sr = %s
-        RETURNING username, email
         """
         
-        updated_user = execute_db_query(update_query, (new_password, token_data['user_id']))
+        # Execute the update query without RETURNING clause
+        execute_db_query(update_query, (new_password, token_data['user_id']), fetch_results=False)
         
-        if not updated_user:
-            flash('Failed to update password. Please try again.', 'error')
-            return render_template('auth/reset_password.html', token=token)
+        # Get user details for confirmation email
+        user_query = """
+        SELECT username, email 
+        FROM external_users 
+        WHERE sr = %s
+        """
+        
+        user_details = execute_db_query(user_query, (token_data['user_id'],))
+        
+        if not user_details or len(user_details) == 0:
+            flash('Password updated but could not send confirmation email.', 'warning')
+            return redirect(url_for('auth_routes.trading_account_login'))
         
         # Mark token as used
         mark_token_as_used(token)
         
         # Send password update confirmation email
-        if updated_user and len(updated_user) > 0:
-            user_info = updated_user[0]
-            send_password_update_confirmation(user_info['email'], user_info['username'])
+        user_info = user_details[0]
+        send_password_update_confirmation(user_info['email'], user_info['username'])
         
         logger.info(f"Password successfully reset for user: {user_info['username']} ({user_info['email']})")
         flash('Password reset successful! You can now log in with your new password.', 'success')
