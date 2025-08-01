@@ -386,11 +386,16 @@ def send_user_id_email(user_data):
         from email.mime.multipart import MIMEMultipart
         import os
 
-        # Email configuration
-        smtp_server = 'smtp.gmail.com'
-        smtp_port = 587
-        email_user = 'dhanushahane01@gmail.com'
-        email_password = 'sljo pinu ajrh padp'
+        # Email configuration from environment variables
+        smtp_server = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+        smtp_port = int(os.environ.get('MAIL_PORT', 587))
+        email_user = os.environ.get('MAIL_USERNAME')
+        email_password = os.environ.get('MAIL_PASSWORD')
+        
+        # Validate email configuration
+        if not email_user or not email_password:
+            logging.error("Email credentials not configured. Set MAIL_USERNAME and MAIL_PASSWORD in Secrets.")
+            return False
 
         logging.info(
             f"Attempting to send User ID email to: {user_data['email']}")
