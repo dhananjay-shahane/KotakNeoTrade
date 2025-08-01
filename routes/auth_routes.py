@@ -274,28 +274,48 @@ def logout():
     return redirect(url_for('auth_routes.trading_account_login'))
 
 
-@auth_bp.route('/logout-kotak')
+@auth_bp.route('/logout-kotak', methods=['GET', 'POST'])
 def logout_kotak():
     """Logout only from Kotak account while keeping trading account session"""
     try:
+        logging.info("Starting Kotak logout process...")
+        
         # Clear only Kotak-specific session data but preserve trading account data
         kotak_keys = ['kotak_logged_in', 'client', 'mobile_number', 'mpin', 'totp', 'access_token', 'session_token', 'sid']
+        cleared_keys = []
+        
         for key in kotak_keys:
-            session.pop(key, None)
+            if key in session:
+                session.pop(key, None)
+                cleared_keys.append(key)
+        
+        logging.info(f"Cleared session keys: {cleared_keys}")
 
         # If this was a Kotak login, preserve the UCC for trading account functionality
         if session.get('login_type') == 'kotak_neo':
             session['login_type'] = 'trading_account'
+            logging.info("Changed login_type from kotak_neo to trading_account")
 
         # Clear any existing flash messages before adding logout message
         session.pop('_flashes', None)
-        flash('Logged out from Kotak Neo successfully', 'info')
         
-        logging.info("Kotak logout successful, redirecting to dashboard")
+        logging.info("Kotak logout successful")
+        
+        # Return JSON response for AJAX requests
+        if request.headers.get('Content-Type') == 'application/json' or request.is_json:
+            return {'success': True, 'message': 'Logged out from Kotak Neo successfully', 'redirect': '/dashboard'}
+        
+        # For direct browser requests, redirect with flash message
+        flash('Logged out from Kotak Neo successfully', 'info')
         return redirect('/dashboard')
         
     except Exception as e:
         logging.error(f"Error during Kotak logout: {str(e)}")
+        
+        # Return JSON error for AJAX requests
+        if request.headers.get('Content-Type') == 'application/json' or request.is_json:
+            return {'success': False, 'error': str(e)}, 500
+            
         flash('Logout completed with some issues', 'warning')
         return redirect('/dashboard')
 

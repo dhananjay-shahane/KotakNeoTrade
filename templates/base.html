@@ -727,36 +727,69 @@ function logoutKotakOnly(event) {
         return;
     }
 
-    // Show loading state
-    showToaster("Info", "Logging out from Kotak Neo...", "info");
+    console.log("Starting Kotak logout...");
+
+    // Show loading state - check if showToaster function exists
+    if (typeof showToaster === 'function') {
+        showToaster("Info", "Logging out from Kotak Neo...", "info");
+    } else {
+        console.log("Logging out from Kotak Neo...");
+    }
 
     // Make AJAX request to logout only from Kotak
     fetch("/logout-kotak", {
-        method: "GET",
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
         credentials: "same-origin",
     })
     .then((response) => {
-        if (response.redirected) {
-            // Handle server-side redirect
-            showToaster("Success", "Logged out from Kotak Neo successfully", "success");
-            setTimeout(() => {
-                window.location.href = response.url;
-            }, 1000);
-        } else if (response.ok) {
-            // Handle JSON response
+        console.log("Logout response status:", response.status);
+        
+        if (response.ok) {
             return response.json().then(data => {
-                showToaster("Success", "Logged out from Kotak Neo successfully", "success");
+                console.log("Logout response data:", data);
+                
+                if (data.success) {
+                    if (typeof showToaster === 'function') {
+                        showToaster("Success", "Logged out from Kotak Neo successfully", "success");
+                    }
+                    
+                    // Reload the page to refresh the UI state
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    console.error("Logout failed:", data.error);
+                    if (typeof showToaster === 'function') {
+                        showToaster("Error", data.error || "Failed to logout from Kotak", "error");
+                    }
+                }
+            }).catch(jsonError => {
+                console.error("JSON parsing error:", jsonError);
+                // If JSON parsing fails, it might be a redirect response
+                if (typeof showToaster === 'function') {
+                    showToaster("Success", "Logged out from Kotak Neo successfully", "success");
+                }
                 setTimeout(() => {
-                    window.location.href = "/dashboard";
+                    window.location.reload();
                 }, 1000);
             });
         } else {
-            showToaster("Error", "Failed to logout from Kotak", "error");
+            console.error("HTTP error:", response.status);
+            if (typeof showToaster === 'function') {
+                showToaster("Error", "Failed to logout from Kotak", "error");
+            }
         }
     })
     .catch((error) => {
         console.error("Logout error:", error);
-        showToaster("Error", "An error occurred during logout", "error");
+        if (typeof showToaster === 'function') {
+            showToaster("Error", "An error occurred during logout", "error");
+        } else {
+            alert("An error occurred during logout");
+        }
     });
 }
 </script>
