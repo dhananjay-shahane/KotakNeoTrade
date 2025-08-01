@@ -1,0 +1,148 @@
+{% extends "auth/base_auth.html" %}
+{% block title %}Know My User ID - Trading Platform{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+    <div class="auth-header">
+        <h4><i class="fas fa-id-card me-2"></i>Know My User ID</h4>
+        <div class="subtitle">Enter your mobile number or email to retrieve your User ID</div>
+    </div>
+
+    <div class="auth-body">
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }} fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('auth_routes.know_user_id') }}" id="knowUserIdForm">
+            <div class="form-group">
+                <label for="contact_info" class="form-label">
+                    <i class="fas fa-envelope"></i>Mobile Number or Email Address
+                </label>
+                <input
+                    type="text"
+                    class="form-control"
+                    id="contact_info"
+                    name="contact_info"
+                    placeholder="Enter your registered mobile number or email"
+                    required
+                    autocomplete="email"
+                />
+                <div class="form-text" style="font-size: 0.75rem; color: var(--gray-600);">
+                    Enter the mobile number or email address you used during registration
+                </div>
+            </div>
+
+            <button type="submit" class="btn-auth" id="submitBtn">
+                <i class="fas fa-search me-2"></i>FIND MY USER ID
+            </button>
+        </form>
+
+        <div class="auth-divider">
+            <span>Remember your credentials?</span>
+        </div>
+
+        <div class="auth-links">
+            <a href="{{ url_for('auth_routes.trading_account_login') }}" class="btn-outline-auth">
+                <i class="fas fa-sign-in-alt"></i>Back to Login
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Information Modal -->
+<div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="infoModalLabel">
+                    <i class="fas fa-info-circle me-2"></i>User ID Retrieval Process
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info" role="alert">
+                    <h6><i class="fas fa-shield-alt me-2"></i>Security Notice</h6>
+                    <p class="mb-2">For your security and privacy:</p>
+                    <ul class="mb-0">
+                        <li>We will verify if the provided contact information is registered</li>
+                        <li>If found, your User ID will be sent to your registered email address</li>
+                        <li>The same response will be shown regardless of whether the account exists</li>
+                        <li>This prevents unauthorized users from discovering valid accounts</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Understood</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("knowUserIdForm");
+        const contactInput = document.getElementById("contact_info");
+        const submitBtn = document.getElementById("submitBtn");
+
+        // Form validation
+        function validateForm() {
+            const contact = contactInput.value.trim();
+            
+            if (contact) {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = "1";
+            } else {
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = "0.6";
+            }
+        }
+
+        // Real-time validation
+        contactInput.addEventListener("input", validateForm);
+
+        // Initial validation
+        validateForm();
+
+        // Form submission
+        form.addEventListener("submit", function (e) {
+            const contact = contactInput.value.trim();
+
+            if (!contact) {
+                e.preventDefault();
+                alert("Please enter your mobile number or email address");
+                return;
+            }
+
+            // Show loading state
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Searching...';
+            submitBtn.disabled = true;
+        });
+
+        // Auto-dismiss alerts
+        setTimeout(function () {
+            const alerts = document.querySelectorAll(".alert-success, .alert-info");
+            alerts.forEach((alert) => {
+                alert.classList.remove("show");
+                setTimeout(() => alert.remove(), 150);
+            });
+        }, 8000);
+
+        // Show info modal on page load if it's the first visit
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('info') === 'true') {
+            const infoModal = new bootstrap.Modal(document.getElementById('infoModal'));
+            infoModal.show();
+        }
+    });
+</script>
+{% endblock %}

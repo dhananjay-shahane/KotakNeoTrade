@@ -18,12 +18,10 @@ class DatabaseConfig:
     def __init__(self):
         """Initialize database configuration from environment variables"""
         # SECURITY: Never hardcode credentials - always use environment variables
-        # Check if we have either DATABASE_URL or individual DB credentials
-        if not os.environ.get('DATABASE_URL') and not os.environ.get(
-                'DB_PASSWORD'):
-            raise ValueError(
-                "Database credentials must be set in environment variables")
-
+        # Use Replit's built-in PostgreSQL database first
+        self.database_url = os.environ.get('DATABASE_URL')
+        
+        # Initialize config dict for backward compatibility
         self.config = {
             'host': os.environ.get('DB_HOST'),
             'database': os.environ.get('DB_NAME'),
@@ -31,9 +29,15 @@ class DatabaseConfig:
             'password': os.environ.get('DB_PASSWORD'),
             'port': os.environ.get('DB_PORT')
         }
-
-        # Build complete database URL - use new database credentials
-        self.database_url = os.environ.get('DATABASE_URL')
+        
+        if not self.database_url:
+            # Check if all external DB credentials are available
+            if all(self.config.values()):
+                self.database_url = self._build_database_url()
+        
+        if not self.database_url:
+            raise ValueError(
+                "Database credentials must be set. Either DATABASE_URL or all DB_* environment variables are required")
 
     def _build_database_url(self) -> str:
         """Build database URL from individual components"""
@@ -124,7 +128,7 @@ class DatabaseConfig:
                     result = cursor.fetchone()
                 conn.close()
                 logger.info("✅ Database connection test successful")
-                return result[0] == 1
+                return result and result[0] == 1
             return False
         except Exception as e:
             logger.error(f"❌ Database connection test failed: {e}")
@@ -136,13 +140,13 @@ class DatabaseConfig:
 
     def get_database_url(self) -> str:
         """Get complete database URL"""
-        return self.database_url
+        return self.database_url or ""
 
 
 class DatabaseConnector:
     """Backward compatible database connector using centralized config"""
 
-    def __init__(self, database_url: str = None):
+    def __init__(self, database_url: Optional[str] = None):
         """
         Initialize with optional database URL (for backward compatibility)
         If no URL provided, uses centralized configuration
