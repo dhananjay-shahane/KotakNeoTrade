@@ -301,9 +301,17 @@ def logout_kotak():
         
         logging.info("Kotak logout successful")
         
-        # Return JSON response for AJAX requests
-        if request.headers.get('Content-Type') == 'application/json' or request.is_json:
-            return {'success': True, 'message': 'Logged out from Kotak Neo successfully', 'redirect': '/dashboard'}
+        # Check if this is an AJAX request
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or \
+                 request.headers.get('Content-Type') == 'application/json' or \
+                 'application/json' in request.headers.get('Accept', '')
+        
+        if is_ajax:
+            return jsonify({
+                'success': True, 
+                'message': 'Logged out from Kotak Neo successfully',
+                'redirect': '/dashboard'
+            })
         
         # For direct browser requests, redirect with flash message
         flash('Logged out from Kotak Neo successfully', 'info')
@@ -312,9 +320,13 @@ def logout_kotak():
     except Exception as e:
         logging.error(f"Error during Kotak logout: {str(e)}")
         
-        # Return JSON error for AJAX requests
-        if request.headers.get('Content-Type') == 'application/json' or request.is_json:
-            return {'success': False, 'error': str(e)}, 500
+        # Check if this is an AJAX request
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or \
+                 request.headers.get('Content-Type') == 'application/json' or \
+                 'application/json' in request.headers.get('Accept', '')
+        
+        if is_ajax:
+            return jsonify({'success': False, 'error': str(e)}), 500
             
         flash('Logout completed with some issues', 'warning')
         return redirect('/dashboard')
