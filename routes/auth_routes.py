@@ -290,3 +290,162 @@ def logout_kotak():
     session.pop('_flashes', None)
     flash('Logged out from Kotak Neo successfully', 'info')
     return redirect(url_for('portfolio'))
+
+
+@auth_bp.route('/know-user-id', methods=['GET', 'POST'])
+def know_user_id():
+    """Know My User ID functionality - Enter mobile number or email to retrieve User ID"""
+    if request.method == 'POST':
+        try:
+            # Get contact info from form (mobile number or email)
+            contact_info = request.form.get('contact_info', '').strip()
+            
+            if not contact_info:
+                flash('Please enter your mobile number or email address', 'error')
+                return render_template('auth/know_user_id.html')
+            
+            # Log the attempt for security auditing
+            logging.info(f"User ID retrieval requested for: {contact_info[:3]}***")
+            
+            # Check if the contact info exists in external_users table
+            user_found = check_user_exists_by_contact(contact_info)
+            
+            if user_found:
+                # Send email with user ID to the registered email address
+                send_user_id_email(user_found)
+                logging.info(f"User ID email sent for: {contact_info[:3]}***")
+            
+            # Always show the same neutral message regardless of whether user exists
+            flash(
+                'If the account exists, the admin will send you an email containing your user ID at your registered email address.',
+                'info'
+            )
+            
+            return render_template('auth/know_user_id.html')
+            
+        except Exception as e:
+            logging.error(f"Know User ID error: {str(e)}")
+            flash('An error occurred. Please try again later.', 'error')
+            return render_template('auth/know_user_id.html')
+    
+    return render_template('auth/know_user_id.html')
+
+
+def check_user_exists_by_contact(contact_info):
+    """Check if user exists by mobile number or email and return user data"""
+    from config.database_config import get_db_dict_connection
+    
+    try:
+        conn = get_db_dict_connection()
+        if not conn:
+            logging.error("Database connection failed")
+            return None
+            
+        with conn.cursor() as cursor:
+            # Check both email and mobile fields
+            cursor.execute(
+                """
+                SELECT username, email, mobile_number 
+                FROM external_users 
+                WHERE email = %s OR mobile_number = %s
+                LIMIT 1
+                """, (contact_info, contact_info)
+            )
+            
+            result = cursor.fetchone()
+            
+            if result:
+                return {
+                    'username': result['username'],
+                    'email': result['email'],
+                    'mobile_number': result['mobile_number']
+                }
+                
+        conn.close()
+        return None
+        
+    except Exception as e:
+        logging.error(f"Database error in check_user_exists_by_contact: {str(e)}")
+        return None
+
+
+def send_user_id_email(user_data):
+    """Send email with user ID to the registered email address"""
+    try:
+        from flask_mail import Mail, Message
+        from flask import current_app
+        
+        # Configure Flask-Mail if not already configured
+        if not hasattr(current_app, 'mail'):
+            from flask_mail import Mail
+            mail = Mail(current_app)
+        else:
+            mail = current_app.mail
+        
+        # Create email message
+        msg = Message(
+            subject='Your Trading Platform User ID',
+            sender=os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@trading-platform.com'),
+            recipients=[user_data['email']]
+        )
+        
+        # Email content
+        msg.body = f"""
+Dear User,
+
+You requested to retrieve your User ID for the Trading Platform.
+
+Your User ID: {user_data['username']}
+
+Please use this User ID along with your password to login to your trading account.
+
+If you did not request this information, please ignore this email.
+
+For any assistance, please contact our support team.
+
+Best regards,
+Trading Platform Support Team
+        """
+        
+        msg.html = f"""
+<html>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+        <h2 style="color: #2c3e50; margin: 0;">Trading Platform - User ID Retrieval</h2>
+    </div>
+    
+    <div style="background-color: white; padding: 20px; border-radius: 8px; border: 1px solid #e9ecef;">
+        <p>Dear User,</p>
+        
+        <p>You requested to retrieve your User ID for the Trading Platform.</p>
+        
+        <div style="background-color: #e3f2fd; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="margin: 0; color: #1976d2;">Your User ID: <strong>{user_data['username']}</strong></h3>
+        </div>
+        
+        <p>Please use this User ID along with your password to login to your trading account.</p>
+        
+        <p style="color: #6c757d; font-size: 14px;">
+            <strong>Security Note:</strong> If you did not request this information, please ignore this email.
+        </p>
+        
+        <hr style="border: none; border-top: 1px solid #e9ecef; margin: 20px 0;">
+        
+        <p style="color: #6c757d; font-size: 14px;">
+            For any assistance, please contact our support team.<br>
+            Best regards,<br>
+            Trading Platform Support Team
+        </p>
+    </div>
+</body>
+</html>
+        """
+        
+        # Send email
+        mail.send(msg)
+        logging.info(f"User ID email sent successfully to: {user_data['email'][:3]}***")
+        return True
+        
+    except Exception as e:
+        logging.error(f"Failed to send User ID email: {str(e)}")
+        return False

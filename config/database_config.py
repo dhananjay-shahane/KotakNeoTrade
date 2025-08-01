@@ -18,8 +18,8 @@ class DatabaseConfig:
     def __init__(self):
         """Initialize database configuration from environment variables"""
         # SECURITY: Never hardcode credentials - always use environment variables
-        # Use Replit's built-in PostgreSQL database first
-        self.database_url = os.environ.get('DATABASE_URL')
+        # Use external PostgreSQL database only (no Replit database)
+        self.database_url = None
         
         # Initialize config dict for backward compatibility
         self.config = {
