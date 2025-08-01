@@ -337,39 +337,23 @@ def know_user_id():
 
 
 def check_user_exists_by_contact(contact_info):
-    """Check if user exists by mobile number or email and return user data - simplified version"""
+    """Check if user exists by mobile number or email and return user data"""
     try:
-        import psycopg2
-        import os
+        # Use centralized database configuration
+        from config.database_config import execute_db_query
         
-        # Use DATABASE_URL directly - same as working test
-        database_url = os.environ.get('DATABASE_URL')
-        if not database_url:
-            logging.error("DATABASE_URL not found")
-            return None
-
-        # Connect to database  
-        conn = psycopg2.connect(database_url)
-        cursor = conn.cursor()
-
         # First check if user exists by email
-        cursor.execute("SELECT username, email, mobile_number FROM external_users WHERE email = %s LIMIT 1", (contact_info,))
-        result = cursor.fetchone()
+        result = execute_db_query("SELECT username, email, mobile FROM external_users WHERE email = %s LIMIT 1", (contact_info,))
         
         # If not found by email, check by mobile
-        if not result:
-            cursor.execute("SELECT username, email, mobile_number FROM external_users WHERE mobile_number = %s LIMIT 1", (contact_info,))
-            result = cursor.fetchone()
+        if not result or len(result) == 0:
+            result = execute_db_query("SELECT username, email, mobile FROM external_users WHERE mobile = %s LIMIT 1", (contact_info,))
         
-        # Close connection
-        cursor.close()
-        conn.close()
-        
-        if result:
+        if result and len(result) > 0:
             user_data = {
-                'username': result[0],
-                'email': result[1], 
-                'mobile': result[2]
+                'username': result[0]['username'],
+                'email': result[0]['email'], 
+                'mobile': result[0]['mobile']
             }
             logging.info(f"User found in database: {user_data['username']}")
             return user_data
@@ -395,6 +379,10 @@ def send_user_id_email(user_data):
         smtp_port = 587
         email_user = 'dhanushahane01@gmail.com'
         email_password = 'sljo pinu ajrh padp'
+        
+        logging.info(f"Attempting to send User ID email to: {user_data['email']}")
+        logging.info(f"SMTP Configuration - Server: {smtp_server}, Port: {smtp_port}")
+        logging.info(f"Email user: {email_user}")
         
         # Create message
         msg = MIMEMultipart()
@@ -481,16 +469,31 @@ Trading Platform Support Team"""
         msg.attach(MIMEText(html_body, 'html'))
         
         # Send email using SMTP
+        logging.info("Connecting to SMTP server...")
         server = smtplib.SMTP(smtp_server, smtp_port)
+        logging.info("Starting TLS...")
         server.starttls()
+        logging.info("Logging in to SMTP server...")
         server.login(email_user, email_password)
+        logging.info("Sending email message...")
         text = msg.as_string()
         server.sendmail(email_user, user_data['email'], text)
         server.quit()
         
-        logging.info(f"User ID email sent successfully to: {user_data['email']}")
+        logging.info(f"✅ User ID email sent successfully to: {user_data['email']}")
         return True
         
+    except smtplib.SMTPAuthenticationError as e:
+        logging.error(f"❌ SMTP Authentication failed: {str(e)}")
+        return False
+    except smtplib.SMTPRecipientsRefused as e:
+        logging.error(f"❌ SMTP Recipients refused: {str(e)}")
+        return False
+    except smtplib.SMTPServerDisconnected as e:
+        logging.error(f"❌ SMTP Server disconnected: {str(e)}")
+        return False
     except Exception as e:
-        logging.error(f"Failed to send user ID email: {str(e)}")
+        logging.error(f"❌ Failed to send user ID email: {str(e)}")
+        import traceback
+        logging.error(f"Full traceback: {traceback.format_exc()}")
         return False
