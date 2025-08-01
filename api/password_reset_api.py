@@ -133,9 +133,9 @@ def validate_reset_token(token):
         
         # Check if token exists and is valid
         query = """
-        SELECT prt.*, eu.id as user_id, eu.email 
+        SELECT prt.*, eu.sr as user_id, eu.email 
         FROM password_reset_tokens prt
-        JOIN external_users eu ON prt.user_id = eu.id
+        JOIN external_users eu ON prt.user_id = eu.sr
         WHERE prt.token_hash = %s AND prt.used = false AND prt.expires_at > %s
         """
         
@@ -209,9 +209,9 @@ def forgot_password():
             flash('Please enter your username or email address.', 'error')
             return render_template('auth/forgot_password.html')
         
-        # Search for user by username or email
+        # Search for user by username or email in external_users table
         user_query = """
-        SELECT id, email, username 
+        SELECT sr as id, email, username 
         FROM external_users 
         WHERE username = %s OR email = %s
         """
