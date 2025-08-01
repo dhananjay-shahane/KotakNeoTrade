@@ -353,8 +353,8 @@ def reset_password():
         token_data, error = validate_reset_token(token)
         
         if error:
-            flash(f'Reset link is invalid or has expired. Please request a new one.', 'error')
-            return redirect(url_for('password_reset.forgot_password'))
+            # Show expired link page instead of redirecting to forgot password
+            return render_template('auth/expired_link.html', error_message=error)
         
         return render_template('auth/reset_password.html', token=token)
     
@@ -380,8 +380,8 @@ def reset_password():
         token_data, error = validate_reset_token(token)
         
         if error:
-            flash('Reset link is invalid or has expired. Please request a new one.', 'error')
-            return redirect(url_for('password_reset.forgot_password'))
+            # Show expired link page instead of redirecting to forgot password
+            return render_template('auth/expired_link.html', error_message=error)
         
         # Update user password in external_users table
         # Note: Using plain password to match existing auth system

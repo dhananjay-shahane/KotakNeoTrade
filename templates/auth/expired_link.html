@@ -1,0 +1,181 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Expired - Kotak Neo Trading</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1c2e 0%, #2d3561 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .main-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .expired-panel {
+            background: rgba(20, 25, 45, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            width: 100%;
+            max-width: 500px;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .panel-header {
+            margin-bottom: 30px;
+        }
+        
+        .panel-icon {
+            width: 80px;
+            height: 80px;
+            background: #f44336;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        
+        .panel-title {
+            color: white;
+            font-size: 2rem;
+            font-weight: 600;
+            margin: 0 0 15px 0;
+        }
+        
+        .panel-subtitle {
+            color: #8892b0;
+            font-size: 1.1rem;
+            margin: 0 0 20px 0;
+            line-height: 1.5;
+        }
+        
+        .error-message {
+            background: rgba(244, 67, 54, 0.1);
+            color: #f44336;
+            border: 1px solid rgba(244, 67, 54, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 25px 0;
+            font-size: 1rem;
+        }
+        
+        .btn-primary {
+            background: #4285f4;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            padding: 15px 30px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background: #3367d6;
+            transform: translateY(-1px);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid #8892b0;
+            border-radius: 10px;
+            color: #8892b0;
+            padding: 15px 30px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(136, 146, 176, 0.1);
+            color: white;
+        }
+        
+        .help-text {
+            background: rgba(40, 45, 65, 0.6);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            color: #8892b0;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .expired-panel {
+                padding: 30px 20px;
+                margin: 0;
+                border-radius: 0;
+                min-height: 100vh;
+            }
+            
+            .panel-title {
+                font-size: 1.6rem;
+            }
+            
+            .btn-primary, .btn-secondary {
+                width: 100%;
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="expired-panel">
+            <div class="panel-header">
+                <div class="panel-icon">
+                    <i class="fas fa-times fa-2x" style="color: white;"></i>
+                </div>
+                <h2 class="panel-title">Link Expired</h2>
+                <p class="panel-subtitle">Your password reset link has expired or is invalid</p>
+            </div>
+
+            <!-- Error Message -->
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>{{ error_message or 'This reset link has expired or is invalid' }}</strong>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <a href="{{ url_for('password_reset.forgot_password') }}" class="btn btn-primary">
+                    <i class="fas fa-paper-plane me-2"></i>Request New Reset Link
+                </a>
+                
+                <a href="{{ url_for('auth_routes.trading_account_login') }}" class="btn btn-secondary">
+                    <i class="fas fa-sign-in-alt me-2"></i>Back to Login
+                </a>
+            </div>
+            
+            <!-- Help Text -->
+            <div class="help-text">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Why did this happen?</strong><br>
+                Password reset links expire after 15 minutes for security reasons. If you need to reset your password, please request a new reset link using the button above.
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
