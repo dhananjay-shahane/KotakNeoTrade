@@ -332,7 +332,8 @@ def know_user_id():
                 'If the account exists, the admin will send you an email containing your user ID at your registered email address.',
                 'info')
 
-            return render_template('auth/know_user_id.html')
+            # Redirect to prevent form resubmission on refresh (Post-Redirect-Get pattern)
+            return redirect(url_for('auth_routes.know_user_id'))
 
         except Exception as e:
             logging.error(f"Know User ID error: {str(e)}")
