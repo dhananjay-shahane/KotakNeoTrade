@@ -373,23 +373,22 @@ def reset_password():
             return redirect(url_for('password_reset.forgot_password'))
         
         # Update user password in external_users table
-        password_hash = generate_password_hash(new_password)
-        
+        # Note: Using plain password to match existing auth system
         update_query = """
         UPDATE external_users 
-        SET password_hash = %s, updated_at = CURRENT_TIMESTAMP
+        SET password = %s
         WHERE sr = %s
         RETURNING username, email
         """
         
-        updated_user = execute_db_query(update_query, (password_hash, token_data['user_id']))
+        updated_user = execute_db_query(update_query, (new_password, token_data['user_id']))
         
         if not updated_user:
             flash('Failed to update password. Please try again.', 'error')
             return render_template('auth/reset_password.html', token=token)
         
         # Mark token as used
-        mark_token_used(token)
+        mark_token_as_used(token)
         
         # Send password update confirmation email
         if updated_user and len(updated_user) > 0:
