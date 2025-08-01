@@ -189,7 +189,7 @@ def send_password_update_confirmation(email, username, new_password):
         logger.error(f"Failed to send password update confirmation: {e}")
         return False
 
-def create_password_reset_token(user_id, expiry_minutes=15):
+def create_password_reset_token(username, expiry_minutes=15):
     """Create a secure password reset token"""
     try:
         # Generate secure token
@@ -201,18 +201,18 @@ def create_password_reset_token(user_id, expiry_minutes=15):
         invalidate_query = """
         UPDATE password_reset_tokens 
         SET used = true 
-        WHERE user_id = %s AND used = false
+        WHERE username = %s AND used = false
         """
-        execute_db_query(invalidate_query, (user_id,), fetch_results=False)
+        execute_db_query(invalidate_query, (username,), fetch_results=False)
         
         # Create new token record
         insert_query = """
-        INSERT INTO password_reset_tokens (user_id, token_hash, expires_at, used, created_at)
+        INSERT INTO password_reset_tokens (username, token_hash, expires_at, used, created_at)
         VALUES (%s, %s, %s, %s, %s)
         """
-        execute_db_query(insert_query, (user_id, token_hash, expires_at, False, datetime.now()), fetch_results=False)
+        execute_db_query(insert_query, (username, token_hash, expires_at, False, datetime.now()), fetch_results=False)
         
-        logger.info(f"Password reset token created for user {user_id}")
+        logger.info(f"Password reset token created for user {username}")
         return raw_token
         
     except Exception as e:
@@ -226,9 +226,9 @@ def validate_reset_token(token):
         
         # Check if token exists and is valid
         query = """
-        SELECT prt.*, eu.sr as user_id, eu.email 
+        SELECT prt.*, eu.sr as user_id, eu.email, eu.username 
         FROM password_reset_tokens prt
-        JOIN external_users eu ON prt.user_id = eu.sr
+        JOIN external_users eu ON prt.username = eu.username
         WHERE prt.token_hash = %s AND prt.used = false AND prt.expires_at > %s
         """
         
@@ -264,12 +264,55 @@ def mark_token_as_used(token):
 
 # Create password_reset_tokens table if it doesn't exist
 def ensure_reset_table_exists():
-    """Ensure the password_reset_tokens table exists"""
+    """Ensure the password_reset_tokens table exists with username column"""
     try:
+        # First, check if the table exists and has the old structure
+        check_table_query = """
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'password_reset_tokens' 
+        AND table_schema = 'public'
+        ORDER BY ordinal_position;
+        """
+        
+        existing_columns = execute_db_query(check_table_query)
+        column_names = [col['column_name'] for col in existing_columns] if existing_columns else []
+        
+        if 'user_id' in column_names and 'username' not in column_names:
+            # Migrate existing table structure
+            logger.info("Migrating password_reset_tokens table to use username...")
+            
+            # Add username column
+            alter_query = """
+            ALTER TABLE password_reset_tokens 
+            ADD COLUMN IF NOT EXISTS username VARCHAR(50);
+            """
+            execute_db_query(alter_query, fetch_results=False)
+            
+            # Update existing records to use username from external_users
+            update_query = """
+            UPDATE password_reset_tokens 
+            SET username = eu.username 
+            FROM external_users eu 
+            WHERE password_reset_tokens.user_id = eu.sr 
+            AND password_reset_tokens.username IS NULL;
+            """
+            execute_db_query(update_query, fetch_results=False)
+            
+            # Drop the old user_id column and its index
+            drop_queries = """
+            DROP INDEX IF EXISTS idx_password_reset_tokens_user_id;
+            ALTER TABLE password_reset_tokens DROP COLUMN IF EXISTS user_id;
+            """
+            execute_db_query(drop_queries, fetch_results=False)
+            
+            logger.info("✓ Table migration completed")
+        
+        # Create table with new structure if it doesn't exist
         create_table_query = """
         CREATE TABLE IF NOT EXISTS password_reset_tokens (
             id SERIAL PRIMARY KEY,
-            user_id INTEGER NOT NULL,
+            username VARCHAR(50) NOT NULL,
             token_hash VARCHAR(128) NOT NULL UNIQUE,
             expires_at TIMESTAMP NOT NULL,
             used BOOLEAN DEFAULT FALSE,
@@ -277,14 +320,14 @@ def ensure_reset_table_exists():
         );
         
         CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_hash ON password_reset_tokens(token_hash);
-        CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);
+        CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_username ON password_reset_tokens(username);
         """
         
         execute_db_query(create_table_query, fetch_results=False)
-        logger.info("✓ Password reset tokens table ensured")
+        logger.info("✓ Password reset tokens table ensured with username column")
         
     except Exception as e:
-        logger.error(f"Failed to create reset tokens table: {e}")
+        logger.error(f"Failed to create/migrate reset tokens table: {e}")
 
 # Initialize table on module load
 ensure_reset_table_exists()
@@ -317,8 +360,8 @@ def forgot_password():
         if users and len(users) > 0:
             user = users[0]
             
-            # Create reset token
-            reset_token = create_password_reset_token(user['id'])
+            # Create reset token using username
+            reset_token = create_password_reset_token(user['username'])
             
             if reset_token:
                 # Send reset email
