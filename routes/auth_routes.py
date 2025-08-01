@@ -337,45 +337,45 @@ def know_user_id():
 
 
 def check_user_exists_by_contact(contact_info):
-    """Check if user exists by mobile number or email and return user data"""
+    """Check if user exists by mobile number or email and return user data - simplified version"""
     try:
         import psycopg2
         import os
-        from urllib.parse import urlparse
         
-        # Use DATABASE_URL directly
+        # Use DATABASE_URL directly - same as working test
         database_url = os.environ.get('DATABASE_URL')
         if not database_url:
             logging.error("DATABASE_URL not found")
             return None
 
-        # Connect to database
+        # Connect to database  
         conn = psycopg2.connect(database_url)
         cursor = conn.cursor()
 
-        # Check both email and mobile fields
-        cursor.execute(
-            """
-            SELECT username, email, mobile_number 
-            FROM external_users 
-            WHERE email = %s OR mobile_number = %s
-            LIMIT 1
-            """, (contact_info, contact_info)
-        )
-        
+        # First check if user exists by email
+        cursor.execute("SELECT username, email, mobile_number FROM external_users WHERE email = %s LIMIT 1", (contact_info,))
         result = cursor.fetchone()
+        
+        # If not found by email, check by mobile
+        if not result:
+            cursor.execute("SELECT username, email, mobile_number FROM external_users WHERE mobile_number = %s LIMIT 1", (contact_info,))
+            result = cursor.fetchone()
         
         # Close connection
         cursor.close()
         conn.close()
         
         if result:
-            return {
+            user_data = {
                 'username': result[0],
                 'email': result[1], 
-                'mobile_number': result[2]
+                'mobile': result[2]
             }
-        return None
+            logging.info(f"User found in database: {user_data['username']}")
+            return user_data
+        else:
+            logging.info(f"No user found for contact: {contact_info[:3]}***")
+            return None
         
     except Exception as e:
         logging.error(f"Database error in check_user_exists_by_contact: {str(e)}")
@@ -402,21 +402,83 @@ def send_user_id_email(user_data):
         msg['To'] = user_data['email']
         msg['Subject'] = 'Your Trading Platform User ID'
         
-        # Email body with user details
-        body = f"""Dear User,
+        # Create HTML email template
+        html_body = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Your Trading Platform User ID</title>
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                <h1 style="color: white; margin: 0; font-size: 28px;">Trading Platform</h1>
+                <p style="color: #f0f0f0; margin: 10px 0 0; font-size: 16px;">Your User ID Request</p>
+            </div>
+            
+            <div style="background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; border-top: none;">
+                <h2 style="color: #333; margin-bottom: 20px;">Dear Valued User,</h2>
+                
+                <p style="font-size: 16px; margin-bottom: 20px;">You requested to retrieve your User ID for the Trading Platform. Here are your account details:</p>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
+                    <h3 style="color: #667eea; margin: 0 0 15px 0;">Your Account Information</h3>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 8px 0; font-weight: bold; color: #555;">User ID:</td>
+                            <td style="padding: 8px 0; color: #333; font-weight: bold; font-size: 18px;">{user_data['username']}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; font-weight: bold; color: #555;">Registered Email:</td>
+                            <td style="padding: 8px 0; color: #333;">{user_data['email']}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; font-weight: bold; color: #555;">Registered Mobile:</td>
+                            <td style="padding: 8px 0; color: #333;">{user_data['mobile']}</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div style="background: #e8f4fd; padding: 15px; border-radius: 6px; margin: 20px 0;">
+                    <p style="margin: 0; color: #0c5460;"><strong>How to Login:</strong> Use your User ID along with your password to access your trading account.</p>
+                </div>
+                
+                <div style="background: #fff3cd; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                    <p style="margin: 0; color: #856404;"><strong>Security Notice:</strong> If you did not request this information, please ignore this email and ensure your account is secure.</p>
+                </div>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 20px; text-align: center; border-radius: 0 0 10px 10px; border: 1px solid #e0e0e0; border-top: none;">
+                <p style="margin: 0; color: #666; font-size: 14px;">For assistance, contact our support team</p>
+                <p style="margin: 5px 0 0; color: #666; font-size: 14px;">Best regards,<br><strong>Trading Platform Support Team</strong></p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Plain text version
+        plain_body = f"""Dear User,
 
-Your Trading Platform credentials:
+You requested to retrieve your User ID for the Trading Platform.
 
+Your Account Information:
 • User ID: {user_data['username']}
-• Registered Email: {user_data['email']}
-• Registered Mobile: {user_data['mobile_number']}
+• Registered Email: {user_data['email']}  
+• Registered Mobile: {user_data['mobile']}
 
-You can use your User ID to log into the Trading Platform.
+How to Login: Use your User ID along with your password to access your trading account.
+
+Security Notice: If you did not request this information, please ignore this email.
+
+For assistance, contact our support team.
 
 Best regards,
 Trading Platform Support Team"""
         
-        msg.attach(MIMEText(body, 'plain'))
+        # Attach both HTML and plain text versions
+        msg.attach(MIMEText(plain_body, 'plain'))
+        msg.attach(MIMEText(html_body, 'html'))
         
         # Send email using SMTP
         server = smtplib.SMTP(smtp_server, smtp_port)

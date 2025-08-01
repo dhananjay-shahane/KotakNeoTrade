@@ -19,7 +19,7 @@ class DatabaseConfig:
         """Initialize database configuration from environment variables"""
         # SECURITY: Never hardcode credentials - always use environment variables
         # Use external PostgreSQL database only (no Replit database)
-        self.database_url = None
+        self.database_url = os.environ.get('DATABASE_URL')
         
         # Initialize config dict for backward compatibility
         self.config = {
