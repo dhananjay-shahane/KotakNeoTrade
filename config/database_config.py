@@ -17,15 +17,16 @@ class DatabaseConfig:
     def __init__(self):
         """Initialize database configuration from environment variables"""
         # SECURITY: Never hardcode credentials - always use environment variables
-        if not os.environ.get('DB_PASSWORD'):
+        # Check if we have either DATABASE_URL or individual DB credentials
+        if not os.environ.get('DATABASE_URL') and not os.environ.get('DB_PASSWORD'):
             raise ValueError("Database credentials must be set in environment variables")
         
         self.config = {
-            'host': os.environ.get('DB_HOST'),
-            'database': os.environ.get('DB_NAME'),
-            'user': os.environ.get('DB_USER'),
-            'password': os.environ.get('DB_PASSWORD'),
-            'port': int(os.environ.get('DB_PORT', 5432))
+            'host': os.environ.get('DB_HOST') or os.environ.get('PGHOST'),
+            'database': os.environ.get('DB_NAME') or os.environ.get('PGDATABASE'),
+            'user': os.environ.get('DB_USER') or os.environ.get('PGUSER'),
+            'password': os.environ.get('DB_PASSWORD') or os.environ.get('PGPASSWORD'),
+            'port': int(os.environ.get('DB_PORT') or os.environ.get('PGPORT', 5432))
         }
         
         # Build complete database URL
@@ -149,7 +150,7 @@ class DatabaseConnector:
                 return None
         return self._connection
     
-    def execute_query(self, query: str, params: tuple = None):
+    def execute_query(self, query: str, params: Optional[tuple] = None):
         """Execute query and return results as list of dictionaries"""
         try:
             conn = self.get_connection()
@@ -194,7 +195,7 @@ def get_db_dict_connection():
     """Get database connection with RealDictCursor"""
     return db_config.get_dict_connection()
 
-def execute_db_query(query: str, params: tuple = None, fetch_results: bool = True):
+def execute_db_query(query: str, params: Optional[tuple] = None, fetch_results: bool = True):
     """Execute database query using centralized config"""
     return db_config.execute_query(query, params, fetch_results)
 
