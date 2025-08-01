@@ -140,7 +140,7 @@ def send_password_update_confirmation(email, username):
                         <strong>📋 Account Information:</strong><br>
                         <strong>Username:</strong> {username}<br>
                         <strong>Email:</strong> {email}<br>
-                        <strong>Password Updated:</strong> {datetime.now().strftime('%B %d, %Y at %I:%M %p')}<br>
+                        <strong>Password Updated:</strong> {datetime.now().strftime('%B %d, %Y')}<br>
                         <strong>Status:</strong> <span style="color: #4caf50; font-weight: bold;">✓ Active</span>
                     </div>
                     
@@ -164,14 +164,6 @@ def send_password_update_confirmation(email, username):
                             <li>💡 Consider enabling two-factor authentication for extra security</li>
                         </ul>
                     </div>
-                    
-                    <p><strong>🚀 What's Next:</strong></p>
-                    <ol style="line-height: 1.8;">
-                        <li><strong>Log in now</strong> with your username and new password</li>
-                        <li><strong>Update saved passwords</strong> in your browser or password manager</li>
-                        <li><strong>Review security settings</strong> in your account preferences</li>
-                        <li><strong>Set up two-factor authentication</strong> (recommended)</li>
-                    </ol>
                     
                     <div style="text-align: center; margin: 30px 0;">
                         <p style="font-size: 16px; color: #4caf50; font-weight: bold;">🎯 Your account is now secure and ready to use!</p>
@@ -395,12 +387,22 @@ def reset_password():
         # Note: Using plain password to match existing auth system
         update_query = """
         UPDATE external_users 
-        SET password = %s
+        SET password = %s, updated_at = CURRENT_TIMESTAMP
         WHERE sr = %s
         """
         
-        # Execute the update query without RETURNING clause
-        execute_db_query(update_query, (new_password, token_data['user_id']), fetch_results=False)
+        # Execute the update query
+        update_result = execute_db_query(update_query, (new_password, token_data['user_id']), fetch_results=False)
+        
+        # Verify the password was actually updated
+        verify_query = """
+        SELECT password FROM external_users WHERE sr = %s
+        """
+        verification = execute_db_query(verify_query, (token_data['user_id'],))
+        
+        if not verification or verification[0]['password'] != new_password:
+            flash('Failed to update password in database. Please try again.', 'error')
+            return render_template('auth/reset_password.html', token=token)
         
         # Get user details for confirmation email
         user_query = """
