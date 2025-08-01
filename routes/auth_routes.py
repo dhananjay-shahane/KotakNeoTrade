@@ -299,40 +299,46 @@ def know_user_id():
         try:
             # Get contact info from form (mobile number or email)
             contact_info = request.form.get('contact_info', '').strip()
-            
+
             if not contact_info:
-                flash('Please enter your mobile number or email address', 'error')
+                flash('Please enter your mobile number or email address',
+                      'error')
                 return render_template('auth/know_user_id.html')
-            
+
             # Log the attempt for security auditing
-            logging.info(f"User ID retrieval requested for: {contact_info[:3]}***")
-            
+            logging.info(
+                f"User ID retrieval requested for: {contact_info[:3]}***")
+
             # Check if the contact info exists in external_users table
             user_found = check_user_exists_by_contact(contact_info)
-            
+
             if user_found:
                 # Send email with user ID to the registered email address
                 email_sent = send_user_id_email(user_found)
                 if email_sent:
-                    logging.info(f"User ID email sent successfully for: {contact_info[:3]}***")
+                    logging.info(
+                        f"User ID email sent successfully for: {contact_info[:3]}***"
+                    )
                 else:
-                    logging.error(f"Failed to send User ID email for: {contact_info[:3]}***")
+                    logging.error(
+                        f"Failed to send User ID email for: {contact_info[:3]}***"
+                    )
             else:
-                logging.info(f"No user found for contact info: {contact_info[:3]}***")
-            
+                logging.info(
+                    f"No user found for contact info: {contact_info[:3]}***")
+
             # Always show the same neutral message regardless of whether user exists
             flash(
                 'If the account exists, the admin will send you an email containing your user ID at your registered email address.',
-                'info'
-            )
-            
+                'info')
+
             return render_template('auth/know_user_id.html')
-            
+
         except Exception as e:
             logging.error(f"Know User ID error: {str(e)}")
             flash('An error occurred. Please try again later.', 'error')
             return render_template('auth/know_user_id.html')
-    
+
     return render_template('auth/know_user_id.html')
 
 
@@ -341,18 +347,22 @@ def check_user_exists_by_contact(contact_info):
     try:
         # Use centralized database configuration
         from config.database_config import execute_db_query
-        
+
         # First check if user exists by email
-        result = execute_db_query("SELECT username, email, mobile FROM external_users WHERE email = %s LIMIT 1", (contact_info,))
-        
+        result = execute_db_query(
+            "SELECT username, email, mobile FROM external_users WHERE email = %s LIMIT 1",
+            (contact_info, ))
+
         # If not found by email, check by mobile
         if not result or len(result) == 0:
-            result = execute_db_query("SELECT username, email, mobile FROM external_users WHERE mobile = %s LIMIT 1", (contact_info,))
-        
+            result = execute_db_query(
+                "SELECT username, email, mobile FROM external_users WHERE mobile = %s LIMIT 1",
+                (contact_info, ))
+
         if result and len(result) > 0:
             user_data = {
                 'username': result[0]['username'],
-                'email': result[0]['email'], 
+                'email': result[0]['email'],
                 'mobile': result[0]['mobile']
             }
             logging.info(f"User found in database: {user_data['username']}")
@@ -360,9 +370,10 @@ def check_user_exists_by_contact(contact_info):
         else:
             logging.info(f"No user found for contact: {contact_info[:3]}***")
             return None
-        
+
     except Exception as e:
-        logging.error(f"Database error in check_user_exists_by_contact: {str(e)}")
+        logging.error(
+            f"Database error in check_user_exists_by_contact: {str(e)}")
         return None
 
 
@@ -373,23 +384,25 @@ def send_user_id_email(user_data):
         from email.mime.text import MIMEText
         from email.mime.multipart import MIMEMultipart
         import os
-        
+
         # Email configuration
         smtp_server = 'smtp.gmail.com'
         smtp_port = 587
         email_user = 'dhanushahane01@gmail.com'
         email_password = 'sljo pinu ajrh padp'
-        
-        logging.info(f"Attempting to send User ID email to: {user_data['email']}")
-        logging.info(f"SMTP Configuration - Server: {smtp_server}, Port: {smtp_port}")
+
+        logging.info(
+            f"Attempting to send User ID email to: {user_data['email']}")
+        logging.info(
+            f"SMTP Configuration - Server: {smtp_server}, Port: {smtp_port}")
         logging.info(f"Email user: {email_user}")
-        
+
         # Create message
         msg = MIMEMultipart()
         msg['From'] = email_user
         msg['To'] = user_data['email']
         msg['Subject'] = 'Your Trading Platform User ID'
-        
+
         # Create HTML email template
         html_body = f"""
         <!DOCTYPE html>
@@ -444,30 +457,11 @@ def send_user_id_email(user_data):
         </body>
         </html>
         """
-        
-        # Plain text version
-        plain_body = f"""Dear User,
 
-You requested to retrieve your User ID for the Trading Platform.
-
-Your Account Information:
-- User ID: {user_data['username']}
-- Registered Email: {user_data['email']}  
-- Registered Mobile: {user_data['mobile']}
-
-How to Login: Use your User ID along with your password to access your trading account.
-
-Security Notice: If you did not request this information, please ignore this email.
-
-For assistance, contact our support team.
-
-Best regards,
-Trading Platform Support Team"""
-        
         # Attach both HTML and plain text versions
         msg.attach(MIMEText(plain_body, 'plain'))
         msg.attach(MIMEText(html_body, 'html'))
-        
+
         # Send email using SMTP
         logging.info("Connecting to SMTP server...")
         server = smtplib.SMTP(smtp_server, smtp_port)
@@ -476,14 +470,15 @@ Trading Platform Support Team"""
         logging.info("Logging in to SMTP server...")
         server.login(email_user, email_password)
         logging.info("Sending email message...")
-        
+
         # Fix Unicode encoding issue by using send_message instead of sendmail
         server.send_message(msg)
         server.quit()
-        
-        logging.info(f"✅ User ID email sent successfully to: {user_data['email']}")
+
+        logging.info(
+            f"✅ User ID email sent successfully to: {user_data['email']}")
         return True
-        
+
     except smtplib.SMTPAuthenticationError as e:
         logging.error(f"❌ SMTP Authentication failed: {str(e)}")
         return False
