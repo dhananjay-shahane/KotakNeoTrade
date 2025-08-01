@@ -290,13 +290,13 @@ def reset_password():
             flash('Reset link is invalid or has expired. Please request a new one.', 'error')
             return redirect(url_for('password_reset.forgot_password'))
         
-        # Update user password
+        # Update user password in external_users table
         password_hash = generate_password_hash(new_password)
         
         update_query = """
         UPDATE external_users 
         SET password_hash = %s 
-        WHERE id = %s
+        WHERE sr = %s
         """
         
         execute_db_query(update_query, (password_hash, token_data['user_id']), fetch_results=False)
