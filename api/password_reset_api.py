@@ -96,6 +96,88 @@ def send_reset_email(email, reset_token, app):
         logger.error(f"Failed to send reset email: {e}")
         return False
 
+def send_password_update_confirmation(email, username):
+    """Send password update confirmation email"""
+    try:
+        from app import mail
+        
+        # Create email message
+        msg = Message(
+            subject='Password Successfully Updated - Kotak Neo Trading',
+            sender=os.environ.get('MAIL_USERNAME', 'noreply@kotakneo.com'),
+            recipients=[email]
+        )
+        
+        # Professional email template
+        msg.html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }}
+                .container {{ max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+                .header {{ background: linear-gradient(135deg, #4caf50 0%, #45a049 100%); color: white; padding: 30px 20px; text-align: center; }}
+                .content {{ padding: 30px 20px; }}
+                .footer {{ background: #f8f9fa; padding: 20px; font-size: 12px; color: #666; text-align: center; }}
+                .security-note {{ background: #e8f5e8; border: 1px solid #4caf50; padding: 15px; border-radius: 5px; margin: 20px 0; }}
+                .user-details {{ background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>✅ Password Updated Successfully</h1>
+                    <p>Kotak Neo Trading Platform</p>
+                </div>
+                <div class="content">
+                    <h2>Password Reset Completed</h2>
+                    <p>We're confirming that your password has been successfully updated for your Kotak Neo Trading account.</p>
+                    
+                    <div class="user-details">
+                        <strong>Account Details:</strong><br>
+                        <strong>Username:</strong> {username}<br>
+                        <strong>Email:</strong> {email}<br>
+                        <strong>Updated:</strong> {datetime.now().strftime('%B %d, %Y at %I:%M %p')}
+                    </div>
+                    
+                    <div class="security-note">
+                        <strong>🔐 Security Information:</strong>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>Your password has been successfully changed</li>
+                            <li>You can now log in with your new password</li>
+                            <li>If you didn't make this change, contact support immediately</li>
+                            <li>For security, consider enabling two-factor authentication</li>
+                        </ul>
+                    </div>
+                    
+                    <p><strong>Next Steps:</strong></p>
+                    <ol>
+                        <li>Log in to your account with your new password</li>
+                        <li>Review your account settings and security preferences</li>
+                        <li>Update any saved passwords in your browser or password manager</li>
+                    </ol>
+                    
+                    <p>Thank you for keeping your account secure!</p>
+                </div>
+                <div class="footer">
+                    <p>This is an automated security notification from Kotak Neo Trading Platform</p>
+                    <p>If you have any questions or concerns, please contact our support team</p>
+                    <p><strong>Important:</strong> Never share your login credentials with anyone</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Send the email
+        mail.send(msg)
+        logger.info(f"Password update confirmation sent to {email}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to send password update confirmation: {e}")
+        return False
+
 def create_password_reset_token(user_id, expiry_minutes=15):
     """Create a secure password reset token"""
     try:
@@ -295,43 +377,26 @@ def reset_password():
         
         update_query = """
         UPDATE external_users 
-        SET password_hash = %s 
+        SET password_hash = %s, updated_at = CURRENT_TIMESTAMP
         WHERE sr = %s
+        RETURNING username, email
         """
         
-        execute_db_query(update_query, (password_hash, token_data['user_id']), fetch_results=False)
+        updated_user = execute_db_query(update_query, (password_hash, token_data['user_id']))
+        
+        if not updated_user:
+            flash('Failed to update password. Please try again.', 'error')
+            return render_template('auth/reset_password.html', token=token)
         
         # Mark token as used
-        mark_token_as_used(token)
+        mark_token_used(token)
         
-        # Send confirmation email (optional)
-        try:
-            from app import app, mail
-            msg = Message(
-                subject='Password Successfully Reset - Kotak Neo Trading',
-                sender=os.environ.get('MAIL_USERNAME', 'noreply@kotakneo.com'),
-                recipients=[token_data['email']]
-            )
-            
-            msg.html = f"""
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #4285f4;">Password Reset Successful</h2>
-                <p>Your password has been successfully reset for your Kotak Neo Trading account.</p>
-                <p>If you didn't make this change, please contact our support team immediately.</p>
-                <p>For security, you may want to:</p>
-                <ul>
-                    <li>Log in with your new password</li>
-                    <li>Review your account security settings</li>
-                    <li>Enable two-factor authentication if available</li>
-                </ul>
-                <p>Thank you for using Kotak Neo Trading Platform.</p>
-            </div>
-            """
-            
-            mail.send(msg)
-        except Exception as e:
-            logger.error(f"Failed to send confirmation email: {e}")
+        # Send password update confirmation email
+        if updated_user and len(updated_user) > 0:
+            user_info = updated_user[0]
+            send_password_update_confirmation(user_info['email'], user_info['username'])
         
+        logger.info(f"Password successfully reset for user: {user_info['username']} ({user_info['email']})")
         flash('Password reset successful! You can now log in with your new password.', 'success')
         return redirect(url_for('auth_routes.trading_account_login'))
         
