@@ -451,9 +451,9 @@ def send_user_id_email(user_data):
 You requested to retrieve your User ID for the Trading Platform.
 
 Your Account Information:
-• User ID: {user_data['username']}
-• Registered Email: {user_data['email']}  
-• Registered Mobile: {user_data['mobile']}
+- User ID: {user_data['username']}
+- Registered Email: {user_data['email']}  
+- Registered Mobile: {user_data['mobile']}
 
 How to Login: Use your User ID along with your password to access your trading account.
 
@@ -476,8 +476,9 @@ Trading Platform Support Team"""
         logging.info("Logging in to SMTP server...")
         server.login(email_user, email_password)
         logging.info("Sending email message...")
-        text = msg.as_string()
-        server.sendmail(email_user, user_data['email'], text)
+        
+        # Fix Unicode encoding issue by using send_message instead of sendmail
+        server.send_message(msg)
         server.quit()
         
         logging.info(f"✅ User ID email sent successfully to: {user_data['email']}")
