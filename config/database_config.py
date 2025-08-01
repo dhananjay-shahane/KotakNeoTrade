@@ -25,15 +25,15 @@ class DatabaseConfig:
                 "Database credentials must be set in environment variables")
 
         self.config = {
-            'host': os.environ.get('DB_HOST'),
-            'database': os.environ.get('DB_NAME'),
-            'user': os.environ.get('DB_USER'),
-            'password': os.environ.get('DB_PASSWORD'),
-            'port': 5432
+            'host': os.environ.get('DB_HOST', 'dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com'),
+            'database': os.environ.get('DB_NAME', 'kotak_trading_db'),
+            'user': os.environ.get('DB_USER', 'kotak_trading_db_user'),
+            'password': os.environ.get('DB_PASSWORD', 'JRUlk8RutdgVcErSiUXqllDUdK8sBsYO'),
+            'port': int(os.environ.get('DB_PORT', 5432))
         }
 
-        # Build complete database URL
-        self.database_url = os.environ.get('DATABASE_URL')
+        # Build complete database URL - use new database credentials
+        self.database_url = os.environ.get('DATABASE_URL') or 'postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com:5432/kotak_trading_db'
 
     def _build_database_url(self) -> str:
         """Build database URL from individual components"""

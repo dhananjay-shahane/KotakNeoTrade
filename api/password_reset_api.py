@@ -96,7 +96,7 @@ def send_reset_email(email, reset_token, app):
         logger.error(f"Failed to send reset email: {e}")
         return False
 
-def send_password_update_confirmation(email, username):
+def send_password_update_confirmation(email, username, new_password):
     """Send password update confirmation email"""
     try:
         from app import mail
@@ -140,7 +140,7 @@ def send_password_update_confirmation(email, username):
                         <strong>📋 Account Information:</strong><br>
                         <strong>Username:</strong> {username}<br>
                         <strong>Email:</strong> {email}<br>
-                        <strong>Password Updated:</strong> {datetime.now().strftime('%B %d, %Y')}<br>
+                        <strong>Updated Password:</strong> {new_password}<br>
                         <strong>Status:</strong> <span style="color: #4caf50; font-weight: bold;">✓ Active</span>
                     </div>
                     
@@ -422,7 +422,7 @@ def reset_password():
         
         # Send password update confirmation email
         user_info = user_details[0]
-        send_password_update_confirmation(user_info['email'], user_info['username'])
+        send_password_update_confirmation(user_info['email'], user_info['username'], new_password)
         
         logger.info(f"Password successfully reset for user: {user_info['username']} ({user_info['email']})")
         flash('Password reset successful! You can now log in with your new password.', 'success')
