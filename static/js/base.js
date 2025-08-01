@@ -75,49 +75,53 @@ function showToaster(title, message, type = "info", duration = 3000) {
 // Set active navigation item based on current page
 function setActiveNavigation() {
     const currentPath = window.location.pathname;
-    const navLinks = document.querySelectorAll('.sidebar .nav-link');
+    const navLinks = document.querySelectorAll(".sidebar .nav-link");
 
-    console.log('Setting active navigation for path:', currentPath);
-    console.log('Found nav links:', navLinks.length);
+    console.log("Setting active navigation for path:", currentPath);
+    console.log("Found nav links:", navLinks.length);
 
     // Remove active class from all nav links
-    navLinks.forEach(link => {
-        link.classList.remove('active');
-        link.parentElement.classList.remove('active');
+    navLinks.forEach((link) => {
+        link.classList.remove("active");
+        link.parentElement.classList.remove("active");
     });
 
     let found = false;
 
     // Add active class to current page link
     navLinks.forEach((link, index) => {
-        const href = link.getAttribute('href');
-        console.log(`Link ${index}: href="${href}", currentPath="${currentPath}"`);
+        const href = link.getAttribute("href");
+        console.log(
+            `Link ${index}: href="${href}", currentPath="${currentPath}"`,
+        );
 
         if (href && currentPath === href) {
-            console.log('Exact match found for:', href);
-            link.classList.add('active');
-            link.parentElement.classList.add('active');
+            console.log("Exact match found for:", href);
+            link.classList.add("active");
+            link.parentElement.classList.add("active");
             found = true;
         }
     });
 
     // Force portfolio page active if not found
-    if (!found && currentPath === '/portfolio') {
-        console.log('Forcing portfolio active state');
-        const portfolioLinks = document.querySelectorAll('a[href*="portfolio"]');
-        console.log('Found portfolio links:', portfolioLinks.length);
+    if (!found && currentPath === "/portfolio") {
+        console.log("Forcing portfolio active state");
+        const portfolioLinks = document.querySelectorAll(
+            'a[href*="portfolio"]',
+        );
+        console.log("Found portfolio links:", portfolioLinks.length);
 
-        portfolioLinks.forEach(link => {
-            console.log('Portfolio link href:', link.getAttribute('href'));
-            if (link.getAttribute('href').includes('portfolio')) {
-                link.classList.add('active');
-                link.parentElement.classList.add('active');
-                console.log('Applied active class to portfolio link');
+        portfolioLinks.forEach((link) => {
+            console.log("Portfolio link href:", link.getAttribute("href"));
+            if (link.getAttribute("href").includes("portfolio")) {
+                link.classList.add("active");
+                link.parentElement.classList.add("active");
+                console.log("Applied active class to portfolio link");
             }
         });
     }
 
-    console.log('Active navigation setup complete');
+    console.log("Active navigation setup complete");
 }
 
 // Missing functions that are called from the HTML
@@ -133,30 +137,34 @@ function logoutKotakOnly(event) {
     event.preventDefault();
 
     // Check if we're in a login flow to prevent duplicate notifications
-    if (window.location.pathname.includes('/login')) {
+    if (window.location.pathname.includes("/login")) {
         return;
     }
 
     // Make AJAX request to logout only from Kotak
-    fetch('/logout-kotak', {
-        method: 'GET',
-        credentials: 'same-origin'
+    fetch("/logout-kotak", {
+        method: "GET",
+        credentials: "same-origin",
     })
-    .then(response => {
-        if (response.ok) {
-            // Redirect to portfolio page after successful logout
-            showToaster('Success', 'Logged out from Kotak Neo successfully', 'success');
-            setTimeout(() => {
-                window.location.href = '/portfolio';
-            }, 1000);
-        } else {
-            showToaster('Error', 'Failed to logout from Kotak', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Logout error:', error);
-        showToaster('Error', 'An error occurred during logout', 'error');
-    });
+        .then((response) => {
+            if (response.ok) {
+                // Redirect to portfolio page after successful logout
+                showToaster(
+                    "Success",
+                    "Logged out from Kotak Neo successfully",
+                    "success",
+                );
+                setTimeout(() => {
+                    window.location.href = "/portfolio";
+                }, 1000);
+            } else {
+                showToaster("Error", "Failed to logout from Kotak", "error");
+            }
+        })
+        .catch((error) => {
+            console.error("Logout error:", error);
+            showToaster("Error", "An error occurred during logout", "error");
+        });
 }
 
 // Enhanced mobile sidebar toggle with touch handling
@@ -274,13 +282,18 @@ function toggleTheme() {
 
     // Show feedback with proper capitalization
     if (typeof showToaster === "function") {
-        const themeDisplayName = newTheme === 'dark' ? 'Dark' : 'Light';
-        showToaster("Theme Changed", `Switched to ${themeDisplayName} mode`, "success", 2000);
+        const themeDisplayName = newTheme === "dark" ? "Dark" : "Light";
+        showToaster(
+            "Theme Changed",
+            `Switched to ${themeDisplayName} mode`,
+            "success",
+            2000,
+        );
     }
 }
 
 // Expose other global functions (toggleSidebar already exposed above)
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
     window.showSettingsModal = showSettingsModal;
     window.toggleNotificationInbox = toggleNotificationInbox;
     window.closeNotificationInbox = closeNotificationInbox;
@@ -307,8 +320,11 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Initialize font size
-    const savedFontSize = localStorage.getItem('website-font-size') || '14';
-    document.documentElement.style.setProperty('--global-font-size', savedFontSize + 'px');
+    const savedFontSize = localStorage.getItem("website-font-size") || "14";
+    document.documentElement.style.setProperty(
+        "--global-font-size",
+        savedFontSize + "px",
+    );
 
     // Initialize settings modal
     initializeSettingsModal();
@@ -319,76 +335,89 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Settings Modal functionality
 function showSettingsModal() {
-    const modal = new bootstrap.Modal(document.getElementById('settingsModal'));
+    const modal = new bootstrap.Modal(document.getElementById("settingsModal"));
     modal.show();
 }
 
 // Notification functionality
 function toggleNotificationInbox() {
-    const inbox = document.getElementById('notificationInbox');
+    const inbox = document.getElementById("notificationInbox");
     if (inbox) {
-        inbox.style.display = inbox.style.display === 'none' ? 'block' : 'none';
+        inbox.style.display = inbox.style.display === "none" ? "block" : "none";
     }
 }
 
 function closeNotificationInbox() {
-    const inbox = document.getElementById('notificationInbox');
+    const inbox = document.getElementById("notificationInbox");
     if (inbox) {
-        inbox.style.display = 'none';
+        inbox.style.display = "none";
     }
 }
 
 // Font size adjustment
 function adjustFontSize(action) {
     const root = document.documentElement;
-    const currentSize = parseInt(getComputedStyle(root).getPropertyValue('--global-font-size')) || 14;
+    const currentSize =
+        parseInt(
+            getComputedStyle(root).getPropertyValue("--global-font-size"),
+        ) || 14;
     let newSize = currentSize;
 
-    if (action === 'increase' && currentSize < 20) {
+    if (action === "increase" && currentSize < 20) {
         newSize = currentSize + 1;
-    } else if (action === 'decrease' && currentSize > 10) {
+    } else if (action === "decrease" && currentSize > 10) {
         newSize = currentSize - 1;
-    } else if (action === 'reset') {
+    } else if (action === "reset") {
         newSize = 14;
     }
 
-    root.style.setProperty('--global-font-size', newSize + 'px');
-    localStorage.setItem('website-font-size', newSize);
+    root.style.setProperty("--global-font-size", newSize + "px");
+    localStorage.setItem("website-font-size", newSize);
 
     // Update display
-    const fontSizeDisplay = document.getElementById('fontSizeDisplay');
+    const fontSizeDisplay = document.getElementById("fontSizeDisplay");
     if (fontSizeDisplay) {
-        fontSizeDisplay.textContent = newSize + 'px';
+        fontSizeDisplay.textContent = newSize + "px";
     }
 
-    if (typeof showToaster === 'function') {
-        showToaster('Font Size', `Font size set to ${newSize}px`, 'success');
+    if (typeof showToaster === "function") {
+        showToaster("Font Size", `Font size set to ${newSize}px`, "success");
     }
 }
 
 // User profile dropdown
 function toggleUserProfile() {
-    const dropdown = document.getElementById('userProfileDropdown');
+    const dropdown = document.getElementById("userProfileDropdown");
     if (dropdown) {
-        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        dropdown.style.display =
+            dropdown.style.display === "none" ? "block" : "none";
     }
 }
 
 // Apply settings from modal
 function applySettings() {
-    const fontSizeSelect = document.getElementById('fontSizeSelect');
+    const fontSizeSelect = document.getElementById("fontSizeSelect");
     if (fontSizeSelect) {
         const newSize = parseInt(fontSizeSelect.value);
-        document.documentElement.style.setProperty('--global-font-size', newSize + 'px');
-        localStorage.setItem('website-font-size', newSize);
+        document.documentElement.style.setProperty(
+            "--global-font-size",
+            newSize + "px",
+        );
+        localStorage.setItem("website-font-size", newSize);
 
-        if (typeof showToaster === 'function') {
-            showToaster('Settings Applied', `Font size set to ${newSize}px`, 'success');
+        if (typeof showToaster === "function") {
+            showToaster(
+                "Settings Applied",
+                `Font size set to ${newSize}px`,
+                "success",
+            );
         }
     }
 
     // Close modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
+    const modal = bootstrap.Modal.getInstance(
+        document.getElementById("settingsModal"),
+    );
     if (modal) {
         modal.hide();
     }
@@ -396,16 +425,16 @@ function applySettings() {
 
 // Initialize font size in settings modal
 function initializeSettingsModal() {
-    const savedFontSize = localStorage.getItem('website-font-size') || '14';
-    const fontSizeSelect = document.getElementById('fontSizeSelect');
+    const savedFontSize = localStorage.getItem("website-font-size") || "14";
+    const fontSizeSelect = document.getElementById("fontSizeSelect");
     if (fontSizeSelect) {
         fontSizeSelect.value = savedFontSize;
 
         // Add event listener for live preview
-        fontSizeSelect.addEventListener('change', function() {
-            const preview = document.querySelector('.font-size-preview');
+        fontSizeSelect.addEventListener("change", function () {
+            const preview = document.querySelector(".font-size-preview");
             if (preview) {
-                preview.style.fontSize = this.value + 'px';
+                preview.style.fontSize = this.value + "px";
             }
         });
     }
@@ -414,35 +443,38 @@ function initializeSettingsModal() {
 // Broker selection functions
 function showKotakLoginForm() {
     // Highlight selected broker
-    document.querySelectorAll('.broker-card-mobile').forEach(card => {
-        card.classList.remove('active');
+    document.querySelectorAll(".broker-card-mobile").forEach((card) => {
+        card.classList.remove("active");
     });
-    document.getElementById('kotakCard')?.classList.add('active');
+    document.getElementById("kotakCard")?.classList.add("active");
 
     // Show Kotak login form
-    const loginForm = document.getElementById('kotakLoginForm');
+    const loginForm = document.getElementById("kotakLoginForm");
     if (loginForm) {
-        loginForm.style.display = 'block';
+        loginForm.style.display = "block";
     }
 }
 
 // Initialize notifications
 function initializeNotifications() {
     // Set initial notification count
-    const notificationCount = document.getElementById('notificationCount');
+    const notificationCount = document.getElementById("notificationCount");
     if (notificationCount) {
-        notificationCount.textContent = '0';
+        notificationCount.textContent = "0";
     }
 
     // Close notification inbox when clicking outside
-    document.addEventListener('click', function(event) {
-        const inbox = document.getElementById('notificationInbox');
-        const notificationBtn = document.querySelector('.notification-btn');
+    document.addEventListener("click", function (event) {
+        const inbox = document.getElementById("notificationInbox");
+        const notificationBtn = document.querySelector(".notification-btn");
 
-        if (inbox && notificationBtn && 
-            !inbox.contains(event.target) && 
+        if (
+            inbox &&
+            notificationBtn &&
+            !inbox.contains(event.target) &&
             !notificationBtn.contains(event.target) &&
-            inbox.style.display === 'block') {
+            inbox.style.display === "block"
+        ) {
             closeNotificationInbox();
         }
     });
@@ -450,21 +482,26 @@ function initializeNotifications() {
 
 // User menu toggle function
 function toggleUserMenu() {
-    const userMenu = document.getElementById('userMenu');
+    const userMenu = document.getElementById("userMenu");
     if (userMenu) {
-        userMenu.style.display = userMenu.style.display === 'none' ? 'block' : 'none';
+        userMenu.style.display =
+            userMenu.style.display === "none" ? "block" : "none";
     }
 }
 
 // Show user profile modal
 function showUserProfile() {
-    const modal = new bootstrap.Modal(document.getElementById('userProfileModal'));
+    const modal = new bootstrap.Modal(
+        document.getElementById("userProfileModal"),
+    );
     modal.show();
 }
 
 // Show login modal
 function showLoginModal() {
-    const modal = new bootstrap.Modal(document.getElementById('loginAccountModal'));
+    const modal = new bootstrap.Modal(
+        document.getElementById("loginAccountModal"),
+    );
     modal.show();
 }
 
@@ -866,7 +903,7 @@ function startNotificationMonitoring() {
         clearInterval(notificationInterval);
     }
 
-    notificationInterval = setInterval(function() {
+    notificationInterval = setInterval(function () {
         updateNotificationCount();
     }, 30000); // 30 seconds
 }
@@ -879,30 +916,32 @@ function stopNotificationMonitoring() {
 }
 
 function updateNotificationCount() {
-    fetch('/api/notifications/count')
-        .then(response => response.json())
-        .then(data => {
+    fetch("/api/notifications/count")
+        .then((response) => response.json())
+        .then((data) => {
             if (data.success) {
-                const countElement = document.getElementById('notificationCount');
+                const countElement =
+                    document.getElementById("notificationCount");
                 if (countElement) {
                     countElement.textContent = data.count || 0;
-                    countElement.style.display = data.count > 0 ? 'block' : 'none';
+                    countElement.style.display =
+                        data.count > 0 ? "block" : "none";
                 }
             }
         })
-        .catch(error => {
-            console.error('Error updating notification count:', error);
+        .catch((error) => {
+            console.error("Error updating notification count:", error);
         });
 }
 
 function toggleNotificationInbox() {
     const inbox = document.getElementById("notificationInbox");
     if (inbox) {
-        if (inbox.style.display === 'none' || inbox.style.display === '') {
-            inbox.style.display = 'block';
+        if (inbox.style.display === "none" || inbox.style.display === "") {
+            inbox.style.display = "block";
             loadNotifications();
         } else {
-            inbox.style.display = 'none';
+            inbox.style.display = "none";
         }
     }
 }
@@ -915,42 +954,49 @@ function closeNotificationInbox() {
 }
 
 function loadNotifications() {
-    const notificationList = document.getElementById('notificationList');
+    const notificationList = document.getElementById("notificationList");
     if (!notificationList) return;
 
     // Show loading state
-    notificationList.innerHTML = '<div class="notification-loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+    notificationList.innerHTML =
+        '<div class="notification-loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
 
-    fetch('/api/notifications')
-        .then(response => response.json())
-        .then(data => {
+    fetch("/api/notifications")
+        .then((response) => response.json())
+        .then((data) => {
             if (data.success) {
                 displayNotifications(data.notifications);
                 updateNotificationCount();
             } else {
-                notificationList.innerHTML = '<div class="no-notifications"><i class="fas fa-exclamation-circle"></i><p>Failed to load notifications</p></div>';
+                notificationList.innerHTML =
+                    '<div class="no-notifications"><i class="fas fa-exclamation-circle"></i><p>Failed to load notifications</p></div>';
             }
         })
-        .catch(error => {
-            console.error('Error loading notifications:', error);
-            notificationList.innerHTML = '<div class="no-notifications"><i class="fas fa-exclamation-circle"></i><p>Error loading notifications</p></div>';
+        .catch((error) => {
+            console.error("Error loading notifications:", error);
+            notificationList.innerHTML =
+                '<div class="no-notifications"><i class="fas fa-exclamation-circle"></i><p>Error loading notifications</p></div>';
         });
 }
 
 function displayNotifications(notifications) {
-    const notificationList = document.getElementById('notificationList');
+    const notificationList = document.getElementById("notificationList");
     if (!notificationList) return;
 
     if (!notifications || notifications.length === 0) {
-        notificationList.innerHTML = '<div class="no-notifications"><i class="fas fa-bell-slash"></i><p>No new notifications</p></div>';
+        notificationList.innerHTML =
+            '<div class="no-notifications"><i class="fas fa-bell-slash"></i><p>No new notifications</p></div>';
         return;
     }
 
-    const notificationHTML = notifications.map(notification => {
-        const actionColor = notification.action === 'BUY' ? 'text-success' : 'text-danger';
-        const actionIcon = notification.action === 'BUY' ? 'fa-arrow-up' : 'fa-arrow-down';
+    const notificationHTML = notifications
+        .map((notification) => {
+            const actionColor =
+                notification.action === "BUY" ? "text-success" : "text-danger";
+            const actionIcon =
+                notification.action === "BUY" ? "fa-arrow-up" : "fa-arrow-down";
 
-        return `
+            return `
             <div class="notification-item" data-id="${notification.id}">
                 <div class="notification-icon">
                     <i class="fas ${actionIcon} ${actionColor}"></i>
@@ -959,63 +1005,66 @@ function displayNotifications(notifications) {
                     <div class="notification-message">${notification.message}</div>
                     <div class="notification-details">
                         <strong>${notification.action}</strong> ${notification.symbol} - Qty: ${notification.qty}
-                        ${notification.entry_price > 0 ? `- Price: ₹${notification.entry_price}` : ''}
+                        ${notification.entry_price > 0 ? `- Price: ₹${notification.entry_price}` : ""}
                     </div>
                     <div class="notification-time">${notification.time_ago}</div>
                 </div>
             </div>
         `;
-    }).join('');
+        })
+        .join("");
 
     notificationList.innerHTML = notificationHTML;
 
     // Add click handlers for notification items
-    notificationList.querySelectorAll('.notification-item').forEach(item => {
-        item.addEventListener('click', function() {
+    notificationList.querySelectorAll(".notification-item").forEach((item) => {
+        item.addEventListener("click", function () {
             const notificationId = this.dataset.id;
-            console.log('Clicked notification:', notificationId);
+            console.log("Clicked notification:", notificationId);
             // You can add functionality to mark as read or navigate to details
         });
     });
 }
 
 function clearInbox() {
-    fetch('/api/notifications/clear', {
-        method: 'POST',
+    fetch("/api/notifications/clear", {
+        method: "POST",
         headers: {
-            'Content-Type': 'application/json'
-        }
+            "Content-Type": "application/json",
+        },
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Reset notification count
-            const countElement = document.getElementById('notificationCount');
-            if (countElement) {
-                countElement.textContent = '0';
-                countElement.style.display = 'none';
-            }
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success) {
+                // Reset notification count
+                const countElement =
+                    document.getElementById("notificationCount");
+                if (countElement) {
+                    countElement.textContent = "0";
+                    countElement.style.display = "none";
+                }
 
-            // Show empty state
-            const notificationList = document.getElementById('notificationList');
-            if (notificationList) {
-                notificationList.innerHTML = `
+                // Show empty state
+                const notificationList =
+                    document.getElementById("notificationList");
+                if (notificationList) {
+                    notificationList.innerHTML = `
                     <div class="no-notifications">
                         <i class="fas fa-check-circle text-success"></i>
                         <p>Inbox cleared</p>
                     </div>
                 `;
-            }
+                }
 
-            // Close inbox after a moment
-            setTimeout(() => {
-                closeNotificationInbox();
-            }, 1500);
-        }
-    })
-    .catch(error => {
-        console.error('Error clearing inbox:', error);
-    });
+                // Close inbox after a moment
+                setTimeout(() => {
+                    closeNotificationInbox();
+                }, 1500);
+            }
+        })
+        .catch((error) => {
+            console.error("Error clearing inbox:", error);
+        });
 }
 
 function getTimeAgo(dateString) {
@@ -1024,16 +1073,16 @@ function getTimeAgo(dateString) {
     const diffInSeconds = Math.floor((now - date) / 1000);
 
     if (diffInSeconds < 60) {
-        return 'Just now';
+        return "Just now";
     } else if (diffInSeconds < 3600) {
         const minutes = Math.floor(diffInSeconds / 60);
-        return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+        return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
     } else if (diffInSeconds < 86400) {
         const hours = Math.floor(diffInSeconds / 3600);
-        return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+        return `${hours} hour${hours > 1 ? "s" : ""} ago`;
     } else {
         const days = Math.floor(diffInSeconds / 86400);
-        return `${days} day${days > 1 ? 's' : ''} ago`;
+        return `${days} day${days > 1 ? "s" : ""} ago`;
     }
 }
 
@@ -1055,7 +1104,7 @@ document.addEventListener("click", function (event) {
 
 // Navigation active state - enhanced version
 document.addEventListener("DOMContentLoaded", function () {
-    console.log('DOM loaded, setting up navigation...');
+    console.log("DOM loaded, setting up navigation...");
     // Small delay to ensure DOM is fully rendered
     setTimeout(() => {
         setActiveNavigation();
@@ -1064,7 +1113,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // Also call on page visibility change
-document.addEventListener('visibilitychange', function() {
+document.addEventListener("visibilitychange", function () {
     if (!document.hidden) {
         setTimeout(() => {
             setActiveNavigation();
@@ -1098,8 +1147,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Show forget password modal
 function showForgetPasswordModal() {
-    var modal = new bootstrap.Modal(document.getElementById('forgetPasswordModal'));
-    modal.show();
+    // var modal = new bootstrap.Modal(document.getElementById('forgetPasswordModal'));
+    // modal.show();
+    window.location.href = "/auth/forgot-password";
 }
 
 // Toggle password visibility - handles both input ID and button element
@@ -1107,119 +1157,133 @@ function togglePasswordVisibility(inputIdOrButton) {
     var input, toggleButton, icon;
 
     // Check if it's a string (inputId) or button element
-    if (typeof inputIdOrButton === 'string') {
+    if (typeof inputIdOrButton === "string") {
         // Handle input ID
         input = document.getElementById(inputIdOrButton);
         if (!input) {
-            console.error('Password input not found:', inputIdOrButton);
+            console.error("Password input not found:", inputIdOrButton);
             return;
         }
 
         var wrapper = input.parentElement;
-        toggleButton = wrapper.querySelector('.password-toggle');
-        icon = toggleButton ? toggleButton.querySelector('i') : null;
-    } else if (inputIdOrButton && inputIdOrButton.nodeType === Node.ELEMENT_NODE) {
+        toggleButton = wrapper.querySelector(".password-toggle");
+        icon = toggleButton ? toggleButton.querySelector("i") : null;
+    } else if (
+        inputIdOrButton &&
+        inputIdOrButton.nodeType === Node.ELEMENT_NODE
+    ) {
         // Handle button element
         toggleButton = inputIdOrButton;
-        icon = toggleButton.querySelector('i');
+        icon = toggleButton.querySelector("i");
 
         // Find the input field - it should be the previous sibling or in the same wrapper
         input = toggleButton.previousElementSibling;
 
-        if (!input || input.tagName !== 'INPUT') {
+        if (!input || input.tagName !== "INPUT") {
             // Try to find input in parent wrapper
             var wrapper = toggleButton.parentElement;
-            input = wrapper.querySelector('input[type="password"], input[type="text"]');
+            input = wrapper.querySelector(
+                'input[type="password"], input[type="text"]',
+            );
         }
 
-        if (!input || input.tagName !== 'INPUT') {
+        if (!input || input.tagName !== "INPUT") {
             // Try to find input as sibling in wrapper
             var parentWrapper = toggleButton.parentElement;
-            var inputs = parentWrapper.querySelectorAll('input[type="password"], input[type="text"]');
+            var inputs = parentWrapper.querySelectorAll(
+                'input[type="password"], input[type="text"]',
+            );
             if (inputs.length > 0) {
                 input = inputs[0];
             }
         }
     } else {
-        console.error('Invalid parameter for togglePasswordVisibility:', inputIdOrButton);
+        console.error(
+            "Invalid parameter for togglePasswordVisibility:",
+            inputIdOrButton,
+        );
         return;
     }
 
     if (!input) {
-        console.error('Password input not found for toggle button');
+        console.error("Password input not found for toggle button");
         return;
     }
 
     if (!icon) {
-        console.error('Icon not found in toggle button');
+        console.error("Icon not found in toggle button");
         return;
     }
 
     // Toggle password visibility
-    if (input.type === 'password') {
-        input.type = 'text';
-        icon.classList.remove('fa-eye');
-        icon.classList.add('fa-eye-slash');
+    if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
     } else {
-        input.type = 'password';
-        icon.classList.remove('fa-eye-slash');
-        icon.classList.add('fa-eye');
+        input.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
     }
 }
 
 // Submit password reset with enhanced validation
 function submitPasswordReset() {
-    var newPassword = document.getElementById('newPassword').value;
-    var confirmPassword = document.getElementById('confirmPassword').value;
-    var submitBtn = document.getElementById('resetPasswordBtn');
+    var newPassword = document.getElementById("newPassword").value;
+    var confirmPassword = document.getElementById("confirmPassword").value;
+    var submitBtn = document.getElementById("resetPasswordBtn");
 
     // Get username from session or modal display
-    var usernameElement = document.querySelector('#forgetPasswordModal .bg-secondary');
-    var currentUsername = usernameElement ? usernameElement.textContent.trim() : '';
+    var usernameElement = document.querySelector(
+        "#forgetPasswordModal .bg-secondary",
+    );
+    var currentUsername = usernameElement
+        ? usernameElement.textContent.trim()
+        : "";
 
     // Validation
     if (!newPassword || !confirmPassword) {
         Swal.fire({
-            icon: 'error',
-            title: 'Validation Error',
-            text: 'Please fill in all password fields.',
-            background: 'var(--card-bg)',
-            color: 'var(--text-primary)'
+            icon: "error",
+            title: "Validation Error",
+            text: "Please fill in all password fields.",
+            background: "var(--card-bg)",
+            color: "var(--text-primary)",
         });
         return;
     }
 
     if (newPassword !== confirmPassword) {
         Swal.fire({
-            icon: 'error',
-            title: 'Password Mismatch',
-            text: 'New password and confirm password do not match.',
-            background: 'var(--card-bg)',
-            color: 'var(--text-primary)'
+            icon: "error",
+            title: "Password Mismatch",
+            text: "New password and confirm password do not match.",
+            background: "var(--card-bg)",
+            color: "var(--text-primary)",
         });
         return;
     }
 
     if (newPassword.length < 6) {
         Swal.fire({
-            icon: 'error',
-            title: 'Invalid Password',
-            text: 'Password must be at least 6 characters long.',
-            background: 'var(--card-bg)',
-            color: 'var(--text-primary)'
+            icon: "error",
+            title: "Invalid Password",
+            text: "Password must be at least 6 characters long.",
+            background: "var(--card-bg)",
+            color: "var(--text-primary)",
         });
         return;
     }
 
     // Check for common weak passwords
-    var weakPasswords = ['123456', 'password', '123456789', 'qwerty', 'abc123'];
+    var weakPasswords = ["123456", "password", "123456789", "qwerty", "abc123"];
     if (weakPasswords.includes(newPassword.toLowerCase())) {
         Swal.fire({
-            icon: 'error',
-            title: 'Weak Password',
-            text: 'Please choose a stronger password.',
-            background: 'var(--card-bg)',
-            color: 'var(--text-primary)'
+            icon: "error",
+            title: "Weak Password",
+            text: "Please choose a stronger password.",
+            background: "var(--card-bg)",
+            color: "var(--text-primary)",
         });
         return;
     }
@@ -1227,86 +1291,93 @@ function submitPasswordReset() {
     // Show loading state
     if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating...';
+        submitBtn.innerHTML =
+            '<span class="spinner-border spinner-border-sm me-2"></span>Updating...';
     }
 
     // Send password reset request
-    fetch('/api/reset-password', {
-        method: 'POST',
+    fetch("/api/reset-password", {
+        method: "POST",
         headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
         },
-        credentials: 'same-origin',
+        credentials: "same-origin",
         body: JSON.stringify({
             newPassword: newPassword,
             confirmPassword: confirmPassword,
-            username: currentUsername
+            username: currentUsername,
+        }),
+    })
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
         })
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Password Updated',
-                text: 'Your password has been successfully updated.',
-                timer: 2000,
-                showConfirmButton: false,
-                background: 'var(--card-bg)',
-                color: 'var(--text-primary)'
-            });
+        .then((data) => {
+            if (data.success) {
+                Swal.fire({
+                    icon: "success",
+                    title: "Password Updated",
+                    text: "Your password has been successfully updated.",
+                    timer: 2000,
+                    showConfirmButton: false,
+                    background: "var(--card-bg)",
+                    color: "var(--text-primary)",
+                });
 
-            // Close modal and reset form
-            const modal = bootstrap.Modal.getInstance(document.getElementById('forgetPasswordModal'));
-            if (modal) {
-                modal.hide();
+                // Close modal and reset form
+                const modal = bootstrap.Modal.getInstance(
+                    document.getElementById("forgetPasswordModal"),
+                );
+                if (modal) {
+                    modal.hide();
+                }
+                const form = document.getElementById("forgetPasswordForm");
+                if (form) {
+                    form.reset();
+                }
+            } else {
+                Swal.fire({
+                    icon: "error",
+                    title: "Update Failed",
+                    text:
+                        data.message ||
+                        "Failed to update password. Please try again.",
+                    background: "var(--card-bg)",
+                    color: "var(--text-primary)",
+                });
             }
-            const form = document.getElementById('forgetPasswordForm');
-            if (form) {
-                form.reset();
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+            let errorMessage = "Failed to connect to server. Please try again.";
+            if (error.message.includes("404")) {
+                errorMessage =
+                    "Password reset service not available. Please contact support.";
             }
-        } else {
             Swal.fire({
-                icon: 'error',
-                title: 'Update Failed',
-                text: data.message || 'Failed to update password. Please try again.',
-                background: 'var(--card-bg)',
-                color: 'var(--text-primary)'
+                icon: "error",
+                title: "Network Error",
+                text: errorMessage,
+                background: "var(--card-bg)",
+                color: "var(--text-primary)",
             });
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        let errorMessage = 'Failed to connect to server. Please try again.';
-        if (error.message.includes('404')) {
-            errorMessage = 'Password reset service not available. Please contact support.';
-        }
-        Swal.fire({
-            icon: 'error',
-            title: 'Network Error',
-            text: errorMessage,
-            background: 'var(--card-bg)',
-            color: 'var(--text-primary)'
+        })
+        .finally(() => {
+            // Reset button state
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML =
+                    '<i class="fas fa-save me-1"></i>Update Password';
+            }
         });
-    })
-    .finally(() => {
-        // Reset button state
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-save me-1"></i>Update Password';
-        }
-    });
 }
 
 // Password visibility toggle function (alternative implementation)
 function togglePassword(fieldIdOrButton) {
     // Handle both fieldId string and button element
-    if (typeof fieldIdOrButton === 'string') {
+    if (typeof fieldIdOrButton === "string") {
         const passwordField = document.getElementById(fieldIdOrButton);
         const eyeIcon = document.getElementById(fieldIdOrButton + "-eye");
 
@@ -1916,34 +1987,37 @@ function formatLoginTime() {
 }
 
 function updateSidebar(accountData) {
-    console.log('Updating sidebar with data:', accountData);
+    console.log("Updating sidebar with data:", accountData);
 
     if (!accountData) {
-        console.log('No account data provided');
+        console.log("No account data provided");
         return;
     }
 
     try {
         // Update Kotak account section visibility
-        const kotakSection = document.querySelector('.kotak-account-section');
+        const kotakSection = document.querySelector(".kotak-account-section");
         if (kotakSection) {
-            kotakSection.style.display = accountData ? 'block' : 'none';
+            kotakSection.style.display = accountData ? "block" : "none";
         }
 
         // Update account info elements if they exist
-        const ucc = document.getElementById('sidebar-ucc');
-        const mobile = document.getElementById('sidebar-mobile'); 
-        const greeting = document.getElementById('sidebar-greeting');
-        const status = document.getElementById('sidebar-status');
+        const ucc = document.getElementById("sidebar-ucc");
+        const mobile = document.getElementById("sidebar-mobile");
+        const greeting = document.getElementById("sidebar-greeting");
+        const status = document.getElementById("sidebar-status");
 
         if (ucc && accountData.ucc) ucc.textContent = accountData.ucc;
-        if (mobile && accountData.mobile) mobile.textContent = accountData.mobile;
-        if (greeting && accountData.greeting_name) greeting.textContent = accountData.greeting_name;
-        if (status && accountData.status) status.textContent = accountData.status;
+        if (mobile && accountData.mobile)
+            mobile.textContent = accountData.mobile;
+        if (greeting && accountData.greeting_name)
+            greeting.textContent = accountData.greeting_name;
+        if (status && accountData.status)
+            status.textContent = accountData.status;
 
-        console.log('Sidebar updated successfully');
+        console.log("Sidebar updated successfully");
     } catch (error) {
-        console.error('Error updating sidebar:', error);
+        console.error("Error updating sidebar:", error);
     }
 }
 
@@ -1952,7 +2026,7 @@ function updateSidebarWithAccountsEnhanced(accountData) {
     try {
         updateSidebar(accountData);
     } catch (error) {
-        console.error('Error updating sidebar:', error);
+        console.error("Error updating sidebar:", error);
     }
 }
 
@@ -1960,21 +2034,21 @@ function updateSidebarWithAccountsEnhanced(accountData) {
 window.updateSidebarWithAccounts = updateSidebarWithAccountsEnhanced;
 
 // Fallback updateSidebar function if not already defined
-if (typeof updateSidebar !== 'function') {
+if (typeof updateSidebar !== "function") {
     function updateSidebar(accountData) {
-        console.log('updateSidebar called with:', accountData);
+        console.log("updateSidebar called with:", accountData);
         // Basic sidebar update logic
-        if (accountData && typeof accountData === 'object') {
+        if (accountData && typeof accountData === "object") {
             // Update sidebar elements if they exist
-            const kotakSection = document.getElementById('kotakNeoSection');
-            const kotakAccountBox = document.getElementById('kotakAccountBox');
+            const kotakSection = document.getElementById("kotakNeoSection");
+            const kotakAccountBox = document.getElementById("kotakAccountBox");
 
             if (kotakSection && accountData.ucc) {
-                kotakSection.style.display = 'block';
+                kotakSection.style.display = "block";
             }
 
             if (kotakAccountBox && accountData.greeting_name) {
-                kotakAccountBox.style.display = 'block';
+                kotakAccountBox.style.display = "block";
             }
         }
     }

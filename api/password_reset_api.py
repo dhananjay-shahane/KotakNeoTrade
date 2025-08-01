@@ -20,22 +20,22 @@ logger = logging.getLogger(__name__)
 # Create blueprint
 password_reset_bp = Blueprint('password_reset', __name__, url_prefix='/auth')
 
+
 def send_reset_email(email, reset_token, app):
     """Send password reset email using Flask-Mail"""
     try:
         from app import mail
-        
+
         # Get the base URL for the reset link
         base_url = request.url_root.rstrip('/')
         reset_url = f"{base_url}/auth/reset-password?token={reset_token}"
-        
+
         # Create email message
-        msg = Message(
-            subject='Password Reset Request - Kotak Neo Trading',
-            sender=os.environ.get('MAIL_USERNAME', 'noreply@kotakneo.com'),
-            recipients=[email]
-        )
-        
+        msg = Message(subject='Password Reset Request - Kotak Neo Trading',
+                      sender=os.environ.get('MAIL_USERNAME',
+                                            'noreply@kotakneo.com'),
+                      recipients=[email])
+
         # HTML email template
         msg.html = f"""
         <!DOCTYPE html>
@@ -86,28 +86,28 @@ def send_reset_email(email, reset_token, app):
         </body>
         </html>
         """
-        
+
         # Send the email
         mail.send(msg)
         logger.info(f"Password reset email sent to {email}")
         return True
-        
+
     except Exception as e:
         logger.error(f"Failed to send reset email: {e}")
         return False
+
 
 def send_password_update_confirmation(email, username, new_password):
     """Send password update confirmation email"""
     try:
         from app import mail
-        
+
         # Create email message
         msg = Message(
             subject='Password Successfully Updated - Kotak Neo Trading',
             sender=os.environ.get('MAIL_USERNAME', 'noreply@kotakneo.com'),
-            recipients=[email]
-        )
-        
+            recipients=[email])
+
         # Professional email template
         msg.html = f"""
         <!DOCTYPE html>
@@ -130,7 +130,6 @@ def send_password_update_confirmation(email, username, new_password):
                 <div class="header">
                     <h1>✅ Password Successfully Updated!</h1>
                     <p>Kotak Neo Trading Platform</p>
-                    <div class="success-badge">Password Reset Complete</div>
                 </div>
                 <div class="content">
                     <h2>🎉 Your Password Has Been Updated</h2>
@@ -139,19 +138,9 @@ def send_password_update_confirmation(email, username, new_password):
                     <div class="user-details">
                         <strong>📋 Account Information:</strong><br>
                         <strong>Username:</strong> {username}<br>
-                        <strong>Email:</strong> {email}<br>
                         <strong>Updated Password:</strong> {new_password}<br>
+                        <strong>Email:</strong> {email}<br>
                         <strong>Status:</strong> <span style="color: #4caf50; font-weight: bold;">✓ Active</span>
-                    </div>
-                    
-                    <div class="login-info">
-                        <strong>🔑 Login Instructions:</strong>
-                        <ul style="margin: 10px 0; padding-left: 20px;">
-                            <li>Use your <strong>username: {username}</strong></li>
-                            <li>Enter the <strong>new password</strong> you just created</li>
-                            <li>Your login credentials are now updated in the system</li>
-                            <li>You can access your account immediately</li>
-                        </ul>
                     </div>
                     
                     <div class="security-note">
@@ -179,51 +168,57 @@ def send_password_update_confirmation(email, username, new_password):
         </body>
         </html>
         """
-        
+
         # Send the email
         mail.send(msg)
         logger.info(f"Password update confirmation sent to {email}")
         return True
-        
+
     except Exception as e:
         logger.error(f"Failed to send password update confirmation: {e}")
         return False
+
 
 def create_password_reset_token(username, expiry_minutes=15):
     """Create a secure password reset token"""
     try:
         # Generate secure token
-        raw_token = secrets.token_urlsafe(48)  # 64 characters when base64 encoded
+        raw_token = secrets.token_urlsafe(
+            48)  # 64 characters when base64 encoded
         token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
         expires_at = datetime.now() + timedelta(minutes=expiry_minutes)
-        
+
         # First, invalidate any existing tokens for this user
         invalidate_query = """
         UPDATE password_reset_tokens 
         SET used = true 
         WHERE username = %s AND used = false
         """
-        execute_db_query(invalidate_query, (username,), fetch_results=False)
-        
+        execute_db_query(invalidate_query, (username, ), fetch_results=False)
+
         # Create new token record
         insert_query = """
         INSERT INTO password_reset_tokens (username, token_hash, expires_at, used, created_at)
         VALUES (%s, %s, %s, %s, %s)
         """
-        execute_db_query(insert_query, (username, token_hash, expires_at, False, datetime.now()), fetch_results=False)
-        
+        execute_db_query(
+            insert_query,
+            (username, token_hash, expires_at, False, datetime.now()),
+            fetch_results=False)
+
         logger.info(f"Password reset token created for user {username}")
         return raw_token
-        
+
     except Exception as e:
         logger.error(f"Failed to create reset token: {e}")
         return None
+
 
 def validate_reset_token(token):
     """Validate a password reset token"""
     try:
         token_hash = hashlib.sha256(token.encode()).hexdigest()
-        
+
         # Check if token exists and is valid
         query = """
         SELECT prt.*, eu.sr as user_id, eu.email, eu.username 
@@ -231,36 +226,38 @@ def validate_reset_token(token):
         JOIN external_users eu ON prt.username = eu.username
         WHERE prt.token_hash = %s AND prt.used = false AND prt.expires_at > %s
         """
-        
+
         result = execute_db_query(query, (token_hash, datetime.now()))
-        
+
         if result and len(result) > 0:
             return result[0], None
         else:
             return None, "Invalid or expired token"
-            
+
     except Exception as e:
         logger.error(f"Token validation failed: {e}")
         return None, "Token validation error"
+
 
 def mark_token_as_used(token):
     """Mark a reset token as used"""
     try:
         token_hash = hashlib.sha256(token.encode()).hexdigest()
-        
+
         update_query = """
         UPDATE password_reset_tokens 
         SET used = true 
         WHERE token_hash = %s
         """
-        execute_db_query(update_query, (token_hash,), fetch_results=False)
-        
+        execute_db_query(update_query, (token_hash, ), fetch_results=False)
+
         logger.info("Reset token marked as used")
         return True
-        
+
     except Exception as e:
         logger.error(f"Failed to mark token as used: {e}")
         return False
+
 
 # Create password_reset_tokens table if it doesn't exist
 def ensure_reset_table_exists():
@@ -274,21 +271,23 @@ def ensure_reset_table_exists():
         AND table_schema = 'public'
         ORDER BY ordinal_position;
         """
-        
+
         existing_columns = execute_db_query(check_table_query)
-        column_names = [col['column_name'] for col in existing_columns] if existing_columns else []
-        
+        column_names = [col['column_name'] for col in existing_columns
+                        ] if existing_columns else []
+
         if 'user_id' in column_names and 'username' not in column_names:
             # Migrate existing table structure
-            logger.info("Migrating password_reset_tokens table to use username...")
-            
+            logger.info(
+                "Migrating password_reset_tokens table to use username...")
+
             # Add username column
             alter_query = """
             ALTER TABLE password_reset_tokens 
             ADD COLUMN IF NOT EXISTS username VARCHAR(50);
             """
             execute_db_query(alter_query, fetch_results=False)
-            
+
             # Update existing records to use username from external_users
             update_query = """
             UPDATE password_reset_tokens 
@@ -298,16 +297,16 @@ def ensure_reset_table_exists():
             AND password_reset_tokens.username IS NULL;
             """
             execute_db_query(update_query, fetch_results=False)
-            
+
             # Drop the old user_id column and its index
             drop_queries = """
             DROP INDEX IF EXISTS idx_password_reset_tokens_user_id;
             ALTER TABLE password_reset_tokens DROP COLUMN IF EXISTS user_id;
             """
             execute_db_query(drop_queries, fetch_results=False)
-            
+
             logger.info("✓ Table migration completed")
-        
+
         # Create table with new structure if it doesn't exist
         create_table_query = """
         CREATE TABLE IF NOT EXISTS password_reset_tokens (
@@ -322,110 +321,124 @@ def ensure_reset_table_exists():
         CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_hash ON password_reset_tokens(token_hash);
         CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_username ON password_reset_tokens(username);
         """
-        
+
         execute_db_query(create_table_query, fetch_results=False)
-        logger.info("✓ Password reset tokens table ensured with username column")
-        
+        logger.info(
+            "✓ Password reset tokens table ensured with username column")
+
     except Exception as e:
         logger.error(f"Failed to create/migrate reset tokens table: {e}")
 
+
 # Initialize table on module load
 ensure_reset_table_exists()
+
 
 @password_reset_bp.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
     """Handle forgot password requests"""
     if request.method == 'GET':
         return render_template('auth/forgot_password.html')
-    
+
     try:
         username_or_email = request.form.get('username_or_email', '').strip()
-        
+
         if not username_or_email:
             flash('Please enter your username or email address.', 'error')
             return render_template('auth/forgot_password.html')
-        
+
         # Search for user by username or email in external_users table
         user_query = """
         SELECT sr as id, email, username 
         FROM external_users 
         WHERE username = %s OR email = %s
         """
-        
-        users = execute_db_query(user_query, (username_or_email, username_or_email))
-        
+
+        users = execute_db_query(user_query,
+                                 (username_or_email, username_or_email))
+
         # Always show the same message for security (don't reveal if account exists)
         message = "If the account exists, a password reset link will be sent to your registered email."
-        
+
         if users and len(users) > 0:
             user = users[0]
-            
+
             # Create reset token using username
             reset_token = create_password_reset_token(user['username'])
-            
+
             if reset_token:
                 # Send reset email
                 from app import app
                 email_sent = send_reset_email(user['email'], reset_token, app)
-                
+
                 if email_sent:
-                    logger.info(f"Password reset initiated for user: {user['username']}")
+                    logger.info(
+                        f"Password reset initiated for user: {user['username']}"
+                    )
                 else:
-                    logger.error(f"Failed to send reset email for user: {user['username']}")
-        
+                    logger.error(
+                        f"Failed to send reset email for user: {user['username']}"
+                    )
+
         # Always show success message (security best practice)
         flash(message, 'success')
         return render_template('auth/forgot_password.html')
-        
+
     except Exception as e:
         logger.error(f"Forgot password error: {e}")
-        flash('An error occurred while processing your request. Please try again.', 'error')
+        flash(
+            'An error occurred while processing your request. Please try again.',
+            'error')
         return render_template('auth/forgot_password.html')
+
 
 @password_reset_bp.route('/reset-password', methods=['GET', 'POST'])
 def reset_password():
     """Handle password reset with token"""
     token = request.args.get('token') or request.form.get('token')
-    
+
     if not token:
-        flash('Invalid reset link. Please request a new password reset.', 'error')
+        flash('Invalid reset link. Please request a new password reset.',
+              'error')
         return redirect(url_for('password_reset.forgot_password'))
-    
+
     if request.method == 'GET':
         # Validate token before showing the form
         token_data, error = validate_reset_token(token)
-        
+
         if error:
             # Show expired link page instead of redirecting to forgot password
-            return render_template('auth/expired_link.html', error_message=error)
-        
+            return render_template('auth/expired_link.html',
+                                   error_message=error)
+
         return render_template('auth/reset_password.html', token=token)
-    
+
     # POST request - process password reset
     try:
         new_password = request.form.get('new_password', '').strip()
         confirm_password = request.form.get('confirm_password', '').strip()
-        
+
         # Validate passwords
         if not new_password or not confirm_password:
             flash('Please fill in all password fields.', 'error')
             return render_template('auth/reset_password.html', token=token)
-        
+
         if new_password != confirm_password:
             flash('Passwords do not match. Please try again.', 'error')
             return render_template('auth/reset_password.html', token=token)
-        
+
         if len(new_password) < 8:
             flash('Password must be at least 8 characters long.', 'error')
             return render_template('auth/reset_password.html', token=token)
-        
+
         # Validate token again
         token_data, error = validate_reset_token(token)
-        
+
         if error:
             # Show expired link page instead of redirecting to forgot password
-            return render_template('auth/expired_link.html', error_message=error)
-        
+            return render_template('auth/expired_link.html',
+                                   error_message=error)
+
         # Update user password in external_users table
         # Note: Using plain password to match existing auth system
         update_query = """
@@ -433,48 +446,61 @@ def reset_password():
         SET password = %s
         WHERE sr = %s
         """
-        
+
         # Execute the update query
-        update_result = execute_db_query(update_query, (new_password, token_data['user_id']), fetch_results=False)
-        
+        update_result = execute_db_query(update_query,
+                                         (new_password, token_data['user_id']),
+                                         fetch_results=False)
+
         # Verify the password was actually updated
         verify_query = """
         SELECT password FROM external_users WHERE sr = %s
         """
-        verification = execute_db_query(verify_query, (token_data['user_id'],))
-        
+        verification = execute_db_query(verify_query,
+                                        (token_data['user_id'], ))
+
         if not verification or verification[0]['password'] != new_password:
-            flash('Failed to update password in database. Please try again.', 'error')
+            flash('Failed to update password in database. Please try again.',
+                  'error')
             return render_template('auth/reset_password.html', token=token)
-        
+
         # Get user details for confirmation email
         user_query = """
         SELECT username, email 
         FROM external_users 
         WHERE sr = %s
         """
-        
-        user_details = execute_db_query(user_query, (token_data['user_id'],))
-        
+
+        user_details = execute_db_query(user_query, (token_data['user_id'], ))
+
         if not user_details or len(user_details) == 0:
-            flash('Password updated but could not send confirmation email.', 'warning')
+            flash('Password updated but could not send confirmation email.',
+                  'warning')
             return redirect(url_for('auth_routes.trading_account_login'))
-        
+
         # Mark token as used
         mark_token_as_used(token)
-        
+
         # Send password update confirmation email
         user_info = user_details[0]
-        send_password_update_confirmation(user_info['email'], user_info['username'], new_password)
-        
-        logger.info(f"Password successfully reset for user: {user_info['username']} ({user_info['email']})")
-        flash('Password reset successful! You can now log in with your new password.', 'success')
+        send_password_update_confirmation(user_info['email'],
+                                          user_info['username'], new_password)
+
+        logger.info(
+            f"Password successfully reset for user: {user_info['username']} ({user_info['email']})"
+        )
+        flash(
+            'Password reset successful! You can now log in with your new password.',
+            'success')
         return redirect(url_for('auth_routes.trading_account_login'))
-        
+
     except Exception as e:
         logger.error(f"Password reset error: {e}")
-        flash('An error occurred while resetting your password. Please try again.', 'error')
+        flash(
+            'An error occurred while resetting your password. Please try again.',
+            'error')
         return render_template('auth/reset_password.html', token=token)
+
 
 # Health check endpoint
 @password_reset_bp.route('/reset-status')
@@ -484,12 +510,18 @@ def reset_status():
         # Test database connection
         test_query = "SELECT 1"
         result = execute_db_query(test_query)
-        
+
         if result:
-            return jsonify({"status": "ok", "message": "Password reset system operational"})
+            return jsonify({
+                "status": "ok",
+                "message": "Password reset system operational"
+            })
         else:
-            return jsonify({"status": "error", "message": "Database connection failed"}), 500
-            
+            return jsonify({
+                "status": "error",
+                "message": "Database connection failed"
+            }), 500
+
     except Exception as e:
         logger.error(f"Reset status check failed: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500

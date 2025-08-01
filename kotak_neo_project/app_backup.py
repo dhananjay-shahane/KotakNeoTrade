@@ -636,7 +636,7 @@ def get_default_deals_data():
             "Default deals API: Fetching data from admin_trade_signals table")
 
         # Connect to external database using the same connection as ETF signals
-        connection_string = "postgresql://kotak_trading_db_user:JRUlk8RutdgVcErSiUXqljDUdK8sBsYO@dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com/kotak_trading_db"
+        connection_string = os.environ.get('DATABASE_URL')
 
         import psycopg2
         from psycopg2.extras import RealDictCursor
@@ -1123,73 +1123,6 @@ if __name__ == '__main__':
 from Scripts.sync_default_deals import setup_auto_sync_triggers
 
 setup_auto_sync_triggers()
-
-# Google Finance CMP update endpoint removed - using Kotak Neo API only
-
-# Specific symbols CMP update endpoint removed - using Kotak Neo API only
-
-# Comprehensive calculations endpoint removed - using Kotak Neo API only
-
-
-@app.route('/api/calculate-symbol-metrics/<symbol>', methods=['GET'])
-def calculate_symbol_metrics(symbol):
-    """API endpoint to calculate metrics for a specific symbol"""
-    try:
-        from Scripts.trading_calculations import TradingCalculations
-
-        db_config = {
-            'host': "dpg-d1cjd66r433s73fsp4n0-a.oregon-postgres.render.com",
-            'database': "kotak_trading_db",
-            'user': "kotak_trading_db_user",
-            'password': "JRUlk8RutdgVcErSiUXqljDUdK8sBsYO",
-            'port': 5432
-        }
-
-        calculator = TradingCalculations(db_config)
-
-        # Get trade data for the symbol
-        import psycopg2
-        from psycopg2.extras import RealDictCursor
-
-        with psycopg2.connect(**db_config) as conn:
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute(
-                    """
-                    SELECT * FROM admin_trade_signals 
-                    WHERE (symbol = %s OR etf = %s)
-                    AND qty IS NOT NULL AND ep IS NOT NULL
-                    LIMIT 1
-                """, (symbol, symbol))
-
-                trade = cursor.fetchone()
-
-                if trade:
-                    trade_dict = dict(trade)
-                    calculated_metrics = calculator.calculate_all_metrics(
-                        trade_dict)
-
-                    return jsonify({
-                        'success': True,
-                        'symbol': symbol,
-                        'trade_data': trade_dict,
-                        'calculated_metrics': calculated_metrics
-                    })
-                else:
-                    return jsonify({
-                        'success':
-                        False,
-                        'message':
-                        f'No trade data found for symbol {symbol}'
-                    }), 404
-
-    except Exception as e:
-        return jsonify({
-            'success':
-            False,
-            'message':
-            f'Error calculating metrics for {symbol}: {str(e)}'
-        }), 500
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

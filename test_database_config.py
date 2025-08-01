@@ -9,7 +9,7 @@ sys.path.append('.')
 
 def test_centralized_database_config():
     """Test the centralized database configuration system"""
-    print("🔧 Testing Centralized Database Configuration System")
+    print("🔧 Testing Centralized Database ConfiguratioFn System")
     print("=" * 60)
     
     try:
