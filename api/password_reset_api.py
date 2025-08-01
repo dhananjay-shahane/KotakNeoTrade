@@ -387,7 +387,7 @@ def reset_password():
         # Note: Using plain password to match existing auth system
         update_query = """
         UPDATE external_users 
-        SET password = %s, updated_at = CURRENT_TIMESTAMP
+        SET password = %s
         WHERE sr = %s
         """
         
