@@ -121,48 +121,67 @@ def send_password_update_confirmation(email, username):
                 .footer {{ background: #f8f9fa; padding: 20px; font-size: 12px; color: #666; text-align: center; }}
                 .security-note {{ background: #e8f5e8; border: 1px solid #4caf50; padding: 15px; border-radius: 5px; margin: 20px 0; }}
                 .user-details {{ background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0; }}
+                .success-badge {{ background: #4caf50; color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: bold; display: inline-block; margin: 10px 0; }}
+                .login-info {{ background: #e3f2fd; border: 1px solid #2196f3; padding: 15px; border-radius: 5px; margin: 20px 0; }}
             </style>
         </head>
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>✅ Password Updated Successfully</h1>
+                    <h1>✅ Password Successfully Updated!</h1>
                     <p>Kotak Neo Trading Platform</p>
+                    <div class="success-badge">Password Reset Complete</div>
                 </div>
                 <div class="content">
-                    <h2>Password Reset Completed</h2>
-                    <p>We're confirming that your password has been successfully updated for your Kotak Neo Trading account.</p>
+                    <h2>🎉 Your Password Has Been Updated</h2>
+                    <p>Great news! Your password has been successfully changed for your Kotak Neo Trading account. You can now log in with your new password.</p>
                     
                     <div class="user-details">
-                        <strong>Account Details:</strong><br>
+                        <strong>📋 Account Information:</strong><br>
                         <strong>Username:</strong> {username}<br>
                         <strong>Email:</strong> {email}<br>
-                        <strong>Updated:</strong> {datetime.now().strftime('%B %d, %Y at %I:%M %p')}
+                        <strong>Password Updated:</strong> {datetime.now().strftime('%B %d, %Y at %I:%M %p')}<br>
+                        <strong>Status:</strong> <span style="color: #4caf50; font-weight: bold;">✓ Active</span>
                     </div>
                     
-                    <div class="security-note">
-                        <strong>🔐 Security Information:</strong>
+                    <div class="login-info">
+                        <strong>🔑 Login Instructions:</strong>
                         <ul style="margin: 10px 0; padding-left: 20px;">
-                            <li>Your password has been successfully changed</li>
-                            <li>You can now log in with your new password</li>
-                            <li>If you didn't make this change, contact support immediately</li>
-                            <li>For security, consider enabling two-factor authentication</li>
+                            <li>Use your <strong>username: {username}</strong></li>
+                            <li>Enter the <strong>new password</strong> you just created</li>
+                            <li>Your login credentials are now updated in the system</li>
+                            <li>You can access your account immediately</li>
                         </ul>
                     </div>
                     
-                    <p><strong>Next Steps:</strong></p>
-                    <ol>
-                        <li>Log in to your account with your new password</li>
-                        <li>Review your account settings and security preferences</li>
-                        <li>Update any saved passwords in your browser or password manager</li>
+                    <div class="security-note">
+                        <strong>🔐 Security Confirmation:</strong>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>✓ Password successfully changed and encrypted</li>
+                            <li>✓ Old password has been permanently disabled</li>
+                            <li>✓ Your account security has been enhanced</li>
+                            <li>⚠️ If you didn't make this change, contact support immediately</li>
+                            <li>💡 Consider enabling two-factor authentication for extra security</li>
+                        </ul>
+                    </div>
+                    
+                    <p><strong>🚀 What's Next:</strong></p>
+                    <ol style="line-height: 1.8;">
+                        <li><strong>Log in now</strong> with your username and new password</li>
+                        <li><strong>Update saved passwords</strong> in your browser or password manager</li>
+                        <li><strong>Review security settings</strong> in your account preferences</li>
+                        <li><strong>Set up two-factor authentication</strong> (recommended)</li>
                     </ol>
                     
-                    <p>Thank you for keeping your account secure!</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <p style="font-size: 16px; color: #4caf50; font-weight: bold;">🎯 Your account is now secure and ready to use!</p>
+                    </div>
                 </div>
                 <div class="footer">
-                    <p>This is an automated security notification from Kotak Neo Trading Platform</p>
-                    <p>If you have any questions or concerns, please contact our support team</p>
-                    <p><strong>Important:</strong> Never share your login credentials with anyone</p>
+                    <p><strong>🛡️ This is an automated security notification</strong></p>
+                    <p>Kotak Neo Trading Platform - Account Security Team</p>
+                    <p>If you have any questions, please contact our support team</p>
+                    <p><strong>Security Reminder:</strong> Never share your login credentials with anyone</p>
                 </div>
             </div>
         </body>
