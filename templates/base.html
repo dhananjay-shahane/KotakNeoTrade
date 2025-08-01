@@ -727,8 +727,37 @@ function logoutKotakOnly(event) {
         return;
     }
 
-    // Make request to logout only from Kotak (this will redirect server-side)
-    window.location.href = "/logout-kotak";
+    // Show loading state
+    showToaster("Info", "Logging out from Kotak Neo...", "info");
+
+    // Make AJAX request to logout only from Kotak
+    fetch("/logout-kotak", {
+        method: "GET",
+        credentials: "same-origin",
+    })
+    .then((response) => {
+        if (response.redirected) {
+            // Handle server-side redirect
+            showToaster("Success", "Logged out from Kotak Neo successfully", "success");
+            setTimeout(() => {
+                window.location.href = response.url;
+            }, 1000);
+        } else if (response.ok) {
+            // Handle JSON response
+            return response.json().then(data => {
+                showToaster("Success", "Logged out from Kotak Neo successfully", "success");
+                setTimeout(() => {
+                    window.location.href = "/dashboard";
+                }, 1000);
+            });
+        } else {
+            showToaster("Error", "Failed to logout from Kotak", "error");
+        }
+    })
+    .catch((error) => {
+        console.error("Logout error:", error);
+        showToaster("Error", "An error occurred during logout", "error");
+    });
 }
 </script>
 

@@ -277,19 +277,27 @@ def logout():
 @auth_bp.route('/logout-kotak')
 def logout_kotak():
     """Logout only from Kotak account while keeping trading account session"""
-    # Clear only Kotak-specific session data but preserve trading account data
-    kotak_keys = ['kotak_logged_in', 'client', 'mobile_number', 'mpin', 'totp']
-    for key in kotak_keys:
-        session.pop(key, None)
+    try:
+        # Clear only Kotak-specific session data but preserve trading account data
+        kotak_keys = ['kotak_logged_in', 'client', 'mobile_number', 'mpin', 'totp', 'access_token', 'session_token', 'sid']
+        for key in kotak_keys:
+            session.pop(key, None)
 
-    # If this was a Kotak login, preserve the UCC for trading account functionality
-    if session.get('login_type') == 'kotak_neo':
-        session['login_type'] = 'trading_account'
+        # If this was a Kotak login, preserve the UCC for trading account functionality
+        if session.get('login_type') == 'kotak_neo':
+            session['login_type'] = 'trading_account'
 
-    # Clear any existing flash messages before adding logout message
-    session.pop('_flashes', None)
-    flash('Logged out from Kotak Neo successfully', 'info')
-    return redirect(url_for('main_routes.dashboard'))
+        # Clear any existing flash messages before adding logout message
+        session.pop('_flashes', None)
+        flash('Logged out from Kotak Neo successfully', 'info')
+        
+        logging.info("Kotak logout successful, redirecting to dashboard")
+        return redirect('/dashboard')
+        
+    except Exception as e:
+        logging.error(f"Error during Kotak logout: {str(e)}")
+        flash('Logout completed with some issues', 'warning')
+        return redirect('/dashboard')
 
 
 @auth_bp.route('/know-user-id', methods=['GET', 'POST'])
