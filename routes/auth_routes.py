@@ -289,7 +289,7 @@ def logout_kotak():
     # Clear any existing flash messages before adding logout message
     session.pop('_flashes', None)
     flash('Logged out from Kotak Neo successfully', 'info')
-    return redirect(url_for('portfolio'))
+    return redirect(url_for('main_routes.dashboard'))
 
 
 @auth_bp.route('/know-user-id', methods=['GET', 'POST'])

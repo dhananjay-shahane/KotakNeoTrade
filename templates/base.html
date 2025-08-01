@@ -718,6 +718,20 @@
         <script src="{{ url_for('static', filename='js/skeleton_loader.js') }}"></script>
         <script src="{{ url_for('static', filename='js/base.js') }}"></script>
 
+        <script>
+function logoutKotakOnly(event) {
+    event.preventDefault();
+
+    // Check if we're in a login flow to prevent duplicate notifications
+    if (window.location.pathname.includes("/login")) {
+        return;
+    }
+
+    // Make request to logout only from Kotak (this will redirect server-side)
+    window.location.href = "/logout-kotak";
+}
+</script>
+
         {% block scripts %}{% endblock %}
     </body>
 </html>
