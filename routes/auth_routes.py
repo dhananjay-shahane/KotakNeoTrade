@@ -312,8 +312,13 @@ def know_user_id():
             
             if user_found:
                 # Send email with user ID to the registered email address
-                send_user_id_email(user_found)
-                logging.info(f"User ID email sent for: {contact_info[:3]}***")
+                email_sent = send_user_id_email(user_found)
+                if email_sent:
+                    logging.info(f"User ID email sent successfully for: {contact_info[:3]}***")
+                else:
+                    logging.error(f"Failed to send User ID email for: {contact_info[:3]}***")
+            else:
+                logging.info(f"No user found for contact info: {contact_info[:3]}***")
             
             # Always show the same neutral message regardless of whether user exists
             flash(
@@ -333,35 +338,43 @@ def know_user_id():
 
 def check_user_exists_by_contact(contact_info):
     """Check if user exists by mobile number or email and return user data"""
-    from config.database_config import get_db_dict_connection
-    
     try:
-        conn = get_db_dict_connection()
-        if not conn:
-            logging.error("Database connection failed")
+        import psycopg2
+        import os
+        from urllib.parse import urlparse
+        
+        # Use DATABASE_URL directly
+        database_url = os.environ.get('DATABASE_URL')
+        if not database_url:
+            logging.error("DATABASE_URL not found")
             return None
-            
-        with conn.cursor() as cursor:
-            # Check both email and mobile fields
-            cursor.execute(
-                """
-                SELECT username, email, mobile_number 
-                FROM external_users 
-                WHERE email = %s OR mobile_number = %s
-                LIMIT 1
-                """, (contact_info, contact_info)
-            )
-            
-            result = cursor.fetchone()
-            
-            if result:
-                return {
-                    'username': result[0],
-                    'email': result[1], 
-                    'mobile_number': result[2]
-                }
-                
+
+        # Connect to database
+        conn = psycopg2.connect(database_url)
+        cursor = conn.cursor()
+
+        # Check both email and mobile fields
+        cursor.execute(
+            """
+            SELECT username, email, mobile_number 
+            FROM external_users 
+            WHERE email = %s OR mobile_number = %s
+            LIMIT 1
+            """, (contact_info, contact_info)
+        )
+        
+        result = cursor.fetchone()
+        
+        # Close connection
+        cursor.close()
         conn.close()
+        
+        if result:
+            return {
+                'username': result[0],
+                'email': result[1], 
+                'mobile_number': result[2]
+            }
         return None
         
     except Exception as e:
@@ -370,78 +383,52 @@ def check_user_exists_by_contact(contact_info):
 
 
 def send_user_id_email(user_data):
-    """Send email with user ID to the registered email address"""
+    """Send email with user ID to the registered email address using direct SMTP"""
     try:
-        from flask_mail import Mail, Message
-        from flask import current_app
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+        import os
         
-        # Create new Mail instance
-        mail = Mail(current_app)
+        # Email configuration
+        smtp_server = 'smtp.gmail.com'
+        smtp_port = 587
+        email_user = 'dhanushahane01@gmail.com'
+        email_password = 'sljo pinu ajrh padp'
         
-        # Create email message
-        msg = Message(
-            subject='Your Trading Platform User ID',
-            sender=os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@trading-platform.com'),
-            recipients=[user_data['email']]
-        )
+        # Create message
+        msg = MIMEMultipart()
+        msg['From'] = email_user
+        msg['To'] = user_data['email']
+        msg['Subject'] = 'Your Trading Platform User ID'
         
-        # Email content
-        msg.body = f"""
-Dear User,
+        # Email body with user details
+        body = f"""Dear User,
 
-You requested to retrieve your User ID for the Trading Platform.
+Your Trading Platform credentials:
 
-Your User ID: {user_data['username']}
+• User ID: {user_data['username']}
+• Registered Email: {user_data['email']}
+• Registered Mobile: {user_data['mobile_number']}
 
-Please use this User ID along with your password to login to your trading account.
-
-If you did not request this information, please ignore this email.
-
-For any assistance, please contact our support team.
+You can use your User ID to log into the Trading Platform.
 
 Best regards,
-Trading Platform Support Team
-        """
+Trading Platform Support Team"""
         
-        msg.html = f"""
-<html>
-<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-        <h2 style="color: #2c3e50; margin: 0;">Trading Platform - User ID Retrieval</h2>
-    </div>
-    
-    <div style="background-color: white; padding: 20px; border-radius: 8px; border: 1px solid #e9ecef;">
-        <p>Dear User,</p>
+        msg.attach(MIMEText(body, 'plain'))
         
-        <p>You requested to retrieve your User ID for the Trading Platform.</p>
+        # Send email using SMTP
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(email_user, email_password)
+        text = msg.as_string()
+        server.sendmail(email_user, user_data['email'], text)
+        server.quit()
         
-        <div style="background-color: #e3f2fd; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <h3 style="margin: 0; color: #1976d2;">Your User ID: <strong>{user_data['username']}</strong></h3>
-        </div>
-        
-        <p>Please use this User ID along with your password to login to your trading account.</p>
-        
-        <p style="color: #6c757d; font-size: 14px;">
-            <strong>Security Note:</strong> If you did not request this information, please ignore this email.
-        </p>
-        
-        <hr style="border: none; border-top: 1px solid #e9ecef; margin: 20px 0;">
-        
-        <p style="color: #6c757d; font-size: 14px;">
-            For any assistance, please contact our support team.<br>
-            Best regards,<br>
-            Trading Platform Support Team
-        </p>
-    </div>
-</body>
-</html>
-        """
-        
-        # Send email
-        mail.send(msg)
-        logging.info(f"User ID email sent successfully to: {user_data['email'][:3]}***")
+        logging.info(f"User ID email sent successfully to: {user_data['email']}")
         return True
         
     except Exception as e:
-        logging.error(f"Failed to send User ID email: {str(e)}")
+        logging.error(f"Failed to send user ID email: {str(e)}")
         return False
