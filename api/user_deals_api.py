@@ -1,4 +1,3 @@
-
 """
 User Deals API - Clean API for user deals management
 Handles CRUD operations for user deals with proper error handling
@@ -12,6 +11,7 @@ from functools import wraps
 
 user_deals_bp = Blueprint('user_deals', __name__, url_prefix='/api')
 
+
 def get_current_user_id():
     """Get current user ID from session"""
     user_ucc = session.get('ucc')
@@ -24,13 +24,12 @@ def get_current_user_id():
         else:
             # Create user if doesn't exist
             try:
-                new_user = User(
-                    ucc=user_ucc,
-                    mobile_number=session.get('mobile_number', ''),
-                    greeting_name=session.get('greeting_name', str(user_ucc)),
-                    user_id=str(user_ucc),
-                    is_active=True
-                )
+                new_user = User(ucc=user_ucc,
+                                mobile_number=session.get('mobile_number', ''),
+                                greeting_name=session.get(
+                                    'greeting_name', str(user_ucc)),
+                                user_id=str(user_ucc),
+                                is_active=True)
                 db.session.add(new_user)
                 db.session.commit()
                 return new_user.id
@@ -46,6 +45,7 @@ def get_current_user_id():
 
     # Return None for unauthenticated users
     return None
+
 
 @user_deals_bp.route('/deals', methods=['GET'])
 def get_user_deals():
@@ -77,15 +77,15 @@ def get_user_deals():
             query = query.filter(UserDeal.status == status_filter.upper())
 
         if deal_type_filter:
-            query = query.filter(UserDeal.deal_type == deal_type_filter.upper())
+            query = query.filter(
+                UserDeal.deal_type == deal_type_filter.upper())
 
         # Get total count before pagination
         total_deals = query.count()
 
         # Apply pagination and ordering
         deals = query.order_by(UserDeal.created_at.desc()).paginate(
-            page=page, per_page=per_page, error_out=False
-        )
+            page=page, per_page=per_page, error_out=False)
 
         # Convert to dict format
         deals_data = []
@@ -119,21 +119,30 @@ def get_user_deals():
             'deals': []
         }), 500
 
+
 @user_deals_bp.route('/deals', methods=['POST'])
 def create_user_deal():
     """Create a new deal in user_deals table"""
     try:
         user_id = get_current_user_id()
         if not user_id:
-            return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+            return jsonify({
+                'success': False,
+                'message': 'Not authenticated'
+            }), 401
 
         data = request.get_json()
 
         # Validate required fields
-        required_fields = ['symbol', 'position_type', 'quantity', 'entry_price']
+        required_fields = [
+            'symbol', 'position_type', 'quantity', 'entry_price'
+        ]
         for field in required_fields:
             if field not in data or not data[field]:
-                return jsonify({'success': False, 'message': f'Missing required field: {field}'}), 400
+                return jsonify({
+                    'success': False,
+                    'message': f'Missing required field: {field}'
+                }), 400
 
         # Helper functions for safe conversion
         def safe_float(value, default=0.0):
@@ -159,42 +168,51 @@ def create_user_deal():
         entry_price = safe_float(data['entry_price'])
 
         if quantity <= 0 or entry_price <= 0:
-            return jsonify({'success': False, 'message': 'Quantity and entry price must be positive'}), 400
+            return jsonify({
+                'success':
+                False,
+                'message':
+                'Quantity and entry price must be positive'
+            }), 400
 
         # Calculate invested amount
         invested_amount = quantity * entry_price
 
         # Create new deal
-        deal = UserDeal(
-            user_id=user_id,
-            symbol=symbol,
-            trading_symbol=data.get('trading_symbol', symbol),
-            exchange=data.get('exchange', 'NSE'),
-            position_type=position_type,
-            quantity=quantity,
-            entry_price=entry_price,
-            current_price=safe_float(data.get('current_price', entry_price)),
-            target_price=safe_float(data.get('target_price')) if data.get('target_price') else None,
-            stop_loss=safe_float(data.get('stop_loss')) if data.get('stop_loss') else None,
-            invested_amount=invested_amount,
-            notes=data.get('notes', ''),
-            tags=data.get('tags', ''),
-            deal_type=data.get('deal_type', 'MANUAL'),
-            status='ACTIVE'
-        )
+        deal = UserDeal(user_id=user_id,
+                        symbol=symbol,
+                        trading_symbol=data.get('trading_symbol', symbol),
+                        exchange=data.get('exchange', 'NSE'),
+                        position_type=position_type,
+                        quantity=quantity,
+                        entry_price=entry_price,
+                        current_price=safe_float(
+                            data.get('current_price', entry_price)),
+                        target_price=safe_float(data.get('target_price'))
+                        if data.get('target_price') else None,
+                        stop_loss=safe_float(data.get('stop_loss'))
+                        if data.get('stop_loss') else None,
+                        invested_amount=invested_amount,
+                        notes=data.get('notes', ''),
+                        tags=data.get('tags', ''),
+                        deal_type=data.get('deal_type', 'MANUAL'),
+                        status='ACTIVE')
 
         # Calculate P&L
         try:
             deal.calculate_pnl()
         except Exception as calc_error:
-            logging.warning(f"Could not calculate P&L for new deal: {calc_error}")
+            logging.warning(
+                f"Could not calculate P&L for new deal: {calc_error}")
             deal.pnl_amount = 0.0
             deal.pnl_percent = 0.0
 
         db.session.add(deal)
         db.session.commit()
 
-        logging.info(f"Deal created for user {user_id}: {deal.symbol} {deal.position_type}")
+        logging.info(
+            f"Deal created for user {user_id}: {deal.symbol} {deal.position_type}"
+        )
 
         return jsonify({
             'success': True,
@@ -205,7 +223,11 @@ def create_user_deal():
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error creating deal: {str(e)}")
-        return jsonify({'success': False, 'message': f'Error creating deal: {str(e)}'}), 500
+        return jsonify({
+            'success': False,
+            'message': f'Error creating deal: {str(e)}'
+        }), 500
+
 
 @user_deals_bp.route('/deals/<int:deal_id>', methods=['PUT'])
 def update_user_deal(deal_id):
@@ -213,12 +235,18 @@ def update_user_deal(deal_id):
     try:
         user_id = get_current_user_id()
         if not user_id:
-            return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+            return jsonify({
+                'success': False,
+                'message': 'Not authenticated'
+            }), 401
 
         deal = UserDeal.query.filter_by(id=deal_id, user_id=user_id).first()
 
         if not deal:
-            return jsonify({'success': False, 'message': 'Deal not found'}), 404
+            return jsonify({
+                'success': False,
+                'message': 'Deal not found'
+            }), 404
 
         data = request.get_json()
 
@@ -227,10 +255,12 @@ def update_user_deal(deal_id):
             deal.current_price = float(data['current_price'])
 
         if 'target_price' in data:
-            deal.target_price = float(data['target_price']) if data['target_price'] else None
+            deal.target_price = float(
+                data['target_price']) if data['target_price'] else None
 
         if 'stop_loss' in data:
-            deal.stop_loss = float(data['stop_loss']) if data['stop_loss'] else None
+            deal.stop_loss = float(
+                data['stop_loss']) if data['stop_loss'] else None
 
         if 'notes' in data:
             deal.notes = data['notes']
@@ -260,7 +290,11 @@ def update_user_deal(deal_id):
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error updating deal {deal_id}: {str(e)}")
-        return jsonify({'success': False, 'message': f'Error updating deal: {str(e)}'}), 500
+        return jsonify({
+            'success': False,
+            'message': f'Error updating deal: {str(e)}'
+        }), 500
+
 
 @user_deals_bp.route('/deals/<int:deal_id>', methods=['DELETE'])
 def delete_user_deal(deal_id):
@@ -268,12 +302,18 @@ def delete_user_deal(deal_id):
     try:
         user_id = get_current_user_id()
         if not user_id:
-            return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+            return jsonify({
+                'success': False,
+                'message': 'Not authenticated'
+            }), 401
 
         deal = UserDeal.query.filter_by(id=deal_id, user_id=user_id).first()
 
         if not deal:
-            return jsonify({'success': False, 'message': 'Deal not found'}), 404
+            return jsonify({
+                'success': False,
+                'message': 'Deal not found'
+            }), 404
 
         db.session.delete(deal)
         db.session.commit()
@@ -286,7 +326,11 @@ def delete_user_deal(deal_id):
     except Exception as e:
         db.session.rollback()
         logging.error(f"Error deleting deal {deal_id}: {str(e)}")
-        return jsonify({'success': False, 'message': f'Error deleting deal: {str(e)}'}), 500
+        return jsonify({
+            'success': False,
+            'message': f'Error deleting deal: {str(e)}'
+        }), 500
+
 
 @user_deals_bp.route('/deals/stats', methods=['GET'])
 def get_user_deals_stats():
@@ -294,35 +338,49 @@ def get_user_deals_stats():
     try:
         user_id = get_current_user_id()
         if not user_id:
-            return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+            return jsonify({
+                'success': False,
+                'message': 'Not authenticated'
+            }), 401
 
         # Get all deals for user
         deals = UserDeal.query.filter_by(user_id=user_id).all()
 
         # Calculate statistics
         stats = {
-            'total_deals': len(deals),
-            'active_deals': len([d for d in deals if d.status == 'ACTIVE']),
-            'closed_deals': len([d for d in deals if d.status == 'CLOSED']),
-            'total_invested': sum([float(d.invested_amount or 0) for d in deals]),
-            'total_pnl': sum([float(d.pnl_amount or 0) for d in deals]),
-            'winning_deals': len([d for d in deals if (d.pnl_amount or 0) > 0]),
-            'losing_deals': len([d for d in deals if (d.pnl_amount or 0) < 0]),
-            'long_positions': len([d for d in deals if d.position_type == 'LONG']),
-            'short_positions': len([d for d in deals if d.position_type == 'SHORT'])
+            'total_deals':
+            len(deals),
+            'active_deals':
+            len([d for d in deals if d.status == 'ACTIVE']),
+            'closed_deals':
+            len([d for d in deals if d.status == 'CLOSED']),
+            'total_invested':
+            sum([float(d.invested_amount or 0) for d in deals]),
+            'total_pnl':
+            sum([float(d.pnl_amount or 0) for d in deals]),
+            'winning_deals':
+            len([d for d in deals if (d.pnl_amount or 0) > 0]),
+            'losing_deals':
+            len([d for d in deals if (d.pnl_amount or 0) < 0]),
+            'long_positions':
+            len([d for d in deals if d.position_type == 'LONG']),
+            'short_positions':
+            len([d for d in deals if d.position_type == 'SHORT'])
         }
 
         # Calculate success rate
-        stats['success_rate'] = (stats['winning_deals'] / stats['total_deals']) * 100 if stats['total_deals'] > 0 else 0
+        stats['success_rate'] = (stats['winning_deals'] / stats['total_deals']
+                                 ) * 100 if stats['total_deals'] > 0 else 0
 
         # Calculate average P&L
-        stats['avg_pnl'] = stats['total_pnl'] / stats['total_deals'] if stats['total_deals'] > 0 else 0
+        stats['avg_pnl'] = stats['total_pnl'] / stats['total_deals'] if stats[
+            'total_deals'] > 0 else 0
 
-        return jsonify({
-            'success': True,
-            'stats': stats
-        })
+        return jsonify({'success': True, 'stats': stats})
 
     except Exception as e:
         logging.error(f"Error fetching deals stats: {str(e)}")
-        return jsonify({'success': False, 'message': f'Error fetching stats: {str(e)}'}), 500
+        return jsonify({
+            'success': False,
+            'message': f'Error fetching stats: {str(e)}'
+        }), 500
