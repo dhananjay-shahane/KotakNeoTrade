@@ -1381,11 +1381,15 @@ function editDeal(
 
     // Set modal values with current deal data
     document.getElementById("editDealId").value = dealId;
-    document.getElementById("editDealIdDisplay").value = dealId;
     document.getElementById("editSymbol").value = symbol;
+    
+    // Set modal heading
+    document.getElementById("editModalDealId").textContent = dealId;
+    document.getElementById("editModalSymbol").textContent = symbol;
     document.getElementById("editDate").value = dateFormatted;
     document.getElementById("editQuantity").value = qty || "";
     document.getElementById("editEntryPrice").value = entryPrice || "";
+    document.getElementById("editTPPercent").value = ""; // TP percentage field - calculate from data
     document.getElementById("editTPRPrice").value = tprPrice || "";
     document.getElementById("editTargetPrice").value = targetPrice || "";
 
@@ -1394,6 +1398,7 @@ function editDeal(
         date: dateFormatted,
         quantity: qty || "",
         entryPrice: entryPrice || "",
+        tpPercent: "", // TP percentage field - always start empty
         tprPrice: tprPrice || "",
         targetPrice: targetPrice || "",
     };
@@ -1409,6 +1414,7 @@ function submitEditDeal() {
     var date = document.getElementById("editDate").value;
     var qty = document.getElementById("editQuantity").value;
     var entryPrice = document.getElementById("editEntryPrice").value;
+    var tpPercent = document.getElementById("editTPPercent").value;
     var tprPrice = document.getElementById("editTPRPrice").value;
     var targetPrice = document.getElementById("editTargetPrice").value;
 
@@ -1417,6 +1423,7 @@ function submitEditDeal() {
         date: date,
         quantity: qty,
         entryPrice: entryPrice,
+        tpPercent: tpPercent,
         tprPrice: tprPrice,
         targetPrice: targetPrice,
     };
@@ -1465,6 +1472,7 @@ function submitEditDeal() {
     var fieldsToValidate = [
         { value: qty, name: "Quantity" },
         { value: entryPrice, name: "Entry Price" },
+        { value: tpPercent, name: "TP Percentage" },
         { value: tprPrice, name: "TPR Price" },
         { value: targetPrice, name: "Target Price" },
     ];
@@ -1507,6 +1515,7 @@ function submitEditDeal() {
     if (dateForAPI) updateData.date = dateForAPI;
     if (qty) updateData.qty = parseFloat(qty);
     if (entryPrice) updateData.entry_price = parseFloat(entryPrice);
+    if (tpPercent) updateData.tp_percent = parseFloat(tpPercent);
     if (tprPrice) updateData.tpr_price = parseFloat(tprPrice);
     if (targetPrice) updateData.target_price = parseFloat(targetPrice);
 
@@ -2741,8 +2750,11 @@ DealsManager.prototype.updateDealsCountBadge = function () {
 function closeDeal(dealId, symbol) {
     // Set modal values
     document.getElementById("closeDealId").value = dealId;
-    document.getElementById("closeDealIdDisplay").value = dealId;
     document.getElementById("closeDealSymbol").value = symbol;
+    
+    // Set modal heading
+    document.getElementById("closeModalDealId").textContent = dealId;
+    document.getElementById("closeModalSymbol").textContent = symbol;
 
     // Set default exit date to today in dd/mm/yy format
     var today = new Date();

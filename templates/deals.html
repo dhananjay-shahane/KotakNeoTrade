@@ -539,7 +539,7 @@ endblock %} {% block head %}
             <div class="modal-content bg-dark">
                 <div class="modal-header border-bottom border-secondary">
                     <h5 class="modal-title text-light">
-                        <i class="fas fa-edit me-2 text-warning"></i>Edit Deal
+                        <i class="fas fa-edit me-2 text-warning"></i>Edit Deal - ID: <span id="editModalDealId"></span> | Symbol: <span id="editModalSymbol"></span>
                     </h5>
                     <button
                         type="button"
@@ -550,24 +550,7 @@ endblock %} {% block head %}
                 <div class="modal-body">
                     <form id="editDealForm">
                         <input type="hidden" id="editDealId" />
-                        <div class="mb-3">
-                            <label class="form-label text-light">Deal ID</label>
-                            <input
-                                type="text"
-                                class="form-control bg-secondary text-light"
-                                id="editDealIdDisplay"
-                                readonly
-                            />
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label text-light">Symbol</label>
-                            <input
-                                type="text"
-                                class="form-control bg-secondary text-light"
-                                id="editSymbol"
-                                readonly
-                            />
-                        </div>
+                        <input type="hidden" id="editSymbol" />
                         <div class="mb-3">
                             <label class="form-label text-light">Date <small class="text-muted">(dd/mm/yy format)</small></label>
                             <input
@@ -606,6 +589,17 @@ endblock %} {% block head %}
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
+                                <label class="form-label text-light">TP (%)</label>
+                                <input
+                                    type="number"
+                                    class="form-control bg-secondary text-light"
+                                    id="editTPPercent"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="Enter TP percentage"
+                                />
+                            </div>
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label text-light">TPR Price</label>
                                 <input
                                     type="number"
@@ -616,7 +610,9 @@ endblock %} {% block head %}
                                     placeholder="Enter TPR price"
                                 />
                             </div>
-                            <div class="col-md-6 mb-3">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
                                 <label class="form-label text-light">Target Price</label>
                                 <input
                                     type="number"
@@ -659,7 +655,7 @@ endblock %} {% block head %}
             <div class="modal-content bg-dark">
                 <div class="modal-header border-bottom border-secondary">
                     <h5 class="modal-title text-light">
-                        <i class="fas fa-times-circle me-2 text-danger"></i>Close Deal
+                        <i class="fas fa-times-circle me-2 text-danger"></i>Close Deal - ID: <span id="closeModalDealId"></span> | Symbol: <span id="closeModalSymbol"></span>
                     </h5>
                     <button
                         type="button"
@@ -670,24 +666,7 @@ endblock %} {% block head %}
                 <div class="modal-body">
                     <form id="closeDealForm">
                         <input type="hidden" id="closeDealId" />
-                        <div class="mb-3">
-                            <label class="form-label text-light">Deal ID</label>
-                            <input
-                                type="text"
-                                class="form-control bg-secondary text-light"
-                                id="closeDealIdDisplay"
-                                readonly
-                            />
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label text-light">Symbol</label>
-                            <input
-                                type="text"
-                                class="form-control bg-secondary text-light"
-                                id="closeDealSymbol"
-                                readonly
-                            />
-                        </div>
+                        <input type="hidden" id="closeDealSymbol" />
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label text-light">Exit Date <small class="text-muted">(dd/mm/yy format)</small></label>

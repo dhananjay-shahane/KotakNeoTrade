@@ -937,6 +937,7 @@ def edit_deal():
         date = data.get('date')
         qty = data.get('qty')
         entry_price = data.get('entry_price')
+        tp_percent = data.get('tp_percent')
         tpr_price = data.get('tpr_price')
         target_price = data.get('target_price')
 
@@ -970,7 +971,7 @@ def edit_deal():
                 from datetime import date as date_obj
                 parsed_date = date_obj(year, month, day)
                 fields_to_update[
-                    'date'] = parsed_date  # Map to database column name for edit deals
+                    'ed'] = parsed_date  # Map to database column name for edit deals (ed = entry date)
                 update_count += 1
             except (ValueError, TypeError):
                 return jsonify({
@@ -1017,6 +1018,24 @@ def edit_deal():
                     'error': 'Invalid entry price value'
                 }), 400
 
+        # Handle TP percentage 
+        if tp_percent is not None:
+            try:
+                tp_percent = float(tp_percent)
+                if tp_percent <= 0:
+                    return jsonify({
+                        'success': False,
+                        'error': 'TP percentage must be a positive number'
+                    }), 400
+                # Store TP percentage in database (tp column stores price, but we can use another column if needed)
+                fields_to_update['tp'] = tp_percent  # Map to database column name
+                update_count += 1
+            except (ValueError, TypeError):
+                return jsonify({
+                    'success': False,
+                    'error': 'Invalid TP percentage value'
+                }), 400
+
         # Handle TPR price (target profit return price)
         if tpr_price is not None:
             try:
@@ -1026,7 +1045,7 @@ def edit_deal():
                         'success': False,
                         'error': 'TPR price must be a positive number'
                     }), 400
-                fields_to_update['tp'] = tpr_price  # Map to database column name
+                fields_to_update['tpr'] = tpr_price  # Map to database column name for TPR
                 update_count += 1
             except (ValueError, TypeError):
                 return jsonify({
@@ -1210,18 +1229,17 @@ def close_deal():
                 'error': f'No deals table found for user {username}'
             }), 404
 
-        # Update deal status to CLOSED, set exit date, exit price, pos to 0, and exp date
+        # Update deal status to CLOSED, set exit date, exit price, pos to 0
         # Note: Store exit price in stop_loss field since there's no dedicated exit_price column
         success = dynamic_deals_service.update_deal(
             username,
             deal_id,
             {
                 'status': 'CLOSED',
-                'ed': exit_date_obj,
+                'ed': exit_date_obj,  # ed = exit date for closed deals
                 'stop_loss':
                 exit_price,  # Using stop_loss field to store exit price
-                'pos': '0',
-                'exp': exit_date_obj  # Set expiry date to exit date
+                'pos': '0'  # Set position to 0 to indicate closed deal
             })
 
         if not success:
