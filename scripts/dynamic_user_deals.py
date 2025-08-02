@@ -40,21 +40,25 @@ class DynamicUserDealsService:
             cursor = conn.cursor()
             table_name = f"{username}_deals"
             
-            # Create table with updated structure (removed notes, user_id; added username)
+            # Create table with updated structure (added date, exp, pr, pp columns)
             create_table_query = sql.SQL("""
                 CREATE TABLE IF NOT EXISTS {} (
                     id SERIAL PRIMARY KEY,
                     username VARCHAR(50),
                     trade_signal_id INTEGER,
                     symbol VARCHAR(50) NOT NULL,
+                    date DATE,
                     qty INTEGER,
                     ep DECIMAL(10, 2),
-                    pos VARCHAR(20),
+                    pos VARCHAR(20) DEFAULT '1',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     ed DATE,
+                    exp DATE,
                     status VARCHAR(20) DEFAULT 'ACTIVE',
                     target_price DECIMAL(10, 2),
-                    stop_loss DECIMAL(10, 2)
+                    stop_loss DECIMAL(10, 2),
+                    pr VARCHAR(50),
+                    pp VARCHAR(50)
                 );
             """).format(sql.Identifier(table_name))
             

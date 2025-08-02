@@ -257,6 +257,22 @@ def try_percent(cmp_val, hist_val):
         return '--'
 
 
+def format_date_field(date_value):
+    """
+    Format date field as dd/mm/yy or return '--' if invalid
+    """
+    if not date_value or date_value == '--':
+        return '--'
+    try:
+        if isinstance(date_value, str):
+            dt_obj = pd.to_datetime(date_value)
+        else:
+            dt_obj = date_value
+        return dt_obj.strftime("%d/%m/%y")
+    except Exception:
+        return str(date_value) if date_value else '--'
+
+
 @deals_api.route('/test-deals', methods=['GET'])
 def test_deals():
     """Test endpoint to verify blueprint registration"""
@@ -445,7 +461,7 @@ def get_all_deals_data_metrics():
             if raw_date:
                 try:
                     dt_obj = pd.to_datetime(raw_date)
-                    date_fmt = dt_obj.strftime("%d-%m-%y %H:%M")
+                    date_fmt = dt_obj.strftime("%d/%m/%y")
                 except Exception:
                     date_fmt = str(raw_date)
             else:
@@ -532,10 +548,10 @@ def get_all_deals_data_metrics():
                 'tva': tva_value,  # Target value amount
                 'pl': round(profit_loss, 2),
                 'qt': qt_value,  # Symbol repeat count
-                'ed': deal.get('ed', '--'),  # Exit date
-                'exp': '--',  # Expiry
-                'pr': '--',  # Price range
-                'pp': '--',  # Performance points
+                'ed': format_date_field(deal.get('ed')),  # Exit date
+                'exp': format_date_field(deal.get('exp')),  # Expiry
+                'pr': deal.get('pr', '--'),  # Price range
+                'pp': deal.get('pp', '--'),  # Performance points
                 'iv': investment,  # Investment value
                 'ip': entry_price,  # Entry price
                 'status': deal_status,  # Use actual status from database
@@ -678,7 +694,7 @@ def get_user_deals_data():
             if raw_date:
                 try:
                     dt_obj = pd.to_datetime(raw_date)
-                    date_fmt = dt_obj.strftime("%d-%m-%y %H:%M")
+                    date_fmt = dt_obj.strftime("%d/%m/%y")
                 except Exception:
                     date_fmt = str(raw_date)
             else:
@@ -782,7 +798,7 @@ def get_user_deals_data():
                 'seven_percent': p7,
                 'thirty': d30_val if d30_val else '--',
                 'thirty_percent': p30,
-                'date': date_str,
+                'date': date_fmt,
                 'qty': qty,
                 'ep': entry_price,
                 'cmp': cmp_display,
@@ -794,10 +810,10 @@ def get_user_deals_data():
                 'tva': tva_value,  # Target value amount
                 'pl': round(profit_loss, 2),
                 'qt': qt_value,  # Symbol repeat count
-                'ed': deal.get('ed', '--'),  # Exit date
-                'exp': '--',  # Expiry
-                'pr': '--',  # Price range
-                'pp': '--',  # Performance points
+                'ed': format_date_field(deal.get('ed')),  # Exit date
+                'exp': format_date_field(deal.get('exp')),  # Expiry
+                'pr': deal.get('pr', '--'),  # Price range
+                'pp': deal.get('pp', '--'),  # Performance points
                 'iv': investment,  # Investment value
                 'ip': entry_price,  # Entry price
                 'status': deal_status,  # Use actual status from database
@@ -951,7 +967,7 @@ def edit_deal():
                 year = 2000 + int(date[4:6])  # Assume 20xx century
                 from datetime import date as date_obj
                 parsed_date = date_obj(year, month, day)
-                fields_to_update['ed'] = parsed_date  # Map to database column name
+                fields_to_update['date'] = parsed_date  # Map to database column name for edit deals
                 update_count += 1
             except (ValueError, TypeError):
                 return jsonify({
@@ -1160,13 +1176,14 @@ def close_deal():
                 'error': f'No deals table found for user {username}'
             }), 404
 
-        # Update deal status to CLOSED, set exit date, exit price, and pos to 0
+        # Update deal status to CLOSED, set exit date, exit price, pos to 0, and exp date
         # Note: Store exit price in stop_loss field since there's no dedicated exit_price column
         success = dynamic_deals_service.update_deal(username, deal_id, {
             'status': 'CLOSED',
             'ed': exit_date_obj,
             'stop_loss': exit_price,  # Using stop_loss field to store exit price
-            'pos': '0'
+            'pos': '0',
+            'exp': exit_date_obj  # Set expiry date to exit date
         })
 
         if not success:
