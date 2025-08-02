@@ -408,6 +408,9 @@ ETFSignalsManager.prototype.loadSignals = function (resetData) {
                         // Hide loading state
                         self.hideLoadingState();
 
+                        // Calculate performance metrics after data is loaded
+                        self.calculatePerformanceMetrics();
+
                         self.showSuccessMessage(
                             "Loaded " + self.signals.length + " signals",
                         );
@@ -2806,7 +2809,10 @@ ETFSignalsManager.prototype.setupNewFeatures = function () {
 
 // Performance Metrics Calculation
 ETFSignalsManager.prototype.calculatePerformanceMetrics = function () {
+    console.log('Calculating performance metrics for', this.signals ? this.signals.length : 0, 'signals');
+    
     if (!this.signals || this.signals.length === 0) {
+        console.log('No signals data available for performance calculation');
         this.updatePerformanceDisplay({
             totalSignals: 0,
             activeSignals: 0,
@@ -2814,7 +2820,9 @@ ETFSignalsManager.prototype.calculatePerformanceMetrics = function () {
             winRate: 0,
             totalInvestment: 0,
             totalCurrentValue: 0,
-            totalPnl: 0
+            totalPnl: 0,
+            topPerformers: [],
+            worstPerformers: []
         });
         return;
     }
@@ -2826,33 +2834,56 @@ ETFSignalsManager.prototype.calculatePerformanceMetrics = function () {
     var totalCurrentValue = 0;
     var totalPnl = 0;
     var topPerformers = [];
-    var worstPerformers = [];
 
-    this.signals.forEach(function(signal) {
-        var pnl = parseFloat(signal.pl || signal.cpl || 0);
-        var investment = parseFloat(signal.inv || 0);
-        var currentValue = parseFloat(signal.tva || 0);
+    console.log('Processing', totalSignals, 'signals for performance metrics');
+
+    this.signals.forEach(function(signal, index) {
+        console.log('Processing signal', index + 1, ':', signal);
+        
+        // Handle different property name variations
+        var quantity = parseFloat(signal.qty || signal.quantity || 0);
+        var entryPrice = parseFloat(signal.ep || signal.entry_price || 0);
+        var currentPrice = parseFloat(signal.cmp || signal.current_price || 0);
+        
+        var investment = quantity * entryPrice;
+        var currentValue = quantity * currentPrice;
+        var pnl = currentValue - investment;
+        var chanPercent = investment > 0 ? ((currentValue - investment) / investment * 100) : 0;
+        
+        console.log('Signal calculations - Investment:', investment, 'Current Value:', currentValue, 'P&L:', pnl);
         
         totalInvestment += investment;
         totalCurrentValue += currentValue;
         totalPnl += pnl;
         
         if (pnl > 0) profitableSignals++;
+        activeSignals++; // Assuming all loaded signals are active
         
         // Collect for top/worst performers
         topPerformers.push({
-            symbol: signal.etf || signal.symbol || 'N/A',
+            symbol: signal.etf || signal.symbol || signal.scrip || 'Signal-' + (index + 1),
             pnl: pnl,
-            pct: signal.chan || '0%'
+            pct: chanPercent.toFixed(2) + '%',
+            investment: investment,
+            currentValue: currentValue
         });
     });
 
-    activeSignals = totalSignals; // Assuming all are active for now
     var winRate = totalSignals > 0 ? (profitableSignals / totalSignals * 100) : 0;
 
-    // Sort performers
+    console.log('Performance Summary:', {
+        totalSignals: totalSignals,
+        activeSignals: activeSignals,
+        profitableSignals: profitableSignals,
+        winRate: winRate,
+        totalInvestment: totalInvestment,
+        totalCurrentValue: totalCurrentValue,
+        totalPnl: totalPnl
+    });
+
+    // Sort performers by P&L
     topPerformers.sort(function(a, b) { return b.pnl - a.pnl; });
-    worstPerformers = topPerformers.slice().reverse();
+    var worstPerformers = topPerformers.slice().reverse().slice(0, 5);
 
     this.updatePerformanceDisplay({
         totalSignals: totalSignals,
@@ -2863,7 +2894,7 @@ ETFSignalsManager.prototype.calculatePerformanceMetrics = function () {
         totalCurrentValue: totalCurrentValue,
         totalPnl: totalPnl,
         topPerformers: topPerformers.slice(0, 5),
-        worstPerformers: worstPerformers.slice(0, 5)
+        worstPerformers: worstPerformers
     });
 };
 
@@ -2934,6 +2965,7 @@ ETFSignalsManager.prototype.setupDateFilters = function () {
 
 // Global functions for date filtering
 function applyQuickDateFilter(days) {
+    console.log('Applying quick date filter for', days, 'days');
     if (window.etfSignalsManager) {
         var endDate = new Date();
         var startDate = new Date();
@@ -2950,7 +2982,20 @@ function applyQuickDateFilter(days) {
         if (startInput) startInput.value = startDate.toISOString().split('T')[0];
         if (endInput) endInput.value = endDate.toISOString().split('T')[0];
         
-        window.etfSignalsManager.applyDateFilters();
+        // Apply the filter immediately
+        window.etfSignalsManager.filterAndRenderSignals();
+        
+        // Show a success message
+        console.log('Date filter applied: Last', days, 'days');
+        
+        // Close the modal if it's open
+        var modal = document.getElementById('signalFiltersModal');
+        if (modal) {
+            var modalInstance = bootstrap.Modal.getInstance(modal);
+            if (modalInstance) {
+                modalInstance.hide();
+            }
+        }
     }
 }
 
@@ -2990,48 +3035,72 @@ ETFSignalsManager.prototype.applyDateFilters = function () {
 function toggleTableSection() {
     var content = document.getElementById('signalsContent');
     var icon = document.getElementById('tableToggleIcon');
-    var button = event.target.closest('button');
+    var button = document.querySelector('[onclick="toggleTableSection()"]');
     
     if (content.classList.contains('section-collapsed')) {
         content.classList.remove('section-collapsed');
-        icon.className = 'fas fa-minus me-1';
-        button.innerHTML = '<i class="fas fa-minus me-1"></i>Minimize';
+        if (icon) {
+            icon.className = 'fas fa-minus me-1';
+        }
+        if (button) {
+            button.innerHTML = '<i class="fas fa-minus me-1" id="tableToggleIcon"></i>Minimize';
+        }
     } else {
         content.classList.add('section-collapsed');
-        icon.className = 'fas fa-plus me-1';
-        button.innerHTML = '<i class="fas fa-plus me-1"></i>Maximize';
+        if (icon) {
+            icon.className = 'fas fa-plus me-1';
+        }
+        if (button) {
+            button.innerHTML = '<i class="fas fa-plus me-1" id="tableToggleIcon"></i>Maximize';
+        }
     }
 }
 
 function togglePerformanceSection() {
     var content = document.getElementById('performanceContent');
     var icon = document.getElementById('performanceToggleIcon');
-    var button = event.target.closest('button');
+    var button = document.querySelector('[onclick="togglePerformanceSection()"]');
     
     if (content.classList.contains('section-collapsed')) {
         content.classList.remove('section-collapsed');
-        icon.className = 'fas fa-minus me-1';
-        button.innerHTML = '<i class="fas fa-minus me-1"></i>Minimize';
+        if (icon) {
+            icon.className = 'fas fa-minus me-1';
+        }
+        if (button) {
+            button.innerHTML = '<i class="fas fa-minus me-1" id="performanceToggleIcon"></i>Minimize';
+        }
     } else {
         content.classList.add('section-collapsed');
-        icon.className = 'fas fa-plus me-1';
-        button.innerHTML = '<i class="fas fa-plus me-1"></i>Maximize';
+        if (icon) {
+            icon.className = 'fas fa-plus me-1';
+        }
+        if (button) {
+            button.innerHTML = '<i class="fas fa-plus me-1" id="performanceToggleIcon"></i>Maximize';
+        }
     }
 }
 
 function toggleAnalyticsSection() {
     var content = document.getElementById('analyticsContent');
     var icon = document.getElementById('analyticsToggleIcon');
-    var button = event.target.closest('button');
+    var button = document.querySelector('[onclick="toggleAnalyticsSection()"]');
     
     if (content.classList.contains('section-collapsed')) {
         content.classList.remove('section-collapsed');
-        icon.className = 'fas fa-minus me-1';
-        button.innerHTML = '<i class="fas fa-minus me-1"></i>Minimize';
+        if (icon) {
+            icon.className = 'fas fa-minus me-1';
+        }
+        if (button) {
+            button.innerHTML = '<i class="fas fa-minus me-1" id="analyticsToggleIcon"></i>Minimize';
+        }
     } else {
         content.classList.add('section-collapsed');
-        icon.className = 'fas fa-plus me-1';
-        button.innerHTML = '<i class="fas fa-plus me-1"></i>Maximize';
+        if (icon) {
+            icon.className = 'fas fa-plus me-1';
+        }
+        if (button) {
+            button.innerHTML = '<i class="fas fa-plus me-1" id="analyticsToggleIcon"></i>Maximize';
+        }
     }
 }
 
@@ -3075,24 +3144,59 @@ ETFSignalsManager.prototype.initializeCharts = function () {
 
 // Enhanced filtering with date support
 ETFSignalsManager.prototype.filterAndRenderSignals = function () {
+    console.log('Filtering signals with date filters:', this.dateFilters);
+    
     this.filteredSignals = this.signals.filter(function(signal) {
-        // Apply existing filters first
         var passesFilters = true;
         
         // Date filtering
         if (this.dateFilters.startDate || this.dateFilters.endDate) {
-            var signalDate = new Date(signal.date || signal.created_at || Date.now());
+            // Try multiple date field variations
+            var signalDateStr = signal.date || signal.DATE || signal.created_at || signal.timestamp;
+            var signalDate;
+            
+            if (signalDateStr) {
+                // Handle different date formats
+                if (typeof signalDateStr === 'string') {
+                    // Try to parse DDMMYY format if it looks like one
+                    if (signalDateStr.length === 6 && /^\d{6}$/.test(signalDateStr)) {
+                        var day = signalDateStr.substring(0, 2);
+                        var month = signalDateStr.substring(2, 4);
+                        var year = '20' + signalDateStr.substring(4, 6);
+                        signalDate = new Date(year + '-' + month + '-' + day);
+                    } else {
+                        signalDate = new Date(signalDateStr);
+                    }
+                } else {
+                    signalDate = new Date(signalDateStr);
+                }
+                
+                // If date is invalid, use current date as fallback
+                if (isNaN(signalDate.getTime())) {
+                    console.log('Invalid date for signal:', signalDateStr, 'using current date');
+                    signalDate = new Date();
+                }
+            } else {
+                // No date found, use current date
+                signalDate = new Date();
+            }
+            
+            console.log('Signal date:', signalDate, 'Start filter:', this.dateFilters.startDate, 'End filter:', this.dateFilters.endDate);
             
             if (this.dateFilters.startDate && signalDate < this.dateFilters.startDate) {
                 passesFilters = false;
+                console.log('Signal filtered out by start date');
             }
             if (this.dateFilters.endDate && signalDate > this.dateFilters.endDate) {
                 passesFilters = false;
+                console.log('Signal filtered out by end date');
             }
         }
         
         return passesFilters;
     }.bind(this));
+    
+    console.log('Filtered', this.filteredSignals.length, 'signals from', this.signals.length, 'total');
     
     this.renderSignalsTable();
     this.calculatePerformanceMetrics();

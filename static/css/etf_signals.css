@@ -142,11 +142,19 @@
 
 /* Collapsible Section Styles */
 .section-collapsed .card-body {
-    display: none;
+    display: none !important;
 }
 
 .section-collapsed .card-footer {
-    display: none;
+    display: none !important;
+}
+
+.section-collapsed #performanceBody {
+    display: none !important;
+}
+
+.section-collapsed #analyticsBody {
+    display: none !important;
 }
 
 .toggle-icon {
