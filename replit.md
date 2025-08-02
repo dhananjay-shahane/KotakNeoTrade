@@ -26,7 +26,10 @@ The platform is built with a Flask backend, utilizing SQLAlchemy for ORM and Pos
 **Key Technical Implementations:**
 - **Authentication System**: Robust user registration and login system with auto-generated usernames, email verification, and secure password management.
 - **Deals Management**: Comprehensive functionality for managing trading deals, including adding, editing (entry/target price), and closing deals with confirmation dialogs.
-- **Enhanced Modal System**: Draggable and resizable modals for edit/close deal operations, allowing users to reposition and resize modal windows to view underlying data while interacting with the modals.
+- **Enhanced Modal System**: Draggable and resizable modals for edit/close deal operations, allowing users to reposition and resize modal windows to view underlying data while interacting with the modals. Modals have no backdrop overlay, enabling full interaction with the data table behind them.
+- **Enhanced Deal Management Forms**: 
+  - Edit Deal Modal: Includes Deal ID display, date field (ddmmyy format), quantity, entry price, TPR percentage, and target price fields
+  - Close Deal Modal: Includes Deal ID display, exit date (ddmmyy format), and exit price fields with proper validation
 - **Charting Functionality**: Integrated candlestick charts with proper state management and real-time data display.
 - **Data Analysis Tools**: Dedicated web interfaces and scripts for analyzing the structure of real trading data from the API.
 

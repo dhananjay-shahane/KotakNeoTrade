@@ -130,11 +130,12 @@ DealsManager.prototype.setupDealButtonListeners = function () {
             var btn = e.target.closest('.edit-deal-btn');
             var dealId = btn.getAttribute('data-deal-id');
             var symbol = btn.getAttribute('data-symbol');
+            var date = btn.getAttribute('data-date');
             var qty = btn.getAttribute('data-qty');
-            var targetPrice = btn.getAttribute('data-target-price');
             var entryPrice = btn.getAttribute('data-entry-price');
             var tprPercent = btn.getAttribute('data-tpr-percent');
-            editDeal(dealId, symbol, qty, targetPrice, entryPrice, tprPercent);
+            var targetPrice = btn.getAttribute('data-target-price');
+            editDeal(dealId, symbol, qty, targetPrice, entryPrice, tprPercent, date);
         }
         
         if (e.target.closest('.close-deal-btn')) {
@@ -883,15 +884,15 @@ DealsManager.prototype.renderDealsTable = function () {
                         // Show enabled buttons for active deals
                         var dealId = deal.id || deal.trade_signal_id || "";
                         var symbol = deal.symbol || "";
+                        var date = deal.date || "";
                         var qty = deal.qty || 0;
-                        var targetPrice = deal.target_price || deal.tpr || 0;
-                        
                         var entryPrice = deal.entry_price || deal.ep || 0;
                         var tprPercent = deal.tpr_percent || deal.pp || 0;
+                        var targetPrice = deal.target_price || deal.tpr || 0;
                         
                         cellContent = 
                             '<div class="btn-group btn-group-sm">' +
-                            '<button class="btn btn-warning btn-sm edit-deal-btn" data-deal-id="' + dealId + '" data-symbol="' + symbol + '" data-qty="' + qty + '" data-target-price="' + targetPrice + '" data-entry-price="' + entryPrice + '" data-tpr-percent="' + tprPercent + '">' +
+                            '<button class="btn btn-warning btn-sm edit-deal-btn" data-deal-id="' + dealId + '" data-symbol="' + symbol + '" data-date="' + date + '" data-qty="' + qty + '" data-entry-price="' + entryPrice + '" data-tpr-percent="' + tprPercent + '" data-target-price="' + targetPrice + '">' +
                             '<i class="fas fa-edit"></i> Edit </button>' +
                             '<button class="btn btn-danger btn-sm close-deal-btn" data-deal-id="' + dealId + '" data-symbol="' + symbol + '">' +
                             '<i class="fas fa-times"></i> Close' +
@@ -1284,8 +1285,8 @@ function cancelOrder(dealId) {
 }
 
 // Edit Deal Functions
-function editDeal(dealId, symbol, qty, targetPrice, entryPrice, tprPercent) {
-    console.log("editDeal function called with:", dealId, symbol, qty, targetPrice, entryPrice, tprPercent);
+function editDeal(dealId, symbol, qty, targetPrice, entryPrice, tprPercent, date) {
+    console.log("editDeal function called with:", dealId, symbol, qty, targetPrice, entryPrice, tprPercent, date);
     
     // Validate input parameters
     if (!dealId || !symbol) {
@@ -1302,20 +1303,37 @@ function editDeal(dealId, symbol, qty, targetPrice, entryPrice, tprPercent) {
         return;
     }
     
+    // Convert date if provided to ddmmyy format
+    var dateFormatted = '';
+    if (date && date !== '--' && date !== null) {
+        try {
+            var dateObj = new Date(date);
+            var day = String(dateObj.getDate()).padStart(2, '0');
+            var month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            var year = String(dateObj.getFullYear()).slice(-2);
+            dateFormatted = day + month + year;
+        } catch (e) {
+            console.warn("Could not parse date:", date);
+        }
+    }
+    
     // Set modal values with current deal data
     document.getElementById('editDealId').value = dealId;
+    document.getElementById('editDealIdDisplay').value = dealId;
     document.getElementById('editSymbol').value = symbol;
+    document.getElementById('editDate').value = dateFormatted;
     document.getElementById('editQuantity').value = qty || '';
-    document.getElementById('editTargetPrice').value = targetPrice || '';
     document.getElementById('editEntryPrice').value = entryPrice || '';
     document.getElementById('editTPRPercent').value = tprPercent || '';
+    document.getElementById('editTargetPrice').value = targetPrice || '';
     
     // Store original values for comparison
     window.originalDealData = {
+        date: dateFormatted,
         quantity: qty || '',
-        targetPrice: targetPrice || '',
         entryPrice: entryPrice || '',
-        tprPercent: tprPercent || ''
+        tprPercent: tprPercent || '',
+        targetPrice: targetPrice || ''
     };
     
     // Show modal
@@ -1326,17 +1344,19 @@ function editDeal(dealId, symbol, qty, targetPrice, entryPrice, tprPercent) {
 function submitEditDeal() {
     var dealId = document.getElementById('editDealId').value;
     var symbol = document.getElementById('editSymbol').value;
+    var date = document.getElementById('editDate').value;
     var qty = document.getElementById('editQuantity').value;
-    var targetPrice = document.getElementById('editTargetPrice').value;
     var entryPrice = document.getElementById('editEntryPrice').value;
     var tprPercent = document.getElementById('editTPRPercent').value;
+    var targetPrice = document.getElementById('editTargetPrice').value;
     
     // Check if at least one field has been changed
     var currentData = {
+        date: date,
         quantity: qty,
-        targetPrice: targetPrice,
         entryPrice: entryPrice,
-        tprPercent: tprPercent
+        tprPercent: tprPercent,
+        targetPrice: targetPrice
     };
     
     var hasChanges = false;
@@ -1358,12 +1378,24 @@ function submitEditDeal() {
         return;
     }
     
+    // Validate date format if provided
+    if (date && !/^\d{6}$/.test(date)) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Invalid Date Format',
+            text: 'Date must be in ddmmyy format (6 digits)',
+            background: '#1e1e1e',
+            color: '#fff'
+        });
+        return;
+    }
+    
     // Validate numeric fields if they have values
     var fieldsToValidate = [
         {value: qty, name: 'Quantity'},
-        {value: targetPrice, name: 'Target Price'},
         {value: entryPrice, name: 'Entry Price'},
-        {value: tprPercent, name: 'TPR Percentage'}
+        {value: tprPercent, name: 'TPR Percentage'},
+        {value: targetPrice, name: 'Target Price'}
     ];
     
     for (var i = 0; i < fieldsToValidate.length; i++) {
@@ -1398,10 +1430,11 @@ function submitEditDeal() {
         symbol: symbol
     };
     
+    if (date) updateData.date = date;
     if (qty) updateData.qty = parseFloat(qty);
-    if (targetPrice) updateData.target_price = parseFloat(targetPrice);
     if (entryPrice) updateData.entry_price = parseFloat(entryPrice);
     if (tprPercent) updateData.tpr_percent = parseFloat(tprPercent);
+    if (targetPrice) updateData.target_price = parseFloat(targetPrice);
     
     // Make API call
     fetch('/api/edit-deal', {
@@ -2623,11 +2656,18 @@ DealsManager.prototype.updateDealsCountBadge = function () {
 function closeDeal(dealId, symbol) {
     // Set modal values
     document.getElementById('closeDealId').value = dealId;
+    document.getElementById('closeDealIdDisplay').value = dealId;
     document.getElementById('closeDealSymbol').value = symbol;
     
-    // Set default exit date to today
-    var today = new Date().toISOString().split('T')[0];
-    document.getElementById('closeDealExitDate').value = today;
+    // Set default exit date to today in ddmmyy format
+    var today = new Date();
+    var day = String(today.getDate()).padStart(2, '0');
+    var month = String(today.getMonth() + 1).padStart(2, '0');
+    var year = String(today.getFullYear()).slice(-2);
+    var todayFormatted = day + month + year;
+    
+    document.getElementById('closeDealExitDate').value = todayFormatted;
+    document.getElementById('closeDealExitPrice').value = '';
     
     // Show close deal modal
     var modal = new bootstrap.Modal(document.getElementById('closeDealModal'));
@@ -2638,12 +2678,49 @@ function submitCloseDeal() {
     var dealId = document.getElementById('closeDealId').value;
     var symbol = document.getElementById('closeDealSymbol').value;
     var exitDate = document.getElementById('closeDealExitDate').value;
+    var exitPrice = document.getElementById('closeDealExitPrice').value;
     
+    // Validate required fields
     if (!exitDate) {
         Swal.fire({
             icon: 'error',
             title: 'Validation Error',
-            text: 'Please select an exit date',
+            text: 'Please enter an exit date',
+            background: '#1e1e1e',
+            color: '#fff'
+        });
+        return;
+    }
+    
+    if (!exitPrice) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Validation Error',
+            text: 'Please enter an exit price',
+            background: '#1e1e1e',
+            color: '#fff'
+        });
+        return;
+    }
+    
+    // Validate date format (ddmmyy)
+    if (!/^\d{6}$/.test(exitDate)) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Invalid Date Format',
+            text: 'Exit date must be in ddmmyy format (6 digits)',
+            background: '#1e1e1e',
+            color: '#fff'
+        });
+        return;
+    }
+    
+    // Validate exit price is a positive number
+    if (isNaN(parseFloat(exitPrice)) || parseFloat(exitPrice) <= 0) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Invalid Exit Price',
+            text: 'Exit price must be a positive number',
             background: '#1e1e1e',
             color: '#fff'
         });
@@ -2671,7 +2748,8 @@ function submitCloseDeal() {
         body: JSON.stringify({
             deal_id: dealId,
             symbol: symbol,
-            exit_date: exitDate
+            exit_date: exitDate,
+            exit_price: parseFloat(exitPrice)
         })
     })
     .then(response => response.json())

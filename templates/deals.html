@@ -551,6 +551,15 @@ endblock %} {% block head %}
                     <form id="editDealForm">
                         <input type="hidden" id="editDealId" />
                         <div class="mb-3">
+                            <label class="form-label text-light">Deal ID</label>
+                            <input
+                                type="text"
+                                class="form-control bg-secondary text-light"
+                                id="editDealIdDisplay"
+                                readonly
+                            />
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label text-light">Symbol</label>
                             <input
                                 type="text"
@@ -559,19 +568,23 @@ endblock %} {% block head %}
                                 readonly
                             />
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label text-light">Date <small class="text-muted">(ddmmyy format)</small></label>
+                            <input
+                                type="text"
+                                class="form-control bg-secondary text-light"
+                                id="editDate"
+                                placeholder="e.g., 021225 for 02 Dec 2025"
+                                pattern="[0-9]{6}"
+                                maxlength="6"
+                            />
+                            <div class="form-text text-muted">
+                                <small><i class="fas fa-info-circle me-1"></i>Enter date in ddmmyy format (6 digits)</small>
+                            </div>
+                        </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">Entry Price</label>
-                                <input
-                                    type="number"
-                                    class="form-control bg-secondary text-light"
-                                    id="editEntryPrice"
-                                    step="0.01"
-                                    min="0"
-                                />
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">Quantity</label>
+                                <label class="form-label text-light">Quantity (Qty)</label>
                                 <input
                                     type="number"
                                     class="form-control bg-secondary text-light"
@@ -580,18 +593,18 @@ endblock %} {% block head %}
                                     min="1"
                                 />
                             </div>
-                        </div>
-                        <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">Target Price</label>
+                                <label class="form-label text-light">Entry Price (EP)</label>
                                 <input
                                     type="number"
                                     class="form-control bg-secondary text-light"
-                                    id="editTargetPrice"
+                                    id="editEntryPrice"
                                     step="0.01"
                                     min="0"
                                 />
                             </div>
+                        </div>
+                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label text-light">TPR (%)</label>
                                 <input
@@ -600,6 +613,16 @@ endblock %} {% block head %}
                                     id="editTPRPercent"
                                     step="0.01"
                                     placeholder="Enter percentage"
+                                />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-light">Target Price</label>
+                                <input
+                                    type="number"
+                                    class="form-control bg-secondary text-light"
+                                    id="editTargetPrice"
+                                    step="0.01"
+                                    min="0"
                                 />
                             </div>
                         </div>
@@ -647,6 +670,15 @@ endblock %} {% block head %}
                     <form id="closeDealForm">
                         <input type="hidden" id="closeDealId" />
                         <div class="mb-3">
+                            <label class="form-label text-light">Deal ID</label>
+                            <input
+                                type="text"
+                                class="form-control bg-secondary text-light"
+                                id="closeDealIdDisplay"
+                                readonly
+                            />
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label text-light">Symbol</label>
                             <input
                                 type="text"
@@ -655,14 +687,34 @@ endblock %} {% block head %}
                                 readonly
                             />
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label text-light">Exit Date</label>
-                            <input
-                                type="date"
-                                class="form-control bg-secondary text-light"
-                                id="closeDealExitDate"
-                                required
-                            />
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-light">Exit Date <small class="text-muted">(ddmmyy format)</small></label>
+                                <input
+                                    type="text"
+                                    class="form-control bg-secondary text-light"
+                                    id="closeDealExitDate"
+                                    placeholder="e.g., 021225 for 02 Dec 2025"
+                                    pattern="[0-9]{6}"
+                                    maxlength="6"
+                                    required
+                                />
+                                <div class="form-text text-muted">
+                                    <small><i class="fas fa-info-circle me-1"></i>Enter date in ddmmyy format (6 digits)</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-light">Exit Price (EXP)</label>
+                                <input
+                                    type="number"
+                                    class="form-control bg-secondary text-light"
+                                    id="closeDealExitPrice"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="Enter exit price"
+                                    required
+                                />
+                            </div>
                         </div>
                         <div class="alert alert-warning">
                             <i class="fas fa-exclamation-triangle me-2"></i>
