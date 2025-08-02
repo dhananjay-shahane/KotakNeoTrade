@@ -55,6 +55,15 @@ class DraggableModal {
                 e.stopPropagation();
             }
         });
+        
+        // Ensure proper backdrop styling
+        this.modal.addEventListener('shown.bs.modal', () => {
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+                backdrop.style.opacity = '0.6';
+            }
+        });
     }
     
     centerModal() {
