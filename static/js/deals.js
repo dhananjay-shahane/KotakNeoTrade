@@ -1420,23 +1420,19 @@ function editDeal(
     document.getElementById("editDate").value = dateFormatted;
     document.getElementById("editQuantity").value = qty || "";
     document.getElementById("editEntryPrice").value = entryPrice || "";
-    // Set TP percentage field if it exists
-    var editTPPercentField = document.getElementById("editTPPercent");
-    if (editTPPercentField) {
-        editTPPercentField.value = ""; // TP percentage field - calculate from data
-    }
-    document.getElementById("editTPRPrice").value = tprPrice || "";
-    // Removed editTargetPrice field - no longer exists
+    // Set TP percentage field (target price)
+        document.getElementById("editTPPercent").value = targetPrice || "";
+        // Set TPR field (target percentage return)
+        document.getElementById("editTPRPrice").value = tprPrice || "";
 
     // Store original values for comparison
-    window.originalDealData = {
-        date: dateFormatted,
-        quantity: qty || "",
-        entryPrice: entryPrice || "",
-        tpPercent: "", // TP percentage field - always start empty
-        tprPrice: tprPrice || "",
-        targetPrice: targetPrice || "",
-    };
+        window.originalDealData = {
+            date: dateFormatted,
+            quantity: qty || "",
+            entryPrice: entryPrice || "",
+            tpPercent: targetPrice || "", // TP percentage field - use target price
+            tprPrice: tprPrice || "",
+        };
 
     // Show modal
     var modal = new bootstrap.Modal(modalElement);
@@ -1861,10 +1857,10 @@ function sellTrade(symbol, currentPrice) {
         return;
     }
 
-```python
     if (!currentPrice || isNaN(currentPrice) || currentPrice <= 0) {
         currentPrice = 100; // Default fallback price
-        console.warn("Invalid price provided, using fallback:", currentPrice);
+        ```javascript
+console.warn("Invalid price provided, using fallback:", currentPrice);
     }
 
     console.log(
@@ -2880,7 +2876,8 @@ function submitCloseDeal() {
     fetch("/api/close-deal", {
         method: "POST",
         headers: {
-            "Content-Type": "application/json",
+            ```javascript
+"Content-Type": "application/json",
         },
         body: JSON.stringify({
             deal_id: dealId,
