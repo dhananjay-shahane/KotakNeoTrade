@@ -872,7 +872,6 @@ def get_user_deals_data():
                 'total_pnl_percent': 0
             }
         }), 408
-```python
     except Exception as e:
         logger.error(f"Error in user deals API: {e}")
         return jsonify({
@@ -951,7 +950,6 @@ def edit_deal():
         tp_percent = data.get('tp_percent')
         tpr_price = data.get('tpr_price')
         target_price = data.get('target_price')
-        pos = data.get('pos')
 
         if not deal_id or not symbol:
             return jsonify({
@@ -1081,22 +1079,6 @@ def edit_deal():
                 return jsonify({
                     'success': False,
                     'error': 'Invalid target price value'
-                }), 400
-
-        if pos is not None:
-            try:
-                pos = str(pos)
-                if pos not in ['0', '1']:
-                    return jsonify({
-                        'success': False,
-                        'error': 'Invalid position value. Must be 0 or 1'
-                    }), 400
-                fields_to_update['pos'] = pos
-                update_count += 1
-            except (ValueError, TypeError):
-                return jsonify({
-                    'success': False,
-                    'error': 'Invalid position value'
                 }), 400
 
         # Ensure at least one field is being updated
