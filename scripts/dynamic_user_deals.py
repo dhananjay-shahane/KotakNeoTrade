@@ -286,6 +286,41 @@ class DynamicUserDealsService:
         updates = {'status': 'CLOSED', 'ed': datetime.now().date()}
         return self.update_deal(username, deal_id, updates)
 
+    def delete_deal(self, username, deal_id):
+        """
+        Delete a deal from user-specific table
+        """
+        try:
+            conn = self.get_connection()
+            if not conn:
+                return False
+
+            cursor = conn.cursor()
+            table_name = f"{username}_deals"
+
+            delete_query = sql.SQL("DELETE FROM {} WHERE id = %s").format(
+                sql.Identifier(table_name))
+
+            cursor.execute(delete_query, (deal_id,))
+            rows_affected = cursor.rowcount
+
+            conn.commit()
+            cursor.close()
+            conn.close()
+
+            logger.info(
+                f"✅ Deleted deal {deal_id} from {table_name}, rows affected: {rows_affected}"
+            )
+            return rows_affected > 0
+
+        except Exception as e:
+            logger.error(
+                f"❌ Failed to delete deal {deal_id} from {username} table: {e}")
+            if 'conn' in locals() and conn:
+                conn.rollback()
+                conn.close()
+            return False
+
     def table_exists(self, username):
         """
         Check if user deals table exists

@@ -152,6 +152,13 @@ DealsManager.prototype.setupDealButtonListeners = function () {
             var symbol = btn.getAttribute("data-symbol");
             closeDeal(dealId, symbol);
         }
+
+        if (e.target.closest(".remove-deal-btn")) {
+            var btn = e.target.closest(".remove-deal-btn");
+            var dealId = btn.getAttribute("data-deal-id");
+            var symbol = btn.getAttribute("data-symbol");
+            removeDeal(dealId, symbol);
+        }
     });
 };
 
@@ -366,7 +373,7 @@ DealsManager.prototype.loadDeals = function () {
                                     deal.id || deal.trade_signal_id || "",
                                 symbol:
                                     deal.symbol || deal.trading_symbol || "",
-                                pos: "1",
+                                pos: (deal.status === 'CLOSED') ? "0" : "1", // Set pos to 0 if closed, 1 if active
                                 qty: parseInt(deal.quantity || deal.qty || 0),
                                 ep: parseFloat(
                                     deal.entry_price || deal.ep || 0,
@@ -422,7 +429,7 @@ DealsManager.prototype.loadDeals = function () {
                                 thirty_percent: deal.thirty_percent || "--",
                                 qt: deal.qt || 1,
                                 ed: deal.ed || "--", // Show exit date from database
-                                exp: deal.exp || "--",
+                                exp: deal.exp || deal.exit_price || "--", // Show exit price (exp) from database
                                 pr: deal.pr || "--",
                                 pp: deal.pp || "--",
                                 iv: deal.iv || "--",
@@ -813,7 +820,12 @@ DealsManager.prototype.renderDealsTable = function () {
                     cellContent = deal.ch || "-";
                     break;
                 case "exp":
-                    cellContent = deal.exp || "-";
+                    // Format exit price to show with currency symbol
+                    if (deal.exp && deal.exp !== "--" && deal.exp !== "-" && deal.exp !== null) {
+                        cellContent = typeof deal.exp === 'number' ? "₹" + deal.exp.toFixed(2) : deal.exp;
+                    } else {
+                        cellContent = "--";
+                    }
                     break;
                 case "entry_price":
                     cellContent = deal.entry_price
@@ -935,6 +947,13 @@ DealsManager.prototype.renderDealsTable = function () {
                             symbol +
                             '">' +
                             '<i class="fas fa-times"></i> Close' +
+                            "</button>" +
+                            '<button class="btn btn-outline-danger btn-sm remove-deal-btn" data-deal-id="' +
+                            dealId +
+                            '" data-symbol="' +
+                            symbol +
+                            '" title="Remove this deal permanently">' +
+                            '<i class="fas fa-trash"></i> Remove' +
                             "</button>" +
                             "</div>";
                     }
@@ -1506,18 +1525,17 @@ function submitEditDeal() {
         color: "#fff",
     });
 
-    // Prepare data for API call
+    // Prepare data for API call with proper field names
     var updateData = {
         deal_id: dealId,
         symbol: symbol,
     };
 
-    if (dateForAPI) updateData.date = dateForAPI;
-    if (qty) updateData.qty = parseFloat(qty);
-    if (entryPrice) updateData.entry_price = parseFloat(entryPrice);
-    if (tpPercent) updateData.tp_percent = parseFloat(tpPercent);
-    if (tprPrice) updateData.tpr_price = parseFloat(tprPrice);
-    if (targetPrice) updateData.target_price = parseFloat(targetPrice);
+    if (dateForAPI) updateData.date = dateForAPI; // date_fmt parameter
+    if (qty) updateData.qty = parseFloat(qty); // qty parameter
+    if (entryPrice) updateData.entry_price = parseFloat(entryPrice); // entry_price parameter
+    if (tpPercent) updateData.tp_percent = parseFloat(tpPercent); // tp_value parameter
+    if (tprPrice) updateData.tpr_price = parseFloat(tprPrice); // tpr_value parameter
 
     // Make API call
     fetch("/api/edit-deal", {
@@ -2854,8 +2872,8 @@ function submitCloseDeal() {
         body: JSON.stringify({
             deal_id: dealId,
             symbol: symbol,
-            exit_date: exitDateForAPI,
-            exit_price: parseFloat(exitPrice),
+            exit_date: exitDateForAPI, // ed parameter
+            exit_price: parseFloat(exitPrice), // exp parameter
         }),
     })
         .then((response) => response.json())
@@ -2903,6 +2921,85 @@ function submitCloseDeal() {
                 color: "#fff",
             });
         });
+}
+
+function removeDeal(dealId, symbol) {
+    // Show confirmation dialog
+    Swal.fire({
+        title: 'Remove Deal?',
+        text: `Are you sure you want to permanently remove deal for ${symbol}? This action cannot be undone.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, Remove Deal',
+        cancelButtonText: 'Cancel',
+        background: '#1e1e1e',
+        color: '#fff',
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Show loading
+            Swal.fire({
+                title: 'Removing Deal...',
+                text: 'Please wait while we remove your deal',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
+                background: '#1e1e1e',
+                color: '#fff',
+            });
+
+            // Make API call to remove deal
+            fetch('/api/remove-deal', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    deal_id: dealId,
+                    symbol: symbol,
+                }),
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Deal Removed!',
+                            text: `Deal removed successfully for ${symbol}`,
+                            background: '#1e1e1e',
+                            color: '#fff',
+                            timer: 2000,
+                            showConfirmButton: false,
+                        });
+
+                        // Refresh deals table
+                        if (window.dealsManager) {
+                            window.dealsManager.loadDeals();
+                        }
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: data.message || 'Failed to remove deal. Please try again.',
+                            background: '#1e1e1e',
+                            color: '#fff',
+                        });
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error removing deal:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Network Error',
+                        text: 'Failed to remove deal. Please check your connection.',
+                        background: '#1e1e1e',
+                        color: '#fff',
+                    });
+                });
+        }
+    });
 }
 
 // Date formatting functions for keyboard input
