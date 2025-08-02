@@ -1018,39 +1018,39 @@ def edit_deal():
                     'error': 'Invalid entry price value'
                 }), 400
 
-        # Handle TP value (target price value)
+        # Handle TP value (target price - actual price)
         if tp_percent is not None:
             try:
                 tp_percent = float(tp_percent)
                 if tp_percent <= 0:
                     return jsonify({
                         'success': False,
-                        'error': 'TP value must be a positive number'
+                        'error': 'Target price must be a positive number'
                     }), 400
-                # Store TP value as target price in tp column
-                fields_to_update['tp'] = tp_percent  # tp_value -> tp column
+                # Store target price in tp column
+                fields_to_update['tp'] = tp_percent  # target price -> tp column
                 update_count += 1
             except (ValueError, TypeError):
                 return jsonify({
                     'success': False,
-                    'error': 'Invalid TP value'
+                    'error': 'Invalid target price value'
                 }), 400
 
-        # Handle TPR value (target percentage return)
+        # Handle TPR value (target percentage return - percentage)
         if tpr_price is not None:
             try:
                 tpr_price = float(tpr_price)
                 if tpr_price <= 0:
                     return jsonify({
                         'success': False,
-                        'error': 'TPR value must be a positive number'
+                        'error': 'Target percentage must be a positive number'
                     }), 400
-                fields_to_update['tpr'] = tpr_price  # tpr_value -> tpr column
+                fields_to_update['tpr'] = tpr_price  # target percentage -> tpr column
                 update_count += 1
             except (ValueError, TypeError):
                 return jsonify({
                     'success': False,
-                    'error': 'Invalid TPR value'
+                    'error': 'Invalid target percentage value'
                 }), 400
 
         if target_price is not None:
@@ -1104,6 +1104,37 @@ def edit_deal():
 
         # Ensure the table has all required columns
         dynamic_deals_service.ensure_table_columns(username)
+
+        # Add fallback TP/TPR calculations if not provided but entry_price is available
+        if 'ep' in fields_to_update and ('tp' not in fields_to_update and 'tpr' not in fields_to_update):
+            entry_price_val = fields_to_update['ep']
+            # Get current CMP to calculate target based on business logic
+            cmp_numeric = 0  # Default if CMP not available
+            
+            # Calculate target price based on business logic
+            if cmp_numeric > 0:
+                current_gain_percent = ((cmp_numeric - entry_price_val) / entry_price_val) * 100
+                if current_gain_percent > 10:
+                    target_price_calc = entry_price_val * 1.25  # 25% from entry price
+                elif current_gain_percent > 5:
+                    target_price_calc = entry_price_val * 1.20
+                elif current_gain_percent > 0:
+                    target_price_calc = entry_price_val * 1.15
+                elif current_gain_percent > -5:
+                    target_price_calc = entry_price_val * 1.12
+                else:
+                    target_price_calc = entry_price_val * 1.10
+            else:
+                target_price_calc = entry_price_val * 1.15  # Default 15% target
+                
+            tpr_percent_calc = ((target_price_calc - entry_price_val) / entry_price_val) * 100
+            fields_to_update['tp'] = round(target_price_calc, 2)
+            fields_to_update['tpr'] = round(tpr_percent_calc, 2)
+            update_count += 2
+
+        # Set POS value based on deal status (1 for active, 0 for closed)
+        # For edit operations, deals are typically active, so set POS = 1
+        fields_to_update['pos'] = 1
 
         # Update deal in user's dynamic table
         success = dynamic_deals_service.update_deal(username, deal_id,

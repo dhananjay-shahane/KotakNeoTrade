@@ -1484,13 +1484,22 @@ function submitEditDeal() {
         }
     }
 
+    // Calculate target price from TP percentage if provided
+    var calculatedTargetPrice = "";
+    if (tpPercent && entryPrice) {
+        var epValue = parseFloat(entryPrice);
+        var tpPercentValue = parseFloat(tpPercent);
+        if (!isNaN(epValue) && !isNaN(tpPercentValue) && epValue > 0 && tpPercentValue > 0) {
+            calculatedTargetPrice = (epValue + (epValue * tpPercentValue / 100)).toString();
+        }
+    }
+
     // Validate numeric fields if they have values
     var fieldsToValidate = [
         { value: qty, name: "Quantity" },
         { value: entryPrice, name: "Entry Price" },
         { value: tpPercent, name: "TP Percentage" },
         { value: tprPrice, name: "TPR Price" },
-        { value: targetPrice, name: "Target Price" },
     ];
 
     for (var i = 0; i < fieldsToValidate.length; i++) {
@@ -1531,8 +1540,12 @@ function submitEditDeal() {
     if (dateForAPI) updateData.date = dateForAPI; // date_fmt parameter
     if (qty) updateData.qty = parseFloat(qty); // qty parameter
     if (entryPrice) updateData.entry_price = parseFloat(entryPrice); // entry_price parameter
-    if (tpPercent) updateData.tp_percent = parseFloat(tpPercent); // tp_value parameter
-    if (tprPrice) updateData.tpr_price = parseFloat(tprPrice); // tpr_value parameter
+    
+    // Fix TPR vs TP confusion:
+    // TPR = Target Price Return (percentage) -> goes to tp_percent 
+    // TP = Target Price (actual price) -> goes to tpr_price
+    if (tpPercent) updateData.tpr_price = parseFloat(tpPercent); // TPR percentage goes to tpr_price parameter
+    if (tprPrice) updateData.tp_percent = parseFloat(tprPrice); // TP price goes to tp_percent parameter
 
     // Make API call
     fetch("/api/edit-deal", {
@@ -1585,34 +1598,51 @@ function submitEditDeal() {
 
 function submitCloseDeal() {
     var dealId = document.getElementById("closeDealId").value;
-    var symbol = document.getElementById("closeSymbol").value;
-    var exitDate = document.getElementById("exitDate").value;
+    var symbol = document.getElementById("closeDealSymbol").value;
+    var exitDate = document.getElementById("closeDealExitDate").value;
+    var exitPrice = document.getElementById("exitPrice").value;
 
     if (!exitDate) {
         Swal.fire({
             icon: "error",
             title: "Validation Error",
-            text: "Please select an exit date",
+            text: "Please enter exit date in dd/mm/yy format",
             background: "#1e1e1e",
             color: "#fff",
         });
         return;
     }
 
-    // Validate exit date is not in the future
-    var selectedDate = new Date(exitDate);
-    var today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (selectedDate > today) {
+    if (!exitPrice || isNaN(parseFloat(exitPrice)) || parseFloat(exitPrice) <= 0) {
         Swal.fire({
             icon: "error",
-            title: "Invalid Date",
-            text: "Exit date cannot be in the future",
+            title: "Validation Error",
+            text: "Please enter a valid exit price",
             background: "#1e1e1e",
             color: "#fff",
         });
         return;
+    }
+
+    // Convert date from dd/mm/yy to ddmmyy format if provided
+    var dateForAPI = "";
+    if (exitDate && exitDate.trim()) {
+        exitDate = exitDate.trim();
+        // Check if date is in dd/mm/yy format
+        if (/^\d{2}\/\d{2}\/\d{2}$/.test(exitDate)) {
+            dateForAPI = exitDate.replace(/\//g, ""); // Remove slashes for API
+        } else if (/^\d{6}$/.test(exitDate)) {
+            dateForAPI = exitDate; // Already in ddmmyy format
+        } else {
+            Swal.fire({
+                icon: "error",
+                title: "Invalid Date Format",
+                text: "Date must be in dd/mm/yy format (e.g., 02/08/25)",
+                background: "#1e1e1e",
+                color: "#fff",
+            });
+            return;
+        }
     }
 
     // Show loading
@@ -1636,7 +1666,8 @@ function submitCloseDeal() {
         body: JSON.stringify({
             deal_id: dealId,
             symbol: symbol,
-            exit_date: exitDate,
+            exit_date: dateForAPI,
+            exit_price: parseFloat(exitPrice),
         }),
     })
         .then((response) => response.json())
@@ -1756,7 +1787,8 @@ function submitEditExitDate() {
         body: JSON.stringify({
             deal_id: dealId,
             symbol: symbol,
-            exit_date: exitDate,
+            exit_date: dateForAPI,
+            exit_price: parseFloat(exitPrice),
         }),
     })
         .then((response) => response.json())

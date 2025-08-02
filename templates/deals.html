@@ -676,17 +676,17 @@ endblock %} {% block head %}
                                 <input
                                     type="number"
                                     class="form-control bg-secondary text-light"
-                                    id="closeDealExitPrice"
+                                    id="exitPrice"
                                     step="0.01"
                                     min="0"
                                     placeholder="Enter exit price"
-
+                                    required
                                 />
                             </div>
                         </div>
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Closing this deal will set position to 0 and disable the row. This action cannot be undone.
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Enter the exit date and price to close this deal permanently.
                         </div>
                     </form>
                 </div>
@@ -703,7 +703,7 @@ endblock %} {% block head %}
                         class="btn btn-danger"
                         onclick="submitCloseDeal()"
                     >
-                        <i class="fas fa-times me-1"></i>Close Deal
+                        Close Deal
                     </button>
                 </div>
             </div>
