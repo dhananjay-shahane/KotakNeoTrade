@@ -135,7 +135,7 @@ DealsManager.prototype.setupDealButtonListeners = function () {
             var entryPrice = btn.getAttribute('data-entry-price');
             var tprPercent = btn.getAttribute('data-tpr-percent');
             var targetPrice = btn.getAttribute('data-target-price');
-            editDeal(dealId, symbol, qty, targetPrice, entryPrice, tprPercent, date);
+            editDeal(dealId, symbol, date, qty, entryPrice, targetPrice, tprPercent);
         }
         
         if (e.target.closest('.close-deal-btn')) {
@@ -1285,8 +1285,8 @@ function cancelOrder(dealId) {
 }
 
 // Edit Deal Functions
-function editDeal(dealId, symbol, qty, targetPrice, entryPrice, tprPercent, date) {
-    console.log("editDeal function called with:", dealId, symbol, qty, targetPrice, entryPrice, tprPercent, date);
+function editDeal(dealId, symbol, date, qty, entryPrice, targetPrice, tprPercent) {
+    console.log("editDeal function called with:", dealId, symbol, date, qty, entryPrice, targetPrice, tprPercent);
     
     // Validate input parameters
     if (!dealId || !symbol) {
@@ -1327,7 +1327,7 @@ function editDeal(dealId, symbol, qty, targetPrice, entryPrice, tprPercent, date
     document.getElementById('editTPRPercent').value = tprPercent || '';
     document.getElementById('editTargetPrice').value = targetPrice || '';
     
-    // Store original values for comparison
+    // Store original values for comparison  
     window.originalDealData = {
         date: dateFormatted,
         quantity: qty || '',
