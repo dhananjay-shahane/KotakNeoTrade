@@ -133,7 +133,7 @@ DealsManager.prototype.setupDealButtonListeners = function () {
             var date = btn.getAttribute("data-date");
             var qty = btn.getAttribute("data-qty");
             var entryPrice = btn.getAttribute("data-entry-price");
-            var tprPercent = btn.getAttribute("data-tpr-percent");
+            var tprPrice = btn.getAttribute("data-tpr-price");
             var targetPrice = btn.getAttribute("data-target-price");
             editDeal(
                 dealId,
@@ -142,7 +142,7 @@ DealsManager.prototype.setupDealButtonListeners = function () {
                 qty,
                 entryPrice,
                 targetPrice,
-                tprPercent,
+                tprPrice,
             );
         }
 
@@ -707,7 +707,7 @@ DealsManager.prototype.renderDealsTable = function () {
                     cellContent = deal.tp ? "₹" + deal.tp.toFixed(2) : "-";
                     break;
                 case "tpr":
-                    cellContent = deal.tpr || "--";
+                    cellContent = deal.tp ? "₹" + parseFloat(deal.tp).toFixed(2) : "--";
                     break;
                 case "tva":
                     cellContent = deal.tva || "--";
@@ -755,7 +755,7 @@ DealsManager.prototype.renderDealsTable = function () {
                         : "";
                     break;
                 case "tpr":
-                    cellContent = deal.tpr ? "₹" + deal.tpr.toFixed(0) : "0";
+                    cellContent = deal.tp ? "₹" + parseFloat(deal.tp).toFixed(2) : "0";
                     break;
                 case "pl":
                     if (deal.pl !== undefined) {
@@ -908,8 +908,8 @@ DealsManager.prototype.renderDealsTable = function () {
                         var date = deal.date || "";
                         var qty = deal.qty || 0;
                         var entryPrice = deal.entry_price || deal.ep || 0;
-                        var tprPercent = deal.tpr_percent || deal.pp || 0;
-                        var targetPrice = deal.target_price || deal.tpr || 0;
+                        var tprPrice = deal.tp || 0; // Use tp (target price) as TPR price
+                        var targetPrice = deal.target_price || deal.tp || 0;
 
                         cellContent =
                             '<div class="btn-group btn-group-sm">' +
@@ -923,8 +923,8 @@ DealsManager.prototype.renderDealsTable = function () {
                             qty +
                             '" data-entry-price="' +
                             entryPrice +
-                            '" data-tpr-percent="' +
-                            tprPercent +
+                            '" data-tpr-price="' +
+                            tprPrice +
                             '" data-target-price="' +
                             targetPrice +
                             '">' +
@@ -1331,7 +1331,7 @@ function editDeal(
     qty,
     entryPrice,
     targetPrice,
-    tprPercent,
+    tprPrice,
 ) {
     console.log(
         "editDeal function called with:",
@@ -1341,7 +1341,7 @@ function editDeal(
         qty,
         entryPrice,
         targetPrice,
-        tprPercent,
+        tprPrice,
     );
 
     // Validate input parameters
@@ -1363,11 +1363,17 @@ function editDeal(
     var dateFormatted = "";
     if (date && date !== "--" && date !== null && date !== "") {
         try {
-            var dateObj = new Date(date);
-            var day = String(dateObj.getDate()).padStart(2, "0");
-            var month = String(dateObj.getMonth() + 1).padStart(2, "0");
-            var year = String(dateObj.getFullYear()).slice(-2);
-            dateFormatted = day + "/" + month + "/" + year;
+            // If date is already in dd/mm/yy format, use it directly
+            if (/^\d{2}\/\d{2}\/\d{2}$/.test(date)) {
+                dateFormatted = date;
+            } else {
+                // Try to parse as date object
+                var dateObj = new Date(date);
+                var day = String(dateObj.getDate()).padStart(2, "0");
+                var month = String(dateObj.getMonth() + 1).padStart(2, "0");
+                var year = String(dateObj.getFullYear()).slice(-2);
+                dateFormatted = day + "/" + month + "/" + year;
+            }
         } catch (e) {
             console.warn("Could not parse date:", date);
         }
@@ -1380,7 +1386,7 @@ function editDeal(
     document.getElementById("editDate").value = dateFormatted;
     document.getElementById("editQuantity").value = qty || "";
     document.getElementById("editEntryPrice").value = entryPrice || "";
-    document.getElementById("editTPRPercent").value = tprPercent || "";
+    document.getElementById("editTPRPrice").value = tprPrice || "";
     document.getElementById("editTargetPrice").value = targetPrice || "";
 
     // Store original values for comparison
@@ -1388,7 +1394,7 @@ function editDeal(
         date: dateFormatted,
         quantity: qty || "",
         entryPrice: entryPrice || "",
-        tprPercent: tprPercent || "",
+        tprPrice: tprPrice || "",
         targetPrice: targetPrice || "",
     };
 
@@ -1403,7 +1409,7 @@ function submitEditDeal() {
     var date = document.getElementById("editDate").value;
     var qty = document.getElementById("editQuantity").value;
     var entryPrice = document.getElementById("editEntryPrice").value;
-    var tprPercent = document.getElementById("editTPRPercent").value;
+    var tprPrice = document.getElementById("editTPRPrice").value;
     var targetPrice = document.getElementById("editTargetPrice").value;
 
     // Check if at least one field has been changed
@@ -1411,7 +1417,7 @@ function submitEditDeal() {
         date: date,
         quantity: qty,
         entryPrice: entryPrice,
-        tprPercent: tprPercent,
+        tprPrice: tprPrice,
         targetPrice: targetPrice,
     };
 
@@ -1459,7 +1465,7 @@ function submitEditDeal() {
     var fieldsToValidate = [
         { value: qty, name: "Quantity" },
         { value: entryPrice, name: "Entry Price" },
-        { value: tprPercent, name: "TPR Percentage" },
+        { value: tprPrice, name: "TPR Price" },
         { value: targetPrice, name: "Target Price" },
     ];
 
@@ -1501,7 +1507,7 @@ function submitEditDeal() {
     if (dateForAPI) updateData.date = dateForAPI;
     if (qty) updateData.qty = parseFloat(qty);
     if (entryPrice) updateData.entry_price = parseFloat(entryPrice);
-    if (tprPercent) updateData.tpr_percent = parseFloat(tprPercent);
+    if (tprPrice) updateData.tpr_price = parseFloat(tprPrice);
     if (targetPrice) updateData.target_price = parseFloat(targetPrice);
 
     // Make API call
@@ -2886,3 +2892,49 @@ function submitCloseDeal() {
             });
         });
 }
+
+// Date formatting functions for keyboard input
+function formatDateInput(input) {
+    let value = input.value.replace(/\D/g, ''); // Remove non-digits
+    
+    if (value.length >= 2 && value.length < 4) {
+        value = value.substring(0, 2) + '/' + value.substring(2);
+    } else if (value.length >= 4) {
+        value = value.substring(0, 2) + '/' + value.substring(2, 4) + '/' + value.substring(4, 6);
+    }
+    
+    input.value = value;
+}
+
+// Add event listeners for date formatting when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Format edit deal date input
+    const editDateInput = document.getElementById('editDate');
+    if (editDateInput) {
+        editDateInput.addEventListener('input', function() {
+            formatDateInput(this);
+        });
+        
+        editDateInput.addEventListener('keypress', function(e) {
+            // Only allow numbers
+            if (!/\d/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter'].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+    }
+    
+    // Format close deal exit date input
+    const exitDateInput = document.getElementById('closeDealExitDate');
+    if (exitDateInput) {
+        exitDateInput.addEventListener('input', function() {
+            formatDateInput(this);
+        });
+        
+        exitDateInput.addEventListener('keypress', function(e) {
+            // Only allow numbers
+            if (!/\d/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter'].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+    }
+});

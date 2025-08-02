@@ -569,17 +569,17 @@ endblock %} {% block head %}
                             />
                         </div>
                         <div class="mb-3">
-                            <label class="form-label text-light">Date <small class="text-muted">(ddmmyy format)</small></label>
+                            <label class="form-label text-light">Date <small class="text-muted">(dd/mm/yy format)</small></label>
                             <input
                                 type="text"
                                 class="form-control bg-secondary text-light"
                                 id="editDate"
-                                placeholder="e.g., 021225 for 02 Dec 2025"
-                                pattern="[0-9]{6}"
-                                maxlength="6"
+                                placeholder="e.g., 02/12/25 for 02 Dec 2025"
+                                pattern="[0-9]{2}/[0-9]{2}/[0-9]{2}"
+                                maxlength="8"
                             />
                             <div class="form-text text-muted">
-                                <small><i class="fas fa-info-circle me-1"></i>Enter date in ddmmyy format (6 digits)</small>
+                                <small><i class="fas fa-info-circle me-1"></i>Enter date in dd/mm/yy format with slashes</small>
                             </div>
                         </div>
                         <div class="row">
@@ -606,13 +606,14 @@ endblock %} {% block head %}
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">TPR (%)</label>
+                                <label class="form-label text-light">TPR Price</label>
                                 <input
                                     type="number"
                                     class="form-control bg-secondary text-light"
-                                    id="editTPRPercent"
+                                    id="editTPRPrice"
                                     step="0.01"
-                                    placeholder="Enter percentage"
+                                    min="0"
+                                    placeholder="Enter TPR price"
                                 />
                             </div>
                             <div class="col-md-6 mb-3">
@@ -689,18 +690,18 @@ endblock %} {% block head %}
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">Exit Date <small class="text-muted">(ddmmyy format)</small></label>
+                                <label class="form-label text-light">Exit Date <small class="text-muted">(dd/mm/yy format)</small></label>
                                 <input
                                     type="text"
                                     class="form-control bg-secondary text-light"
                                     id="closeDealExitDate"
-                                    placeholder="e.g., 021225 for 02 Dec 2025"
-                                    pattern="[0-9]{6}"
-                                    maxlength="6"
+                                    placeholder="e.g., 02/12/25 for 02 Dec 2025"
+                                    pattern="[0-9]{2}/[0-9]{2}/[0-9]{2}"
+                                    maxlength="8"
                                     required
                                 />
                                 <div class="form-text text-muted">
-                                    <small><i class="fas fa-info-circle me-1"></i>Enter date in ddmmyy format (6 digits)</small>
+                                    <small><i class="fas fa-info-circle me-1"></i>Enter date in dd/mm/yy format with slashes</small>
                                 </div>
                             </div>
                             <div class="col-md-6 mb-3">

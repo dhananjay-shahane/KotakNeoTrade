@@ -937,7 +937,7 @@ def edit_deal():
         date = data.get('date')
         qty = data.get('qty')
         entry_price = data.get('entry_price')
-        tpr_percent = data.get('tpr_percent')
+        tpr_price = data.get('tpr_price')
         target_price = data.get('target_price')
 
         if not deal_id or not symbol:
@@ -1017,8 +1017,22 @@ def edit_deal():
                     'error': 'Invalid entry price value'
                 }), 400
 
-        # Note: tpr_percent is not stored in database, skip it for now
-        # This can be calculated on the frontend based on entry_price and target_price
+        # Handle TPR price (target profit return price)
+        if tpr_price is not None:
+            try:
+                tpr_price = float(tpr_price)
+                if tpr_price <= 0:
+                    return jsonify({
+                        'success': False,
+                        'error': 'TPR price must be a positive number'
+                    }), 400
+                fields_to_update['tp'] = tpr_price  # Map to database column name
+                update_count += 1
+            except (ValueError, TypeError):
+                return jsonify({
+                    'success': False,
+                    'error': 'Invalid TPR price value'
+                }), 400
 
         if target_price is not None:
             try:
