@@ -1359,15 +1359,15 @@ function editDeal(
         return;
     }
 
-    // Convert date if provided to dd/mm/yy format
+    // Convert date if provided to ddmmyy format
     var dateFormatted = "";
-    if (date && date !== "--" && date !== null && date !== "") {
+    if (date && date !== "--" && date !== null) {
         try {
             var dateObj = new Date(date);
             var day = String(dateObj.getDate()).padStart(2, "0");
             var month = String(dateObj.getMonth() + 1).padStart(2, "0");
             var year = String(dateObj.getFullYear()).slice(-2);
-            dateFormatted = day + "/" + month + "/" + year;
+            dateFormatted = day + month + year;
         } catch (e) {
             console.warn("Could not parse date:", date);
         }
@@ -1434,25 +1434,16 @@ function submitEditDeal() {
         return;
     }
 
-    // Convert date from dd/mm/yy to ddmmyy format if provided
-    var dateForAPI = "";
-    if (date && date.trim()) {
-        date = date.trim();
-        // Check if date is in dd/mm/yy format
-        if (/^\d{2}\/\d{2}\/\d{2}$/.test(date)) {
-            dateForAPI = date.replace(/\//g, ""); // Remove slashes for API
-        } else if (/^\d{6}$/.test(date)) {
-            dateForAPI = date; // Already in ddmmyy format
-        } else {
-            Swal.fire({
-                icon: "error",
-                title: "Invalid Date Format",
-                text: "Date must be in dd/mm/yy format (e.g., 02/08/25)",
-                background: "#1e1e1e",
-                color: "#fff",
-            });
-            return;
-        }
+    // Validate date format if provided
+    if (date && !/^\d{6}$/.test(date)) {
+        Swal.fire({
+            icon: "error",
+            title: "Invalid Date Format",
+            text: "Date must be in ddmmyy format (6 digits)",
+            background: "#1e1e1e",
+            color: "#fff",
+        });
+        return;
     }
 
     // Validate numeric fields if they have values
@@ -1498,7 +1489,7 @@ function submitEditDeal() {
         symbol: symbol,
     };
 
-    if (dateForAPI) updateData.date = dateForAPI;
+    if (date) updateData.date = date;
     if (qty) updateData.qty = parseFloat(qty);
     if (entryPrice) updateData.entry_price = parseFloat(entryPrice);
     if (tprPercent) updateData.tpr_percent = parseFloat(tprPercent);
@@ -2738,12 +2729,12 @@ function closeDeal(dealId, symbol) {
     document.getElementById("closeDealIdDisplay").value = dealId;
     document.getElementById("closeDealSymbol").value = symbol;
 
-    // Set default exit date to today in dd/mm/yy format
+    // Set default exit date to today in ddmmyy format
     var today = new Date();
     var day = String(today.getDate()).padStart(2, "0");
     var month = String(today.getMonth() + 1).padStart(2, "0");
     var year = String(today.getFullYear()).slice(-2);
-    var todayFormatted = day + "/" + month + "/" + year;
+    var todayFormatted = day + month + year;
 
     document.getElementById("closeDealExitDate").value = todayFormatted;
     document.getElementById("closeDealExitPrice").value = "";
@@ -2782,25 +2773,16 @@ function submitCloseDeal() {
         return;
     }
 
-    // Convert exit date from dd/mm/yy to ddmmyy format for API
-    var exitDateForAPI = "";
-    if (exitDate && exitDate.trim()) {
-        exitDate = exitDate.trim();
-        // Check if date is in dd/mm/yy format
-        if (/^\d{2}\/\d{2}\/\d{2}$/.test(exitDate)) {
-            exitDateForAPI = exitDate.replace(/\//g, ""); // Remove slashes for API
-        } else if (/^\d{6}$/.test(exitDate)) {
-            exitDateForAPI = exitDate; // Already in ddmmyy format
-        } else {
-            Swal.fire({
-                icon: "error",
-                title: "Invalid Date Format",
-                text: "Exit date must be in dd/mm/yy format (e.g., 02/08/25)",
-                background: "#1e1e1e",
-                color: "#fff",
-            });
-            return;
-        }
+    // Validate date format (ddmmyy)
+    if (!/^\d{6}$/.test(exitDate)) {
+        Swal.fire({
+            icon: "error",
+            title: "Invalid Date Format",
+            text: "Exit date must be in ddmmyy format (6 digits)",
+            background: "#1e1e1e",
+            color: "#fff",
+        });
+        return;
     }
 
     // Validate exit price is a positive number
@@ -2836,7 +2818,7 @@ function submitCloseDeal() {
         body: JSON.stringify({
             deal_id: dealId,
             symbol: symbol,
-            exit_date: exitDateForAPI,
+            exit_date: exitDate,
             exit_price: parseFloat(exitPrice),
         }),
     })

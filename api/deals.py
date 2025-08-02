@@ -956,10 +956,8 @@ def edit_deal():
             date = date.strip()
             if not re.match(r'^\d{6}$', date):
                 return jsonify({
-                    'success':
-                    False,
-                    'error':
-                    'Date must be in ddmmyy format (6 digits)'
+                    'success': False,
+                    'error': 'Date must be in ddmmyy format (6 digits)'
                 }), 400
 
             # Convert ddmmyy to date object
@@ -969,15 +967,12 @@ def edit_deal():
                 year = 2000 + int(date[4:6])  # Assume 20xx century
                 from datetime import date as date_obj
                 parsed_date = date_obj(year, month, day)
-                fields_to_update[
-                    'date'] = parsed_date  # Map to database column name for edit deals
+                fields_to_update['date'] = parsed_date  # Map to database column name for edit deals
                 update_count += 1
             except (ValueError, TypeError):
                 return jsonify({
-                    'success':
-                    False,
-                    'error':
-                    'Invalid date format. Use ddmmyy (e.g., 020825 for 2nd Aug 2025)'
+                    'success': False,
+                    'error': 'Invalid date format. Use ddmmyy (e.g., 020825 for 2nd Aug 2025)'
                 }), 400
 
         if qty is not None:
@@ -985,10 +980,8 @@ def edit_deal():
                 qty = float(qty)
                 if qty <= 0:
                     return jsonify({
-                        'success':
-                        False,
-                        'error':
-                        'Quantity must be a positive number'
+                        'success': False,
+                        'error': 'Quantity must be a positive number'
                     }), 400
                 fields_to_update['qty'] = qty
                 update_count += 1
@@ -1003,13 +996,10 @@ def edit_deal():
                 entry_price = float(entry_price)
                 if entry_price <= 0:
                     return jsonify({
-                        'success':
-                        False,
-                        'error':
-                        'Entry price must be a positive number'
+                        'success': False,
+                        'error': 'Entry price must be a positive number'
                     }), 400
-                fields_to_update[
-                    'ep'] = entry_price  # Map to database column name
+                fields_to_update['ep'] = entry_price  # Map to database column name
                 update_count += 1
             except (ValueError, TypeError):
                 return jsonify({
@@ -1025,10 +1015,8 @@ def edit_deal():
                 target_price = float(target_price)
                 if target_price <= 0:
                     return jsonify({
-                        'success':
-                        False,
-                        'error':
-                        'Target price must be a positive number'
+                        'success': False,
+                        'error': 'Target price must be a positive number'
                     }), 400
                 fields_to_update['target_price'] = target_price
                 update_count += 1
@@ -1041,10 +1029,8 @@ def edit_deal():
         # Ensure at least one field is being updated
         if update_count == 0:
             return jsonify({
-                'success':
-                False,
-                'error':
-                'At least one field must be provided for update'
+                'success': False,
+                'error': 'At least one field must be provided for update'
             }), 400
 
         # Get username from session
@@ -1070,8 +1056,7 @@ def edit_deal():
             }), 404
 
         # Update deal in user's dynamic table
-        success = dynamic_deals_service.update_deal(username, deal_id,
-                                                    fields_to_update)
+        success = dynamic_deals_service.update_deal(username, deal_id, fields_to_update)
 
         if not success:
             return jsonify({
@@ -1081,8 +1066,7 @@ def edit_deal():
 
         return jsonify({
             'success': True,
-            'message':
-            f'Deal updated successfully for {symbol} ({update_count} field{"s" if update_count > 1 else ""} changed)',
+            'message': f'Deal updated successfully for {symbol} ({update_count} field{"s" if update_count > 1 else ""} changed)',
             'deal_id': deal_id,
             'symbol': symbol,
             'updated_fields': list(fields_to_update.keys()),
@@ -1145,10 +1129,8 @@ def close_deal():
         # Validate exit date format (ddmmyy)
         if not re.match(r'^\d{6}$', exit_date):
             return jsonify({
-                'success':
-                False,
-                'error':
-                'Exit date must be in ddmmyy format (6 digits)'
+                'success': False,
+                'error': 'Exit date must be in ddmmyy format (6 digits)'
             }), 400
 
         # Convert ddmmyy to date object and validate
@@ -1168,10 +1150,8 @@ def close_deal():
 
         except (ValueError, TypeError):
             return jsonify({
-                'success':
-                False,
-                'error':
-                'Invalid exit date format. Use ddmmyy (e.g., 020825 for 2nd Aug 2025)'
+                'success': False,
+                'error': 'Invalid exit date format. Use ddmmyy (e.g., 020825 for 2nd Aug 2025)'
             }), 400
 
         # Get username from session
@@ -1198,17 +1178,13 @@ def close_deal():
 
         # Update deal status to CLOSED, set exit date, exit price, pos to 0, and exp date
         # Note: Store exit price in stop_loss field since there's no dedicated exit_price column
-        success = dynamic_deals_service.update_deal(
-            username,
-            deal_id,
-            {
-                'status': 'CLOSED',
-                'ed': exit_date_obj,
-                'stop_loss':
-                exit_price,  # Using stop_loss field to store exit price
-                'pos': '0',
-                'exp': exit_date_obj  # Set expiry date to exit date
-            })
+        success = dynamic_deals_service.update_deal(username, deal_id, {
+            'status': 'CLOSED',
+            'ed': exit_date_obj,
+            'stop_loss': exit_price,  # Using stop_loss field to store exit price
+            'pos': '0',
+            'exp': exit_date_obj  # Set expiry date to exit date
+        })
 
         if not success:
             return jsonify({
@@ -1218,8 +1194,7 @@ def close_deal():
 
         return jsonify({
             'success': True,
-            'message':
-            f'Deal closed successfully for {symbol} at ₹{exit_price}',
+            'message': f'Deal closed successfully for {symbol} at ₹{exit_price}',
             'deal_id': deal_id,
             'symbol': symbol,
             'status': 'CLOSED',
@@ -1393,8 +1368,7 @@ def create_deal_from_signal():
 
     except Exception as db_error:
         logger.error(f"Database error creating deal: {db_error}")
-        signal_data_str = str(locals().get('signal_data',
-                                           'No signal data available'))
+        signal_data_str = str(locals().get('signal_data', 'No signal data available'))
         logger.error(f"Signal data was: {signal_data_str}")
         return jsonify({
             'success': False,
