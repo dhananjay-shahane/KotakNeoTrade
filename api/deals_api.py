@@ -523,10 +523,15 @@ def get_all_deals_data_metrics():
                 tpr_value = "--"
                 tva_value = "--"
 
-            # --- Set pos to 0 if deal is closed, otherwise use original value ---
+            # --- Set pos value based on deal status from database ---
             deal_status = str(deal.get('status', 'ACTIVE')).upper()
-            pos_value = '0' if deal_status == 'CLOSED' else deal.get(
-                'pos', '1')
+            # Get pos from database if available, otherwise determine by status
+            db_pos = deal.get('pos')
+            if db_pos is not None:
+                pos_value = str(db_pos)
+            else:
+                # Fallback: set pos based on status
+                pos_value = '0' if deal_status == 'CLOSED' else '1'
 
             # --- Format deal with all required fields ---
             formatted_deal = {
@@ -756,10 +761,15 @@ def get_user_deals_data():
                 tpr_value = "--"
                 tva_value = "--"
 
-            # --- Set pos to 0 if deal is closed, otherwise use original value ---
+            # --- Set pos value based on deal status from database ---
             deal_status = str(deal.get('status', 'ACTIVE')).upper()
-            pos_value = '0' if deal_status == 'CLOSED' else deal.get(
-                'pos', '1')
+            # Get pos from database if available, otherwise determine by status
+            db_pos = deal.get('pos')
+            if db_pos is not None:
+                pos_value = str(db_pos)
+            else:
+                # Fallback: set pos based on status
+                pos_value = '0' if deal_status == 'CLOSED' else '1'
 
             cmp = price_fetcher.get_cmp(deal.get('symbol', ''))
 

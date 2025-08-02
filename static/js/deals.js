@@ -1861,6 +1861,7 @@ function sellTrade(symbol, currentPrice) {
         return;
     }
 
+```python
     if (!currentPrice || isNaN(currentPrice) || currentPrice <= 0) {
         currentPrice = 100; // Default fallback price
         console.warn("Invalid price provided, using fallback:", currentPrice);
