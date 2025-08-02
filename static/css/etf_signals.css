@@ -149,11 +149,11 @@
     display: none !important;
 }
 
-.section-collapsed #performanceBody {
+.section-collapsed .performance-body {
     display: none !important;
 }
 
-.section-collapsed #analyticsBody {
+.section-collapsed .analytics-body {
     display: none !important;
 }
 

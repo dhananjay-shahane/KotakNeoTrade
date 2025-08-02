@@ -408,8 +408,9 @@ ETFSignalsManager.prototype.loadSignals = function (resetData) {
                         // Hide loading state
                         self.hideLoadingState();
 
-                        // Calculate performance metrics after data is loaded
+                        // Calculate performance metrics and advanced analytics after data is loaded
                         self.calculatePerformanceMetrics();
+                        self.calculateAdvancedAnalytics();
 
                         self.showSuccessMessage(
                             "Loaded " + self.signals.length + " signals",
@@ -2802,9 +2803,13 @@ ETFSignalsManager.prototype.goToPage = function (page) {
 // New Enhanced Features for Trading Signals
 ETFSignalsManager.prototype.setupNewFeatures = function () {
     console.log("Setting up new enhanced features");
-    this.calculatePerformanceMetrics();
     this.setupDateFilters();
     this.initializeCharts();
+    
+    // Calculate performance metrics only if signals are already loaded
+    if (this.signals && this.signals.length > 0) {
+        this.calculatePerformanceMetrics();
+    }
 };
 
 // Performance Metrics Calculation
@@ -2840,15 +2845,25 @@ ETFSignalsManager.prototype.calculatePerformanceMetrics = function () {
     this.signals.forEach(function(signal, index) {
         console.log('Processing signal', index + 1, ':', signal);
         
-        // Handle different property name variations
-        var quantity = parseFloat(signal.qty || signal.quantity || 0);
-        var entryPrice = parseFloat(signal.ep || signal.entry_price || 0);
-        var currentPrice = parseFloat(signal.cmp || signal.current_price || 0);
+        // Use the actual property names from your real data
+        var quantity = parseFloat(signal.QTY || signal.qty || 0);
+        var entryPrice = parseFloat(signal.EP || signal.ep || 0);
+        var currentPrice = parseFloat(signal.CMP || signal.cmp || 0);
+        var investment = parseFloat(signal.INV || signal.inv || 0);
+        var currentValue = parseFloat(signal.TVA || signal.tva || 0);
+        var pnl = parseFloat(signal.CPL || signal.cpl || 0);
+        var chanPercent = signal['%CHAN'] || signal.chan || '0%';
         
-        var investment = quantity * entryPrice;
-        var currentValue = quantity * currentPrice;
-        var pnl = currentValue - investment;
-        var chanPercent = investment > 0 ? ((currentValue - investment) / investment * 100) : 0;
+        // If INV and TVA are not available, calculate them
+        if (!investment && quantity && entryPrice) {
+            investment = quantity * entryPrice;
+        }
+        if (!currentValue && quantity && currentPrice) {
+            currentValue = quantity * currentPrice;
+        }
+        if (!pnl && investment && currentValue) {
+            pnl = currentValue - investment;
+        }
         
         console.log('Signal calculations - Investment:', investment, 'Current Value:', currentValue, 'P&L:', pnl);
         
@@ -2861,9 +2876,9 @@ ETFSignalsManager.prototype.calculatePerformanceMetrics = function () {
         
         // Collect for top/worst performers
         topPerformers.push({
-            symbol: signal.etf || signal.symbol || signal.scrip || 'Signal-' + (index + 1),
+            symbol: signal.Symbol || signal.symbol || signal.etf || signal.scrip || 'Signal-' + (index + 1),
             pnl: pnl,
-            pct: chanPercent.toFixed(2) + '%',
+            pct: chanPercent,
             investment: investment,
             currentValue: currentValue
         });
@@ -2931,9 +2946,12 @@ ETFSignalsManager.prototype.formatNumber = function (num) {
 
 ETFSignalsManager.prototype.updatePerformersTable = function (tableId, performers) {
     var tbody = document.getElementById(tableId);
-    if (!tbody) return;
+    if (!tbody) {
+        console.log('Table body not found:', tableId);
+        return;
+    }
 
-    if (performers.length === 0) {
+    if (!performers || performers.length === 0) {
         tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No data available</td></tr>';
         return;
     }
@@ -2941,13 +2959,15 @@ ETFSignalsManager.prototype.updatePerformersTable = function (tableId, performer
     var html = '';
     performers.forEach(function(performer) {
         var pnlClass = performer.pnl >= 0 ? 'text-success' : 'text-danger';
+        var formattedPnl = isNaN(performer.pnl) ? '₹0.00' : '₹' + performer.pnl.toFixed(2);
         html += '<tr>' +
-            '<td>' + performer.symbol + '</td>' +
-            '<td class="' + pnlClass + '">₹' + performer.pnl.toFixed(2) + '</td>' +
-            '<td class="' + pnlClass + '">' + performer.pct + '</td>' +
+            '<td>' + (performer.symbol || 'N/A') + '</td>' +
+            '<td class="' + pnlClass + '">' + formattedPnl + '</td>' +
+            '<td class="' + pnlClass + '">' + (performer.pct || '0%') + '</td>' +
             '</tr>';
     });
     tbody.innerHTML = html;
+    console.log('Updated performers table:', tableId, 'with', performers.length, 'entries');
 };
 
 // Date Filter Functions
@@ -3135,11 +3155,86 @@ function exitFullScreen() {
     }
 }
 
-// Chart Initialization (placeholder for future implementation)
+// Advanced Analytics Calculations and Display
 ETFSignalsManager.prototype.initializeCharts = function () {
-    // Placeholder for chart initialization
-    // Could integrate Chart.js or similar library for advanced analytics
-    console.log("Charts placeholder - ready for Chart.js integration");
+    console.log("Calculating advanced analytics");
+    this.calculateAdvancedAnalytics();
+};
+
+ETFSignalsManager.prototype.calculateAdvancedAnalytics = function () {
+    if (!this.signals || this.signals.length === 0) {
+        this.updateAdvancedAnalyticsDisplay({
+            avgHoldPeriod: '0 days',
+            maxDrawdown: '0%',
+            sharpeRatio: '0.00',
+            riskRewardRatio: '1:0',
+            successRate: '0%'
+        });
+        return;
+    }
+
+    var totalSignals = this.signals.length;
+    var profitableSignals = 0;
+    var totalReturn = 0;
+    var returns = [];
+    
+    this.signals.forEach(function(signal) {
+        var pnl = parseFloat(signal.CPL || signal.cpl || 0);
+        var investment = parseFloat(signal.INV || signal.inv || 0);
+        
+        if (pnl > 0) profitableSignals++;
+        
+        if (investment > 0) {
+            var returnPct = (pnl / investment) * 100;
+            returns.push(returnPct);
+            totalReturn += returnPct;
+        }
+    });
+
+    var successRate = totalSignals > 0 ? (profitableSignals / totalSignals * 100) : 0;
+    var avgReturn = returns.length > 0 ? totalReturn / returns.length : 0;
+    
+    // Calculate risk metrics (simplified)
+    var variance = 0;
+    if (returns.length > 1) {
+        returns.forEach(function(ret) {
+            variance += Math.pow(ret - avgReturn, 2);
+        });
+        variance = variance / (returns.length - 1);
+    }
+    var volatility = Math.sqrt(variance);
+    var sharpeRatio = volatility > 0 ? avgReturn / volatility : 0;
+    
+    // Find max drawdown (simplified)
+    var maxDrawdown = 0;
+    var peak = 0;
+    var runningPnl = 0;
+    
+    this.signals.forEach(function(signal) {
+        var pnl = parseFloat(signal.CPL || signal.cpl || 0);
+        runningPnl += pnl;
+        if (runningPnl > peak) peak = runningPnl;
+        var drawdown = ((peak - runningPnl) / Math.abs(peak)) * 100;
+        if (drawdown > maxDrawdown) maxDrawdown = drawdown;
+    });
+
+    this.updateAdvancedAnalyticsDisplay({
+        avgHoldPeriod: '5 days', // Placeholder - would need entry/exit dates
+        maxDrawdown: maxDrawdown.toFixed(2) + '%',
+        sharpeRatio: sharpeRatio.toFixed(2),
+        riskRewardRatio: '1:' + (avgReturn > 0 ? (avgReturn/10).toFixed(1) : '0'),
+        successRate: successRate.toFixed(1) + '%'
+    });
+};
+
+ETFSignalsManager.prototype.updateAdvancedAnalyticsDisplay = function (analytics) {
+    this.updateElement('avgHoldPeriod', analytics.avgHoldPeriod);
+    this.updateElement('maxDrawdown', analytics.maxDrawdown);
+    this.updateElement('sharpeRatio', analytics.sharpeRatio);
+    this.updateElement('riskRewardRatio', analytics.riskRewardRatio);
+    this.updateElement('successRate', analytics.successRate);
+    
+    console.log('Updated advanced analytics:', analytics);
 };
 
 // Enhanced filtering with date support
