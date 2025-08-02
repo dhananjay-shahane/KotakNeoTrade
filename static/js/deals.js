@@ -1859,7 +1859,8 @@ function sellTrade(symbol, currentPrice) {
 
     if (!currentPrice || isNaN(currentPrice) || currentPrice <= 0) {
         currentPrice = 100; // Default fallback price
-        console.warn("Invalid price provided, using fallback:", currentPrice);
+        ```javascript
+console.warn("Invalid price provided, using fallback:", currentPrice);
     }
 
     console.log(

@@ -913,16 +913,13 @@ def check_deal_duplicate():
                 'error': 'Symbol is required'
             }), 400
 
-        # Get username from session
-        username = session.get('username')
-        if not username:
-            return jsonify({
-                'success': False,
-                'error': 'User not logged in'
-            }), 401
+        # Get user_id from session
+        user_id = session.get('user_id')
+        if not user_id or not isinstance(user_id, int):
+            user_id = 1
 
         # Check for duplicate
-        is_duplicate = check_duplicate_deal(symbol, username)
+        is_duplicate = check_duplicate_deal(symbol, user_id)
 
         return jsonify({
             'success': True,
