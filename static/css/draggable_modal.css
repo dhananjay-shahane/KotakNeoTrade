@@ -1,0 +1,204 @@
+/* Draggable Modal Styles */
+.modal-draggable .modal-dialog {
+    position: fixed;
+    margin: 0;
+    pointer-events: none;
+    z-index: 9999;
+}
+
+.modal-draggable .modal-content {
+    pointer-events: auto;
+    position: relative;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.modal-draggable .modal-header {
+    cursor: move;
+    user-select: none;
+    background: linear-gradient(45deg, #198754, #20c997);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-draggable .modal-header:hover {
+    background: linear-gradient(45deg, #157347, #1aa179);
+}
+
+/* Resize handles */
+.modal-resizable {
+    position: relative;
+}
+
+.resize-handle {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.3);
+    transition: background-color 0.2s ease;
+}
+
+.resize-handle:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Corner resize handles */
+.resize-se {
+    width: 15px;
+    height: 15px;
+    bottom: 0;
+    right: 0;
+    cursor: se-resize;
+    border-radius: 0 0 8px 0;
+}
+
+.resize-sw {
+    width: 15px;
+    height: 15px;
+    bottom: 0;
+    left: 0;
+    cursor: sw-resize;
+    border-radius: 0 0 0 8px;
+}
+
+.resize-ne {
+    width: 15px;
+    height: 15px;
+    top: 0;
+    right: 0;
+    cursor: ne-resize;
+    border-radius: 0 8px 0 0;
+}
+
+.resize-nw {
+    width: 15px;
+    height: 15px;
+    top: 0;
+    left: 0;
+    cursor: nw-resize;
+    border-radius: 8px 0 0 0;
+}
+
+/* Edge resize handles */
+.resize-n {
+    height: 5px;
+    top: 0;
+    left: 15px;
+    right: 15px;
+    cursor: n-resize;
+}
+
+.resize-s {
+    height: 5px;
+    bottom: 0;
+    left: 15px;
+    right: 15px;
+    cursor: s-resize;
+}
+
+.resize-e {
+    width: 5px;
+    top: 15px;
+    bottom: 15px;
+    right: 0;
+    cursor: e-resize;
+}
+
+.resize-w {
+    width: 5px;
+    top: 15px;
+    bottom: 15px;
+    left: 0;
+    cursor: w-resize;
+}
+
+/* Modal size constraints */
+.modal-draggable .modal-dialog {
+    min-width: 300px;
+    min-height: 200px;
+    max-width: 90vw;
+    max-height: 90vh;
+}
+
+/* Visual feedback during dragging */
+.modal-dragging .modal-content {
+    transform: scale(1.02);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+/* Visual feedback during resizing */
+.modal-resizing .modal-content {
+    transition: none;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
+}
+
+/* Backdrop interaction */
+.modal-backdrop.modal-backdrop-interactive {
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* Drag handle indicator */
+.modal-draggable .modal-title::after {
+    content: "⋮⋮";
+    margin-left: 10px;
+    opacity: 0.6;
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .modal-draggable .modal-dialog {
+        min-width: 280px;
+        max-width: 95vw;
+    }
+    
+    .resize-handle {
+        width: 20px !important;
+        height: 20px !important;
+    }
+    
+    .resize-n, .resize-s {
+        height: 8px;
+        left: 20px;
+        right: 20px;
+    }
+    
+    .resize-e, .resize-w {
+        width: 8px;
+        top: 20px;
+        bottom: 20px;
+    }
+}
+
+/* Animation for modal appearance */
+.modal-draggable.fade .modal-dialog {
+    transition: transform 0.3s ease-out;
+    transform: translate3d(0, -50px, 0);
+}
+
+.modal-draggable.show .modal-dialog {
+    transform: none;
+}
+
+/* Custom scrollbar for modal body when resized */
+.modal-draggable .modal-body {
+    overflow-y: auto;
+    max-height: calc(90vh - 120px);
+}
+
+.modal-draggable .modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-draggable .modal-body::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.modal-draggable .modal-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+
+.modal-draggable .modal-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}

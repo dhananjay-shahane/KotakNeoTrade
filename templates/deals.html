@@ -1,6 +1,7 @@
 {% extends "base.html" %} {% block title %}Deals - ETF Trading Signals{%
 endblock %} {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton_animation.css') }}"/>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/draggable_modal.css') }}"/>
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 {% endblock %} {% block content %}
@@ -755,5 +756,6 @@ endblock %} {% block head %}
 </div>
 {% endblock %} {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/draggable_modal.js') }}"></script>
 <script src="{{ url_for('static', filename='js/deals.js') }}"></script>
 {% endblock %}
