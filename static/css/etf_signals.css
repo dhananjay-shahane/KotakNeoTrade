@@ -157,6 +157,15 @@
     display: none !important;
 }
 
+/* Additional specific selectors for better targeting */
+#performanceContent.section-collapsed #performanceBody {
+    display: none !important;
+}
+
+#analyticsContent.section-collapsed #analyticsBody {
+    display: none !important;
+}
+
 .toggle-icon {
     transition: transform 0.3s ease;
 }

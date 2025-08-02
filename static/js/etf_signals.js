@@ -2937,6 +2937,9 @@ ETFSignalsManager.prototype.updateElement = function (id, value) {
     var element = document.getElementById(id);
     if (element) {
         element.textContent = value;
+        console.log('Updated element', id, 'with value:', value);
+    } else {
+        console.log('Element not found:', id);
     }
 };
 
@@ -3081,7 +3084,9 @@ function togglePerformanceSection() {
     var icon = document.getElementById('performanceToggleIcon');
     var button = document.querySelector('[onclick="togglePerformanceSection()"]');
     
-    if (content.classList.contains('section-collapsed')) {
+    console.log('Toggling performance section - content:', content, 'icon:', icon);
+    
+    if (content && content.classList.contains('section-collapsed')) {
         content.classList.remove('section-collapsed');
         if (icon) {
             icon.className = 'fas fa-minus me-1';
@@ -3089,7 +3094,7 @@ function togglePerformanceSection() {
         if (button) {
             button.innerHTML = '<i class="fas fa-minus me-1" id="performanceToggleIcon"></i>Minimize';
         }
-    } else {
+    } else if (content) {
         content.classList.add('section-collapsed');
         if (icon) {
             icon.className = 'fas fa-plus me-1';
@@ -3105,7 +3110,9 @@ function toggleAnalyticsSection() {
     var icon = document.getElementById('analyticsToggleIcon');
     var button = document.querySelector('[onclick="toggleAnalyticsSection()"]');
     
-    if (content.classList.contains('section-collapsed')) {
+    console.log('Toggling analytics section - content:', content, 'icon:', icon);
+    
+    if (content && content.classList.contains('section-collapsed')) {
         content.classList.remove('section-collapsed');
         if (icon) {
             icon.className = 'fas fa-minus me-1';
@@ -3113,7 +3120,7 @@ function toggleAnalyticsSection() {
         if (button) {
             button.innerHTML = '<i class="fas fa-minus me-1" id="analyticsToggleIcon"></i>Minimize';
         }
-    } else {
+    } else if (content) {
         content.classList.add('section-collapsed');
         if (icon) {
             icon.className = 'fas fa-plus me-1';
