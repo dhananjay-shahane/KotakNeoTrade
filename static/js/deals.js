@@ -1502,7 +1502,6 @@ function submitEditDeal() {
         { value: entryPrice, name: "Entry Price" },
         { value: tpPercent, name: "TP Percentage" },
         { value: tprPrice, name: "TPR Price" },
-        { value: targetPrice, name: "Target Price" },
     ];
 
     for (var i = 0; i < fieldsToValidate.length; i++) {
