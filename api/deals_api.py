@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 import traceback
 import os
 import sys
+import re
 import pandas as pd
 from typing import List, Dict, Optional
 
@@ -917,10 +918,11 @@ def edit_deal():
 
         deal_id = data.get('deal_id', '').strip()
         symbol = data.get('symbol', '').strip()
+        date = data.get('date')
         qty = data.get('qty')
-        target_price = data.get('target_price')
         entry_price = data.get('entry_price')
         tpr_percent = data.get('tpr_percent')
+        target_price = data.get('target_price')
 
         if not deal_id or not symbol:
             return jsonify({
@@ -933,6 +935,30 @@ def edit_deal():
         update_count = 0
 
         # Validate and collect fields to update
+        if date is not None and date.strip():
+            # Validate date format (ddmmyy)
+            date = date.strip()
+            if not re.match(r'^\d{6}$', date):
+                return jsonify({
+                    'success': False,
+                    'error': 'Date must be in ddmmyy format (6 digits)'
+                }), 400
+            
+            # Convert ddmmyy to date object
+            try:
+                day = int(date[:2])
+                month = int(date[2:4])
+                year = 2000 + int(date[4:6])  # Assume 20xx century
+                from datetime import date as date_obj
+                parsed_date = date_obj(year, month, day)
+                fields_to_update['ed'] = parsed_date  # Map to database column name
+                update_count += 1
+            except (ValueError, TypeError):
+                return jsonify({
+                    'success': False,
+                    'error': 'Invalid date format. Use ddmmyy (e.g., 020825 for 2nd Aug 2025)'
+                }), 400
+
         if qty is not None:
             try:
                 qty = float(qty)
@@ -947,22 +973,6 @@ def edit_deal():
                 return jsonify({
                     'success': False,
                     'error': 'Invalid quantity value'
-                }), 400
-
-        if target_price is not None:
-            try:
-                target_price = float(target_price)
-                if target_price <= 0:
-                    return jsonify({
-                        'success': False,
-                        'error': 'Target price must be a positive number'
-                    }), 400
-                fields_to_update['target_price'] = target_price
-                update_count += 1
-            except (ValueError, TypeError):
-                return jsonify({
-                    'success': False,
-                    'error': 'Invalid target price value'
                 }), 400
 
         if entry_price is not None:
@@ -981,15 +991,23 @@ def edit_deal():
                     'error': 'Invalid entry price value'
                 }), 400
 
-        if tpr_percent is not None:
+        # Note: tpr_percent is not stored in database, skip it for now
+        # This can be calculated on the frontend based on entry_price and target_price
+
+        if target_price is not None:
             try:
-                tpr_percent = float(tpr_percent)
-                fields_to_update['tpr_percent'] = tpr_percent
+                target_price = float(target_price)
+                if target_price <= 0:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Target price must be a positive number'
+                    }), 400
+                fields_to_update['target_price'] = target_price
                 update_count += 1
             except (ValueError, TypeError):
                 return jsonify({
                     'success': False,
-                    'error': 'Invalid TPR percentage value'
+                    'error': 'Invalid target price value'
                 }), 400
 
         # Ensure at least one field is being updated
@@ -1058,6 +1076,7 @@ def close_deal():
         deal_id = data.get('deal_id', '').strip()
         symbol = data.get('symbol', '').strip()
         exit_date = data.get('exit_date', '').strip()
+        exit_price = data.get('exit_price')
 
         if not deal_id or not symbol:
             return jsonify({
@@ -1071,22 +1090,52 @@ def close_deal():
                 'error': 'Exit date is required'
             }), 400
 
-        # Validate exit date format and ensure it's not in the future
+        if not exit_price:
+            return jsonify({
+                'success': False,
+                'error': 'Exit price is required'
+            }), 400
+
+        # Validate exit price
+        try:
+            exit_price = float(exit_price)
+            if exit_price <= 0:
+                return jsonify({
+                    'success': False,
+                    'error': 'Exit price must be a positive number'
+                }), 400
+        except (ValueError, TypeError):
+            return jsonify({
+                'success': False,
+                'error': 'Invalid exit price value'
+            }), 400
+
+        # Validate exit date format (ddmmyy)
+        if not re.match(r'^\d{6}$', exit_date):
+            return jsonify({
+                'success': False,
+                'error': 'Exit date must be in ddmmyy format (6 digits)'
+            }), 400
+
+        # Convert ddmmyy to date object and validate
         try:
             from datetime import datetime, date
-            exit_date_obj = datetime.strptime(exit_date, '%Y-%m-%d').date()
-            today = date.today()
+            day = int(exit_date[:2])
+            month = int(exit_date[2:4])
+            year = 2000 + int(exit_date[4:6])  # Assume 20xx century
+            exit_date_obj = date(year, month, day)
             
+            today = date.today()
             if exit_date_obj > today:
                 return jsonify({
                     'success': False,
                     'error': 'Exit date cannot be in the future'
                 }), 400
                 
-        except ValueError:
+        except (ValueError, TypeError):
             return jsonify({
                 'success': False,
-                'error': 'Invalid exit date format. Use YYYY-MM-DD'
+                'error': 'Invalid exit date format. Use ddmmyy (e.g., 020825 for 2nd Aug 2025)'
             }), 400
 
         # Get username from session
@@ -1111,10 +1160,12 @@ def close_deal():
                 'error': f'No deals table found for user {username}'
             }), 404
 
-        # Update deal status to CLOSED, set exit date and pos to 0
+        # Update deal status to CLOSED, set exit date, exit price, and pos to 0
+        # Note: Store exit price in stop_loss field since there's no dedicated exit_price column
         success = dynamic_deals_service.update_deal(username, deal_id, {
             'status': 'CLOSED',
-            'ed': exit_date,
+            'ed': exit_date_obj,
+            'stop_loss': exit_price,  # Using stop_loss field to store exit price
             'pos': '0'
         })
 
@@ -1126,11 +1177,12 @@ def close_deal():
 
         return jsonify({
             'success': True,
-            'message': f'Deal closed successfully for {symbol}',
+            'message': f'Deal closed successfully for {symbol} at ₹{exit_price}',
             'deal_id': deal_id,
             'symbol': symbol,
             'status': 'CLOSED',
-            'exit_date': exit_date
+            'exit_date': exit_date,
+            'exit_price': exit_price
         })
 
     except Exception as e:
