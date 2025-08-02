@@ -55,15 +55,6 @@ class DraggableModal {
                 e.stopPropagation();
             }
         });
-        
-        // Ensure proper backdrop styling
-        this.modal.addEventListener('shown.bs.modal', () => {
-            const backdrop = document.querySelector('.modal-backdrop');
-            if (backdrop) {
-                backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
-                backdrop.style.opacity = '0.6';
-            }
-        });
     }
     
     centerModal() {
@@ -289,6 +280,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const editExitDateModal = document.getElementById('editExitDateModal');
     
     if (editDealModal) {
+        // Set backdrop to false for these modals
+        editDealModal.setAttribute('data-bs-backdrop', 'false');
         new DraggableModal(editDealModal, {
             minWidth: 400,
             minHeight: 300
@@ -296,6 +289,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     if (closeDealModal) {
+        // Set backdrop to false for these modals
+        closeDealModal.setAttribute('data-bs-backdrop', 'false');
         new DraggableModal(closeDealModal, {
             minWidth: 350,
             minHeight: 250
@@ -303,6 +298,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     if (editExitDateModal) {
+        // Set backdrop to false for these modals
+        editExitDateModal.setAttribute('data-bs-backdrop', 'false');
         new DraggableModal(editExitDateModal, {
             minWidth: 350,
             minHeight: 250

@@ -130,39 +130,32 @@
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
 }
 
-/* Custom backdrop for draggable modals - specific modal IDs */
+/* Remove backdrop completely for draggable modals */
 #editDealModal.modal-draggable + .modal-backdrop,
 #closeDealModal.modal-draggable + .modal-backdrop,
 #editExitDateModal.modal-draggable + .modal-backdrop {
-    background-color: rgba(0, 0, 0, 0.6) !important;
-    opacity: 0.6 !important;
+    display: none !important;
 }
 
 #editDealModal.modal-draggable.show + .modal-backdrop.show,
 #closeDealModal.modal-draggable.show + .modal-backdrop.show,
 #editExitDateModal.modal-draggable.show + .modal-backdrop.show {
-    opacity: 0.6 !important;
-    background-color: rgba(0, 0, 0, 0.6) !important;
+    display: none !important;
 }
 
-/* Ensure backdrop stays dark during interactions */
+/* Hide backdrop during interactions */
 #editDealModal.modal-dragging + .modal-backdrop,
 #editDealModal.modal-resizing + .modal-backdrop,
 #closeDealModal.modal-dragging + .modal-backdrop,
 #closeDealModal.modal-resizing + .modal-backdrop,
 #editExitDateModal.modal-dragging + .modal-backdrop,
 #editExitDateModal.modal-resizing + .modal-backdrop {
-    background-color: rgba(0, 0, 0, 0.6) !important;
-    opacity: 0.6 !important;
+    display: none !important;
 }
 
-/* Ensure proper z-index stacking */
+/* Ensure proper z-index stacking for modals without backdrop */
 .modal-draggable {
     z-index: 1055 !important;
-}
-
-.modal-draggable + .modal-backdrop {
-    z-index: 1050 !important;
 }
 
 /* Drag handle indicator */
