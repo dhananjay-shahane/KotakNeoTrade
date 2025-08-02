@@ -64,14 +64,14 @@ endblock %} {% block extra_css %}
     <!-- Content Container with relative positioning -->
     <div>
 
-        <!-- ETF Signals Table -->
-        <div class="card bg-secondary border-0 shadow-lg content-loading" id="signalsContent">
+        <!-- ETF Signals Table Section -->
+        <div class="card bg-secondary border-0 shadow-lg content-loading mb-4" id="signalsContent">
         <div
             class="card-header bg-dark border-0 d-flex justify-content-between align-items-center"
         >
             <h5 class="mb-0 text-light">
                 <i class="fas fa-chart-line me-2 text-primary"></i>Trading
-                Signals
+                Signals Table
                 <span class="badge bg-primary ms-2" id="visibleSignalsCount"
                     >0</span
                 >
@@ -111,6 +111,22 @@ endblock %} {% block extra_css %}
                         </li>
                     </ul>
                 </div>
+
+                <button
+                    class="btn btn-sm btn-outline-info"
+                    onclick="toggleFullScreen()"
+                    title="Full Screen View"
+                >
+                    <i class="fas fa-expand me-1"></i>Full Screen
+                </button>
+
+                <button
+                    class="btn btn-sm btn-outline-warning"
+                    onclick="toggleTableSection()"
+                    title="Minimize/Maximize Table"
+                >
+                    <i class="fas fa-minus me-1" id="tableToggleIcon"></i>Minimize
+                </button>
 
                 <button
                     class="btn btn-sm btn-outline-light"
@@ -299,6 +315,47 @@ endblock %} {% block extra_css %}
                             />
                         </div>
                     </div>
+                    
+                    <!-- Date Range Filter Section -->
+                    <div class="mt-4">
+                        <label class="form-label text-light">Date Range Filter</label>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <button class="btn btn-sm btn-outline-primary w-100" onclick="applyQuickDateFilter(10)">
+                                    <i class="fas fa-calendar-alt me-1"></i>Last 10 Days
+                                </button>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-sm btn-outline-primary w-100" onclick="applyQuickDateFilter(5)">
+                                    <i class="fas fa-calendar-alt me-1"></i>Last 5 Days
+                                </button>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-sm btn-outline-secondary w-100" onclick="clearDateFilter()">
+                                    <i class="fas fa-times me-1"></i>Clear
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label text-light small">Start Date</label>
+                                <input
+                                    type="date"
+                                    class="form-control bg-secondary text-light"
+                                    id="startDateFilter"
+                                />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-light small">End Date</label>
+                                <input
+                                    type="date"
+                                    class="form-control bg-secondary text-light"
+                                    id="endDateFilter"
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer border-top border-secondary">
                     <button
@@ -320,6 +377,238 @@ endblock %} {% block extra_css %}
             </div>
         </div>
     </div>
+    <!-- Performance Analysis Section -->
+    <div class="card bg-secondary border-0 shadow-lg mb-4" id="performanceContent">
+        <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-light">
+                <i class="fas fa-chart-bar me-2 text-success"></i>Performance Analysis
+            </h5>
+            <div class="d-flex gap-2 align-items-center">
+                <button
+                    class="btn btn-sm btn-outline-warning"
+                    onclick="togglePerformanceSection()"
+                    title="Minimize/Maximize Performance"
+                >
+                    <i class="fas fa-minus me-1" id="performanceToggleIcon"></i>Minimize
+                </button>
+            </div>
+        </div>
+        
+        <div class="card-body" id="performanceBody">
+            <!-- Performance Summary Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="summary-card">
+                        <h6 class="text-muted mb-1">Total Signals</h6>
+                        <h4 class="mb-0 text-primary" id="totalSignalsCount">0</h4>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="summary-card">
+                        <h6 class="text-muted mb-1">Active Signals</h6>
+                        <h4 class="mb-0 text-warning" id="activeSignalsCount">0</h4>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="summary-card">
+                        <h6 class="text-muted mb-1">Profitable Signals</h6>
+                        <h4 class="mb-0 text-success" id="profitableSignalsCount">0</h4>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="summary-card">
+                        <h6 class="text-muted mb-1">Win Rate</h6>
+                        <h4 class="mb-0 text-info" id="winRatePercentage">0%</h4>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Metrics -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="summary-card">
+                        <h6 class="text-muted mb-1">Total Investment</h6>
+                        <h4 class="mb-0 text-light" id="totalInvestmentAmount">₹0</h4>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="summary-card">
+                        <h6 class="text-muted mb-1">Current Value</h6>
+                        <h4 class="mb-0 text-light" id="totalCurrentValue">₹0</h4>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="summary-card">
+                        <h6 class="text-muted mb-1">Total P&L</h6>
+                        <h4 class="mb-0" id="totalPnlAmount">₹0</h4>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Performers -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card bg-dark border-0">
+                        <div class="card-header bg-success">
+                            <h6 class="mb-0 text-light">
+                                <i class="fas fa-trophy me-2"></i>Top Performers
+                            </h6>
+                        </div>
+                        <div class="card-body p-2">
+                            <div class="table-responsive">
+                                <table class="table table-dark table-sm mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Symbol</th>
+                                            <th>P&L</th>
+                                            <th>%</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="topPerformersTable">
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted">
+                                                <i class="fas fa-spinner fa-spin me-2"></i>Loading...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card bg-dark border-0">
+                        <div class="card-header bg-danger">
+                            <h6 class="mb-0 text-light">
+                                <i class="fas fa-chart-line-down me-2"></i>Worst Performers
+                            </h6>
+                        </div>
+                        <div class="card-body p-2">
+                            <div class="table-responsive">
+                                <table class="table table-dark table-sm mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Symbol</th>
+                                            <th>P&L</th>
+                                            <th>%</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="worstPerformersTable">
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted">
+                                                <i class="fas fa-spinner fa-spin me-2"></i>Loading...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Analytics Section -->
+    <div class="card bg-secondary border-0 shadow-lg mb-4" id="analyticsContent">
+        <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-light">
+                <i class="fas fa-analytics me-2 text-info"></i>Advanced Analytics
+            </h5>
+            <div class="d-flex gap-2 align-items-center">
+                <button
+                    class="btn btn-sm btn-outline-warning"
+                    onclick="toggleAnalyticsSection()"
+                    title="Minimize/Maximize Analytics"
+                >
+                    <i class="fas fa-minus me-1" id="analyticsToggleIcon"></i>Minimize
+                </button>
+            </div>
+        </div>
+        
+        <div class="card-body" id="analyticsBody">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card bg-dark border-0 mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0 text-light">
+                                <i class="fas fa-chart-pie me-2"></i>Position Distribution
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="positionChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card bg-dark border-0 mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0 text-light">
+                                <i class="fas fa-calendar-alt me-2"></i>Daily P&L Trend
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="dailyPnlChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Risk Metrics -->
+            <div class="row">
+                <div class="col-md-2">
+                    <div class="summary-card">
+                        <h6 class="text-muted mb-1">Avg. Hold Period</h6>
+                        <h5 class="mb-0 text-light" id="avgHoldPeriod">0 days</h5>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="summary-card">
+                        <h6 class="text-muted mb-1">Max Drawdown</h6>
+                        <h5 class="mb-0 text-danger" id="maxDrawdown">0%</h5>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="summary-card">
+                        <h6 class="text-muted mb-1">Sharpe Ratio</h6>
+                        <h5 class="mb-0 text-info" id="sharpeRatio">0.00</h5>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="summary-card">
+                        <h6 class="text-muted mb-1">Risk/Reward</h6>
+                        <h5 class="mb-0 text-warning" id="riskRewardRatio">1:0</h5>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="summary-card">
+                        <h6 class="text-muted mb-1">Success Rate</h6>
+                        <h5 class="mb-0 text-success" id="successRate">0%</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div>
+</div>
+
+<!-- Full Screen Modal for Table -->
+<div class="modal fade" id="fullScreenModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title text-light">
+                    <i class="fas fa-chart-line me-2"></i>Trading Signals - Full Screen View
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="exitFullScreen()"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="fullScreenTableContainer">
+                    <!-- Table will be moved here in full screen mode -->
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %} {% block scripts %}

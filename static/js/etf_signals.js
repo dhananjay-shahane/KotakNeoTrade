@@ -47,6 +47,13 @@ function ETFSignalsManager() {
         { key: "actions", label: "ACTION", width: "80px", visible: true },
     ];
 
+    // Date filtering
+    this.dateFilters = {
+        startDate: null,
+        endDate: null,
+        quickFilter: null
+    };
+
     // Initialize when DOM is ready
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", function () {
@@ -70,6 +77,7 @@ ETFSignalsManager.prototype.init = function () {
 
     this.loadSignals(true);
     this.startAutoRefresh();
+    this.setupNewFeatures();
 };
 
 ETFSignalsManager.prototype.setupEventListeners = function () {
@@ -2786,6 +2794,309 @@ ETFSignalsManager.prototype.goToPage = function (page) {
         this.renderSignalsTable();
         this.renderPaginationHTML();
     }
+};
+
+// New Enhanced Features for Trading Signals
+ETFSignalsManager.prototype.setupNewFeatures = function () {
+    console.log("Setting up new enhanced features");
+    this.calculatePerformanceMetrics();
+    this.setupDateFilters();
+    this.initializeCharts();
+};
+
+// Performance Metrics Calculation
+ETFSignalsManager.prototype.calculatePerformanceMetrics = function () {
+    if (!this.signals || this.signals.length === 0) {
+        this.updatePerformanceDisplay({
+            totalSignals: 0,
+            activeSignals: 0,
+            profitableSignals: 0,
+            winRate: 0,
+            totalInvestment: 0,
+            totalCurrentValue: 0,
+            totalPnl: 0
+        });
+        return;
+    }
+
+    var totalSignals = this.signals.length;
+    var activeSignals = 0;
+    var profitableSignals = 0;
+    var totalInvestment = 0;
+    var totalCurrentValue = 0;
+    var totalPnl = 0;
+    var topPerformers = [];
+    var worstPerformers = [];
+
+    this.signals.forEach(function(signal) {
+        var pnl = parseFloat(signal.pl || signal.cpl || 0);
+        var investment = parseFloat(signal.inv || 0);
+        var currentValue = parseFloat(signal.tva || 0);
+        
+        totalInvestment += investment;
+        totalCurrentValue += currentValue;
+        totalPnl += pnl;
+        
+        if (pnl > 0) profitableSignals++;
+        
+        // Collect for top/worst performers
+        topPerformers.push({
+            symbol: signal.etf || signal.symbol || 'N/A',
+            pnl: pnl,
+            pct: signal.chan || '0%'
+        });
+    });
+
+    activeSignals = totalSignals; // Assuming all are active for now
+    var winRate = totalSignals > 0 ? (profitableSignals / totalSignals * 100) : 0;
+
+    // Sort performers
+    topPerformers.sort(function(a, b) { return b.pnl - a.pnl; });
+    worstPerformers = topPerformers.slice().reverse();
+
+    this.updatePerformanceDisplay({
+        totalSignals: totalSignals,
+        activeSignals: activeSignals,
+        profitableSignals: profitableSignals,
+        winRate: winRate,
+        totalInvestment: totalInvestment,
+        totalCurrentValue: totalCurrentValue,
+        totalPnl: totalPnl,
+        topPerformers: topPerformers.slice(0, 5),
+        worstPerformers: worstPerformers.slice(0, 5)
+    });
+};
+
+ETFSignalsManager.prototype.updatePerformanceDisplay = function (metrics) {
+    // Update summary cards
+    this.updateElement('totalSignalsCount', metrics.totalSignals);
+    this.updateElement('activeSignalsCount', metrics.activeSignals);
+    this.updateElement('profitableSignalsCount', metrics.profitableSignals);
+    this.updateElement('winRatePercentage', metrics.winRate.toFixed(1) + '%');
+    this.updateElement('totalInvestmentAmount', '₹' + this.formatNumber(metrics.totalInvestment));
+    this.updateElement('totalCurrentValue', '₹' + this.formatNumber(metrics.totalCurrentValue));
+    
+    var pnlElement = document.getElementById('totalPnlAmount');
+    if (pnlElement) {
+        pnlElement.textContent = '₹' + this.formatNumber(metrics.totalPnl);
+        pnlElement.className = 'mb-0 ' + (metrics.totalPnl >= 0 ? 'text-success' : 'text-danger');
+    }
+
+    // Update performers tables
+    this.updatePerformersTable('topPerformersTable', metrics.topPerformers || []);
+    this.updatePerformersTable('worstPerformersTable', metrics.worstPerformers || []);
+};
+
+ETFSignalsManager.prototype.updateElement = function (id, value) {
+    var element = document.getElementById(id);
+    if (element) {
+        element.textContent = value;
+    }
+};
+
+ETFSignalsManager.prototype.formatNumber = function (num) {
+    return new Intl.NumberFormat('en-IN').format(Math.abs(num));
+};
+
+ETFSignalsManager.prototype.updatePerformersTable = function (tableId, performers) {
+    var tbody = document.getElementById(tableId);
+    if (!tbody) return;
+
+    if (performers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No data available</td></tr>';
+        return;
+    }
+
+    var html = '';
+    performers.forEach(function(performer) {
+        var pnlClass = performer.pnl >= 0 ? 'text-success' : 'text-danger';
+        html += '<tr>' +
+            '<td>' + performer.symbol + '</td>' +
+            '<td class="' + pnlClass + '">₹' + performer.pnl.toFixed(2) + '</td>' +
+            '<td class="' + pnlClass + '">' + performer.pct + '</td>' +
+            '</tr>';
+    });
+    tbody.innerHTML = html;
+};
+
+// Date Filter Functions
+ETFSignalsManager.prototype.setupDateFilters = function () {
+    var startDateInput = document.getElementById('startDateFilter');
+    var endDateInput = document.getElementById('endDateFilter');
+    
+    if (startDateInput) {
+        startDateInput.addEventListener('change', this.applyDateFilters.bind(this));
+    }
+    if (endDateInput) {
+        endDateInput.addEventListener('change', this.applyDateFilters.bind(this));
+    }
+};
+
+// Global functions for date filtering
+function applyQuickDateFilter(days) {
+    if (window.etfSignalsManager) {
+        var endDate = new Date();
+        var startDate = new Date();
+        startDate.setDate(startDate.getDate() - days);
+        
+        window.etfSignalsManager.dateFilters.startDate = startDate;
+        window.etfSignalsManager.dateFilters.endDate = endDate;
+        window.etfSignalsManager.dateFilters.quickFilter = days;
+        
+        // Update input fields
+        var startInput = document.getElementById('startDateFilter');
+        var endInput = document.getElementById('endDateFilter');
+        
+        if (startInput) startInput.value = startDate.toISOString().split('T')[0];
+        if (endInput) endInput.value = endDate.toISOString().split('T')[0];
+        
+        window.etfSignalsManager.applyDateFilters();
+    }
+}
+
+function clearDateFilter() {
+    if (window.etfSignalsManager) {
+        window.etfSignalsManager.dateFilters = {
+            startDate: null,
+            endDate: null,
+            quickFilter: null
+        };
+        
+        var startInput = document.getElementById('startDateFilter');
+        var endInput = document.getElementById('endDateFilter');
+        
+        if (startInput) startInput.value = '';
+        if (endInput) endInput.value = '';
+        
+        window.etfSignalsManager.applyDateFilters();
+    }
+}
+
+ETFSignalsManager.prototype.applyDateFilters = function () {
+    var startDateInput = document.getElementById('startDateFilter');
+    var endDateInput = document.getElementById('endDateFilter');
+    
+    if (startDateInput && startDateInput.value) {
+        this.dateFilters.startDate = new Date(startDateInput.value);
+    }
+    if (endDateInput && endDateInput.value) {
+        this.dateFilters.endDate = new Date(endDateInput.value);
+    }
+    
+    this.filterAndRenderSignals();
+};
+
+// Section Toggle Functions
+function toggleTableSection() {
+    var content = document.getElementById('signalsContent');
+    var icon = document.getElementById('tableToggleIcon');
+    var button = event.target.closest('button');
+    
+    if (content.classList.contains('section-collapsed')) {
+        content.classList.remove('section-collapsed');
+        icon.className = 'fas fa-minus me-1';
+        button.innerHTML = '<i class="fas fa-minus me-1"></i>Minimize';
+    } else {
+        content.classList.add('section-collapsed');
+        icon.className = 'fas fa-plus me-1';
+        button.innerHTML = '<i class="fas fa-plus me-1"></i>Maximize';
+    }
+}
+
+function togglePerformanceSection() {
+    var content = document.getElementById('performanceContent');
+    var icon = document.getElementById('performanceToggleIcon');
+    var button = event.target.closest('button');
+    
+    if (content.classList.contains('section-collapsed')) {
+        content.classList.remove('section-collapsed');
+        icon.className = 'fas fa-minus me-1';
+        button.innerHTML = '<i class="fas fa-minus me-1"></i>Minimize';
+    } else {
+        content.classList.add('section-collapsed');
+        icon.className = 'fas fa-plus me-1';
+        button.innerHTML = '<i class="fas fa-plus me-1"></i>Maximize';
+    }
+}
+
+function toggleAnalyticsSection() {
+    var content = document.getElementById('analyticsContent');
+    var icon = document.getElementById('analyticsToggleIcon');
+    var button = event.target.closest('button');
+    
+    if (content.classList.contains('section-collapsed')) {
+        content.classList.remove('section-collapsed');
+        icon.className = 'fas fa-minus me-1';
+        button.innerHTML = '<i class="fas fa-minus me-1"></i>Minimize';
+    } else {
+        content.classList.add('section-collapsed');
+        icon.className = 'fas fa-plus me-1';
+        button.innerHTML = '<i class="fas fa-plus me-1"></i>Maximize';
+    }
+}
+
+// Full Screen Functions
+function toggleFullScreen() {
+    var modal = document.getElementById('fullScreenModal');
+    var tableContainer = document.querySelector('.table-responsive');
+    var fullScreenContainer = document.getElementById('fullScreenTableContainer');
+    
+    if (modal) {
+        // Move table to full screen container
+        if (tableContainer && fullScreenContainer) {
+            var tableClone = tableContainer.cloneNode(true);
+            tableClone.classList.add('full-screen-table');
+            fullScreenContainer.innerHTML = '';
+            fullScreenContainer.appendChild(tableClone);
+        }
+        
+        // Show modal
+        var modalInstance = new bootstrap.Modal(modal);
+        modalInstance.show();
+    }
+}
+
+function exitFullScreen() {
+    var modal = document.getElementById('fullScreenModal');
+    if (modal) {
+        var modalInstance = bootstrap.Modal.getInstance(modal);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+    }
+}
+
+// Chart Initialization (placeholder for future implementation)
+ETFSignalsManager.prototype.initializeCharts = function () {
+    // Placeholder for chart initialization
+    // Could integrate Chart.js or similar library for advanced analytics
+    console.log("Charts placeholder - ready for Chart.js integration");
+};
+
+// Enhanced filtering with date support
+ETFSignalsManager.prototype.filterAndRenderSignals = function () {
+    this.filteredSignals = this.signals.filter(function(signal) {
+        // Apply existing filters first
+        var passesFilters = true;
+        
+        // Date filtering
+        if (this.dateFilters.startDate || this.dateFilters.endDate) {
+            var signalDate = new Date(signal.date || signal.created_at || Date.now());
+            
+            if (this.dateFilters.startDate && signalDate < this.dateFilters.startDate) {
+                passesFilters = false;
+            }
+            if (this.dateFilters.endDate && signalDate > this.dateFilters.endDate) {
+                passesFilters = false;
+            }
+        }
+        
+        return passesFilters;
+    }.bind(this));
+    
+    this.renderSignalsTable();
+    this.calculatePerformanceMetrics();
+    this.updateSignalCounts();
 };
 
 // Initialize ETF Signals Manager when DOM is ready
