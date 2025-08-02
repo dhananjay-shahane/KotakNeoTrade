@@ -373,7 +373,7 @@ DealsManager.prototype.loadDeals = function () {
                                     deal.id || deal.trade_signal_id || "",
                                 symbol:
                                     deal.symbol || deal.trading_symbol || "",
-                                pos: deal.status === "CLOSED" ? "0" : "1", // Set pos to 0 if closed, 1 if active
+                                pos: (deal.status === 'CLOSED') ? "0" : "1", // Set pos to 0 if closed, 1 if active
                                 qty: parseInt(deal.quantity || deal.qty || 0),
                                 ep: parseFloat(
                                     deal.entry_price || deal.ep || 0,
@@ -714,9 +714,7 @@ DealsManager.prototype.renderDealsTable = function () {
                     cellContent = deal.tp ? "₹" + deal.tp.toFixed(2) : "-";
                     break;
                 case "tpr":
-                    cellContent = deal.tp
-                        ? "₹" + parseFloat(deal.tp).toFixed(2)
-                        : "--";
+                    cellContent = deal.tp ? "₹" + parseFloat(deal.tp).toFixed(2) : "--";
                     break;
                 case "tva":
                     cellContent = deal.tva || "--";
@@ -764,9 +762,7 @@ DealsManager.prototype.renderDealsTable = function () {
                         : "";
                     break;
                 case "tpr":
-                    cellContent = deal.tp
-                        ? "₹" + parseFloat(deal.tp).toFixed(2)
-                        : "0";
+                    cellContent = deal.tp ? "₹" + parseFloat(deal.tp).toFixed(2) : "0";
                     break;
                 case "pl":
                     if (deal.pl !== undefined) {
@@ -825,16 +821,8 @@ DealsManager.prototype.renderDealsTable = function () {
                     break;
                 case "exp":
                     // Format exit price to show with currency symbol
-                    if (
-                        deal.exp &&
-                        deal.exp !== "--" &&
-                        deal.exp !== "-" &&
-                        deal.exp !== null
-                    ) {
-                        cellContent =
-                            typeof deal.exp === "number"
-                                ? "₹" + deal.exp.toFixed(2)
-                                : deal.exp;
+                    if (deal.exp && deal.exp !== "--" && deal.exp !== "-" && deal.exp !== null) {
+                        cellContent = typeof deal.exp === 'number' ? "₹" + deal.exp.toFixed(2) : deal.exp;
                     } else {
                         cellContent = "--";
                     }
@@ -933,7 +921,7 @@ DealsManager.prototype.renderDealsTable = function () {
                         var qty = deal.qty || 0;
                         var entryPrice = deal.entry_price || deal.ep || 0;
                         var tprPrice = deal.tp || 0; // Use tp (target price) as TPR price
-                        var targetPrice = deal.tp || deal.tp || 0;
+                        var targetPrice = deal.target_price || deal.tp || 0;
 
                         cellContent =
                             '<div class="btn-group btn-group-sm">' +
@@ -1413,18 +1401,14 @@ function editDeal(
     // Set modal values with current deal data
     document.getElementById("editDealId").value = dealId;
     document.getElementById("editSymbol").value = symbol;
-
+    
     // Set modal heading
     document.getElementById("editModalDealId").textContent = dealId;
     document.getElementById("editModalSymbol").textContent = symbol;
     document.getElementById("editDate").value = dateFormatted;
     document.getElementById("editQuantity").value = qty || "";
     document.getElementById("editEntryPrice").value = entryPrice || "";
-    // Set TP percentage field if it exists
-    var editTPPercentField = document.getElementById("editTPPercent");
-    if (editTPPercentField) {
-        editTPPercentField.value = ""; // TP percentage field - calculate from data
-    }
+    document.getElementById("editTPPercent").value = ""; // TP percentage field - calculate from data
     document.getElementById("editTPRPrice").value = tprPrice || "";
     // Removed editTargetPrice field - no longer exists
 
@@ -1506,6 +1490,7 @@ function submitEditDeal() {
         { value: entryPrice, name: "Entry Price" },
         { value: tpPercent, name: "TP Percentage" },
         { value: tprPrice, name: "TPR Price" },
+        { value: targetPrice, name: "Target Price" },
     ];
 
     for (var i = 0; i < fieldsToValidate.length; i++) {
@@ -1861,7 +1846,6 @@ function sellTrade(symbol, currentPrice) {
         return;
     }
 
-```python
     if (!currentPrice || isNaN(currentPrice) || currentPrice <= 0) {
         currentPrice = 100; // Default fallback price
         console.warn("Invalid price provided, using fallback:", currentPrice);
@@ -2782,7 +2766,7 @@ function closeDeal(dealId, symbol) {
     // Set modal values
     document.getElementById("closeDealId").value = dealId;
     document.getElementById("closeDealSymbol").value = symbol;
-
+    
     // Set modal heading
     document.getElementById("closeModalDealId").textContent = dealId;
     document.getElementById("closeModalSymbol").textContent = symbol;
@@ -2939,35 +2923,35 @@ function submitCloseDeal() {
 function removeDeal(dealId, symbol) {
     // Show confirmation dialog
     Swal.fire({
-        title: "Remove Deal?",
+        title: 'Remove Deal?',
         text: `Are you sure you want to permanently remove deal for ${symbol}? This action cannot be undone.`,
-        icon: "warning",
+        icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: "#d33",
-        cancelButtonColor: "#3085d6",
-        confirmButtonText: "Yes, Remove Deal",
-        cancelButtonText: "Cancel",
-        background: "#1e1e1e",
-        color: "#fff",
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, Remove Deal',
+        cancelButtonText: 'Cancel',
+        background: '#1e1e1e',
+        color: '#fff',
     }).then((result) => {
         if (result.isConfirmed) {
             // Show loading
             Swal.fire({
-                title: "Removing Deal...",
-                text: "Please wait while we remove your deal",
+                title: 'Removing Deal...',
+                text: 'Please wait while we remove your deal',
                 allowOutsideClick: false,
                 didOpen: () => {
                     Swal.showLoading();
                 },
-                background: "#1e1e1e",
-                color: "#fff",
+                background: '#1e1e1e',
+                color: '#fff',
             });
 
             // Make API call to remove deal
-            fetch("/api/remove-deal", {
-                method: "POST",
+            fetch('/api/remove-deal', {
+                method: 'POST',
                 headers: {
-                    "Content-Type": "application/json",
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                     deal_id: dealId,
@@ -2978,11 +2962,11 @@ function removeDeal(dealId, symbol) {
                 .then((data) => {
                     if (data.success) {
                         Swal.fire({
-                            icon: "success",
-                            title: "Deal Removed!",
+                            icon: 'success',
+                            title: 'Deal Removed!',
                             text: `Deal removed successfully for ${symbol}`,
-                            background: "#1e1e1e",
-                            color: "#fff",
+                            background: '#1e1e1e',
+                            color: '#fff',
                             timer: 2000,
                             showConfirmButton: false,
                         });
@@ -2993,24 +2977,22 @@ function removeDeal(dealId, symbol) {
                         }
                     } else {
                         Swal.fire({
-                            icon: "error",
-                            title: "Error",
-                            text:
-                                data.message ||
-                                "Failed to remove deal. Please try again.",
-                            background: "#1e1e1e",
-                            color: "#fff",
+                            icon: 'error',
+                            title: 'Error',
+                            text: data.message || 'Failed to remove deal. Please try again.',
+                            background: '#1e1e1e',
+                            color: '#fff',
                         });
                     }
                 })
                 .catch((error) => {
-                    console.error("Error removing deal:", error);
+                    console.error('Error removing deal:', error);
                     Swal.fire({
-                        icon: "error",
-                        title: "Network Error",
-                        text: "Failed to remove deal. Please check your connection.",
-                        background: "#1e1e1e",
-                        color: "#fff",
+                        icon: 'error',
+                        title: 'Network Error',
+                        text: 'Failed to remove deal. Please check your connection.',
+                        background: '#1e1e1e',
+                        color: '#fff',
                     });
                 });
         }
@@ -3019,55 +3001,44 @@ function removeDeal(dealId, symbol) {
 
 // Date formatting functions for keyboard input
 function formatDateInput(input) {
-    let value = input.value.replace(/\D/g, ""); // Remove non-digits
-
+    let value = input.value.replace(/\D/g, ''); // Remove non-digits
+    
     if (value.length >= 2 && value.length < 4) {
-        value = value.substring(0, 2) + "/" + value.substring(2);
+        value = value.substring(0, 2) + '/' + value.substring(2);
     } else if (value.length >= 4) {
-        value =
-            value.substring(0, 2) +
-            "/" +
-            value.substring(2, 4) +
-            "/" +
-            value.substring(4, 6);
+        value = value.substring(0, 2) + '/' + value.substring(2, 4) + '/' + value.substring(4, 6);
     }
-
+    
     input.value = value;
 }
 
 // Add event listeners for date formatting when DOM is loaded
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener('DOMContentLoaded', function() {
     // Format edit deal date input
-    const editDateInput = document.getElementById("editDate");
+    const editDateInput = document.getElementById('editDate');
     if (editDateInput) {
-        editDateInput.addEventListener("input", function () {
+        editDateInput.addEventListener('input', function() {
             formatDateInput(this);
         });
-
-        editDateInput.addEventListener("keypress", function (e) {
+        
+        editDateInput.addEventListener('keypress', function(e) {
             // Only allow numbers
-            if (
-                !/\d/.test(e.key) &&
-                !["Backspace", "Delete", "Tab", "Enter"].includes(e.key)
-            ) {
+            if (!/\d/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter'].includes(e.key)) {
                 e.preventDefault();
             }
         });
     }
-
+    
     // Format close deal exit date input
-    const exitDateInput = document.getElementById("closeDealExitDate");
+    const exitDateInput = document.getElementById('closeDealExitDate');
     if (exitDateInput) {
-        exitDateInput.addEventListener("input", function () {
+        exitDateInput.addEventListener('input', function() {
             formatDateInput(this);
         });
-
-        exitDateInput.addEventListener("keypress", function (e) {
+        
+        exitDateInput.addEventListener('keypress', function(e) {
             // Only allow numbers
-            if (
-                !/\d/.test(e.key) &&
-                !["Backspace", "Delete", "Tab", "Enter"].includes(e.key)
-            ) {
+            if (!/\d/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter'].includes(e.key)) {
                 e.preventDefault();
             }
         });
