@@ -1420,7 +1420,11 @@ function editDeal(
     document.getElementById("editDate").value = dateFormatted;
     document.getElementById("editQuantity").value = qty || "";
     document.getElementById("editEntryPrice").value = entryPrice || "";
-    document.getElementById("editTPPercent").value = ""; // TP percentage field - calculate from data
+    // Set TP percentage field if it exists
+    var editTPPercentField = document.getElementById("editTPPercent");
+    if (editTPPercentField) {
+        editTPPercentField.value = ""; // TP percentage field - calculate from data
+    }
     document.getElementById("editTPRPrice").value = tprPrice || "";
     // Removed editTargetPrice field - no longer exists
 
@@ -1445,8 +1449,8 @@ function submitEditDeal() {
     var date = document.getElementById("editDate").value;
     var qty = document.getElementById("editQuantity").value;
     var entryPrice = document.getElementById("editEntryPrice").value;
-    var tpPercent = document.getElementById("editTPRPrice").value;
-    var tprPrice = document.getElementById("editTPPercent").value;
+    var tpPercent = document.getElementById("editTPPercent").value;
+    var tprPrice = document.getElementById("editTPRPrice").value;
     // Check if at least one field has been changed
     var currentData = {
         date: date,

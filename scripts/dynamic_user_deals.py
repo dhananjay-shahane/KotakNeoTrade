@@ -56,6 +56,7 @@ class DynamicUserDealsService:
 
             # Required columns with their definitions
             required_columns = {
+                'date': 'DATE',            # entry/trade date
                 'exp': 'DECIMAL(10, 2)',  # exit price for closed deals
                 'pr': 'VARCHAR(50)',       # price range
                 'pp': 'VARCHAR(50)',       # performance points
