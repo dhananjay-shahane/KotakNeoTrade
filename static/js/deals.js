@@ -1435,8 +1435,6 @@ function submitEditDeal() {
     var entryPrice = document.getElementById("editEntryPrice").value;
     var tpPercent = document.getElementById("editTPPercent").value;
     var tprPrice = document.getElementById("editTPRPrice").value;
-    var targetPrice = document.getElementById("editTargetPrice").value;
-
     // Check if at least one field has been changed
     var currentData = {
         date: date,
@@ -1444,7 +1442,6 @@ function submitEditDeal() {
         entryPrice: entryPrice,
         tpPercent: tpPercent,
         tprPrice: tprPrice,
-        targetPrice: targetPrice,
     };
 
     var hasChanges = false;

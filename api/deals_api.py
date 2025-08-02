@@ -971,7 +971,7 @@ def edit_deal():
                 from datetime import date as date_obj
                 parsed_date = date_obj(year, month, day)
                 fields_to_update[
-                    'entry_date'] = parsed_date  # Map to database column name (date_fmt -> entry_date)
+                    'date'] = parsed_date  # Map to database column name (date_fmt -> date)
                 update_count += 1
             except (ValueError, TypeError):
                 return jsonify({
@@ -991,7 +991,7 @@ def edit_deal():
                         'error':
                         'Quantity must be a positive number'
                     }), 400
-                fields_to_update['quantity'] = qty
+                fields_to_update['qty'] = qty
                 update_count += 1
             except (ValueError, TypeError):
                 return jsonify({
@@ -1010,7 +1010,7 @@ def edit_deal():
                         'Entry price must be a positive number'
                     }), 400
                 fields_to_update[
-                    'entry_price'] = entry_price  # Map to database column name
+                    'ep'] = entry_price  # Map to database column name
                 update_count += 1
             except (ValueError, TypeError):
                 return jsonify({
