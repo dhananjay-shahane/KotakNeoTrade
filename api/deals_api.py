@@ -1102,6 +1102,9 @@ def edit_deal():
                 'error': f'No deals table found for user {username}'
             }), 404
 
+        # Ensure the table has all required columns
+        dynamic_deals_service.ensure_table_columns(username)
+
         # Update deal in user's dynamic table
         success = dynamic_deals_service.update_deal(username, deal_id,
                                                     fields_to_update)
@@ -1228,6 +1231,9 @@ def close_deal():
                 'success': False,
                 'error': f'No deals table found for user {username}'
             }), 404
+
+        # Ensure the table has all required columns (especially exp column)
+        dynamic_deals_service.ensure_table_columns(username)
 
         # Update deal status to CLOSED, set exit date (ed), exit price (exp), pos to 0
         success = dynamic_deals_service.update_deal(

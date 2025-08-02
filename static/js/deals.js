@@ -1410,7 +1410,7 @@ function editDeal(
     document.getElementById("editEntryPrice").value = entryPrice || "";
     document.getElementById("editTPPercent").value = ""; // TP percentage field - calculate from data
     document.getElementById("editTPRPrice").value = tprPrice || "";
-    document.getElementById("editTargetPrice").value = targetPrice || "";
+    // Removed editTargetPrice field - no longer exists
 
     // Store original values for comparison
     window.originalDealData = {

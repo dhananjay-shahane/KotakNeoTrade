@@ -30,6 +30,64 @@ class DynamicUserDealsService:
             logger.error(f"Database connection failed: {e}")
             return None
 
+    def ensure_table_columns(self, username):
+        """
+        Ensure the user deals table has all required columns
+        """
+        try:
+            conn = self.get_connection()
+            if not conn:
+                return False
+
+            cursor = conn.cursor()
+            table_name = f"{username}_deals"
+
+            # Check existing columns
+            check_columns_query = """
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = %s
+                ORDER BY ordinal_position;
+            """
+            cursor.execute(check_columns_query, (table_name, ))
+            existing_columns = [
+                row['column_name'] for row in cursor.fetchall()
+            ]
+
+            # Required columns with their definitions
+            required_columns = {
+                'exp': 'DECIMAL(10, 2)',  # exit price for closed deals
+                'pr': 'VARCHAR(50)',       # price range
+                'pp': 'VARCHAR(50)',       # performance points
+                'tp': 'DECIMAL(10, 2)',    # target price value
+                'tpr': 'DECIMAL(10, 2)'    # target price percentage
+            }
+
+            # Add missing columns
+            for column_name, column_def in required_columns.items():
+                if column_name not in existing_columns:
+                    alter_query = sql.SQL(
+                        "ALTER TABLE {} ADD COLUMN {} {}"
+                    ).format(
+                        sql.Identifier(table_name),
+                        sql.Identifier(column_name),
+                        sql.SQL(column_def)
+                    )
+                    cursor.execute(alter_query)
+                    logger.info(f"✅ Added column {column_name} to {table_name}")
+
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return True
+
+        except Exception as e:
+            logger.error(f"❌ Failed to ensure table columns for {username}: {e}")
+            if 'conn' in locals() and conn:
+                conn.rollback()
+                conn.close()
+            return False
+
     def create_user_deals_table(self, username):
         """
         Create a dynamic user-specific deals table
@@ -43,7 +101,7 @@ class DynamicUserDealsService:
             cursor = conn.cursor()
             table_name = f"{username}_deals"
 
-            # Create table with updated structure (added date, exp, pr, pp columns)
+            # Create table with updated structure (added date, exp, pr, pp, tp, tpr columns)
             create_table_query = sql.SQL("""
                 CREATE TABLE IF NOT EXISTS {} (
                     id SERIAL PRIMARY KEY,
@@ -56,12 +114,14 @@ class DynamicUserDealsService:
                     pos VARCHAR(20) DEFAULT '1',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     ed DATE,
-                    exp DATE,
+                    exp DECIMAL(10, 2),
                     status VARCHAR(20) DEFAULT 'ACTIVE',
                     target_price DECIMAL(10, 2),
                     stop_loss DECIMAL(10, 2),
                     pr VARCHAR(50),
-                    pp VARCHAR(50)
+                    pp VARCHAR(50),
+                    tp DECIMAL(10, 2),
+                    tpr DECIMAL(10, 2)
                 );
             """).format(sql.Identifier(table_name))
 
@@ -89,6 +149,9 @@ class DynamicUserDealsService:
             conn.commit()
             cursor.close()
             conn.close()
+
+            # Ensure all columns exist for existing tables
+            self.ensure_table_columns(username)
 
             logger.info(f"✅ Created user deals table: {table_name}")
             return True
