@@ -140,29 +140,29 @@
     overflow: auto;
 }
 
-/* Collapsible Section Styles */
-.section-collapsed .card-body {
+/* Collapsible Section Styles - Using direct style manipulation */
+.toggle-button {
+    transition: all 0.3s ease;
+}
+
+.toggle-button:hover {
+    transform: scale(1.05);
+}
+
+/* Ensure collapsed sections are properly hidden */
+.card-body[style*="display: none"] {
     display: none !important;
 }
 
-.section-collapsed .card-footer {
-    display: none !important;
+/* Animation for smooth collapse/expand */
+.card-body {
+    transition: all 0.3s ease-in-out;
 }
 
-.section-collapsed .performance-body {
-    display: none !important;
-}
-
+/* Ensure no conflicts with other hiding mechanisms */
+.section-collapsed .card-body,
+.section-collapsed .performance-body,
 .section-collapsed .analytics-body {
-    display: none !important;
-}
-
-/* Additional specific selectors for better targeting */
-#performanceContent.section-collapsed #performanceBody {
-    display: none !important;
-}
-
-#analyticsContent.section-collapsed #analyticsBody {
     display: none !important;
 }
 

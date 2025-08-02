@@ -3054,80 +3054,58 @@ ETFSignalsManager.prototype.applyDateFilters = function () {
     this.filterAndRenderSignals();
 };
 
-// Section Toggle Functions
+// Section Toggle Functions - Direct style manipulation approach
 function toggleTableSection() {
     var content = document.getElementById('signalsContent');
     var icon = document.getElementById('tableToggleIcon');
     var button = document.querySelector('[onclick="toggleTableSection()"]');
     
-    if (content.classList.contains('section-collapsed')) {
-        content.classList.remove('section-collapsed');
-        if (icon) {
-            icon.className = 'fas fa-minus me-1';
-        }
-        if (button) {
-            button.innerHTML = '<i class="fas fa-minus me-1" id="tableToggleIcon"></i>Minimize';
-        }
-    } else {
-        content.classList.add('section-collapsed');
-        if (icon) {
-            icon.className = 'fas fa-plus me-1';
-        }
-        if (button) {
-            button.innerHTML = '<i class="fas fa-plus me-1" id="tableToggleIcon"></i>Maximize';
-        }
+    var cardBody = content ? content.querySelector('.card-body') : null;
+    
+    if (cardBody && cardBody.style.display === 'none') {
+        cardBody.style.display = 'block';
+        if (icon) icon.className = 'fas fa-minus me-1';
+        if (button) button.innerHTML = '<i class="fas fa-minus me-1" id="tableToggleIcon"></i>Minimize';
+    } else if (cardBody) {
+        cardBody.style.display = 'none';
+        if (icon) icon.className = 'fas fa-plus me-1';
+        if (button) button.innerHTML = '<i class="fas fa-plus me-1" id="tableToggleIcon"></i>Maximize';
     }
 }
 
 function togglePerformanceSection() {
-    var content = document.getElementById('performanceContent');
+    var cardBody = document.getElementById('performanceBody');
     var icon = document.getElementById('performanceToggleIcon');
     var button = document.querySelector('[onclick="togglePerformanceSection()"]');
     
-    console.log('Toggling performance section - content:', content, 'icon:', icon);
+    console.log('Toggling performance section - cardBody:', cardBody, 'display:', cardBody ? cardBody.style.display : 'not found');
     
-    if (content && content.classList.contains('section-collapsed')) {
-        content.classList.remove('section-collapsed');
-        if (icon) {
-            icon.className = 'fas fa-minus me-1';
-        }
-        if (button) {
-            button.innerHTML = '<i class="fas fa-minus me-1" id="performanceToggleIcon"></i>Minimize';
-        }
-    } else if (content) {
-        content.classList.add('section-collapsed');
-        if (icon) {
-            icon.className = 'fas fa-plus me-1';
-        }
-        if (button) {
-            button.innerHTML = '<i class="fas fa-plus me-1" id="performanceToggleIcon"></i>Maximize';
-        }
+    if (cardBody && cardBody.style.display === 'none') {
+        cardBody.style.display = 'block';
+        if (icon) icon.className = 'fas fa-minus me-1';
+        if (button) button.innerHTML = '<i class="fas fa-minus me-1" id="performanceToggleIcon"></i>Minimize';
+    } else if (cardBody) {
+        cardBody.style.display = 'none';
+        if (icon) icon.className = 'fas fa-plus me-1';
+        if (button) button.innerHTML = '<i class="fas fa-plus me-1" id="performanceToggleIcon"></i>Maximize';
     }
 }
 
 function toggleAnalyticsSection() {
-    var content = document.getElementById('analyticsContent');
+    var cardBody = document.getElementById('analyticsBody');
     var icon = document.getElementById('analyticsToggleIcon');
     var button = document.querySelector('[onclick="toggleAnalyticsSection()"]');
     
-    console.log('Toggling analytics section - content:', content, 'icon:', icon);
+    console.log('Toggling analytics section - cardBody:', cardBody, 'display:', cardBody ? cardBody.style.display : 'not found');
     
-    if (content && content.classList.contains('section-collapsed')) {
-        content.classList.remove('section-collapsed');
-        if (icon) {
-            icon.className = 'fas fa-minus me-1';
-        }
-        if (button) {
-            button.innerHTML = '<i class="fas fa-minus me-1" id="analyticsToggleIcon"></i>Minimize';
-        }
-    } else if (content) {
-        content.classList.add('section-collapsed');
-        if (icon) {
-            icon.className = 'fas fa-plus me-1';
-        }
-        if (button) {
-            button.innerHTML = '<i class="fas fa-plus me-1" id="analyticsToggleIcon"></i>Maximize';
-        }
+    if (cardBody && cardBody.style.display === 'none') {
+        cardBody.style.display = 'block';
+        if (icon) icon.className = 'fas fa-minus me-1';
+        if (button) button.innerHTML = '<i class="fas fa-minus me-1" id="analyticsToggleIcon"></i>Minimize';
+    } else if (cardBody) {
+        cardBody.style.display = 'none';
+        if (icon) icon.className = 'fas fa-plus me-1';
+        if (button) button.innerHTML = '<i class="fas fa-plus me-1" id="analyticsToggleIcon"></i>Maximize';
     }
 }
 
