@@ -733,32 +733,52 @@ def get_user_deals_data():
                 (cmp_numeric - entry_price) /
                 entry_price) * 100 if cmp_is_num and entry_price > 0 else 0
 
-            # --- Target Price, TPR, TVA calculation (business logic) ---
-            if entry_price > 0:
-                if cmp_numeric > 0 and cmp_is_num:
-                    current_gain_percent = (
-                        (cmp_numeric - entry_price) / entry_price) * 100
-                    if current_gain_percent > 10:
-                        target_price = entry_price * 1.25  # 25% from entry price
-                    elif current_gain_percent > 5:
-                        target_price = entry_price * 1.20
-                    elif current_gain_percent > 0:
-                        target_price = entry_price * 1.15
-                    elif current_gain_percent > -5:
-                        target_price = entry_price * 1.12
+            # --- Target Price, TPR, TVA calculation (check database first, then use business logic) ---
+            # Check if tp and tpr values exist in database
+            db_tp_value = deal.get('tp')
+            db_tpr_value = deal.get('tpr')
+            
+            if db_tp_value and db_tpr_value:
+                # Use values from database if they exist
+                try:
+                    tp_value = round(float(db_tp_value), 2)
+                    if isinstance(db_tpr_value, str) and '%' in db_tpr_value:
+                        tpr_value = db_tpr_value
                     else:
-                        target_price = entry_price * 1.10
+                        tpr_value = f"{float(db_tpr_value):.2f}%"
+                    tva_value = round(tp_value * qty, 2)
+                except (ValueError, TypeError):
+                    # If database values are invalid, fall back to calculation
+                    db_tp_value = None
+                    db_tpr_value = None
+            
+            # If no valid database values, use calculation logic
+            if not db_tp_value or not db_tpr_value:
+                if entry_price > 0:
+                    if cmp_numeric > 0 and cmp_is_num:
+                        current_gain_percent = (
+                            (cmp_numeric - entry_price) / entry_price) * 100
+                        if current_gain_percent > 10:
+                            target_price = entry_price * 1.25  # 25% from entry price
+                        elif current_gain_percent > 5:
+                            target_price = entry_price * 1.20
+                        elif current_gain_percent > 0:
+                            target_price = entry_price * 1.15
+                        elif current_gain_percent > -5:
+                            target_price = entry_price * 1.12
+                        else:
+                            target_price = entry_price * 1.10
+                    else:
+                        target_price = entry_price * 1.15  # Default 15% target
+                    tpr_percent = (
+                        (target_price - entry_price) / entry_price) * 100
+                    tp_value = round(target_price, 2)
+                    tpr_value = f"{tpr_percent:.2f}%"
+                    tva_value = round(target_price * qty, 2)
                 else:
-                    target_price = entry_price * 1.15  # Default 15% target
-                tpr_percent = (
-                    (target_price - entry_price) / entry_price) * 100
-                tp_value = round(target_price, 2)
-                tpr_value = f"{tpr_percent:.2f}%"
-                tva_value = round(target_price * qty, 2)
-            else:
-                tp_value = "--"
-                tpr_value = "--"
-                tva_value = "--"
+                    tp_value = "--"
+                    tpr_value = "--"
+                    tva_value = "--"
 
             # ######## PR AND PP CALCULATIONS ######
 
@@ -1037,7 +1057,7 @@ def edit_deal():
                     'error': 'Invalid entry price value'
                 }), 400
 
-        # Handle TP value (target price value)
+        # Handle TP value (target price percentage - convert to actual target price)
         if tp_percent is not None:
             try:
                 tp_percent = float(tp_percent)
@@ -1046,18 +1066,18 @@ def edit_deal():
                         'success':
                         False,
                         'error':
-                        'TP value must be a positive number'
+                        'TP percentage must be a positive number'
                     }), 400
-                # Store TP value as target price in tp column
-                fields_to_update['tp'] = tp_percent  # tp_value -> tp column
+                # Store TP percentage value in tpr column (as percentage)
+                fields_to_update['tpr'] = f"{tp_percent:.2f}%"  # Store as percentage string
                 update_count += 1
             except (ValueError, TypeError):
                 return jsonify({
                     'success': False,
-                    'error': 'Invalid TP value'
+                    'error': 'Invalid TP percentage value'
                 }), 400
 
-        # Handle TPR value (target percentage return)
+        # Handle TPR value (target price actual value)
         if tpr_price is not None:
             try:
                 tpr_price = float(tpr_price)
@@ -1066,14 +1086,15 @@ def edit_deal():
                         'success':
                         False,
                         'error':
-                        'TPR value must be a positive number'
+                        'Target price must be a positive number'
                     }), 400
-                fields_to_update['tpr'] = tpr_price  # tpr_value -> tpr column
+                # Store target price in tp column
+                fields_to_update['tp'] = tpr_price  # Store actual target price
                 update_count += 1
             except (ValueError, TypeError):
                 return jsonify({
                     'success': False,
-                    'error': 'Invalid TPR value'
+                    'error': 'Invalid target price value'
                 }), 400
 
         if target_price is not None:
