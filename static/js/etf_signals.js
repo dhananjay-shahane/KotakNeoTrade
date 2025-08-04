@@ -3291,3 +3291,195 @@ if (document.readyState === "loading") {
 } else {
     window.etfSignalsManager = new ETFSignalsManager();
 }
+
+// Date filtering functions
+function applyQuickDateFilter(days) {
+    var endDate = new Date();
+    var startDate = new Date();
+    startDate.setDate(endDate.getDate() - days);
+    
+    var startDateStr = startDate.toISOString().split('T')[0];
+    var endDateStr = endDate.toISOString().split('T')[0];
+    
+    var startDateInput = document.getElementById('startDateFilter');
+    var endDateInput = document.getElementById('endDateFilter');
+    
+    if (startDateInput) startDateInput.value = startDateStr;
+    if (endDateInput) endDateInput.value = endDateStr;
+    
+    if (window.etfSignalsManager) {
+        window.etfSignalsManager.dateFilters.startDate = startDateStr;
+        window.etfSignalsManager.dateFilters.endDate = endDateStr;
+        window.etfSignalsManager.dateFilters.quickFilter = days;
+        window.etfSignalsManager.applyFilters();
+    }
+    
+    console.log('Applied quick date filter for last', days, 'days');
+}
+
+function clearDateFilter() {
+    var startDateInput = document.getElementById('startDateFilter');
+    var endDateInput = document.getElementById('endDateFilter');
+    
+    if (startDateInput) startDateInput.value = '';
+    if (endDateInput) endDateInput.value = '';
+    
+    if (window.etfSignalsManager) {
+        window.etfSignalsManager.dateFilters = { startDate: null, endDate: null, quickFilter: null };
+        window.etfSignalsManager.applyFilters();
+    }
+    
+    console.log('Cleared date filters');
+}
+
+function applyFilters() {
+    if (!window.etfSignalsManager) return;
+    
+    var startDate = document.getElementById('startDateFilter')?.value;
+    var endDate = document.getElementById('endDateFilter')?.value;
+    
+    window.etfSignalsManager.dateFilters.startDate = startDate;
+    window.etfSignalsManager.dateFilters.endDate = endDate;
+    window.etfSignalsManager.applyFilters();
+}
+
+function clearFilters() {
+    var inputs = ['startDateFilter', 'endDateFilter', 'positionTypeFilter', 'modalStatusFilter', 'modalSymbolFilter'];
+    inputs.forEach(function(id) {
+        var input = document.getElementById(id);
+        if (input) input.value = '';
+    });
+    
+    if (window.etfSignalsManager) {
+        window.etfSignalsManager.dateFilters = { startDate: null, endDate: null, quickFilter: null };
+        window.etfSignalsManager.applyFilters();
+    }
+}
+
+// Add applyFilters method to ETFSignalsManager
+ETFSignalsManager.prototype.applyFilters = function() {
+    var filteredSignals = this.signals.slice();
+    
+    if (this.dateFilters.startDate || this.dateFilters.endDate) {
+        filteredSignals = filteredSignals.filter(function(signal) {
+            var signalDate = signal.DATE || signal.date;
+            if (!signalDate || signalDate === '--') return true;
+            
+            if (signalDate.length === 7) {
+                var day = signalDate.substring(0, 2);
+                var month = signalDate.substring(2, 5);
+                var year = '20' + signalDate.substring(5, 7);
+                
+                var monthMap = {
+                    'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
+                    'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
+                    'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+                };
+                
+                var monthNum = monthMap[month];
+                if (monthNum) {
+                    var parsedDate = new Date(year + '-' + monthNum + '-' + day);
+                    var startDate = this.dateFilters.startDate ? new Date(this.dateFilters.startDate) : null;
+                    var endDate = this.dateFilters.endDate ? new Date(this.dateFilters.endDate) : null;
+                    
+                    if (startDate && parsedDate < startDate) return false;
+                    if (endDate && parsedDate > endDate) return false;
+                }
+            }
+            
+            return true;
+        }.bind(this));
+    }
+    
+    this.filteredSignals = filteredSignals;
+    this.currentPage = 1;
+    this.updatePagination();
+    this.renderSignalsTable();
+    this.updatePerformanceAnalysis();
+};
+
+// Update Performance Analysis with real data
+ETFSignalsManager.prototype.updatePerformanceAnalysis = function() {
+    if (!this.filteredSignals || this.filteredSignals.length === 0) return;
+    
+    var totalSignals = this.filteredSignals.length;
+    var activeSignals = 0;
+    var profitableSignals = 0;
+    var totalInvestment = 0;
+    var totalCurrentValue = 0;
+    var totalPnl = 0;
+    var topPerformers = [];
+    var worstPerformers = [];
+    
+    this.filteredSignals.forEach(function(signal) {
+        var investment = parseFloat(signal.INV || signal.investment || 0);
+        var pnl = parseFloat(signal.CPL || signal.pnl || 0);
+        var cmp = parseFloat(signal.CMP || signal.current_price || 0);
+        var qty = parseFloat(signal.QTY || signal.qty || 0);
+        var symbol = signal.Symbol || signal.symbol || signal.etf;
+        var changePercent = parseFloat(String(signal['%CHAN'] || '0').replace('%', ''));
+        
+        totalInvestment += investment;
+        totalCurrentValue += (cmp * qty);
+        totalPnl += pnl;
+        
+        if (pnl > 0) profitableSignals++;
+        if (signal.status !== 'CLOSED') activeSignals++;
+        
+        if (symbol && symbol !== '--') {
+            var perfData = { symbol: symbol, pnl: pnl, percent: changePercent };
+            
+            if (pnl > 0) {
+                topPerformers.push(perfData);
+            } else if (pnl < 0) {
+                worstPerformers.push(perfData);
+            }
+        }
+    });
+    
+    // Sort performers
+    topPerformers.sort(function(a, b) { return b.pnl - a.pnl; });
+    worstPerformers.sort(function(a, b) { return a.pnl - b.pnl; });
+    
+    var winRate = totalSignals > 0 ? ((profitableSignals / totalSignals) * 100) : 0;
+    
+    // Update summary cards
+    document.getElementById('totalSignalsCount').textContent = totalSignals;
+    document.getElementById('activeSignalsCount').textContent = activeSignals;
+    document.getElementById('profitableSignalsCount').textContent = profitableSignals;
+    document.getElementById('winRatePercentage').textContent = winRate.toFixed(1) + '%';
+    document.getElementById('totalInvestmentAmount').textContent = '₹' + totalInvestment.toLocaleString();
+    document.getElementById('totalCurrentValue').textContent = '₹' + totalCurrentValue.toLocaleString();
+    
+    var pnlElement = document.getElementById('totalPnlAmount');
+    pnlElement.textContent = '₹' + totalPnl.toLocaleString();
+    pnlElement.className = 'mb-0 ' + (totalPnl >= 0 ? 'text-success' : 'text-danger');
+    
+    // Update performer tables
+    this.updatePerformerTable('topPerformersTable', topPerformers.slice(0, 5), true);
+    this.updatePerformerTable('worstPerformersTable', worstPerformers.slice(0, 5), false);
+};
+
+ETFSignalsManager.prototype.updatePerformerTable = function(tableId, data, isPositive) {
+    var tbody = document.getElementById(tableId);
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No data available</td></tr>';
+        return;
+    }
+    
+    data.forEach(function(item) {
+        var row = document.createElement('tr');
+        var pnlClass = isPositive ? 'text-success' : 'text-danger';
+        var percentClass = item.percent >= 0 ? 'text-success' : 'text-danger';
+        
+        row.innerHTML = '<td>' + item.symbol + '</td>' +
+                       '<td class="' + pnlClass + '">₹' + item.pnl.toLocaleString() + '</td>' +
+                       '<td class="' + percentClass + '">' + item.percent.toFixed(2) + '%</td>';
+        tbody.appendChild(row);
+    });
+};
+
