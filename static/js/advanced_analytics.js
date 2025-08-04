@@ -220,6 +220,12 @@ AdvancedAnalyticsManager.prototype.renderPercentageChart = function() {
         return;
     }
     
+    // Clear any existing loading state
+    var chartDiv = document.getElementById('percentageChangeChart');
+    if (chartDiv) {
+        chartDiv.innerHTML = '';
+    }
+    
     var data = this.percentageData.data;
     
     // Prepare data for grouped bar chart

@@ -7,6 +7,8 @@ A comprehensive trading platform integrated with Kotak Neo API for real-time por
 - **Data Policy**: Absolutely no sample, demo, mock, or placeholder data allowed
 - **Authentication**: Real trading account authentication only
 - **Data Sources**: All data must come from live Kotak Neo API
+- **Performance**: Proper loading states for all data sections and charts
+- **Date Filtering**: Functional date filtering for "Last 10 Days" and "Last 6 Days" options
 
 ## System Architecture
 The platform is built with a Flask backend, utilizing SQLAlchemy for ORM and PostgreSQL for database management. The frontend uses HTML/CSS/JavaScript with Bootstrap for a responsive UI.
