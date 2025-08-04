@@ -37,7 +37,7 @@ def create_external_users_table():
     conn = get_external_db_connection()
     if not conn:
         return False
-    
+
     try:
         cursor = conn.cursor()
         cursor.execute('''
@@ -60,42 +60,51 @@ def create_external_users_table():
         return False
 
 
-def store_user_in_external_db(username, password, email, mobile, trading_account_name=None):
+def store_user_in_external_db(username,
+                              password,
+                              email,
+                              mobile,
+                              trading_account_name=None):
     """Store user registration details in external PostgreSQL database"""
     try:
         # Ensure table exists
         create_external_users_table()
-        
+
         conn = get_external_db_connection()
         if not conn:
             return False
-        
+
         cursor = conn.cursor()
-        
+
         # Check if user already exists
-        cursor.execute('''
+        cursor.execute(
+            '''
             SELECT username FROM external_users WHERE email = %s OR username = %s
         ''', (email, username))
-        
+
         if cursor.fetchone():
             cursor.close()
             conn.close()
-            print(f"User with email {email} or username {username} already exists")
+            print(
+                f"User with email {email} or username {username} already exists"
+            )
             return False
-        
+
         # Insert user data
-        cursor.execute('''
+        cursor.execute(
+            '''
             INSERT INTO external_users (username, password, email, mobile, trading_account_name)
             VALUES (%s, %s, %s, %s, %s)
-        ''', (username, password, email, mobile, trading_account_name or 'Not Set'))
-        
+        ''', (username, password, email, mobile, trading_account_name
+              or 'Not Set'))
+
         conn.commit()
         cursor.close()
         conn.close()
-        
+
         print(f"User {username} successfully stored in external database")
         return True
-        
+
     except Exception as e:
         print(f"Error storing user in external database: {e}")
         return False
@@ -107,18 +116,19 @@ def authenticate_user_from_external_db(username, password):
         conn = get_external_db_connection()
         if not conn:
             return None
-        
+
         cursor = conn.cursor()
-        cursor.execute('''
+        cursor.execute(
+            '''
             SELECT sr, username, email, mobile, trading_account_name, datetime 
             FROM external_users 
             WHERE username = %s AND password = %s
         ''', (username, password))
-        
+
         result = cursor.fetchone()
         cursor.close()
         conn.close()
-        
+
         if result:
             return {
                 'sr': result[0],
@@ -128,9 +138,9 @@ def authenticate_user_from_external_db(username, password):
                 'trading_account_name': result[4],
                 'datetime': result[5]
             }
-        
+
         return None
-        
+
     except Exception as e:
         print(f"Error authenticating user from external database: {e}")
         return None
@@ -143,16 +153,23 @@ class EmailService:
     @staticmethod
     def configure_mail(app):
         """Configure Flask-Mail with app"""
-        app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+        app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER',
+                                                   'smtp.gmail.com')
         app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
-        app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
-        app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME') or os.environ.get('EMAIL_USER')
-        app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD') or os.environ.get('EMAIL_PASSWORD')
-        app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER') or app.config['MAIL_USERNAME']
+        app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS',
+                                                    'True').lower() == 'true'
+        app.config['MAIL_USERNAME'] = os.environ.get(
+            'MAIL_USERNAME') or os.environ.get('EMAIL_USER')
+        app.config['MAIL_PASSWORD'] = os.environ.get(
+            'MAIL_PASSWORD') or os.environ.get('EMAIL_PASSWORD')
+        app.config['MAIL_DEFAULT_SENDER'] = os.environ.get(
+            'MAIL_DEFAULT_SENDER') or app.config['MAIL_USERNAME']
 
         # Only configure mail if credentials are provided
         if not app.config['MAIL_USERNAME'] or not app.config['MAIL_PASSWORD']:
-            print("❌ Email credentials not configured. Set MAIL_USERNAME and MAIL_PASSWORD in Secrets.")
+            print(
+                "❌ Email credentials not configured. Set MAIL_USERNAME and MAIL_PASSWORD in Secrets."
+            )
             print("📧 Email service will be disabled.")
             return None
 
@@ -166,7 +183,8 @@ class EmailService:
             print("Email service not configured, skipping email send")
             return False
 
-        if not mail.app.config.get('MAIL_USERNAME') or not mail.app.config.get('MAIL_PASSWORD'):
+        if not mail.app.config.get('MAIL_USERNAME') or not mail.app.config.get(
+                'MAIL_PASSWORD'):
             print("Email credentials not configured, skipping email send")
             return False
 
@@ -177,7 +195,8 @@ class EmailService:
 
             msg = Message(
                 subject="Welcome to Trading Platform - Your Account Details",
-                sender=mail.app.config.get('MAIL_DEFAULT_SENDER') or mail.app.config.get('MAIL_USERNAME'),
+                sender=mail.app.config.get('MAIL_DEFAULT_SENDER')
+                or mail.app.config.get('MAIL_USERNAME'),
                 recipients=[user_email])
 
             # Beautiful email template matching the design
@@ -325,10 +344,6 @@ class EmailService:
                                 <span class="credential-value">{username}</span>
                             </div>
                             <div class="credential-item">
-                                <span class="credential-label">Password:</span>
-                                <span class="credential-value">{password}</span>
-                            </div>
-                            <div class="credential-item">
                                 <span class="credential-label">Registered Email:</span>
                                 <span class="credential-value">{user_email}</span>
                             </div>
@@ -377,7 +392,9 @@ def handle_login():
         return redirect(url_for('portfolio'))
 
     if request.method == 'POST':
-        username = request.form.get('email', '').strip()  # Form field is named 'email' but contains username
+        username = request.form.get(
+            'email',
+            '').strip()  # Form field is named 'email' but contains username
         password = request.form.get('password', '').strip()
 
         if not username or not password:
@@ -386,7 +403,7 @@ def handle_login():
 
         # First try to authenticate from external database
         external_user = authenticate_user_from_external_db(username, password)
-        
+
         if external_user:
             # Check if user exists in local database, if not create one
             user = User.query.filter_by(username=username).first()
@@ -399,9 +416,10 @@ def handle_login():
                 user.set_password(password)
                 db.session.add(user)
                 db.session.commit()
-            
+
             login_user(user)
-            flash('Login successful! Welcome to the trading platform.', 'success')
+            flash('Login successful! Welcome to the trading platform.',
+                  'success')
             next_page = request.args.get('next')
             return redirect(next_page or url_for('portfolio'))
         else:
@@ -409,7 +427,8 @@ def handle_login():
             user = User.query.filter_by(username=username).first()
             if user and user.check_password(password):
                 login_user(user)
-                flash('Login successful! Welcome to the trading platform.', 'success')
+                flash('Login successful! Welcome to the trading platform.',
+                      'success')
                 next_page = request.args.get('next')
                 return redirect(next_page or url_for('portfolio'))
             else:
@@ -449,7 +468,7 @@ def handle_register(mail=None):
             # Extract last 2 digits from mobile
             mobile_digits = ''.join(filter(str.isdigit, mobile))[-2:]
             username = email_part + mobile_digits
-            
+
             # Ensure username is exactly 5 characters
             if len(username) < 5:
                 username = username.ljust(5, '0')
@@ -461,16 +480,23 @@ def handle_register(mail=None):
                 if dynamic_deals_service.create_user_deals_table(username):
                     print(f"✅ Created deals table for user: {username}")
                 else:
-                    print(f"⚠️ Failed to create deals table for user: {username}")
-                
+                    print(
+                        f"⚠️ Failed to create deals table for user: {username}"
+                    )
+
                 # Send registration email if email service is configured
                 if mail:
-                    EmailService.send_registration_email(mail, email, username, password)
+                    EmailService.send_registration_email(
+                        mail, email, username, password)
 
-                flash('Registration successful! Please check your email for login credentials. Do not close this message until you have received the email.', 'success')
+                flash(
+                    'Registration successful! Please check your email for login credentials. Do not close this message until you have received the email.',
+                    'success')
                 return redirect(url_for('login'))
             else:
-                flash('Registration failed. Email might already be registered.', 'error')
+                flash(
+                    'Registration failed. Email might already be registered.',
+                    'error')
                 return render_template('auth/register.html')
 
         except Exception as e:
