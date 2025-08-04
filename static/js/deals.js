@@ -364,6 +364,10 @@ DealsManager.prototype.loadDeals = function () {
                     }
 
                     console.log("Processing deals data:", dealsData);
+                    // Debug: Log the first deal to see what fields are available
+                    if (dealsData.length > 0) {
+                        console.log("Sample deal data:", dealsData[0]);
+                    }
 
                     if (dealsData.length > 0) {
                         var uniqueDeals = dealsData.map(function (deal) {
@@ -408,9 +412,17 @@ DealsManager.prototype.loadDeals = function () {
                                 inv: parseFloat(
                                     deal.invested_amount || deal.inv || 0,
                                 ),
-                                tp: parseFloat(deal.tp || 0),
+                                tp: parseFloat(deal.tp || deal.tpr_price || deal.target_price || 0),
                                 tva: parseFloat(deal.tva || 0),
-                                tpr: deal.tpr || "15.00%",
+                                tpr: (function() {
+                                    var tprValue = deal.tpr || deal.tp_percent;
+                                    if (tprValue && typeof tprValue === 'number') {
+                                        return tprValue.toFixed(2) + "%";
+                                    } else if (tprValue && typeof tprValue === 'string') {
+                                        return tprValue.includes('%') ? tprValue : tprValue + "%";
+                                    }
+                                    return "15.00%";
+                                })(),
                                 date: (function () {
                                     var dateValue =
                                         deal.entry_date ||
@@ -1580,7 +1592,12 @@ function submitEditDeal() {
                         document.getElementById("editDealModal"),
                     );
                     modal.hide();
-                    window.dealsManager.loadDeals();
+                    
+                    // Force a fresh reload by adding a timestamp to bypass any caching
+                    console.log("Forcing fresh deals reload after edit...");
+                    setTimeout(() => {
+                        window.dealsManager.loadDeals();
+                    }, 500); // Small delay to ensure modal is closed
                 });
             } else {
                 Swal.fire({
