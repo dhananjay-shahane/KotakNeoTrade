@@ -1057,7 +1057,7 @@ def edit_deal():
                     'error': 'Invalid entry price value'
                 }), 400
 
-        # Handle TP value (target price percentage - convert to actual target price)
+        # Handle TP value (target price percentage)
         if tp_percent is not None:
             try:
                 tp_percent = float(tp_percent)
@@ -1068,9 +1068,36 @@ def edit_deal():
                         'error':
                         'TP percentage must be a positive number'
                     }), 400
-                # Store TP percentage value in tpr column (as percentage)
-                fields_to_update['tpr'] = f"{tp_percent:.2f}%"  # Store as percentage string
-                update_count += 1
+                # Calculate target price from percentage and store in tp column
+                # Get current entry price from the update data or fetch from database if not provided
+                current_entry_price = entry_price
+                if not current_entry_price:
+                    # Need to fetch current entry price from database
+                    try:
+                        # Import dynamic deals service to get current entry price
+                        import sys
+                        sys.path.append('scripts')
+                        from scripts.dynamic_user_deals import DynamicUserDealsService
+                        
+                        username = session.get('username')
+                        if username:
+                            dynamic_deals_service = DynamicUserDealsService()
+                            current_deal = dynamic_deals_service.get_deal_by_id(username, deal_id)
+                            if current_deal:
+                                current_entry_price = float(current_deal.get('ep', 0))
+                    except Exception as e:
+                        pass
+                
+                if current_entry_price and current_entry_price > 0:
+                    calculated_target_price = current_entry_price * (1 + tp_percent / 100)
+                    fields_to_update['tp'] = round(calculated_target_price, 2)  # Store actual target price
+                    fields_to_update['tpr'] = f"{tp_percent:.2f}%"  # Store as percentage string
+                    update_count += 1
+                else:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Entry price is required to calculate target price from percentage'
+                    }), 400
             except (ValueError, TypeError):
                 return jsonify({
                     'success': False,
@@ -1088,8 +1115,11 @@ def edit_deal():
                         'error':
                         'Target price must be a positive number'
                     }), 400
-                # Store target price in tp column
+                # Store target price in tp column and calculate percentage for tpr
                 fields_to_update['tp'] = tpr_price  # Store actual target price
+                if entry_price and entry_price > 0:
+                    calculated_percentage = ((tpr_price - entry_price) / entry_price) * 100
+                    fields_to_update['tpr'] = f"{calculated_percentage:.2f}%"
                 update_count += 1
             except (ValueError, TypeError):
                 return jsonify({
