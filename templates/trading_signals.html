@@ -361,25 +361,33 @@ endblock %} {% block extra_css %}
                 <div class="col-md-3">
                     <div class="summary-card">
                         <h6 class="text-muted mb-1">Total Signals</h6>
-                        <h4 class="mb-0 text-primary" id="totalSignalsCount">0</h4>
+                        <h4 class="mb-0 text-primary" id="totalSignalsCount">
+                            <i class="fas fa-spinner fa-spin me-2"></i>Loading...
+                        </h4>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="summary-card">
                         <h6 class="text-muted mb-1">Active Signals</h6>
-                        <h4 class="mb-0 text-warning" id="activeSignalsCount">0</h4>
+                        <h4 class="mb-0 text-warning" id="activeSignalsCount">
+                            <i class="fas fa-spinner fa-spin me-2"></i>Loading...
+                        </h4>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="summary-card">
                         <h6 class="text-muted mb-1">Profitable Signals</h6>
-                        <h4 class="mb-0 text-success" id="profitableSignalsCount">0</h4>
+                        <h4 class="mb-0 text-success" id="profitableSignalsCount">
+                            <i class="fas fa-spinner fa-spin me-2"></i>Loading...
+                        </h4>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="summary-card">
                         <h6 class="text-muted mb-1">Win Rate</h6>
-                        <h4 class="mb-0 text-info" id="winRatePercentage">0%</h4>
+                        <h4 class="mb-0 text-info" id="winRatePercentage">
+                            <i class="fas fa-spinner fa-spin me-2"></i>Loading...
+                        </h4>
                     </div>
                 </div>
             </div>
@@ -389,19 +397,25 @@ endblock %} {% block extra_css %}
                 <div class="col-md-4">
                     <div class="summary-card">
                         <h6 class="text-muted mb-1">Total Investment</h6>
-                        <h4 class="mb-0 text-light" id="totalInvestmentAmount">₹0</h4>
+                        <h4 class="mb-0 text-light" id="totalInvestmentAmount">
+                            <i class="fas fa-spinner fa-spin me-2"></i>Loading...
+                        </h4>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="summary-card">
                         <h6 class="text-muted mb-1">Current Value</h6>
-                        <h4 class="mb-0 text-light" id="totalCurrentValue">₹0</h4>
+                        <h4 class="mb-0 text-light" id="totalCurrentValue">
+                            <i class="fas fa-spinner fa-spin me-2"></i>Loading...
+                        </h4>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="summary-card">
                         <h6 class="text-muted mb-1">Total P&L</h6>
-                        <h4 class="mb-0" id="totalPnlAmount">₹0</h4>
+                        <h4 class="mb-0" id="totalPnlAmount">
+                            <i class="fas fa-spinner fa-spin me-2"></i>Loading...
+                        </h4>
                     </div>
                 </div>
             </div>
@@ -499,7 +513,14 @@ endblock %} {% block extra_css %}
                             <small class="text-muted">Track time-based performance patterns and identify seasonal trends</small>
                         </div>
                         <div class="card-body">
-                            <div id="timeSeriesChart" style="height: 400px;"></div>
+                            <div id="timeSeriesChart" style="height: 400px;">
+                                <div class="d-flex justify-content-center align-items-center h-100">
+                                    <div class="text-center text-muted">
+                                        <i class="fas fa-spinner fa-spin fa-3x mb-3"></i>
+                                        <p>Loading time series data...</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

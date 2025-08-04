@@ -3294,12 +3294,16 @@ if (document.readyState === "loading") {
 
 // Date filtering functions
 function applyQuickDateFilter(days) {
+    console.log('Applying quick date filter for last', days, 'days');
+    
     var endDate = new Date();
     var startDate = new Date();
     startDate.setDate(endDate.getDate() - days);
     
     var startDateStr = startDate.toISOString().split('T')[0];
     var endDateStr = endDate.toISOString().split('T')[0];
+    
+    console.log('Date range:', startDateStr, 'to', endDateStr);
     
     var startDateInput = document.getElementById('startDateFilter');
     var endDateInput = document.getElementById('endDateFilter');
@@ -3311,10 +3315,17 @@ function applyQuickDateFilter(days) {
         window.etfSignalsManager.dateFilters.startDate = startDateStr;
         window.etfSignalsManager.dateFilters.endDate = endDateStr;
         window.etfSignalsManager.dateFilters.quickFilter = days;
-        window.etfSignalsManager.applyFilters();
+        
+        // Show loading for performance analysis
+        window.etfSignalsManager.showPerformanceLoading();
+        
+        // Apply filters with a small delay to show loading
+        setTimeout(function() {
+            window.etfSignalsManager.applyFilters();
+        }, 100);
     }
     
-    console.log('Applied quick date filter for last', days, 'days');
+    console.log('Quick date filter applied for last', days, 'days');
 }
 
 function clearDateFilter() {
@@ -3356,18 +3367,28 @@ function clearFilters() {
     }
 }
 
-// Add applyFilters method to ETFSignalsManager
+// Enhanced applyFilters method with better date parsing
 ETFSignalsManager.prototype.applyFilters = function() {
+    console.log('Applying filters with date range:', this.dateFilters);
+    
     var filteredSignals = this.signals.slice();
     
+    // Apply date filtering if dates are set
     if (this.dateFilters.startDate || this.dateFilters.endDate) {
+        var startDate = this.dateFilters.startDate ? new Date(this.dateFilters.startDate) : null;
+        var endDate = this.dateFilters.endDate ? new Date(this.dateFilters.endDate) : null;
+        
         filteredSignals = filteredSignals.filter(function(signal) {
             var signalDate = signal.DATE || signal.date;
             if (!signalDate || signalDate === '--') return true;
             
+            var parsedDate = null;
+            
+            // Handle different date formats
             if (signalDate.length === 7) {
+                // Format: "12Dec24"
                 var day = signalDate.substring(0, 2);
-                var month = signalDate.substring(2, 5);
+                var monthStr = signalDate.substring(2, 5);
                 var year = '20' + signalDate.substring(5, 7);
                 
                 var monthMap = {
@@ -3376,26 +3397,38 @@ ETFSignalsManager.prototype.applyFilters = function() {
                     'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
                 };
                 
-                var monthNum = monthMap[month];
+                var monthNum = monthMap[monthStr];
                 if (monthNum) {
-                    var parsedDate = new Date(year + '-' + monthNum + '-' + day);
-                    var startDate = this.dateFilters.startDate ? new Date(this.dateFilters.startDate) : null;
-                    var endDate = this.dateFilters.endDate ? new Date(this.dateFilters.endDate) : null;
-                    
-                    if (startDate && parsedDate < startDate) return false;
-                    if (endDate && parsedDate > endDate) return false;
+                    parsedDate = new Date(year + '-' + monthNum + '-' + day);
                 }
+            } else if (signalDate.includes('-')) {
+                // Format: "2024-12-01" or similar
+                parsedDate = new Date(signalDate);
+            } else if (signalDate.includes('/')) {
+                // Format: "12/01/2024" or similar
+                parsedDate = new Date(signalDate);
+            }
+            
+            if (parsedDate && !isNaN(parsedDate.getTime())) {
+                if (startDate && parsedDate < startDate) return false;
+                if (endDate && parsedDate > endDate) return false;
             }
             
             return true;
-        }.bind(this));
+        });
+        
+        console.log('Filtered from', this.signals.length, 'to', filteredSignals.length, 'signals');
     }
     
     this.filteredSignals = filteredSignals;
     this.currentPage = 1;
     this.updatePagination();
     this.renderSignalsTable();
-    this.updatePerformanceAnalysis();
+    
+    // Update performance analysis with filtered data
+    if (this.updatePerformanceAnalysis) {
+        this.updatePerformanceAnalysis();
+    }
 };
 
 // Update Performance Analysis with real data
@@ -3481,5 +3514,37 @@ ETFSignalsManager.prototype.updatePerformerTable = function(tableId, data, isPos
                        '<td class="' + percentClass + '">' + item.percent.toFixed(2) + '%</td>';
         tbody.appendChild(row);
     });
+};
+
+// Show loading state for performance analysis
+ETFSignalsManager.prototype.showPerformanceLoading = function() {
+    var loadingElements = [
+        'totalSignalsCount',
+        'activeSignalsCount', 
+        'profitableSignalsCount',
+        'winRatePercentage',
+        'totalInvestmentAmount',
+        'totalCurrentValue',
+        'totalPnlAmount'
+    ];
+    
+    loadingElements.forEach(function(elementId) {
+        var element = document.getElementById(elementId);
+        if (element) {
+            element.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Loading...';
+        }
+    });
+    
+    // Show loading for performer tables
+    var topPerformersTable = document.getElementById('topPerformersTable');
+    var worstPerformersTable = document.getElementById('worstPerformersTable');
+    
+    if (topPerformersTable) {
+        topPerformersTable.innerHTML = '<tr><td colspan="3" class="text-center text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Loading...</td></tr>';
+    }
+    
+    if (worstPerformersTable) {
+        worstPerformersTable.innerHTML = '<tr><td colspan="3" class="text-center text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Loading...</td></tr>';
+    }
 };
 
