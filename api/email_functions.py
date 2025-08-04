@@ -5,6 +5,7 @@ Handles SMTP email sending for trading signal notifications and daily reports
 
 import smtplib
 import logging
+import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
@@ -23,14 +24,21 @@ class EmailService:
 
     def __init__(self):
         self.db_service = ExternalDatabaseService()
+        # Load admin email configuration from environment variables
+        self.admin_smtp_config = {
+            'smtp_host': os.environ.get('MAIL_SERVER', 'smtp.gmail.com'),
+            'smtp_port': int(os.environ.get('MAIL_PORT', 587)),
+            'smtp_username': os.environ.get('EMAIL_USER'),
+            'smtp_password': os.environ.get('EMAIL_PASSWORD'),
+            'use_tls': os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
+        }
 
-    def send_email_via_smtp(self, smtp_config: Dict, recipient_email: str, 
-                           subject: str, html_content: str, text_content: str = None) -> bool:
+    def send_email_via_admin_smtp(self, recipient_email: str, 
+                                 subject: str, html_content: str, text_content: str = None) -> bool:
         """
-        Send email using user's SMTP configuration with proper error handling
+        Send email using admin's SMTP configuration with proper error handling
         
         Args:
-            smtp_config: Dictionary containing SMTP host, port, username, password
             recipient_email: Email address to send to
             subject: Email subject line
             html_content: HTML content of the email
@@ -40,15 +48,16 @@ class EmailService:
             Boolean indicating success/failure of email sending
         """
         try:
-            # Validate SMTP configuration
-            required_fields = ['smtp_host', 'smtp_port', 'smtp_username', 'smtp_password']
-            if not all(field in smtp_config for field in required_fields):
-                logger.error("❌ Incomplete SMTP configuration provided")
+            # Validate admin SMTP configuration
+            if not all([self.admin_smtp_config['smtp_host'], 
+                       self.admin_smtp_config['smtp_username'], 
+                       self.admin_smtp_config['smtp_password']]):
+                logger.error("❌ Incomplete admin SMTP configuration")
                 return False
 
             # Create email message with both HTML and text content
             message = MIMEMultipart('alternative')
-            message['From'] = smtp_config['smtp_username']
+            message['From'] = self.admin_smtp_config['smtp_username']
             message['To'] = recipient_email
             message['Subject'] = subject
 
@@ -62,20 +71,21 @@ class EmailService:
             message.attach(html_part)
 
             # Connect to SMTP server with security measures
-            server = smtplib.SMTP(smtp_config['smtp_host'], smtp_config['smtp_port'])
-            server.starttls()  # Enable security
-            server.login(smtp_config['smtp_username'], smtp_config['smtp_password'])
+            server = smtplib.SMTP(self.admin_smtp_config['smtp_host'], self.admin_smtp_config['smtp_port'])
+            if self.admin_smtp_config['use_tls']:
+                server.starttls()  # Enable security
+            server.login(self.admin_smtp_config['smtp_username'], self.admin_smtp_config['smtp_password'])
             
             # Send email
             text = message.as_string()
-            server.sendmail(smtp_config['smtp_username'], recipient_email, text)
+            server.sendmail(self.admin_smtp_config['smtp_username'], recipient_email, text)
             server.quit()
             
             logger.info(f"✅ Email sent successfully to {recipient_email}")
             return True
 
         except smtplib.SMTPAuthenticationError:
-            logger.error(f"❌ SMTP authentication failed for {smtp_config.get('smtp_username', 'unknown')}")
+            logger.error(f"❌ SMTP authentication failed for admin email {self.admin_smtp_config.get('smtp_username', 'unknown')}")
             return False
         except smtplib.SMTPException as e:
             logger.error(f"❌ SMTP error occurred: {e}")
@@ -149,22 +159,16 @@ class EmailService:
             Consider this signal based on your risk tolerance and trading strategy.
             """
 
-            # Send email to each user using their personal SMTP configuration
+            # Send email to each user using admin SMTP configuration
             for user in users:
-                smtp_config = {
-                    'smtp_host': user['smtp_host'],
-                    'smtp_port': user['smtp_port'],
-                    'smtp_username': user['smtp_username'],
-                    'smtp_password': user['smtp_password_encrypted']  # In production, decrypt this
-                }
+                user_email = user['user_email']
                 
-                # Send email to user using their SMTP settings
-                if self.send_email_via_smtp(smtp_config, user['smtp_username'], 
-                                          subject, html_content, text_content):
+                # Send email to user using admin SMTP settings
+                if self.send_email_via_admin_smtp(user_email, subject, html_content, text_content):
                     successful_sends += 1
-                    logger.info(f"✅ Trading signal email sent to {user['username']}")
+                    logger.info(f"✅ Trading signal email sent to {user['username']} ({user_email})")
                 else:
-                    logger.error(f"❌ Failed to send trading signal email to {user['username']}")
+                    logger.error(f"❌ Failed to send trading signal email to {user['username']} ({user_email})")
 
             logger.info(f"📧 Trading signal emails: {successful_sends}/{len(users)} sent successfully")
             return successful_sends
@@ -190,8 +194,8 @@ class EmailService:
             users = get_users_with_email_notifications('deals')
             user_settings = next((u for u in users if u['username'] == username), None)
             
-            if not user_settings:
-                logger.info(f"📧 User {username} doesn't have deal email notifications enabled")
+            if not user_settings or not user_settings.get('user_email'):
+                logger.info(f"📧 User {username} doesn't have deal email notifications enabled or no email provided")
                 return False
 
             # Calculate profit/loss and percentage
@@ -237,16 +241,10 @@ class EmailService:
             </html>
             """
 
-            smtp_config = {
-                'smtp_host': user_settings['smtp_host'],
-                'smtp_port': user_settings['smtp_port'],
-                'smtp_username': user_settings['smtp_username'],
-                'smtp_password': user_settings['smtp_password_encrypted']
-            }
+            user_email = user_settings['user_email']
             
-            # Send email to user
-            success = self.send_email_via_smtp(smtp_config, user_settings['smtp_username'], 
-                                             subject, html_content)
+            # Send email to user using admin SMTP
+            success = self.send_email_via_admin_smtp(user_email, subject, html_content)
             
             if success:
                 logger.info(f"✅ Deal closure email sent to {username}")
@@ -324,19 +322,13 @@ class EmailService:
 
             # Send email to each target user
             for user in target_users:
-                smtp_config = {
-                    'smtp_host': user['smtp_host'],
-                    'smtp_port': user['smtp_port'],
-                    'smtp_username': user['smtp_username'],
-                    'smtp_password': user['smtp_password_encrypted']
-                }
+                user_email = user['user_email']
                 
-                if self.send_email_via_smtp(smtp_config, user['smtp_username'], 
-                                          subject, html_content):
+                if self.send_email_via_admin_smtp(user_email, subject, html_content):
                     successful_sends += 1
-                    logger.info(f"✅ Daily report sent to {user['username']}")
+                    logger.info(f"✅ Daily report sent to {user['username']} ({user_email})")
                 else:
-                    logger.error(f"❌ Failed to send daily report to {user['username']}")
+                    logger.error(f"❌ Failed to send daily report to {user['username']} ({user_email})")
 
             logger.info(f"📧 Daily reports: {successful_sends}/{len(target_users)} sent successfully")
             return successful_sends

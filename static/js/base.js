@@ -43,9 +43,7 @@ function loadEmailSettings() {
                 document.getElementById('sendDealsInMail').checked = settings.send_deals_in_mail;
                 document.getElementById('sendDailyChangeData').checked = settings.send_daily_change_data;
                 document.getElementById('dailyEmailTime').value = settings.daily_email_time;
-                document.getElementById('smtpHost').value = settings.smtp_host;
-                document.getElementById('smtpPort').value = settings.smtp_port;
-                document.getElementById('smtpUsername').value = settings.smtp_username;
+                document.getElementById('userEmail').value = settings.user_email;
                 
                 // Show/hide time container based on daily data setting
                 toggleDailyEmailTimeContainer(settings.send_daily_change_data);
@@ -77,10 +75,7 @@ function saveEmailSettings() {
         send_deals_in_mail: document.getElementById('sendDealsInMail').checked,
         send_daily_change_data: document.getElementById('sendDailyChangeData').checked,
         daily_email_time: document.getElementById('dailyEmailTime').value,
-        smtp_host: document.getElementById('smtpHost').value.trim(),
-        smtp_port: parseInt(document.getElementById('smtpPort').value) || 587,
-        smtp_username: document.getElementById('smtpUsername').value.trim(),
-        smtp_password: document.getElementById('smtpPassword').value
+        user_email: document.getElementById('userEmail').value.trim()
     };
 
     fetch('/api/email-settings', {
@@ -97,8 +92,6 @@ function saveEmailSettings() {
             // Close modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
             modal.hide();
-            // Clear password field for security
-            document.getElementById('smtpPassword').value = '';
         } else {
             showToaster('Error', data.error || 'Failed to save settings', 'error');
         }

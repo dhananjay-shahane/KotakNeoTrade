@@ -750,36 +750,22 @@
                                 </div>
                             </div>
 
-                            <!-- SMTP Configuration Section -->
+                            <!-- User Email Configuration Section -->
                             <div class="mb-3">
                                 <h6 class="mb-2">
-                                    <i class="fas fa-server me-2"></i>
-                                    SMTP Configuration
+                                    <i class="fas fa-envelope me-2"></i>
+                                    Your Email Address
                                 </h6>
                                 <small class="form-text text-muted d-block mb-3">
-                                    Configure your email server settings for sending notifications
+                                    Provide your email address to receive trading notifications from the admin
                                 </small>
                                 
-                                <div class="row">
-                                    <div class="col-md-6 mb-2">
-                                        <label for="smtpHost" class="form-label">SMTP Host</label>
-                                        <input type="text" class="form-control" id="smtpHost" placeholder="smtp.gmail.com">
-                                    </div>
-                                    <div class="col-md-6 mb-2">
-                                        <label for="smtpPort" class="form-label">SMTP Port</label>
-                                        <input type="number" class="form-control" id="smtpPort" placeholder="587" value="587">
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-6 mb-2">
-                                        <label for="smtpUsername" class="form-label">Email Address</label>
-                                        <input type="email" class="form-control" id="smtpUsername" placeholder="your-email@gmail.com">
-                                    </div>
-                                    <div class="col-md-6 mb-2">
-                                        <label for="smtpPassword" class="form-label">Email Password</label>
-                                        <input type="password" class="form-control" id="smtpPassword" placeholder="your-email-password">
-                                    </div>
+                                <div class="mb-2">
+                                    <label for="userEmail" class="form-label">Your Email Address</label>
+                                    <input type="email" class="form-control" id="userEmail" placeholder="your-email@gmail.com" required>
+                                    <small class="form-text text-muted">
+                                        Admin will send trading signals and deal updates to this email address
+                                    </small>
                                 </div>
                             </div>
                         </div>
