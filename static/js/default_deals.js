@@ -189,22 +189,23 @@ DefaultDealsManager.prototype.renderHeaders = function () {
         if (column) {
             let sortIcon = "";
             let headerClass = "";
-            
+
             if (column.sortable) {
                 headerClass = "sortable-header";
-                
+
                 if (this.currentSortColumn === columnKey) {
                     // Show active sort direction with colored icons
                     headerClass += " active";
-                    sortIcon = this.sortDirection === "asc" 
-                        ? '<i class="fas fa-sort-up sort-icon sort-asc"></i>'
-                        : '<i class="fas fa-sort-down sort-icon sort-desc"></i>';
+                    sortIcon =
+                        this.sortDirection === "asc"
+                            ? '<i class="fas fa-sort-up sort-icon sort-asc"></i>'
+                            : '<i class="fas fa-sort-down sort-icon sort-desc"></i>';
                 } else {
                     // Show default sort icon
                     sortIcon = '<i class="fas fa-sort sort-icon"></i>';
                 }
             }
-            
+
             headersHTML += `
                 <th style="width: ${column.width}; min-width: ${column.width};" 
                     class="${headerClass}" 
@@ -356,11 +357,6 @@ DefaultDealsManager.prototype.getCellClass = function (deal, columnKey) {
                 else if (value < 0) cssClass = "loss";
                 else cssClass = "neutral";
             }
-            break;
-
-        case "pos":
-            cssClass =
-                deal[columnKey] === "BUY" ? "text-success" : "text-danger";
             break;
 
         default:
@@ -772,7 +768,7 @@ function closeDefaultDeal(dealId, symbol, event) {
         event.preventDefault();
         event.stopPropagation();
     }
-    
+
     // Input validation
     if (!dealId || dealId.trim() === "") {
         Swal.fire({
