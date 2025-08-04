@@ -1,7 +1,13 @@
 {% extends "base.html" %} {% block title %}Deals - ETF Trading Signals{%
 endblock %} {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton_animation.css') }}"/>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/draggable_modal.css') }}"/>
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/skeleton_animation.css') }}"
+/>
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/draggable_modal.css') }}"
+/>
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 {% endblock %} {% block content %}
@@ -11,14 +17,12 @@ endblock %} {% block head %}
         class="d-flex justify-content-between align-items-center mb-4 flex-wrap"
     >
         <div>
-            <h1 class="h3 mb-1">
-                Deals 
-            </h1>
+            <h1 class="h3 mb-1">Deals</h1>
             <p class="text-muted mb-0">Orders placed from trading signals</p>
         </div>
         <div class="d-flex gap-2 align-items-center">
             <!-- Search Input UI -->
-            <div class="input-group" style="min-width: 300px;">
+            <div class="input-group" style="min-width: 300px">
                 <span class="input-group-text bg-secondary border-0">
                     <i class="fas fa-search text-light"></i>
                 </span>
@@ -29,13 +33,18 @@ endblock %} {% block head %}
                     placeholder="Search by symbol, status, or any field..."
                     onkeyup="performSearch()"
                     autocomplete="off"
-                    style="font-size: 14px;"
+                    style="font-size: 14px"
                 />
-                <button class="btn btn-sm btn-outline-light" type="button" onclick="clearSearch()" title="Clear search">
+                <button
+                    class="btn btn-sm btn-outline-light"
+                    type="button"
+                    onclick="clearSearch()"
+                    title="Clear search"
+                >
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            
+
             <button
                 class="btn btn-sm btn-outline-secondary"
                 onclick="refreshDeals()"
@@ -60,722 +69,779 @@ endblock %} {% block head %}
     </div>
 
     <!-- Content Container with relative positioning -->
-    <div style="position: relative; min-height: 600px;">
+    <div style="position: relative; min-height: 600px">
         <!-- Deals Table -->
         <div class="card bg-secondary border-0 shadow-lg" id="dealsMainContent">
-        <div
-            class="card-header bg-dark border-0 d-flex justify-content-between align-items-center"
-        >
-            <h5 class="mb-0 text-light">
-                <i class="fas fa-chart-line me-2 text-primary"></i>Deals
-                Signals
-                <span class="badge bg-primary ms-2" id="totalCount"
-                    >0</span
-                >
-            </h5>
-            
-            <div class="d-flex gap-2 align-items-center">
-                <div class="form-check form-switch">
-                    <input
-                        class="form-check-input"
-                        type="checkbox"
-                        id="autoRefreshToggle"
-                        checked
-                    />
-                    <label
-                        class="form-check-label text-light"
-                        for="autoRefreshToggle"
-                    >
-                        Auto Refresh
-                    </label>
-                </div>
-                <div class="dropdown">
-                    <button
-                        class="btn btn-sm btn-outline-light dropdown-toggle"
-                        type="button"
-                        id="refreshIntervalDropdown"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
-                    >
-                        <i class="fas fa-clock me-1"></i
-                        ><span id="currentInterval">30s</span>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-dark">
-                        <li>
-                            <a
-                                class="dropdown-item"
-                                href="#"
-                                onclick="setRefreshInterval(5000, '5s')"
-                                >5 seconds</a
-                            >
-                        </li>
-                        <li>
-                            <a
-                                class="dropdown-item"
-                                href="#"
-                                onclick="setRefreshInterval(10000, '10s')"
-                                >10 seconds</a
-                            >
-                        </li>
-                        <li>
-                            <a
-                                class="dropdown-item"
-                                href="#"
-                                onclick="setRefreshInterval(300000, '5m')"
-                                >5 minutes</a
-                            >
-                        </li>
-                        <li>
-                            <a
-                                class="dropdown-item"
-                                href="#"
-                                onclick="setRefreshInterval(600000, '10m')"
-                                >10 minutes</a
-                            >
-                        </li>
-                    </ul>
-                </div>
-                <button
-                    class="btn btn-sm btn-outline-light"
-                    onclick="exportDeals()"
-                >
-                    <i class="fas fa-download me-1"></i>Export
-                </button>
-            </div>
-        </div>
+            <div
+                class="card-header bg-dark border-0 d-flex justify-content-between align-items-center"
+            >
+                <h5 class="mb-0 text-light">
+                    <i class="fas fa-chart-line me-2 text-primary"></i>Deals
+                    Signals
+                    <span class="badge bg-primary ms-2" id="totalCount">0</span>
+                </h5>
 
-        <div class="card-body p-0">
-            <div class="table-responsive" style="overflow-y: auto;">
-                <table
-                    class="table table-dark table-hover mb-0 signals-table"
-                    id="dealsTable">
-                    <thead class="sticky-top">
-                        <tr id="tableHeaders">
-                            <!-- Dynamic headers will be generated here with sorting functionality -->
-                        </tr>
-                    </thead>
-                    <tbody id="dealsTableBody">
-                        <!-- Dynamic content will be loaded here -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div
-            class="card-footer bg-dark border-0 d-flex justify-content-between align-items-center text-light"
-        >
-            <div class="d-flex align-items-center gap-3">
-                <small
-                    >Showing <span id="showingCount">0</span> of
-                    <span id="totalCount">0</span> deals</small
-                >
-            </div>
-            <div class="btn-group" role="group">
-                <button
-                    type="button"
-                    class="btn btn-sm btn-outline-light"
-                    onclick="previousPage()"
-                    id="prevBtn"
-                    disabled
-                >
-                    <i class="fas fa-chevron-left"></i> Previous
-                </button>
-                <button
-                    type="button"
-                    class="btn btn-sm btn-outline-light"
-                    disabled
-                >
-                    Page <span id="currentPage">1</span> of
-                    <span id="totalPages">1</span>
-                </button>
-                <button
-                    type="button"
-                    class="btn btn-sm btn-outline-light"
-                    onclick="nextPage()"
-                    id="nextBtn"
-                    disabled
-                >
-                    Next <i class="fas fa-chevron-right"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    
-
-
-
-    <!-- Column Settings Modal -->
-    <div class="modal fade" id="columnSettingsModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header border-bottom border-secondary">
-                    <h5 class="modal-title text-muted">
-                        <i class="fas fa-cog me-2"></i>Column Settings
-                    </h5>
-                    <button
-                        type="button"
-                        class="btn-close"
-                        data-bs-dismiss="modal"
-                    ></button>
-                </div>
-                <div class="modal-body">
-                    <p class="text-muted">
-                        Select which columns to display in the deals table:
-                    </p>
-                    <div class="row" id="columnCheckboxes">
-                        <!-- Column checkboxes will be populated here -->
-                    </div>
-                    <hr class="border-secondary" />
-                    <div class="d-flex gap-2">
-                        <button
-                            type="button"
-                            class="btn btn-sm btn-outline-primary"
-                            onclick="selectAllColumns()"
-                        >
-                            Select All
-                        </button>
-                        <button
-                            type="button"
-                            class="btn btn-sm btn-outline-secondary"
-                            onclick="resetDefaultColumns()"
-                        >
-                            Reset to Default
-                        </button>
-                    </div>
-                </div>
-                <div class="modal-footer border-top border-secondary">
-                    <button
-                        type="button"
-                        class="btn btn-secondary"
-                        data-bs-dismiss="modal"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        class="btn btn-primary"
-                        onclick="applyColumnSettings()"
-                    >
-                        Apply Changes
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Deal Filters Modal -->
-    <div class="modal fade" id="dealFiltersModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content bg-dark">
-                <div class="modal-header border-bottom border-secondary">
-                    <h5 class="modal-title text-light">
-                        <i class="fas fa-filter me-2"></i>Deal Filters
-                    </h5>
-                    <button
-                        type="button"
-                        class="btn-close btn-close-white"
-                        data-bs-dismiss="modal"
-                    ></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label text-light">Order Type</label>
-                        <select
-                            class="form-select bg-secondary text-light"
-                            id="orderTypeFilter"
-                        >
-                            <option value="">All Orders</option>
-                            <option value="BUY">Buy Orders</option>
-                            <option value="SELL">Sell Orders</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-light">Status</label>
-                        <select
-                            class="form-select bg-secondary text-light"
-                            id="statusFilter"
-                        >
-                            <option value="">All Status</option>
-                            <option value="EXECUTED">Executed</option>
-                            <option value="PENDING">Pending</option>
-                            <option value="CANCELLED">Cancelled</option>
-                            <option value="REJECTED">Rejected</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-light">Symbol</label>
+                <div class="d-flex gap-2 align-items-center">
+                    <div class="form-check form-switch">
                         <input
-                            type="text"
-                            class="form-control bg-secondary text-light"
-                            id="symbolFilter"
-                            placeholder="Enter symbol..."
+                            class="form-check-input"
+                            type="checkbox"
+                            id="autoRefreshToggle"
+                            checked
                         />
+                        <label
+                            class="form-check-label text-light"
+                            for="autoRefreshToggle"
+                        >
+                            Auto Refresh
+                        </label>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <label class="form-label text-light">Min P&L</label>
-                            <input
-                                type="number"
-                                class="form-control bg-secondary text-light"
-                                id="minPnlFilter"
-                                placeholder="-10000"
-                            />
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-light">Max P&L</label>
-                            <input
-                                type="number"
-                                class="form-control bg-secondary text-light"
-                                id="maxPnlFilter"
-                                placeholder="10000"
-                            />
-                        </div>
+                    <div class="dropdown">
+                        <button
+                            class="btn btn-sm btn-outline-light dropdown-toggle"
+                            type="button"
+                            id="refreshIntervalDropdown"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                        >
+                            <i class="fas fa-clock me-1"></i
+                            ><span id="currentInterval">30s</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li>
+                                <a
+                                    class="dropdown-item"
+                                    href="#"
+                                    onclick="setRefreshInterval(5000, '5s')"
+                                    >5 seconds</a
+                                >
+                            </li>
+                            <li>
+                                <a
+                                    class="dropdown-item"
+                                    href="#"
+                                    onclick="setRefreshInterval(10000, '10s')"
+                                    >10 seconds</a
+                                >
+                            </li>
+                            <li>
+                                <a
+                                    class="dropdown-item"
+                                    href="#"
+                                    onclick="setRefreshInterval(300000, '5m')"
+                                    >5 minutes</a
+                                >
+                            </li>
+                            <li>
+                                <a
+                                    class="dropdown-item"
+                                    href="#"
+                                    onclick="setRefreshInterval(600000, '10m')"
+                                    >10 minutes</a
+                                >
+                            </li>
+                        </ul>
                     </div>
+                    <button
+                        class="btn btn-sm btn-outline-light"
+                        onclick="exportDeals()"
+                    >
+                        <i class="fas fa-download me-1"></i>Export
+                    </button>
                 </div>
-                <div class="modal-footer border-top border-secondary">
+            </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive" style="overflow-y: auto">
+                    <table
+                        class="table table-dark table-hover mb-0 signals-table"
+                        id="dealsTable"
+                    >
+                        <thead class="sticky-top">
+                            <tr id="tableHeaders">
+                                <!-- Dynamic headers will be generated here with sorting functionality -->
+                            </tr>
+                        </thead>
+                        <tbody id="dealsTableBody">
+                            <!-- Dynamic content will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div
+                class="card-footer bg-dark border-0 d-flex justify-content-between align-items-center text-light"
+            >
+                <div class="d-flex align-items-center gap-3">
+                    <small
+                        >Showing <span id="showingCount">0</span> of
+                        <span id="totalCount">0</span> deals</small
+                    >
+                </div>
+                <div class="btn-group" role="group">
                     <button
                         type="button"
-                        class="btn btn-secondary"
-                        onclick="clearFilters()"
+                        class="btn btn-sm btn-outline-light"
+                        onclick="previousPage()"
+                        id="prevBtn"
+                        disabled
                     >
-                        Clear Filters
+                        <i class="fas fa-chevron-left"></i> Previous
                     </button>
                     <button
                         type="button"
-                        class="btn btn-primary"
-                        onclick="applyFilters()"
-                        data-bs-dismiss="modal"
+                        class="btn btn-sm btn-outline-light"
+                        disabled
                     >
-                        Apply Filters
+                        Page <span id="currentPage">1</span> of
+                        <span id="totalPages">1</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="btn btn-sm btn-outline-light"
+                        onclick="nextPage()"
+                        id="nextBtn"
+                        disabled
+                    >
+                        Next <i class="fas fa-chevron-right"></i>
                     </button>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Trade Modal -->
-    <div class="modal fade" id="tradeModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content bg-dark">
-                <div class="modal-header border-bottom border-secondary">
-                    <h5 class="modal-title text-light" id="tradeModalLabel">
-                        <i class="fas fa-handshake me-2"></i>Place Trade
-                    </h5>
-                    <button
-                        type="button"
-                        class="btn-close btn-close-white"
-                        data-bs-dismiss="modal"
-                    ></button>
+        <!-- Column Settings Modal -->
+        <div class="modal fade" id="columnSettingsModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header border-bottom border-secondary">
+                        <h5 class="modal-title text-muted">
+                            <i class="fas fa-cog me-2"></i>Column Settings
+                        </h5>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted">
+                            Select which columns to display in the deals table:
+                        </p>
+                        <div class="row" id="columnCheckboxes">
+                            <!-- Column checkboxes will be populated here -->
+                        </div>
+                        <hr class="border-secondary" />
+                        <div class="d-flex gap-2">
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-outline-primary"
+                                onclick="selectAllColumns()"
+                            >
+                                Select All
+                            </button>
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-outline-secondary"
+                                onclick="resetDefaultColumns()"
+                            >
+                                Reset to Default
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top border-secondary">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-primary"
+                            onclick="applyColumnSettings()"
+                        >
+                            Apply Changes
+                        </button>
+                    </div>
                 </div>
-                <div class="modal-body">
-                    <form id="tradeForm">
+            </div>
+        </div>
+
+        <!-- Deal Filters Modal -->
+        <div class="modal fade" id="dealFiltersModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content bg-dark">
+                    <div class="modal-header border-bottom border-secondary">
+                        <h5 class="modal-title text-light">
+                            <i class="fas fa-filter me-2"></i>Deal Filters
+                        </h5>
+                        <button
+                            type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label text-light"
+                                >Order Type</label
+                            >
+                            <select
+                                class="form-select bg-secondary text-light"
+                                id="orderTypeFilter"
+                            >
+                                <option value="">All Orders</option>
+                                <option value="BUY">Buy Orders</option>
+                                <option value="SELL">Sell Orders</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-light">Status</label>
+                            <select
+                                class="form-select bg-secondary text-light"
+                                id="statusFilter"
+                            >
+                                <option value="">All Status</option>
+                                <option value="EXECUTED">Executed</option>
+                                <option value="PENDING">Pending</option>
+                                <option value="CANCELLED">Cancelled</option>
+                                <option value="REJECTED">Rejected</option>
+                            </select>
+                        </div>
                         <div class="mb-3">
                             <label class="form-label text-light">Symbol</label>
                             <input
                                 type="text"
                                 class="form-control bg-secondary text-light"
-                                id="tradeSymbol"
-                                readonly
-                            />
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label text-light"
-                                >Transaction Type</label
-                            >
-                            <input
-                                type="text"
-                                class="form-control bg-secondary text-light"
-                                id="tradeType"
-                                readonly
+                                id="symbolFilter"
+                                placeholder="Enter symbol..."
                             />
                         </div>
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6">
                                 <label class="form-label text-light"
-                                    >Order Type</label
-                                >
-                                <select
-                                    class="form-select bg-secondary text-light"
-                                    id="orderType"
-                                >
-                                    <option value="L">Limit</option>
-                                    <option value="MKT">Market</option>
-                                    <option value="SL">Stop Loss</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light"
-                                    >Product</label
-                                >
-                                <select
-                                    class="form-select bg-secondary text-light"
-                                    id="productType"
-                                >
-                                    <option value="CNC">
-                                        CNC (Cash & Carry)
-                                    </option>
-                                    <option value="MIS">
-                                        MIS (Margin Intraday)
-                                    </option>
-                                    <option value="NRML">NRML (Normal)</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light"
-                                    >Price</label
+                                    >Min P&L</label
                                 >
                                 <input
                                     type="number"
                                     class="form-control bg-secondary text-light"
-                                    id="tradePrice"
-                                    step="0.01"
-                                    min="0"
+                                    id="minPnlFilter"
+                                    placeholder="-10000"
                                 />
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6">
                                 <label class="form-label text-light"
-                                    >Quantity</label
+                                    >Max P&L</label
                                 >
                                 <input
                                     type="number"
                                     class="form-control bg-secondary text-light"
-                                    id="tradeQuantity"
-                                    min="1"
+                                    id="maxPnlFilter"
+                                    placeholder="10000"
                                 />
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light"
-                                    >Validity</label
-                                >
-                                <select
-                                    class="form-select bg-secondary text-light"
-                                    id="validity"
-                                >
-                                    <option value="DAY">DAY</option>
-                                    <option value="IOC">IOC</option>
-                                    <option value="GTT">GTT</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light"
-                                    >Trigger Price</label
-                                >
-                                <input
-                                    type="number"
-                                    class="form-control bg-secondary text-light"
-                                    id="triggerPrice"
-                                    step="0.01"
-                                    min="0"
-                                    value="0"
-                                />
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer border-top border-secondary">
-                    <button
-                        type="button"
-                        class="btn btn-secondary"
-                        data-bs-dismiss="modal"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        class="btn btn-primary"
-                        onclick="submitTrade()"
-                    >
-                        Place Trade
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Chart Modal -->
-    <div class="modal fade" id="chartModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content bg-dark">
-                <div class="modal-header border-bottom border-secondary">
-                    <h5 class="modal-title text-light" id="chartModalLabel">
-                        <i class="fas fa-chart-line me-2"></i>Price Chart
-                    </h5>
-                    <button
-                        type="button"
-                        class="btn-close btn-close-white"
-                        data-bs-dismiss="modal"
-                    ></button>
-                </div>
-                <div class="modal-body">
-                    <div id="chartContainer">
-                        <canvas
-                            id="priceChart"
-                            width="400"
-                            height="200"
-                        ></canvas>
+                    </div>
+                    <div class="modal-footer border-top border-secondary">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            onclick="clearFilters()"
+                        >
+                            Clear Filters
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-primary"
+                            onclick="applyFilters()"
+                            data-bs-dismiss="modal"
+                        >
+                            Apply Filters
+                        </button>
                     </div>
                 </div>
-                <div class="modal-footer border-top border-secondary">
-                    <button
-                        type="button"
-                        class="btn btn-secondary"
-                        data-bs-dismiss="modal"
-                    >
-                        Close
-                    </button>
-                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Edit Deal Modal -->
-    <div class="modal fade" id="editDealModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content bg-dark">
-                <div class="modal-header border-bottom border-secondary">
-                    <h5 class="modal-title text-light">
-                        <i class="fas fa-edit me-2 text-warning"></i>Edit Deal - ID: <span id="editModalDealId"></span> | Symbol: <span id="editModalSymbol"></span>
-                    </h5>
-                    <button
-                        type="button"
-                        class="btn-close btn-close-white"
-                        data-bs-dismiss="modal"
-                    ></button>
-                </div>
-                <div class="modal-body">
-                    <form id="editDealForm">
-                        <input type="hidden" id="editDealId" />
-                        <input type="hidden" id="editSymbol" />
-                        <div class="mb-3">
-                            <label class="form-label text-light">Date <small class="text-muted">(dd/mm/yy format)</small></label>
-                            <input
-                                type="text"
-                                class="form-control bg-secondary text-light"
-                                id="editDate"
-                                placeholder="e.g., 02/12/25 for 02 Dec 2025"
-                                pattern="[0-9]{2}/[0-9]{2}/[0-9]{2}"
-                                maxlength="8"
-                            />
-                            <div class="form-text text-muted">
-                                <small><i class="fas fa-info-circle me-1"></i>Enter date in dd/mm/yy format with slashes</small>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">Quantity (Qty)</label>
-                                <input
-                                    type="number"
-                                    class="form-control bg-secondary text-light"
-                                    id="editQuantity"
-                                    step="1"
-                                    min="1"
-                                />
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">Entry Price (EP)</label>
-                                <input
-                                    type="number"
-                                    class="form-control bg-secondary text-light"
-                                    id="editEntryPrice"
-                                    step="0.01"
-                                    min="0"
-                                />
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">Target Price</label>
-                                <input
-                                    type="number"
-                                    class="form-control bg-secondary text-light"
-                                    id="editTPPercent"
-                                    step="0.01"
-                                    min="0"
-                                    placeholder="Enter target price"
-                                />
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">Target Price Percentage (%)</label>
-                                <input
-                                    type="number"
-                                    class="form-control bg-secondary text-light"
-                                    id="editTPRPrice"
-                                    step="0.01"
-                                    min="0"
-                                    placeholder="Enter target price percentage"
-                                />
-                            </div>
-                        </div>
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            You can modify one or more fields. At least one field must be changed to update the deal.
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer border-top border-secondary">
-                    <button
-                        type="button"
-                        class="btn btn-secondary"
-                        data-bs-dismiss="modal"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        class="btn btn-warning"
-                        onclick="submitEditDeal()"
-                    >
-                        Update Deal
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Close Deal Modal -->
-    <div class="modal fade" id="closeDealModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content bg-dark">
-                <div class="modal-header border-bottom border-secondary">
-                    <h5 class="modal-title text-light">
-                        <i class="fas fa-times-circle me-2 text-danger"></i>Close Deal - ID: <span id="closeModalDealId"></span> | Symbol: <span id="closeModalSymbol"></span>
-                    </h5>
-                    <button
-                        type="button"
-                        class="btn-close btn-close-white"
-                        data-bs-dismiss="modal"
-                    ></button>
-                </div>
-                <div class="modal-body">
-                    <form id="closeDealForm">
-                        <input type="hidden" id="closeDealId" />
-                        <input type="hidden" id="closeDealSymbol" />
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">Exit Date <small class="text-muted">(dd/mm/yy format)</small></label>
+        <!-- Trade Modal -->
+        <div class="modal fade" id="tradeModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content bg-dark">
+                    <div class="modal-header border-bottom border-secondary">
+                        <h5 class="modal-title text-light" id="tradeModalLabel">
+                            <i class="fas fa-handshake me-2"></i>Place Trade
+                        </h5>
+                        <button
+                            type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="tradeForm">
+                            <div class="mb-3">
+                                <label class="form-label text-light"
+                                    >Symbol</label
+                                >
                                 <input
                                     type="text"
                                     class="form-control bg-secondary text-light"
-                                    id="closeDealExitDate"
+                                    id="tradeSymbol"
+                                    readonly
+                                />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-light"
+                                    >Transaction Type</label
+                                >
+                                <input
+                                    type="text"
+                                    class="form-control bg-secondary text-light"
+                                    id="tradeType"
+                                    readonly
+                                />
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-light"
+                                        >Order Type</label
+                                    >
+                                    <select
+                                        class="form-select bg-secondary text-light"
+                                        id="orderType"
+                                    >
+                                        <option value="L">Limit</option>
+                                        <option value="MKT">Market</option>
+                                        <option value="SL">Stop Loss</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-light"
+                                        >Product</label
+                                    >
+                                    <select
+                                        class="form-select bg-secondary text-light"
+                                        id="productType"
+                                    >
+                                        <option value="CNC">
+                                            CNC (Cash & Carry)
+                                        </option>
+                                        <option value="MIS">
+                                            MIS (Margin Intraday)
+                                        </option>
+                                        <option value="NRML">
+                                            NRML (Normal)
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-light"
+                                        >Price</label
+                                    >
+                                    <input
+                                        type="number"
+                                        class="form-control bg-secondary text-light"
+                                        id="tradePrice"
+                                        step="0.01"
+                                        min="0"
+                                    />
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-light"
+                                        >Quantity</label
+                                    >
+                                    <input
+                                        type="number"
+                                        class="form-control bg-secondary text-light"
+                                        id="tradeQuantity"
+                                        min="1"
+                                    />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-light"
+                                        >Validity</label
+                                    >
+                                    <select
+                                        class="form-select bg-secondary text-light"
+                                        id="validity"
+                                    >
+                                        <option value="DAY">DAY</option>
+                                        <option value="IOC">IOC</option>
+                                        <option value="GTT">GTT</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-light"
+                                        >Trigger Price</label
+                                    >
+                                    <input
+                                        type="number"
+                                        class="form-control bg-secondary text-light"
+                                        id="triggerPrice"
+                                        step="0.01"
+                                        min="0"
+                                        value="0"
+                                    />
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer border-top border-secondary">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-primary"
+                            onclick="submitTrade()"
+                        >
+                            Place Trade
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart Modal -->
+        <div class="modal fade" id="chartModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content bg-dark">
+                    <div class="modal-header border-bottom border-secondary">
+                        <h5 class="modal-title text-light" id="chartModalLabel">
+                            <i class="fas fa-chart-line me-2"></i>Price Chart
+                        </h5>
+                        <button
+                            type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="chartContainer">
+                            <canvas
+                                id="priceChart"
+                                width="400"
+                                height="200"
+                            ></canvas>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top border-secondary">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Deal Modal -->
+        <div class="modal fade" id="editDealModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content bg-dark">
+                    <div class="modal-header border-bottom border-secondary">
+                        <h5 class="modal-title text-light">
+                            <i class="fas fa-edit me-2 text-warning"></i>Edit
+                            Deal - ID: <span id="editModalDealId"></span> |
+                            Symbol: <span id="editModalSymbol"></span>
+                        </h5>
+                        <button
+                            type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editDealForm">
+                            <input type="hidden" id="editDealId" />
+                            <input type="hidden" id="editSymbol" />
+                            <div class="mb-3">
+                                <label class="form-label text-light"
+                                    >Date
+                                    <small class="text-muted"
+                                        >(dd/mm/yy format)</small
+                                    ></label
+                                >
+                                <input
+                                    type="text"
+                                    class="form-control bg-secondary text-light"
+                                    id="editDate"
                                     placeholder="e.g., 02/12/25 for 02 Dec 2025"
                                     pattern="[0-9]{2}/[0-9]{2}/[0-9]{2}"
                                     maxlength="8"
-
                                 />
                                 <div class="form-text text-muted">
-                                    <small><i class="fas fa-info-circle me-1"></i>Enter date in dd/mm/yy format with slashes</small>
+                                    <small
+                                        ><i class="fas fa-info-circle me-1"></i
+                                        >Enter date in dd/mm/yy format with
+                                        slashes</small
+                                    >
                                 </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-light">Exit Price (EXP)</label>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-light"
+                                        >Quantity (Qty)</label
+                                    >
+                                    <input
+                                        type="number"
+                                        class="form-control bg-secondary text-light"
+                                        id="editQuantity"
+                                        step="1"
+                                        min="1"
+                                    />
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-light"
+                                        >Entry Price (EP)</label
+                                    >
+                                    <input
+                                        type="number"
+                                        class="form-control bg-secondary text-light"
+                                        id="editEntryPrice"
+                                        step="0.01"
+                                        min="0"
+                                    />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-light"
+                                        >Target Price</label
+                                    >
+                                    <input
+                                        type="number"
+                                        class="form-control bg-secondary text-light"
+                                        id="editTPRPrice"
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="Enter target price"
+                                    />
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-light"
+                                        >Target Price Percentage (%)</label
+                                    >
+                                    <input
+                                        type="number"
+                                        class="form-control bg-secondary text-light"
+                                        id="editTPPercent"
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="Enter target price percentage"
+                                    />
+                                </div>
+                            </div>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                You can modify one or more fields. At least one
+                                field must be changed to update the deal.
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer border-top border-secondary">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-warning"
+                            onclick="submitEditDeal()"
+                        >
+                            Update Deal
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Close Deal Modal -->
+        <div class="modal fade" id="closeDealModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content bg-dark">
+                    <div class="modal-header border-bottom border-secondary">
+                        <h5 class="modal-title text-light">
+                            <i class="fas fa-times-circle me-2 text-danger"></i
+                            >Close Deal - ID:
+                            <span id="closeModalDealId"></span> | Symbol:
+                            <span id="closeModalSymbol"></span>
+                        </h5>
+                        <button
+                            type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="closeDealForm">
+                            <input type="hidden" id="closeDealId" />
+                            <input type="hidden" id="closeDealSymbol" />
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-light"
+                                        >Exit Date
+                                        <small class="text-muted"
+                                            >(dd/mm/yy format)</small
+                                        ></label
+                                    >
+                                    <input
+                                        type="text"
+                                        class="form-control bg-secondary text-light"
+                                        id="closeDealExitDate"
+                                        placeholder="e.g., 02/12/25 for 02 Dec 2025"
+                                        pattern="[0-9]{2}/[0-9]{2}/[0-9]{2}"
+                                        maxlength="8"
+                                    />
+                                    <div class="form-text text-muted">
+                                        <small
+                                            ><i
+                                                class="fas fa-info-circle me-1"
+                                            ></i
+                                            >Enter date in dd/mm/yy format with
+                                            slashes</small
+                                        >
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-light"
+                                        >Exit Price (EXP)</label
+                                    >
+                                    <input
+                                        type="number"
+                                        class="form-control bg-secondary text-light"
+                                        id="closeDealExitPrice"
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="Enter exit price"
+                                    />
+                                </div>
+                            </div>
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Closing this deal will set position to 0 and
+                                disable the row. This action cannot be undone.
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer border-top border-secondary">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-danger"
+                            onclick="submitCloseDeal()"
+                        >
+                            <i class="fas fa-times me-1"></i>Close Deal
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Exit Date Modal -->
+        <div class="modal fade" id="editExitDateModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content bg-dark">
+                    <div class="modal-header border-bottom border-secondary">
+                        <h5 class="modal-title text-light">
+                            <i class="fas fa-calendar-alt me-2 text-info"></i
+                            >Edit Exit Date
+                        </h5>
+                        <button
+                            type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editExitDateForm">
+                            <input type="hidden" id="editExitDealId" />
+                            <div class="mb-3">
+                                <label class="form-label text-light"
+                                    >Symbol</label
+                                >
                                 <input
-                                    type="number"
+                                    type="text"
                                     class="form-control bg-secondary text-light"
-                                    id="exitPrice"
-                                    step="0.01"
-                                    min="0"
-                                    placeholder="Enter exit price"
-                                    required
+                                    id="editExitSymbol"
+                                    readonly
                                 />
                             </div>
-                        </div>
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            Enter the exit date and price to close this deal permanently.
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer border-top border-secondary">
-                    <button
-                        type="button"
-                        class="btn btn-secondary"
-                        data-bs-dismiss="modal"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        class="btn btn-danger"
-                        onclick="submitCloseDeal()"
-                    >
-                        Close Deal
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Exit Date Modal -->
-    <div class="modal fade" id="editExitDateModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content bg-dark">
-                <div class="modal-header border-bottom border-secondary">
-                    <h5 class="modal-title text-light">
-                        <i class="fas fa-calendar-alt me-2 text-info"></i>Edit Exit Date
-                    </h5>
-                    <button
-                        type="button"
-                        class="btn-close btn-close-white"
-                        data-bs-dismiss="modal"
-                    ></button>
-                </div>
-                <div class="modal-body">
-                    <form id="editExitDateForm">
-                        <input type="hidden" id="editExitDealId" />
-                        <div class="mb-3">
-                            <label class="form-label text-light">Symbol</label>
-                            <input
-                                type="text"
-                                class="form-control bg-secondary text-light"
-                                id="editExitSymbol"
-                                readonly
-                            />
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label text-light">Exit Date <span class="text-danger">*</span></label>
-                            <input
-                                type="date"
-                                class="form-control bg-secondary text-light"
-                                id="editExitDateInput"
-                                required
-                            />
-                            <div class="form-text text-muted">
-                                <small><i class="fas fa-info-circle me-1"></i>Exit date cannot be in the future</small>
+                            <div class="mb-3">
+                                <label class="form-label text-light"
+                                    >Exit Date
+                                    <span class="text-danger">*</span></label
+                                >
+                                <input
+                                    type="date"
+                                    class="form-control bg-secondary text-light"
+                                    id="editExitDateInput"
+                                    required
+                                />
+                                <div class="form-text text-muted">
+                                    <small
+                                        ><i class="fas fa-info-circle me-1"></i
+                                        >Exit date cannot be in the
+                                        future</small
+                                    >
+                                </div>
                             </div>
-                        </div>
-                        <div class="alert alert-info bg-info text-dark border-0" role="alert">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>Note:</strong> You can only edit the exit date for closed deals. Other fields cannot be modified.
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer border-top border-secondary">
-                    <button
-                        type="button"
-                        class="btn btn-secondary"
-                        data-bs-dismiss="modal"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        class="btn btn-info"
-                        onclick="submitEditExitDate()"
-                    >
-                        <i class="fas fa-calendar-check me-1"></i>Update Exit Date
-                    </button>
+                            <div
+                                class="alert alert-info bg-info text-dark border-0"
+                                role="alert"
+                            >
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Note:</strong> You can only edit the
+                                exit date for closed deals. Other fields cannot
+                                be modified.
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer border-top border-secondary">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-info"
+                            onclick="submitEditExitDate()"
+                        >
+                            <i class="fas fa-calendar-check me-1"></i>Update
+                            Exit Date
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+    {% endblock %} {% block scripts %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='js/draggable_modal.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/deals.js') }}"></script>
+    {% endblock %}
 </div>
-{% endblock %} {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="{{ url_for('static', filename='js/draggable_modal.js') }}"></script>
-<script src="{{ url_for('static', filename='js/deals.js') }}"></script>
-{% endblock %}

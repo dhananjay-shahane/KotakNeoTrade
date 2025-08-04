@@ -46,7 +46,8 @@ def sync_default_deals():
 
         return jsonify({
             'success': True,
-            'message': f'Successfully synced {synced_count} admin signals to default deals',
+            'message':
+            f'Successfully synced {synced_count} admin signals to default deals',
             'synced_count': synced_count
         })
 
@@ -61,8 +62,9 @@ def get_default_deals_data():
     try:
         import psycopg2
         from psycopg2.extras import RealDictCursor
-        
-        logging.info("Default deals API: Fetching data from admin_trade_signals table")
+
+        logging.info(
+            "Default deals API: Fetching data from admin_trade_signals table")
 
         # Connect to external database using centralized configuration
         from config.database_config import get_db_connection
@@ -81,25 +83,38 @@ def get_default_deals_data():
                     WHERE symbol IS NOT NULL
                     ORDER BY created_at DESC, id DESC
                 """
-                
+
                 cursor.execute(query)
                 rows = cursor.fetchall()
-                
+
                 deals_data = []
                 total_investment = 0.0
                 total_current_value = 0.0
                 total_pnl = 0.0
-                
+
                 if rows:
                     for count, row in enumerate(rows, 1):
                         # Safe type conversion with fallbacks
-                        quantity = int(row.get('qty') or 0) if row.get('qty') is not None else 0
-                        entry_price = float(row.get('ep') or 0) if row.get('ep') is not None else 0.0
-                        current_price = float(row.get('cmp') or 0) if row.get('cmp') is not None else 0.0
-                        pnl_amount = float(row.get('pl') or 0) if row.get('pl') is not None else 0.0
-                        investment = float(row.get('inv') or 0) if row.get('inv') is not None else 0.0
-                        target_price = float(row.get('tp') or 0) if row.get('tp') is not None else 0.0
-                        current_value = float(row.get('tva') or 0) if row.get('tva') is not None else 0.0
+                        quantity = int(row.get('qty') or
+                                       0) if row.get('qty') is not None else 0
+                        entry_price = float(
+                            row.get('ep')
+                            or 0) if row.get('ep') is not None else 0.0
+                        current_price = float(
+                            row.get('cmp')
+                            or 0) if row.get('cmp') is not None else 0.0
+                        pnl_amount = float(
+                            row.get('pl')
+                            or 0) if row.get('pl') is not None else 0.0
+                        investment = float(
+                            row.get('inv')
+                            or 0) if row.get('inv') is not None else 0.0
+                        target_price = float(
+                            row.get('tp')
+                            or 0) if row.get('tp') is not None else 0.0
+                        current_value = float(
+                            row.get('tva')
+                            or 0) if row.get('tva') is not None else 0.0
 
                         # Handle percentage change
                         chan_value = row.get('chan') or '0'
@@ -161,7 +176,9 @@ def get_default_deals_data():
                         }
                         deals_data.append(deal_dict)
 
-                logging.info(f"Default deals API: Returning {len(deals_data)} deals from admin_trade_signals")
+                logging.info(
+                    f"Default deals API: Returning {len(deals_data)} deals from admin_trade_signals"
+                )
 
                 return jsonify({
                     'success': True,
@@ -195,46 +212,71 @@ def add_deal_to_user():
     try:
         data = request.get_json()
         if not data:
-            return jsonify({'success': False, 'error': 'No data provided'}), 400
-        
+            return jsonify({
+                'success': False,
+                'error': 'No data provided'
+            }), 400
+
         # Get current user information
         if not current_user.is_authenticated:
-            return jsonify({'success': False, 'error': 'User not authenticated'}), 401
-        
+            return jsonify({
+                'success': False,
+                'error': 'User not authenticated'
+            }), 401
+
         username = current_user.username
-        
+
         # Check if user deals table exists, create if not
         if not dynamic_deals_service.table_exists(username):
             if not dynamic_deals_service.create_user_deals_table(username):
-                return jsonify({'success': False, 'error': 'Failed to create user deals table'}), 500
-        
+                return jsonify({
+                    'success': False,
+                    'error': 'Failed to create user deals table'
+                }), 500
+
         # Prepare deal data
         deal_data = {
-            'user_id': current_user.id,
-            'trade_signal_id': data.get('signal_id'),
-            'symbol': data.get('symbol'),
-            'qty': data.get('qty'),
-            'ep': data.get('ep'),  # Entry price
-            'pos': data.get('pos'),  # Position (BUY/SELL)
-            'status': 'ACTIVE',
-            'target_price': data.get('target_price'),
-            'stop_loss': data.get('stop_loss'),
-            'notes': data.get('notes', f'Added from trading signals on {data.get("symbol")}')
+            'user_id':
+            current_user.id,
+            'trade_signal_id':
+            data.get('signal_id'),
+            'symbol':
+            data.get('symbol'),
+            'qty':
+            data.get('qty'),
+            'ep':
+            data.get('ep'),  # Entry price
+            'pos':
+            data.get('pos'),  # Position (BUY/SELL)
+            'status':
+            'ACTIVE',
+            'target_price':
+            data.get('target_price'),
+            'stop_loss':
+            data.get('stop_loss'),
+            'notes':
+            data.get('notes',
+                     f'Added from trading signals on {data.get("symbol")}')
         }
-        
+
         # Add deal to user table
-        deal_id = dynamic_deals_service.add_deal_to_user_table(username, deal_data)
-        
+        deal_id = dynamic_deals_service.add_deal_to_user_table(
+            username, deal_data)
+
         if deal_id:
             return jsonify({
                 'success': True,
-                'message': f'Deal added successfully to {username}_deals table',
+                'message':
+                f'Deal added successfully to {username}_deals table',
                 'deal_id': deal_id,
                 'table_name': f'{username}_deals'
             })
         else:
-            return jsonify({'success': False, 'error': 'Failed to add deal'}), 500
-            
+            return jsonify({
+                'success': False,
+                'error': 'Failed to add deal'
+            }), 500
+
     except Exception as e:
         logging.error(f"Add deal to user API error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -248,9 +290,13 @@ def initialize_auto_sync():
         result = initialize_auto_sync_system()
 
         return jsonify({
-            'success': result['success'],
-            'message': 'Auto-sync system initialized successfully' if result['success'] else 'Failed to initialize auto-sync system',
-            'details': result
+            'success':
+            result['success'],
+            'message':
+            'Auto-sync system initialized successfully'
+            if result['success'] else 'Failed to initialize auto-sync system',
+            'details':
+            result
         })
 
     except Exception as e:
@@ -266,8 +312,10 @@ def test_auto_sync():
         test_result = test_auto_sync()
 
         return jsonify({
-            'success': test_result,
-            'message': 'Auto-sync test passed' if test_result else 'Auto-sync test failed'
+            'success':
+            test_result,
+            'message':
+            'Auto-sync test passed' if test_result else 'Auto-sync test failed'
         })
 
     except Exception as e:

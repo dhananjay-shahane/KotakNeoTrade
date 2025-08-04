@@ -644,20 +644,19 @@ def get_user_deals_data():
                 }
             })
 
-        # Calculate symbol counts for QT (repeated symbol count)
-        symbol_counts = {}
-        for deal in user_deals:
-            symbol = str(deal.get('symbol', '')).upper()
-            if symbol:
-                symbol_counts[symbol] = symbol_counts.get(symbol, 0) + 1
-
         # Format deals for frontend
         formatted_deals = []
         total_invested = 0
         total_current_value = 0
         total_pnl = 0
+        # Calculate symbol counts for QT (repeated symbol count)
+        symbol_counts = {}
 
         for deal in user_deals:
+            symbol = str(deal.get('symbol', '')).upper()
+            symbol_counts[symbol] = symbol_counts.get(symbol, 0) + 1
+            qt_value = symbol_counts[symbol]
+
             # Get CMP for the symbol using PriceFetcher
             db_connector = None
             try:
@@ -672,10 +671,6 @@ def get_user_deals_data():
                     f"Could not fetch CMP for {deal.get('symbol', '')}: {e}")
                 # cmp = deal.get('ep', 0)  # Fallback to entry price
 
-            # --- Extract basic trading info ---
-
-            symbol_counts = {}
-
             # 2. Initialize helper/fetcher objects
             price_fetcher = PriceFetcher(db_connector)
             signals_fetcher = SignalsFetcher(db_connector)
@@ -685,12 +680,21 @@ def get_user_deals_data():
             trade_signal_id = deal.get('trade_signal_id')
             qty = float(deal.get('qty') or 0)
             entry_price = float(deal.get('ep') or 0)
-
-            # --- QT = Symbol repeat count ---
-            qt_value = symbol_counts.get(symbol, 1)
+            exp_value = float(deal.get('exp') or 0)
 
             # --- Format the date as dd-mm-yy HH:MM ---
-            raw_date = deal.get('date', '') or ''
+            create_date_value = deal.get('created_at')
+            raw_date = deal.get('date')
+
+            if create_date_value:
+                try:
+                    dt_obj_create = pd.to_datetime(create_date_value)
+                    date_fmt_create = dt_obj_create.strftime("%d/%m/%y")
+                except Exception:
+                    date_fmt_create = str(create_date_value)
+            else:
+                date_fmt_create = date_fmt
+
             if raw_date:
                 try:
                     dt_obj = pd.to_datetime(raw_date)
@@ -698,7 +702,7 @@ def get_user_deals_data():
                 except Exception:
                     date_fmt = str(raw_date)
             else:
-                date_fmt = ''
+                date_fmt = date_fmt_create
 
             # --- Fetch prices (CMP, 7D, 30D) ---
             cmp_val = price_fetcher.get_cmp(symbol)
@@ -756,14 +760,29 @@ def get_user_deals_data():
                 tpr_value = "--"
                 tva_value = "--"
 
+            # ######## PR AND PP CALCULATIONS ######
+
+            pp_value = (exp_value - entry_price) * qty
+            pr_value = (exp_value - entry_price) * qty
+
+            # ######### CLOSE DEALS ###########
             # --- Set pos to 0 if deal is closed, otherwise use original value ---
             deal_status = str(deal.get('status', 'ACTIVE')).upper()
             pos_value = '0' if deal_status == 'CLOSED' else deal.get(
                 'pos', '1')
-
-            cmp = price_fetcher.get_cmp(deal.get('symbol', ''))
+            change_percent_fmt = '--' if deal_status == 'CLOSED' else round(
+                change_percent, 2)
+            investment_fmt = '--' if deal_status == 'CLOSED' else investment
+            tp_value_fmt = '--' if deal_status == 'CLOSED' else tp_value
+            tpr_value_fmt = '--' if deal_status == 'CLOSED' else tpr_value
+            tva_value_fmt = '--' if deal_status == 'CLOSED' else tva_value
+            profit_loss_fmt = '--' if deal_status == 'CLOSED' else round(
+                profit_loss, 2)
+            pp_value_fmt = pp_value if deal_status == 'CLOSED' else '--'
+            pr_value_fmt = pr_value if deal_status == 'CLOSED' else '--'
 
             # Calculate values
+            cmp = price_fetcher.get_cmp(deal.get('symbol', ''))
             qty = float(deal.get('qty', 0))
             ep = float(deal.get('ep', 0))
             current_price = float(cmp if cmp is not None else 0)
@@ -798,22 +817,22 @@ def get_user_deals_data():
                 'seven_percent': p7,
                 'thirty': d30_val if d30_val else '--',
                 'thirty_percent': p30,
-                'date': date_fmt,
+                'date': date_fmt if date_fmt else date_fmt_create,
                 'qty': qty,
                 'ep': entry_price,
                 'cmp': cmp_display,
                 'pos': pos_value,
-                'chan_percent': round(change_percent, 2),
-                'inv': investment,
-                'tp': tp_value,  # Target price with business logic
-                'tpr': tpr_value,  # Target profit return percentage
-                'tva': tva_value,  # Target value amount
-                'pl': round(profit_loss, 2),
+                'chan_percent': change_percent_fmt,
+                'inv': investment_fmt,
+                'tp': tp_value_fmt,  # Target price with business logic
+                'tpr': tpr_value_fmt,  # Target profit return percentage
+                'tva': tva_value_fmt,  # Target value amount
+                'pl': profit_loss_fmt,
                 'qt': qt_value,  # Symbol repeat count
                 'ed': format_date_field(deal.get('ed')),  # Exit date
                 'exp': format_date_field(deal.get('exp')),  # Expiry
-                'pr': deal.get('pr', '--'),  # Price range
-                'pp': deal.get('pp', '--'),  # Performance points
+                'pr': pr_value_fmt,  # Price range
+                'pp': pp_value_fmt,  # Performance points
                 'iv': investment,  # Investment value
                 'ip': entry_price,  # Entry price
                 'status': deal_status,  # Use actual status from database
@@ -1018,39 +1037,43 @@ def edit_deal():
                     'error': 'Invalid entry price value'
                 }), 400
 
-        # Handle TP value (target price - actual price)
+        # Handle TP value (target price value)
         if tp_percent is not None:
             try:
                 tp_percent = float(tp_percent)
                 if tp_percent <= 0:
                     return jsonify({
-                        'success': False,
-                        'error': 'Target price must be a positive number'
+                        'success':
+                        False,
+                        'error':
+                        'TP value must be a positive number'
                     }), 400
-                # Store target price in tp column
-                fields_to_update['tp'] = tp_percent  # target price -> tp column
+                # Store TP value as target price in tp column
+                fields_to_update['tp'] = tp_percent  # tp_value -> tp column
                 update_count += 1
             except (ValueError, TypeError):
                 return jsonify({
                     'success': False,
-                    'error': 'Invalid target price value'
+                    'error': 'Invalid TP value'
                 }), 400
 
-        # Handle TPR value (target percentage return - percentage)
+        # Handle TPR value (target percentage return)
         if tpr_price is not None:
             try:
                 tpr_price = float(tpr_price)
                 if tpr_price <= 0:
                     return jsonify({
-                        'success': False,
-                        'error': 'Target percentage must be a positive number'
+                        'success':
+                        False,
+                        'error':
+                        'TPR value must be a positive number'
                     }), 400
-                fields_to_update['tpr'] = tpr_price  # target percentage -> tpr column
+                fields_to_update['tpr'] = tpr_price  # tpr_value -> tpr column
                 update_count += 1
             except (ValueError, TypeError):
                 return jsonify({
                     'success': False,
-                    'error': 'Invalid target percentage value'
+                    'error': 'Invalid TPR value'
                 }), 400
 
         if target_price is not None:
@@ -1104,37 +1127,6 @@ def edit_deal():
 
         # Ensure the table has all required columns
         dynamic_deals_service.ensure_table_columns(username)
-
-        # Add fallback TP/TPR calculations if not provided but entry_price is available
-        if 'ep' in fields_to_update and ('tp' not in fields_to_update and 'tpr' not in fields_to_update):
-            entry_price_val = fields_to_update['ep']
-            # Get current CMP to calculate target based on business logic
-            cmp_numeric = 0  # Default if CMP not available
-            
-            # Calculate target price based on business logic
-            if cmp_numeric > 0:
-                current_gain_percent = ((cmp_numeric - entry_price_val) / entry_price_val) * 100
-                if current_gain_percent > 10:
-                    target_price_calc = entry_price_val * 1.25  # 25% from entry price
-                elif current_gain_percent > 5:
-                    target_price_calc = entry_price_val * 1.20
-                elif current_gain_percent > 0:
-                    target_price_calc = entry_price_val * 1.15
-                elif current_gain_percent > -5:
-                    target_price_calc = entry_price_val * 1.12
-                else:
-                    target_price_calc = entry_price_val * 1.10
-            else:
-                target_price_calc = entry_price_val * 1.15  # Default 15% target
-                
-            tpr_percent_calc = ((target_price_calc - entry_price_val) / entry_price_val) * 100
-            fields_to_update['tp'] = round(target_price_calc, 2)
-            fields_to_update['tpr'] = round(tpr_percent_calc, 2)
-            update_count += 2
-
-        # Set POS value based on deal status (1 for active, 0 for closed)
-        # For edit operations, deals are typically active, so set POS = 1
-        fields_to_update['pos'] = 1
 
         # Update deal in user's dynamic table
         success = dynamic_deals_service.update_deal(username, deal_id,
@@ -1273,7 +1265,7 @@ def close_deal():
             {
                 'status': 'CLOSED',
                 'ed': exit_date_obj,  # ed = exit date for closed deals
-                'exp': exit_price,    # exp = exit price for closed deals
+                'exp': exit_price,  # exp = exit price for closed deals
                 'pos': '0'  # Set position to 0 to indicate closed deal
             })
 
