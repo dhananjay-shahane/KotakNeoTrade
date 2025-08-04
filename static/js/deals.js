@@ -417,9 +417,7 @@ DealsManager.prototype.loadDeals = function () {
                                 tpr: deal.tpr,
                                 date: (function () {
                                     var dateValue =
-                                        deal.entry_date ||
-                                        deal.date ||
-                                        deal.created_at;
+                                        deal.date || deal.created_at;
                                     if (!dateValue) return "";
                                     if (typeof dateValue === "string") {
                                         return dateValue.split("T")[0];
@@ -718,7 +716,7 @@ DealsManager.prototype.renderDealsTable = function () {
                     cellContent = deal.tp ? "₹" + deal.tp.toFixed(2) : "--";
                     break;
                 case "tpr":
-                    cellContent = deal.tpr || "";
+                    cellContent = deal.tpr ? deal.tpr + `%` : "--";
                     break;
                 case "tva":
                     cellContent = deal.tva || "--";
@@ -1431,16 +1429,8 @@ function editDeal(
     document.getElementById("editQuantity").value = qty || "";
     document.getElementById("editEntryPrice").value = entryPrice || "";
     // Calculate and set TP percentage if we have both entry price and target price
-    var calculatedTPPercent = "";
-    if (entryPrice && tprPrice && entryPrice > 0) {
-        calculatedTPPercent = (
-            ((tprPrice - entryPrice) / entryPrice) *
-            100
-        ).toFixed(2);
-    } else if (targetPricePerc) {
-        calculatedTPPercent = targetPricePerc;
-    }
-    document.getElementById("editTPPercent").value = calculatedTPPercent;
+
+    document.getElementById("editTPPercent").value = targetPricePerc;
     document.getElementById("editTPRPrice").value = tprPrice || "";
     // Removed editTargetPrice field - no longer exists
 
@@ -1450,7 +1440,7 @@ function editDeal(
         quantity: qty || "",
         entryPrice: entryPrice || "",
         tprPrice: tprPrice,
-        tpPercent: calculatedTPPercent || "",
+        tpPercent: targetPricePerc || "",
     };
 
     // Show modal
@@ -1560,9 +1550,9 @@ function submitEditDeal() {
 
     if (dateForAPI) updateData.date = dateForAPI; // date_fmt parameter
     if (qty) updateData.qty = parseFloat(qty); // qty parameter
-    if (entryPrice) updateData.entry_price = parseFloat(entryPrice); // entry_price parameter
-    if (tpPercent) updateData.tp_percent = parseFloat(tpPercent); // tp_value parameter
-    if (tpPrice) updateData.tpr_price = parseFloat(tpPrice); // tpr_value parameter
+    if (entryPrice) updateData.entry_price = parseInt(entryPrice); // entry_price parameter
+    if (tpPercent) updateData.tp_percent = parseInt(tpPercent); // tp_value parameter
+    if (tpPrice) updateData.tpr_price = parseInt(tpPrice); // tpr_value parameter
 
     // Make API call
     fetch("/api/edit-deal", {

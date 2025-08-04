@@ -734,51 +734,34 @@ def get_user_deals_data():
                 entry_price) * 100 if cmp_is_num and entry_price > 0 else 0
 
             # --- Target Price, TPR, TVA calculation (check database first, then use business logic) ---
-            # Check if tp and tpr values exist in database
-            db_tp_value = deal.get('tp')
-            db_tpr_value = deal.get('tpr')
-            
-            if db_tp_value and db_tpr_value:
-                # Use values from database if they exist
-                try:
-                    tp_value = round(float(db_tp_value), 2)
-                    if isinstance(db_tpr_value, str) and '%' in db_tpr_value:
-                        tpr_value = db_tpr_value
+            tpr_value_fmt = deal.get('tpr')
+            tp_value_fmt = deal.get('tp')
+
+            if entry_price > 0:
+                if cmp_numeric > 0 and cmp_is_num:
+                    current_gain_percent = (
+                        (cmp_numeric - entry_price) / entry_price) * 100
+                    if current_gain_percent > 10:
+                        target_price = entry_price * 1.25  # 25% from entry price
+                    elif current_gain_percent > 5:
+                        target_price = entry_price * 1.20
+                    elif current_gain_percent > 0:
+                        target_price = entry_price * 1.15
+                    elif current_gain_percent > -5:
+                        target_price = entry_price * 1.12
                     else:
-                        tpr_value = f"{float(db_tpr_value):.2f}%"
-                    tva_value = round(tp_value * qty, 2)
-                except (ValueError, TypeError):
-                    # If database values are invalid, fall back to calculation
-                    db_tp_value = None
-                    db_tpr_value = None
-            
-            # If no valid database values, use calculation logic
-            if not db_tp_value or not db_tpr_value:
-                if entry_price > 0:
-                    if cmp_numeric > 0 and cmp_is_num:
-                        current_gain_percent = (
-                            (cmp_numeric - entry_price) / entry_price) * 100
-                        if current_gain_percent > 10:
-                            target_price = entry_price * 1.25  # 25% from entry price
-                        elif current_gain_percent > 5:
-                            target_price = entry_price * 1.20
-                        elif current_gain_percent > 0:
-                            target_price = entry_price * 1.15
-                        elif current_gain_percent > -5:
-                            target_price = entry_price * 1.12
-                        else:
-                            target_price = entry_price * 1.10
-                    else:
-                        target_price = entry_price * 1.15  # Default 15% target
-                    tpr_percent = (
-                        (target_price - entry_price) / entry_price) * 100
-                    tp_value = round(target_price, 2)
-                    tpr_value = f"{tpr_percent:.2f}%"
-                    tva_value = round(target_price * qty, 2)
+                        target_price = entry_price * 1.10
                 else:
-                    tp_value = "--"
-                    tpr_value = "--"
-                    tva_value = "--"
+                    target_price = entry_price * 1.15  # Default 15% target
+                tpr_percent = (
+                    (target_price - entry_price) / entry_price) * 100
+                tp_value = round(target_price, 2)
+                tpr_value = f"{tpr_percent:.2f}%"
+                tva_value = round(target_price * qty, 2)
+            else:
+                tp_value = "--"
+                tpr_value = "--"
+                tva_value = "--"
 
             # ######## PR AND PP CALCULATIONS ######
 
@@ -794,7 +777,7 @@ def get_user_deals_data():
                 change_percent, 2)
             investment_fmt = '--' if deal_status == 'CLOSED' else investment
             tp_value_fmt = '--' if deal_status == 'CLOSED' else tp_value
-            tpr_value_fmt = '--' if deal_status == 'CLOSED' else tpr_value
+            tpr_value_fmt = '--' if deal_status == 'CLOSED' else tpr_value_fmt
             tva_value_fmt = '--' if deal_status == 'CLOSED' else tva_value
             profit_loss_fmt = '--' if deal_status == 'CLOSED' else round(
                 profit_loss, 2)
@@ -1068,39 +1051,7 @@ def edit_deal():
                         'error':
                         'TP percentage must be a positive number'
                     }), 400
-                # Calculate target price from percentage and store in tp column
-                # Get current entry price from the update data or fetch from database if not provided
-                current_entry_price = entry_price
-                if not current_entry_price:
-                    # Need to fetch current entry price from database
-                    try:
-                        # Import dynamic deals service to get current entry price
-                        import sys
-                        sys.path.append('scripts')
-                        from scripts.dynamic_user_deals import DynamicUserDealsService
-                        
-                        username = session.get('username')
-                        if username:
-                            dynamic_deals_service = DynamicUserDealsService()
-                            current_deals = dynamic_deals_service.get_user_deals(username)
-                            if current_deals:
-                                for deal in current_deals:
-                                    if str(deal.get('id')) == str(deal_id):
-                                        current_entry_price = float(deal.get('ep', 0))
-                                        break
-                    except Exception as e:
-                        pass
-                
-                if current_entry_price and current_entry_price > 0:
-                    calculated_target_price = current_entry_price * (1 + tp_percent / 100)
-                    fields_to_update['tp'] = round(calculated_target_price, 2)  # Store actual target price
-                    fields_to_update['tpr'] = tp_percent  # Store as numeric percentage (e.g., 11 for 11%)
-                    update_count += 1
-                else:
-                    return jsonify({
-                        'success': False,
-                        'error': 'Entry price is required to calculate target price from percentage'
-                    }), 400
+                fields_to_update['tpr'] = tp_percent
             except (ValueError, TypeError):
                 return jsonify({
                     'success': False,
@@ -1120,26 +1071,7 @@ def edit_deal():
                     }), 400
                 # Store target price in tp column and calculate percentage for tpr
                 fields_to_update['tp'] = tpr_price  # Store actual target price
-                # Get current entry price for percentage calculation
-                current_entry_price = entry_price
-                if not current_entry_price:
-                    try:
-                        username = session.get('username')
-                        if username:
-                            dynamic_deals_service = DynamicUserDealsService()
-                            current_deals = dynamic_deals_service.get_user_deals(username)
-                            if current_deals:
-                                for deal in current_deals:
-                                    if str(deal.get('id')) == str(deal_id):
-                                        current_entry_price = float(deal.get('ep', 0))
-                                        break
-                    except Exception as e:
-                        pass
-                
-                if current_entry_price and current_entry_price > 0:
-                    calculated_percentage = ((tpr_price - current_entry_price) / current_entry_price) * 100
-                    fields_to_update['tpr'] = round(calculated_percentage, 2)
-                update_count += 1
+
             except (ValueError, TypeError):
                 return jsonify({
                     'success': False,
@@ -1335,21 +1267,22 @@ def close_deal():
             if str(deal.get('id')) == str(deal_id):
                 current_deal = deal
                 break
-                
+
         # Calculate profit values
         pr_value = 0  # Profit amount
         pp_value = 0  # Profit percentage
-        
+
         if current_deal:
             entry_price = float(current_deal.get('ep', 0))
             quantity = float(current_deal.get('qty', 0))
-            
+
             if entry_price > 0 and quantity > 0:
                 # Calculate profit amount: (exit_price - entry_price) * quantity
                 pr_value = int((exit_price - entry_price) * quantity)
-                
+
                 # Calculate profit percentage: ((exit_price - entry_price) / entry_price) * 100
-                pp_value = int(((exit_price - entry_price) / entry_price) * 100)
+                pp_value = int(
+                    ((exit_price - entry_price) / entry_price) * 100)
 
         # Update deal status to CLOSED, set exit date (ed), exit price (exp), pos to 0
         success = dynamic_deals_service.update_deal(
@@ -1361,9 +1294,9 @@ def close_deal():
                 'exp': exit_price,  # exp = exit price for closed deals
                 'pos': '0',  # Set position to 0 to indicate closed deal
                 'pr': pr_value,  # Profit amount as integer
-                'pp': pp_value   # Profit percentage as integer
+                'pp': pp_value  # Profit percentage as integer
             })
-        
+
         # Email notifications disabled as requested
 
         if not success:
@@ -1394,27 +1327,31 @@ def save_user_settings():
     try:
         data = request.get_json()
         if not data:
-            return jsonify({'success': False, 'error': 'No data provided'}), 400
-        
+            return jsonify({
+                'success': False,
+                'error': 'No data provided'
+            }), 400
+
         # Save settings to session
         session['email_settings'] = {
             'emailDealCreated': data.get('emailDealCreated', True),
-            'emailDealUpdated': data.get('emailDealUpdated', True), 
+            'emailDealUpdated': data.get('emailDealUpdated', True),
             'emailDealClosed': data.get('emailDealClosed', True)
         }
-        
+
         session['general_settings'] = {
             'autoRefresh': data.get('autoRefresh', True),
             'showINR': data.get('showINR', True)
         }
-        
-        logger.info(f"Settings saved for user: {session.get('username', 'Unknown')}")
-        
+
+        logger.info(
+            f"Settings saved for user: {session.get('username', 'Unknown')}")
+
         return jsonify({
             'success': True,
             'message': 'Settings saved successfully'
         })
-        
+
     except Exception as e:
         logger.error(f"Error saving settings: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
