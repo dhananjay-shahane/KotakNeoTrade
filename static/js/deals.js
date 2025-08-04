@@ -1426,7 +1426,14 @@ function editDeal(
     document.getElementById("editDate").value = dateFormatted;
     document.getElementById("editQuantity").value = qty || "";
     document.getElementById("editEntryPrice").value = entryPrice || "";
-    document.getElementById("editTPPercent").value = targetPricePerc || ""; // TP percentage field - calculate from data
+    // Calculate and set TP percentage if we have both entry price and target price
+    var calculatedTPPercent = "";
+    if (entryPrice && tprPrice && entryPrice > 0) {
+        calculatedTPPercent = (((tprPrice - entryPrice) / entryPrice) * 100).toFixed(2);
+    } else if (targetPricePerc) {
+        calculatedTPPercent = targetPricePerc;
+    }
+    document.getElementById("editTPPercent").value = calculatedTPPercent;
     document.getElementById("editTPRPrice").value = tprPrice || "";
     // Removed editTargetPrice field - no longer exists
 
@@ -1436,7 +1443,7 @@ function editDeal(
         quantity: qty || "",
         entryPrice: entryPrice || "",
         tprPrice: tprPrice,
-        tpPercent: targetPricePerc || "",
+        tpPercent: calculatedTPPercent || "",
     };
 
     // Show modal
@@ -1463,7 +1470,7 @@ function submitEditDeal() {
 
     var hasChanges = false;
     for (var key in currentData) {
-        if (currentData[key] !== window.originalDealData[key]) {
+        if (String(currentData[key]) !== String(window.originalDealData[key])) {
             hasChanges = true;
             break;
         }
@@ -1732,6 +1739,9 @@ function editExitDate(dealId, symbol, currentExitDate) {
     
     document.getElementById("editExitDateInput").value = dateFormatted;
 
+    // Store original value for comparison
+    window.originalExitDate = dateFormatted;
+
     // Show modal
     var modal = new bootstrap.Modal(
         document.getElementById("editExitDateModal"),
@@ -1748,6 +1758,18 @@ function submitEditExitDate() {
             icon: "error",
             title: "Validation Error",
             text: "Please enter an exit date",
+            background: "#1e1e1e",
+            color: "#fff",
+        });
+        return;
+    }
+
+    // Check if date has been changed
+    if (exitDate === window.originalExitDate) {
+        Swal.fire({
+            icon: "warning",
+            title: "No Changes",
+            text: "Please modify the exit date to update the deal",
             background: "#1e1e1e",
             color: "#fff",
         });
@@ -2860,6 +2882,17 @@ function submitCloseDeal() {
     var exitPrice = document.getElementById("closeDealExitPrice").value;
 
     // Validate required fields
+    if (!dealId || !symbol) {
+        Swal.fire({
+            icon: "error",
+            title: "Validation Error",
+            text: "Deal ID and symbol are required",
+            background: "#1e1e1e",
+            color: "#fff",
+        });
+        return;
+    }
+
     if (!exitDate) {
         Swal.fire({
             icon: "error",
@@ -2876,6 +2909,31 @@ function submitCloseDeal() {
             icon: "error",
             title: "Validation Error",
             text: "Please enter an exit price",
+            background: "#1e1e1e",
+            color: "#fff",
+        });
+        return;
+    }
+
+    // Validate date format dd/mm/yy
+    if (!/^\d{2}\/\d{2}\/\d{2}$/.test(exitDate)) {
+        Swal.fire({
+            icon: "error",
+            title: "Invalid Date Format",
+            text: "Please enter date in dd/mm/yy format (e.g., 02/12/25)",
+            background: "#1e1e1e",
+            color: "#fff",
+        });
+        return;
+    }
+
+    // Validate exit price is a positive number
+    var exitPriceFloat = parseFloat(exitPrice);
+    if (isNaN(exitPriceFloat) || exitPriceFloat <= 0) {
+        Swal.fire({
+            icon: "error",
+            title: "Invalid Exit Price",
+            text: "Please enter a valid positive exit price",
             background: "#1e1e1e",
             color: "#fff",
         });
@@ -2903,17 +2961,7 @@ function submitCloseDeal() {
         }
     }
 
-    // Validate exit price is a positive number
-    if (isNaN(parseFloat(exitPrice)) || parseFloat(exitPrice) <= 0) {
-        Swal.fire({
-            icon: "error",
-            title: "Invalid Exit Price",
-            text: "Exit price must be a positive number",
-            background: "#1e1e1e",
-            color: "#fff",
-        });
-        return;
-    }
+
 
     // Show loading
     Swal.fire({
@@ -2937,7 +2985,7 @@ function submitCloseDeal() {
             deal_id: dealId,
             symbol: symbol,
             exit_date: exitDateForAPI, // ed parameter
-            exit_price: parseFloat(exitPrice), // exp parameter
+            exit_price: exitPriceFloat, // exp parameter
         }),
     })
         .then((response) => response.json())
