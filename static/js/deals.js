@@ -1554,7 +1554,7 @@ function submitEditDeal() {
     if (dateForAPI) updateData.date = dateForAPI; // date_fmt parameter
     if (qty) updateData.qty = parseFloat(qty); // qty parameter
     if (entryPrice) updateData.entry_price = parseFloat(entryPrice); // entry_price parameter
-    if (tpPercent) updateData.tp_percent = parseFloat(targetPricePerc); // tp_value parameter
+    if (tpPercent) updateData.tp_percent = parseFloat(tpPercent); // tp_value parameter
     if (tpPrice) updateData.tpr_price = parseFloat(tpPrice); // tpr_value parameter
 
     // Make API call
