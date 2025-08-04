@@ -45,6 +45,10 @@ AdvancedAnalyticsManager.prototype.init = function() {
 AdvancedAnalyticsManager.prototype.loadAnalyticsData = function() {
     var self = this;
     
+    // Show loading states for both charts
+    self.showChartLoading('timeSeriesChart', 'Loading time series data...');
+    self.showChartLoading('percentageChangeChart', 'Loading multi-period performance data...');
+    
     // Load time series data
     this.fetchTimeSeriesData()
         .then(function(data) {
@@ -364,6 +368,19 @@ AdvancedAnalyticsManager.prototype.updateTrendInsights = function(insights) {
     }
     
     trendContainer.innerHTML = html;
+};
+
+// Helper functions for chart states
+AdvancedAnalyticsManager.prototype.showChartLoading = function(chartId, message) {
+    var chartDiv = document.getElementById(chartId);
+    if (chartDiv) {
+        chartDiv.innerHTML = '<div class="d-flex justify-content-center align-items-center h-100">' +
+            '<div class="text-center text-muted">' +
+            '<i class="fas fa-spinner fa-spin fa-3x mb-3"></i>' +
+            '<p>' + message + '</p>' +
+            '</div>' +
+            '</div>';
+    }
 };
 
 AdvancedAnalyticsManager.prototype.showChartError = function(containerId, message) {

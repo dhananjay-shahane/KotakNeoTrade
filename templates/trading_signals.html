@@ -539,7 +539,14 @@ endblock %} {% block extra_css %}
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-8">
-                                    <div id="percentageChangeChart" style="height: 500px;"></div>
+                                    <div id="percentageChangeChart" style="height: 500px;">
+                                        <div class="d-flex justify-content-center align-items-center h-100">
+                                            <div class="text-center text-muted">
+                                                <i class="fas fa-spinner fa-spin fa-3x mb-3"></i>
+                                                <p>Loading multi-period performance data...</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="performance-legend">
