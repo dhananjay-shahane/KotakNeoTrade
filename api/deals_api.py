@@ -1094,7 +1094,7 @@ def edit_deal():
                 if current_entry_price and current_entry_price > 0:
                     calculated_target_price = current_entry_price * (1 + tp_percent / 100)
                     fields_to_update['tp'] = round(calculated_target_price, 2)  # Store actual target price
-                    fields_to_update['tpr'] = f"{tp_percent:.2f}%"  # Store as percentage string
+                    fields_to_update['tpr'] = tp_percent  # Store as numeric percentage
                     update_count += 1
                 else:
                     return jsonify({
@@ -1138,7 +1138,7 @@ def edit_deal():
                 
                 if current_entry_price and current_entry_price > 0:
                     calculated_percentage = ((tpr_price - current_entry_price) / current_entry_price) * 100
-                    fields_to_update['tpr'] = f"{calculated_percentage:.2f}%"
+                    fields_to_update['tpr'] = round(calculated_percentage, 2)
                 update_count += 1
             except (ValueError, TypeError):
                 return jsonify({
