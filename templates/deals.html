@@ -766,7 +766,8 @@ endblock %} {% block head %}
                     <div class="modal-header border-bottom border-secondary">
                         <h5 class="modal-title text-light">
                             <i class="fas fa-calendar-alt me-2 text-info"></i
-                            >Edit Exit Date
+                            >Edit Exit Date - ID: <span id="editExitModalDealId"></span> | 
+                            Symbol: <span id="editExitModalSymbol"></span>
                         </h5>
                         <button
                             type="button"
@@ -779,31 +780,23 @@ endblock %} {% block head %}
                             <input type="hidden" id="editExitDealId" />
                             <div class="mb-3">
                                 <label class="form-label text-light"
-                                    >Symbol</label
+                                    >Exit Date
+                                    <small class="text-muted">(dd/mm/yy format)</small>
+                                    <span class="text-danger">*</span></label
                                 >
                                 <input
                                     type="text"
                                     class="form-control bg-secondary text-light"
-                                    id="editExitSymbol"
-                                    readonly
-                                />
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label text-light"
-                                    >Exit Date
-                                    <span class="text-danger">*</span></label
-                                >
-                                <input
-                                    type="date"
-                                    class="form-control bg-secondary text-light"
                                     id="editExitDateInput"
+                                    placeholder="e.g., 02/12/25 for 02 Dec 2025"
+                                    pattern="[0-9]{2}/[0-9]{2}/[0-9]{2}"
+                                    maxlength="8"
                                     required
                                 />
                                 <div class="form-text text-muted">
                                     <small
                                         ><i class="fas fa-info-circle me-1"></i
-                                        >Exit date cannot be in the
-                                        future</small
+                                        >Enter date in dd/mm/yy format with slashes</small
                                     >
                                 </div>
                             </div>

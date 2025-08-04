@@ -1457,7 +1457,7 @@ function submitEditDeal() {
         date: date,
         quantity: qty,
         entryPrice: entryPrice,
-        tprPercent: tprPercent,
+        tprPercent: tpPercent,
         tpPrice: tpPrice,
     };
 
@@ -1703,14 +1703,34 @@ function editExitDate(dealId, symbol, currentExitDate) {
         currentExitDate,
     );
 
+    // Set modal heading values
+    document.getElementById("editExitModalDealId").textContent = dealId;
+    document.getElementById("editExitModalSymbol").textContent = symbol;
+
     // Set modal values
     document.getElementById("editExitDealId").value = dealId;
-    document.getElementById("editExitSymbol").value = symbol;
-    document.getElementById("editExitDateInput").value = currentExitDate || "";
-
-    // Set max date to today
-    var today = new Date().toISOString().split("T")[0];
-    document.getElementById("editExitDateInput").setAttribute("max", today);
+    
+    // Convert currentExitDate to dd/mm/yy format if needed
+    var dateFormatted = "";
+    if (currentExitDate && currentExitDate !== "--" && currentExitDate !== null && currentExitDate !== "") {
+        try {
+            // If date is already in dd/mm/yy format, use it directly
+            if (/^\d{2}\/\d{2}\/\d{2}$/.test(currentExitDate)) {
+                dateFormatted = currentExitDate;
+            } else {
+                // Try to parse as date object and convert to dd/mm/yy
+                var dateObj = new Date(currentExitDate);
+                var day = String(dateObj.getDate()).padStart(2, "0");
+                var month = String(dateObj.getMonth() + 1).padStart(2, "0");
+                var year = String(dateObj.getFullYear()).slice(-2);
+                dateFormatted = day + "/" + month + "/" + year;
+            }
+        } catch (e) {
+            console.warn("Could not parse exit date:", currentExitDate);
+        }
+    }
+    
+    document.getElementById("editExitDateInput").value = dateFormatted;
 
     // Show modal
     var modal = new bootstrap.Modal(
@@ -1721,14 +1741,43 @@ function editExitDate(dealId, symbol, currentExitDate) {
 
 function submitEditExitDate() {
     var dealId = document.getElementById("editExitDealId").value;
-    var symbol = document.getElementById("editExitSymbol").value;
     var exitDate = document.getElementById("editExitDateInput").value;
 
     if (!exitDate) {
         Swal.fire({
             icon: "error",
             title: "Validation Error",
-            text: "Please select an exit date",
+            text: "Please enter an exit date",
+            background: "#1e1e1e",
+            color: "#fff",
+        });
+        return;
+    }
+
+    // Validate date format dd/mm/yy
+    if (!/^\d{2}\/\d{2}\/\d{2}$/.test(exitDate)) {
+        Swal.fire({
+            icon: "error",
+            title: "Invalid Date Format",
+            text: "Please enter date in dd/mm/yy format (e.g., 02/12/25)",
+            background: "#1e1e1e",
+            color: "#fff",
+        });
+        return;
+    }
+
+    // Convert dd/mm/yy to yyyy-mm-dd for date validation
+    var dateParts = exitDate.split('/');
+    var day = parseInt(dateParts[0]);
+    var month = parseInt(dateParts[1]);
+    var year = 2000 + parseInt(dateParts[2]); // Convert yy to yyyy
+    
+    // Basic validation
+    if (month < 1 || month > 12 || day < 1 || day > 31) {
+        Swal.fire({
+            icon: "error",
+            title: "Invalid Date",
+            text: "Please enter a valid date",
             background: "#1e1e1e",
             color: "#fff",
         });
@@ -1736,7 +1785,7 @@ function submitEditExitDate() {
     }
 
     // Validate exit date is not in the future
-    var selectedDate = new Date(exitDate);
+    var selectedDate = new Date(year, month - 1, day);
     var today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -1763,6 +1812,9 @@ function submitEditExitDate() {
         color: "#fff",
     });
 
+    // Convert date to ddmmyy format for API
+    var dateForAPI = exitDate.replace(/\//g, ""); // Remove slashes for API
+
     // Make API call to update exit date
     fetch("/api/close-deal", {
         method: "POST",
@@ -1771,8 +1823,7 @@ function submitEditExitDate() {
         },
         body: JSON.stringify({
             deal_id: dealId,
-            symbol: symbol,
-            exit_date: exitDate,
+            exit_date: dateForAPI, // Send in ddmmyy format
         }),
     })
         .then((response) => response.json())
