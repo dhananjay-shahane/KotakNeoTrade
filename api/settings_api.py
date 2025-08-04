@@ -33,6 +33,7 @@ def create_user_settings_table():
                     user_email VARCHAR(255),
                     send_deals_in_mail BOOLEAN DEFAULT FALSE,
                     send_daily_change_data BOOLEAN DEFAULT FALSE,
+                    subscription BOOLEAN DEFAULT FALSE,
                     daily_email_time VARCHAR(5) DEFAULT '11:00',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -97,25 +98,28 @@ def get_user_email_settings():
             
             result = cursor.fetchone()
             
+            # Get user's registered email from session as default
+            user_session_email = session.get('email', '')
+            
             if result:
                 return jsonify({
                     'success': True,
                     'settings': {
-                        'send_deals_in_mail': result['send_deals_in_mail'],
-                        'send_daily_change_data': result['send_daily_change_data'],
-                        'daily_email_time': result['daily_email_time'],
-                        'user_email': result['user_email'] or ''
+                        'send_deals_in_mail': result[0] if result[0] is not None else False,
+                        'send_daily_change_data': result[1] if result[1] is not None else False,
+                        'daily_email_time': result[2] if result[2] is not None else '11:00',
+                        'user_email': result[3] if result[3] else user_session_email
                     }
                 })
             else:
-                # Return default settings if user hasn't configured anything yet
+                # Return default settings with user's session email pre-populated
                 return jsonify({
                     'success': True,
                     'settings': {
                         'send_deals_in_mail': False,
                         'send_daily_change_data': False,
                         'daily_email_time': '11:00',
-                        'user_email': ''
+                        'user_email': user_session_email
                     }
                 })
 
@@ -185,19 +189,23 @@ def save_user_email_settings():
             }), 500
 
         with conn.cursor() as cursor:
+            # Link subscription status to daily change data checkbox
+            subscription_status = send_daily_change_data
+            
             # Use UPSERT to insert or update user settings
             cursor.execute("""
                 INSERT INTO user_email_settings 
-                (username, user_email, send_deals_in_mail, send_daily_change_data, daily_email_time, updated_at)
-                VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                (username, user_email, send_deals_in_mail, send_daily_change_data, subscription, daily_email_time, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
                 ON CONFLICT (username) 
                 DO UPDATE SET
                     user_email = EXCLUDED.user_email,
                     send_deals_in_mail = EXCLUDED.send_deals_in_mail,
                     send_daily_change_data = EXCLUDED.send_daily_change_data,
+                    subscription = EXCLUDED.subscription,
                     daily_email_time = EXCLUDED.daily_email_time,
                     updated_at = CURRENT_TIMESTAMP
-            """, (username, user_email, send_deals_in_mail, send_daily_change_data, daily_email_time))
+            """, (username, user_email, send_deals_in_mail, send_daily_change_data, subscription_status, daily_email_time))
             
             conn.commit()
             logger.info(f"✅ Email settings saved successfully for user: {username}")
@@ -254,11 +262,12 @@ def get_users_with_email_notifications(notification_type):
                     AND user_email != ''
                 """)
             elif notification_type == 'daily_reports':
-                # Get users who want daily reports
+                # Get users who want daily reports (with subscription enabled)
                 cursor.execute("""
                     SELECT username, user_email, daily_email_time
                     FROM user_email_settings 
                     WHERE send_daily_change_data = TRUE 
+                    AND subscription = TRUE
                     AND user_email IS NOT NULL 
                     AND user_email != ''
                 """)
