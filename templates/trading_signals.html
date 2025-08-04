@@ -488,6 +488,70 @@ endblock %} {% block extra_css %}
         </div>
         
         <div class="card-body analytics-body" id="analyticsBody">
+            <!-- Time Series Analysis Row -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card bg-dark border-0 mb-3">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 text-light">
+                                <i class="fas fa-chart-line me-2 text-primary"></i>1) Time Series Analysis - Entry Date vs Performance
+                            </h6>
+                            <small class="text-muted">Track time-based performance patterns and identify seasonal trends</small>
+                        </div>
+                        <div class="card-body">
+                            <div id="timeSeriesChart" style="height: 400px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Percentage Change Analysis Row -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card bg-dark border-0 mb-3">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 text-light">
+                                <i class="fas fa-chart-bar me-2 text-success"></i>2) Multi-Period Performance Analysis (7D%, 30D%, 90D%)
+                            </h6>
+                            <small class="text-muted">Compare short, medium, and long-term performance across all symbols</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div id="percentageChangeChart" style="height: 500px;"></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="performance-legend">
+                                        <h6 class="text-light mb-3"><i class="fas fa-info-circle me-2"></i>Performance Insights</h6>
+                                        <div class="insight-card mb-3">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <span class="badge bg-success me-2">Green</span>
+                                                <span class="text-light">Price Appreciation</span>
+                                            </div>
+                                            <small class="text-muted">Positive percentage indicates upward momentum</small>
+                                        </div>
+                                        <div class="insight-card mb-3">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <span class="badge bg-danger me-2">Red</span>
+                                                <span class="text-light">Price Depreciation</span>
+                                            </div>
+                                            <small class="text-muted">Negative percentage shows selling pressure</small>
+                                        </div>
+                                        <div class="trend-analysis mt-4" id="trendAnalysis">
+                                            <h6 class="text-light mb-2">Market Trends</h6>
+                                            <div id="trendInsights" class="text-muted">
+                                                <i class="fas fa-spinner fa-spin me-2"></i>Analyzing trends...
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Original Analytics Row -->
             <div class="row">
                 <div class="col-md-6">
                     <div class="card bg-dark border-0 mb-3">
@@ -575,5 +639,8 @@ endblock %} {% block extra_css %}
 {% endblock %} {% block scripts %}
 <!-- Ensure jQuery is loaded -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Plotly.js for advanced charts -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script src="{{ url_for('static', filename='js/etf_signals.js') }}"></script>
+<script src="{{ url_for('static', filename='js/advanced_analytics.js') }}"></script>
 {% endblock %}

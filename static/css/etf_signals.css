@@ -73,7 +73,62 @@
 
 .live-indicator.connected {
     background: var(--success-color);
-    animation: pulse 2s infinite;
+}
+
+/* Advanced Analytics Styles */
+.performance-legend {
+    background: rgba(52, 58, 64, 0.8);
+    border-radius: 8px;
+    padding: 15px;
+    border: 1px solid var(--border-color);
+}
+
+.insight-card {
+    background: rgba(73, 80, 87, 0.6);
+    border-radius: 6px;
+    padding: 10px;
+    border-left: 3px solid var(--primary-color);
+}
+
+.trend-item {
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(108, 117, 125, 0.3);
+}
+
+.trend-item:last-child {
+    border-bottom: none;
+}
+
+.analytics-body .card {
+    transition: transform 0.2s ease;
+}
+
+.analytics-body .card:hover {
+    transform: translateY(-2px);
+}
+
+/* Chart containers */
+#timeSeriesChart, #percentageChangeChart {
+    border-radius: 8px;
+    background: rgba(52, 58, 64, 0.9);
+}
+
+/* Performance badges */
+.badge.bg-success {
+    background-color: #28a745 !important;
+}
+
+.badge.bg-danger {
+    background-color: #dc3545 !important;
+}
+
+.badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #000 !important;
+}
+
+.badge.bg-info {
+    background-color: #17a2b8 !important;
 }
 
 .live-indicator.disconnected {

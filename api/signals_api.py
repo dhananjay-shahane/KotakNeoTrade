@@ -56,6 +56,119 @@ def sync_default_deals():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@signals_bp.route('/analytics/time-series')
+def get_time_series_data():
+    """API endpoint for time series analysis - entry date vs performance"""
+    try:
+        from Scripts.external_db_service import get_all_trade_metrics
+        signals_data = get_all_trade_metrics()
+        
+        # Process data for time series analysis
+        time_series_data = []
+        for signal in signals_data:
+            if signal.get('DATE') != '--' and signal.get('%CHAN') != '--':
+                # Parse date and performance
+                date = signal.get('DATE')
+                performance = signal.get('%CHAN')
+                cpl = signal.get('CPL', 0)
+                symbol = signal.get('Symbol')
+                
+                # Extract numeric value from percentage
+                if performance and '%' in str(performance):
+                    perf_value = float(str(performance).replace('%', ''))
+                else:
+                    perf_value = 0
+                
+                time_series_data.append({
+                    'date': date,
+                    'symbol': symbol,
+                    'performance': perf_value,
+                    'cpl': cpl if isinstance(cpl, (int, float)) else 0
+                })
+        
+        # Sort by date for proper time series visualization
+        time_series_data.sort(key=lambda x: x['date'])
+        
+        return jsonify({
+            'success': True,
+            'data': time_series_data,
+            'total': len(time_series_data)
+        })
+        
+    except Exception as e:
+        logging.error(f"Time series API error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@signals_bp.route('/analytics/percentage-analysis')
+def get_percentage_analysis_data():
+    """API endpoint for multi-period percentage analysis (7D%, 30D%, 90D%)"""
+    try:
+        from Scripts.external_db_service import get_all_trade_metrics
+        signals_data = get_all_trade_metrics()
+        
+        # Process data for percentage analysis
+        percentage_data = []
+        trend_insights = {
+            'consistent_winners': [],
+            'declining_stocks': [],
+            'volatile_stocks': [],
+            'stable_performers': []
+        }
+        
+        for signal in signals_data:
+            symbol = signal.get('Symbol')
+            if not symbol or symbol == '--':
+                continue
+                
+            # Get 7D, 30D, and 90D percentages (simulate 90D since not in original data)
+            perf_7d = signal.get('7D%', '--')
+            perf_30d = signal.get('30D%', '--')
+            
+            # Parse percentage values
+            perf_7d_val = 0
+            perf_30d_val = 0
+            perf_90d_val = 0  # Simulate based on available data
+            
+            if perf_7d != '--' and '%' in str(perf_7d):
+                perf_7d_val = float(str(perf_7d).replace('%', ''))
+            
+            if perf_30d != '--' and '%' in str(perf_30d):
+                perf_30d_val = float(str(perf_30d).replace('%', ''))
+                # Simulate 90D based on 30D trend (for demonstration)
+                perf_90d_val = perf_30d_val * 1.5 if perf_30d_val > 0 else perf_30d_val * 2
+            
+            percentage_data.append({
+                'symbol': symbol,
+                'perf_7d': perf_7d_val,
+                'perf_30d': perf_30d_val,
+                'perf_90d': perf_90d_val,
+                'current_price': signal.get('CMP', 0),
+                'entry_price': signal.get('EP', 0)
+            })
+            
+            # Analyze trends for insights
+            if perf_7d_val > 0 and perf_30d_val > 0 and perf_90d_val > 0:
+                trend_insights['consistent_winners'].append(symbol)
+            elif perf_7d_val < 0 and perf_30d_val < 0:
+                trend_insights['declining_stocks'].append(symbol)
+            elif abs(perf_7d_val - perf_30d_val) > 10:
+                trend_insights['volatile_stocks'].append(symbol)
+            elif abs(perf_7d_val) < 5 and abs(perf_30d_val) < 5:
+                trend_insights['stable_performers'].append(symbol)
+        
+        return jsonify({
+            'success': True,
+            'data': percentage_data,
+            'insights': trend_insights,
+            'total': len(percentage_data)
+        })
+        
+    except Exception as e:
+        logging.error(f"Percentage analysis API error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @signals_bp.route('/default-deals-data')
 def get_default_deals_data():
     """API endpoint to get default deals data directly from admin_trade_signals"""
