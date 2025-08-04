@@ -1094,7 +1094,7 @@ def edit_deal():
                 if current_entry_price and current_entry_price > 0:
                     calculated_target_price = current_entry_price * (1 + tp_percent / 100)
                     fields_to_update['tp'] = round(calculated_target_price, 2)  # Store actual target price
-                    fields_to_update['tpr'] = tp_percent  # Store as numeric percentage
+                    fields_to_update['tpr'] = tp_percent  # Store as numeric percentage (e.g., 11 for 11%)
                     update_count += 1
                 else:
                     return jsonify({
@@ -1328,6 +1328,29 @@ def close_deal():
         # Ensure the table has all required columns (especially exp column)
         dynamic_deals_service.ensure_table_columns(username)
 
+        # Get current deal data to calculate profit
+        current_deals = dynamic_deals_service.get_user_deals(username)
+        current_deal = None
+        for deal in current_deals:
+            if str(deal.get('id')) == str(deal_id):
+                current_deal = deal
+                break
+                
+        # Calculate profit values
+        pr_value = 0  # Profit amount
+        pp_value = 0  # Profit percentage
+        
+        if current_deal:
+            entry_price = float(current_deal.get('ep', 0))
+            quantity = float(current_deal.get('qty', 0))
+            
+            if entry_price > 0 and quantity > 0:
+                # Calculate profit amount: (exit_price - entry_price) * quantity
+                pr_value = int((exit_price - entry_price) * quantity)
+                
+                # Calculate profit percentage: ((exit_price - entry_price) / entry_price) * 100
+                pp_value = int(((exit_price - entry_price) / entry_price) * 100)
+
         # Update deal status to CLOSED, set exit date (ed), exit price (exp), pos to 0
         success = dynamic_deals_service.update_deal(
             username,
@@ -1336,8 +1359,12 @@ def close_deal():
                 'status': 'CLOSED',
                 'ed': exit_date_obj,  # ed = exit date for closed deals
                 'exp': exit_price,  # exp = exit price for closed deals
-                'pos': '0'  # Set position to 0 to indicate closed deal
+                'pos': '0',  # Set position to 0 to indicate closed deal
+                'pr': pr_value,  # Profit amount as integer
+                'pp': pp_value   # Profit percentage as integer
             })
+        
+        # Email notifications disabled as requested
 
         if not success:
             return jsonify({
@@ -1358,6 +1385,38 @@ def close_deal():
 
     except Exception as e:
         logger.error(f"Error closing deal: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@deals_api.route('/api/save-settings', methods=['POST'])
+def save_user_settings():
+    """Save user settings API endpoint"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+        
+        # Save settings to session
+        session['email_settings'] = {
+            'emailDealCreated': data.get('emailDealCreated', True),
+            'emailDealUpdated': data.get('emailDealUpdated', True), 
+            'emailDealClosed': data.get('emailDealClosed', True)
+        }
+        
+        session['general_settings'] = {
+            'autoRefresh': data.get('autoRefresh', True),
+            'showINR': data.get('showINR', True)
+        }
+        
+        logger.info(f"Settings saved for user: {session.get('username', 'Unknown')}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Settings saved successfully'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error saving settings: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 

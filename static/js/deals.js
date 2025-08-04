@@ -414,20 +414,7 @@ DealsManager.prototype.loadDeals = function () {
                                 ),
                                 tp: parseFloat(deal.tp || 0),
                                 tva: parseFloat(deal.tva || 0),
-                                tpr: (function() {
-                                    var tprValue = deal.tpr;
-                                    if (tprValue && typeof tprValue === 'number') {
-                                        return tprValue.toFixed(2) + "%";
-                                    } else if (tprValue && typeof tprValue === 'string') {
-                                        if (tprValue.includes('%')) {
-                                            return tprValue;
-                                        } else {
-                                            var numVal = parseFloat(tprValue);
-                                            return !isNaN(numVal) ? numVal.toFixed(2) + "%" : tprValue;
-                                        }
-                                    }
-                                    return "15.00%";
-                                })(),
+                                tpr: deal.tpr,
                                 date: (function () {
                                     var dateValue =
                                         deal.entry_date ||
@@ -447,8 +434,8 @@ DealsManager.prototype.loadDeals = function () {
                                 qt: deal.qt || 1,
                                 ed: deal.ed || "--", // Show exit date from database
                                 exp: deal.exp || deal.exit_price || "--", // Show exit price (exp) from database
-                                pr: deal.pr || "--",
-                                pp: deal.pp || "--",
+                                pr: deal.pr ? parseInt(deal.pr) : "--",
+                                pp: deal.pp ? parseInt(deal.pp) : "--",
                                 iv: deal.iv || "--",
                                 ip: deal.ip || "--",
                                 entry_price: parseFloat(
