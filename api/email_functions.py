@@ -94,6 +94,91 @@ class EmailService:
             logger.error(f"❌ Failed to send email: {e}")
             return False
 
+    def send_deal_notification_email(self, user_email: str, deal_data: Dict, action_type: str) -> bool:
+        """
+        Send email notification for deal operations (add/close) to the specific user
+        
+        Args:
+            user_email: Email address of the user performing the action
+            deal_data: Dictionary containing deal information
+            action_type: 'added' or 'closed'
+            
+        Returns:
+            Boolean indicating success/failure of email sending
+        """
+        try:
+            if not user_email or not deal_data:
+                logger.error("❌ Missing user email or deal data")
+                return False
+
+            # Prepare email content based on action type
+            if action_type == 'added':
+                subject = f"Deal Added: {deal_data.get('symbol', 'Unknown')}"
+                action_text = "added a new deal"
+                action_details = f"""
+                    <tr><td style="padding: 8px; font-weight: bold;">Entry Price:</td><td style="padding: 8px;">₹{deal_data.get('entry_price', 'N/A')}</td></tr>
+                    <tr><td style="padding: 8px; font-weight: bold;">Quantity:</td><td style="padding: 8px;">{deal_data.get('quantity', 'N/A')}</td></tr>
+                    <tr><td style="padding: 8px; font-weight: bold;">Investment:</td><td style="padding: 8px;">₹{deal_data.get('invested_amount', 'N/A')}</td></tr>
+                    <tr><td style="padding: 8px; font-weight: bold;">Date:</td><td style="padding: 8px;">{deal_data.get('date', 'N/A')}</td></tr>
+                """
+            elif action_type == 'closed':
+                subject = f"Deal Closed: {deal_data.get('symbol', 'Unknown')}"
+                action_text = "closed a deal"
+                pnl_color = "#16a34a" if float(deal_data.get('pnl_amount', 0)) >= 0 else "#dc2626"
+                pnl_sign = "+" if float(deal_data.get('pnl_amount', 0)) >= 0 else ""
+                action_details = f"""
+                    <tr><td style="padding: 8px; font-weight: bold;">Exit Price:</td><td style="padding: 8px;">₹{deal_data.get('exit_price', 'N/A')}</td></tr>
+                    <tr><td style="padding: 8px; font-weight: bold;">Exit Date:</td><td style="padding: 8px;">{deal_data.get('exit_date', 'N/A')}</td></tr>
+                    <tr><td style="padding: 8px; font-weight: bold;">P&L Amount:</td><td style="padding: 8px; color: {pnl_color}; font-weight: bold;">{pnl_sign}₹{deal_data.get('pnl_amount', 'N/A')}</td></tr>
+                    <tr><td style="padding: 8px; font-weight: bold;">P&L %:</td><td style="padding: 8px; color: {pnl_color}; font-weight: bold;">{pnl_sign}{deal_data.get('pnl_percent', 'N/A')}%</td></tr>
+                """
+            else:
+                return False
+
+            html_content = f"""
+            <html>
+                <body style="font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5;">
+                    <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <h2 style="color: #2563eb; margin-bottom: 20px;">{'📈' if action_type == 'added' else '💰'} Deal {action_type.title()} Notification</h2>
+                        
+                        <p style="color: #374151; font-size: 16px; line-height: 1.6;">
+                            You have successfully {action_text} for <strong>{deal_data.get('symbol', 'Unknown')}</strong>.
+                        </p>
+                        
+                        <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                            <h3 style="color: #1f2937; margin: 0 0 15px 0;">Deal Details:</h3>
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr><td style="padding: 8px; font-weight: bold;">Symbol:</td><td style="padding: 8px;">{deal_data.get('symbol', 'N/A')}</td></tr>
+                                <tr><td style="padding: 8px; font-weight: bold;">Deal ID:</td><td style="padding: 8px;">{deal_data.get('deal_id', 'N/A')}</td></tr>
+                                {action_details}
+                            </table>
+                        </div>
+                        
+                        <div style="background-color: #eff6ff; padding: 15px; border-radius: 8px; border-left: 4px solid #2563eb;">
+                            <p style="margin: 0; color: #1e40af;">
+                                <strong>📊 Neo Trading Platform</strong><br>
+                                You can view all your deals and portfolio performance in your dashboard.
+                            </p>
+                        </div>
+                        
+                        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+                        
+                        <div style="text-align: center; color: #6b7280; font-size: 14px;">
+                            <p>This is an automated notification from Neo Trading Platform</p>
+                            <p>Time: {datetime.now().strftime('%d %B %Y at %I:%M %p')}</p>
+                        </div>
+                    </div>
+                </body>
+            </html>
+            """
+
+            # Send email using admin SMTP
+            return self.send_email_via_admin_smtp(user_email, subject, html_content)
+
+        except Exception as e:
+            logger.error(f"❌ Failed to send deal notification email: {e}")
+            return False
+
     def send_trading_signal_email(self, trading_signal_data: Dict) -> int:
         """
         Send email containing trading signal data to all users who have enabled "Send deals in mail"
