@@ -166,6 +166,9 @@ def save_user_email_settings():
         send_daily_change_data = bool(data.get('send_daily_change_data', False))
         daily_email_time = data.get('daily_email_time', '11:00')
         user_email = data.get('user_email', '').strip()
+        
+        # Link subscription status to daily change data checkbox
+        subscription_status = send_daily_change_data
 
         # Validate time format (HH:MM)
         if not InputValidator.validate_time_format(daily_email_time):
@@ -189,9 +192,6 @@ def save_user_email_settings():
             }), 500
 
         with conn.cursor() as cursor:
-            # Link subscription status to daily change data checkbox
-            subscription_status = send_daily_change_data
-            
             # Use UPSERT to insert or update user settings
             cursor.execute("""
                 INSERT INTO user_email_settings 
@@ -206,6 +206,22 @@ def save_user_email_settings():
                     daily_email_time = EXCLUDED.daily_email_time,
                     updated_at = CURRENT_TIMESTAMP
             """, (username, user_email, send_deals_in_mail, send_daily_change_data, subscription_status, daily_email_time))
+            
+            # Also update subscription status in external_users table
+            try:
+                cursor.execute("""
+                    UPDATE external_users 
+                    SET subscription = %s 
+                    WHERE username = %s
+                """, (subscription_status, username))
+            except Exception as e:
+                logger.warning(f"Could not update external_users subscription: {e}")
+                # Try to add subscription column if it doesn't exist
+                try:
+                    cursor.execute("ALTER TABLE external_users ADD COLUMN IF NOT EXISTS subscription BOOLEAN DEFAULT FALSE")
+                    cursor.execute("UPDATE external_users SET subscription = %s WHERE username = %s", (subscription_status, username))
+                except Exception as e2:
+                    logger.error(f"Failed to add subscription column or update: {e2}")
             
             conn.commit()
             logger.info(f"✅ Email settings saved successfully for user: {username}")
