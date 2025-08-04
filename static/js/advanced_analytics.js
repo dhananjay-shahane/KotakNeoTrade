@@ -111,6 +111,12 @@ AdvancedAnalyticsManager.prototype.renderTimeSeriesChart = function() {
         return;
     }
     
+    // Clear any existing loading state
+    var chartDiv = document.getElementById('timeSeriesChart');
+    if (chartDiv) {
+        chartDiv.innerHTML = '';
+    }
+    
     var data = this.timeSeriesData.data;
     
     // Group data by date for better visualization

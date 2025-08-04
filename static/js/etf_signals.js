@@ -3382,6 +3382,7 @@ ETFSignalsManager.prototype.applyFilters = function() {
             var signalDate = signal.DATE || signal.date;
             if (!signalDate || signalDate === '--') return true;
             
+            console.log('Processing signal date:', signalDate, 'Length:', signalDate.length);
             var parsedDate = null;
             
             // Handle different date formats
@@ -3401,6 +3402,22 @@ ETFSignalsManager.prototype.applyFilters = function() {
                 if (monthNum) {
                     parsedDate = new Date(year + '-' + monthNum + '-' + day);
                 }
+            } else if (signalDate.length === 6) {
+                // Format: "1Dec24" 
+                var day = signalDate.substring(0, 1);
+                var monthStr = signalDate.substring(1, 4);
+                var year = '20' + signalDate.substring(4, 6);
+                
+                var monthMap = {
+                    'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
+                    'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
+                    'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+                };
+                
+                var monthNum = monthMap[monthStr];
+                if (monthNum) {
+                    parsedDate = new Date(year + '-' + monthNum + '-0' + day);
+                }
             } else if (signalDate.includes('-')) {
                 // Format: "2024-12-01" or similar
                 parsedDate = new Date(signalDate);
@@ -3410,8 +3427,20 @@ ETFSignalsManager.prototype.applyFilters = function() {
             }
             
             if (parsedDate && !isNaN(parsedDate.getTime())) {
-                if (startDate && parsedDate < startDate) return false;
-                if (endDate && parsedDate > endDate) return false;
+                // Set time to beginning/end of day for proper comparison
+                var compareDate = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate());
+                var compareStart = startDate ? new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()) : null;
+                var compareEnd = endDate ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()) : null;
+                
+                console.log('Date comparison:', compareDate, 'vs start:', compareStart, 'vs end:', compareEnd);
+                if (compareStart && compareDate < compareStart) {
+                    console.log('Filtering out signal - before start date');
+                    return false;
+                }
+                if (compareEnd && compareDate > compareEnd) {
+                    console.log('Filtering out signal - after end date');
+                    return false;
+                }
             }
             
             return true;
