@@ -24,6 +24,104 @@ function toggleSidebar() {
 // Immediately expose toggleSidebar to global scope
 window.toggleSidebar = toggleSidebar;
 
+// Email Settings Modal Functions
+function showSettingsModal() {
+    const modal = new bootstrap.Modal(document.getElementById('settingsModal'));
+    loadEmailSettings();
+    modal.show();
+}
+
+// Make showSettingsModal globally available
+window.showSettingsModal = showSettingsModal;
+
+function loadEmailSettings() {
+    fetch('/api/email-settings')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const settings = data.settings;
+                document.getElementById('sendDealsInMail').checked = settings.send_deals_in_mail;
+                document.getElementById('sendDailyChangeData').checked = settings.send_daily_change_data;
+                document.getElementById('dailyEmailTime').value = settings.daily_email_time;
+                document.getElementById('smtpHost').value = settings.smtp_host;
+                document.getElementById('smtpPort').value = settings.smtp_port;
+                document.getElementById('smtpUsername').value = settings.smtp_username;
+                
+                // Show/hide time container based on daily data setting
+                toggleDailyEmailTimeContainer(settings.send_daily_change_data);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading email settings:', error);
+            showToaster('Error', 'Failed to load email settings', 'error');
+        });
+}
+
+function toggleDailyEmailTimeContainer(show) {
+    const container = document.getElementById('dailyEmailTimeContainer');
+    container.style.display = show ? 'block' : 'none';
+}
+
+function applySettings() {
+    // Save font settings (existing functionality)
+    const fontSize = document.getElementById('fontSizeSelect').value;
+    localStorage.setItem('website-font-size', fontSize);
+    document.documentElement.style.setProperty('--global-font-size', fontSize + 'px');
+    
+    // Save email settings
+    saveEmailSettings();
+}
+
+function saveEmailSettings() {
+    const settings = {
+        send_deals_in_mail: document.getElementById('sendDealsInMail').checked,
+        send_daily_change_data: document.getElementById('sendDailyChangeData').checked,
+        daily_email_time: document.getElementById('dailyEmailTime').value,
+        smtp_host: document.getElementById('smtpHost').value.trim(),
+        smtp_port: parseInt(document.getElementById('smtpPort').value) || 587,
+        smtp_username: document.getElementById('smtpUsername').value.trim(),
+        smtp_password: document.getElementById('smtpPassword').value
+    };
+
+    fetch('/api/email-settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(settings)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToaster('Success', 'Email settings saved successfully', 'success');
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
+            modal.hide();
+            // Clear password field for security
+            document.getElementById('smtpPassword').value = '';
+        } else {
+            showToaster('Error', data.error || 'Failed to save settings', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving email settings:', error);
+        showToaster('Error', 'Failed to save email settings', 'error');
+    });
+}
+
+// Event listeners for email settings
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle time container when daily data switch changes
+    const dailyDataSwitch = document.getElementById('sendDailyChangeData');
+    if (dailyDataSwitch) {
+        dailyDataSwitch.addEventListener('change', function() {
+            toggleDailyEmailTimeContainer(this.checked);
+        });
+    }
+});
+
+window.applySettings = applySettings;
+
 // Toaster notification system
 function showToaster(title, message, type = "info", duration = 3000) {
     // Create toaster container if it doesn't exist

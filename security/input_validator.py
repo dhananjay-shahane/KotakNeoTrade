@@ -24,6 +24,7 @@ class InputValidator:
         'alphanumeric': re.compile(r'^[a-zA-Z0-9]+$'),
         'numeric': re.compile(r'^\d+$'),
         'decimal': re.compile(r'^\d+\.?\d*$'),
+        'time_format': re.compile(r'^([0-1][0-9]|2[0-3]):[0-5][0-9]$'),
     }
     
     @staticmethod
@@ -85,6 +86,13 @@ class InputValidator:
         if not ucc:
             return False
         return bool(InputValidator.PATTERNS['ucc'].match(ucc.upper()))
+    
+    @staticmethod
+    def validate_time_format(time_str: str) -> bool:
+        """Validate time format (HH:MM)"""
+        if not time_str:
+            return False
+        return bool(InputValidator.PATTERNS['time_format'].match(time_str))
     
     @staticmethod
     def validate_numeric(value: str, min_val: float = None, max_val: float = None) -> bool:

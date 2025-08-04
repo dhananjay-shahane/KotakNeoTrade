@@ -34,6 +34,7 @@ dependencies = [
     "pandas-ta>=0.3.14b0",
     "redis>=6.2.0",
     "sendgrid>=6.12.4",
+    "bleach>=6.2.0",
 ]
 
 [tool.uv.sources]

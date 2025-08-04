@@ -1,0 +1,390 @@
+"""
+Email Functions for Kotak Neo Trading Platform
+Handles SMTP email sending for trading signal notifications and daily reports
+"""
+
+import smtplib
+import logging
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from datetime import datetime, timedelta
+from typing import List, Dict, Optional
+from api.settings_api import get_users_with_email_notifications
+from Scripts.external_db_service import ExternalDatabaseService
+
+logger = logging.getLogger(__name__)
+
+
+class EmailService:
+    """
+    Email service for sending trading notifications using user-specific SMTP configurations
+    Supports per-user SMTP settings for secure and personalized email delivery
+    """
+
+    def __init__(self):
+        self.db_service = ExternalDatabaseService()
+
+    def send_email_via_smtp(self, smtp_config: Dict, recipient_email: str, 
+                           subject: str, html_content: str, text_content: str = None) -> bool:
+        """
+        Send email using user's SMTP configuration with proper error handling
+        
+        Args:
+            smtp_config: Dictionary containing SMTP host, port, username, password
+            recipient_email: Email address to send to
+            subject: Email subject line
+            html_content: HTML content of the email
+            text_content: Plain text content (optional)
+            
+        Returns:
+            Boolean indicating success/failure of email sending
+        """
+        try:
+            # Validate SMTP configuration
+            required_fields = ['smtp_host', 'smtp_port', 'smtp_username', 'smtp_password']
+            if not all(field in smtp_config for field in required_fields):
+                logger.error("❌ Incomplete SMTP configuration provided")
+                return False
+
+            # Create email message with both HTML and text content
+            message = MIMEMultipart('alternative')
+            message['From'] = smtp_config['smtp_username']
+            message['To'] = recipient_email
+            message['Subject'] = subject
+
+            # Add text content if provided
+            if text_content:
+                text_part = MIMEText(text_content, 'plain')
+                message.attach(text_part)
+
+            # Add HTML content
+            html_part = MIMEText(html_content, 'html')
+            message.attach(html_part)
+
+            # Connect to SMTP server with security measures
+            server = smtplib.SMTP(smtp_config['smtp_host'], smtp_config['smtp_port'])
+            server.starttls()  # Enable security
+            server.login(smtp_config['smtp_username'], smtp_config['smtp_password'])
+            
+            # Send email
+            text = message.as_string()
+            server.sendmail(smtp_config['smtp_username'], recipient_email, text)
+            server.quit()
+            
+            logger.info(f"✅ Email sent successfully to {recipient_email}")
+            return True
+
+        except smtplib.SMTPAuthenticationError:
+            logger.error(f"❌ SMTP authentication failed for {smtp_config.get('smtp_username', 'unknown')}")
+            return False
+        except smtplib.SMTPException as e:
+            logger.error(f"❌ SMTP error occurred: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"❌ Failed to send email: {e}")
+            return False
+
+    def send_trading_signal_email(self, trading_signal_data: Dict) -> int:
+        """
+        Send email containing trading signal data to all users who have enabled "Send deals in mail"
+        This function is called whenever the admin adds a new trading signal
+        
+        Args:
+            trading_signal_data: Dictionary containing signal information
+            
+        Returns:
+            Number of emails successfully sent
+        """
+        try:
+            # Get users who want deal notifications
+            users = get_users_with_email_notifications('deals')
+            if not users:
+                logger.info("📧 No users have deal email notifications enabled")
+                return 0
+
+            successful_sends = 0
+            
+            # Prepare email content with trading signal details
+            subject = f"New Trading Signal: {trading_signal_data.get('symbol', 'Unknown')}"
+            
+            html_content = f"""
+            <html>
+                <body style="font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5;">
+                    <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <h2 style="color: #2563eb; margin-bottom: 20px;">🎯 New Trading Signal Alert</h2>
+                        
+                        <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                            <h3 style="color: #1e40af; margin-top: 0;">Signal Details</h3>
+                            <p><strong>Symbol:</strong> {trading_signal_data.get('symbol', 'N/A')}</p>
+                            <p><strong>Signal Type:</strong> {trading_signal_data.get('signal_type', 'N/A')}</p>
+                            <p><strong>Entry Price:</strong> ₹{trading_signal_data.get('entry_price', 'N/A')}</p>
+                            <p><strong>Target Price:</strong> ₹{trading_signal_data.get('target_price', 'N/A')}</p>
+                            <p><strong>Stop Loss:</strong> ₹{trading_signal_data.get('stop_loss', 'N/A')}</p>
+                            <p><strong>Date Added:</strong> {trading_signal_data.get('date_added', datetime.now().strftime('%Y-%m-%d %H:%M'))}</p>
+                        </div>
+                        
+                        <div style="background-color: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                            <p style="margin: 0; color: #92400e;"><strong>📊 Trading Recommendation:</strong> 
+                            Consider this signal based on your risk tolerance and trading strategy.</p>
+                        </div>
+                        
+                        <p style="color: #6b7280; font-size: 12px; margin-top: 20px;">
+                            This email was sent because you enabled "Send deals in mail" in your notification settings.
+                        </p>
+                    </div>
+                </body>
+            </html>
+            """
+
+            text_content = f"""
+            New Trading Signal Alert
+            
+            Symbol: {trading_signal_data.get('symbol', 'N/A')}
+            Signal Type: {trading_signal_data.get('signal_type', 'N/A')}
+            Entry Price: ₹{trading_signal_data.get('entry_price', 'N/A')}
+            Target Price: ₹{trading_signal_data.get('target_price', 'N/A')}
+            Stop Loss: ₹{trading_signal_data.get('stop_loss', 'N/A')}
+            Date Added: {trading_signal_data.get('date_added', datetime.now().strftime('%Y-%m-%d %H:%M'))}
+            
+            Consider this signal based on your risk tolerance and trading strategy.
+            """
+
+            # Send email to each user using their personal SMTP configuration
+            for user in users:
+                smtp_config = {
+                    'smtp_host': user['smtp_host'],
+                    'smtp_port': user['smtp_port'],
+                    'smtp_username': user['smtp_username'],
+                    'smtp_password': user['smtp_password_encrypted']  # In production, decrypt this
+                }
+                
+                # Send email to user using their SMTP settings
+                if self.send_email_via_smtp(smtp_config, user['smtp_username'], 
+                                          subject, html_content, text_content):
+                    successful_sends += 1
+                    logger.info(f"✅ Trading signal email sent to {user['username']}")
+                else:
+                    logger.error(f"❌ Failed to send trading signal email to {user['username']}")
+
+            logger.info(f"📧 Trading signal emails: {successful_sends}/{len(users)} sent successfully")
+            return successful_sends
+
+        except Exception as e:
+            logger.error(f"❌ Error in send_trading_signal_email: {e}")
+            return 0
+
+    def send_deal_close_email(self, deal_data: Dict, username: str) -> bool:
+        """
+        Send email with deal close data to the relevant user when a deal is closed
+        This function is called when a deal is closed on the deal page
+        
+        Args:
+            deal_data: Dictionary containing deal closure information
+            username: Username of the user whose deal was closed
+            
+        Returns:
+            Boolean indicating success/failure
+        """
+        try:
+            # Get specific user's email settings
+            users = get_users_with_email_notifications('deals')
+            user_settings = next((u for u in users if u['username'] == username), None)
+            
+            if not user_settings:
+                logger.info(f"📧 User {username} doesn't have deal email notifications enabled")
+                return False
+
+            # Calculate profit/loss and percentage
+            entry_price = float(deal_data.get('entry_price', 0))
+            exit_price = float(deal_data.get('exit_price', 0))
+            quantity = int(deal_data.get('quantity', 0))
+            
+            profit_loss = (exit_price - entry_price) * quantity
+            profit_loss_percent = ((exit_price - entry_price) / entry_price * 100) if entry_price > 0 else 0
+            
+            status_color = "#16a34a" if profit_loss >= 0 else "#dc2626"
+            status_text = "Profit" if profit_loss >= 0 else "Loss"
+            status_icon = "📈" if profit_loss >= 0 else "📉"
+
+            subject = f"Deal Closed: {deal_data.get('symbol', 'Unknown')} - {status_text}"
+            
+            html_content = f"""
+            <html>
+                <body style="font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5;">
+                    <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <h2 style="color: #2563eb; margin-bottom: 20px;">{status_icon} Deal Closure Notification</h2>
+                        
+                        <div style="background-color: {status_color}15; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid {status_color};">
+                            <h3 style="color: {status_color}; margin-top: 0;">Deal Summary</h3>
+                            <p><strong>Symbol:</strong> {deal_data.get('symbol', 'N/A')}</p>
+                            <p><strong>Entry Price:</strong> ₹{entry_price:.2f}</p>
+                            <p><strong>Exit Price:</strong> ₹{exit_price:.2f}</p>
+                            <p><strong>Quantity:</strong> {quantity}</p>
+                            <p><strong>Profit/Loss:</strong> <span style="color: {status_color}; font-weight: bold;">₹{profit_loss:.2f} ({profit_loss_percent:+.2f}%)</span></p>
+                            <p><strong>Closure Date:</strong> {deal_data.get('closure_date', datetime.now().strftime('%Y-%m-%d %H:%M'))}</p>
+                        </div>
+                        
+                        <div style="background-color: #f1f5f9; padding: 15px; border-radius: 8px;">
+                            <p style="margin: 0; color: #475569;"><strong>💡 Note:</strong> 
+                            Review your trading strategy and consider this outcome for future decisions.</p>
+                        </div>
+                        
+                        <p style="color: #6b7280; font-size: 12px; margin-top: 20px;">
+                            This email was sent because you enabled deal email notifications in your settings.
+                        </p>
+                    </div>
+                </body>
+            </html>
+            """
+
+            smtp_config = {
+                'smtp_host': user_settings['smtp_host'],
+                'smtp_port': user_settings['smtp_port'],
+                'smtp_username': user_settings['smtp_username'],
+                'smtp_password': user_settings['smtp_password_encrypted']
+            }
+            
+            # Send email to user
+            success = self.send_email_via_smtp(smtp_config, user_settings['smtp_username'], 
+                                             subject, html_content)
+            
+            if success:
+                logger.info(f"✅ Deal closure email sent to {username}")
+            else:
+                logger.error(f"❌ Failed to send deal closure email to {username}")
+                
+            return success
+
+        except Exception as e:
+            logger.error(f"❌ Error in send_deal_close_email: {e}")
+            return False
+
+    def send_daily_change_data_email(self) -> int:
+        """
+        Send daily email reports with trading performance data at scheduled times
+        This function is called by a scheduler to send daily reports to users who enabled this feature
+        
+        Returns:
+            Number of emails successfully sent
+        """
+        try:
+            # Get users who want daily reports
+            users = get_users_with_email_notifications('daily_reports')
+            if not users:
+                logger.info("📧 No users have daily email reports enabled")
+                return 0
+
+            # Get current time to check against user preferences
+            current_time = datetime.now().strftime('%H:%M')
+            
+            # Filter users whose daily email time matches current time (within 5 minutes)
+            target_users = []
+            for user in users:
+                user_time = user.get('daily_email_time', '11:00')
+                if abs(datetime.strptime(current_time, '%H:%M').hour - 
+                      datetime.strptime(user_time, '%H:%M').hour) <= 0:
+                    target_users.append(user)
+
+            if not target_users:
+                logger.info(f"📧 No users scheduled for daily reports at {current_time}")
+                return 0
+
+            # Fetch daily trading data from database
+            daily_data = self._get_daily_trading_summary()
+            successful_sends = 0
+
+            subject = f"Daily Trading Report - {datetime.now().strftime('%Y-%m-%d')}"
+            
+            html_content = f"""
+            <html>
+                <body style="font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5;">
+                    <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <h2 style="color: #2563eb; margin-bottom: 20px;">📊 Daily Trading Report</h2>
+                        
+                        <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                            <h3 style="color: #1e40af; margin-top: 0;">Today's Summary</h3>
+                            <p><strong>Total Active Signals:</strong> {daily_data.get('total_signals', 0)}</p>
+                            <p><strong>New Signals Added:</strong> {daily_data.get('new_signals_today', 0)}</p>
+                            <p><strong>Deals Closed Today:</strong> {daily_data.get('deals_closed_today', 0)}</p>
+                            <p><strong>Overall Performance:</strong> {daily_data.get('performance_summary', 'N/A')}</p>
+                        </div>
+                        
+                        <div style="background-color: #ecfdf5; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981;">
+                            <p style="margin: 0; color: #047857;"><strong>📈 Market Insight:</strong> 
+                            {daily_data.get('market_insight', 'Stay updated with market trends and adjust your strategy accordingly.')}</p>
+                        </div>
+                        
+                        <p style="color: #6b7280; font-size: 12px; margin-top: 20px;">
+                            This daily report was sent at {current_time} as per your notification preferences.
+                        </p>
+                    </div>
+                </body>
+            </html>
+            """
+
+            # Send email to each target user
+            for user in target_users:
+                smtp_config = {
+                    'smtp_host': user['smtp_host'],
+                    'smtp_port': user['smtp_port'],
+                    'smtp_username': user['smtp_username'],
+                    'smtp_password': user['smtp_password_encrypted']
+                }
+                
+                if self.send_email_via_smtp(smtp_config, user['smtp_username'], 
+                                          subject, html_content):
+                    successful_sends += 1
+                    logger.info(f"✅ Daily report sent to {user['username']}")
+                else:
+                    logger.error(f"❌ Failed to send daily report to {user['username']}")
+
+            logger.info(f"📧 Daily reports: {successful_sends}/{len(target_users)} sent successfully")
+            return successful_sends
+
+        except Exception as e:
+            logger.error(f"❌ Error in send_daily_change_data_email: {e}")
+            return 0
+
+    def _get_daily_trading_summary(self) -> Dict:
+        """
+        Get daily trading summary data from the database
+        Helper function to fetch performance data for daily email reports
+        
+        Returns:
+            Dictionary containing daily trading statistics
+        """
+        try:
+            # Use external database service to fetch trading data
+            signals_data = self.db_service.get_etf_signals_data()
+            
+            today = datetime.now().date()
+            total_signals = len(signals_data) if signals_data else 0
+            
+            # Calculate basic statistics
+            new_signals_today = 0
+            deals_closed_today = 0
+            
+            # This would be expanded with actual database queries for real data
+            summary = {
+                'total_signals': total_signals,
+                'new_signals_today': new_signals_today,
+                'deals_closed_today': deals_closed_today,
+                'performance_summary': 'Market analysis in progress',
+                'market_insight': 'Continue monitoring your portfolio and stay informed about market trends.'
+            }
+            
+            return summary
+
+        except Exception as e:
+            logger.error(f"❌ Error getting daily trading summary: {e}")
+            return {
+                'total_signals': 0,
+                'new_signals_today': 0,
+                'deals_closed_today': 0,
+                'performance_summary': 'Data unavailable',
+                'market_insight': 'Please check your connection and try again later.'
+            }
+
+
+# Global email service instance
+email_service = EmailService()

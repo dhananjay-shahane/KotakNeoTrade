@@ -1042,6 +1042,21 @@ try:
 except Exception as e:
     print(f"✗ Error registering notifications_api: {e}")
 
+# Register email settings API routes
+@app.route('/api/email-settings', methods=['GET'])
+def api_get_email_settings():
+    """API endpoint to get user email notification settings"""
+    from api.settings_api import get_user_email_settings
+    return get_user_email_settings()
+
+@app.route('/api/email-settings', methods=['POST'])
+def api_save_email_settings():
+    """API endpoint to save user email notification settings"""
+    from api.settings_api import save_user_email_settings
+    return save_user_email_settings()
+
+print("✓ Registered email settings API routes")
+
 # ================================= berjumpa=======
 # KOTAK NEO PROJECT INTEGRATION
 # ========================================
