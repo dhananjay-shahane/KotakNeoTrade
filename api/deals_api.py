@@ -1082,9 +1082,12 @@ def edit_deal():
                         username = session.get('username')
                         if username:
                             dynamic_deals_service = DynamicUserDealsService()
-                            current_deal = dynamic_deals_service.get_deal_by_id(username, deal_id)
-                            if current_deal:
-                                current_entry_price = float(current_deal.get('ep', 0))
+                            current_deals = dynamic_deals_service.get_user_deals(username)
+                            if current_deals:
+                                for deal in current_deals:
+                                    if str(deal.get('id')) == str(deal_id):
+                                        current_entry_price = float(deal.get('ep', 0))
+                                        break
                     except Exception as e:
                         pass
                 
@@ -1117,8 +1120,24 @@ def edit_deal():
                     }), 400
                 # Store target price in tp column and calculate percentage for tpr
                 fields_to_update['tp'] = tpr_price  # Store actual target price
-                if entry_price and entry_price > 0:
-                    calculated_percentage = ((tpr_price - entry_price) / entry_price) * 100
+                # Get current entry price for percentage calculation
+                current_entry_price = entry_price
+                if not current_entry_price:
+                    try:
+                        username = session.get('username')
+                        if username:
+                            dynamic_deals_service = DynamicUserDealsService()
+                            current_deals = dynamic_deals_service.get_user_deals(username)
+                            if current_deals:
+                                for deal in current_deals:
+                                    if str(deal.get('id')) == str(deal_id):
+                                        current_entry_price = float(deal.get('ep', 0))
+                                        break
+                    except Exception as e:
+                        pass
+                
+                if current_entry_price and current_entry_price > 0:
+                    calculated_percentage = ((tpr_price - current_entry_price) / current_entry_price) * 100
                     fields_to_update['tpr'] = f"{calculated_percentage:.2f}%"
                 update_count += 1
             except (ValueError, TypeError):

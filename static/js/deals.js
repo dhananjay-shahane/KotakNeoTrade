@@ -412,17 +412,9 @@ DealsManager.prototype.loadDeals = function () {
                                 inv: parseFloat(
                                     deal.invested_amount || deal.inv || 0,
                                 ),
-                                tp: parseFloat(deal.tp || deal.tpr_price || deal.target_price || 0),
+                                tp: parseFloat(deal.tp || 0),
                                 tva: parseFloat(deal.tva || 0),
-                                tpr: (function() {
-                                    var tprValue = deal.tpr || deal.tp_percent;
-                                    if (tprValue && typeof tprValue === 'number') {
-                                        return tprValue.toFixed(2) + "%";
-                                    } else if (tprValue && typeof tprValue === 'string') {
-                                        return tprValue.includes('%') ? tprValue : tprValue + "%";
-                                    }
-                                    return "15.00%";
-                                })(),
+                                tpr: deal.tpr,
                                 date: (function () {
                                     var dateValue =
                                         deal.entry_date ||
@@ -1441,7 +1433,10 @@ function editDeal(
     // Calculate and set TP percentage if we have both entry price and target price
     var calculatedTPPercent = "";
     if (entryPrice && tprPrice && entryPrice > 0) {
-        calculatedTPPercent = (((tprPrice - entryPrice) / entryPrice) * 100).toFixed(2);
+        calculatedTPPercent = (
+            ((tprPrice - entryPrice) / entryPrice) *
+            100
+        ).toFixed(2);
     } else if (targetPricePerc) {
         calculatedTPPercent = targetPricePerc;
     }
@@ -1592,7 +1587,7 @@ function submitEditDeal() {
                         document.getElementById("editDealModal"),
                     );
                     modal.hide();
-                    
+
                     // Force a fresh reload by adding a timestamp to bypass any caching
                     console.log("Forcing fresh deals reload after edit...");
                     setTimeout(() => {
@@ -1733,10 +1728,15 @@ function editExitDate(dealId, symbol, currentExitDate) {
 
     // Set modal values
     document.getElementById("editExitDealId").value = dealId;
-    
+
     // Convert currentExitDate to dd/mm/yy format if needed
     var dateFormatted = "";
-    if (currentExitDate && currentExitDate !== "--" && currentExitDate !== null && currentExitDate !== "") {
+    if (
+        currentExitDate &&
+        currentExitDate !== "--" &&
+        currentExitDate !== null &&
+        currentExitDate !== ""
+    ) {
         try {
             // If date is already in dd/mm/yy format, use it directly
             if (/^\d{2}\/\d{2}\/\d{2}$/.test(currentExitDate)) {
@@ -1753,7 +1753,7 @@ function editExitDate(dealId, symbol, currentExitDate) {
             console.warn("Could not parse exit date:", currentExitDate);
         }
     }
-    
+
     document.getElementById("editExitDateInput").value = dateFormatted;
 
     // Store original value for comparison
@@ -1806,11 +1806,11 @@ function submitEditExitDate() {
     }
 
     // Convert dd/mm/yy to yyyy-mm-dd for date validation
-    var dateParts = exitDate.split('/');
+    var dateParts = exitDate.split("/");
     var day = parseInt(dateParts[0]);
     var month = parseInt(dateParts[1]);
     var year = 2000 + parseInt(dateParts[2]); // Convert yy to yyyy
-    
+
     // Basic validation
     if (month < 1 || month > 12 || day < 1 || day > 31) {
         Swal.fire({
@@ -2977,8 +2977,6 @@ function submitCloseDeal() {
             return;
         }
     }
-
-
 
     // Show loading
     Swal.fire({
