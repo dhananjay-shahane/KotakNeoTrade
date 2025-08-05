@@ -112,18 +112,38 @@ class EmailService:
     def get_user_email_preference(self, user_id: str) -> Optional[str]:
         """Get user's preferred email address"""
         try:
-            from config.database_config import execute_db_query
+            from config.database_config import get_db_dict_connection
             
-            # Check if user has alternative email set
-            query = """
-            SELECT email, alternative_email FROM users WHERE username = %s
-            """
-            result = execute_db_query(query, (user_id,))
+            # Get user's email preferences from external_users and user_email_settings
+            conn = get_db_dict_connection()
+            if not conn:
+                return None
             
-            if result:
-                user_data = result[0]
-                # Return alternative email if set, otherwise regular email
-                return user_data.get('alternative_email') or user_data.get('email')
+            try:
+                with conn.cursor() as cursor:
+                    # First try to get alternative email from user_email_settings
+                    cursor.execute("""
+                        SELECT alternative_email FROM user_email_settings 
+                        WHERE username = %s AND alternative_email IS NOT NULL AND alternative_email != ''
+                    """, (user_id,))
+                    
+                    alt_email_result = cursor.fetchone()
+                    if alt_email_result and alt_email_result[0]:
+                        return alt_email_result[0]
+                    
+                    # If no alternative email, get regular email from external_users
+                    cursor.execute("""
+                        SELECT email FROM external_users 
+                        WHERE username = %s AND email IS NOT NULL AND email != ''
+                    """, (user_id,))
+                    
+                    email_result = cursor.fetchone()
+                    if email_result and email_result[0]:
+                        return email_result[0]
+                    
+                    return None
+            finally:
+                conn.close()
                 
         except Exception as e:
             logger.error(f"Error getting user email preference: {e}")

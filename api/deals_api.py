@@ -1305,65 +1305,37 @@ def close_deal():
                 'error': 'Deal not found or update failed'
             }), 404
 
-        # Send email notification for closed deal
+        # Send email notification for closed deal (Case 4)
         try:
-            from api.email_service import EmailService
-            from config.database_config import get_db_dict_connection
+            from api.email_functions import trigger_deal_status_email
             
-            # Get user's email from external_users table
-            email_conn = get_db_dict_connection()
-            if email_conn:
-                with email_conn.cursor() as email_cursor:
-                    email_cursor.execute("SELECT email FROM external_users WHERE username = %s", (username,))
-                    user_email_result = email_cursor.fetchone()
-                    
-                    if user_email_result and user_email_result[0]:
-                        user_email = user_email_result[0]
-                        
-                        # Check if user has email notifications enabled
-                        email_cursor.execute("""
-                            SELECT send_deals_in_mail FROM user_email_settings 
-                            WHERE username = %s AND send_deals_in_mail = TRUE
-                        """, (username,))
-                        
-                        notification_enabled = email_cursor.fetchone()
-                        
-                        if notification_enabled:
-                            # Calculate P&L for email
-                            try:
-                                # Get deal details for P&L calculation
-                                deal_details = dynamic_deals_service.get_deal_by_id(username, deal_id)
-                                if deal_details:
-                                    entry_price = float(deal_details.get('entry_price', 0))
-                                    quantity = int(deal_details.get('quantity', 0))
-                                    invested_amount = entry_price * quantity
-                                    exit_amount = exit_price * quantity
-                                    pnl_amount = exit_amount - invested_amount
-                                    pnl_percent = (pnl_amount / invested_amount * 100) if invested_amount > 0 else 0
-                                else:
-                                    pnl_amount = 0
-                                    pnl_percent = 0
-                            except:
-                                pnl_amount = 0
-                                pnl_percent = 0
-                            
-                            email_service = EmailService()
-                            deal_data = {
-                                'symbol': symbol,
-                                'deal_id': deal_id,
-                                'exit_price': exit_price,
-                                'exit_date': exit_date,
-                                'pnl_amount': round(pnl_amount, 2),
-                                'pnl_percent': round(pnl_percent, 2)
-                            }
-                            
-                            email_sent = email_service.send_deal_notification_email(user_email, deal_data, 'closed')
-                            if email_sent:
-                                logger.info(f"✅ Deal closure notification email sent to {user_email}")
-                            else:
-                                logger.warning(f"⚠️ Failed to send deal closure notification email to {user_email}")
-                
-                email_conn.close()
+            # Calculate P&L for email
+            try:
+                entry_price = float(current_deal.get('ep', 0)) if current_deal else 0
+                quantity = int(current_deal.get('qty', 0)) if current_deal else 0
+                invested_amount = entry_price * quantity
+                exit_amount = exit_price * quantity
+                pnl_amount = exit_amount - invested_amount
+                pnl_percent = (pnl_amount / invested_amount * 100) if invested_amount > 0 else 0
+            except:
+                pnl_amount = 0
+                pnl_percent = 0
+            
+            deal_email_data = {
+                'symbol': symbol,
+                'deal_id': deal_id,
+                'exit_price': exit_price,
+                'exit_date': exit_date,
+                'entry_price': entry_price,
+                'quantity': quantity,
+                'pnl_amount': round(pnl_amount, 2),
+                'pnl_percent': round(pnl_percent, 2),
+                'username': username
+            }
+            
+            # Call the centralized email function
+            trigger_deal_status_email(username, deal_email_data, 'closed')
+            logger.info(f"✅ Deal closure email triggered for {username}")
                     
         except Exception as e:
             logger.error(f"❌ Error sending deal closure notification email: {e}")
@@ -1463,6 +1435,9 @@ def remove_deal():
                 'error': f'No deals table found for user {username}'
             }), 404
 
+        # Get deal details before deletion for email notification
+        deal_details = dynamic_deals_service.get_deal_by_id(username, deal_id)
+        
         # Remove deal from user's dynamic table
         success = dynamic_deals_service.delete_deal(username, deal_id)
 
@@ -1471,6 +1446,28 @@ def remove_deal():
                 'success': False,
                 'error': 'Deal not found or deletion failed'
             }), 404
+
+        # Send email notification for deleted deal (Case 4)
+        try:
+            from api.email_functions import trigger_deal_status_email
+            
+            if deal_details:
+                deal_email_data = {
+                    'symbol': symbol,
+                    'deal_id': deal_id,
+                    'entry_price': deal_details.get('ep', 0),
+                    'quantity': deal_details.get('qty', 0),
+                    'date': datetime.now().strftime('%d/%m/%Y'),
+                    'username': username
+                }
+                
+                # Call the centralized email function
+                trigger_deal_status_email(username, deal_email_data, 'deleted')
+                logger.info(f"✅ Deal deletion email triggered for {username}")
+                        
+        except Exception as e:
+            logger.error(f"❌ Error sending deal deletion notification email: {e}")
+            # Don't fail the deal deletion if email fails
 
         return jsonify({
             'success': True,
@@ -1628,47 +1625,23 @@ def create_deal_from_signal():
                 f"✓ Created deal from signal: {symbol} - Deal ID: {deal_id} for user: {username}"
             )
             
-            # Send email notification for new deal
+            # Send email notification for new deal (Case 2)
             try:
-                from api.email_service import EmailService
-                from config.database_config import get_db_dict_connection
+                from api.email_functions import trigger_deal_creation_email
                 
-                # Get user's email from external_users table
-                email_conn = get_db_dict_connection()
-                if email_conn:
-                    with email_conn.cursor() as email_cursor:
-                        email_cursor.execute("SELECT email FROM external_users WHERE username = %s", (username,))
-                        user_email_result = email_cursor.fetchone()
-                        
-                        if user_email_result and user_email_result[0]:
-                            user_email = user_email_result[0]
-                            
-                            # Check if user has email notifications enabled
-                            email_cursor.execute("""
-                                SELECT send_deals_in_mail FROM user_email_settings 
-                                WHERE username = %s AND send_deals_in_mail = TRUE
-                            """, (username,))
-                            
-                            notification_enabled = email_cursor.fetchone()
-                            
-                            if notification_enabled:
-                                email_service = EmailService()
-                                deal_data = {
-                                    'symbol': symbol,
-                                    'deal_id': deal_id,
-                                    'entry_price': ep,
-                                    'quantity': qty,
-                                    'invested_amount': invested_amount,
-                                    'date': datetime.now().strftime('%d/%m/%Y')
-                                }
-                                
-                                email_sent = email_service.send_deal_notification_email(user_email, deal_data, 'added')
-                                if email_sent:
-                                    logger.info(f"✅ Deal notification email sent to {user_email}")
-                                else:
-                                    logger.warning(f"⚠️ Failed to send deal notification email to {user_email}")
-                    
-                    email_conn.close()
+                deal_email_data = {
+                    'symbol': symbol,
+                    'deal_id': deal_id,
+                    'entry_price': ep,
+                    'quantity': qty,
+                    'invested_amount': invested_amount,
+                    'date': datetime.now().strftime('%d/%m/%Y'),
+                    'username': username
+                }
+                
+                # Call the centralized email function
+                trigger_deal_creation_email(username, deal_email_data)
+                logger.info(f"✅ Deal creation email triggered for {username}")
                         
             except Exception as e:
                 logger.error(f"❌ Error sending deal notification email: {e}")
