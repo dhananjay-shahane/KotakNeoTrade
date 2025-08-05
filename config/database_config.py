@@ -128,7 +128,7 @@ class DatabaseConfig:
                     result = cursor.fetchone()
                 conn.close()
                 logger.info("✅ Database connection test successful")
-                return result and result[0] == 1
+                return bool(result and result[0] == 1)
             return False
         except Exception as e:
             logger.error(f"❌ Database connection test failed: {e}")
