@@ -651,7 +651,7 @@
                     </div>
                     <div class="modal-body">
                         <!-- Font Size Settings -->
-                        <div class="settings-section">
+                        <div class="settings-section mb-4">
                             <h6 class="mb-3">
                                 <i class="fas fa-text-height me-2"></i>
                                 Font Size Settings
@@ -693,18 +693,27 @@
                                 <i class="fas fa-envelope me-2"></i>
                                 Email Notification Settings
                             </h6>
-                            
+
                             <!-- Send trading notifications switch -->
                             <!-- This switch enables email notifications for new trading signals and deal updates -->
                             <div class="mb-3">
                                 <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="sendDealsInMail">
-                                    <label class="form-check-label" for="sendDealsInMail">
+                                    <input
+                                        class="form-check-input"
+                                        type="checkbox"
+                                        id="sendDealsInMail"
+                                    />
+                                    <label
+                                        class="form-check-label"
+                                        for="sendDealsInMail"
+                                    >
                                         <i class="fas fa-envelope me-1"></i>
                                         Email notifications
                                     </label>
                                     <small class="form-text text-muted d-block">
-                                        Receive email notifications when new trading signals are added or deals are updated
+                                        Receive email notifications when new
+                                        trading signals are added or deals are
+                                        updated
                                     </small>
                                 </div>
                             </div>
@@ -713,30 +722,50 @@
                             <!-- This switch enables daily email reports with trading performance data at a specified time -->
                             <div class="mb-3">
                                 <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="sendDailyChangeData">
-                                    <label class="form-check-label" for="sendDailyChangeData">
+                                    <input
+                                        class="form-check-input"
+                                        type="checkbox"
+                                        id="sendDailyChangeData"
+                                    />
+                                    <label
+                                        class="form-check-label"
+                                        for="sendDailyChangeData"
+                                    >
                                         <i class="fas fa-chart-line me-1"></i>
                                         Send daily change data
                                     </label>
                                     <small class="form-text text-muted d-block">
-                                        Receive daily email reports with trading performance and market changes
+                                        Receive daily email reports with trading
+                                        performance and market changes
                                     </small>
                                 </div>
-                                
+
                                 <!-- Time selector for daily email reports -->
                                 <!-- Default time is set to 11 AM as requested -->
-                                <div class="mt-2" id="dailyEmailTimeContainer" style="display: none;">
-                                    <label for="dailyEmailTime" class="form-label">
+                                <div
+                                    class="mt-2"
+                                    id="dailyEmailTimeContainer"
+                                    style="display: none"
+                                >
+                                    <label
+                                        for="dailyEmailTime"
+                                        class="form-label"
+                                    >
                                         <i class="fas fa-clock me-1"></i>
                                         Select time for daily reports:
                                     </label>
-                                    <select id="dailyEmailTime" class="form-select">
+                                    <select
+                                        id="dailyEmailTime"
+                                        class="form-select"
+                                    >
                                         <option value="06:00">6:00 AM</option>
                                         <option value="07:00">7:00 AM</option>
                                         <option value="08:00">8:00 AM</option>
                                         <option value="09:00">9:00 AM</option>
                                         <option value="10:00">10:00 AM</option>
-                                        <option value="11:00" selected>11:00 AM (Default)</option>
+                                        <option value="11:00" selected>
+                                            11:00 AM (Default)
+                                        </option>
                                         <option value="12:00">12:00 PM</option>
                                         <option value="13:00">1:00 PM</option>
                                         <option value="14:00">2:00 PM</option>
@@ -756,15 +785,27 @@
                                     <i class="fas fa-envelope me-2"></i>
                                     Your Email Address
                                 </h6>
-                                <small class="form-text text-muted d-block mb-3">
-                                    Provide your email address to receive trading notifications from the admin
+                                <small
+                                    class="form-text text-muted d-block mb-3"
+                                >
+                                    Provide your email address to receive
+                                    trading notifications from the admin
                                 </small>
-                                
+
                                 <div class="mb-2">
-                                    <label for="userEmail" class="form-label">Your Email Address</label>
-                                    <input type="email" class="form-control" id="userEmail" placeholder="your-email@gmail.com" required>
+                                    <label for="userEmail" class="form-label"
+                                        >Your Alternative Email Address</label
+                                    >
+                                    <input
+                                        type="email"
+                                        class="form-control"
+                                        id="userEmail"
+                                        placeholder="your-email@gmail.com"
+                                        required
+                                    />
                                     <small class="form-text text-muted">
-                                        Admin will send trading signals and deal updates to this email address
+                                        Admin will send trading signals and deal
+                                        updates to this email address
                                     </small>
                                 </div>
                             </div>
