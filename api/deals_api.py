@@ -1297,7 +1297,7 @@ def close_deal():
                 'pp': pp_value  # Profit percentage as integer
             })
 
-        # Email notifications disabled as requested
+        # Case 4: Send email notification for closed deal
 
         if not success:
             return jsonify({
@@ -1307,7 +1307,7 @@ def close_deal():
 
         # Send email notification for closed deal
         try:
-            from api.email_functions import EmailService
+            from api.email_service import EmailService
             from config.database_config import get_db_dict_connection
             
             # Get user's email from external_users table
@@ -1630,7 +1630,7 @@ def create_deal_from_signal():
             
             # Send email notification for new deal
             try:
-                from api.email_functions import EmailService
+                from api.email_service import EmailService
                 from config.database_config import get_db_dict_connection
                 
                 # Get user's email from external_users table

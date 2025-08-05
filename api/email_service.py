@@ -1,13 +1,13 @@
 """
 Comprehensive Email Service for Kotak Neo Trading Platform
-Handles all notification cases with Gmail SMTP integration
+Handles all 4 notification cases with Gmail SMTP integration
 """
 import os
 import logging
 import smtplib
 from datetime import datetime, timedelta
-from email.mime.text import MimeText
-from email.mime.multipart import MimeMultipart
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from typing import Optional, List, Dict, Any
 from jinja2 import Template
 import schedule
@@ -55,18 +55,18 @@ class EmailService:
             
         try:
             # Create message
-            msg = MimeMultipart('alternative')
+            msg = MIMEMultipart('alternative')
             msg['From'] = self.from_email
             msg['To'] = to_email
             msg['Subject'] = subject
             
             # Add content
             if text_content:
-                text_part = MimeText(text_content, 'plain')
+                text_part = MIMEText(text_content, 'plain')
                 msg.attach(text_part)
                 
             if html_content:
-                html_part = MimeText(html_content, 'html')
+                html_part = MIMEText(html_content, 'html')
                 msg.attach(html_part)
                 
             if not text_content and not html_content:
@@ -77,7 +77,8 @@ class EmailService:
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
                 if self.use_tls:
                     server.starttls()
-                server.login(self.admin_email, self.admin_password)
+                if self.admin_email and self.admin_password:
+                    server.login(self.admin_email, self.admin_password)
                 server.send_message(msg)
                 
             logger.info(f"✅ Email sent successfully to {to_email}")
@@ -123,263 +124,203 @@ class EmailService:
                 user_data = result[0]
                 # Return alternative email if set, otherwise regular email
                 return user_data.get('alternative_email') or user_data.get('email')
-            
-            return None
-            
+                
         except Exception as e:
-            logger.error(f"Error fetching user email preference: {e}")
-            return None
-    
-    def get_subscribed_users(self) -> List[Dict[str, Any]]:
-        """Get all users with email subscription enabled"""
-        try:
-            from config.database_config import execute_db_query
+            logger.error(f"Error getting user email preference: {e}")
             
-            query = """
-            SELECT username, email, alternative_email, daily_email_time 
-            FROM users 
-            WHERE subscription = true
-            """
-            return execute_db_query(query) or []
-            
-        except Exception as e:
-            logger.error(f"Error fetching subscribed users: {e}")
-            return []
+        return None
     
-    def get_external_users(self) -> List[Dict[str, Any]]:
-        """Get all external users for signal notifications"""
-        try:
-            from config.database_config import execute_db_query
-            
-            query = """
-            SELECT email FROM external_users WHERE email_notification = true
-            """
-            return execute_db_query(query) or []
-            
-        except Exception as e:
-            logger.error(f"Error fetching external users: {e}")
-            return []
-    
-    # ========================================
-    # NOTIFICATION CASE 1: Trade Signal to External Users
-    # ========================================
-    
+    # Case 1: Trade Signal Notification to External Users
     def send_trade_signal_notification(self, signal_data: Dict[str, Any]) -> bool:
-        """Send new trade signal notification to all external users"""
+        """Send new trade signal notifications to all external users"""
         try:
-            external_users = self.get_external_users()
+            from config.database_config import execute_db_query
+            
+            # Get all external users
+            query = "SELECT email FROM external_users WHERE email IS NOT NULL"
+            external_users = execute_db_query(query)
             
             if not external_users:
-                logger.info("No external users with email notifications enabled")
+                logger.info("No external users found for trade signal notification")
                 return True
                 
-            subject = f"New Trading Signal: {signal_data.get('symbol', 'Unknown Symbol')}"
+            subject = f"🚨 New Trading Signal: {signal_data.get('symbol', 'N/A')}"
             
-            html_content = self._create_signal_email_template(signal_data)
-            text_content = self._create_signal_text_template(signal_data)
+            # Create email content
+            html_content = self._create_trade_signal_html_template(signal_data)
+            text_content = self._create_trade_signal_text_template(signal_data)
             
             success_count = 0
             for user in external_users:
-                if self.send_email(user['email'], subject, text_content, html_content):
+                email = user.get('email')
+                if email and self.send_email(email, subject, text_content, html_content):
                     success_count += 1
                     
-            logger.info(f"✅ Signal notification sent to {success_count}/{len(external_users)} external users")
+            logger.info(f"✅ Trade signal notification sent to {success_count}/{len(external_users)} external users")
             return success_count > 0
             
         except Exception as e:
-            logger.error(f"Error sending trade signal notifications: {e}")
+            logger.error(f"❌ Failed to send trade signal notifications: {e}")
             return False
     
-    # ========================================
-    # NOTIFICATION CASE 2: Deal Creation to Logged-in User
-    # ========================================
-    
+    # Case 2: Deal Creation Notification to Logged-in User
     def send_deal_creation_notification(self, user_id: str, deal_data: Dict[str, Any]) -> bool:
         """Send deal creation notification to logged-in user"""
         try:
             user_email = self.get_user_email_preference(user_id)
-            
             if not user_email:
-                logger.warning(f"No email found for user: {user_id}")
+                logger.error(f"No email found for user: {user_id}")
                 return False
                 
-            subject = f"Deal Created: {deal_data.get('symbol', 'Unknown')}"
+            subject = f"✅ Deal Created: {deal_data.get('symbol', 'N/A')}"
             
-            html_content = self._create_deal_email_template(deal_data, 'created')
+            # Create email content
+            html_content = self._create_deal_html_template(deal_data, 'created')
             text_content = self._create_deal_text_template(deal_data, 'created')
             
-            return self.send_email(user_email, subject, text_content, html_content)
+            success = self.send_email(user_email, subject, text_content, html_content)
+            if success:
+                logger.info(f"✅ Deal creation notification sent to {user_email}")
+            return success
             
         except Exception as e:
-            logger.error(f"Error sending deal creation notification: {e}")
+            logger.error(f"❌ Failed to send deal creation notification: {e}")
             return False
     
-    # ========================================
-    # NOTIFICATION CASE 3: Daily Trading Signal Changes
-    # ========================================
+    # Case 3: Daily Trading Signal Change Email (Subscription-Based)
+    def setup_daily_trading_updates(self, user_id: str, send_time: str = "09:00"):
+        """Setup daily trading update emails for subscribed users"""
+        try:
+            # Schedule daily email at specified time
+            schedule.every().day.at(send_time).do(
+                self._send_daily_trading_update, user_id
+            )
+            logger.info(f"✅ Daily trading updates scheduled for {user_id} at {send_time}")
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to setup daily trading updates: {e}")
     
-    def schedule_daily_emails(self, user_time: str = "09:00"):
-        """Schedule daily email for a specific time"""
-        schedule.every().day.at(user_time).do(self.send_daily_signal_changes)
-    
-    def send_daily_signal_changes(self) -> bool:
+    def _send_daily_trading_update(self, user_id: str) -> bool:
         """Send daily trading signal changes to subscribed users"""
-        try:
-            subscribed_users = self.get_subscribed_users()
-            
-            if not subscribed_users:
-                logger.info("No users subscribed to daily emails")
-                return True
-                
-            # Get daily signal changes
-            signal_changes = self._get_daily_signal_changes()
-            
-            if not signal_changes:
-                logger.info("No signal changes for today")
-                return True
-                
-            success_count = 0
-            for user in subscribed_users:
-                user_email = user.get('alternative_email') or user.get('email')
-                
-                if not user_email or not self._can_send_daily_email(user_email):
-                    continue
-                    
-                subject = f"Daily Trading Updates - {datetime.now().strftime('%Y-%m-%d')}"
-                
-                html_content = self._create_daily_update_email_template(signal_changes)
-                text_content = self._create_daily_update_text_template(signal_changes)
-                
-                if self.send_email(user_email, subject, text_content, html_content):
-                    success_count += 1
-                    
-            logger.info(f"✅ Daily updates sent to {success_count}/{len(subscribed_users)} users")
-            return success_count > 0
-            
-        except Exception as e:
-            logger.error(f"Error sending daily signal changes: {e}")
-            return False
-    
-    # ========================================
-    # NOTIFICATION CASE 4: Deal Status Changes
-    # ========================================
-    
-    def send_deal_status_notification(self, user_id: str, deal_data: Dict[str, Any], action: str) -> bool:
-        """Send deal status change notification (close/delete)"""
-        try:
-            # Check if user has email notifications enabled
-            if not self._user_has_email_notifications(user_id):
-                logger.info(f"User {user_id} has email notifications disabled")
-                return True
-                
-            user_email = self.get_user_email_preference(user_id)
-            
-            if not user_email:
-                logger.warning(f"No email found for user: {user_id}")
-                return False
-                
-            subject_map = {
-                'closed': f"Deal Closed: {deal_data.get('symbol', 'Unknown')}",
-                'deleted': f"Deal Deleted: {deal_data.get('symbol', 'Unknown')}"
-            }
-            
-            subject = subject_map.get(action, "Deal Status Update")
-            
-            html_content = self._create_deal_email_template(deal_data, action)
-            text_content = self._create_deal_text_template(deal_data, action)
-            
-            return self.send_email(user_email, subject, text_content, html_content)
-            
-        except Exception as e:
-            logger.error(f"Error sending deal status notification: {e}")
-            return False
-    
-    # ========================================
-    # HELPER METHODS
-    # ========================================
-    
-    def _user_has_email_notifications(self, user_id: str) -> bool:
-        """Check if user has email notifications enabled"""
         try:
             from config.database_config import execute_db_query
             
+            # Check if user has subscription enabled
+            user_query = """
+            SELECT email, alternative_email, subscription 
+            FROM users WHERE username = %s AND subscription = true
+            """
+            user_result = execute_db_query(user_query, (user_id,))
+            
+            if not user_result:
+                return False
+                
+            user_data = user_result[0]
+            user_email = user_data.get('alternative_email') or user_data.get('email')
+            
+            if not user_email:
+                return False
+                
+            # Check if daily email already sent
+            if not self._can_send_daily_email(user_email):
+                logger.info(f"Daily email already sent to {user_email} today")
+                return True
+                
+            # Get today's signal changes
+            today = datetime.now().date()
+            signal_query = """
+            SELECT symbol, action, entry_price, target_price, created_at
+            FROM admin_trade_signals 
+            WHERE DATE(created_at) = %s
+            ORDER BY created_at DESC
+            """
+            signal_changes = execute_db_query(signal_query, (today,))
+            
+            if not signal_changes:
+                logger.info(f"No signal changes today for {user_email}")
+                return True
+                
+            subject = f"📈 Daily Trading Update - {today.strftime('%Y-%m-%d')}"
+            
+            # Create email content
+            html_content = self._create_daily_update_html_template(signal_changes)
+            text_content = self._create_daily_update_text_template(signal_changes)
+            
+            success = self.send_email(user_email, subject, text_content, html_content)
+            if success:
+                logger.info(f"✅ Daily trading update sent to {user_email}")
+            return success
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to send daily trading update: {e}")
+            return False
+    
+    # Case 4: Deal Status Email Notification (Opt-in)
+    def send_deal_status_notification(self, user_id: str, deal_data: Dict[str, Any], action: str) -> bool:
+        """Send deal status notification (close/delete) if user has opted in"""
+        try:
+            from config.database_config import execute_db_query
+            
+            # Check if user has email notifications enabled
             query = """
-            SELECT email_notification FROM external_users WHERE username = %s
+            SELECT email, alternative_email, email_notification 
+            FROM external_users 
+            WHERE username = %s AND email_notification = true
             """
             result = execute_db_query(query, (user_id,))
             
-            if result:
-                return bool(result[0].get('email_notification', False))
-            return False
+            if not result:
+                logger.info(f"User {user_id} has not opted in for email notifications")
+                return True
+                
+            user_data = result[0]
+            user_email = user_data.get('alternative_email') or user_data.get('email')
+            
+            if not user_email:
+                logger.error(f"No email found for user: {user_id}")
+                return False
+                
+            action_text = "Closed" if action == 'closed' else "Deleted"
+            subject = f"📊 Deal {action_text}: {deal_data.get('symbol', 'N/A')}"
+            
+            # Create email content
+            html_content = self._create_deal_html_template(deal_data, action)
+            text_content = self._create_deal_text_template(deal_data, action)
+            
+            success = self.send_email(user_email, subject, text_content, html_content)
+            if success:
+                logger.info(f"✅ Deal {action} notification sent to {user_email}")
+            return success
             
         except Exception as e:
-            logger.error(f"Error checking email notification preference: {e}")
+            logger.error(f"❌ Failed to send deal status notification: {e}")
             return False
     
-    def _get_daily_signal_changes(self) -> List[Dict[str, Any]]:
-        """Get daily signal changes from database"""
-        try:
-            from config.database_config import execute_db_query
-            
-            # Get signals that changed in the last 24 hours
-            query = """
-            SELECT symbol, action, entry_price, target_price, created_at, updated_at
-            FROM admin_trade_signals
-            WHERE DATE(created_at) = CURRENT_DATE 
-               OR DATE(updated_at) = CURRENT_DATE
-            ORDER BY created_at DESC
-            """
-            return execute_db_query(query) or []
-            
-        except Exception as e:
-            logger.error(f"Error fetching daily signal changes: {e}")
-            return []
-    
-    # ========================================
-    # EMAIL TEMPLATES
-    # ========================================
-    
-    def _create_signal_email_template(self, signal_data: Dict[str, Any]) -> str:
-        """Create HTML template for trading signal notifications"""
+    # Email Template Methods
+    def _create_trade_signal_html_template(self, signal_data: Dict[str, Any]) -> str:
+        """Create HTML template for trade signal notifications"""
         template_str = """
         <html>
         <body style="font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5;">
             <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                <h2 style="color: #2c3e50; margin-bottom: 20px;">🚀 New Trading Signal Alert</h2>
+                <h2 style="color: #2c3e50; margin-bottom: 20px;">🚨 New Trading Signal</h2>
                 
-                <div style="background-color: #3498db; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-                    <h3 style="margin: 0; font-size: 24px;">{{ symbol }}</h3>
-                    <p style="margin: 5px 0 0 0;">{{ action|upper }}</p>
+                <div style="background-color: #3498db; color: white; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
+                    <h3 style="margin: 0; font-size: 28px;">{{ symbol }}</h3>
+                    <p style="margin: 5px 0 0 0; font-size: 18px;">{{ action|upper }}</p>
                 </div>
                 
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                    <tr>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Entry Price:</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee;">₹{{ entry_price }}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Target Price:</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee;">₹{{ target_price }}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Stop Loss:</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee;">₹{{ stop_loss }}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Date:</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ date }}</td>
-                    </tr>
-                </table>
-                
-                {% if notes %}
-                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-                    <h4 style="margin: 0 0 10px 0; color: #2c3e50;">Notes:</h4>
-                    <p style="margin: 0; color: #555;">{{ notes }}</p>
+                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
+                    <h3 style="color: #495057; margin-top: 0;">Signal Details</h3>
+                    <p><strong>Entry Price:</strong> ₹{{ entry_price }}</p>
+                    {% if target_price %}<p><strong>Target Price:</strong> ₹{{ target_price }}</p>{% endif %}
+                    {% if stop_loss %}<p><strong>Stop Loss:</strong> ₹{{ stop_loss }}</p>{% endif %}
+                    <p><strong>Signal Time:</strong> {{ created_at }}</p>
                 </div>
-                {% endif %}
                 
-                <p style="color: #7f8c8d; font-size: 12px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px;">
-                    This is an automated notification from Kotak Neo Trading Platform. Please do not reply to this email.
+                <p style="color: #6c757d; font-size: 14px; margin-top: 30px; border-top: 1px solid #dee2e6; padding-top: 20px;">
+                    This is an automated notification from Kotak Neo Trading Platform.<br>
+                    You are receiving this because you are subscribed to trading signal alerts.
                 </p>
             </div>
         </body>
@@ -389,26 +330,32 @@ class EmailService:
         template = Template(template_str)
         return template.render(**signal_data)
     
-    def _create_signal_text_template(self, signal_data: Dict[str, Any]) -> str:
-        """Create text template for trading signal notifications"""
-        return f"""
-New Trading Signal Alert
+    def _create_trade_signal_text_template(self, signal_data: Dict[str, Any]) -> str:
+        """Create text template for trade signal notifications"""
+        text = f"""
+🚨 NEW TRADING SIGNAL
 
 Symbol: {signal_data.get('symbol', 'N/A')}
 Action: {signal_data.get('action', 'N/A').upper()}
 Entry Price: ₹{signal_data.get('entry_price', 'N/A')}
-Target Price: ₹{signal_data.get('target_price', 'N/A')}
-Stop Loss: ₹{signal_data.get('stop_loss', 'N/A')}
-Date: {signal_data.get('date', 'N/A')}
-
-{f"Notes: {signal_data.get('notes', '')}" if signal_data.get('notes') else ""}
-
+"""
+        
+        if signal_data.get('target_price'):
+            text += f"Target Price: ₹{signal_data.get('target_price')}\n"
+            
+        if signal_data.get('stop_loss'):
+            text += f"Stop Loss: ₹{signal_data.get('stop_loss')}\n"
+            
+        text += f"Signal Time: {signal_data.get('created_at', 'N/A')}\n"
+        text += """
 ---
 Kotak Neo Trading Platform
-This is an automated notification. Please do not reply.
+This is an automated trading signal notification.
         """.strip()
+        
+        return text
     
-    def _create_deal_email_template(self, deal_data: Dict[str, Any], action: str) -> str:
+    def _create_deal_html_template(self, deal_data: Dict[str, Any], action: str) -> str:
         """Create HTML template for deal notifications"""
         action_colors = {
             'created': '#27ae60',
@@ -422,7 +369,7 @@ This is an automated notification. Please do not reply.
         <html>
         <body style="font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5;">
             <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                <h2 style="color: #2c3e50; margin-bottom: 20px;">📊 Deal {action.title()}</h2>
+                <h2 style="color: #2c3e50; margin-bottom: 20px;">📊 Deal {{{{ action.title() }}}}</h2>
                 
                 <div style="background-color: {color}; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
                     <h3 style="margin: 0; font-size: 24px;">{{{{ symbol }}}}</h3>
@@ -438,25 +385,25 @@ This is an automated notification. Please do not reply.
                         <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Entry Price:</td>
                         <td style="padding: 10px; border-bottom: 1px solid #eee;">₹{{{{ entry_price }}}}</td>
                     </tr>
-                    {{{% if target_price %}}}}
+                    {{% if target_price %}}
                     <tr>
                         <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Target Price:</td>
                         <td style="padding: 10px; border-bottom: 1px solid #eee;">₹{{{{ target_price }}}}</td>
                     </tr>
-                    {{{% endif %}}}}
-                    {{{% if exit_price %}}}}
+                    {{% endif %}}
+                    {{% if exit_price %}}
                     <tr>
                         <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Exit Price:</td>
                         <td style="padding: 10px; border-bottom: 1px solid #eee;">₹{{{{ exit_price }}}}</td>
                     </tr>
-                    {{{% endif %}}}}
+                    {{% endif %}}
                     <tr>
                         <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Date:</td>
                         <td style="padding: 10px; border-bottom: 1px solid #eee;">{{{{ date }}}}</td>
                     </tr>
                 </table>
                 
-                {{{% if profit_loss %}}}}
+                {{% if profit_loss is not none %}}
                 <div style="background-color: {{{{ '#d5edda' if profit_loss >= 0 else '#f8d7da' }}}}; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
                     <h4 style="margin: 0 0 10px 0; color: {{{{ '#155724' if profit_loss >= 0 else '#721c24' }}}};">
                         {{{{ 'Profit' if profit_loss >= 0 else 'Loss' }}}}:
@@ -465,10 +412,11 @@ This is an automated notification. Please do not reply.
                         ₹{{{{ profit_loss }}}}
                     </p>
                 </div>
-                {{{% endif %}}}}
+                {{% endif %}}
                 
-                <p style="color: #7f8c8d; font-size: 12px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px;">
-                    This is an automated notification from Kotak Neo Trading Platform. Please do not reply to this email.
+                <p style="color: #6c757d; font-size: 14px; margin-top: 30px; border-top: 1px solid #dee2e6; padding-top: 20px;">
+                    This is an automated notification from your trading platform.<br>
+                    Please do not reply to this email.
                 </p>
             </div>
         </body>
@@ -476,7 +424,7 @@ This is an automated notification. Please do not reply.
         """
         
         template = Template(template_str)
-        return template.render(**deal_data)
+        return template.render(action=action, **deal_data)
     
     def _create_deal_text_template(self, deal_data: Dict[str, Any], action: str) -> str:
         """Create text template for deal notifications"""
@@ -497,8 +445,8 @@ Entry Price: ₹{deal_data.get('entry_price', 'N/A')}
             
         text += f"Date: {deal_data.get('date', 'N/A')}\n"
         
-        if deal_data.get('profit_loss') is not None:
-            profit_loss = deal_data.get('profit_loss')
+        profit_loss = deal_data.get('profit_loss')
+        if profit_loss is not None:
             text += f"\n{'Profit' if profit_loss >= 0 else 'Loss'}: ₹{profit_loss}\n"
             
         text += """
@@ -509,7 +457,7 @@ This is an automated notification. Please do not reply.
         
         return text
     
-    def _create_daily_update_email_template(self, signal_changes: List[Dict[str, Any]]) -> str:
+    def _create_daily_update_html_template(self, signal_changes: List[Dict[str, Any]]) -> str:
         """Create HTML template for daily update notifications"""
         template_str = """
         <html>
@@ -572,34 +520,6 @@ You are receiving this email because you have subscribed to daily trading update
         
         return text
 
-
-# Global email service instance
-email_service = EmailService()
-                
-                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
-                    <h3 style="color: #495057; margin-top: 0;">Deal Details</h3>
-                    <p><strong>Symbol:</strong> {deal_data.get('symbol', 'N/A')}</p>
-                    <p><strong>Quantity:</strong> {deal_data.get('qty', 'N/A')}</p>
-                    <p><strong>Entry Price:</strong> ₹{deal_data.get('ep', 'N/A')}</p>
-                    <p><strong>Target Price:</strong> ₹{deal_data.get('tp', 'N/A')}</p>
-                    <p><strong>Target %:</strong> {deal_data.get('tpr', 'N/A')}%</p>
-                    <p><strong>Status:</strong> {deal_data.get('status', 'N/A')}</p>
-                    
-                    {f'<p><strong>Exit Price:</strong> ₹{deal_data.get("exp", "N/A")}</p>' if action == 'closed' else ''}
-                    {f'<p><strong>Profit:</strong> ₹{deal_data.get("pr", "N/A")}</p>' if action == 'closed' else ''}
-                    {f'<p><strong>Profit %:</strong> {deal_data.get("pp", "N/A")}%</p>' if action == 'closed' else ''}
-                </div>
-                
-                <p style="color: #6c757d; font-size: 14px; margin-top: 30px; border-top: 1px solid #dee2e6; padding-top: 20px;">
-                    This is an automated notification from your trading platform.<br>
-                    Please do not reply to this email.
-                </p>
-            </div>
-        </body>
-        </html>
-        """
-        
-        return self.send_email(to_email, subject, html_content=html_content)
 
 # Global email service instance
 email_service = EmailService()

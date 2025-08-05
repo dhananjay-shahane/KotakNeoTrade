@@ -45,3 +45,33 @@ The platform is built with a Flask backend, utilizing SQLAlchemy for ORM and Pos
 - **SweetAlert2**: For interactive and visually appealing alert/confirmation dialogs.
 - **python-dotenv**: For managing environment variables securely.
 - **Gmail SMTP**: For sending email confirmations and notifications.
+
+## Email Notification System
+A comprehensive email notification system has been implemented with 4 specific notification cases:
+
+**Case 1: Trade Signal Notifications to External Users**
+- Triggers when admin creates new trading signals
+- Sends email alerts to external users about new trading opportunities
+- Integrated in `api/admin.py` - `send_signal` endpoint
+
+**Case 2: Deal Creation Notifications** 
+- Triggers when users create new deals from trading signals
+- Sends confirmation emails with deal details (symbol, quantity, entry price, investment amount)
+- Integrated in `api/deals_api.py` - `create_deal_from_signal` endpoint
+
+**Case 3: Daily Trading Signal Change Emails (Subscription-based)**
+- Scheduled daily emails summarizing trading signal changes from last 24 hours
+- Users can subscribe/unsubscribe via email settings
+- Implemented via `Scripts/daily_email_scheduler.py` with background scheduler
+
+**Case 4: Deal Status Notifications**
+- Triggers when users close deals
+- Sends emails with closure details including P&L calculations
+- Integrated in `api/deals_api.py` - `close_deal` endpoint
+
+**Technical Implementation:**
+- SMTP Configuration: Gmail SMTP with credentials from environment variables
+- Email Templates: Professional HTML templates for each notification type
+- Database Integration: Uses external PostgreSQL database for user email settings
+- User Preferences: Users can enable/disable each notification type individually
+- Error Handling: Graceful failure - email errors don't break application functionality

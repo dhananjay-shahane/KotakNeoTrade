@@ -74,6 +74,25 @@ def send_trade_signal():
         db.session.add(notification)
         db.session.commit()
         
+        # Case 1: Send trade signal notification to external users
+        try:
+            from api.email_functions import trigger_trade_signal_email
+            signal_data = {
+                'id': signal.id,
+                'symbol': data['symbol'].upper(),
+                'action': data['signal_type'].upper(),
+                'entry_price': float(data['entry_price']),
+                'target_price': float(data['target_price']) if data.get('target_price') else None,
+                'stop_loss': float(data['stop_loss']) if data.get('stop_loss') else None,
+                'quantity': int(data['quantity']),
+                'message': data.get('signal_description', ''),
+                'created_at': signal.created_at.isoformat()
+            }
+            trigger_trade_signal_email(signal_data)
+            logging.info(f"✅ Trade signal email sent for: {data['symbol']}")
+        except Exception as e:
+            logging.error(f"Failed to send trade signal email: {e}")
+        
         logging.info(f"Trade signal sent from user {admin_user.id} to user {data['target_user_id']}: {data['signal_title']}")
         
         return jsonify({

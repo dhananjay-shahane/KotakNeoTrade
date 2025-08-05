@@ -1018,6 +1018,25 @@ try:
 except Exception as e:
     print(f"Auto-sync setup optional: {e}")
 
+# Initialize daily email scheduler in background
+try:
+    import threading
+    from Scripts.daily_email_scheduler import DailyEmailScheduler
+    
+    def start_email_scheduler():
+        """Start email scheduler in background thread"""
+        scheduler = DailyEmailScheduler()
+        scheduler.setup_scheduler()
+        # Just setup, don't run continuously in web app
+        print("✅ Daily email scheduler configured")
+    
+    # Start scheduler in background thread
+    scheduler_thread = threading.Thread(target=start_email_scheduler, daemon=True)
+    scheduler_thread.start()
+    print("✓ Email scheduler initialized in background")
+except Exception as e:
+    print(f"Email scheduler setup optional: {e}")
+
 # Register default deals API blueprint
 try:
     from api.default_deals_api import default_deals_api
@@ -1041,6 +1060,14 @@ try:
     print("✓ Registered notifications_api blueprint")
 except Exception as e:
     print(f"✗ Error registering notifications_api: {e}")
+
+# Register email functions API blueprint
+try:
+    from api.email_functions import email_functions_bp
+    app.register_blueprint(email_functions_bp)
+    print("✓ Registered email_functions_api blueprint")
+except Exception as e:
+    print(f"✗ Error registering email_functions_api: {e}")
 
 # Register email settings API routes
 @app.route('/api/email-settings', methods=['GET'])
