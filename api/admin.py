@@ -74,22 +74,54 @@ def send_trade_signal():
         db.session.add(notification)
         db.session.commit()
         
-        # Case 1: Send trade signal notification to external users
+        # Case 1: Send trade signal notification to external users (ONLY for NEW signals)
         try:
             from api.email_functions import trigger_trade_signal_email
-            signal_data = {
-                'id': signal.id,
-                'symbol': data['symbol'].upper(),
-                'action': data['signal_type'].upper(),
-                'entry_price': float(data['entry_price']),
-                'target_price': float(data['target_price']) if data.get('target_price') else None,
-                'stop_loss': float(data['stop_loss']) if data.get('stop_loss') else None,
-                'quantity': int(data['quantity']),
-                'message': data.get('signal_description', ''),
-                'created_at': signal.created_at.isoformat()
-            }
-            trigger_trade_signal_email(signal_data)
-            logging.info(f"✅ Trade signal email sent for: {data['symbol']}")
+            from config.database_config import get_db_dict_connection
+            
+            # Check if this is a truly NEW signal by checking if it was just created
+            # Only send email for signals created in the last 30 seconds to avoid duplicate emails
+            from datetime import datetime, timedelta
+            signal_age = datetime.utcnow() - signal.created_at
+            
+            if signal_age.total_seconds() <= 30:  # Only for brand new signals
+                signal_data = {
+                    'id': signal.id,
+                    'symbol': data['symbol'].upper(),
+                    'action': data['signal_type'].upper(),
+                    'entry_price': float(data['entry_price']),
+                    'target_price': float(data['target_price']) if data.get('target_price') else None,
+                    'stop_loss': float(data['stop_loss']) if data.get('stop_loss') else None,
+                    'quantity': int(data['quantity']),
+                    'message': data.get('signal_description', ''),
+                    'created_at': signal.created_at.isoformat()
+                }
+                
+                # Get users who have enabled trade signal notifications
+                conn = get_db_dict_connection()
+                if conn:
+                    with conn.cursor() as cursor:
+                        cursor.execute("""
+                            SELECT DISTINCT u.email, u.username 
+                            FROM external_users u
+                            JOIN user_email_settings ues ON u.username = ues.username
+                            WHERE ues.send_signals_in_mail = TRUE 
+                            AND u.email IS NOT NULL 
+                            AND u.email != ''
+                        """)
+                        
+                        eligible_users = cursor.fetchall()
+                        
+                        if eligible_users:
+                            trigger_trade_signal_email(signal_data)
+                            logging.info(f"✅ NEW trade signal email sent to {len(eligible_users)} users for: {data['symbol']}")
+                        else:
+                            logging.info(f"ℹ️ No users subscribed to trade signal emails for: {data['symbol']}")
+                    
+                    conn.close()
+            else:
+                logging.info(f"ℹ️ Skipping email for existing signal: {data['symbol']} (age: {signal_age.total_seconds()}s)")
+                
         except Exception as e:
             logging.error(f"Failed to send trade signal email: {e}")
         

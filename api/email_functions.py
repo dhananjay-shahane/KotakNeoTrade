@@ -227,27 +227,147 @@ def update_subscription():
 def update_notification_settings():
     """Update user's email notification settings"""
     try:
-        from config.database_config import execute_db_query
+        from config.database_config import get_db_dict_connection
         
         data = request.get_json()
         user_id = session.get('user_id')
-        email_notification = data.get('email_notification', False)
         
-        # Update email notification setting in external_users table
-        query = """
-        UPDATE external_users 
-        SET email_notification = %s 
-        WHERE username = %s
-        """
-        execute_db_query(query, (email_notification, user_id))
+        if not user_id:
+            return jsonify({
+                'status': 'error',
+                'message': 'User not authenticated'
+            }), 401
         
-        return jsonify({
-            'status': 'success',
-            'message': f'Email notifications {"enabled" if email_notification else "disabled"} successfully'
-        })
+        # Update email notification settings in user_email_settings table
+        conn = get_db_dict_connection()
+        if not conn:
+            return jsonify({
+                'status': 'error',
+                'message': 'Database connection failed'
+            }), 500
+        
+        try:
+            with conn.cursor() as cursor:
+                # First ensure the user has a record in user_email_settings
+                cursor.execute("""
+                    INSERT INTO user_email_settings (username, send_signals_in_mail, send_deals_in_mail, subscription, send_time)
+                    VALUES (%s, FALSE, FALSE, FALSE, '09:00')
+                    ON CONFLICT (username) DO NOTHING
+                """, (user_id,))
+                
+                # Update settings based on what was provided
+                update_fields = []
+                update_values = []
+                
+                if 'send_signals_in_mail' in data:
+                    update_fields.append('send_signals_in_mail = %s')
+                    update_values.append(data['send_signals_in_mail'])
+                
+                if 'send_deals_in_mail' in data:
+                    update_fields.append('send_deals_in_mail = %s')
+                    update_values.append(data['send_deals_in_mail'])
+                
+                if 'subscription' in data:
+                    update_fields.append('subscription = %s')
+                    update_values.append(data['subscription'])
+                
+                if 'send_time' in data:
+                    update_fields.append('send_time = %s')
+                    update_values.append(data['send_time'])
+                
+                if 'alternative_email' in data:
+                    update_fields.append('alternative_email = %s')
+                    update_values.append(data['alternative_email'])
+                
+                if update_fields:
+                    update_values.append(user_id)
+                    update_query = f"UPDATE user_email_settings SET {', '.join(update_fields)} WHERE username = %s"
+                    cursor.execute(update_query, update_values)
+                    
+                conn.commit()
+                
+                return jsonify({
+                    'status': 'success',
+                    'message': 'Email notification settings updated successfully'
+                })
+        finally:
+            conn.close()
         
     except Exception as e:
         logger.error(f"Failed to update notification settings: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@email_functions_bp.route('/api/email/get-settings', methods=['GET'])
+@login_required
+def get_email_settings():
+    """Get user's current email settings"""
+    try:
+        from config.database_config import get_db_dict_connection
+        
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({
+                'status': 'error',
+                'message': 'User not authenticated'
+            }), 401
+        
+        # Get current settings from user_email_settings table
+        conn = get_db_dict_connection()
+        if not conn:
+            return jsonify({
+                'status': 'error',
+                'message': 'Database connection failed'
+            }), 500
+        
+        try:
+            with conn.cursor() as cursor:
+                # First ensure the user has a record in user_email_settings
+                cursor.execute("""
+                    INSERT INTO user_email_settings (username, send_signals_in_mail, send_deals_in_mail, subscription, send_time)
+                    VALUES (%s, FALSE, FALSE, FALSE, '09:00')
+                    ON CONFLICT (username) DO NOTHING
+                """, (user_id,))
+                
+                # Get current settings
+                cursor.execute("""
+                    SELECT send_signals_in_mail, send_deals_in_mail, subscription, send_time, alternative_email
+                    FROM user_email_settings 
+                    WHERE username = %s
+                """, (user_id,))
+                
+                result = cursor.fetchone()
+                
+                if result:
+                    return jsonify({
+                        'status': 'success',
+                        'settings': {
+                            'send_signals_in_mail': result[0] if result[0] is not None else False,
+                            'send_deals_in_mail': result[1] if result[1] is not None else False,
+                            'subscription': result[2] if result[2] is not None else False,
+                            'send_time': result[3] if result[3] else '09:00',
+                            'alternative_email': result[4] if result[4] else ''
+                        }
+                    })
+                else:
+                    # Return default settings if user not found
+                    return jsonify({
+                        'status': 'success',
+                        'settings': {
+                            'send_signals_in_mail': False,
+                            'send_deals_in_mail': False,
+                            'subscription': False,
+                            'send_time': '09:00',
+                            'alternative_email': ''
+                        }
+                    })
+        finally:
+            conn.close()
+        
+    except Exception as e:
+        logger.error(f"Failed to get email settings: {e}")
         return jsonify({
             'status': 'error',
             'message': str(e)
