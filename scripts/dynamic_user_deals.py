@@ -287,6 +287,59 @@ class DynamicUserDealsService:
                 conn.close()
             return []
 
+    def get_deal_by_id(self, username, deal_id):
+        """
+        Get a specific deal by ID from user-specific table
+        """
+        try:
+            conn = self.get_connection()
+            if not conn:
+                return None
+
+            cursor = conn.cursor()
+            table_name = f"{username}_deals"
+
+            # Check if table exists
+            check_table_query = """
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_name = %s
+                );
+            """
+            cursor.execute(check_table_query, (table_name, ))
+            table_exists = cursor.fetchone()['exists']
+
+            if not table_exists:
+                logger.warning(f"Table {table_name} does not exist")
+                cursor.close()
+                conn.close()
+                return None
+
+            # Get specific deal by ID
+            select_query = sql.SQL("""
+                SELECT * FROM {} 
+                WHERE id = %s;
+            """).format(sql.Identifier(table_name))
+
+            cursor.execute(select_query, (deal_id,))
+            deal = cursor.fetchone()
+
+            cursor.close()
+            conn.close()
+
+            if deal:
+                logger.info(f"✅ Retrieved deal {deal_id} from {table_name}")
+                return dict(deal)
+            else:
+                logger.warning(f"Deal {deal_id} not found in {table_name}")
+                return None
+
+        except Exception as e:
+            logger.error(f"❌ Failed to get deal {deal_id} from {username} table: {e}")
+            if 'conn' in locals() and conn:
+                conn.close()
+            return None
+
     def update_deal(self, username, deal_id, updates):
         """
         Update a deal in user-specific table

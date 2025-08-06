@@ -1216,6 +1216,30 @@ def close_deal():
                 'error': 'Deal not found or update failed'
             }), 404
 
+        # **CASE 4: Deal Status Email Notification (Deal Closure)**
+        # Trigger email notification for deal closure
+        try:
+            from api.email_functions import trigger_deal_status_email
+            
+            # Prepare deal data for email
+            email_deal_data = {
+                'deal_id': deal_id,
+                'symbol': symbol,
+                'exit_price': exit_price,
+                'exit_date': exit_date,
+                'username': username,
+                'status': 'CLOSED'
+            }
+            
+            email_sent = trigger_deal_status_email(username, email_deal_data, 'CLOSED')
+            if email_sent:
+                logger.info(f"✓ Deal closure email sent to user: {username}")
+            else:
+                logger.warning(f"⚠️ Failed to send deal closure email to user: {username}")
+                
+        except Exception as email_error:
+            logger.error(f"❌ Error sending deal closure email: {email_error}")
+
         return jsonify({
             'success': True,
             'message':
@@ -1375,6 +1399,31 @@ def create_deal_from_signal():
             logger.info(
                 f"✓ Created deal from signal: {symbol} - Deal ID: {deal_id} for user: {username}"
             )
+            
+            # **CASE 2: Deal Creation Email Notification**
+            # Trigger email notification for deal creation
+            try:
+                from api.email_functions import trigger_deal_creation_email
+                
+                # Prepare deal data for email
+                email_deal_data = {
+                    'deal_id': deal_id,
+                    'symbol': symbol,
+                    'entry_price': ep,
+                    'quantity': qty,
+                    'invested_amount': invested_amount,
+                    'username': username
+                }
+                
+                email_sent = trigger_deal_creation_email(username, email_deal_data)
+                if email_sent:
+                    logger.info(f"✓ Deal creation email sent to user: {username}")
+                else:
+                    logger.warning(f"⚠️ Failed to send deal creation email to user: {username}")
+                    
+            except Exception as email_error:
+                logger.error(f"❌ Error sending deal creation email: {email_error}")
+            
             return jsonify({
                 'success': True,
                 'message': f'Deal created successfully for {symbol}',
