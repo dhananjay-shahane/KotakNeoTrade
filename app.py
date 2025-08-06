@@ -486,6 +486,32 @@ def deals():
     return render_template('deals.html', kotak_account=kotak_account_data)
 
 
+@app.route('/market-watch')
+def market_watch():
+    """Market Watch page - authentication required"""
+    # Check if user is authenticated - no guest access allowed
+    if not (session.get('authenticated') or session.get('kotak_logged_in')):
+        return redirect(url_for('auth_routes.trading_account_login'))
+
+    # Prepare account data for sidebar if logged in
+    kotak_account_data = None
+    if session.get('kotak_logged_in') or session.get('authenticated'):
+        kotak_account_data = {
+            'ucc':
+            session.get('ucc', session.get('username', '-')),
+            'mobile':
+            session.get('mobile_number', '-'),
+            'greeting_name':
+            session.get('greeting_name', session.get('username', 'User')),
+            'last_login':
+            'Just Now',
+            'status':
+            'Online'
+        }
+
+    return render_template('market_watch.html', kotak_account=kotak_account_data)
+
+
 @app.route('/positions')
 def show_positions():
     # Check if user is authenticated with any login method
