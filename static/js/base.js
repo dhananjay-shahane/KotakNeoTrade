@@ -35,24 +35,72 @@ function showSettingsModal() {
 window.showSettingsModal = showSettingsModal;
 
 function loadEmailSettings() {
-    fetch('/api/email-settings')
+    // Load email notification settings from new dedicated API
+    fetch('/api/check-email-notification-status', {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: {
+            'Accept': 'application/json'
+        }
+    })
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
-                const settings = data.settings;
-                document.getElementById('sendDealsInMail').checked = settings.send_deals_in_mail;
-                document.getElementById('sendDailyChangeData').checked = settings.send_daily_change_data;
-                document.getElementById('dailyEmailTime').value = settings.daily_email_time;
-                document.getElementById('userEmail').value = settings.user_email;
+            if (data.success && data.authenticated) {
+                const status = data.status;
                 
-                // Show/hide time container based on daily data setting
-                toggleDailyEmailTimeContainer(settings.send_daily_change_data);
+                // Update email notification toggle switch in settings modal
+                const emailNotificationToggle = document.getElementById('sendDealsInMail');
+                if (emailNotificationToggle) {
+                    emailNotificationToggle.checked = Boolean(status.email_notification);
+                    console.log('📧 Email notification toggle loaded:', status.email_notification);
+                }
+                
+                // Update email field
+                const userEmailField = document.getElementById('userEmail');
+                if (userEmailField && status.user_email) {
+                    userEmailField.value = status.user_email;
+                }
+                
+                // Handle other settings if they exist
+                const dailyChangeToggle = document.getElementById('sendDailyChangeData');
+                if (dailyChangeToggle) {
+                    dailyChangeToggle.checked = status.send_daily_change_data || false;
+                    toggleDailyEmailTimeContainer(status.send_daily_change_data || false);
+                }
+                
+                const dailyTimeField = document.getElementById('dailyEmailTime');
+                if (dailyTimeField && status.daily_email_time) {
+                    dailyTimeField.value = status.daily_email_time;
+                }
+            } else {
+                if (!data.authenticated) {
+                    console.warn('🔒 User not authenticated for email settings');
+                } else {
+                    console.error('❌ Failed to load email settings:', data.error);
+                }
+                // Set default values for unauthenticated users
+                setDefaultEmailSettingsInModal();
             }
         })
         .catch(error => {
-            console.error('Error loading email settings:', error);
-            showToaster('Error', 'Failed to load email settings', 'error');
+            console.error('❌ Error loading email settings:', error);
+            setDefaultEmailSettingsInModal();
         });
+}
+
+function setDefaultEmailSettingsInModal() {
+    // Set safe defaults in the settings modal
+    const emailNotificationToggle = document.getElementById('sendDealsInMail');
+    if (emailNotificationToggle) {
+        emailNotificationToggle.checked = false;
+        console.log('📧 Set default email notification to: false');
+    }
+    
+    const dailyChangeToggle = document.getElementById('sendDailyChangeData');
+    if (dailyChangeToggle) {
+        dailyChangeToggle.checked = false;
+        toggleDailyEmailTimeContainer(false);
+    }
 }
 
 function toggleDailyEmailTimeContainer(show) {
@@ -71,8 +119,48 @@ function applySettings() {
 }
 
 function saveEmailSettings() {
+    // Save email notification setting using new dedicated API
+    const emailNotificationToggle = document.getElementById('sendDealsInMail');
+    
+    if (emailNotificationToggle) {
+        const isEnabled = Boolean(emailNotificationToggle.checked);
+        
+        console.log('💾 Saving email notification status:', isEnabled);
+        
+        fetch('/api/update-email-notification-status', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                email_notification: isEnabled
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('✅ Email notification status saved:', data.status.email_notification);
+                showToaster('Success', 'Email notification setting saved', 'success');
+            } else {
+                if (!data.authenticated) {
+                    console.warn('🔒 Authentication required for saving email settings');
+                    showToaster('Warning', 'Please login to save email settings', 'warning');
+                } else {
+                    console.error('❌ Failed to save email settings:', data.error);
+                    showToaster('Error', 'Failed to save email settings', 'error');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error saving email settings:', error);
+            showToaster('Error', 'Error saving email settings', 'error');
+        });
+    }
+    
+    // Handle other settings if they exist
     const settings = {
-        send_deals_in_mail: document.getElementById('sendDealsInMail').checked,
+        send_deals_in_mail: document.getElementById('sendDealsInMail') ? document.getElementById('sendDealsInMail').checked : false,
         send_daily_change_data: document.getElementById('sendDailyChangeData').checked,
         daily_email_time: document.getElementById('dailyEmailTime').value,
         user_email: document.getElementById('userEmail').value.trim()
@@ -422,7 +510,52 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Initialize notification system
     initializeNotifications();
+    
+    // Add email notification toggle event listener
+    setupEmailNotificationToggle();
 });
+
+// Setup email notification toggle for immediate saving
+function setupEmailNotificationToggle() {
+    const emailNotificationToggle = document.getElementById('sendDealsInMail');
+    if (emailNotificationToggle) {
+        emailNotificationToggle.addEventListener('change', function() {
+            const isEnabled = Boolean(this.checked);
+            console.log('📧 Email notification toggle changed to:', isEnabled);
+            
+            // Save immediately when user toggles the switch
+            fetch('/api/update-email-notification-status', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email_notification: isEnabled
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('✅ Email notification status auto-saved:', data.status.email_notification);
+                    showToaster('Success', 'Email notification setting saved', 'success', 2000);
+                } else {
+                    console.error('❌ Failed to auto-save email notification status:', data.error);
+                    showToaster('Error', 'Failed to save setting', 'error', 3000);
+                    // Revert toggle state if save failed
+                    this.checked = !isEnabled;
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error auto-saving email notification:', error);
+                showToaster('Error', 'Connection error', 'error', 3000);
+                // Revert toggle state if save failed
+                this.checked = !isEnabled;
+            });
+        });
+        console.log('✅ Email notification toggle listener setup complete');
+    }
+}
 
 // Settings Modal functionality
 function showSettingsModal() {
