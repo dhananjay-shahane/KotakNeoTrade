@@ -1,6 +1,6 @@
 function MarketWatchManager() {
-    this.marketData = [];
-    this.filteredMarketData = [];
+    this.userMarketData = [];
+    this.filteredUserMarketData = [];
     this.currentPage = 1;
     this.pageSize = 20;
     this.autoRefresh = true;
@@ -10,6 +10,7 @@ function MarketWatchManager() {
     this.sortDirection = "asc";
     this.currentSortColumn = null;
     this.isLoading = false;
+    this.userIdCounter = 1;
 
     this.availableColumns = {
         symbol: {
@@ -104,12 +105,10 @@ MarketWatchManager.prototype.getDefaultColumns = function () {
 };
 
 MarketWatchManager.prototype.init = function () {
-    this.updateTableHeaders();
-    this.loadMarketWatch();
+    this.loadUserMarketWatch();
     this.startAutoRefresh();
     this.setupEventListeners();
-    this.setupColumnSettingsModal();
-    this.setupDealButtonListeners();
+    this.updateUserCounts();
 
     var autoRefreshToggle = document.getElementById("autoRefreshToggle");
     var self = this;

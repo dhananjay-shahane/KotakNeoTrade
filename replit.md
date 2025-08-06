@@ -60,6 +60,9 @@ A comprehensive email notification system has been implemented with 4 specific n
 - ✅ Fixed deal deletion functionality with proper email notifications
 - ✅ Added get_deal_by_id method to support deal deletion operations
 - ✅ Improved import error handling and code robustness
+- ✅ Added Market Watch page with dual table structure (Default + User Custom lists)
+- ✅ Implemented comprehensive Market Watch functionality with add/remove symbols
+- ✅ Created responsive table UI with live market data columns (ID, Symbol, 7D, 30D, 7D%, 30D%, CMP, %CHAN, CPL, Actions)
 
 **Case 1: Trade Signal Notifications to External Users**
 - Triggers when admin creates new trading signals
