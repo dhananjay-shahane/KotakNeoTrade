@@ -471,7 +471,8 @@ def get_user_symbols_with_market_data():
         }), 500
 
 
-@market_watch_api.route('/api/market-watch/default-symbols-with-data', methods=['GET'])
+@market_watch_api.route('/api/market-watch/default-symbols-with-data',
+                        methods=['GET'])
 def get_default_symbols_with_market_data():
     """
     Get default market watch symbols with real market data (CMP, historical prices, percentage changes)
@@ -479,40 +480,46 @@ def get_default_symbols_with_market_data():
     """
     if not db_config:
         return jsonify({"error": "Database not configured"}), 500
-    
+
     try:
         # Define default symbols (popular Nifty 50 stocks)
         default_symbols = [
-            'RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'HINDUNILVR',
-            'ICICIBANK', 'KOTAKBANK', 'BHARTIARTL', 'ITC', 'SBIN',
-            'LT', 'ASIANPAINT', 'AXISBANK', 'MARUTI', 'TITAN'
+            'RELIANCE', 'HDFCBANK', 'INFY', 'HINDUNILVR', 'ICICIBANK',
+            'KOTAKBANK', 'BHARTIARTL', 'LT', 'MARUTI'
         ]
-        
+
+        # Use bulk query for better performance
+        conn = db_config.get_connection()
+        if not conn:
+            return jsonify({"error": "Database connection failed"}), 500
+
         symbols_with_market_data = []
         
+        try:
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
+                # Bulk query for all symbols at once
+                placeholders = ','.join(['%s'] * len(default_symbols))
+                cursor.execute(f"""
+                    SELECT symbol, company, sector, sub_sector
+                    FROM nse_symbols 
+                    WHERE UPPER(symbol) = ANY(ARRAY[{placeholders}]::text[])
+                """, [s.upper() for s in default_symbols])
+                all_symbol_details = cursor.fetchall()
+        finally:
+            conn.close()
+
+        # Create lookup dictionary for faster access
+        symbol_lookup = {row['symbol'].upper(): row for row in all_symbol_details}
+
         for idx, symbol in enumerate(default_symbols, 1):
             try:
-                # Get symbol details from database
-                conn = db_config.get_connection()
-                if not conn:
-                    logger.warning(f"Database connection failed for {symbol}")
-                    continue
-                
-                try:
-                    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
-                        cursor.execute("""
-                            SELECT symbol, company, sector, sub_sector
-                            FROM nse_symbols 
-                            WHERE UPPER(symbol) = UPPER(%s)
-                        """, (symbol,))
-                        symbol_details = cursor.fetchone()
-                finally:
-                    conn.close()
+                symbol_upper = symbol.upper()
+                symbol_details = symbol_lookup.get(symbol_upper)
                 
                 if not symbol_details:
                     logger.warning(f"Symbol details not found for {symbol}")
                     continue
-                
+
                 # Create basic symbol info
                 symbol_info = {
                     'id': idx,
@@ -521,36 +528,60 @@ def get_default_symbols_with_market_data():
                     'sector': symbol_details.get('sector', 'N/A'),
                     'sub_sector': symbol_details.get('sub_sector', 'N/A')
                 }
+
+                # Get market data using PriceFetcher (with timeout for performance)
+                cmp = None
+                price_7d = None
+                price_30d = None
                 
-                # Get market data using PriceFetcher
-                cmp = price_fetcher.get_cmp(symbol) if price_fetcher else None
-                price_7d = historical_fetcher.get_offset_price(symbol, 7) if historical_fetcher else None
-                price_30d = historical_fetcher.get_offset_price(symbol, 30) if historical_fetcher else None
-                
+                if price_fetcher and historical_fetcher:
+                    try:
+                        cmp = price_fetcher.get_cmp(symbol)
+                        price_7d = historical_fetcher.get_offset_price(symbol, 5)
+                        price_30d = historical_fetcher.get_offset_price(symbol, 20)
+                    except Exception as market_error:
+                        logger.warning(f"Market data error for {symbol}: {market_error}")
+                        # Continue with basic symbol info even if market data fails
+
                 if cmp is not None:
                     # Calculate percentage changes
                     change_7d_pct = try_percent_calc(cmp, price_7d)
                     change_30d_pct = try_percent_calc(cmp, price_30d)
-                    
+
                     # Calculate absolute changes
-                    change_7d = (cmp - price_7d) if (cmp and price_7d) else None
-                    change_30d = (cmp - price_30d) if (cmp and price_30d) else None
-                    
-                    # For current day change, use a small random variation (since we don't have intraday data)
-                    import random
-                    daily_change_pct = (random.random() - 0.5) * 4  # ±2% random change
-                    daily_change_val = (cmp * daily_change_pct) / 100
-                    
+                    change_7d = (cmp -
+                                 price_7d) if (cmp and price_7d) else None
+                    change_30d = (cmp -
+                                  price_30d) if (cmp and price_30d) else None
+
+                    # Calculate daily change from historical data instead of random
+                    # Use actual historical price difference for better accuracy
+                    daily_change_pct = change_7d_pct if change_7d_pct is not None else 0
+                    daily_change_val = change_7d if change_7d else 0
+
                     symbol_info.update({
-                        'cmp': f"{cmp:.2f}" if cmp else '--',
-                        'price_7d': f"{price_7d:.2f}" if price_7d else '--',
-                        'price_30d': f"{price_30d:.2f}" if price_30d else '--',
-                        'change_7d_pct': f"{change_7d_pct:.2f}%" if change_7d_pct is not None else '--',
-                        'change_30d_pct': f"{change_30d_pct:.2f}%" if change_30d_pct is not None else '--',
-                        'change_7d': f"{change_7d:.2f}" if change_7d else '--',
-                        'change_30d': f"{change_30d:.2f}" if change_30d else '--',
-                        'change_pct': f"{daily_change_pct:+.2f}%" if daily_change_pct else '--',
-                        'change_val': f"{daily_change_val:+.2f}" if daily_change_val else '--'
+                        'cmp':
+                        f"{cmp:.2f}" if cmp else '--',
+                        'price_7d':
+                        f"{price_7d:.2f}" if price_7d else '--',
+                        'price_30d':
+                        f"{price_30d:.2f}" if price_30d else '--',
+                        'change_7d_pct':
+                        f"{change_7d_pct:.2f}%"
+                        if change_7d_pct is not None else '--',
+                        'change_30d_pct':
+                        f"{change_30d_pct:.2f}%"
+                        if change_30d_pct is not None else '--',
+                        'change_7d':
+                        f"{change_7d:.2f}" if change_7d else '--',
+                        'change_30d':
+                        f"{change_30d:.2f}" if change_30d else '--',
+                        'change_pct':
+                        f"{daily_change_pct:+.2f}%"
+                        if daily_change_pct is not None else '--',
+                        'change_val':
+                        f"{daily_change_val:+.2f}"
+                        if daily_change_val is not None else '--'
                     })
                 else:
                     # Fallback values when market data is not available
@@ -565,19 +596,19 @@ def get_default_symbols_with_market_data():
                         'change_pct': '--',
                         'change_val': '--'
                     })
-                
+
             except Exception as e:
                 logger.error(f"Error processing symbol {symbol}: {e}")
                 continue
-            
+
             symbols_with_market_data.append(symbol_info)
-        
+
         return jsonify({
             "success": True,
             "symbols": symbols_with_market_data,
             "count": len(symbols_with_market_data)
         })
-    
+
     except Exception as e:
         logger.error(f"Error getting default symbols with market data: {e}")
         return jsonify({

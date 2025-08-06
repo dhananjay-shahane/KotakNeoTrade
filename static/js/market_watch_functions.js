@@ -62,41 +62,33 @@ function getGradientBackgroundColor(value) {
     return "";
 }
 
-// Load user watchlist from CSV API with real market data
-function loadUserWatchlist() {
-    fetch('/api/market-watch/user-symbols-with-data')
-    .then(response => response.json())
-    .then(data => {
+// Load user watchlist from CSV API with real market data - async version
+async function loadUserWatchlist() {
+    console.log('Loading user market watch data...');
+    
+    // Show loading state
+    showUserTableLoader();
+    
+    try {
+        const response = await fetch('/api/market-watch/user-symbols-with-data');
+        const data = await response.json();
+        
         if (data.success) {
             userMarketWatchData = data.symbols;
             updateUserMarketWatchTable();
             updateUserCounts();
+            console.log(`✓ Loaded ${data.symbols.length} user symbols`);
         } else {
             console.error('Failed to load user watchlist:', data.error);
+            showErrorInUserTable('Failed to load your watchlist: ' + data.error);
         }
-    })
-    .catch(error => {
+    } catch (error) {
         console.error('Error loading user watchlist:', error);
-    });
+        showErrorInUserTable('Network error loading watchlist data');
+    }
 }
 
-// Load default market watch with real market data
-function loadDefaultMarketWatch() {
-    fetch('/api/market-watch/default-symbols-with-data')
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            defaultMarketWatchData = data.symbols;
-            updateDefaultMarketWatchTable();
-            updateDefaultCounts();
-        } else {
-            console.error('Failed to load default market watch:', data.error);
-        }
-    })
-    .catch(error => {
-        console.error('Error loading default market watch:', error);
-    });
-}
+
 
 // Add symbol to user list from default list
 function addToUserList(symbol) {
@@ -622,6 +614,100 @@ function updateDefaultCounts() {
 function addToUserListFromDefault(symbol) {
     // Use the existing addToUserList function
     addToUserList(symbol);
+}
+
+// Load default market watch data from API with async/await and loader
+async function loadDefaultMarketWatch() {
+    console.log('Loading default market watch data...');
+    
+    // Show loading state
+    showDefaultTableLoader();
+    
+    try {
+        const response = await fetch('/api/market-watch/default-symbols-with-data');
+        const data = await response.json();
+        
+        if (data.success) {
+            defaultMarketWatchData = data.symbols;
+            updateDefaultMarketWatchTable();
+            updateDefaultCounts();
+            console.log(`✓ Loaded ${data.symbols.length} default symbols`);
+        } else {
+            console.error('Error loading default market watch:', data.error);
+            showErrorInDefaultTable('Failed to load default market watch data: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Network error loading default market watch:', error);
+        showErrorInDefaultTable('Network error loading market data');
+    }
+}
+
+// Show loader for default table
+function showDefaultTableLoader() {
+    var tableBody = document.getElementById('defaultMarketWatchTableBody');
+    tableBody.innerHTML = `
+        <tr class="loading-row">
+            <td colspan="10" class="text-center py-4">
+                <div class="d-flex justify-content-center align-items-center">
+                    <div class="spinner-border text-primary me-2" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <span class="text-muted">Loading default market watch data...</span>
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
+// Show loader for user table
+function showUserTableLoader() {
+    var tableBody = document.getElementById('userMarketWatchTableBody');
+    if (tableBody) {
+        tableBody.innerHTML = `
+            <tr class="loading-row">
+                <td colspan="10" class="text-center py-4">
+                    <div class="d-flex justify-content-center align-items-center">
+                        <div class="spinner-border text-success me-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <span class="text-muted">Loading your market watch data...</span>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Show error in default table
+function showErrorInDefaultTable(message) {
+    var tableBody = document.getElementById('defaultMarketWatchTableBody');
+    tableBody.innerHTML = `
+        <tr class="error-row">
+            <td colspan="10" class="text-center py-4">
+                <div class="d-flex justify-content-center align-items-center text-danger">
+                    <i class="fas fa-exclamation-triangle fa-2x me-2"></i>
+                    <span>${message}</span>
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
+// Show error in user table
+function showErrorInUserTable(message) {
+    var tableBody = document.getElementById('userMarketWatchTableBody');
+    if (tableBody) {
+        tableBody.innerHTML = `
+            <tr class="error-row">
+                <td colspan="10" class="text-center py-4">
+                    <div class="d-flex justify-content-center align-items-center text-danger">
+                        <i class="fas fa-exclamation-triangle fa-2x me-2"></i>
+                        <span>${message}</span>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
 }
 
 // Refresh functions
