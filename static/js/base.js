@@ -511,55 +511,87 @@ document.addEventListener("DOMContentLoaded", function () {
     // Initialize notification system
     initializeNotifications();
     
-    // Add email notification toggle event listener
-    setupEmailNotificationToggle();
+    // Note: Email notification toggle setup happens when modal is shown
 });
 
 // Setup email notification toggle for immediate saving
 function setupEmailNotificationToggle() {
+    console.log('🔧 Setting up email notification toggle...');
     const emailNotificationToggle = document.getElementById('sendDealsInMail');
+    console.log('🔍 Email toggle element found:', emailNotificationToggle ? 'YES' : 'NO');
+    
     if (emailNotificationToggle) {
-        emailNotificationToggle.addEventListener('change', function() {
-            const isEnabled = Boolean(this.checked);
-            console.log('📧 Email notification toggle changed to:', isEnabled);
-            
-            // Save immediately when user toggles the switch
-            fetch('/api/update-email-notification-status', {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    email_notification: isEnabled
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log('✅ Email notification status auto-saved:', data.status.email_notification);
-                    showToaster('Success', 'Email notification setting saved', 'success', 2000);
-                } else {
-                    console.error('❌ Failed to auto-save email notification status:', data.error);
-                    showToaster('Error', 'Failed to save setting', 'error', 3000);
-                    // Revert toggle state if save failed
-                    this.checked = !isEnabled;
-                }
-            })
-            .catch(error => {
-                console.error('❌ Error auto-saving email notification:', error);
-                showToaster('Error', 'Connection error', 'error', 3000);
-                // Revert toggle state if save failed
-                this.checked = !isEnabled;
-            });
-        });
+        // Remove any existing event listeners first
+        emailNotificationToggle.removeEventListener('change', emailToggleHandler);
+        
+        // Add the new event listener
+        emailNotificationToggle.addEventListener('change', emailToggleHandler);
         console.log('✅ Email notification toggle listener setup complete');
+    } else {
+        console.error('❌ Email notification toggle element NOT FOUND');
     }
+}
+
+// Separate handler function to avoid duplicate listeners
+function emailToggleHandler() {
+    const isEnabled = Boolean(this.checked);
+    console.log('📧 Email notification toggle changed to:', isEnabled);
+    
+    // Save immediately when user toggles the switch
+    fetch('/api/update-email-notification-status', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            email_notification: isEnabled
+        })
+    })
+    .then(response => {
+        console.log('🌐 API Response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('📊 API Response data:', data);
+        if (data.success) {
+            console.log('✅ Email notification status auto-saved:', data.status.email_notification);
+            if (typeof showToaster === 'function') {
+                showToaster('Success', 'Email notification setting saved', 'success', 2000);
+            }
+        } else {
+            console.error('❌ Failed to auto-save email notification status:', data.error);
+            if (typeof showToaster === 'function') {
+                showToaster('Error', 'Failed to save setting', 'error', 3000);
+            }
+            // Revert toggle state if save failed
+            this.checked = !isEnabled;
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error auto-saving email notification:', error);
+        if (typeof showToaster === 'function') {
+            showToaster('Error', 'Connection error', 'error', 3000);
+        }
+        // Revert toggle state if save failed
+        this.checked = !isEnabled;
+    });
 }
 
 // Settings Modal functionality
 function showSettingsModal() {
     const modal = new bootstrap.Modal(document.getElementById("settingsModal"));
+    
+    // Load email settings when modal opens
+    console.log('🔄 Opening settings modal, loading email settings...');
+    loadEmailSettings();
+    
+    // Setup toggle listener after modal is shown
+    const modalElement = document.getElementById("settingsModal");
+    modalElement.addEventListener('shown.bs.modal', function () {
+        setupEmailNotificationToggle();
+    }, { once: true }); // Only setup once per modal show
+    
     modal.show();
 }
 
