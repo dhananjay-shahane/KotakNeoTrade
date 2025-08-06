@@ -1,6 +1,5 @@
 import logging
 from typing import Optional
-from psycopg2 import sql
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -38,12 +37,12 @@ class PriceFetcher:
                 self.logger.warning(f"5min table not found: {table_name}")
                 return None
 
-            query = sql.SQL("""
+            query = f"""
                 SELECT close 
-                FROM symbols.{} 
+                FROM symbols.{table_name} 
                 ORDER BY datetime DESC 
                 LIMIT 1
-            """).format(sql.Identifier(table_name))
+            """
 
             result = self.db.execute_query(query)
             return float(result[0]['close']) if result else None
@@ -81,9 +80,7 @@ class HistoricalFetcher:
                 return None
 
             # Count rows
-            count_query = sql.SQL(
-                "SELECT COUNT(*) as cnt FROM symbols.{}").format(
-                    sql.Identifier(table_name))
+            count_query = f"SELECT COUNT(*) as cnt FROM symbols.{table_name}"
             count_result = self.db.execute_query(count_query)
             row_count = count_result[0]['cnt'] if count_result else 0
 
@@ -91,12 +88,12 @@ class HistoricalFetcher:
                 return None  # Not enough rows
 
             # Get Nth previous close: 0 = latest, 1 = 1 trading day ago, ...
-            price_query = sql.SQL("""
-                SELECT close FROM symbols.{}
+            price_query = f"""
+                SELECT close FROM symbols.{table_name}
                 ORDER BY datetime DESC
-                OFFSET %s LIMIT 1
-            """).format(sql.Identifier(table_name))
-            result = self.db.execute_query(price_query, (offset, ))
+                OFFSET {offset} LIMIT 1
+            """
+            result = self.db.execute_query(price_query)
             return float(result[0]['close']) if result else None
         except Exception as e:
             logger.error(f"Error fetching offset={offset} price: {e}",
@@ -112,11 +109,11 @@ class HistoricalFetcher:
             if not self.table_exists(table_name):
                 logger.warning(f"Table not found: symbols.{table_name}")
                 return None
-            price_query = sql.SQL("""
-                SELECT close FROM symbols.{}
+            price_query = f"""
+                SELECT close FROM symbols.{table_name}
                 ORDER BY datetime DESC
                 LIMIT 1
-            """).format(sql.Identifier(table_name))
+            """
             result = self.db.execute_query(price_query)
             return float(result[0]['close']) if result else None
         except Exception as e:

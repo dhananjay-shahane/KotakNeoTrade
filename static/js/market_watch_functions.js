@@ -4,20 +4,70 @@
 var userMarketWatchData = [];
 var userIdCounter = 1;
 
-// Load user watchlist from CSV API
+// Gradient Background Color Function for percentage values
+function getGradientBackgroundColor(value) {
+    var numValue = parseFloat(value);
+    if (isNaN(numValue)) return "";
+
+    var intensity = Math.min(Math.abs(numValue) / 5, 1); // Scale to 0-1, max at 5%
+    var alpha = 0.3 + intensity * 0.5; // Alpha from 0.3 to 0.8
+
+    if (numValue < 0) {
+        // Red gradient for negative values
+        if (intensity <= 0.3) {
+            // Light red for small negative values
+            return (
+                "background-color: rgba(255, 182, 193, " +
+                alpha +
+                "); color: #000;"
+            ); // Light pink
+        } else if (intensity <= 0.6) {
+            // Medium red
+            return (
+                "background-color: rgba(255, 99, 71, " +
+                alpha +
+                "); color: #fff;"
+            ); // Tomato
+        } else {
+            // Dark red for large negative values
+            return (
+                "background-color: rgba(139, 0, 0, " + alpha + "); color: #fff;"
+            ); // Dark red
+        }
+    } else if (numValue > 0) {
+        // Green gradient for positive values
+        if (intensity <= 0.3) {
+            // Light green for small positive values
+            return (
+                "background-color: rgba(144, 238, 144, " +
+                alpha +
+                "); color: #000;"
+            ); // Light green
+        } else if (intensity <= 0.6) {
+            // Medium green
+            return (
+                "background-color: rgba(50, 205, 50, " +
+                alpha +
+                "); color: #fff;"
+            ); // Lime green
+        } else {
+            // Dark green for large positive values
+            return (
+                "background-color: rgba(0, 100, 0, " + alpha + "); color: #fff;"
+            ); // Dark green
+        }
+    }
+
+    return "";
+}
+
+// Load user watchlist from CSV API with real market data
 function loadUserWatchlist() {
-    fetch('/api/market-watch/user-symbols')
+    fetch('/api/market-watch/user-symbols-with-data')
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            userMarketWatchData = data.symbols.map(item => ({
-                id: item.id,
-                symbol: item.symbol,
-                added_date: item.added_date,
-                // Generate sample market data for display
-                ...generateSymbolData(item.symbol, item.id)
-            }));
-            
+            userMarketWatchData = data.symbols;
             updateUserMarketWatchTable();
             updateUserCounts();
         } else {
@@ -459,21 +509,22 @@ function updateUserMarketWatchTable() {
     
     var html = '';
     userMarketWatchData.forEach(function(item) {
-        var changeClass = parseFloat(item.change) > 0 ? 'profit' : parseFloat(item.change) < 0 ? 'loss' : 'neutral';
-        var sevenDayClass = parseFloat(item.sevenDayPercent) > 0 ? 'profit' : parseFloat(item.sevenDayPercent) < 0 ? 'loss' : 'neutral';
-        var thirtyDayClass = parseFloat(item.thirtyDayPercent) > 0 ? 'profit' : parseFloat(item.thirtyDayPercent) < 0 ? 'loss' : 'neutral';
+        // Get gradient styles for percentage columns
+        var change7dStyle = getGradientBackgroundColor(item.change_7d_pct);
+        var change30dStyle = getGradientBackgroundColor(item.change_30d_pct);
+        var changePctStyle = getGradientBackgroundColor(item.change_pct);
         
         html += `
             <tr>
                 <td>${item.id}</td>
                 <td><strong>${item.symbol}</strong></td>
-                <td class="${sevenDayClass}">${item.sevenDay}</td>
-                <td class="${thirtyDayClass}">${item.thirtyDay}</td>
-                <td class="${sevenDayClass}">${item.sevenDayPercent > 0 ? '+' : ''}${item.sevenDayPercent}%</td>
-                <td class="${thirtyDayClass}">${item.thirtyDayPercent > 0 ? '+' : ''}${item.thirtyDayPercent}%</td>
-                <td><strong>${item.cmp}</strong></td>
-                <td class="${changeClass}">${item.changePercent > 0 ? '+' : ''}${item.changePercent}%</td>
-                <td class="${changeClass}">${item.change > 0 ? '+' : ''}${item.cpl}</td>
+                <td>${item.price_7d || '--'}</td>
+                <td>${item.price_30d || '--'}</td>
+                <td style="${change7dStyle}">${item.change_7d_pct || '--'}</td>
+                <td style="${change30dStyle}">${item.change_30d_pct || '--'}</td>
+                <td><strong>${item.cmp || '--'}</strong></td>
+                <td style="${changePctStyle}">${item.change_pct || '--'}</td>
+                <td>${item.change_val || '--'}</td>
                 <td>
                     <button class="btn btn-sm btn-danger" onclick="removeFromUserList(${item.id})">
                         <i class="fas fa-trash"></i>

@@ -5,8 +5,10 @@ Handles symbol search, filtering, and watchlist operations using nse_symbols tab
 from flask import Blueprint, request, jsonify, session
 import logging
 import psycopg2.extras
+import pandas as pd
 from config.database_config import DatabaseConfig
 from Scripts.user_market_watch_service import UserMarketWatchService
+from Scripts.price_fetcher import PriceFetcher, HistoricalFetcher
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +24,81 @@ except Exception as e:
 
 # Initialize user market watch service
 user_watchlist_service = UserMarketWatchService()
+
+# Initialize price fetchers
+price_fetcher = None
+historical_fetcher = None
+
+if db_config:
+    try:
+        price_fetcher = PriceFetcher(db_config)
+        historical_fetcher = HistoricalFetcher(db_config)
+        logger.info("✓ Price fetchers initialized")
+    except Exception as e:
+        logger.error(f"❌ Price fetcher initialization failed: {e}")
+
+def try_percent(cmp_val, hist_val):
+    """
+    Calculate percent change if both are numbers, else '--'.
+    """
+    try:
+        if (cmp_val is not None and hist_val is not None
+                and isinstance(cmp_val, (int, float))
+                and isinstance(hist_val, (int, float)) and hist_val != 0
+                and not pd.isna(cmp_val) and not pd.isna(hist_val)):
+            pct_change = (float(cmp_val) -
+                          float(hist_val)) / float(hist_val) * 100
+            return f"{pct_change:.2f}%"
+        else:
+            return '--'
+    except Exception:
+        return '--'
+
+def get_market_data_for_symbol(symbol):
+    """
+    Get real market data for a symbol including CMP, historical prices, and calculated percentages
+    """
+    try:
+        if not price_fetcher or not historical_fetcher:
+            return None
+            
+        # Get current market price
+        cmp = price_fetcher.get_cmp(symbol)
+        if cmp is None:
+            return None
+            
+        # Get historical prices
+        price_7d = historical_fetcher.get_offset_price(symbol, 7)
+        price_30d = historical_fetcher.get_offset_price(symbol, 30)
+        
+        # Calculate percentage changes
+        change_7d_pct = try_percent(cmp, price_7d)
+        change_30d_pct = try_percent(cmp, price_30d)
+        
+        # Calculate absolute changes
+        change_7d = round(cmp - price_7d, 2) if price_7d else None
+        change_30d = round(cmp - price_30d, 2) if price_30d else None
+        
+        # Calculate change percentage from previous day (CPL - Change from Previous Day)
+        latest_close = historical_fetcher.get_latest_close(symbol)
+        change_pct = try_percent(cmp, latest_close)
+        change_val = round(cmp - latest_close, 2) if latest_close else None
+        
+        return {
+            'cmp': round(cmp, 2),
+            'price_7d': round(price_7d, 2) if price_7d else '--',
+            'price_30d': round(price_30d, 2) if price_30d else '--',
+            'change_7d_pct': change_7d_pct,
+            'change_30d_pct': change_30d_pct,
+            'change_7d': change_7d if change_7d else '--',
+            'change_30d': change_30d if change_30d else '--',
+            'change_pct': change_pct,  # %CHAN
+            'change_val': change_val if change_val else '--'  # CPL (Change from Previous day)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting market data for {symbol}: {e}")
+        return None
 
 @market_watch_api.route('/api/symbols/search', methods=['GET'])
 def search_symbols():
@@ -310,6 +387,65 @@ def manage_user_symbols():
             })
         else:
             return jsonify({"error": "Failed to remove symbol or symbol not found"}), 400
+
+@market_watch_api.route('/api/market-watch/user-symbols-with-data', methods=['GET'])
+def get_user_symbols_with_market_data():
+    """
+    Get user's watchlist symbols with real-time market data
+    """
+    # Get username from session or use demo user for testing
+    username = session.get('username') or session.get('user_id') or 'demo_user'
+    if not username or username == 'None':
+        username = 'demo_user'
+    
+    try:
+        # Get user's watchlist from CSV
+        watchlist = user_watchlist_service.get_user_watchlist(username)
+        
+        # Get market data for each symbol
+        symbols_with_market_data = []
+        for item in watchlist:
+            symbol = item['symbol']
+            market_data = get_market_data_for_symbol(symbol)
+            
+            symbol_info = {
+                'id': item['id'],
+                'username': item['username'], 
+                'symbol': symbol,
+                'added_date': item['added_date']
+            }
+            
+            # Add market data if available
+            if market_data:
+                symbol_info.update(market_data)
+            else:
+                # Fallback values when market data is not available
+                symbol_info.update({
+                    'cmp': '--',
+                    'price_7d': '--',
+                    'price_30d': '--',
+                    'change_7d_pct': '--',
+                    'change_30d_pct': '--',
+                    'change_7d': '--',
+                    'change_30d': '--',
+                    'change_pct': '--',
+                    'change_val': '--'
+                })
+            
+            symbols_with_market_data.append(symbol_info)
+        
+        return jsonify({
+            "success": True,
+            "symbols": symbols_with_market_data,
+            "count": len(symbols_with_market_data)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting user symbols with market data: {e}")
+        return jsonify({
+            "error": "Failed to fetch market data",
+            "details": str(e)
+        }), 500
 
 def is_valid_symbol(symbol: str) -> bool:
     """Check if symbol exists in nse_symbols table"""
