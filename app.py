@@ -1150,6 +1150,25 @@ try:
 except Exception as e:
     print(f"✗ Error registering email_functions_api: {e}")
 
+# Register settings routes blueprint
+try:
+    from routes.settings_routes import settings_routes
+    app.register_blueprint(settings_routes)
+    print("✓ Registered settings_routes blueprint")
+except Exception as e:
+    print(f"✗ Error registering settings_routes: {e}")
+
+# Add direct /settings route with authentication
+@app.route('/settings')
+def settings_page():
+    """Settings page with authentication check"""
+    # Check if user is authenticated
+    if not (session.get('authenticated') or session.get('kotak_logged_in')):
+        return redirect(url_for('auth_routes.trading_account_login'))
+    
+    user_email = session.get('email', session.get('user_email', 'Not configured'))
+    return render_template('settings.html', user_email=user_email)
+
 # Register email settings API routes
 @app.route('/api/email-settings', methods=['GET'])
 def api_get_email_settings():

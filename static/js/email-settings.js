@@ -9,8 +9,22 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadEmailSettings() {
-    fetch('/api/email-settings')
-        .then(response => response.json())
+    fetch('/api/email-settings', {
+        method: 'GET',
+        credentials: 'same-origin',  // Include session cookies
+        headers: {
+            'Accept': 'application/json'
+        }
+    })
+        .then(response => {
+            if (response.status === 401) {
+                console.warn('User not authenticated for email settings');
+                // Set default values without showing error to user
+                setDefaultEmailSettings();
+                return { success: false, error: 'Not authenticated' };
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 const settings = data.settings;
@@ -20,6 +34,7 @@ function loadEmailSettings() {
                 
                 if (emailNotificationToggle) {
                     emailNotificationToggle.checked = settings.email_notification || false;
+                    console.log('Email notification toggle set to:', settings.email_notification);
                 }
                 
                 if (settings.user_email) {
@@ -29,16 +44,27 @@ function loadEmailSettings() {
                     }
                 }
                 
-                console.log('Email settings loaded:', settings);
+                console.log('✅ Email settings loaded successfully:', settings);
             } else {
-                console.error('Failed to load email settings:', data.error);
-                showAlert('Failed to load email settings', 'error');
+                if (data.error !== 'Not authenticated') {
+                    console.error('Failed to load email settings:', data.error);
+                    setDefaultEmailSettings();
+                }
             }
         })
         .catch(error => {
             console.error('Error loading email settings:', error);
-            showAlert('Error loading email settings', 'error');
+            setDefaultEmailSettings();
         });
+}
+
+function setDefaultEmailSettings() {
+    // Set safe defaults when settings cannot be loaded
+    const emailNotificationToggle = document.getElementById('emailNotificationToggle');
+    if (emailNotificationToggle) {
+        emailNotificationToggle.checked = false; // Default to off for safety
+        console.log('Set default email notification toggle to: false');
+    }
 }
 
 function setupEmailToggleListeners() {
@@ -74,19 +100,29 @@ function saveEmailSettings() {
     
     fetch('/api/email-settings', {
         method: 'POST',
+        credentials: 'same-origin',  // Include session cookies
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(settings)
     })
-    .then(response => response.json())
+    .then(response => {
+        if (response.status === 401) {
+            console.warn('User not authenticated for saving email settings');
+            showAlert('Please login to save email settings', 'warning');
+            return { success: false, error: 'Not authenticated' };
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
-            console.log('Email settings saved successfully');
+            console.log('✅ Email settings saved successfully');
             showAlert('Email settings saved successfully', 'success');
         } else {
-            console.error('Failed to save email settings:', data.error);
-            showAlert('Failed to save email settings: ' + data.error, 'error');
+            if (data.error !== 'Not authenticated') {
+                console.error('Failed to save email settings:', data.error);
+                showAlert('Failed to save email settings: ' + data.error, 'error');
+            }
         }
     })
     .catch(error => {
