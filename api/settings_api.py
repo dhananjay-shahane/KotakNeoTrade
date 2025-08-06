@@ -1,66 +1,16 @@
 """
-Email Settings API for Kotak Neo Trading Platform
-Handles saving and retrieving user email notification preferences and SMTP configurations
+Email Settings API
+
+This module handles email notification settings for users.
+It provides endpoints to get and save user email preferences.
 """
 
-import json
 import logging
-from datetime import datetime
-from flask import request, jsonify, session
+import re
+from flask import session, request, jsonify
 from config.database_config import get_db_dict_connection
-from security.input_validator import InputValidator
 
 logger = logging.getLogger(__name__)
-
-
-def create_user_settings_table():
-    """
-    Create user_email_settings table if it doesn't exist
-    This table stores user-specific email notification preferences and SMTP configurations
-    """
-    conn = None
-    try:
-        conn = get_db_dict_connection()
-        if not conn:
-            logger.error("Failed to connect to database")
-            return False
-
-        with conn.cursor() as cursor:
-            # Create table for storing user email settings with proper security measures
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS user_email_settings (
-                    id SERIAL PRIMARY KEY,
-                    username VARCHAR(100) NOT NULL UNIQUE,
-                    user_email VARCHAR(255),
-                    alternative_email VARCHAR(255),
-                    send_deals_in_mail BOOLEAN DEFAULT FALSE,
-                    send_daily_change_data BOOLEAN DEFAULT FALSE,
-                    subscription BOOLEAN DEFAULT FALSE,
-                    daily_email_time VARCHAR(5) DEFAULT '11:00',
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    CONSTRAINT valid_time_format CHECK (daily_email_time ~ '^[0-2][0-9]:[0-5][0-9]$')
-                )
-            """)
-            
-            # Create index for faster user lookups
-            cursor.execute("""
-                CREATE INDEX IF NOT EXISTS idx_user_email_settings_username 
-                ON user_email_settings(username)
-            """)
-            
-            conn.commit()
-            logger.info("✅ User email settings table created/verified successfully")
-            return True
-
-    except Exception as e:
-        logger.error(f"❌ Failed to create user settings table: {e}")
-        if conn:
-            conn.rollback()
-        return False
-    finally:
-        if conn:
-            conn.close()
 
 
 def get_user_email_settings():
@@ -68,6 +18,7 @@ def get_user_email_settings():
     Retrieve email notification settings for the current user
     Returns user's email preferences including switches and SMTP configuration
     """
+    conn = None
     try:
         # Ensure user is authenticated before accessing settings
         if not session.get('authenticated'):
@@ -83,16 +34,14 @@ def get_user_email_settings():
                 'error': 'Username not found in session'
             }), 400
 
-        conn = None
-        try:
-            conn = get_db_dict_connection()
-            if not conn:
-                return jsonify({
-                    'success': False,
-                    'error': 'Database connection failed'
-                }), 500
+        conn = get_db_dict_connection()
+        if not conn:
+            return jsonify({
+                'success': False,
+                'error': 'Database connection failed'
+            }), 500
 
-            with conn.cursor() as cursor:
+        with conn.cursor() as cursor:
             # Retrieve user settings with authorization check
             cursor.execute("""
                 SELECT send_deals_in_mail, send_daily_change_data, daily_email_time, user_email, alternative_email
@@ -145,6 +94,7 @@ def save_user_email_settings():
     Save email notification settings for the current user
     Validates input and performs authorization checks before saving preferences
     """
+    conn = None
     try:
         # Ensure user is authenticated before saving settings
         if not session.get('authenticated'):
@@ -178,36 +128,35 @@ def save_user_email_settings():
         subscription_status = send_daily_change_data
 
         # Validate time format (HH:MM)
-        if not InputValidator.validate_time_format(daily_email_time):
+        if not re.match(r'^([01]?[0-9]|2[0-3]):[0-5][0-9]$', daily_email_time):
             return jsonify({
                 'success': False,
                 'error': 'Invalid time format. Use HH:MM format'
             }), 400
 
         # Validate email format if user email is provided
-        if user_email and not InputValidator.validate_email(user_email):
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if user_email and not re.match(email_pattern, user_email):
             return jsonify({
                 'success': False,
                 'error': 'Invalid email format'
             }), 400
             
         # Validate alternative email format if provided
-        if alternative_email and not InputValidator.validate_email(alternative_email):
+        if alternative_email and not re.match(email_pattern, alternative_email):
             return jsonify({
                 'success': False,
                 'error': 'Invalid alternative email format'
             }), 400
 
-        conn = None
-        try:
-            conn = get_db_dict_connection()
-            if not conn:
-                return jsonify({
-                    'success': False,
-                    'error': 'Database connection failed'
-                }), 500
+        conn = get_db_dict_connection()
+        if not conn:
+            return jsonify({
+                'success': False,
+                'error': 'Database connection failed'
+            }), 500
 
-            with conn.cursor() as cursor:
+        with conn.cursor() as cursor:
             # Use UPSERT to insert or update user settings
             cursor.execute("""
                 INSERT INTO user_email_settings 
@@ -230,6 +179,9 @@ def save_user_email_settings():
                 cursor.execute("ALTER TABLE external_users ADD COLUMN IF NOT EXISTS email_notification BOOLEAN DEFAULT FALSE")
                 cursor.execute("ALTER TABLE external_users ADD COLUMN IF NOT EXISTS subscription BOOLEAN DEFAULT FALSE")
                 
+                # Also ensure user_email_settings table has alternative_email column
+                cursor.execute("ALTER TABLE user_email_settings ADD COLUMN IF NOT EXISTS alternative_email VARCHAR(255)")
+                
                 # Update both subscription and email notification based on send_deals_in_mail setting
                 cursor.execute("""
                     UPDATE external_users 
@@ -245,6 +197,7 @@ def save_user_email_settings():
                 try:
                     cursor.execute("ALTER TABLE external_users ADD COLUMN IF NOT EXISTS subscription BOOLEAN DEFAULT FALSE")
                     cursor.execute("ALTER TABLE external_users ADD COLUMN IF NOT EXISTS email_notification BOOLEAN DEFAULT FALSE")
+                    cursor.execute("ALTER TABLE user_email_settings ADD COLUMN IF NOT EXISTS alternative_email VARCHAR(255)")
                     cursor.execute("UPDATE external_users SET subscription = %s, email_notification = %s WHERE username = %s", 
                                  (subscription_status, send_deals_in_mail, username))
                 except Exception as e2:
@@ -316,20 +269,14 @@ def get_users_with_email_notifications(notification_type):
                     AND user_email != ''
                 """)
             else:
-                logger.error(f"Invalid notification type: {notification_type}")
                 return []
-            
+
             results = cursor.fetchall()
-            logger.info(f"✅ Found {len(results)} users with {notification_type} notifications enabled")
-            return results
+            return [dict(row) for row in results] if results else []
 
     except Exception as e:
-        logger.error(f"❌ Failed to get users with email notifications: {e}")
+        logger.error(f"Error getting users with email notifications: {e}")
         return []
     finally:
         if conn:
             conn.close()
-
-
-# Initialize the settings table when the module is imported
-create_user_settings_table()
