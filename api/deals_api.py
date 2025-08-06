@@ -1629,54 +1629,34 @@ def create_deal_from_signal():
                 f"✓ Created deal from signal: {symbol} - Deal ID: {deal_id} for user: {username}"
             )
             
-            # Send email notification for new deal (Case 2) - Check external_users table
+            # Send email notification for new deal (Case 2)
             try:
-                from config.database_config import get_db_dict_connection
+                logger.info(f"🔔 Attempting to send email notification for deal creation: {username}")
                 
-                # Check if user has email notifications enabled in external_users table
-                conn = get_db_dict_connection()
-                if conn:
-                    with conn.cursor() as cursor:
-                        cursor.execute("""
-                            SELECT email_notification, email 
-                            FROM external_users 
-                            WHERE username = %s AND email_notification = TRUE
-                        """, (username,))
-                        
-                        user_notification_data = cursor.fetchone()
-                        
-                        if user_notification_data:
-                            user_email = user_notification_data[1]
-                            
-                            if user_email:
-                                # Send email notification
-                                from api.email_service import EmailService
-                                email_service = EmailService()
-                                
-                                deal_email_data = {
-                                    'symbol': symbol,
-                                    'deal_id': deal_id,
-                                    'entry_price': ep,
-                                    'quantity': qty,
-                                    'invested_amount': invested_amount,
-                                    'date': datetime.now().strftime('%d/%m/%Y'),
-                                    'username': username
-                                }
-                                
-                                success = email_service.send_deal_creation_notification(username, deal_email_data)
-                                if success:
-                                    logger.info(f"✅ Deal creation email sent to {user_email} for {username}")
-                                else:
-                                    logger.warning(f"Failed to send deal creation email to {user_email}")
-                            else:
-                                logger.warning(f"No email address found for user {username}")
-                        else:
-                            logger.info(f"User {username} has email notifications disabled or not found")
-                    
-                    conn.close()
+                # Use the centralized email service approach
+                from api.email_service import EmailService
+                email_service = EmailService()
+                
+                deal_email_data = {
+                    'symbol': symbol,
+                    'deal_id': deal_id,
+                    'entry_price': ep,
+                    'quantity': qty,
+                    'invested_amount': invested_amount,
+                    'date': datetime.now().strftime('%d/%m/%Y'),
+                    'username': username
+                }
+                
+                success = email_service.send_deal_creation_notification(username, deal_email_data)
+                if success:
+                    logger.info(f"✅ Deal creation email sent successfully for {username}")
+                else:
+                    logger.warning(f"⚠️ Failed to send deal creation email for {username}")
                         
             except Exception as e:
-                logger.error(f"❌ Error sending deal notification email: {e}")
+                logger.error(f"❌ Error sending deal notification email: {str(e)}")
+                import traceback
+                logger.error(f"Full traceback: {traceback.format_exc()}")
                 # Don't fail the deal creation if email fails
             
             return jsonify({
