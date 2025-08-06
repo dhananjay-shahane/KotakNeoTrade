@@ -512,6 +512,13 @@ document.addEventListener("DOMContentLoaded", function () {
     initializeNotifications();
     
     // Note: Email notification toggle setup happens when modal is shown
+    
+    // Debug: Verify all functions are loaded
+    console.log('🔍 Function availability check:');
+    console.log('- showSettingsModal:', typeof showSettingsModal);
+    console.log('- loadEmailSettings:', typeof loadEmailSettings);
+    console.log('- setupEmailNotificationToggle:', typeof setupEmailNotificationToggle);
+    console.log('- Bootstrap available:', typeof bootstrap !== 'undefined' ? 'YES' : 'NO');
 });
 
 // Setup email notification toggle for immediate saving
@@ -580,19 +587,29 @@ function emailToggleHandler() {
 
 // Settings Modal functionality
 function showSettingsModal() {
-    const modal = new bootstrap.Modal(document.getElementById("settingsModal"));
+    console.log('⚙️ showSettingsModal() called!');
+    const modalElement = document.getElementById("settingsModal");
+    console.log('🔍 Modal element found:', modalElement ? 'YES' : 'NO');
+    
+    if (!modalElement) {
+        console.error('❌ Settings modal element not found!');
+        return;
+    }
+    
+    const modal = new bootstrap.Modal(modalElement);
     
     // Load email settings when modal opens
     console.log('🔄 Opening settings modal, loading email settings...');
-    loadEmailSettings();
     
     // Setup toggle listener after modal is shown
-    const modalElement = document.getElementById("settingsModal");
     modalElement.addEventListener('shown.bs.modal', function () {
+        console.log('🎯 Modal shown event fired');
+        loadEmailSettings();
         setupEmailNotificationToggle();
     }, { once: true }); // Only setup once per modal show
     
     modal.show();
+    console.log('✅ Modal.show() called');
 }
 
 // Notification functionality
