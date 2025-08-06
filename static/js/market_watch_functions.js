@@ -4,39 +4,77 @@
 var userMarketWatchData = [];
 var userIdCounter = 1;
 
+// Load user watchlist from CSV API
+function loadUserWatchlist() {
+    fetch('/api/market-watch/user-symbols')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            userMarketWatchData = data.symbols.map(item => ({
+                id: item.id,
+                symbol: item.symbol,
+                added_date: item.added_date,
+                // Generate sample market data for display
+                ...generateSymbolData(item.symbol, item.id)
+            }));
+            
+            updateUserMarketWatchTable();
+            updateUserCounts();
+        } else {
+            console.error('Failed to load user watchlist:', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading user watchlist:', error);
+    });
+}
+
 // Add symbol to user list from default list
 function addToUserList(symbol) {
-    // Check if symbol already exists
-    var exists = userMarketWatchData.some(function(item) {
-        return item.symbol === symbol;
-    });
-    
-    if (exists) {
+    // Make API call to add symbol to user's CSV watchlist
+    fetch('/api/market-watch/user-symbols', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            symbol: symbol
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload the user watchlist
+            loadUserWatchlist();
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Symbol Added',
+                text: data.message,
+                background: '#1a1a1a',
+                color: '#fff',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.error || 'Failed to add symbol to watchlist',
+                background: '#1a1a1a',
+                color: '#fff'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error adding symbol to watchlist:', error);
         Swal.fire({
-            icon: 'warning',
-            title: 'Symbol Already Added',
-            text: symbol + ' is already in your market watch list.',
+            icon: 'error',
+            title: 'Error',
+            text: 'Failed to add symbol. Please try again.',
             background: '#1a1a1a',
             color: '#fff'
         });
-        return;
-    }
-    
-    // Generate sample data for the symbol
-    var newSymbol = generateSymbolData(symbol, userIdCounter++);
-    userMarketWatchData.push(newSymbol);
-    
-    updateUserMarketWatchTable();
-    updateUserCounts();
-    
-    Swal.fire({
-        icon: 'success',
-        title: 'Symbol Added',
-        text: symbol + ' has been added to your market watch list.',
-        background: '#1a1a1a',
-        color: '#fff',
-        timer: 2000,
-        showConfirmButton: false
     });
 }
 
@@ -295,48 +333,13 @@ function submitAdvancedAddSymbol() {
         return;
     }
     
-    // Check if symbol already exists
-    var exists = userMarketWatchData.some(function(item) {
-        return item.symbol === selectedSymbolData.symbol;
-    });
-    
-    if (exists) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Symbol Already Added',
-            text: selectedSymbolData.symbol + ' is already in your market watch list.',
-            background: '#1a1a1a',
-            color: '#fff'
-        });
-        return;
-    }
-    
-    // Generate sample data for the symbol with metadata
-    var newSymbol = generateSymbolData(selectedSymbolData.symbol, userIdCounter++);
-    newSymbol.company = selectedSymbolData.company;
-    newSymbol.sector = selectedSymbolData.sector;
-    newSymbol.sub_sector = selectedSymbolData.sub_sector;
-    newSymbol.categories = selectedSymbolData.categories;
-    
-    userMarketWatchData.push(newSymbol);
-    
-    updateUserMarketWatchTable();
-    updateUserCounts();
+    // Use the same API call as the simple add function
+    addToUserList(selectedSymbolData.symbol);
     
     // Close modal and clear selection
     var modal = bootstrap.Modal.getInstance(document.getElementById('addSymbolModal'));
     modal.hide();
     clearSymbolSelection();
-    
-    Swal.fire({
-        icon: 'success',
-        title: 'Symbol Added',
-        text: `${selectedSymbolData.symbol} (${selectedSymbolData.company}) has been added to your market watch list.`,
-        background: '#1a1a1a',
-        color: '#fff',
-        timer: 2000,
-        showConfirmButton: false
-    });
 }
 
 // Legacy function for backward compatibility
@@ -364,21 +367,50 @@ function removeFromUserList(id) {
         color: '#fff'
     }).then((result) => {
         if (result.isConfirmed) {
-            userMarketWatchData = userMarketWatchData.filter(function(item) {
-                return item.id !== id;
-            });
-            
-            updateUserMarketWatchTable();
-            updateUserCounts();
-            
-            Swal.fire({
-                icon: 'success',
-                title: 'Removed',
-                text: symbol.symbol + ' has been removed from your market watch.',
-                background: '#1a1a1a',
-                color: '#fff',
-                timer: 2000,
-                showConfirmButton: false
+            // Make API call to remove symbol from CSV
+            fetch('/api/market-watch/user-symbols', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    symbol: symbol.symbol
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reload the user watchlist
+                    loadUserWatchlist();
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Removed',
+                        text: data.message,
+                        background: '#1a1a1a',
+                        color: '#fff',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.error || 'Failed to remove symbol',
+                        background: '#1a1a1a',
+                        color: '#fff'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error removing symbol from watchlist:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to remove symbol. Please try again.',
+                    background: '#1a1a1a',
+                    color: '#fff'
+                });
             });
         }
     });
@@ -479,13 +511,8 @@ function refreshDefaultList() {
 
 function refreshUserList() {
     console.log('Refreshing user market watch list...');
-    // Simulate real-time data update
-    userMarketWatchData.forEach(function(item) {
-        var updatedData = generateSymbolData(item.symbol, item.id);
-        Object.assign(item, updatedData);
-    });
-    
-    updateUserMarketWatchTable();
+    // Reload user watchlist from API
+    loadUserWatchlist();
     
     Swal.fire({
         icon: 'success',
@@ -531,6 +558,9 @@ function exportMarketWatch() {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
+    // Load user watchlist data from CSV
+    loadUserWatchlist();
+    
     // Initialize advanced symbol modal
     initializeAdvancedSymbolModal();
     
