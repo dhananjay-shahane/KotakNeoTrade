@@ -49,6 +49,13 @@ The platform is built with a Flask backend, utilizing SQLAlchemy for ORM and Pos
 ## Email Notification System
 A comprehensive email notification system has been implemented with 4 specific notification cases:
 
+**RECENT FIXES (Aug 2025):**
+- ✅ Fixed missing email notifications for deal creation (Case 2)
+- ✅ Fixed missing email notifications for deal closure (Case 4)
+- ✅ Fixed deal deletion functionality with proper email notifications
+- ✅ Added get_deal_by_id method to support deal deletion operations
+- ✅ Improved import error handling and code robustness
+
 **Case 1: Trade Signal Notifications to External Users**
 - Triggers when admin creates new trading signals
 - Sends email alerts to external users about new trading opportunities

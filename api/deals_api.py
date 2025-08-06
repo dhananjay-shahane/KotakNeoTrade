@@ -31,7 +31,11 @@ except ImportError:
     try:
         from Scripts.db_connector import DatabaseConnector
     except ImportError:
-        from db_connector import DatabaseConnector
+        try:
+            from db_connector import DatabaseConnector
+        except ImportError:
+            # Fallback - will use centralized config instead
+            DatabaseConnector = None
     USE_CENTRALIZED_CONFIG = False
 
 deals_api = Blueprint('deals_api', __name__, url_prefix='/api')

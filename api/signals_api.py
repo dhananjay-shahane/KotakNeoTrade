@@ -9,7 +9,10 @@ from flask_login import current_user, login_required
 
 # Add scripts to path
 sys.path.append('scripts')
-from dynamic_user_deals import dynamic_deals_service
+try:
+    from dynamic_user_deals import dynamic_deals_service
+except ImportError:
+    dynamic_deals_service = None
 
 # Create blueprint for signals API
 signals_bp = Blueprint('signals_api', __name__, url_prefix='/api')
