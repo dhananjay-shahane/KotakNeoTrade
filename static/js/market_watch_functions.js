@@ -1,7 +1,8 @@
 // Market Watch Functionality
 
-// User market watch data storage
+// Market watch data storage
 var userMarketWatchData = [];
+var defaultMarketWatchData = [];
 var userIdCounter = 1;
 
 // Gradient Background Color Function for percentage values
@@ -76,6 +77,24 @@ function loadUserWatchlist() {
     })
     .catch(error => {
         console.error('Error loading user watchlist:', error);
+    });
+}
+
+// Load default market watch with real market data
+function loadDefaultMarketWatch() {
+    fetch('/api/market-watch/default-symbols-with-data')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            defaultMarketWatchData = data.symbols;
+            updateDefaultMarketWatchTable();
+            updateDefaultCounts();
+        } else {
+            console.error('Failed to load default market watch:', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading default market watch:', error);
     });
 }
 
@@ -537,6 +556,52 @@ function updateUserMarketWatchTable() {
     tableBody.innerHTML = html;
 }
 
+// Update default market watch table
+function updateDefaultMarketWatchTable() {
+    var tableBody = document.getElementById('defaultMarketWatchTableBody');
+    
+    if (defaultMarketWatchData.length === 0) {
+        tableBody.innerHTML = `
+            <tr class="no-data-row">
+                <td colspan="10" class="text-center text-muted py-4">
+                    <i class="fas fa-chart-line fa-2x mb-2"></i><br>
+                    Loading default market watch data...
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    var html = '';
+    defaultMarketWatchData.forEach(function(item) {
+        // Get gradient styles for percentage columns
+        var change7dStyle = getGradientBackgroundColor(item.change_7d_pct);
+        var change30dStyle = getGradientBackgroundColor(item.change_30d_pct);
+        var changePctStyle = getGradientBackgroundColor(item.change_pct);
+        
+        html += `
+            <tr>
+                <td>${item.id}</td>
+                <td><strong>${item.symbol}</strong></td>
+                <td>${item.price_7d || '--'}</td>
+                <td>${item.price_30d || '--'}</td>
+                <td style="${change7dStyle}">${item.change_7d_pct || '--'}</td>
+                <td style="${change30dStyle}">${item.change_30d_pct || '--'}</td>
+                <td><strong>${item.cmp || '--'}</strong></td>
+                <td style="${changePctStyle}">${item.change_pct || '--'}</td>
+                <td>${item.change_val || '--'}</td>
+                <td>
+                    <button class="btn btn-sm btn-success" onclick="addToUserListFromDefault('${item.symbol}')">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    tableBody.innerHTML = html;
+}
+
 // Update user counts
 function updateUserCounts() {
     var count = userMarketWatchData.length;
@@ -545,14 +610,30 @@ function updateUserCounts() {
     document.getElementById('userShowingCount').textContent = count;
 }
 
+// Update default counts
+function updateDefaultCounts() {
+    var count = defaultMarketWatchData.length;
+    document.getElementById('defaultCount').textContent = count;
+    document.getElementById('defaultTotalCount').textContent = count;
+    document.getElementById('defaultShowingCount').textContent = count;
+}
+
+// Add symbol to user list from default market watch
+function addToUserListFromDefault(symbol) {
+    // Use the existing addToUserList function
+    addToUserList(symbol);
+}
+
 // Refresh functions
 function refreshDefaultList() {
     console.log('Refreshing default market watch list...');
-    // In a real implementation, this would fetch fresh data from the API
+    // Reload default market watch data from API
+    loadDefaultMarketWatch();
+    
     Swal.fire({
         icon: 'success',
         title: 'Refreshed',
-        text: 'Default market watch list has been refreshed.',
+        text: 'Default market watch list has been refreshed with latest market data.',
         background: '#1a1a1a',
         color: '#fff',
         timer: 1500,
@@ -609,7 +690,8 @@ function exportMarketWatch() {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-    // Load user watchlist data from CSV
+    // Load both market watch lists
+    loadDefaultMarketWatch();
     loadUserWatchlist();
     
     // Initialize advanced symbol modal
