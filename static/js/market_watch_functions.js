@@ -51,6 +51,10 @@ function initializeAdvancedSymbolModal() {
     document.getElementById('addSymbolModal').addEventListener('shown.bs.modal', function() {
         loadFilterOptions();
         clearSymbolSelection();
+        // Show initial symbols based on default Nifty selection
+        setTimeout(() => {
+            updateSymbolSearch();
+        }, 500);
     });
 }
 
@@ -112,44 +116,55 @@ function searchSymbols() {
         clearTimeout(searchTimeout);
     }
     
-    // Hide suggestions if search term is too short
-    if (searchTerm.length < 2) {
+    // Check if we have any filters selected
+    const hasFilters = document.getElementById('companyFilter').value || 
+                      document.getElementById('sectorFilter').value || 
+                      document.getElementById('subSectorFilter').value;
+    
+    // Show suggestions if search term is >= 1 char OR filters are selected
+    if (searchTerm.length < 1 && !hasFilters) {
         hideSuggestions();
         return;
     }
     
     // Debounce search
     searchTimeout = setTimeout(() => {
-        performSymbolSearch(searchTerm);
+        performSymbolSearch(searchTerm || '*');
     }, 300);
 }
 
 // Perform actual symbol search
 function performSymbolSearch(searchTerm) {
+    // Use empty string instead of '*' for wildcard search
+    const finalSearchTerm = searchTerm === '*' ? '' : searchTerm;
+    
     const params = new URLSearchParams({
-        q: searchTerm,
+        q: finalSearchTerm,
         nifty: document.getElementById('niftyCheck').checked ? '1' : '0',
         nifty_500: document.getElementById('nifty500Check').checked ? '1' : '0',
         etf: document.getElementById('etfCheck').checked ? '1' : '0',
         company: document.getElementById('companyFilter').value,
         sector: document.getElementById('sectorFilter').value,
         sub_sector: document.getElementById('subSectorFilter').value,
-        limit: '10'
+        limit: '15'
     });
+    
+    console.log('Searching with params:', params.toString());
     
     fetch(`/api/symbols/search?${params.toString()}`)
         .then(response => response.json())
         .then(data => {
+            console.log('Search response:', data);
             if (data.success) {
                 displaySymbolSuggestions(data.symbols);
             } else {
                 console.error('Search failed:', data.error);
-                hideSuggestions();
+                displaySymbolSuggestions([]);
             }
         })
         .catch(error => {
             console.error('Search error:', error);
-            hideSuggestions();
+            displaySymbolSuggestions([]);
         });
 }
 
@@ -158,7 +173,7 @@ function displaySymbolSuggestions(symbols) {
     const suggestionsDiv = document.getElementById('symbolSuggestions');
     
     if (symbols.length === 0) {
-        suggestionsDiv.innerHTML = '<div class="p-2 text-muted">No symbols found</div>';
+        suggestionsDiv.innerHTML = '<div class="p-3 text-muted text-center"><i class="fas fa-search me-2"></i>No symbols found matching your criteria</div>';
         suggestionsDiv.classList.remove('d-none');
         return;
     }
@@ -166,24 +181,27 @@ function displaySymbolSuggestions(symbols) {
     let html = '';
     symbols.forEach(symbol => {
         const categories = [];
-        if (symbol.categories.nifty) categories.push('<span class="badge bg-success">Nifty</span>');
-        if (symbol.categories.nifty_500) categories.push('<span class="badge bg-primary">Nifty 500</span>');
-        if (symbol.categories.etf) categories.push('<span class="badge bg-warning">ETF</span>');
+        if (symbol.categories.nifty) categories.push('<span class="badge bg-success me-1">Nifty</span>');
+        if (symbol.categories.nifty_500) categories.push('<span class="badge bg-primary me-1">Nifty 500</span>');
+        if (symbol.categories.etf) categories.push('<span class="badge bg-warning me-1">ETF</span>');
         
         html += `
-            <div class="suggestion-item p-2 border-bottom border-secondary cursor-pointer" 
+            <div class="suggestion-item p-3 border-bottom border-secondary" 
                  onclick="selectSymbol('${symbol.symbol}')" 
-                 style="cursor: pointer;"
+                 style="cursor: pointer; transition: background-color 0.2s;"
                  onmouseover="this.style.backgroundColor='#495057'" 
                  onmouseout="this.style.backgroundColor='transparent'">
                 <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <strong class="text-light">${symbol.symbol}</strong>
-                        <div class="text-muted small">${symbol.company}</div>
-                        <div class="text-muted small">${symbol.sector} - ${symbol.sub_sector}</div>
+                    <div style="flex: 1;">
+                        <div class="d-flex align-items-center mb-1">
+                            <strong class="text-light me-2" style="font-size: 14px;">${symbol.symbol}</strong>
+                            ${categories.join('')}
+                        </div>
+                        <div class="text-muted small mb-1">${symbol.company || 'N/A'}</div>
+                        <div class="text-muted small">${symbol.sector || 'N/A'} • ${symbol.sub_sector || 'N/A'}</div>
                     </div>
                     <div class="text-end">
-                        ${categories.join(' ')}
+                        <i class="fas fa-plus-circle text-success" style="font-size: 18px;"></i>
                     </div>
                 </div>
             </div>
@@ -192,6 +210,8 @@ function displaySymbolSuggestions(symbols) {
     
     suggestionsDiv.innerHTML = html;
     suggestionsDiv.classList.remove('d-none');
+    
+    console.log('Displayed', symbols.length, 'symbol suggestions');
 }
 
 // Hide suggestions
@@ -239,8 +259,17 @@ function displaySelectedSymbolDetails() {
 // Update symbol search when filters change
 function updateSymbolSearch() {
     const searchInput = document.getElementById('symbolSearchInput');
-    if (searchInput.value.trim().length >= 2) {
-        performSymbolSearch(searchInput.value.trim());
+    const searchTerm = searchInput.value.trim();
+    
+    // Show suggestions even with empty search if filters are selected
+    const hasFilters = document.getElementById('companyFilter').value || 
+                      document.getElementById('sectorFilter').value || 
+                      document.getElementById('subSectorFilter').value;
+    
+    if (searchTerm.length >= 1 || hasFilters) {
+        performSymbolSearch(searchTerm || '*');
+    } else {
+        hideSuggestions();
     }
 }
 

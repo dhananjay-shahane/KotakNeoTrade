@@ -488,7 +488,34 @@ endblock %} {% block head %}
                             </div>
                         </div>
 
-                        <!-- Step 2: Symbol Search -->
+                        <!-- Step 2: Advanced Filters -->
+                        <div class="mb-4">
+                            <label class="form-label text-light">
+                                <i class="fas fa-sliders-h me-1"></i>Filter by Company/Sector
+                            </label>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label class="form-label text-light">Company</label>
+                                    <select class="form-select bg-secondary text-light border-0" id="companyFilter" onchange="updateSymbolSearch()">
+                                        <option value="">All Companies</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label text-light">Sector</label>
+                                    <select class="form-select bg-secondary text-light border-0" id="sectorFilter" onchange="updateSymbolSearch()">
+                                        <option value="">All Sectors</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label text-light">Sub Sector</label>
+                                    <select class="form-select bg-secondary text-light border-0" id="subSectorFilter" onchange="updateSymbolSearch()">
+                                        <option value="">All Sub Sectors</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Symbol Search -->
                         <div class="mb-4">
                             <label class="form-label text-light">
                                 <i class="fas fa-search me-1"></i>Search Symbols
@@ -505,30 +532,11 @@ endblock %} {% block head %}
                                 <div
                                     id="symbolSuggestions"
                                     class="position-absolute w-100 bg-dark border rounded mt-1 d-none"
-                                    style="z-index: 1050; max-height: 200px; overflow-y: auto;"
+                                    style="z-index: 1050; max-height: 250px; overflow-y: auto; border: 1px solid #495057 !important;"
                                 ></div>
                             </div>
-                        </div>
-
-                        <!-- Step 3: Advanced Filters -->
-                        <div class="row mb-4">
-                            <div class="col-md-4">
-                                <label class="form-label text-light">Company</label>
-                                <select class="form-select bg-secondary text-light border-0" id="companyFilter" onchange="updateSymbolSearch()">
-                                    <option value="">All Companies</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label text-light">Sector</label>
-                                <select class="form-select bg-secondary text-light border-0" id="sectorFilter" onchange="updateSymbolSearch()">
-                                    <option value="">All Sectors</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label text-light">Sub Sector</label>
-                                <select class="form-select bg-secondary text-light border-0" id="subSectorFilter" onchange="updateSymbolSearch()">
-                                    <option value="">All Sub Sectors</option>
-                                </select>
+                            <div class="form-text text-muted">
+                                <small><i class="fas fa-info-circle me-1"></i>Start typing to see filtered suggestions based on your category and filter selections</small>
                             </div>
                         </div>
 
