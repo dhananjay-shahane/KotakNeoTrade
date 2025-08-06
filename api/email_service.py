@@ -385,53 +385,132 @@ This is an automated trading signal notification.
         return text
     
     def _create_deal_html_template(self, deal_data: Dict[str, Any], action: str) -> str:
-        """Create HTML template for deal notifications"""
+        """Create professional HTML template for deal notifications"""
         action_colors = {
-            'created': '#27ae60',
-            'closed': '#e74c3c',
-            'deleted': '#95a5a6'
+            'created': '#28a745',
+            'closed': '#dc3545',
+            'deleted': '#6c757d'
         }
         
-        color = action_colors.get(action, '#3498db')
+        action_icons = {
+            'created': '📊',
+            'closed': '📉',
+            'deleted': '🗑️'
+        }
+        
+        color = action_colors.get(action, '#007bff')
+        icon = action_icons.get(action, '📊')
+        
+        # Calculate additional metrics
+        invested_amount = deal_data.get('invested_amount', 0)
+        current_value = deal_data.get('current_value', invested_amount)
+        profit_loss = deal_data.get('profit_loss')
+        if profit_loss is None and deal_data.get('exit_price') and deal_data.get('entry_price') and deal_data.get('quantity'):
+            profit_loss = (float(deal_data['exit_price']) - float(deal_data['entry_price'])) * int(deal_data['quantity'])
         
         template_str = f"""
         <html>
-        <body style="font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5;">
-            <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                <h2 style="color: #2c3e50; margin-bottom: 20px;">📊 Deal {{{{ action.title() }}}}</h2>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Deal {{{{ action.title() }}}} Notification</title>
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 20px; background-color: #f8f9fa; line-height: 1.6;">
+            <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); overflow: hidden;">
                 
-                <div style="background-color: {color}; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-                    <h3 style="margin: 0; font-size: 24px;">{{{{ symbol }}}}</h3>
-                    <p style="margin: 5px 0 0 0;">Deal ID: {{{{ deal_id }}}}</p>
+                <!-- Header -->
+                <div style="background: linear-gradient(135deg, {color} 0%, {color}dd 100%); color: white; padding: 24px; text-align: center;">
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 600;">{icon} Deal {{{{ action.title() }}}}</h1>
+                    <p style="margin: 8px 0 0 0; opacity: 0.9; font-size: 14px;">Kotak Neo Trading Platform</p>
                 </div>
                 
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                    <tr>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Quantity:</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee;">{{{{ quantity }}}}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Entry Price:</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee;">₹{{{{ entry_price }}}}</td>
-                    </tr>
-                    {{% if target_price %}}
-                    <tr>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Target Price:</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee;">₹{{{{ target_price }}}}</td>
-                    </tr>
-                    {{% endif %}}
-                    {{% if exit_price %}}
-                    <tr>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Exit Price:</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee;">₹{{{{ exit_price }}}}</td>
-                    </tr>
-                    {{% endif %}}
-                </table>
+                <!-- Symbol Header -->
+                <div style="background-color: {color}; color: white; padding: 20px; text-align: center;">
+                    <h2 style="margin: 0; font-size: 28px; font-weight: 700; letter-spacing: 0.5px;">{{{{ symbol }}}}</h2>
+                    <p style="margin: 8px 0 0 0; font-size: 16px; opacity: 0.95;">Deal ID: {{{{ deal_id }}}}</p>
+                </div>
                 
-                <p style="color: #6c757d; font-size: 14px; margin-top: 30px; border-top: 1px solid #dee2e6; padding-top: 20px;">
-                    This is an automated notification from Kotak Neo Trading Platform.<br>
-                    Deal action completed successfully.
-                </p>
+                <!-- Deal Information Table -->
+                <div style="padding: 30px;">
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; background-color: #fff;">
+                        <tr style="background-color: #f8f9fa;">
+                            <td style="padding: 12px 16px; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Field</td>
+                            <td style="padding: 12px 16px; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Value</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 14px 16px; border-bottom: 1px solid #e9ecef; font-weight: 500; color: #212529;">User</td>
+                            <td style="padding: 14px 16px; border-bottom: 1px solid #e9ecef; color: #495057; font-weight: 600;">{{{{ username }}}}</td>
+                        </tr>
+                        <tr style="background-color: #f8f9fa;">
+                            <td style="padding: 14px 16px; border-bottom: 1px solid #e9ecef; font-weight: 500; color: #212529;">Quantity</td>
+                            <td style="padding: 14px 16px; border-bottom: 1px solid #e9ecef; color: #495057; font-weight: 600;">{{{{ quantity }}}} shares</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 14px 16px; border-bottom: 1px solid #e9ecef; font-weight: 500; color: #212529;">Entry Price</td>
+                            <td style="padding: 14px 16px; border-bottom: 1px solid #e9ecef; color: #495057; font-weight: 600;">₹{{{{ "%.2f"|format(entry_price|float) }}}}</td>
+                        </tr>
+                        {{% if target_price %}}
+                        <tr style="background-color: #f8f9fa;">
+                            <td style="padding: 14px 16px; border-bottom: 1px solid #e9ecef; font-weight: 500; color: #212529;">Target Price</td>
+                            <td style="padding: 14px 16px; border-bottom: 1px solid #e9ecef; color: #28a745; font-weight: 600;">₹{{{{ "%.2f"|format(target_price|float) }}}}</td>
+                        </tr>
+                        {{% endif %}}
+                        {{% if exit_price %}}
+                        <tr style="background-color: #f8f9fa;">
+                            <td style="padding: 14px 16px; border-bottom: 1px solid #e9ecef; font-weight: 500; color: #212529;">Exit Price</td>
+                            <td style="padding: 14px 16px; border-bottom: 1px solid #e9ecef; color: #dc3545; font-weight: 600;">₹{{{{ "%.2f"|format(exit_price|float) }}}}</td>
+                        </tr>
+                        {{% endif %}}
+                        <tr>
+                            <td style="padding: 14px 16px; border-bottom: 1px solid #e9ecef; font-weight: 500; color: #212529;">Invested Amount</td>
+                            <td style="padding: 14px 16px; border-bottom: 1px solid #e9ecef; color: #495057; font-weight: 600;">₹{{{{ "%.2f"|format(invested_amount|float) if invested_amount else "0.00" }}}}</td>
+                        </tr>
+                        {{% if current_value and current_value != invested_amount %}}
+                        <tr style="background-color: #f8f9fa;">
+                            <td style="padding: 14px 16px; border-bottom: 1px solid #e9ecef; font-weight: 500; color: #212529;">Current Value</td>
+                            <td style="padding: 14px 16px; border-bottom: 1px solid #e9ecef; color: #495057; font-weight: 600;">₹{{{{ "%.2f"|format(current_value|float) }}}}</td>
+                        </tr>
+                        {{% endif %}}
+                        {{% if profit_loss is not none and action in ['closed', 'deleted'] %}}
+                        <tr style="background-color: {{% if profit_loss >= 0 %}}#d4edda{{% else %}}#f8d7da{{% endif %}};">
+                            <td style="padding: 14px 16px; border-bottom: 1px solid #e9ecef; font-weight: 600; color: #212529;">P&L</td>
+                            <td style="padding: 14px 16px; border-bottom: 1px solid #e9ecef; font-weight: 700; color: {{% if profit_loss >= 0 %}}#28a745{{% else %}}#dc3545{{% endif %}};">
+                                {{% if profit_loss >= 0 %}}+{{% endif %}}₹{{{{ "%.2f"|format(profit_loss|float) }}}} ({{% if profit_loss >= 0 %}}Profit{{% else %}}Loss{{% endif %}})
+                            </td>
+                        </tr>
+                        {{% endif %}}
+                        <tr style="background-color: #f8f9fa;">
+                            <td style="padding: 14px 16px; border-bottom: 1px solid #e9ecef; font-weight: 500; color: #212529;">Date</td>
+                            <td style="padding: 14px 16px; border-bottom: 1px solid #e9ecef; color: #495057; font-weight: 600;">{{{{ date }}}}</td>
+                        </tr>
+                        {{% if deal_type %}}
+                        <tr>
+                            <td style="padding: 14px 16px; font-weight: 500; color: #212529;">Deal Type</td>
+                            <td style="padding: 14px 16px; color: #495057; font-weight: 600;">
+                                <span style="background-color: #e9ecef; padding: 4px 8px; border-radius: 12px; font-size: 12px; text-transform: uppercase;">{{{{ deal_type }}}}</span>
+                            </td>
+                        </tr>
+                        {{% endif %}}
+                    </table>
+                    
+                    <!-- Status Message -->
+                    <div style="text-align: center; background-color: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid {color};">
+                        <p style="margin: 0; color: #495057; font-size: 16px; font-weight: 500;">
+                            ✅ Deal {{{{ action }}}} completed successfully
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Footer -->
+                <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #dee2e6;">
+                    <p style="margin: 0; color: #6c757d; font-size: 14px; line-height: 1.5;">
+                        This is an automated notification from <strong>Kotak Neo Trading Platform</strong>.<br>
+                        Deal action completed successfully at {{{{ datetime.now().strftime('%Y-%m-%d %H:%M:%S') }}}}
+                    </p>
+                    <p style="margin: 8px 0 0 0; color: #adb5bd; font-size: 12px;">
+                        Please do not reply to this email.
+                    </p>
+                </div>
             </div>
         </body>
         </html>
@@ -439,7 +518,9 @@ This is an automated trading signal notification.
         
         template = Template(template_str)
         try:
-            return template.render(**deal_data, action=action)
+            from datetime import datetime
+            template_data = {**deal_data, 'action': action, 'datetime': datetime}
+            return template.render(**template_data)
         except Exception as e:
             # If template rendering fails, create a simple fallback
             logger.warning(f"Template rendering failed, using fallback: {e}")
@@ -447,6 +528,7 @@ This is an automated trading signal notification.
             <html>
             <body style="font-family: Arial, sans-serif; padding: 20px;">
                 <h2>Deal {action.title()}: {deal_data.get('symbol', 'N/A')}</h2>
+                <p><strong>User:</strong> {deal_data.get('username', 'N/A')}</p>
                 <p><strong>Deal ID:</strong> {deal_data.get('deal_id', 'N/A')}</p>
                 <p><strong>Quantity:</strong> {deal_data.get('quantity', 'N/A')}</p>
                 <p><strong>Entry Price:</strong> ₹{deal_data.get('entry_price', 'N/A')}</p>
@@ -456,33 +538,69 @@ This is an automated trading signal notification.
             """
     
     def _create_deal_text_template(self, deal_data: Dict[str, Any], action: str) -> str:
-        """Create text template for deal notifications"""
+        """Create professional text template for deal notifications"""
+        action_icons = {
+            'created': '📊',
+            'closed': '📉',
+            'deleted': '🗑️'
+        }
+        
+        icon = action_icons.get(action, '📊')
+        invested_amount = deal_data.get('invested_amount', 0)
+        current_value = deal_data.get('current_value', invested_amount)
+        profit_loss = deal_data.get('profit_loss')
+        
+        # Calculate P&L if not provided
+        if profit_loss is None and deal_data.get('exit_price') and deal_data.get('entry_price') and deal_data.get('quantity'):
+            profit_loss = (float(deal_data['exit_price']) - float(deal_data['entry_price'])) * int(deal_data['quantity'])
+        
         text = f"""
-Deal {action.title()} Notification
+{icon} DEAL {action.upper()} NOTIFICATION
+Kotak Neo Trading Platform
 
-Symbol: {deal_data.get('symbol', 'N/A')}
-Deal ID: {deal_data.get('deal_id', 'N/A')}
-Quantity: {deal_data.get('quantity', 'N/A')}
-Entry Price: ₹{deal_data.get('entry_price', 'N/A')}
-"""
+================================================
+SYMBOL: {deal_data.get('symbol', 'N/A')}
+DEAL ID: {deal_data.get('deal_id', 'N/A')}
+================================================
+
+DEAL INFORMATION:
+------------------
+User: {deal_data.get('username', 'N/A')}
+Quantity: {deal_data.get('quantity', 'N/A')} shares
+Entry Price: ₹{float(deal_data.get('entry_price', 0) or 0):.2f}"""
         
         if deal_data.get('target_price'):
-            text += f"Target Price: ₹{deal_data.get('target_price')}\n"
+            text += f"\nTarget Price: ₹{float(deal_data.get('target_price') or 0):.2f}"
             
         if deal_data.get('exit_price'):
-            text += f"Exit Price: ₹{deal_data.get('exit_price')}\n"
-            
-        text += f"Date: {deal_data.get('date', 'N/A')}\n"
+            text += f"\nExit Price: ₹{float(deal_data.get('exit_price') or 0):.2f}"
         
-        # Only show P&L for deal closure/deletion if available
-        profit_loss = deal_data.get('profit_loss')
-        if profit_loss is not None and action in ['closed', 'deleted']:
-            text += f"\n{'Profit' if profit_loss >= 0 else 'Loss'}: ₹{profit_loss}\n"
+        text += f"\nInvested Amount: ₹{float(invested_amount):.2f}"
+        
+        if current_value and current_value != invested_amount:
+            text += f"\nCurrent Value: ₹{float(current_value):.2f}"
             
-        text += """
----
-Kotak Neo Trading Platform
-This is an automated notification. Please do not reply.
+        # Show P&L for deal closure/deletion if available
+        if profit_loss is not None and action in ['closed', 'deleted']:
+            pnl_status = "PROFIT" if profit_loss >= 0 else "LOSS"
+            pnl_sign = "+" if profit_loss >= 0 else ""
+            text += f"\nP&L: {pnl_sign}₹{float(profit_loss):.2f} ({pnl_status})"
+            
+        text += f"\nDate: {deal_data.get('date', 'N/A')}"
+        
+        if deal_data.get('deal_type'):
+            text += f"\nDeal Type: {deal_data.get('deal_type')}"
+            
+        text += f"""
+
+STATUS: ✅ Deal {action} completed successfully
+
+================================================
+This is an automated notification from 
+Kotak Neo Trading Platform.
+
+Please do not reply to this email.
+================================================
         """.strip()
         
         return text
