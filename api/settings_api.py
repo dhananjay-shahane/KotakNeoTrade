@@ -224,21 +224,31 @@ def save_user_email_settings():
                     updated_at = CURRENT_TIMESTAMP
             """, (username, user_email, alternative_email, send_deals_in_mail, send_daily_change_data, subscription_status, daily_email_time))
             
-            # Also update subscription status in external_users table
+            # Also update subscription status and email notification in external_users table
             try:
+                # Add email_notification column if it doesn't exist
+                cursor.execute("ALTER TABLE external_users ADD COLUMN IF NOT EXISTS email_notification BOOLEAN DEFAULT FALSE")
+                cursor.execute("ALTER TABLE external_users ADD COLUMN IF NOT EXISTS subscription BOOLEAN DEFAULT FALSE")
+                
+                # Update both subscription and email notification based on send_deals_in_mail setting
                 cursor.execute("""
                     UPDATE external_users 
-                    SET subscription = %s 
+                    SET subscription = %s, email_notification = %s 
                     WHERE username = %s
-                """, (subscription_status, username))
+                """, (subscription_status, send_deals_in_mail, username))
+                
+                logger.info(f"✅ Updated external_users table for {username}: subscription={subscription_status}, email_notification={send_deals_in_mail}")
+                
             except Exception as e:
-                logger.warning(f"Could not update external_users subscription: {e}")
-                # Try to add subscription column if it doesn't exist
+                logger.warning(f"Could not update external_users: {e}")
+                # Try to add columns separately if needed
                 try:
                     cursor.execute("ALTER TABLE external_users ADD COLUMN IF NOT EXISTS subscription BOOLEAN DEFAULT FALSE")
-                    cursor.execute("UPDATE external_users SET subscription = %s WHERE username = %s", (subscription_status, username))
+                    cursor.execute("ALTER TABLE external_users ADD COLUMN IF NOT EXISTS email_notification BOOLEAN DEFAULT FALSE")
+                    cursor.execute("UPDATE external_users SET subscription = %s, email_notification = %s WHERE username = %s", 
+                                 (subscription_status, send_deals_in_mail, username))
                 except Exception as e2:
-                    logger.error(f"Failed to add subscription column or update: {e2}")
+                    logger.error(f"Failed to add columns or update external_users: {e2}")
             
             conn.commit()
             logger.info(f"✅ Email settings saved successfully for user: {username}")

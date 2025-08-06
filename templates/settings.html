@@ -383,85 +383,41 @@
             </div>
         </div>
         
-        <div class="text-center">
-            <button type="button" class="btn btn-primary btn-lg" onclick="saveSettings()">
-                <i class="fas fa-save me-2"></i>Save Settings
-            </button>
-        </div>
+        <!-- Save button removed - email settings auto-save, local settings save automatically -->
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/static/js/email-settings.js"></script>
     
     <script>
-        // Load saved settings on page load
+        // Load saved local settings (non-email settings)
         document.addEventListener('DOMContentLoaded', function() {
-            loadSettings();
+            loadLocalSettings();
         });
         
-        function loadSettings() {
-            // Load settings from localStorage
-            const settings = {
-                emailDealCreated: localStorage.getItem('emailDealCreated') !== 'false',
-                emailDealUpdated: localStorage.getItem('emailDealUpdated') !== 'false',
-                emailDealClosed: localStorage.getItem('emailDealClosed') !== 'false',
-                autoRefresh: localStorage.getItem('autoRefresh') !== 'false',
-                showINR: localStorage.getItem('showINR') !== 'false'
-            };
+        function loadLocalSettings() {
+            // Load non-email settings from localStorage
+            const autoRefresh = localStorage.getItem('autoRefresh') !== 'false';
+            const soundNotifications = localStorage.getItem('soundNotifications') === 'true';
             
             // Apply settings to switches
-            Object.keys(settings).forEach(key => {
-                const element = document.getElementById(key);
-                if (element) {
-                    element.checked = settings[key];
-                }
-            });
-        }
-        
-        function saveSettings() {
-            // Get current switch states
-            const settings = {
-                emailDealCreated: document.getElementById('emailDealCreated').checked,
-                emailDealUpdated: document.getElementById('emailDealUpdated').checked,
-                emailDealClosed: document.getElementById('emailDealClosed').checked,
-                autoRefresh: document.getElementById('autoRefresh').checked,
-                showINR: document.getElementById('showINR').checked
-            };
+            const autoRefreshToggle = document.getElementById('autoRefreshToggle');
+            const soundToggle = document.getElementById('soundNotificationsToggle');
             
-            // Save to localStorage
-            Object.keys(settings).forEach(key => {
-                localStorage.setItem(key, settings[key]);
-            });
-            
-            // Send to server
-            fetch('/api/save-settings', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(settings)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Settings Saved',
-                        text: 'Your preferences have been saved successfully!',
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-                } else {
-                    throw new Error(data.error || 'Failed to save settings');
-                }
-            })
-            .catch(error => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Failed to save settings: ' + error.message
+            if (autoRefreshToggle) {
+                autoRefreshToggle.checked = autoRefresh;
+                autoRefreshToggle.addEventListener('change', function() {
+                    localStorage.setItem('autoRefresh', this.checked);
                 });
-            });
+            }
+            
+            if (soundToggle) {
+                soundToggle.checked = soundNotifications;
+                soundToggle.addEventListener('change', function() {
+                    localStorage.setItem('soundNotifications', this.checked);
+                });
+            }
         }
     </script>
 </body>

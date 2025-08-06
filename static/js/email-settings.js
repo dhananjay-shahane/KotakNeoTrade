@@ -9,10 +9,10 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadEmailSettings() {
-    fetch('/api/email/get-settings')
+    fetch('/api/email-settings')
         .then(response => response.json())
         .then(data => {
-            if (data.status === 'success') {
+            if (data.success) {
                 const settings = data.settings;
                 
                 // Update toggle switches based on saved settings
@@ -23,7 +23,7 @@ function loadEmailSettings() {
                 const alternativeEmailInput = document.getElementById('alternativeEmail');
                 
                 if (signalsToggle) {
-                    signalsToggle.checked = settings.send_signals_in_mail;
+                    signalsToggle.checked = settings.send_deals_in_mail || false;
                 }
                 
                 if (dealsToggle) {
@@ -31,20 +31,27 @@ function loadEmailSettings() {
                 }
                 
                 if (subscriptionToggle) {
-                    subscriptionToggle.checked = settings.subscription;
+                    subscriptionToggle.checked = settings.send_daily_change_data;
                 }
                 
                 if (sendTimeInput) {
-                    sendTimeInput.value = settings.send_time || '09:00';
+                    sendTimeInput.value = settings.daily_email_time || '09:00';
                 }
                 
                 if (alternativeEmailInput) {
                     alternativeEmailInput.value = settings.alternative_email || '';
                 }
                 
+                if (settings.user_email) {
+                    const userEmailInput = document.getElementById('userEmail');
+                    if (userEmailInput) {
+                        userEmailInput.value = settings.user_email;
+                    }
+                }
+                
                 console.log('Email settings loaded successfully');
             } else {
-                console.error('Failed to load email settings:', data.message);
+                console.error('Failed to load email settings:', data.error);
                 showNotification('Failed to load email settings', 'error');
             }
         })
@@ -55,11 +62,11 @@ function loadEmailSettings() {
 }
 
 function setupEmailToggleListeners() {
-    // Trade signals email toggle
+    // Trade signals email toggle (using same setting as deals for now)
     const signalsToggle = document.getElementById('emailSignalsToggle');
     if (signalsToggle) {
         signalsToggle.addEventListener('change', function() {
-            updateEmailSetting('send_signals_in_mail', this.checked);
+            updateEmailSetting('send_deals_in_mail', this.checked);
         });
     }
     
@@ -75,7 +82,7 @@ function setupEmailToggleListeners() {
     const subscriptionToggle = document.getElementById('emailSubscriptionToggle');
     if (subscriptionToggle) {
         subscriptionToggle.addEventListener('change', function() {
-            updateEmailSetting('subscription', this.checked);
+            updateEmailSetting('send_daily_change_data', this.checked);
         });
     }
     
@@ -83,7 +90,7 @@ function setupEmailToggleListeners() {
     const sendTimeInput = document.getElementById('emailSendTime');
     if (sendTimeInput) {
         sendTimeInput.addEventListener('change', function() {
-            updateEmailSetting('send_time', this.value);
+            updateEmailSetting('daily_email_time', this.value);
         });
     }
     
@@ -100,7 +107,7 @@ function updateEmailSetting(settingName, settingValue) {
     const data = {};
     data[settingName] = settingValue;
     
-    fetch('/api/email/notification-settings', {
+    fetch('/api/email-settings', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -109,11 +116,11 @@ function updateEmailSetting(settingName, settingValue) {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.status === 'success') {
+        if (data.success) {
             showNotification('Email setting updated successfully', 'success');
             console.log(`Updated ${settingName} to ${settingValue}`);
         } else {
-            console.error('Failed to update email setting:', data.message);
+            console.error('Failed to update email setting:', data.error);
             showNotification('Failed to update email setting', 'error');
             // Revert the toggle if update failed
             revertToggle(settingName);
@@ -130,16 +137,33 @@ function updateEmailSetting(settingName, settingValue) {
 function revertToggle(settingName) {
     // Revert the toggle state if the server update failed
     const toggleMap = {
-        'send_signals_in_mail': 'emailSignalsToggle',
-        'send_deals_in_mail': 'emailDealsToggle',
-        'subscription': 'emailSubscriptionToggle'
+        'send_deals_in_mail': ['emailSignalsToggle', 'emailDealsToggle'],
+        'send_daily_change_data': 'emailSubscriptionToggle',
+        'daily_email_time': 'emailSendTime',
+        'alternative_email': 'alternativeEmail'
     };
     
-    const toggleId = toggleMap[settingName];
-    if (toggleId) {
-        const toggle = document.getElementById(toggleId);
-        if (toggle) {
-            toggle.checked = !toggle.checked; // Revert to previous state
+    const toggleIds = toggleMap[settingName];
+    if (toggleIds) {
+        if (Array.isArray(toggleIds)) {
+            // Handle multiple toggles for the same setting
+            toggleIds.forEach(toggleId => {
+                const toggle = document.getElementById(toggleId);
+                if (toggle && toggle.type === 'checkbox') {
+                    toggle.checked = !toggle.checked; // Revert to previous state
+                }
+            });
+        } else {
+            // Handle single toggle
+            const toggle = document.getElementById(toggleIds);
+            if (toggle) {
+                if (toggle.type === 'checkbox') {
+                    toggle.checked = !toggle.checked; // Revert to previous state
+                } else {
+                    // For input fields, we would need to store previous value
+                    console.log('Cannot revert non-checkbox input');
+                }
+            }
         }
     }
 }
