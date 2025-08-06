@@ -2,10 +2,11 @@
 Market Watch API for Symbol Management
 Handles symbol search, filtering, and watchlist operations using nse_symbols table
 """
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 import logging
 import psycopg2.extras
 from config.database_config import DatabaseConfig
+from Scripts.user_market_watch_service import UserMarketWatchService
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,9 @@ try:
 except Exception as e:
     logger.error(f"❌ Market Watch API - Database configuration failed: {e}")
     db_config = None
+
+# Initialize user market watch service
+user_watchlist_service = UserMarketWatchService()
 
 @market_watch_api.route('/api/symbols/search', methods=['GET'])
 def search_symbols():
@@ -235,47 +239,104 @@ def get_symbol_details(symbol):
 @market_watch_api.route('/api/market-watch/user-symbols', methods=['GET', 'POST', 'DELETE'])
 def manage_user_symbols():
     """
-    Manage user's market watch symbols
+    Manage user's market watch symbols using CSV files
     GET: Get user's symbols
     POST: Add symbol to user's list
     DELETE: Remove symbol from user's list
     """
-    # For now, we'll use session-based storage
-    # In production, this would be stored in user-specific database table
+    # Get username from session
+    username = session.get('username')
+    if not username:
+        return jsonify({"error": "User not authenticated"}), 401
     
     if request.method == 'GET':
-        # Return user's saved symbols (placeholder implementation)
+        # Get user's watchlist from CSV
+        watchlist = user_watchlist_service.get_user_watchlist(username)
+        
+        # Get market data for symbols if needed
+        symbols_with_data = []
+        for item in watchlist:
+            symbols_with_data.append({
+                'id': item['id'],
+                'username': item['username'],
+                'symbol': item['symbol'],
+                'added_date': item['added_date']
+            })
+        
         return jsonify({
             "success": True,
-            "symbols": [],
-            "count": 0
+            "symbols": symbols_with_data,
+            "count": len(symbols_with_data)
         })
     
     elif request.method == 'POST':
-        symbol = request.json.get('symbol', '').upper()
+        json_data = request.json or {}
+        symbol = json_data.get('symbol', '').upper()
         
         if not symbol:
             return jsonify({"error": "Symbol is required"}), 400
+        
+        # Check if symbol exists in nse_symbols table
+        if not is_valid_symbol(symbol):
+            return jsonify({"error": "Invalid symbol or not found in market data"}), 404
             
-        # Add symbol to user's list (placeholder implementation)
-        return jsonify({
-            "success": True,
-            "message": f"Symbol {symbol} added to market watch",
-            "symbol": symbol
-        })
+        # Add symbol to user's watchlist
+        success = user_watchlist_service.add_symbol_to_watchlist(username, symbol)
+        
+        if success:
+            return jsonify({
+                "success": True,
+                "message": f"Symbol {symbol} added to market watch",
+                "symbol": symbol
+            })
+        else:
+            return jsonify({"error": "Failed to add symbol or symbol already exists"}), 400
     
     elif request.method == 'DELETE':
-        symbol = request.json.get('symbol', '').upper()
+        json_data = request.json or {}
+        symbol = json_data.get('symbol', '').upper()
         
         if not symbol:
             return jsonify({"error": "Symbol is required"}), 400
             
-        # Remove symbol from user's list (placeholder implementation)
-        return jsonify({
-            "success": True,
-            "message": f"Symbol {symbol} removed from market watch",
-            "symbol": symbol
-        })
+        # Remove symbol from user's watchlist
+        success = user_watchlist_service.remove_symbol_from_watchlist(username, symbol)
+        
+        if success:
+            return jsonify({
+                "success": True,
+                "message": f"Symbol {symbol} removed from market watch",
+                "symbol": symbol
+            })
+        else:
+            return jsonify({"error": "Failed to remove symbol or symbol not found"}), 400
+
+def is_valid_symbol(symbol: str) -> bool:
+    """Check if symbol exists in nse_symbols table"""
+    if not db_config:
+        return False
+        
+    try:
+        conn = db_config.get_connection()
+        if not conn:
+            return False
+            
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    SELECT COUNT(*) FROM nse_symbols 
+                    WHERE UPPER(symbol) = UPPER(%s)
+                """, (symbol,))
+                
+                result = cursor.fetchone()
+                return result and result[0] > 0
+                
+        finally:
+            conn.close()
+            
+    except Exception as e:
+        logger.error(f"Error validating symbol {symbol}: {e}")
+        return False
 
 # Export blueprint
 __all__ = ['market_watch_api']
