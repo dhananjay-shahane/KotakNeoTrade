@@ -1169,6 +1169,14 @@ def settings_page():
     user_email = session.get('email', session.get('user_email', 'Not configured'))
     return render_template('settings.html', user_email=user_email)
 
+# Register email notification status API blueprint
+try:
+    from api.email_notification_status import email_status_bp
+    app.register_blueprint(email_status_bp)
+    print("✓ Registered email_notification_status blueprint")
+except Exception as e:
+    print(f"✗ Error registering email_notification_status: {e}")
+
 # Register email settings API routes
 @app.route('/api/email-settings', methods=['GET'])
 def api_get_email_settings():
