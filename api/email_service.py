@@ -110,58 +110,41 @@ class EmailService:
         return False
     
     def get_user_email_preference(self, user_id: str) -> Optional[str]:
-        """Get user's preferred email address"""
-        try:
-            from config.database_config import get_db_dict_connection
-            
-            # Get user's email preferences from external_users and user_email_settings
-            conn = get_db_dict_connection()
-            if not conn:
-                return None
-            
-            try:
-                with conn.cursor() as cursor:
-                    # First try to get alternative email from user_email_settings
-                    cursor.execute("""
-                        SELECT alternative_email FROM user_email_settings 
-                        WHERE username = %s AND alternative_email IS NOT NULL AND alternative_email != ''
-                    """, (user_id,))
-                    
-                    alt_email_result = cursor.fetchone()
-                    if alt_email_result and alt_email_result[0]:
-                        return alt_email_result[0]
-                    
-                    # If no alternative email, get regular email from external_users
-                    cursor.execute("""
-                        SELECT email FROM external_users 
-                        WHERE username = %s AND email IS NOT NULL AND email != ''
-                    """, (user_id,))
-                    
-                    email_result = cursor.fetchone()
-                    if email_result and email_result[0]:
-                        return email_result[0]
-                    
-                    return None
-            finally:
-                conn.close()
-                
-        except Exception as e:
-            logger.error(f"Error getting user email preference: {e}")
-            
-        return None
-    
-    # Case 1: Trade Signal Notification to External Users
-    def send_trade_signal_notification(self, signal_data: Dict[str, Any]) -> bool:
-        """Send new trade signal notifications to all external users"""
+        """Get user's email address from external_users table"""
         try:
             from config.database_config import execute_db_query
             
-            # Get all external users
-            query = "SELECT email FROM external_users WHERE email IS NOT NULL"
+            # Get user's email from external_users table only
+            query = """
+                SELECT email FROM external_users 
+                WHERE username = %s AND email IS NOT NULL AND email != '' AND email_notifications = true
+            """
+            result = execute_db_query(query, (user_id,))
+            
+            if result and len(result) > 0:
+                return result[0].get('email')
+            
+            return None
+                
+        except Exception as e:
+            logger.error(f"Error getting user email preference: {e}")
+            return None
+    
+    # Case 1: Trade Signal Notification to External Users
+    def send_trade_signal_notification(self, signal_data: Dict[str, Any]) -> bool:
+        """Send new trade signal notifications to external users with email notifications enabled"""
+        try:
+            from config.database_config import execute_db_query
+            
+            # Get all external users with email notifications enabled
+            query = """
+                SELECT email FROM external_users 
+                WHERE email IS NOT NULL AND email != '' AND email_notifications = true
+            """
             external_users = execute_db_query(query)
             
             if not external_users:
-                logger.info("No external users found for trade signal notification")
+                logger.info("No external users with email notifications enabled found")
                 return True
                 
             subject = f"🚨 New Trading Signal: {signal_data.get('symbol', 'N/A')}"
@@ -187,52 +170,42 @@ class EmailService:
     def send_deal_creation_notification(self, user_id: str, deal_data: Dict[str, Any]) -> bool:
         """Send deal creation notification email to user if they have email notifications enabled in external_users table"""
         try:
-            from config.database_config import get_db_dict_connection
+            from config.database_config import execute_db_query
             
             # Check if user has email notifications enabled in external_users table
-            conn = get_db_dict_connection()
-            if not conn:
-                logger.error("Failed to connect to database")
-                return False
+            query = """
+                SELECT email, email_notifications 
+                FROM external_users 
+                WHERE username = %s AND email IS NOT NULL AND email != ''
+            """
+            result = execute_db_query(query, (user_id,))
             
-            try:
-                with conn.cursor() as cursor:
-                    cursor.execute("""
-                        SELECT email, email_notification
-                        FROM external_users 
-                        WHERE username = %s
-                    """, (user_id,))
-                    
-                    result = cursor.fetchone()
-                    
-                    if not result:
-                        logger.error(f"User not found: {user_id}")
-                        return False
-                        
-                    user_email = result[0]
-                    email_notification = result[1]
-                    
-                    if not user_email:
-                        logger.error(f"No email address found for user: {user_id}")
-                        return False
-                        
-                    if not email_notification:
-                        logger.info(f"User {user_id} has email notifications disabled")
-                        return True  # Return True as this is expected behavior
-                        
-                    subject = f"✅ Deal Created: {deal_data.get('symbol', 'N/A')}"
-                    
-                    # Create email content
-                    html_content = self._create_deal_html_template(deal_data, 'created')
-                    text_content = self._create_deal_text_template(deal_data, 'created')
-                    
-                    success = self.send_email(user_email, subject, text_content, html_content)
-                    if success:
-                        logger.info(f"✅ Deal creation notification sent to {user_email}")
-                    return success
-                    
-            finally:
-                conn.close()
+            if not result:
+                logger.error(f"User not found: {user_id}")
+                return False
+                
+            user_data = result[0]
+            user_email = user_data.get('email')
+            email_notifications = user_data.get('email_notifications', False)
+            
+            if not user_email:
+                logger.error(f"No email found for user: {user_id}")
+                return False
+                
+            if not email_notifications:
+                logger.info(f"User {user_id} has email notifications disabled")
+                return True  # Return True as this is expected behavior
+                
+            subject = f"✅ Deal Created: {deal_data.get('symbol', 'N/A')}"
+            
+            # Create email content
+            html_content = self._create_deal_html_template(deal_data, 'created')
+            text_content = self._create_deal_text_template(deal_data, 'created')
+            
+            success = self.send_email(user_email, subject, text_content, html_content)
+            if success:
+                logger.info(f"✅ Deal creation notification sent to {user_email}")
+            return success
             
         except Exception as e:
             logger.error(f"❌ Failed to send deal creation notification: {e}")
@@ -308,18 +281,15 @@ class EmailService:
     
     # Case 4: Deal Status Email Notification (Opt-in)
     def send_deal_status_notification(self, user_id: str, deal_data: Dict[str, Any], action: str) -> bool:
-        """Send deal status notification (close/delete) if user has opted in"""
+        """Send deal status notification (close/delete) if user has email notifications enabled"""
         try:
             from config.database_config import execute_db_query
             
-            # Check if user has email notifications enabled for deals
+            # Check if user has email notifications enabled in external_users table
             query = """
-            SELECT 
-                COALESCE(ues.alternative_email, ues.user_email, eu.email) as email_address,
-                COALESCE(ues.send_deals_in_mail, FALSE) as send_deals_in_mail
-            FROM external_users eu
-            LEFT JOIN user_email_settings ues ON eu.username = ues.username
-            WHERE eu.username = %s
+                SELECT email, email_notifications 
+                FROM external_users 
+                WHERE username = %s AND email IS NOT NULL AND email != ''
             """
             result = execute_db_query(query, (user_id,))
             
@@ -328,15 +298,15 @@ class EmailService:
                 return False
                 
             user_data = result[0]
-            user_email = user_data.get('email_address')
-            send_deals_in_mail = user_data.get('send_deals_in_mail', False)
+            user_email = user_data.get('email')
+            email_notifications = user_data.get('email_notifications', False)
             
             if not user_email:
                 logger.error(f"No email found for user: {user_id}")
                 return False
                 
-            if not send_deals_in_mail:
-                logger.info(f"User {user_id} has not enabled deal status notifications")
+            if not email_notifications:
+                logger.info(f"User {user_id} has email notifications disabled")
                 return True  # Return True as this is expected behavior
                 
             action_text = "Closed" if action == 'closed' else "Deleted"
