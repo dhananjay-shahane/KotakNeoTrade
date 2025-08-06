@@ -187,10 +187,35 @@ class EmailService:
     def send_deal_creation_notification(self, user_id: str, deal_data: Dict[str, Any]) -> bool:
         """Send deal creation notification to logged-in user"""
         try:
-            user_email = self.get_user_email_preference(user_id)
+            # Check if user has email notifications enabled for deals
+            from config.database_config import execute_db_query
+            
+            # Check user's email notification preference for deals
+            query = """
+            SELECT 
+                COALESCE(ues.alternative_email, ues.user_email, eu.email) as email_address,
+                COALESCE(ues.send_deals_in_mail, FALSE) as send_deals_in_mail
+            FROM external_users eu
+            LEFT JOIN user_email_settings ues ON eu.username = ues.username
+            WHERE eu.username = %s
+            """
+            result = execute_db_query(query, (user_id,))
+            
+            if not result:
+                logger.error(f"User not found: {user_id}")
+                return False
+                
+            user_data = result[0]
+            user_email = user_data.get('email_address')
+            send_deals_in_mail = user_data.get('send_deals_in_mail', False)
+            
             if not user_email:
                 logger.error(f"No email found for user: {user_id}")
                 return False
+                
+            if not send_deals_in_mail:
+                logger.info(f"User {user_id} has not enabled deal creation notifications")
+                return True  # Return True as this is expected behavior
                 
             subject = f"✅ Deal Created: {deal_data.get('symbol', 'N/A')}"
             
@@ -281,24 +306,32 @@ class EmailService:
         try:
             from config.database_config import execute_db_query
             
-            # Check if user has email notifications enabled
+            # Check if user has email notifications enabled for deals
             query = """
-            SELECT email, alternative_email, email_notification 
-            FROM external_users 
-            WHERE username = %s AND email_notification = true
+            SELECT 
+                COALESCE(ues.alternative_email, ues.user_email, eu.email) as email_address,
+                COALESCE(ues.send_deals_in_mail, FALSE) as send_deals_in_mail
+            FROM external_users eu
+            LEFT JOIN user_email_settings ues ON eu.username = ues.username
+            WHERE eu.username = %s
             """
             result = execute_db_query(query, (user_id,))
             
             if not result:
-                logger.info(f"User {user_id} has not opted in for email notifications")
-                return True
+                logger.error(f"User not found: {user_id}")
+                return False
                 
             user_data = result[0]
-            user_email = user_data.get('alternative_email') or user_data.get('email')
+            user_email = user_data.get('email_address')
+            send_deals_in_mail = user_data.get('send_deals_in_mail', False)
             
             if not user_email:
                 logger.error(f"No email found for user: {user_id}")
                 return False
+                
+            if not send_deals_in_mail:
+                logger.info(f"User {user_id} has not enabled deal status notifications")
+                return True  # Return True as this is expected behavior
                 
             action_text = "Closed" if action == 'closed' else "Deleted"
             subject = f"📊 Deal {action_text}: {deal_data.get('symbol', 'N/A')}"

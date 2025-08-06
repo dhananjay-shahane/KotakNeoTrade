@@ -18,6 +18,7 @@ def create_user_settings_table():
     Create user_email_settings table if it doesn't exist
     This table stores user-specific email notification preferences and SMTP configurations
     """
+    conn = None
     try:
         conn = get_db_dict_connection()
         if not conn:
@@ -31,6 +32,7 @@ def create_user_settings_table():
                     id SERIAL PRIMARY KEY,
                     username VARCHAR(100) NOT NULL UNIQUE,
                     user_email VARCHAR(255),
+                    alternative_email VARCHAR(255),
                     send_deals_in_mail BOOLEAN DEFAULT FALSE,
                     send_daily_change_data BOOLEAN DEFAULT FALSE,
                     subscription BOOLEAN DEFAULT FALSE,
@@ -81,17 +83,19 @@ def get_user_email_settings():
                 'error': 'Username not found in session'
             }), 400
 
-        conn = get_db_dict_connection()
-        if not conn:
-            return jsonify({
-                'success': False,
-                'error': 'Database connection failed'
-            }), 500
+        conn = None
+        try:
+            conn = get_db_dict_connection()
+            if not conn:
+                return jsonify({
+                    'success': False,
+                    'error': 'Database connection failed'
+                }), 500
 
-        with conn.cursor() as cursor:
+            with conn.cursor() as cursor:
             # Retrieve user settings with authorization check
             cursor.execute("""
-                SELECT send_deals_in_mail, send_daily_change_data, daily_email_time, user_email
+                SELECT send_deals_in_mail, send_daily_change_data, daily_email_time, user_email, alternative_email
                 FROM user_email_settings 
                 WHERE username = %s
             """, (username,))
@@ -108,7 +112,8 @@ def get_user_email_settings():
                         'send_deals_in_mail': result[0] if result[0] is not None else False,
                         'send_daily_change_data': result[1] if result[1] is not None else False,
                         'daily_email_time': result[2] if result[2] is not None else '11:00',
-                        'user_email': result[3] if result[3] else user_session_email
+                        'user_email': result[3] if result[3] else user_session_email,
+                        'alternative_email': result[4] if result[4] else ''
                     }
                 })
             else:
@@ -119,7 +124,8 @@ def get_user_email_settings():
                         'send_deals_in_mail': False,
                         'send_daily_change_data': False,
                         'daily_email_time': '11:00',
-                        'user_email': user_session_email
+                        'user_email': user_session_email,
+                        'alternative_email': ''
                     }
                 })
 
@@ -166,6 +172,7 @@ def save_user_email_settings():
         send_daily_change_data = bool(data.get('send_daily_change_data', False))
         daily_email_time = data.get('daily_email_time', '11:00')
         user_email = data.get('user_email', '').strip()
+        alternative_email = data.get('alternative_email', '').strip()
         
         # Link subscription status to daily change data checkbox
         subscription_status = send_daily_change_data
@@ -183,29 +190,39 @@ def save_user_email_settings():
                 'success': False,
                 'error': 'Invalid email format'
             }), 400
-
-        conn = get_db_dict_connection()
-        if not conn:
+            
+        # Validate alternative email format if provided
+        if alternative_email and not InputValidator.validate_email(alternative_email):
             return jsonify({
                 'success': False,
-                'error': 'Database connection failed'
-            }), 500
+                'error': 'Invalid alternative email format'
+            }), 400
 
-        with conn.cursor() as cursor:
+        conn = None
+        try:
+            conn = get_db_dict_connection()
+            if not conn:
+                return jsonify({
+                    'success': False,
+                    'error': 'Database connection failed'
+                }), 500
+
+            with conn.cursor() as cursor:
             # Use UPSERT to insert or update user settings
             cursor.execute("""
                 INSERT INTO user_email_settings 
-                (username, user_email, send_deals_in_mail, send_daily_change_data, subscription, daily_email_time, updated_at)
-                VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                (username, user_email, alternative_email, send_deals_in_mail, send_daily_change_data, subscription, daily_email_time, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
                 ON CONFLICT (username) 
                 DO UPDATE SET
                     user_email = EXCLUDED.user_email,
+                    alternative_email = EXCLUDED.alternative_email,
                     send_deals_in_mail = EXCLUDED.send_deals_in_mail,
                     send_daily_change_data = EXCLUDED.send_daily_change_data,
                     subscription = EXCLUDED.subscription,
                     daily_email_time = EXCLUDED.daily_email_time,
                     updated_at = CURRENT_TIMESTAMP
-            """, (username, user_email, send_deals_in_mail, send_daily_change_data, subscription_status, daily_email_time))
+            """, (username, user_email, alternative_email, send_deals_in_mail, send_daily_change_data, subscription_status, daily_email_time))
             
             # Also update subscription status in external_users table
             try:
@@ -261,6 +278,7 @@ def get_users_with_email_notifications(notification_type):
     Returns:
         List of users with their email settings and SMTP configurations
     """
+    conn = None
     try:
         conn = get_db_dict_connection()
         if not conn:
