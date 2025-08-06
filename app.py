@@ -918,6 +918,45 @@ def place_order():
         logging.error(f"Place order API error: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/enable-email-notifications', methods=['GET'])
+def enable_email_notifications():
+    """Temporary endpoint to enable email notifications for dha86"""
+    try:
+        from config.database_config import execute_db_query
+        
+        # Check current settings
+        query = """
+            SELECT username, email, email_notification 
+            FROM external_users 
+            WHERE username = %s
+        """
+        result = execute_db_query(query, ('dha86',))
+        
+        if not result:
+            return jsonify({"error": "User dha86 not found"}), 404
+            
+        user_data = result[0]
+        current_status = user_data.get('email_notification', False)
+        
+        # Enable email notifications
+        update_query = """
+            UPDATE external_users 
+            SET email_notification = true 
+            WHERE username = %s
+        """
+        execute_db_query(update_query, ('dha86',))
+        
+        return jsonify({
+            "success": True,
+            "message": f"Email notifications enabled for dha86",
+            "previous_status": current_status,
+            "current_status": True,
+            "email": user_data.get('email')
+        })
+        
+    except Exception as e:
+        return jsonify({"error": f"Failed to enable email notifications: {str(e)}"}), 500
+
 
 # ========================================
 # BLUEPRINT REGISTRATION

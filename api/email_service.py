@@ -117,7 +117,7 @@ class EmailService:
             # Get user's email from external_users table only
             query = """
                 SELECT email FROM external_users 
-                WHERE username = %s AND email IS NOT NULL AND email != '' AND email_notifications = true
+                WHERE username = %s AND email IS NOT NULL AND email != '' AND email_notification = true
             """
             result = execute_db_query(query, (user_id,))
             
@@ -139,7 +139,7 @@ class EmailService:
             # Get all external users with email notifications enabled
             query = """
                 SELECT email FROM external_users 
-                WHERE email IS NOT NULL AND email != '' AND email_notifications = true
+                WHERE email IS NOT NULL AND email != '' AND email_notification = true
             """
             external_users = execute_db_query(query)
             
@@ -174,7 +174,7 @@ class EmailService:
             
             # Check if user has email notifications enabled in external_users table
             query = """
-                SELECT email, email_notifications 
+                SELECT email, email_notification 
                 FROM external_users 
                 WHERE username = %s AND email IS NOT NULL AND email != ''
             """
@@ -186,7 +186,7 @@ class EmailService:
                 
             user_data = result[0]
             user_email = user_data.get('email')
-            email_notifications = user_data.get('email_notifications', False)
+            email_notifications = user_data.get('email_notification', False)
             
             if not user_email:
                 logger.error(f"No email found for user: {user_id}")
@@ -287,7 +287,7 @@ class EmailService:
             
             # Check if user has email notifications enabled in external_users table
             query = """
-                SELECT email, email_notifications 
+                SELECT email, email_notification 
                 FROM external_users 
                 WHERE username = %s AND email IS NOT NULL AND email != ''
             """
@@ -299,7 +299,7 @@ class EmailService:
                 
             user_data = result[0]
             user_email = user_data.get('email')
-            email_notifications = user_data.get('email_notifications', False)
+            email_notifications = user_data.get('email_notification', False)
             
             if not user_email:
                 logger.error(f"No email found for user: {user_id}")
