@@ -63,9 +63,14 @@ def trigger_deal_status_email(user_id: str, deal_data: Dict[str, Any], action: s
     Action: Send email if user has email notifications enabled
     """
     try:
-        return email_service.send_deal_status_notification(user_id, deal_data, action)
+        logger.info(f"🔔 Triggering {action} email for user {user_id} with data: {deal_data}")
+        success = email_service.send_deal_status_notification(user_id, deal_data, action)
+        logger.info(f"📧 Deal {action} email result: {'SUCCESS' if success else 'FAILED'}")
+        return success
     except Exception as e:
         logger.error(f"Failed to trigger deal status email: {e}")
+        import traceback
+        logger.error(f"Full traceback: {traceback.format_exc()}")
         return False
 
 # API Endpoints for Email Management

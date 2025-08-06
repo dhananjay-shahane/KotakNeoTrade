@@ -957,6 +957,48 @@ def enable_email_notifications():
     except Exception as e:
         return jsonify({"error": f"Failed to enable email notifications: {str(e)}"}), 500
 
+@app.route('/api/test-email', methods=['GET'])
+def test_email():
+    """Test email functionality directly"""
+    try:
+        from api.email_service import EmailService
+        from datetime import datetime
+        
+        email_service = EmailService()
+        
+        # Test simple email
+        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        test_subject = "Test Email from Kotak Neo Platform"
+        test_content = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; padding: 20px;">
+            <h2>Test Email</h2>
+            <p>This is a test email from your Kotak Neo Trading Platform.</p>
+            <p>If you receive this, your email system is working correctly!</p>
+            <p>Time: {current_time}</p>
+        </body>
+        </html>
+        """
+        
+        text_content = f"Test email from Kotak Neo Platform at {current_time}"
+        
+        success = email_service.send_email(
+            "dhananjayshahane24@gmail.com",
+            test_subject,
+            text_content,
+            test_content
+        )
+        
+        return jsonify({
+            "success": success,
+            "message": "Test email sent" if success else "Failed to send test email",
+            "email_configured": email_service.is_configured,
+            "from_email": email_service.from_email
+        })
+        
+    except Exception as e:
+        return jsonify({"error": f"Test email failed: {str(e)}"}), 500
+
 
 # ========================================
 # BLUEPRINT REGISTRATION

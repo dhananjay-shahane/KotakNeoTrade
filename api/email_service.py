@@ -426,26 +426,11 @@ This is an automated trading signal notification.
                         <td style="padding: 10px; border-bottom: 1px solid #eee;">₹{{{{ exit_price }}}}</td>
                     </tr>
                     {{% endif %}}
-                    <tr>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Date:</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #eee;">{{{{ date }}}}</td>
-                    </tr>
                 </table>
                 
-                {{% if profit_loss is not none %}}
-                <div style="background-color: {{{{ '#d5edda' if profit_loss >= 0 else '#f8d7da' }}}}; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-                    <h4 style="margin: 0 0 10px 0; color: {{{{ '#155724' if profit_loss >= 0 else '#721c24' }}}};">
-                        {{{{ 'Profit' if profit_loss >= 0 else 'Loss' }}}}:
-                    </h4>
-                    <p style="margin: 0; font-size: 18px; font-weight: bold; color: {{{{ '#155724' if profit_loss >= 0 else '#721c24' }}}};">
-                        ₹{{{{ profit_loss }}}}
-                    </p>
-                </div>
-                {{% endif %}}
-                
                 <p style="color: #6c757d; font-size: 14px; margin-top: 30px; border-top: 1px solid #dee2e6; padding-top: 20px;">
-                    This is an automated notification from your trading platform.<br>
-                    Please do not reply to this email.
+                    This is an automated notification from Kotak Neo Trading Platform.<br>
+                    Deal action completed successfully.
                 </p>
             </div>
         </body>
@@ -453,7 +438,22 @@ This is an automated trading signal notification.
         """
         
         template = Template(template_str)
-        return template.render(action=action, **deal_data)
+        try:
+            return template.render(**deal_data, action=action)
+        except Exception as e:
+            # If template rendering fails, create a simple fallback
+            logger.warning(f"Template rendering failed, using fallback: {e}")
+            return f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; padding: 20px;">
+                <h2>Deal {action.title()}: {deal_data.get('symbol', 'N/A')}</h2>
+                <p><strong>Deal ID:</strong> {deal_data.get('deal_id', 'N/A')}</p>
+                <p><strong>Quantity:</strong> {deal_data.get('quantity', 'N/A')}</p>
+                <p><strong>Entry Price:</strong> ₹{deal_data.get('entry_price', 'N/A')}</p>
+                <p>Deal {action} successfully.</p>
+            </body>
+            </html>
+            """
     
     def _create_deal_text_template(self, deal_data: Dict[str, Any], action: str) -> str:
         """Create text template for deal notifications"""
@@ -474,8 +474,9 @@ Entry Price: ₹{deal_data.get('entry_price', 'N/A')}
             
         text += f"Date: {deal_data.get('date', 'N/A')}\n"
         
+        # Only show P&L for deal closure/deletion if available
         profit_loss = deal_data.get('profit_loss')
-        if profit_loss is not None:
+        if profit_loss is not None and action in ['closed', 'deleted']:
             text += f"\n{'Profit' if profit_loss >= 0 else 'Loss'}: ₹{profit_loss}\n"
             
         text += """
