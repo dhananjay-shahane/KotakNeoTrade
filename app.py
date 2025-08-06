@@ -1203,6 +1203,14 @@ try:
 except Exception as e:
     print(f"✗ Error registering email_notification_status: {e}")
 
+# Register market watch API blueprint
+try:
+    from api.market_watch_api import market_watch_api
+    app.register_blueprint(market_watch_api)
+    print("✓ Registered market_watch_api blueprint")
+except Exception as e:
+    print(f"✗ Error registering market_watch_api: {e}")
+
 # Register email settings API routes
 @app.route('/api/email-settings', methods=['GET'])
 def api_get_email_settings():

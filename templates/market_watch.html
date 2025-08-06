@@ -426,7 +426,7 @@ endblock %} {% block head %}
 
         <!-- Add Symbol Modal -->
         <div class="modal fade" id="addSymbolModal" tabindex="-1">
-            <div class="modal-dialog">
+            <div class="modal-dialog modal-lg">
                 <div class="modal-content bg-dark">
                     <div class="modal-header border-bottom border-secondary">
                         <h5 class="modal-title text-light">
@@ -439,22 +439,135 @@ endblock %} {% block head %}
                         ></button>
                     </div>
                     <div class="modal-body">
-                        <form id="addSymbolForm">
-                            <div class="mb-3">
-                                <label class="form-label text-light">Symbol</label>
+                        <!-- Step 1: Category Selection -->
+                        <div class="mb-4">
+                            <label class="form-label text-light">
+                                <i class="fas fa-filter me-1"></i>Symbol Categories
+                            </label>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input
+                                            class="form-check-input"
+                                            type="checkbox"
+                                            id="niftyCheck"
+                                            checked
+                                            onchange="updateSymbolSearch()"
+                                        />
+                                        <label class="form-check-label text-light" for="niftyCheck">
+                                            <i class="fas fa-chart-line text-success me-1"></i>Nifty
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input
+                                            class="form-check-input"
+                                            type="checkbox"
+                                            id="nifty500Check"
+                                            onchange="updateSymbolSearch()"
+                                        />
+                                        <label class="form-check-label text-light" for="nifty500Check">
+                                            <i class="fas fa-chart-area text-primary me-1"></i>Nifty 500
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input
+                                            class="form-check-input"
+                                            type="checkbox"
+                                            id="etfCheck"
+                                            onchange="updateSymbolSearch()"
+                                        />
+                                        <label class="form-check-label text-light" for="etfCheck">
+                                            <i class="fas fa-briefcase text-warning me-1"></i>ETF
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Symbol Search -->
+                        <div class="mb-4">
+                            <label class="form-label text-light">
+                                <i class="fas fa-search me-1"></i>Search Symbols
+                            </label>
+                            <div class="position-relative">
                                 <input
                                     type="text"
                                     class="form-control bg-secondary text-light border-0"
-                                    id="symbolInput"
-                                    placeholder="e.g., RELIANCE, TCS, INFY"
-                                    required
-                                    style="text-transform: uppercase;"
+                                    id="symbolSearchInput"
+                                    placeholder="Type symbol or company name..."
+                                    autocomplete="off"
+                                    oninput="searchSymbols()"
                                 />
-                                <div class="form-text text-muted">
-                                    <small><i class="fas fa-info-circle me-1"></i>Enter stock symbol (automatically converted to uppercase)</small>
+                                <div
+                                    id="symbolSuggestions"
+                                    class="position-absolute w-100 bg-dark border rounded mt-1 d-none"
+                                    style="z-index: 1050; max-height: 200px; overflow-y: auto;"
+                                ></div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Advanced Filters -->
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label text-light">Company</label>
+                                <select class="form-select bg-secondary text-light border-0" id="companyFilter" onchange="updateSymbolSearch()">
+                                    <option value="">All Companies</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label text-light">Sector</label>
+                                <select class="form-select bg-secondary text-light border-0" id="sectorFilter" onchange="updateSymbolSearch()">
+                                    <option value="">All Sectors</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label text-light">Sub Sector</label>
+                                <select class="form-select bg-secondary text-light border-0" id="subSectorFilter" onchange="updateSymbolSearch()">
+                                    <option value="">All Sub Sectors</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Step 4: Selected Symbol Details -->
+                        <div id="selectedSymbolDetails" class="d-none">
+                            <div class="card bg-secondary border-0 mb-3">
+                                <div class="card-header bg-dark border-0">
+                                    <h6 class="text-light mb-0">
+                                        <i class="fas fa-info-circle me-1"></i>Selected Symbol Details
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <small class="text-muted">Symbol:</small>
+                                            <div class="text-light fw-bold" id="detailSymbol">-</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <small class="text-muted">Company:</small>
+                                            <div class="text-light" id="detailCompany">-</div>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-2">
+                                        <div class="col-md-6">
+                                            <small class="text-muted">Sector:</small>
+                                            <div class="text-light" id="detailSector">-</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <small class="text-muted">Sub Sector:</small>
+                                            <div class="text-light" id="detailSubSector">-</div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <small class="text-muted">Categories:</small>
+                                        <div id="detailCategories" class="mt-1"></div>
+                                    </div>
                                 </div>
                             </div>
-                        </form>
+                        </div>
                     </div>
                     <div class="modal-footer border-top border-secondary">
                         <button
@@ -467,7 +580,9 @@ endblock %} {% block head %}
                         <button
                             type="button"
                             class="btn btn-success"
-                            onclick="submitAddSymbol()"
+                            id="addSymbolBtn"
+                            onclick="submitAdvancedAddSymbol()"
+                            disabled
                         >
                             <i class="fas fa-plus me-1"></i>Add Symbol
                         </button>
