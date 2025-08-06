@@ -183,50 +183,56 @@ class EmailService:
             logger.error(f"❌ Failed to send trade signal notifications: {e}")
             return False
     
-    # Case 2: Deal Creation Notification to Logged-in User
+    # Case 2: Deal Creation Notification (Using external_users table only)
     def send_deal_creation_notification(self, user_id: str, deal_data: Dict[str, Any]) -> bool:
-        """Send deal creation notification to logged-in user"""
+        """Send deal creation notification email to user if they have email notifications enabled in external_users table"""
         try:
-            # Check if user has email notifications enabled for deals
-            from config.database_config import execute_db_query
+            from config.database_config import get_db_dict_connection
             
-            # Check user's email notification preference for deals
-            query = """
-            SELECT 
-                COALESCE(ues.alternative_email, ues.user_email, eu.email) as email_address,
-                COALESCE(ues.send_deals_in_mail, FALSE) as send_deals_in_mail
-            FROM external_users eu
-            LEFT JOIN user_email_settings ues ON eu.username = ues.username
-            WHERE eu.username = %s
-            """
-            result = execute_db_query(query, (user_id,))
-            
-            if not result:
-                logger.error(f"User not found: {user_id}")
+            # Check if user has email notifications enabled in external_users table
+            conn = get_db_dict_connection()
+            if not conn:
+                logger.error("Failed to connect to database")
                 return False
-                
-            user_data = result[0]
-            user_email = user_data.get('email_address')
-            send_deals_in_mail = user_data.get('send_deals_in_mail', False)
             
-            if not user_email:
-                logger.error(f"No email found for user: {user_id}")
-                return False
-                
-            if not send_deals_in_mail:
-                logger.info(f"User {user_id} has not enabled deal creation notifications")
-                return True  # Return True as this is expected behavior
-                
-            subject = f"✅ Deal Created: {deal_data.get('symbol', 'N/A')}"
-            
-            # Create email content
-            html_content = self._create_deal_html_template(deal_data, 'created')
-            text_content = self._create_deal_text_template(deal_data, 'created')
-            
-            success = self.send_email(user_email, subject, text_content, html_content)
-            if success:
-                logger.info(f"✅ Deal creation notification sent to {user_email}")
-            return success
+            try:
+                with conn.cursor() as cursor:
+                    cursor.execute("""
+                        SELECT email, email_notification
+                        FROM external_users 
+                        WHERE username = %s
+                    """, (user_id,))
+                    
+                    result = cursor.fetchone()
+                    
+                    if not result:
+                        logger.error(f"User not found: {user_id}")
+                        return False
+                        
+                    user_email = result[0]
+                    email_notification = result[1]
+                    
+                    if not user_email:
+                        logger.error(f"No email address found for user: {user_id}")
+                        return False
+                        
+                    if not email_notification:
+                        logger.info(f"User {user_id} has email notifications disabled")
+                        return True  # Return True as this is expected behavior
+                        
+                    subject = f"✅ Deal Created: {deal_data.get('symbol', 'N/A')}"
+                    
+                    # Create email content
+                    html_content = self._create_deal_html_template(deal_data, 'created')
+                    text_content = self._create_deal_text_template(deal_data, 'created')
+                    
+                    success = self.send_email(user_email, subject, text_content, html_content)
+                    if success:
+                        logger.info(f"✅ Deal creation notification sent to {user_email}")
+                    return success
+                    
+            finally:
+                conn.close()
             
         except Exception as e:
             logger.error(f"❌ Failed to send deal creation notification: {e}")

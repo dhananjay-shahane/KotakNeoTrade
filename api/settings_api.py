@@ -1,7 +1,7 @@
 """
 Email Settings API
 
-This module handles email notification settings for users.
+This module handles email notification settings for users using external_users table only.
 It provides endpoints to get and save user email preferences.
 """
 
@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 
 def get_user_email_settings():
     """
-    Retrieve email notification settings for the current user
-    Returns user's email preferences including switches and SMTP configuration
+    Retrieve email notification settings for the current user from external_users table
+    Returns user's email preferences including notification switch
     """
     conn = None
     try:
@@ -42,10 +42,17 @@ def get_user_email_settings():
             }), 500
 
         with conn.cursor() as cursor:
-            # Retrieve user settings with authorization check
+            # Add email_notification column if it doesn't exist
+            try:
+                cursor.execute("ALTER TABLE external_users ADD COLUMN IF NOT EXISTS email_notification BOOLEAN DEFAULT FALSE")
+                conn.commit()
+            except Exception as e:
+                logger.warning(f"Could not add email_notification column: {e}")
+            
+            # Retrieve user settings from external_users table
             cursor.execute("""
-                SELECT send_deals_in_mail, send_daily_change_data, daily_email_time, user_email, alternative_email
-                FROM user_email_settings 
+                SELECT email_notification, email, username
+                FROM external_users 
                 WHERE username = %s
             """, (username,))
             
@@ -58,11 +65,8 @@ def get_user_email_settings():
                 return jsonify({
                     'success': True,
                     'settings': {
-                        'send_deals_in_mail': result[0] if result[0] is not None else False,
-                        'send_daily_change_data': result[1] if result[1] is not None else False,
-                        'daily_email_time': result[2] if result[2] is not None else '11:00',
-                        'user_email': result[3] if result[3] else user_session_email,
-                        'alternative_email': result[4] if result[4] else ''
+                        'email_notification': result[0] if result[0] is not None else False,
+                        'user_email': result[1] if result[1] else user_session_email
                     }
                 })
             else:
@@ -70,11 +74,8 @@ def get_user_email_settings():
                 return jsonify({
                     'success': True,
                     'settings': {
-                        'send_deals_in_mail': False,
-                        'send_daily_change_data': False,
-                        'daily_email_time': '11:00',
-                        'user_email': user_session_email,
-                        'alternative_email': ''
+                        'email_notification': False,
+                        'user_email': user_session_email
                     }
                 })
 
@@ -91,7 +92,7 @@ def get_user_email_settings():
 
 def save_user_email_settings():
     """
-    Save email notification settings for the current user
+    Save email notification settings for the current user in external_users table only
     Validates input and performs authorization checks before saving preferences
     """
     conn = None
@@ -117,37 +118,8 @@ def save_user_email_settings():
                 'error': 'No settings data provided'
             }), 400
 
-        # Validate input data with security checks
-        send_deals_in_mail = bool(data.get('send_deals_in_mail', False))
-        send_daily_change_data = bool(data.get('send_daily_change_data', False))
-        daily_email_time = data.get('daily_email_time', '11:00')
-        user_email = data.get('user_email', '').strip()
-        alternative_email = data.get('alternative_email', '').strip()
-        
-        # Link subscription status to daily change data checkbox
-        subscription_status = send_daily_change_data
-
-        # Validate time format (HH:MM)
-        if not re.match(r'^([01]?[0-9]|2[0-3]):[0-5][0-9]$', daily_email_time):
-            return jsonify({
-                'success': False,
-                'error': 'Invalid time format. Use HH:MM format'
-            }), 400
-
-        # Validate email format if user email is provided
-        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        if user_email and not re.match(email_pattern, user_email):
-            return jsonify({
-                'success': False,
-                'error': 'Invalid email format'
-            }), 400
-            
-        # Validate alternative email format if provided
-        if alternative_email and not re.match(email_pattern, alternative_email):
-            return jsonify({
-                'success': False,
-                'error': 'Invalid alternative email format'
-            }), 400
+        # Get email notification setting
+        email_notification = bool(data.get('email_notification', False))
 
         conn = get_db_dict_connection()
         if not conn:
@@ -157,89 +129,55 @@ def save_user_email_settings():
             }), 500
 
         with conn.cursor() as cursor:
-            # Use UPSERT to insert or update user settings
-            cursor.execute("""
-                INSERT INTO user_email_settings 
-                (username, user_email, alternative_email, send_deals_in_mail, send_daily_change_data, subscription, daily_email_time, updated_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
-                ON CONFLICT (username) 
-                DO UPDATE SET
-                    user_email = EXCLUDED.user_email,
-                    alternative_email = EXCLUDED.alternative_email,
-                    send_deals_in_mail = EXCLUDED.send_deals_in_mail,
-                    send_daily_change_data = EXCLUDED.send_daily_change_data,
-                    subscription = EXCLUDED.subscription,
-                    daily_email_time = EXCLUDED.daily_email_time,
-                    updated_at = CURRENT_TIMESTAMP
-            """, (username, user_email, alternative_email, send_deals_in_mail, send_daily_change_data, subscription_status, daily_email_time))
-            
-            # Also update subscription status and email notification in external_users table
+            # Add email_notification column if it doesn't exist
             try:
-                # Add email_notification column if it doesn't exist
                 cursor.execute("ALTER TABLE external_users ADD COLUMN IF NOT EXISTS email_notification BOOLEAN DEFAULT FALSE")
-                cursor.execute("ALTER TABLE external_users ADD COLUMN IF NOT EXISTS subscription BOOLEAN DEFAULT FALSE")
-                
-                # Also ensure user_email_settings table has alternative_email column
-                cursor.execute("ALTER TABLE user_email_settings ADD COLUMN IF NOT EXISTS alternative_email VARCHAR(255)")
-                
-                # Update both subscription and email notification based on send_deals_in_mail setting
-                cursor.execute("""
-                    UPDATE external_users 
-                    SET subscription = %s, email_notification = %s 
-                    WHERE username = %s
-                """, (subscription_status, send_deals_in_mail, username))
-                
-                logger.info(f"✅ Updated external_users table for {username}: subscription={subscription_status}, email_notification={send_deals_in_mail}")
-                
+                conn.commit()
             except Exception as e:
-                logger.warning(f"Could not update external_users: {e}")
-                # Try to add columns separately if needed
-                try:
-                    cursor.execute("ALTER TABLE external_users ADD COLUMN IF NOT EXISTS subscription BOOLEAN DEFAULT FALSE")
-                    cursor.execute("ALTER TABLE external_users ADD COLUMN IF NOT EXISTS email_notification BOOLEAN DEFAULT FALSE")
-                    cursor.execute("ALTER TABLE user_email_settings ADD COLUMN IF NOT EXISTS alternative_email VARCHAR(255)")
-                    cursor.execute("UPDATE external_users SET subscription = %s, email_notification = %s WHERE username = %s", 
-                                 (subscription_status, send_deals_in_mail, username))
-                except Exception as e2:
-                    logger.error(f"Failed to add columns or update external_users: {e2}")
+                logger.warning(f"Could not add email_notification column: {e}")
+            
+            # Update email notification setting in external_users table
+            cursor.execute("""
+                UPDATE external_users 
+                SET email_notification = %s 
+                WHERE username = %s
+            """, (email_notification, username))
+            
+            if cursor.rowcount == 0:
+                logger.warning(f"No rows updated for username: {username}")
+                return jsonify({
+                    'success': False,
+                    'error': 'User not found in external_users table'
+                }), 404
             
             conn.commit()
-            logger.info(f"✅ Email settings saved successfully for user: {username}")
+            logger.info(f"✅ Email notification setting updated for {username}: {email_notification}")
             
             return jsonify({
                 'success': True,
-                'message': 'Email settings saved successfully'
+                'message': 'Email notification setting saved successfully'
             })
 
-    except ValueError as e:
-        logger.error(f"❌ Invalid input data: {e}")
-        return jsonify({
-            'success': False,
-            'error': 'Invalid input data provided'
-        }), 400
     except Exception as e:
-        logger.error(f"❌ Failed to save user email settings: {e}")
+        logger.error(f"❌ Failed to save email notification setting: {e}")
         if conn:
             conn.rollback()
         return jsonify({
             'success': False,
-            'error': 'Failed to save email settings'
+            'error': 'Failed to save email notification setting'
         }), 500
     finally:
         if conn:
             conn.close()
 
 
-def get_users_with_email_notifications(notification_type):
+def get_users_with_email_notifications():
     """
-    Get all users who have enabled specific email notification types
-    Used for sending bulk emails when trading signals or deals are updated
-    
-    Args:
-        notification_type: 'deals' or 'daily_reports'
+    Get all users who have enabled email notifications from external_users table
+    Used for sending emails when deals are created
     
     Returns:
-        List of users with their email settings and SMTP configurations
+        List of users with their email addresses who want notifications
     """
     conn = None
     try:
@@ -249,30 +187,17 @@ def get_users_with_email_notifications(notification_type):
             return []
 
         with conn.cursor() as cursor:
-            if notification_type == 'deals':
-                # Get users who want deal notifications
-                cursor.execute("""
-                    SELECT username, user_email
-                    FROM user_email_settings 
-                    WHERE send_deals_in_mail = TRUE 
-                    AND user_email IS NOT NULL 
-                    AND user_email != ''
-                """)
-            elif notification_type == 'daily_reports':
-                # Get users who want daily reports (with subscription enabled)
-                cursor.execute("""
-                    SELECT username, user_email, daily_email_time
-                    FROM user_email_settings 
-                    WHERE send_daily_change_data = TRUE 
-                    AND subscription = TRUE
-                    AND user_email IS NOT NULL 
-                    AND user_email != ''
-                """)
-            else:
-                return []
+            # Get users who want deal notifications from external_users table
+            cursor.execute("""
+                SELECT username, email
+                FROM external_users 
+                WHERE email_notification = TRUE 
+                AND email IS NOT NULL 
+                AND email != ''
+            """)
 
             results = cursor.fetchall()
-            return [dict(row) for row in results] if results else []
+            return [{'username': row[0], 'email': row[1]} for row in results] if results else []
 
     except Exception as e:
         logger.error(f"Error getting users with email notifications: {e}")

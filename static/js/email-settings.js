@@ -1,6 +1,6 @@
 /**
  * Email Settings JavaScript
- * Handles email notification toggle switches and persistence
+ * Handles email notification toggle switch and persistence using external_users table
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -15,31 +15,11 @@ function loadEmailSettings() {
             if (data.success) {
                 const settings = data.settings;
                 
-                // Update toggle switches based on saved settings
-                const signalsToggle = document.getElementById('emailSignalsToggle');
-                const dealsToggle = document.getElementById('emailDealsToggle');
-                const subscriptionToggle = document.getElementById('emailSubscriptionToggle');
-                const sendTimeInput = document.getElementById('emailSendTime');
-                const alternativeEmailInput = document.getElementById('alternativeEmail');
+                // Update toggle switch based on saved settings
+                const emailNotificationToggle = document.getElementById('emailNotificationToggle');
                 
-                if (signalsToggle) {
-                    signalsToggle.checked = settings.send_deals_in_mail || false;
-                }
-                
-                if (dealsToggle) {
-                    dealsToggle.checked = settings.send_deals_in_mail;
-                }
-                
-                if (subscriptionToggle) {
-                    subscriptionToggle.checked = settings.send_daily_change_data;
-                }
-                
-                if (sendTimeInput) {
-                    sendTimeInput.value = settings.daily_email_time || '09:00';
-                }
-                
-                if (alternativeEmailInput) {
-                    alternativeEmailInput.value = settings.alternative_email || '';
+                if (emailNotificationToggle) {
+                    emailNotificationToggle.checked = settings.email_notification || false;
                 }
                 
                 if (settings.user_email) {
@@ -49,146 +29,91 @@ function loadEmailSettings() {
                     }
                 }
                 
-                console.log('Email settings loaded successfully');
+                console.log('Email settings loaded:', settings);
             } else {
                 console.error('Failed to load email settings:', data.error);
-                showNotification('Failed to load email settings', 'error');
+                showAlert('Failed to load email settings', 'error');
             }
         })
         .catch(error => {
             console.error('Error loading email settings:', error);
-            showNotification('Error loading email settings', 'error');
+            showAlert('Error loading email settings', 'error');
         });
 }
 
 function setupEmailToggleListeners() {
-    // Trade signals email toggle (using same setting as deals for now)
-    const signalsToggle = document.getElementById('emailSignalsToggle');
-    if (signalsToggle) {
-        signalsToggle.addEventListener('change', function() {
-            updateEmailSetting('send_deals_in_mail', this.checked);
-        });
+    const saveButton = document.getElementById('saveEmailSettings');
+    const emailNotificationToggle = document.getElementById('emailNotificationToggle');
+    
+    if (saveButton) {
+        saveButton.addEventListener('click', saveEmailSettings);
     }
     
-    // Deal notifications email toggle
-    const dealsToggle = document.getElementById('emailDealsToggle');
-    if (dealsToggle) {
-        dealsToggle.addEventListener('change', function() {
-            updateEmailSetting('send_deals_in_mail', this.checked);
-        });
-    }
-    
-    // Daily subscription email toggle
-    const subscriptionToggle = document.getElementById('emailSubscriptionToggle');
-    if (subscriptionToggle) {
-        subscriptionToggle.addEventListener('change', function() {
-            updateEmailSetting('send_daily_change_data', this.checked);
-        });
-    }
-    
-    // Send time input
-    const sendTimeInput = document.getElementById('emailSendTime');
-    if (sendTimeInput) {
-        sendTimeInput.addEventListener('change', function() {
-            updateEmailSetting('daily_email_time', this.value);
-        });
-    }
-    
-    // Alternative email input
-    const alternativeEmailInput = document.getElementById('alternativeEmail');
-    if (alternativeEmailInput) {
-        alternativeEmailInput.addEventListener('blur', function() {
-            updateEmailSetting('alternative_email', this.value);
+    // Auto-save when toggle changes
+    if (emailNotificationToggle) {
+        emailNotificationToggle.addEventListener('change', function() {
+            console.log('Email notification toggle changed:', this.checked);
+            saveEmailSettings();
         });
     }
 }
 
-function updateEmailSetting(settingName, settingValue) {
-    const data = {};
-    data[settingName] = settingValue;
+function saveEmailSettings() {
+    const emailNotificationToggle = document.getElementById('emailNotificationToggle');
+    
+    if (!emailNotificationToggle) {
+        console.error('Email notification toggle not found');
+        return;
+    }
+    
+    const settings = {
+        email_notification: emailNotificationToggle.checked
+    };
+    
+    console.log('Saving email settings:', settings);
     
     fetch('/api/email-settings', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(settings)
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showNotification('Email setting updated successfully', 'success');
-            console.log(`Updated ${settingName} to ${settingValue}`);
+            console.log('Email settings saved successfully');
+            showAlert('Email settings saved successfully', 'success');
         } else {
-            console.error('Failed to update email setting:', data.error);
-            showNotification('Failed to update email setting', 'error');
-            // Revert the toggle if update failed
-            revertToggle(settingName);
+            console.error('Failed to save email settings:', data.error);
+            showAlert('Failed to save email settings: ' + data.error, 'error');
         }
     })
     .catch(error => {
-        console.error('Error updating email setting:', error);
-        showNotification('Error updating email setting', 'error');
-        // Revert the toggle if update failed
-        revertToggle(settingName);
+        console.error('Error saving email settings:', error);
+        showAlert('Error saving email settings', 'error');
     });
 }
 
-function revertToggle(settingName) {
-    // Revert the toggle state if the server update failed
-    const toggleMap = {
-        'send_deals_in_mail': ['emailSignalsToggle', 'emailDealsToggle'],
-        'send_daily_change_data': 'emailSubscriptionToggle',
-        'daily_email_time': 'emailSendTime',
-        'alternative_email': 'alternativeEmail'
-    };
+function showAlert(message, type) {
+    // Create alert element
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
+    alertDiv.style.position = 'fixed';
+    alertDiv.style.top = '20px';
+    alertDiv.style.right = '20px';
+    alertDiv.style.zIndex = '9999';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
     
-    const toggleIds = toggleMap[settingName];
-    if (toggleIds) {
-        if (Array.isArray(toggleIds)) {
-            // Handle multiple toggles for the same setting
-            toggleIds.forEach(toggleId => {
-                const toggle = document.getElementById(toggleId);
-                if (toggle && toggle.type === 'checkbox') {
-                    toggle.checked = !toggle.checked; // Revert to previous state
-                }
-            });
-        } else {
-            // Handle single toggle
-            const toggle = document.getElementById(toggleIds);
-            if (toggle) {
-                if (toggle.type === 'checkbox') {
-                    toggle.checked = !toggle.checked; // Revert to previous state
-                } else {
-                    // For input fields, we would need to store previous value
-                    console.log('Cannot revert non-checkbox input');
-                }
-            }
+    document.body.appendChild(alertDiv);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.parentNode.removeChild(alertDiv);
         }
-    }
+    }, 3000);
 }
-
-function showNotification(message, type = 'info') {
-    // Check if SweetAlert2 is available
-    if (typeof Swal !== 'undefined') {
-        const icon = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
-        Swal.fire({
-            title: type.charAt(0).toUpperCase() + type.slice(1),
-            text: message,
-            icon: icon,
-            timer: 3000,
-            showConfirmButton: false,
-            toast: true,
-            position: 'top-end'
-        });
-    } else {
-        // Fallback to alert
-        alert(message);
-    }
-}
-
-// Export functions for use in other scripts
-window.emailSettings = {
-    loadEmailSettings,
-    updateEmailSetting
-};
