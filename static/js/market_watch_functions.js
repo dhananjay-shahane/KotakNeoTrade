@@ -193,8 +193,11 @@ function displaySymbolSuggestions(symbols, searchTerm = '') {
 
     suggestionsDiv.innerHTML = html;
     suggestionsDiv.classList.remove("d-none");
-
-    console.log("✓ Displayed", symbols.length, "symbol suggestions in modal");
+    suggestionsDiv.style.display = 'block'; // Force display
+    
+    console.log("✅ Successfully displayed", symbols.length, "symbol suggestions");
+    console.log("✅ suggestionsDiv classes:", suggestionsDiv.className);
+    console.log("✅ suggestionsDiv style display:", suggestionsDiv.style.display);
 }
 
 function highlightSearchTerm(text, searchTerm) {
@@ -511,7 +514,9 @@ function performSymbolSearch(searchTerm) {
 
 // Show search loading state
 function showSearchLoading() {
+    console.log("🔄 showSearchLoading called");
     const suggestionsDiv = document.getElementById("symbolSuggestions");
+    console.log("🔄 Loading - suggestionsDiv found:", !!suggestionsDiv);
     if (suggestionsDiv) {
         suggestionsDiv.innerHTML = `
             <div class="p-3 text-center">
@@ -522,6 +527,8 @@ function showSearchLoading() {
             </div>
         `;
         suggestionsDiv.classList.remove("d-none");
+        suggestionsDiv.style.display = 'block';
+        console.log("🔄 Loading state displayed");
     }
 }
 
@@ -770,6 +777,22 @@ window.hideSuggestions = hideSuggestions;
 window.hideSymbolSuggestions = hideSymbolSuggestions;
 window.clearSymbolSearch = clearSymbolSearch;
 window.initializeAddSymbolModal = initializeAddSymbolModal;
+window.displaySymbolSuggestions = displaySymbolSuggestions;
+
+// Test function to manually trigger suggestions (for debugging)
+window.testSymbolSuggestions = function() {
+    console.log("🧪 Testing symbol suggestions manually...");
+    const testSymbols = [
+        {
+            symbol: "ABB",
+            company: "ABB India Ltd.",
+            sector: "Capital Goods",
+            sub_sector: "Heavy Electrical Equipment",
+            categories: { nifty: true, nifty_500: true, etf: false }
+        }
+    ];
+    displaySymbolSuggestions(testSymbols);
+};
 
 // Clear symbol selection
 function clearSymbolSelection() {
