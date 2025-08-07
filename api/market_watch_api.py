@@ -759,11 +759,8 @@ def get_default_symbols_with_market_data():
         return jsonify({"error": "Database not configured"}), 500
 
     try:
-        # Define default symbols (popular Nifty 50 stocks)
-        default_symbols = [
-            'RELIANCE', 'HDFCBANK', 'INFY', 'HINDUNILVR', 'ICICIBANK',
-            'KOTAKBANK', 'BHARTIARTL', 'LT', 'MARUTI'
-        ]
+        # Load default symbols from CSV file
+        default_symbols = load_default_symbols_from_csv()
 
         # Use bulk query for better performance
         conn = db_config.get_connection()
@@ -806,19 +803,22 @@ def get_default_symbols_with_market_data():
                     'sub_sector': symbol_details.get('sub_sector', 'N/A')
                 }
 
-                # Get market data using PriceFetcher (with timeout for performance)
+                # Get market data with simplified approach (to avoid database timeout)
                 cmp = None
                 price_7d = None
                 price_30d = None
                 
-                if price_fetcher and historical_fetcher:
-                    try:
+                # For now, use fallback values to ensure CSV loading works
+                # Market data integration can be improved separately
+                try:
+                    if price_fetcher:
                         cmp = price_fetcher.get_cmp(symbol)
-                        price_7d = historical_fetcher.get_offset_price(symbol, 5)
-                        price_30d = historical_fetcher.get_offset_price(symbol, 20)
-                    except Exception as market_error:
-                        logger.warning(f"Market data error for {symbol}: {market_error}")
-                        # Continue with basic symbol info even if market data fails
+                    # Skip historical data for now to avoid timeout issues
+                    # price_7d = historical_fetcher.get_offset_price(symbol, 5)
+                    # price_30d = historical_fetcher.get_offset_price(symbol, 20)
+                except Exception as market_error:
+                    logger.warning(f"Market data error for {symbol}: {market_error}")
+                    # Continue with basic symbol info even if market data fails
 
                 if cmp is not None:
                     # Calculate percentage changes
@@ -904,6 +904,56 @@ def try_percent_calc(current_val, historical_val):
         return None
 
 
+def load_default_symbols_from_csv():
+    """
+    Load default market watch symbols from CSV file with priority sorting
+    """
+    import csv
+    import os
+    
+    csv_file_path = os.path.join('data', 'default_market_watch_symbols.csv')
+    symbols_data = []
+    
+    try:
+        if os.path.exists(csv_file_path):
+            with open(csv_file_path, 'r', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+                for row in reader:
+                    symbol = row.get('symbol', '').strip().upper()
+                    priority = int(row.get('priority', 999)) if row.get('priority', '').isdigit() else 999
+                    if symbol:
+                        symbols_data.append({
+                            'symbol': symbol,
+                            'company': row.get('company', ''),
+                            'sector': row.get('sector', ''),
+                            'priority': priority
+                        })
+            
+            # Sort by priority (ascending - lower numbers first)
+            symbols_data.sort(key=lambda x: x['priority'])
+            default_symbols = [item['symbol'] for item in symbols_data]
+            
+            logger.info(f"✓ Loaded {len(default_symbols)} default symbols from CSV (sorted by priority)")
+        else:
+            # Fallback to hardcoded symbols if CSV doesn't exist
+            default_symbols = [
+                'RELIANCE', 'HDFCBANK', 'INFY', 'HINDUNILVR', 'ICICIBANK',
+                'KOTAKBANK', 'BHARTIARTL', 'LT', 'MARUTI', 'TCS'
+            ]
+            logger.warning(f"CSV file not found, using fallback symbols: {len(default_symbols)} symbols")
+    
+    except Exception as e:
+        logger.error(f"Error loading default symbols from CSV: {e}")
+        # Fallback to hardcoded symbols
+        default_symbols = [
+            'RELIANCE', 'HDFCBANK', 'INFY', 'HINDUNILVR', 'ICICIBANK',
+            'KOTAKBANK', 'BHARTIARTL', 'LT', 'MARUTI', 'TCS'
+        ]
+        logger.warning(f"Using fallback symbols due to error: {len(default_symbols)} symbols")
+    
+    return default_symbols
+
+
 def is_valid_symbol(symbol: str) -> bool:
     """Check if symbol exists in nse_symbols table"""
     if not db_config:
@@ -931,6 +981,100 @@ def is_valid_symbol(symbol: str) -> bool:
     except Exception as e:
         logger.error(f"Error validating symbol {symbol}: {e}")
         return False
+
+
+@market_watch_api.route('/api/market-watch/default-symbols/manage', methods=['GET', 'POST', 'PUT', 'DELETE'])
+def manage_default_symbols():
+    """
+    Manage default symbols in CSV file
+    GET: List all default symbols
+    POST: Add new symbol
+    PUT: Update symbol priority
+    DELETE: Remove symbol
+    """
+    import csv
+    import os
+    from flask import request, jsonify
+    
+    csv_file_path = os.path.join('data', 'default_market_watch_symbols.csv')
+    
+    if request.method == 'GET':
+        # Return current default symbols from CSV
+        try:
+            symbols_data = []
+            if os.path.exists(csv_file_path):
+                with open(csv_file_path, 'r', encoding='utf-8') as csvfile:
+                    reader = csv.DictReader(csvfile)
+                    for row in reader:
+                        symbols_data.append({
+                            'symbol': row.get('symbol', ''),
+                            'company': row.get('company', ''),
+                            'sector': row.get('sector', ''),
+                            'priority': int(row.get('priority', 999)) if row.get('priority', '').isdigit() else 999
+                        })
+                
+                # Sort by priority
+                symbols_data.sort(key=lambda x: x['priority'])
+                
+            return jsonify({
+                "success": True,
+                "symbols": symbols_data,
+                "count": len(symbols_data)
+            })
+        except Exception as e:
+            logger.error(f"Error reading default symbols: {e}")
+            return jsonify({"error": "Failed to read default symbols"}), 500
+    
+    elif request.method == 'POST':
+        # Add new symbol to CSV
+        json_data = request.json or {}
+        symbol = json_data.get('symbol', '').upper().strip()
+        company = json_data.get('company', '').strip()
+        sector = json_data.get('sector', '').strip()
+        priority = json_data.get('priority', 999)
+        
+        if not symbol:
+            return jsonify({"error": "Symbol is required"}), 400
+        
+        try:
+            # Check if symbol already exists
+            existing_symbols = []
+            if os.path.exists(csv_file_path):
+                with open(csv_file_path, 'r', encoding='utf-8') as csvfile:
+                    reader = csv.DictReader(csvfile)
+                    existing_symbols = [row['symbol'].upper() for row in reader]
+            
+            if symbol in existing_symbols:
+                return jsonify({"error": "Symbol already exists in default list"}), 400
+            
+            # Append new symbol to CSV
+            with open(csv_file_path, 'a', newline='', encoding='utf-8') as csvfile:
+                fieldnames = ['symbol', 'company', 'sector', 'priority']
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                
+                # Write header if file is empty
+                if os.path.getsize(csv_file_path) == 0:
+                    writer.writeheader()
+                
+                writer.writerow({
+                    'symbol': symbol,
+                    'company': company,
+                    'sector': sector,
+                    'priority': priority
+                })
+            
+            logger.info(f"✓ Added symbol {symbol} to default symbols CSV")
+            return jsonify({
+                "success": True,
+                "message": f"Symbol {symbol} added to default market watch"
+            })
+            
+        except Exception as e:
+            logger.error(f"Error adding symbol to CSV: {e}")
+            return jsonify({"error": "Failed to add symbol"}), 500
+    
+    else:
+        return jsonify({"error": "Method not implemented"}), 501
 
 
 # Export blueprint

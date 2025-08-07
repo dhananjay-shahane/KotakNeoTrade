@@ -1,0 +1,26 @@
+symbol,company,sector,priority
+RELIANCE,Reliance Industries Limited,Oil Gas & Consumable Fuels,1
+HDFCBANK,HDFC Bank Limited,Banks,2
+INFY,Infosys Limited,IT Services,3
+HINDUNILVR,Hindustan Unilever Limited,Household Products,4
+ICICIBANK,ICICI Bank Limited,Banks,5
+KOTAKBANK,Kotak Mahindra Bank Limited,Banks,6
+BHARTIARTL,Bharti Airtel Limited,Diversified Telecommunication Services,7
+LT,Larsen & Toubro Limited,Construction & Engineering,8
+MARUTI,Maruti Suzuki India Limited,Automobiles,9
+TCS,Tata Consultancy Services Limited,IT Services,10
+WIPRO,Wipro Limited,IT Services,11
+BAJFINANCE,Bajaj Finance Limited,Consumer Finance,12
+ASIANPAINT,Asian Paints Limited,Chemicals,13
+NESTLEIND,Nestle India Limited,Food Products,14
+TITAN,Titan Company Limited,Textiles Apparel & Luxury Goods,15
+DRREDDY,Dr. Reddys Laboratories Limited,Pharmaceuticals,16
+SUNPHARMA,Sun Pharmaceutical Industries Limited,Pharmaceuticals,17
+ULTRACEMCO,UltraTech Cement Limited,Construction Materials,18
+BAJAJFINSV,Bajaj Finserv Limited,Diversified Financial Services,19
+ONGC,Oil & Natural Gas Corporation Limited,Oil Gas & Consumable Fuels,20
+POWERGRID,Power Grid Corporation of India Limited,Electric Utilities,21
+TATASTEEL,Tata Steel Limited,Steel,22
+NTPC,NTPC Limited,Independent Power and Renewable Electricity Producers,23
+COALINDIA,Coal India Limited,Oil Gas & Consumable Fuels,24
+ADANIPORTS,Adani Ports and Special Economic Zone Limited,Transportation Infrastructure,25

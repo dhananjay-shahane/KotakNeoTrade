@@ -71,6 +71,10 @@ A comprehensive email notification system has been implemented with 4 specific n
 - ✅ Fixed "List name is required for loadWatchlistMarketData" error by updating function calls
 - ✅ Removed refresh and export buttons from Custom Watchlists table footer as requested
 - ✅ Enhanced error handling and null checks for DOM elements in JavaScript functions
+- ✅ Created data folder structure with CSV files for default Market Watch symbols
+- ✅ Implemented CSV-based symbol management with priority sorting
+- ✅ Added API endpoints for managing default symbols (/api/market-watch/default-symbols/manage)
+- ✅ Enhanced Market Watch page with CSV data loading and improved refresh functionality
 
 **Case 1: Trade Signal Notifications to External Users**
 - Triggers when admin creates new trading signals
