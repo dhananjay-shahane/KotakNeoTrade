@@ -666,21 +666,72 @@ async function loadDefaultMarketWatch() {
     }
 }
 
-// Show loader for default table
+// Show skeleton shimmer for default table
 function showDefaultTableLoader() {
     var tableBody = document.getElementById("defaultMarketWatchTableBody");
-    tableBody.innerHTML = `
-        <tr class="loading-row">
-            <td colspan="10" class="text-center py-4">
-                <div class="d-flex justify-content-center align-items-center">
-                    <div class="spinner-border text-primary me-2" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <span class="text-muted">Loading default market watch data...</span>
-                </div>
-            </td>
+    const skeletonRows = `
+        <tr class="skeleton-row">
+            <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 60px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 45px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 45px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 55px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 45px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 45px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 70px; height: 20px;"></div></td>
+        </tr>
+        <tr class="skeleton-row">
+            <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 70px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 55px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 55px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 60px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 70px; height: 20px;"></div></td>
+        </tr>
+        <tr class="skeleton-row">
+            <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 65px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 40px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 40px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 55px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 40px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 40px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 70px; height: 20px;"></div></td>
+        </tr>
+        <tr class="skeleton-row">
+            <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 75px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 45px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 45px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 35px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 35px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 35px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 35px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 70px; height: 20px;"></div></td>
+        </tr>
+        <tr class="skeleton-row">
+            <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 65px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 45px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 45px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 60px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 45px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 45px; height: 20px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 70px; height: 20px;"></div></td>
         </tr>
     `;
+    tableBody.innerHTML = skeletonRows;
 }
 
 // Show loader for user table
