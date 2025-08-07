@@ -1020,6 +1020,9 @@ function createWatchlistCard(watchlist) {
                     <span class="badge bg-warning text-dark ms-2" id="${cardId}-count">${watchlist.count}</span>
                 </h5>
                 <div class="d-flex gap-2 align-items-center">
+                    <button class="btn btn-sm btn-outline-light" onclick="toggleWatchlistSection('${watchlist.name}')">
+                        <i class="fas fa-minus" id="${cardId}-minimize-icon"></i>
+                    </button>
                     <button class="btn btn-sm btn-success" onclick="addSymbolToWatchlist('${watchlist.name}')">
                         <i class="fas fa-plus me-1"></i>Add Symbol
                     </button>
@@ -1035,20 +1038,38 @@ function createWatchlistCard(watchlist) {
                 </div>
             </div>
             
-            <div class="card-body p-0">
+            <div class="card-body p-0" id="${cardId}-table-container">
                 <div class="table-responsive" style="overflow-y: auto; max-height: 400px;">
                     <table class="table table-dark table-hover mb-0 signals-table" id="${tableId}">
                         <thead class="sticky-top">
                             <tr>
-                                <th style="width: 50px">ID</th>
-                                <th style="width: 80px">Symbol</th>
-                                <th style="width: 70px">7D</th>
-                                <th style="width: 70px">30D</th>
-                                <th style="width: 60px">7D%</th>
-                                <th style="width: 60px">30D%</th>
-                                <th style="width: 70px">CMP</th>
-                                <th style="width: 70px">%CHAN</th>
-                                <th style="width: 70px">CPL</th>
+                                <th style="width: 50px" onclick="sortWatchlistTable('${watchlist.name}', 'id')">
+                                    ID <i class="fas fa-sort" id="${cardId}-sort-id"></i>
+                                </th>
+                                <th style="width: 80px" onclick="sortWatchlistTable('${watchlist.name}', 'symbol')">
+                                    Symbol <i class="fas fa-sort" id="${cardId}-sort-symbol"></i>
+                                </th>
+                                <th style="width: 70px" onclick="sortWatchlistTable('${watchlist.name}', 'price_7d')">
+                                    7D <i class="fas fa-sort" id="${cardId}-sort-price_7d"></i>
+                                </th>
+                                <th style="width: 70px" onclick="sortWatchlistTable('${watchlist.name}', 'price_30d')">
+                                    30D <i class="fas fa-sort" id="${cardId}-sort-price_30d"></i>
+                                </th>
+                                <th style="width: 60px" onclick="sortWatchlistTable('${watchlist.name}', 'change_7d_pct')">
+                                    7D% <i class="fas fa-sort" id="${cardId}-sort-change_7d_pct"></i>
+                                </th>
+                                <th style="width: 60px" onclick="sortWatchlistTable('${watchlist.name}', 'change_30d_pct')">
+                                    30D% <i class="fas fa-sort" id="${cardId}-sort-change_30d_pct"></i>
+                                </th>
+                                <th style="width: 70px" onclick="sortWatchlistTable('${watchlist.name}', 'cmp')">
+                                    CMP <i class="fas fa-sort" id="${cardId}-sort-cmp"></i>
+                                </th>
+                                <th style="width: 70px" onclick="sortWatchlistTable('${watchlist.name}', 'change_pct')">
+                                    %CHAN <i class="fas fa-sort" id="${cardId}-sort-change_pct"></i>
+                                </th>
+                                <th style="width: 70px" onclick="sortWatchlistTable('${watchlist.name}', 'change_val')">
+                                    CPL <i class="fas fa-sort" id="${cardId}-sort-change_val"></i>
+                                </th>
                                 <th style="width: 100px">Actions</th>
                             </tr>
                         </thead>
@@ -1489,6 +1510,393 @@ window.editWatchlistName = function(listName) {
 
 
 
+// Toggle section visibility functions
+window.toggleDefaultSection = function() {
+    const container = document.getElementById('defaultTableContainer');
+    const icon = document.getElementById('defaultMinimizeIcon');
+    
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+        icon.className = 'fas fa-minus';
+    } else {
+        container.style.display = 'none';
+        icon.className = 'fas fa-plus';
+    }
+};
+
+window.toggleUserSection = function() {
+    const container = document.getElementById('userTableContainer');
+    const icon = document.getElementById('userMinimizeIcon');
+    
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+        icon.className = 'fas fa-minus';
+    } else {
+        container.style.display = 'none';
+        icon.className = 'fas fa-plus';
+    }
+};
+
+window.toggleCreateSection = function() {
+    const container = document.getElementById('createFormContainer');
+    const icon = document.getElementById('createMinimizeIcon');
+    
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+        icon.className = 'fas fa-minus';
+    } else {
+        container.style.display = 'none';
+        icon.className = 'fas fa-plus';
+    }
+};
+
+// Search watchlists functionality
+window.searchWatchlists = function() {
+    const input = document.getElementById('watchlistSearchInput');
+    const suggestions = document.getElementById('watchlistSuggestions');
+    const query = input.value.trim().toLowerCase();
+    
+    if (query.length < 1) {
+        suggestions.classList.add('d-none');
+        return;
+    }
+    
+    // Get all existing watchlists
+    fetch('/api/market-watch/watchlists')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.watchlists.length > 0) {
+            const filtered = data.watchlists.filter(w => 
+                w.name.toLowerCase().includes(query)
+            );
+            
+            if (filtered.length > 0) {
+                let html = '';
+                filtered.forEach(watchlist => {
+                    html += `
+                        <div class="p-2 border-bottom border-secondary suggestion-item" 
+                             style="cursor: pointer;"
+                             onmouseover="this.style.backgroundColor='#343a40'"
+                             onmouseout="this.style.backgroundColor=''"
+                             onclick="jumpToWatchlist('${watchlist.name}')">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-light">
+                                    <i class="fas fa-list me-2 text-warning"></i>${watchlist.name}
+                                </span>
+                                <small class="text-muted">${watchlist.count} symbols</small>
+                            </div>
+                        </div>
+                    `;
+                });
+                suggestions.innerHTML = html;
+                suggestions.classList.remove('d-none');
+            } else {
+                suggestions.innerHTML = '<div class="p-2 text-muted text-center">No watchlists found</div>';
+                suggestions.classList.remove('d-none');
+            }
+        } else {
+            suggestions.classList.add('d-none');
+        }
+    })
+    .catch(error => {
+        console.error('Error searching watchlists:', error);
+        suggestions.classList.add('d-none');
+    });
+};
+
+// Jump to specific watchlist
+window.jumpToWatchlist = function(listName) {
+    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const element = document.getElementById(cardId);
+    
+    if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Highlight the card briefly
+        element.style.boxShadow = '0 0 20px rgba(0, 123, 255, 0.5)';
+        setTimeout(() => {
+            element.style.boxShadow = '';
+        }, 2000);
+    }
+    
+    // Clear search
+    document.getElementById('watchlistSearchInput').value = '';
+    document.getElementById('watchlistSuggestions').classList.add('d-none');
+};
+
+// Sorting functionality
+let defaultSortState = { column: null, direction: 'asc' };
+let userSortState = { column: null, direction: 'asc' };
+
+window.sortDefaultTable = function(column) {
+    // Update sort state
+    if (defaultSortState.column === column) {
+        defaultSortState.direction = defaultSortState.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        defaultSortState.column = column;
+        defaultSortState.direction = 'asc';
+    }
+    
+    // Update sort icons
+    updateSortIcons('default', column, defaultSortState.direction);
+    
+    // Sort the data
+    if (defaultMarketWatchData && defaultMarketWatchData.length > 0) {
+        defaultMarketWatchData.sort((a, b) => {
+            let valueA = a[column] || '';
+            let valueB = b[column] || '';
+            
+            // Convert to numbers if possible
+            if (!isNaN(valueA) && !isNaN(valueB)) {
+                valueA = parseFloat(valueA);
+                valueB = parseFloat(valueB);
+            }
+            
+            if (defaultSortState.direction === 'asc') {
+                return valueA > valueB ? 1 : -1;
+            } else {
+                return valueA < valueB ? 1 : -1;
+            }
+        });
+        
+        updateDefaultMarketWatchTable();
+    }
+};
+
+window.sortUserTable = function(column) {
+    // Update sort state
+    if (userSortState.column === column) {
+        userSortState.direction = userSortState.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        userSortState.column = column;
+        userSortState.direction = 'asc';
+    }
+    
+    // Update sort icons
+    updateSortIcons('user', column, userSortState.direction);
+    
+    // Sort the data
+    if (userMarketWatchData && userMarketWatchData.length > 0) {
+        userMarketWatchData.sort((a, b) => {
+            let valueA = a[column] || '';
+            let valueB = b[column] || '';
+            
+            // Convert to numbers if possible
+            if (!isNaN(valueA) && !isNaN(valueB)) {
+                valueA = parseFloat(valueA);
+                valueB = parseFloat(valueB);
+            }
+            
+            if (userSortState.direction === 'asc') {
+                return valueA > valueB ? 1 : -1;
+            } else {
+                return valueA < valueB ? 1 : -1;
+            }
+        });
+        
+        updateUserMarketWatchTable();
+    }
+};
+
+function updateSortIcons(tableType, activeColumn, direction) {
+    // Reset all icons for this table
+    const prefix = tableType === 'default' ? 'default-sort-' : 'sort-';
+    document.querySelectorAll(`[id^="${prefix}"]`).forEach(icon => {
+        icon.className = 'fas fa-sort';
+    });
+    
+    // Set active icon
+    const activeIcon = document.getElementById(`${prefix}${activeColumn}`);
+    if (activeIcon) {
+        activeIcon.className = direction === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
+    }
+}
+
+// User watchlist functions
+window.refreshUserWatchlist = function() {
+    loadUserWatchlist();
+};
+
+window.exportUserWatchlist = function() {
+    if (!userMarketWatchData || userMarketWatchData.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'No Data',
+            text: 'No symbols to export in your watchlist.',
+            background: '#1a1a1a',
+            color: '#fff'
+        });
+        return;
+    }
+    
+    // Create CSV content according to user's format: Market Watch Name, Symbol 1, Symbol 2, etc.
+    const symbols = userMarketWatchData.map(s => s.symbol).join(',');
+    const csvContent = `Market Watch Name,Symbol 1,Symbol 2,Symbol 3,Symbol 4,Symbol 5\nYour Market Watch,${symbols}`;
+    
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'your_market_watch.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    Swal.fire({
+        icon: 'success',
+        title: 'Exported',
+        text: 'Your watchlist exported successfully!',
+        background: '#1a1a1a',
+        color: '#fff',
+        timer: 2000,
+        showConfirmButton: false
+    });
+};
+
+window.clearUserWatchlist = function() {
+    Swal.fire({
+        title: 'Clear All Symbols',
+        text: 'Are you sure you want to remove all symbols from your watchlist?',
+        icon: 'warning',
+        background: '#1a1a1a',
+        color: '#fff',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, clear all',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Clear user watchlist via API
+            fetch('/api/market-watch/user-symbols', {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Cleared',
+                        text: 'All symbols removed from your watchlist.',
+                        background: '#1a1a1a',
+                        color: '#fff',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    
+                    // Reload user watchlist
+                    loadUserWatchlist();
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.error || 'Failed to clear watchlist',
+                        background: '#1a1a1a',
+                        color: '#fff'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error clearing user watchlist:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to clear watchlist. Please try again.',
+                    background: '#1a1a1a',
+                    color: '#fff'
+                });
+            });
+        }
+    });
+};
+
+// Toggle individual watchlist sections
+window.toggleWatchlistSection = function(listName) {
+    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const container = document.getElementById(`${cardId}-table-container`);
+    const icon = document.getElementById(`${cardId}-minimize-icon`);
+    
+    if (container && icon) {
+        if (container.style.display === 'none') {
+            container.style.display = 'block';
+            icon.className = 'fas fa-minus';
+        } else {
+            container.style.display = 'none';
+            icon.className = 'fas fa-plus';
+        }
+    }
+};
+
+// Sort individual watchlist tables
+let watchlistSortStates = {};
+
+window.sortWatchlistTable = function(listName, column) {
+    // Initialize sort state for this watchlist if it doesn't exist
+    if (!watchlistSortStates[listName]) {
+        watchlistSortStates[listName] = { column: null, direction: 'asc' };
+    }
+    
+    const sortState = watchlistSortStates[listName];
+    
+    // Update sort state
+    if (sortState.column === column) {
+        sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortState.column = column;
+        sortState.direction = 'asc';
+    }
+    
+    // Update sort icons for this watchlist
+    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    updateWatchlistSortIcons(cardId, column, sortState.direction);
+    
+    // Reload data and apply sorting
+    fetch(`/api/market-watch/watchlists/${encodeURIComponent(listName)}/symbols-with-data`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Sort the data
+            data.symbols.sort((a, b) => {
+                let valueA = a[column] || '';
+                let valueB = b[column] || '';
+                
+                // Convert to numbers if possible
+                if (!isNaN(valueA) && !isNaN(valueB)) {
+                    valueA = parseFloat(valueA);
+                    valueB = parseFloat(valueB);
+                } else {
+                    // Convert to strings for comparison
+                    valueA = String(valueA).toLowerCase();
+                    valueB = String(valueB).toLowerCase();
+                }
+                
+                if (sortState.direction === 'asc') {
+                    return valueA > valueB ? 1 : -1;
+                } else {
+                    return valueA < valueB ? 1 : -1;
+                }
+            });
+            
+            updateWatchlistTable(listName, data.symbols);
+        }
+    })
+    .catch(error => {
+        console.error(`Error sorting watchlist ${listName}:`, error);
+    });
+};
+
+function updateWatchlistSortIcons(cardId, activeColumn, direction) {
+    // Reset all icons for this watchlist
+    document.querySelectorAll(`[id^="${cardId}-sort-"]`).forEach(icon => {
+        icon.className = 'fas fa-sort';
+    });
+    
+    // Set active icon
+    const activeIcon = document.getElementById(`${cardId}-sort-${activeColumn}`);
+    if (activeIcon) {
+        activeIcon.className = direction === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
+    }
+}
+
 // Initialize on page load
 document.addEventListener("DOMContentLoaded", function () {
     // Load both market watch lists
@@ -1526,6 +1934,17 @@ document.addEventListener("DOMContentLoaded", function () {
             !e.target.closest("#symbolSuggestions")
         ) {
             hideSuggestions();
+        }
+        
+        // Hide watchlist suggestions when clicking outside
+        if (
+            !e.target.closest("#watchlistSearchInput") &&
+            !e.target.closest("#watchlistSuggestions")
+        ) {
+            const watchlistSuggestions = document.getElementById("watchlistSuggestions");
+            if (watchlistSuggestions) {
+                watchlistSuggestions.classList.add("d-none");
+            }
         }
     });
 });
