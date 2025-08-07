@@ -104,6 +104,113 @@ def get_market_data_for_symbol(symbol):
         return None
 
 
+def get_batch_market_data(symbols):
+    """
+    Get market data for multiple symbols in batch to improve performance
+    """
+    if not symbols or not price_fetcher or not historical_fetcher:
+        return {}
+    
+    batch_data = {}
+    
+    try:
+        # Use a single database connection for all queries
+        conn = db_config.get_connection()
+        if not conn:
+            return {}
+        
+        try:
+            with conn.cursor() as cursor:
+                # Get all current prices in one query
+                symbol_list = list(symbols)
+                if not symbol_list:
+                    return {}
+                
+                # Create placeholders for IN clause
+                placeholders = ','.join(['%s'] * len(symbol_list))
+                
+                # Query for current prices (using cmp table)
+                cmp_query = f"""
+                    SELECT symbol, cmp 
+                    FROM cmp 
+                    WHERE UPPER(symbol) IN ({placeholders})
+                """
+                cursor.execute(cmp_query, [s.upper() for s in symbol_list])
+                cmp_results = {row[0]: float(row[1]) for row in cursor.fetchall()}
+                
+                # Query for 7-day prices
+                offset_7d_query = f"""
+                    SELECT DISTINCT symbol, close as price
+                    FROM stock_data 
+                    WHERE UPPER(symbol) IN ({placeholders})
+                    AND date = (SELECT date FROM stock_data WHERE UPPER(symbol) = UPPER(stock_data.symbol) ORDER BY date DESC LIMIT 1 OFFSET 5)
+                """
+                cursor.execute(offset_7d_query, [s.upper() for s in symbol_list])
+                price_7d_results = {row[0]: float(row[1]) for row in cursor.fetchall()}
+                
+                # Query for 30-day prices
+                offset_30d_query = f"""
+                    SELECT DISTINCT symbol, close as price
+                    FROM stock_data 
+                    WHERE UPPER(symbol) IN ({placeholders})
+                    AND date = (SELECT date FROM stock_data WHERE UPPER(symbol) = UPPER(stock_data.symbol) ORDER BY date DESC LIMIT 1 OFFSET 20)
+                """
+                cursor.execute(offset_30d_query, [s.upper() for s in symbol_list])
+                price_30d_results = {row[0]: float(row[1]) for row in cursor.fetchall()}
+                
+                # Query for latest close prices
+                latest_close_query = f"""
+                    SELECT DISTINCT symbol, close
+                    FROM stock_data 
+                    WHERE UPPER(symbol) IN ({placeholders})
+                    AND date = (SELECT MAX(date) FROM stock_data WHERE UPPER(symbol) = UPPER(stock_data.symbol))
+                """
+                cursor.execute(latest_close_query, [s.upper() for s in symbol_list])
+                latest_close_results = {row[0]: float(row[1]) for row in cursor.fetchall()}
+                
+                # Process results for each symbol
+                for symbol in symbol_list:
+                    symbol_upper = symbol.upper()
+                    cmp = cmp_results.get(symbol_upper)
+                    
+                    if cmp is None:
+                        continue
+                    
+                    price_7d = price_7d_results.get(symbol_upper)
+                    price_30d = price_30d_results.get(symbol_upper)
+                    latest_close = latest_close_results.get(symbol_upper)
+                    
+                    # Calculate percentage changes
+                    change_7d_pct = try_percent(cmp, price_7d)
+                    change_30d_pct = try_percent(cmp, price_30d)
+                    change_pct = try_percent(cmp, latest_close)
+                    
+                    # Calculate absolute changes
+                    change_7d = round(cmp - price_7d, 2) if price_7d else None
+                    change_30d = round(cmp - price_30d, 2) if price_30d else None
+                    change_val = round(cmp - latest_close, 2) if latest_close else None
+                    
+                    batch_data[symbol] = {
+                        'cmp': round(cmp, 2),
+                        'price_7d': round(price_7d, 2) if price_7d else '--',
+                        'price_30d': round(price_30d, 2) if price_30d else '--',
+                        'change_7d_pct': change_7d_pct,
+                        'change_30d_pct': change_30d_pct,
+                        'change_7d': change_7d if change_7d else '--',
+                        'change_30d': change_30d if change_30d else '--',
+                        'change_pct': change_pct,
+                        'change_val': change_val if change_val else '--'
+                    }
+                
+        finally:
+            conn.close()
+            
+    except Exception as e:
+        logger.error(f"Error getting batch market data: {e}")
+    
+    return batch_data
+
+
 @market_watch_api.route('/api/symbols/search', methods=['GET'])
 def search_symbols():
     """
@@ -627,18 +734,19 @@ def get_watchlist_symbols_with_market_data(list_name):
     try:
         symbols = user_watchlist_service.get_watchlist_symbols(username, list_name)
         
-        # Get market data for each symbol
+        # Get market data for all symbols in batch (performance optimization)
+        batch_market_data = get_batch_market_data(symbols)
+        
         symbols_with_market_data = []
         for i, symbol in enumerate(symbols, 1):
-            market_data = get_market_data_for_symbol(symbol)
-            
             symbol_info = {
                 'id': i,
                 'symbol': symbol,
                 'list_name': list_name
             }
             
-            # Add market data if available
+            # Add market data if available from batch
+            market_data = batch_market_data.get(symbol)
             if market_data:
                 symbol_info.update(market_data)
             else:
@@ -684,12 +792,14 @@ def get_user_symbols_with_market_data():
         # Get user's watchlist from CSV
         watchlist = user_watchlist_service.get_user_watchlist(username)
 
-        # Get market data for each symbol
+        # Extract symbols for batch processing
+        symbol_list = [item['symbol'] for item in watchlist]
+        batch_market_data = get_batch_market_data(symbol_list)
+        
+        # Get market data for all symbols in batch (performance optimization)
         symbols_with_market_data = []
         for item in watchlist:
             symbol = item['symbol']
-            market_data = get_market_data_for_symbol(symbol)
-
             symbol_info = {
                 'id': item['id'],
                 'username': item['username'],
@@ -697,7 +807,8 @@ def get_user_symbols_with_market_data():
                 'added_date': item['added_date']
             }
 
-            # Add market data if available
+            # Add market data if available from batch
+            market_data = batch_market_data.get(symbol)
             if market_data:
                 symbol_info.update(market_data)
             else:
@@ -769,6 +880,9 @@ def get_default_symbols_with_market_data():
 
         # Create lookup dictionary for faster access
         symbol_lookup = {row['symbol'].upper(): row for row in all_symbol_details}
+        
+        # Get market data for all default symbols in batch (performance optimization)
+        batch_market_data = get_batch_market_data(default_symbols)
 
         for idx, symbol in enumerate(default_symbols, 1):
             try:
@@ -788,59 +902,20 @@ def get_default_symbols_with_market_data():
                     'sub_sector': symbol_details.get('sub_sector', 'N/A')
                 }
 
-                # Get market data using PriceFetcher (with timeout for performance)
-                cmp = None
-                price_7d = None
-                price_30d = None
+                # Get market data from batch results
+                market_data = batch_market_data.get(symbol)
                 
-                if price_fetcher and historical_fetcher:
-                    try:
-                        cmp = price_fetcher.get_cmp(symbol)
-                        price_7d = historical_fetcher.get_offset_price(symbol, 5)
-                        price_30d = historical_fetcher.get_offset_price(symbol, 20)
-                    except Exception as market_error:
-                        logger.warning(f"Market data error for {symbol}: {market_error}")
-                        # Continue with basic symbol info even if market data fails
-
-                if cmp is not None:
-                    # Calculate percentage changes
-                    change_7d_pct = try_percent_calc(cmp, price_7d)
-                    change_30d_pct = try_percent_calc(cmp, price_30d)
-
-                    # Calculate absolute changes
-                    change_7d = (cmp -
-                                 price_7d) if (cmp and price_7d) else None
-                    change_30d = (cmp -
-                                  price_30d) if (cmp and price_30d) else None
-
-                    # Calculate daily change from historical data instead of random
-                    # Use actual historical price difference for better accuracy
-                    daily_change_pct = change_7d_pct if change_7d_pct is not None else 0
-                    daily_change_val = change_7d if change_7d else 0
-
+                if market_data and market_data.get('cmp') != '--':
                     symbol_info.update({
-                        'cmp':
-                        f"{cmp:.2f}" if cmp else '--',
-                        'price_7d':
-                        f"{price_7d:.2f}" if price_7d else '--',
-                        'price_30d':
-                        f"{price_30d:.2f}" if price_30d else '--',
-                        'change_7d_pct':
-                        f"{change_7d_pct:.2f}%"
-                        if change_7d_pct is not None else '--',
-                        'change_30d_pct':
-                        f"{change_30d_pct:.2f}%"
-                        if change_30d_pct is not None else '--',
-                        'change_7d':
-                        f"{change_7d:.2f}" if change_7d else '--',
-                        'change_30d':
-                        f"{change_30d:.2f}" if change_30d else '--',
-                        'change_pct':
-                        f"{daily_change_pct:+.2f}%"
-                        if daily_change_pct is not None else '--',
-                        'change_val':
-                        f"{daily_change_val:+.2f}"
-                        if daily_change_val is not None else '--'
+                        'cmp': f"{market_data['cmp']:.2f}" if market_data['cmp'] != '--' else '--',
+                        'price_7d': f"{market_data['price_7d']:.2f}" if market_data['price_7d'] != '--' else '--',
+                        'price_30d': f"{market_data['price_30d']:.2f}" if market_data['price_30d'] != '--' else '--',
+                        'change_7d_pct': market_data['change_7d_pct'],
+                        'change_30d_pct': market_data['change_30d_pct'],
+                        'change_7d': f"{market_data['change_7d']:.2f}" if market_data['change_7d'] != '--' else '--',
+                        'change_30d': f"{market_data['change_30d']:.2f}" if market_data['change_30d'] != '--' else '--',
+                        'change_pct': market_data['change_pct'],
+                        'change_val': f"{market_data['change_val']:.2f}" if market_data['change_val'] != '--' else '--'
                     })
                 else:
                     # Fallback values when market data is not available
