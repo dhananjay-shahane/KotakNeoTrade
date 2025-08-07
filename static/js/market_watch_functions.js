@@ -1898,21 +1898,8 @@ document.addEventListener("DOMContentLoaded", function () {
         loadCustomWatchlists();
     }, 1000);
 
-    // Set up auto-refresh for market data (every 30 seconds)
-    setInterval(() => {
-        if (document.getElementById('autoRefreshToggle') && document.getElementById('autoRefreshToggle').checked) {
-            console.log("Auto-refreshing market data...");
-            loadDefaultMarketWatch();
-            // Reload all visible custom watchlists
-            const watchlistElements = document.querySelectorAll('[id^="watchlist-"]');
-            watchlistElements.forEach(element => {
-                const listName = element.id.replace('watchlist-', '').replace(/_/g, ' ');
-                if (listName) {
-                    loadWatchlistMarketDataEnhanced(listName);
-                }
-            });
-        }
-    }, 30000); // 30 seconds
+    // Auto-refresh removed to prevent excessive API calls
+    // Users can manually refresh using the refresh button
 
     // Auto-uppercase symbol input and enable button
     var symbolInput = document.getElementById("symbolSearchInput");

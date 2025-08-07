@@ -820,40 +820,18 @@ def get_default_symbols_with_market_data():
                     logger.warning(f"Market data error for {symbol}: {market_error}")
                     # Continue with basic symbol info even if market data fails
 
+                # Show CMP if available, otherwise show placeholder values
                 if cmp is not None:
-                    # For demo purposes, generate some reasonable sample data
-                    # since historical price fetching is causing timeouts
-                    import random
-                    
-                    # Generate realistic sample data based on current price
-                    base_price = float(cmp)
-                    
-                    # Sample 7-day and 30-day prices (slightly different from current)
-                    price_7d_sample = base_price * (1 + random.uniform(-0.05, 0.05))  # ±5% variation
-                    price_30d_sample = base_price * (1 + random.uniform(-0.15, 0.15))  # ±15% variation
-                    
-                    # Calculate percentage changes
-                    change_7d_pct = ((base_price - price_7d_sample) / price_7d_sample) * 100
-                    change_30d_pct = ((base_price - price_30d_sample) / price_30d_sample) * 100
-                    
-                    # Calculate absolute changes
-                    change_7d = base_price - price_7d_sample
-                    change_30d = base_price - price_30d_sample
-                    
-                    # Daily change (smaller variation)
-                    daily_change_pct = random.uniform(-3, 3)  # ±3% daily variation
-                    daily_change_val = base_price * (daily_change_pct / 100)
-
                     symbol_info.update({
                         'cmp': f"{cmp:.2f}",
-                        'price_7d': f"{price_7d_sample:.2f}",
-                        'price_30d': f"{price_30d_sample:.2f}",
-                        'change_7d_pct': f"{change_7d_pct:.2f}%",
-                        'change_30d_pct': f"{change_30d_pct:.2f}%",
-                        'change_7d': f"{change_7d:.2f}",
-                        'change_30d': f"{change_30d:.2f}",
-                        'change_pct': f"{daily_change_pct:+.2f}%",
-                        'change_val': f"{daily_change_val:+.2f}"
+                        'price_7d': '--',  # Historical data temporarily disabled
+                        'price_30d': '--',  # Historical data temporarily disabled  
+                        'change_7d_pct': '--',
+                        'change_30d_pct': '--',
+                        'change_7d': '--',
+                        'change_30d': '--',
+                        'change_pct': '--',
+                        'change_val': '--'
                     })
                 else:
                     # Fallback values when market data is not available
@@ -901,34 +879,27 @@ def try_percent_calc(current_val, historical_val):
 
 def load_default_symbols_from_csv():
     """
-    Load default market watch symbols from CSV file with priority sorting
+    Load default market watch symbols from CSV file (simplified version)
     """
     import csv
     import os
     
     csv_file_path = os.path.join('data', 'default_market_watch_symbols.csv')
-    symbols_data = []
+    default_symbols = []
     
     try:
         if os.path.exists(csv_file_path):
             with open(csv_file_path, 'r', encoding='utf-8') as csvfile:
-                reader = csv.DictReader(csvfile)
+                reader = csv.reader(csvfile)
+                # Skip header row
+                next(reader, None)
                 for row in reader:
-                    symbol = row.get('symbol', '').strip().upper()
-                    priority = int(row.get('priority', 999)) if row.get('priority', '').isdigit() else 999
-                    if symbol:
-                        symbols_data.append({
-                            'symbol': symbol,
-                            'company': row.get('company', ''),
-                            'sector': row.get('sector', ''),
-                            'priority': priority
-                        })
+                    if row and len(row) > 0:
+                        symbol = row[0].strip().upper()
+                        if symbol:
+                            default_symbols.append(symbol)
             
-            # Sort by priority (ascending - lower numbers first)
-            symbols_data.sort(key=lambda x: x['priority'])
-            default_symbols = [item['symbol'] for item in symbols_data]
-            
-            logger.info(f"✓ Loaded {len(default_symbols)} default symbols from CSV (sorted by priority)")
+            logger.info(f"✓ Loaded {len(default_symbols)} default symbols from CSV")
         else:
             # Fallback to hardcoded symbols if CSV doesn't exist
             default_symbols = [
