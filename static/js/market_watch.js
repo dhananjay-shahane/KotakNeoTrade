@@ -3517,8 +3517,8 @@ window.removeSymbolFromWatchlist = function(listName, symbol) {
                         showConfirmButton: false
                     });
                     
-                    // Reload the watchlist with enhanced version
-                    loadWatchlistMarketDataEnhanced(listName);
+                    // Reload the watchlist
+                    loadWatchlistData(listName);
                 } else {
                     Swal.fire({
                         icon: 'error',
@@ -3572,8 +3572,12 @@ window.deleteWatchlist = function(listName) {
                         showConfirmButton: false
                     });
                     
-                    // Reload all custom watchlists to remove the deleted one
-                    loadCustomWatchlists();
+                    // Remove the watchlist card from DOM
+                    const cardId = `watchlist-${listName.replace(/\s+/g, '-')}`;
+                    const card = document.getElementById(cardId);
+                    if (card) {
+                        card.remove();
+                    }
                 } else {
                     Swal.fire({
                         icon: 'error',
