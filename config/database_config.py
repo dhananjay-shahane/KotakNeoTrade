@@ -19,24 +19,26 @@ class DatabaseConfig:
         """Initialize database configuration from environment variables"""
         # SECURITY: Never hardcode credentials - always use environment variables
         # Use external PostgreSQL database only (NO REPLIT DATABASE)
-        
+
         # Priority 1: Use DATABASE_URL if provided (for external PostgreSQL)
         self.database_url = os.environ.get('DATABASE_URL')
-        
+
         # Priority 2: Build from individual components (for .env file configuration)
         self.config = {
-            'host': os.environ.get('DB_HOST') or os.environ.get('PGHOST'),
-            'database': os.environ.get('DB_NAME') or os.environ.get('PGDATABASE'),
-            'user': os.environ.get('DB_USER') or os.environ.get('PGUSER'),
-            'password': os.environ.get('DB_PASSWORD') or os.environ.get('PGPASSWORD'),
-            'port': os.environ.get('DB_PORT') or os.environ.get('PGPORT', '5432')
+            'host': os.environ.get('DB_HOST'),
+            'database': os.environ.get('DB_NAME'),
+            'user': os.environ.get('DB_USER'),
+            'password': os.environ.get('DB_PASSWORD'),
+            'port': os.environ.get('DB_PORT')
         }
-        
+
         # Build DATABASE_URL from components if not provided directly
         if not self.database_url and all(v for v in self.config.values()):
             self.database_url = self._build_database_url()
-            print(f"✓ Built DATABASE_URL from .env components: {self.config['host']}:{self.config['port']}")
-        
+            print(
+                f"✓ Built DATABASE_URL from .env components: {self.config['host']}:{self.config['port']}"
+            )
+
         # Ensure we have a valid external database URL
         if not self.database_url:
             error_msg = (
@@ -48,13 +50,14 @@ class DatabaseConfig:
                 "\n⚠️  REPLIT DATABASE IS NOT SUPPORTED - Use external PostgreSQL only!"
             )
             raise ValueError(error_msg)
-        
+
         # Validate that we're not using Replit database
-        if 'replit' in self.database_url.lower() or 'repl.co' in self.database_url.lower():
+        if 'replit' in self.database_url.lower(
+        ) or 'repl.co' in self.database_url.lower():
             raise ValueError(
                 "❌ Replit database detected! Please configure external PostgreSQL database instead."
             )
-        
+
         print(f"✅ External PostgreSQL database configured successfully")
 
     def _build_database_url(self) -> str:
