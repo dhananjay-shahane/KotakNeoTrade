@@ -132,12 +132,16 @@ function fetchSymbolSuggestions(searchTerm) {
 
 // This function handles suggestions for the modal (updated to work with modal structure)
 function displaySymbolSuggestions(symbols, searchTerm = '') {
-    const suggestionsDiv = document.getElementById("symbolSuggestions");
+    console.log('🔍 displaySymbolSuggestions called with:', symbols?.length, 'symbols for modal');
     
-    console.log('displaySymbolSuggestions called with:', symbols.length, 'symbols for modal');
+    const suggestionsDiv = document.getElementById("symbolSuggestions");
+    console.log('🔍 suggestionsDiv element found:', !!suggestionsDiv);
     
     if (!suggestionsDiv) {
-        console.error("symbolSuggestions element not found");
+        console.error("❌ symbolSuggestions element not found - checking modal is open");
+        // Check if modal exists at all
+        const modal = document.getElementById("addSymbolModal");
+        console.log('Modal exists:', !!modal);
         return;
     }
 
@@ -489,10 +493,11 @@ function performSymbolSearch(searchTerm) {
         .then((response) => response.json())
         .then((data) => {
             console.log("Search response:", data);
-            if (data.success) {
+            console.log("About to call displaySymbolSuggestions with:", data.symbols?.length, "symbols");
+            if (data.success && data.symbols) {
                 displaySymbolSuggestions(data.symbols);
             } else {
-                console.error("Search failed:", data.error);
+                console.error("Search failed:", data.error || "No symbols returned");
                 displaySymbolSuggestions([]);
             }
         })
