@@ -1,9 +1,9 @@
 // Market Watch Functionality
 
 // Market watch data storage
-var userMarketWatchData = [];
+
 var defaultMarketWatchData = [];
-var userIdCounter = 1;
+
 
 // Gradient Background Color Function for percentage values
 function getGradientBackgroundColor(value) {
@@ -62,54 +62,7 @@ function getGradientBackgroundColor(value) {
     return "";
 }
 
-// Add symbol to user list from default list
-function addToUserList(symbol) {
-    // Make API call to add symbol to user's CSV watchlist
-    fetch("/api/market-watch/user-symbols", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            symbol: symbol,
-        }),
-    })
-        .then((response) => response.json())
-        .then((data) => {
-            if (data.success) {
-                // Reload the user watchlist
-                loadUserWatchlist();
 
-                Swal.fire({
-                    icon: "success",
-                    title: "Symbol Added",
-                    text: data.message,
-                    background: "#1a1a1a",
-                    color: "#fff",
-                    timer: 2000,
-                    showConfirmButton: false,
-                });
-            } else {
-                Swal.fire({
-                    icon: "error",
-                    title: "Error",
-                    text: data.error || "Failed to add symbol to watchlist",
-                    background: "#1a1a1a",
-                    color: "#fff",
-                });
-            }
-        })
-        .catch((error) => {
-            console.error("Error adding symbol to watchlist:", error);
-            Swal.fire({
-                icon: "error",
-                title: "Error",
-                text: "Failed to add symbol. Please try again.",
-                background: "#1a1a1a",
-                color: "#fff",
-            });
-        });
-}
 
 // Advanced symbol search and selection variables
 var selectedSymbolData = null;
@@ -434,9 +387,6 @@ function submitAdvancedAddSymbol() {
         
         // Clear current watchlist name
         window.currentWatchlistName = null;
-    } else {
-        // Use the same API call as the simple add function for default user list
-        addToUserList(selectedSymbolData.symbol);
     }
 
     // Close modal and clear selection
@@ -452,80 +402,7 @@ function submitAddSymbol() {
     submitAdvancedAddSymbol();
 }
 
-// Remove symbol from user list
-function removeFromUserList(id) {
-    var symbol = userMarketWatchData.find(function (item) {
-        return item.id === id;
-    });
 
-    if (!symbol) return;
-
-    Swal.fire({
-        title: "Remove Symbol",
-        text:
-            "Are you sure you want to remove " +
-            symbol.symbol +
-            " from your market watch?",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#d33",
-        cancelButtonColor: "#6c757d",
-        confirmButtonText: "Yes, remove it!",
-        background: "#1a1a1a",
-        color: "#fff",
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Make API call to remove symbol from CSV
-            fetch("/api/market-watch/user-symbols", {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    symbol: symbol.symbol,
-                }),
-            })
-                .then((response) => response.json())
-                .then((data) => {
-                    if (data.success) {
-                        // Reload the user watchlist
-                        loadUserWatchlist();
-
-                        Swal.fire({
-                            icon: "success",
-                            title: "Removed",
-                            text: data.message,
-                            background: "#1a1a1a",
-                            color: "#fff",
-                            timer: 2000,
-                            showConfirmButton: false,
-                        });
-                    } else {
-                        Swal.fire({
-                            icon: "error",
-                            title: "Error",
-                            text: data.error || "Failed to remove symbol",
-                            background: "#1a1a1a",
-                            color: "#fff",
-                        });
-                    }
-                })
-                .catch((error) => {
-                    console.error(
-                        "Error removing symbol from watchlist:",
-                        error,
-                    );
-                    Swal.fire({
-                        icon: "error",
-                        title: "Error",
-                        text: "Failed to remove symbol. Please try again.",
-                        background: "#1a1a1a",
-                        color: "#fff",
-                    });
-                });
-        }
-    });
-}
 
 // Generate sample market data for a symbol
 function generateSymbolData(symbol, id) {
@@ -588,9 +465,7 @@ function updateDefaultMarketWatchTable() {
                 <td style="${changePctStyle}">${item.change_pct || "--"}</td>
                 <td>${item.change_val || "--"}</td>
                 <td>
-                    <button class="btn btn-sm btn-success" onclick="addToUserListFromDefault('${item.symbol}')">
-                        <i class="fas fa-plus"></i>
-                    </button>
+                    <!-- Action buttons removed for Default watchlist -->
                 </td>
             </tr>
         `;
@@ -599,13 +474,7 @@ function updateDefaultMarketWatchTable() {
     tableBody.innerHTML = html;
 }
 
-// Update user counts
-function updateUserCounts() {
-    var count = userMarketWatchData.length;
-    document.getElementById("userCount").textContent = count;
-    document.getElementById("userTotalCount").textContent = count;
-    document.getElementById("userShowingCount").textContent = count;
-}
+
 
 // Update default counts
 function updateDefaultCounts() {
@@ -615,11 +484,7 @@ function updateDefaultCounts() {
     document.getElementById("defaultShowingCount").textContent = count;
 }
 
-// Add symbol to user list from default market watch
-function addToUserListFromDefault(symbol) {
-    // Use the existing addToUserList function
-    addToUserList(symbol);
-}
+
 
 // Load default market watch data from API with async/await and loader
 async function loadDefaultMarketWatch() {
@@ -736,41 +601,14 @@ function refreshDefaultList() {
     });
 }
 
-function refreshUserList() {
-    console.log("Refreshing user market watch list...");
-    // Reload user watchlist from API
-    loadUserWatchlist();
-
-    Swal.fire({
-        icon: "success",
-        title: "Refreshed",
-        text: "Your market watch list has been refreshed with latest data.",
-        background: "#1a1a1a",
-        color: "#fff",
-        timer: 1500,
-        showConfirmButton: false,
-    });
-}
-
 function refreshMarketWatch() {
     refreshDefaultList();
-    refreshUserList();
-}
-
-// Pagination functions for user list
-function previousUserPage() {
-    console.log("Previous user page");
-}
-
-function nextUserPage() {
-    console.log("Next user page");
 }
 
 // Export function
 function exportMarketWatch() {
     var data = {
-        defaultList: "Default market watch data",
-        userList: userMarketWatchData,
+        defaultList: "Default market watch data"
     };
 
     var dataStr = JSON.stringify(data, null, 2);
@@ -781,106 +619,6 @@ function exportMarketWatch() {
     link.download = "market_watch_export.json";
     link.click();
     URL.revokeObjectURL(url);
-}
-
-// Load user watchlist data from API (missing function)
-function loadUserWatchlist() {
-    console.log("Loading user watchlist data...");
-    
-    // Show loading state
-    showUserTableLoader();
-    
-    fetch("/api/market-watch/user-symbols-with-data")
-        .then((response) => response.json())
-        .then((data) => {
-            if (data.success) {
-                userMarketWatchData = data.symbols;
-                updateUserMarketWatchTable();
-                updateUserCounts();
-                console.log(`✓ Loaded ${data.symbols.length} user symbols`);
-            } else {
-                console.error("Error loading user watchlist:", data.error);
-                showErrorInUserTable(
-                    "Failed to load your watchlist: " + data.error,
-                );
-            }
-        })
-        .catch((error) => {
-            console.error("Network error loading user watchlist:", error);
-            showErrorInUserTable("Network error loading your watchlist");
-        });
-}
-
-// Update user market watch table (missing function)
-function updateUserMarketWatchTable() {
-    console.log("Updating user market watch table...");
-    
-    const userTableBody = document.getElementById("userMarketWatchTableBody");
-    if (!userTableBody) {
-        console.error("User market watch table body not found");
-        return;
-    }
-    
-    if (!userMarketWatchData || userMarketWatchData.length === 0) {
-        userTableBody.innerHTML = `
-            <tr class="no-data-row">
-                <td colspan="12" class="text-center text-muted py-4">
-                    <i class="fas fa-chart-line fa-2x mb-2"></i><br>
-                    No symbols in your watchlist<br>
-                    <button class="btn btn-sm btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#addSymbolModal">
-                        <i class="fas fa-plus me-1"></i>Add Symbol
-                    </button>
-                </td>
-            </tr>
-        `;
-        return;
-    }
-    
-    let tableContent = "";
-    userMarketWatchData.forEach((symbol, index) => {
-        const change = parseFloat(symbol.change || 0);
-        const changePct = parseFloat(symbol.change_pct || 0);
-        
-        // Color classes based on change
-        const changeColorClass = change >= 0 ? "text-success" : "text-danger";
-        const changeIcon = change >= 0 ? "fas fa-arrow-up" : "fas fa-arrow-down";
-        
-        tableContent += `
-            <tr>
-                <td>${index + 1}</td>
-                <td class="fw-bold">${symbol.symbol || '-'}</td>
-                <td><small class="text-muted">${symbol.company_name || '-'}</small></td>
-                <td>${symbol.sector || '-'}</td>
-                <td class="text-end">₹${parseFloat(symbol.cmp || 0).toFixed(2)}</td>
-                <td class="text-end ${changeColorClass}">
-                    <i class="${changeIcon} me-1"></i>
-                    ₹${Math.abs(change).toFixed(2)}
-                </td>
-                <td class="text-end ${changeColorClass}">
-                    ${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}%
-                </td>
-                <td class="text-end">₹${parseFloat(symbol.open || 0).toFixed(2)}</td>
-                <td class="text-end">₹${parseFloat(symbol.high || 0).toFixed(2)}</td>
-                <td class="text-end">₹${parseFloat(symbol.low || 0).toFixed(2)}</td>
-                <td class="text-end">₹${parseFloat(symbol.close || 0).toFixed(2)}</td>
-                <td class="text-center">
-                    <button class="btn btn-sm btn-outline-danger" onclick="removeFromUserList('${symbol.id || symbol.symbol}')" title="Remove from watchlist">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            </tr>
-        `;
-    });
-    
-    userTableBody.innerHTML = tableContent;
-}
-
-// Update user counts function
-function updateUserCounts() {
-    const countElement = document.getElementById("userSymbolCount");
-    if (countElement) {
-        countElement.textContent = userMarketWatchData.length;
-    }
 }
 
 // Custom Watchlist Management Functions
@@ -1524,18 +1262,7 @@ window.toggleDefaultSection = function() {
     }
 };
 
-window.toggleUserSection = function() {
-    const container = document.getElementById('userTableContainer');
-    const icon = document.getElementById('userMinimizeIcon');
-    
-    if (container.style.display === 'none') {
-        container.style.display = 'block';
-        icon.className = 'fas fa-minus';
-    } else {
-        container.style.display = 'none';
-        icon.className = 'fas fa-plus';
-    }
-};
+
 
 window.toggleCreateSection = function() {
     const container = document.getElementById('createFormContainer');
@@ -1662,40 +1389,7 @@ window.sortDefaultTable = function(column) {
     }
 };
 
-window.sortUserTable = function(column) {
-    // Update sort state
-    if (userSortState.column === column) {
-        userSortState.direction = userSortState.direction === 'asc' ? 'desc' : 'asc';
-    } else {
-        userSortState.column = column;
-        userSortState.direction = 'asc';
-    }
-    
-    // Update sort icons
-    updateSortIcons('user', column, userSortState.direction);
-    
-    // Sort the data
-    if (userMarketWatchData && userMarketWatchData.length > 0) {
-        userMarketWatchData.sort((a, b) => {
-            let valueA = a[column] || '';
-            let valueB = b[column] || '';
-            
-            // Convert to numbers if possible
-            if (!isNaN(valueA) && !isNaN(valueB)) {
-                valueA = parseFloat(valueA);
-                valueB = parseFloat(valueB);
-            }
-            
-            if (userSortState.direction === 'asc') {
-                return valueA > valueB ? 1 : -1;
-            } else {
-                return valueA < valueB ? 1 : -1;
-            }
-        });
-        
-        updateUserMarketWatchTable();
-    }
-};
+
 
 function updateSortIcons(tableType, activeColumn, direction) {
     // Reset all icons for this table
@@ -1711,103 +1405,7 @@ function updateSortIcons(tableType, activeColumn, direction) {
     }
 }
 
-// User watchlist functions
-window.refreshUserWatchlist = function() {
-    loadUserWatchlist();
-};
 
-window.exportUserWatchlist = function() {
-    if (!userMarketWatchData || userMarketWatchData.length === 0) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'No Data',
-            text: 'No symbols to export in your watchlist.',
-            background: '#1a1a1a',
-            color: '#fff'
-        });
-        return;
-    }
-    
-    // Create CSV content according to user's format: Market Watch Name, Symbol 1, Symbol 2, etc.
-    const symbols = userMarketWatchData.map(s => s.symbol).join(',');
-    const csvContent = `Market Watch Name,Symbol 1,Symbol 2,Symbol 3,Symbol 4,Symbol 5\nYour Market Watch,${symbols}`;
-    
-    // Create and download file
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'your_market_watch.csv';
-    a.click();
-    window.URL.revokeObjectURL(url);
-    
-    Swal.fire({
-        icon: 'success',
-        title: 'Exported',
-        text: 'Your watchlist exported successfully!',
-        background: '#1a1a1a',
-        color: '#fff',
-        timer: 2000,
-        showConfirmButton: false
-    });
-};
-
-window.clearUserWatchlist = function() {
-    Swal.fire({
-        title: 'Clear All Symbols',
-        text: 'Are you sure you want to remove all symbols from your watchlist?',
-        icon: 'warning',
-        background: '#1a1a1a',
-        color: '#fff',
-        showCancelButton: true,
-        confirmButtonText: 'Yes, clear all',
-        cancelButtonText: 'Cancel',
-        confirmButtonColor: '#dc3545',
-        cancelButtonColor: '#6c757d'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Clear user watchlist via API
-            fetch('/api/market-watch/user-symbols', {
-                method: 'DELETE'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Cleared',
-                        text: 'All symbols removed from your watchlist.',
-                        background: '#1a1a1a',
-                        color: '#fff',
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-                    
-                    // Reload user watchlist
-                    loadUserWatchlist();
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: data.error || 'Failed to clear watchlist',
-                        background: '#1a1a1a',
-                        color: '#fff'
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error clearing user watchlist:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Failed to clear watchlist. Please try again.',
-                    background: '#1a1a1a',
-                    color: '#fff'
-                });
-            });
-        }
-    });
-};
 
 // Toggle individual watchlist sections
 window.toggleWatchlistSection = function(listName) {
@@ -1899,9 +1497,8 @@ function updateWatchlistSortIcons(cardId, activeColumn, direction) {
 
 // Initialize on page load
 document.addEventListener("DOMContentLoaded", function () {
-    // Load both market watch lists
+    // Load market watch lists
     loadDefaultMarketWatch();
-    loadUserWatchlist();
     
     // Load custom watchlists
     setTimeout(() => {
