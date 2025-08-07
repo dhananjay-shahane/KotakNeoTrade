@@ -7,7 +7,7 @@ packages = ["gcc-unwrapped", "glibcLocales", "libffi", "libstdcxx5", "openssl", 
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["sh", "-c", "flask run"]
+run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
 
 [workflows]
 runButton = "Project"
