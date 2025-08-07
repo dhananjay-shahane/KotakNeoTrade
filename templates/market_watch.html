@@ -22,39 +22,10 @@ endblock %} {% block head %}
         </div>
         <div class="d-flex gap-2 align-items-center">
             <!-- Symbol Search Input with Autocomplete -->
-            <div class="search-container" style="position: relative; min-width: 350px">
-                <div class="input-group">
-                    <span class="input-group-text bg-secondary border-0">
-                        <i class="fas fa-search text-light"></i>
-                    </span>
-                    <input
-                        type="text"
-                        class="form-control bg-dark text-light border-0"
-                        id="symbolAutocompleteInput"
-                        placeholder="Start typing symbol name to see suggestions..."
-                        autocomplete="off"
-                        style="font-size: 14px"
-                        oninput="showSymbolSuggestions(this.value)"
-                        onfocus="showSymbolSuggestions(this.value)"
-                        onblur="setTimeout(hideSymbolSuggestions, 200)"
-                    />
-                    <button
-                        class="btn btn-sm btn-outline-light"
-                        type="button"
-                        onclick="clearSymbolSearch()"
-                        title="Clear search"
-                    >
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                
-                <!-- Autocomplete Suggestions Dropdown -->
-                <div id="symbolSuggestions" class="symbol-suggestions" style="display: none;">
-                    <div class="suggestions-list" id="suggestionsList">
-                        <!-- Suggestions will be populated here -->
-                    </div>
-                </div>
-            </div>
+            <div
+                class="search-container"
+                style="position: relative; min-width: 350px"
+            ></div>
 
             <button
                 class="btn btn-sm btn-outline-secondary"
@@ -98,7 +69,11 @@ endblock %} {% block head %}
                 </h5>
 
                 <div class="d-flex gap-2 align-items-center">
-                    <button class="btn btn-sm btn-outline-light" id="defaultMinimizeBtn" onclick="toggleDefaultSection()">
+                    <button
+                        class="btn btn-sm btn-outline-light"
+                        id="defaultMinimizeBtn"
+                        onclick="toggleDefaultSection()"
+                    >
                         <i class="fas fa-minus" id="defaultMinimizeIcon"></i>
                     </button>
                     <div class="form-check form-switch">
@@ -169,13 +144,18 @@ endblock %} {% block head %}
                     </button>
                 </div>
             </div>
-            
+
             <!-- Search and Filter Section for Default Market Watch -->
-            <div class="border-bottom border-secondary p-3" id="defaultSearchContainer">
+            <div
+                class="border-bottom border-secondary p-3"
+                id="defaultSearchContainer"
+            >
                 <div class="row g-2">
                     <div class="col-md-6">
                         <div class="input-group">
-                            <span class="input-group-text bg-secondary border-0">
+                            <span
+                                class="input-group-text bg-secondary border-0"
+                            >
                                 <i class="fas fa-search text-light"></i>
                             </span>
                             <input
@@ -197,18 +177,36 @@ endblock %} {% block head %}
                         </div>
                         <!-- Search suggestions dropdown -->
                         <div class="position-relative">
-                            <div id="defaultSearchSuggestions" class="dropdown-menu bg-dark border-secondary d-none" style="width: 100%; max-height: 200px; overflow-y: auto; position: absolute; z-index: 1000;">
+                            <div
+                                id="defaultSearchSuggestions"
+                                class="dropdown-menu bg-dark border-secondary d-none"
+                                style="
+                                    width: 100%;
+                                    max-height: 200px;
+                                    overflow-y: auto;
+                                    position: absolute;
+                                    z-index: 1000;
+                                "
+                            >
                                 <!-- Search suggestions will be populated here -->
                             </div>
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <select class="form-select bg-dark text-light border-secondary" id="defaultCompanyFilter" onchange="performDefaultSearch()">
+                        <select
+                            class="form-select bg-dark text-light border-secondary"
+                            id="defaultCompanyFilter"
+                            onchange="performDefaultSearch()"
+                        >
                             <option value="">All Companies</option>
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <select class="form-select bg-dark text-light border-secondary" id="defaultSectorFilter" onchange="performDefaultSearch()">
+                        <select
+                            class="form-select bg-dark text-light border-secondary"
+                            id="defaultSectorFilter"
+                            onchange="performDefaultSearch()"
+                        >
                             <option value="">All Sectors</option>
                         </select>
                     </div>
@@ -216,39 +214,105 @@ endblock %} {% block head %}
             </div>
 
             <div class="card-body p-0" id="defaultTableContainer">
-                <div class="table-responsive" style="overflow-y: auto; max-height: 400px;">
+                <div
+                    class="table-responsive"
+                    style="overflow-y: auto; max-height: 400px"
+                >
                     <table
                         class="table table-dark table-hover mb-0 signals-table"
                         id="defaultMarketWatchTable"
                     >
                         <thead class="sticky-top">
                             <tr>
-                                <th style="width: 50px" onclick="sortDefaultTable('id')">
-                                    ID <i class="fas fa-sort" id="default-sort-id"></i>
+                                <th
+                                    style="width: 50px"
+                                    onclick="sortDefaultTable('id')"
+                                >
+                                    ID
+                                    <i
+                                        class="fas fa-sort"
+                                        id="default-sort-id"
+                                    ></i>
                                 </th>
-                                <th style="width: 80px" onclick="sortDefaultTable('symbol')">
-                                    Symbol <i class="fas fa-sort" id="default-sort-symbol"></i>
+                                <th
+                                    style="width: 80px"
+                                    onclick="sortDefaultTable('symbol')"
+                                >
+                                    Symbol
+                                    <i
+                                        class="fas fa-sort"
+                                        id="default-sort-symbol"
+                                    ></i>
                                 </th>
-                                <th style="width: 70px" onclick="sortDefaultTable('price_7d')">
-                                    7D <i class="fas fa-sort" id="default-sort-price_7d"></i>
+                                <th
+                                    style="width: 70px"
+                                    onclick="sortDefaultTable('price_7d')"
+                                >
+                                    7D
+                                    <i
+                                        class="fas fa-sort"
+                                        id="default-sort-price_7d"
+                                    ></i>
                                 </th>
-                                <th style="width: 70px" onclick="sortDefaultTable('price_30d')">
-                                    30D <i class="fas fa-sort" id="default-sort-price_30d"></i>
+                                <th
+                                    style="width: 70px"
+                                    onclick="sortDefaultTable('price_30d')"
+                                >
+                                    30D
+                                    <i
+                                        class="fas fa-sort"
+                                        id="default-sort-price_30d"
+                                    ></i>
                                 </th>
-                                <th style="width: 60px" onclick="sortDefaultTable('change_7d_pct')">
-                                    7D% <i class="fas fa-sort" id="default-sort-change_7d_pct"></i>
+                                <th
+                                    style="width: 60px"
+                                    onclick="sortDefaultTable('change_7d_pct')"
+                                >
+                                    7D%
+                                    <i
+                                        class="fas fa-sort"
+                                        id="default-sort-change_7d_pct"
+                                    ></i>
                                 </th>
-                                <th style="width: 60px" onclick="sortDefaultTable('change_30d_pct')">
-                                    30D% <i class="fas fa-sort" id="default-sort-change_30d_pct"></i>
+                                <th
+                                    style="width: 60px"
+                                    onclick="sortDefaultTable('change_30d_pct')"
+                                >
+                                    30D%
+                                    <i
+                                        class="fas fa-sort"
+                                        id="default-sort-change_30d_pct"
+                                    ></i>
                                 </th>
-                                <th style="width: 70px" onclick="sortDefaultTable('cmp')">
-                                    CMP <i class="fas fa-sort" id="default-sort-cmp"></i>
+                                <th
+                                    style="width: 70px"
+                                    onclick="sortDefaultTable('cmp')"
+                                >
+                                    CMP
+                                    <i
+                                        class="fas fa-sort"
+                                        id="default-sort-cmp"
+                                    ></i>
                                 </th>
-                                <th style="width: 70px" onclick="sortDefaultTable('change_pct')">
-                                    %CHAN <i class="fas fa-sort" id="default-sort-change_pct"></i>
+                                <th
+                                    style="width: 70px"
+                                    onclick="sortDefaultTable('change_pct')"
+                                >
+                                    %CHAN
+                                    <i
+                                        class="fas fa-sort"
+                                        id="default-sort-change_pct"
+                                    ></i>
                                 </th>
-                                <th style="width: 70px" onclick="sortDefaultTable('change_val')">
-                                    CPL <i class="fas fa-sort" id="default-sort-change_val"></i>
+                                <th
+                                    style="width: 70px"
+                                    onclick="sortDefaultTable('change_val')"
+                                >
+                                    CPL
+                                    <i
+                                        class="fas fa-sort"
+                                        id="default-sort-change_val"
+                                    ></i>
                                 </th>
                                 <th style="width: 100px">Actions</th>
                             </tr>
@@ -256,64 +320,304 @@ endblock %} {% block head %}
                         <tbody id="defaultMarketWatchTableBody">
                             <!-- Loading state with skeleton shimmer - will be replaced by JavaScript -->
                             <tr class="skeleton-row">
-                                <td class="skeleton-shimmer" style="width: 50px; height: 20px;"></td>
-                                <td><div class="skeleton-shimmer" style="width: 60px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 45px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 45px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 55px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 45px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 45px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 70px; height: 20px;"></div></td>
+                                <td
+                                    class="skeleton-shimmer"
+                                    style="width: 50px; height: 20px"
+                                ></td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 60px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 50px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 50px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 45px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 45px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 55px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 45px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 45px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 70px; height: 20px"
+                                    ></div>
+                                </td>
                             </tr>
                             <tr class="skeleton-row">
-                                <td class="skeleton-shimmer" style="width: 50px; height: 20px;"></td>
-                                <td><div class="skeleton-shimmer" style="width: 70px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 55px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 55px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 60px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 70px; height: 20px;"></div></td>
+                                <td
+                                    class="skeleton-shimmer"
+                                    style="width: 50px; height: 20px"
+                                ></td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 70px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 55px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 55px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 50px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 50px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 60px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 50px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 50px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 70px; height: 20px"
+                                    ></div>
+                                </td>
                             </tr>
                             <tr class="skeleton-row">
-                                <td class="skeleton-shimmer" style="width: 50px; height: 20px;"></td>
-                                <td><div class="skeleton-shimmer" style="width: 65px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 40px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 40px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 55px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 40px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 40px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 70px; height: 20px;"></div></td>
+                                <td
+                                    class="skeleton-shimmer"
+                                    style="width: 50px; height: 20px"
+                                ></td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 65px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 50px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 50px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 40px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 40px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 55px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 40px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 40px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 70px; height: 20px"
+                                    ></div>
+                                </td>
                             </tr>
                             <tr class="skeleton-row">
-                                <td class="skeleton-shimmer" style="width: 50px; height: 20px;"></td>
-                                <td><div class="skeleton-shimmer" style="width: 75px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 45px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 45px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 35px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 35px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 35px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 35px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 70px; height: 20px;"></div></td>
+                                <td
+                                    class="skeleton-shimmer"
+                                    style="width: 50px; height: 20px"
+                                ></td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 75px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 45px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 45px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 35px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 35px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 50px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 35px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 35px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 70px; height: 20px"
+                                    ></div>
+                                </td>
                             </tr>
                             <tr class="skeleton-row">
-                                <td class="skeleton-shimmer" style="width: 50px; height: 20px;"></td>
-                                <td><div class="skeleton-shimmer" style="width: 65px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 50px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 45px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 45px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 60px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 45px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 45px; height: 20px;"></div></td>
-                                <td><div class="skeleton-shimmer" style="width: 70px; height: 20px;"></div></td>
+                                <td
+                                    class="skeleton-shimmer"
+                                    style="width: 50px; height: 20px"
+                                ></td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 65px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 50px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 50px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 45px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 45px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 60px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 45px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 45px; height: 20px"
+                                    ></div>
+                                </td>
+                                <td>
+                                    <div
+                                        class="skeleton-shimmer"
+                                        style="width: 70px; height: 20px"
+                                    ></div>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -369,7 +673,6 @@ endblock %} {% block head %}
             </div>
         </div>
 
-
         <!-- Create New Watchlist Section -->
         <div
             class="card bg-secondary border-0 shadow-lg mb-4"
@@ -382,14 +685,20 @@ endblock %} {% block head %}
                     <i class="fas fa-plus-circle me-2 text-info"></i>Create New
                     Market Watch List
                 </h5>
-                <button class="btn btn-sm btn-outline-light" id="createMinimizeBtn" onclick="toggleCreateSection()">
+                <button
+                    class="btn btn-sm btn-outline-light"
+                    id="createMinimizeBtn"
+                    onclick="toggleCreateSection()"
+                >
                     <i class="fas fa-minus" id="createMinimizeIcon"></i>
                 </button>
             </div>
             <div class="card-body" id="createFormContainer">
                 <div class="row align-items-end mb-3">
                     <div class="col-md-8">
-                        <label class="form-label text-light">Enter list name</label>
+                        <label class="form-label text-light"
+                            >Enter list name</label
+                        >
                         <input
                             type="text"
                             class="form-control bg-dark text-light border-secondary"
@@ -409,12 +718,13 @@ endblock %} {% block head %}
                         </button>
                     </div>
                 </div>
-                
+
                 <!-- Search Existing Watchlists -->
                 <div class="row">
                     <div class="col-12">
                         <label class="form-label text-light">
-                            <i class="fas fa-search me-1"></i>Search Existing Watchlists
+                            <i class="fas fa-search me-1"></i>Search Existing
+                            Watchlists
                         </label>
                         <div class="position-relative">
                             <input
@@ -428,11 +738,17 @@ endblock %} {% block head %}
                             <div
                                 id="watchlistSuggestions"
                                 class="position-absolute w-100 bg-dark border rounded mt-1 d-none"
-                                style="z-index: 1050; max-height: 200px; overflow-y: auto; border: 1px solid #495057 !important;"
+                                style="
+                                    z-index: 1050;
+                                    max-height: 200px;
+                                    overflow-y: auto;
+                                    border: 1px solid #495057 !important;
+                                "
                             ></div>
                         </div>
                         <small class="text-muted">
-                            <i class="fas fa-info-circle me-1"></i>Find and jump to your existing watchlists
+                            <i class="fas fa-info-circle me-1"></i>Find and jump
+                            to your existing watchlists
                         </small>
                     </div>
                 </div>

@@ -842,6 +842,7 @@ def get_default_symbols_with_market_data():
                 try:
                     if price_fetcher:
                         cmp = price_fetcher.get_cmp(symbol)
+
                 except Exception as market_error:
                     logger.warning(
                         f"Market data error for {symbol}: {market_error}")

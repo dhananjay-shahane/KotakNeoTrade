@@ -78,6 +78,7 @@ ETFSignalsManager.prototype.init = function () {
     this.loadSignals(true);
     this.startAutoRefresh();
     this.setupNewFeatures();
+    this.loadPerformanceAnalysis(); // Load real performance data
 };
 
 ETFSignalsManager.prototype.setupEventListeners = function () {
@@ -2930,7 +2931,7 @@ ETFSignalsManager.prototype.updatePerformanceDisplay = function (metrics) {
 
     // Update performers tables
     this.updatePerformersTable('topPerformersTable', metrics.topPerformers || []);
-    this.updatePerformersTable('worstPerformersTable', metrics.worstPerformers || []);
+    this.updatePerformersTable('lowPerformersTable', metrics.worstPerformers || []);
 };
 
 ETFSignalsManager.prototype.updateElement = function (id, value) {
@@ -3519,7 +3520,7 @@ ETFSignalsManager.prototype.updatePerformanceAnalysis = function() {
     
     // Update performer tables
     this.updatePerformerTable('topPerformersTable', topPerformers.slice(0, 5), true);
-    this.updatePerformerTable('worstPerformersTable', worstPerformers.slice(0, 5), false);
+    this.updatePerformerTable('lowPerformersTable', worstPerformers.slice(0, 5), false);
 };
 
 ETFSignalsManager.prototype.updatePerformerTable = function(tableId, data, isPositive) {
@@ -3566,14 +3567,37 @@ ETFSignalsManager.prototype.showPerformanceLoading = function() {
     
     // Show loading for performer tables
     var topPerformersTable = document.getElementById('topPerformersTable');
-    var worstPerformersTable = document.getElementById('worstPerformersTable');
+    var lowPerformersTable = document.getElementById('lowPerformersTable');
     
     if (topPerformersTable) {
         topPerformersTable.innerHTML = '<tr><td colspan="3" class="text-center text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Loading...</td></tr>';
     }
     
-    if (worstPerformersTable) {
-        worstPerformersTable.innerHTML = '<tr><td colspan="3" class="text-center text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Loading...</td></tr>';
+    if (lowPerformersTable) {
+        lowPerformersTable.innerHTML = '<tr><td colspan="3" class="text-center text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Loading...</td></tr>';
     }
 };
+
+// Global pagination functions
+window.goToPage = function(page) {
+    if (window.etfSignalsManager) {
+        window.etfSignalsManager.currentPage = page;
+        window.etfSignalsManager.updateDisplayedSignals();
+        window.etfSignalsManager.renderSignalsTable();
+        window.etfSignalsManager.updatePagination();
+    }
+};
+
+window.changeItemsPerPage = function(newPerPage) {
+    if (window.etfSignalsManager) {
+        window.etfSignalsManager.itemsPerPage = parseInt(newPerPage);
+        window.etfSignalsManager.currentPage = 1;
+        window.etfSignalsManager.updateDisplayedSignals();
+        window.etfSignalsManager.renderSignalsTable();
+        window.etfSignalsManager.updatePagination();
+    }
+};
+
+// Initialize ETF Signals Manager when DOM is ready
+window.etfSignalsManager = new ETFSignalsManager();
 

@@ -165,6 +165,37 @@ endblock %} {% block extra_css %}
                     (Total: <span id="totalCount">0</span>)</small
                 >
             </div>
+            
+            <!-- Pagination Controls -->
+            <div class="d-flex align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <label for="itemsPerPage" class="form-label mb-0 text-muted small">Per page:</label>
+                    <select id="itemsPerPage" class="form-select form-select-sm bg-secondary text-light border-0" style="width: auto;" onchange="changeItemsPerPage(this.value)">
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+                
+                <nav aria-label="Table pagination">
+                    <ul class="pagination pagination-sm mb-0" id="paginationControls">
+                        <li class="page-item" id="prevPageItem">
+                            <a class="page-link bg-secondary text-light border-0" href="#" onclick="goToPage(window.etfSignalsManager ? window.etfSignalsManager.currentPage - 1 : 1); return false;">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item active">
+                            <span class="page-link bg-primary border-0" id="currentPageDisplay">1 of 1</span>
+                        </li>
+                        <li class="page-item" id="nextPageItem">
+                            <a class="page-link bg-secondary text-light border-0" href="#" onclick="goToPage(window.etfSignalsManager ? window.etfSignalsManager.currentPage + 1 : 1); return false;">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
         </div>
     </div>
 
@@ -455,7 +486,7 @@ endblock %} {% block extra_css %}
                     <div class="card bg-dark border-0">
                         <div class="card-header bg-danger">
                             <h6 class="mb-0 text-light">
-                                <i class="fas fa-chart-line-down me-2"></i>Worst Performers
+                                <i class="fas fa-chart-line-down me-2"></i>Low Performers
                             </h6>
                         </div>
                         <div class="card-body p-2">
@@ -468,7 +499,7 @@ endblock %} {% block extra_css %}
                                             <th>%</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="worstPerformersTable">
+                                    <tbody id="lowPerformersTable">
                                         <tr>
                                             <td colspan="3" class="text-center text-muted">
                                                 <i class="fas fa-spinner fa-spin me-2"></i>Loading...

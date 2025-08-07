@@ -16,7 +16,6 @@ var symbolSearchTimeout = null;
 var cachedSymbols = []; // Cache for symbol suggestions
 var isSymbolSuggestionsVisible = false;
 
-
 // Gradient Background Color Function for percentage values
 function getGradientBackgroundColor(value) {
     var numValue = parseFloat(value);
@@ -76,26 +75,26 @@ function getGradientBackgroundColor(value) {
 
 // Symbol Autocomplete Functions
 function showSymbolSuggestions(searchTerm) {
-    console.log('showSymbolSuggestions called with:', searchTerm);
-    
+    console.log("showSymbolSuggestions called with:", searchTerm);
+
     // Clear previous timeout
     if (symbolSearchTimeout) {
         clearTimeout(symbolSearchTimeout);
     }
-    
+
     // Add delay for better performance
     symbolSearchTimeout = setTimeout(() => {
-        const trimmedTerm = (searchTerm || '').trim();
-        console.log('Processing search term:', trimmedTerm);
-        
+        const trimmedTerm = (searchTerm || "").trim();
+        console.log("Processing search term:", trimmedTerm);
+
         if (trimmedTerm.length < 1) {
             hideSymbolSuggestions();
             return;
         }
-        
+
         // Show loading state
         showSuggestionsLoading();
-        
+
         // Fetch symbol suggestions from API
         fetchSymbolSuggestions(trimmedTerm);
     }, 200);
@@ -104,44 +103,50 @@ function showSymbolSuggestions(searchTerm) {
 function fetchSymbolSuggestions(searchTerm) {
     const maxSuggestions = 10;
     const url = `/api/symbols/search?q=${encodeURIComponent(searchTerm)}&limit=${maxSuggestions}`;
-    
-    console.log('Fetching symbols from:', url);
-    
+
+    console.log("Fetching symbols from:", url);
+
     fetch(url)
-        .then(response => {
-            console.log('API response status:', response.status);
+        .then((response) => {
+            console.log("API response status:", response.status);
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
             }
             return response.json();
         })
-        .then(data => {
-            console.log('API response data:', data);
+        .then((data) => {
+            console.log("API response data:", data);
             if (data.success && data.symbols && Array.isArray(data.symbols)) {
                 displaySymbolSuggestions(data.symbols, searchTerm);
             } else {
-                console.warn('Invalid API response format:', data);
+                console.warn("Invalid API response format:", data);
                 displayNoSuggestions();
             }
         })
-        .catch(error => {
-            console.error('Symbol search error:', error);
+        .catch((error) => {
+            console.error("Symbol search error:", error);
             displayNoSuggestions();
         });
 }
 
 // This function handles suggestions for the modal (updated to work with modal structure)
-function displaySymbolSuggestions(symbols, searchTerm = '') {
-    console.log('🔍 displaySymbolSuggestions called with:', symbols?.length, 'symbols for modal');
-    
+function displaySymbolSuggestions(symbols, searchTerm = "") {
+    console.log(
+        "🔍 displaySymbolSuggestions called with:",
+        symbols?.length,
+        "symbols for modal",
+    );
+
     const suggestionsDiv = document.getElementById("symbolSuggestions");
-    console.log('🔍 suggestionsDiv element found:', !!suggestionsDiv);
-    
+    console.log("🔍 suggestionsDiv element found:", !!suggestionsDiv);
+
     if (!suggestionsDiv) {
-        console.error("❌ symbolSuggestions element not found - checking modal is open");
+        console.error(
+            "❌ symbolSuggestions element not found - checking modal is open",
+        );
         // Check if modal exists at all
         const modal = document.getElementById("addSymbolModal");
-        console.log('Modal exists:', !!modal);
+        console.log("Modal exists:", !!modal);
         return;
     }
 
@@ -165,8 +170,12 @@ function displaySymbolSuggestions(symbols, searchTerm = '') {
             categories.push('<span class="badge bg-warning me-1">ETF</span>');
 
         // Highlight search term if provided
-        const highlightedSymbol = searchTerm ? highlightSearchTerm(symbol.symbol, searchTerm) : symbol.symbol;
-        const highlightedCompany = searchTerm ? highlightSearchTerm(symbol.company || '', searchTerm) : (symbol.company || 'N/A');
+        const highlightedSymbol = searchTerm
+            ? highlightSearchTerm(symbol.symbol, searchTerm)
+            : symbol.symbol;
+        const highlightedCompany = searchTerm
+            ? highlightSearchTerm(symbol.company || "", searchTerm)
+            : symbol.company || "N/A";
 
         html += `
             <div class="suggestion-item p-3 border-bottom border-secondary" 
@@ -193,131 +202,154 @@ function displaySymbolSuggestions(symbols, searchTerm = '') {
 
     suggestionsDiv.innerHTML = html;
     suggestionsDiv.classList.remove("d-none");
-    suggestionsDiv.style.display = 'block'; // Force display
-    
-    console.log("✅ Successfully displayed", symbols.length, "symbol suggestions");
+    suggestionsDiv.style.display = "block"; // Force display
+
+    console.log(
+        "✅ Successfully displayed",
+        symbols.length,
+        "symbol suggestions",
+    );
     console.log("✅ suggestionsDiv classes:", suggestionsDiv.className);
-    console.log("✅ suggestionsDiv style display:", suggestionsDiv.style.display);
+    console.log(
+        "✅ suggestionsDiv style display:",
+        suggestionsDiv.style.display,
+    );
 }
 
 function highlightSearchTerm(text, searchTerm) {
     if (!text || !searchTerm) return text;
-    
-    const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+
+    const regex = new RegExp(
+        `(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+        "gi",
+    );
     return text.replace(regex, '<strong style="color: #ffc107;">$1</strong>');
 }
 
 function displayNoSuggestions() {
-    const suggestionsList = document.getElementById('suggestionsList');
-    const suggestionsContainer = document.getElementById('symbolSuggestions');
-    
+    const suggestionsList = document.getElementById("suggestionsList");
+    const suggestionsContainer = document.getElementById("symbolSuggestions");
+
     if (!suggestionsList || !suggestionsContainer) {
         return;
     }
-    
-    suggestionsList.innerHTML = '<div class="suggestion-empty">No symbols found matching your search</div>';
-    suggestionsContainer.style.display = 'block';
+
+    suggestionsList.innerHTML =
+        '<div class="suggestion-empty">No symbols found matching your search</div>';
+    suggestionsContainer.style.display = "block";
     isSymbolSuggestionsVisible = true;
 }
 
 function showSuggestionsLoading() {
-    const suggestionsList = document.getElementById('suggestionsList');
-    const suggestionsContainer = document.getElementById('symbolSuggestions');
-    
-    console.log('showSuggestionsLoading called');
-    
+    const suggestionsList = document.getElementById("suggestionsList");
+    const suggestionsContainer = document.getElementById("symbolSuggestions");
+
+    console.log("showSuggestionsLoading called");
+
     if (!suggestionsList || !suggestionsContainer) {
-        console.error('Loading elements not found:', { suggestionsList, suggestionsContainer });
+        console.error("Loading elements not found:", {
+            suggestionsList,
+            suggestionsContainer,
+        });
         return;
     }
-    
-    suggestionsList.innerHTML = '<div class="suggestion-empty">Searching symbols...</div>';
-    suggestionsContainer.style.display = 'block';
+
+    suggestionsList.innerHTML =
+        '<div class="suggestion-empty">Searching symbols...</div>';
+    suggestionsContainer.style.display = "block";
     isSymbolSuggestionsVisible = true;
-    console.log('Loading state shown');
+    console.log("Loading state shown");
 }
 
 function hideSymbolSuggestions() {
-    const suggestionsContainer = document.getElementById('symbolSuggestions');
+    const suggestionsContainer = document.getElementById("symbolSuggestions");
     if (suggestionsContainer) {
         // Add small delay to allow for selection clicks
         setTimeout(() => {
-            suggestionsContainer.style.display = 'none';
+            suggestionsContainer.style.display = "none";
             isSymbolSuggestionsVisible = false;
         }, 150);
     }
 }
 
 function selectSymbol(symbolName) {
-    const input = document.getElementById('symbolAutocompleteInput');
+    const input = document.getElementById("symbolAutocompleteInput");
     if (input) {
         input.value = symbolName;
         hideSymbolSuggestions();
-        
+
         // Optionally trigger search or add to watchlist
-        console.log('Selected symbol:', symbolName);
-        
+        console.log("Selected symbol:", symbolName);
+
         // Show success message
-        showNotification('Symbol selected: ' + symbolName, 'success');
-        
+        showNotification("Symbol selected: " + symbolName, "success");
+
         // Auto-add to default watchlist or show add modal
         // You can customize this behavior as needed
     }
 }
 
 function clearSymbolSearch() {
-    const input = document.getElementById('symbolAutocompleteInput');
+    const input = document.getElementById("symbolAutocompleteInput");
     if (input) {
-        input.value = '';
+        input.value = "";
         hideSymbolSuggestions();
         input.focus();
     }
 }
 
 // Add keyboard navigation support
-document.addEventListener('DOMContentLoaded', function() {
-    const symbolInput = document.getElementById('symbolAutocompleteInput');
+document.addEventListener("DOMContentLoaded", function () {
+    const symbolInput = document.getElementById("symbolAutocompleteInput");
     if (symbolInput) {
         let selectedIndex = -1;
-        
-        symbolInput.addEventListener('keydown', function(e) {
-            const suggestionsList = document.getElementById('suggestionsList');
-            const suggestions = suggestionsList ? suggestionsList.querySelectorAll('.suggestion-item') : [];
-            
-            switch(e.key) {
-                case 'ArrowDown':
+
+        symbolInput.addEventListener("keydown", function (e) {
+            const suggestionsList = document.getElementById("suggestionsList");
+            const suggestions = suggestionsList
+                ? suggestionsList.querySelectorAll(".suggestion-item")
+                : [];
+
+            switch (e.key) {
+                case "ArrowDown":
                     e.preventDefault();
                     if (suggestions.length > 0) {
-                        selectedIndex = Math.min(selectedIndex + 1, suggestions.length - 1);
+                        selectedIndex = Math.min(
+                            selectedIndex + 1,
+                            suggestions.length - 1,
+                        );
                         updateSelectedSuggestion(suggestions, selectedIndex);
                     }
                     break;
-                    
-                case 'ArrowUp':
+
+                case "ArrowUp":
                     e.preventDefault();
                     if (suggestions.length > 0) {
                         selectedIndex = Math.max(selectedIndex - 1, -1);
                         updateSelectedSuggestion(suggestions, selectedIndex);
                     }
                     break;
-                    
-                case 'Enter':
+
+                case "Enter":
                     e.preventDefault();
                     if (selectedIndex >= 0 && suggestions[selectedIndex]) {
-                        const symbol = suggestions[selectedIndex].getAttribute('data-symbol');
+                        const symbol =
+                            suggestions[selectedIndex].getAttribute(
+                                "data-symbol",
+                            );
                         selectSymbol(symbol);
                     }
                     break;
-                    
-                case 'Escape':
+
+                case "Escape":
                     hideSymbolSuggestions();
                     selectedIndex = -1;
                     break;
             }
         });
-        
+
         // Reset selection when suggestions change
-        symbolInput.addEventListener('input', function() {
+        symbolInput.addEventListener("input", function () {
             selectedIndex = -1;
         });
     }
@@ -326,31 +358,29 @@ document.addEventListener('DOMContentLoaded', function() {
 function updateSelectedSuggestion(suggestions, index) {
     suggestions.forEach((item, i) => {
         if (i === index) {
-            item.classList.add('active');
+            item.classList.add("active");
         } else {
-            item.classList.remove('active');
+            item.classList.remove("active");
         }
     });
 }
 
 // Utility function for notifications
-function showNotification(message, type = 'info') {
+function showNotification(message, type = "info") {
     // Use existing notification system or create simple one
-    if (typeof Swal !== 'undefined') {
+    if (typeof Swal !== "undefined") {
         Swal.fire({
             title: message,
             icon: type,
             timer: 2000,
             showConfirmButton: false,
             toast: true,
-            position: 'top-end'
+            position: "top-end",
         });
     } else {
         console.log(`${type.toUpperCase()}: ${message}`);
     }
 }
-
-
 
 // Advanced symbol search and selection variables
 var selectedSymbolData = null;
@@ -375,7 +405,7 @@ function initializeAdvancedSymbolModal() {
 }
 
 // Initialize when document is ready
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", function () {
     initializeAdvancedSymbolModal();
 });
 
@@ -434,7 +464,7 @@ function searchSymbols() {
         console.error("symbolSearchInput element not found");
         return;
     }
-    
+
     const searchTerm = searchInput.value.trim().toUpperCase();
 
     // Clear previous timeout
@@ -446,7 +476,7 @@ function searchSymbols() {
     const companyFilter = document.getElementById("companyFilter");
     const sectorFilter = document.getElementById("sectorFilter");
     const subSectorFilter = document.getElementById("subSectorFilter");
-    
+
     const hasFilters =
         (companyFilter && companyFilter.value) ||
         (sectorFilter && sectorFilter.value) ||
@@ -460,7 +490,7 @@ function searchSymbols() {
 
     // Show loading state immediately
     showSearchLoading();
-    
+
     // Debounce search
     searchTimeout = setTimeout(() => {
         performSymbolSearch(searchTerm || "");
@@ -482,7 +512,7 @@ function performSymbolSearch(searchTerm) {
     const params = new URLSearchParams({
         q: finalSearchTerm,
         nifty: niftyCheck && niftyCheck.checked ? "1" : "0",
-        nifty_500: nifty500Check && nifty500Check.checked ? "1" : "0", 
+        nifty_500: nifty500Check && nifty500Check.checked ? "1" : "0",
         etf: etfCheck && etfCheck.checked ? "1" : "0",
         company: companyFilter ? companyFilter.value : "",
         sector: sectorFilter ? sectorFilter.value : "",
@@ -496,11 +526,18 @@ function performSymbolSearch(searchTerm) {
         .then((response) => response.json())
         .then((data) => {
             console.log("Search response:", data);
-            console.log("About to call displaySymbolSuggestions with:", data.symbols?.length, "symbols");
+            console.log(
+                "About to call displaySymbolSuggestions with:",
+                data.symbols?.length,
+                "symbols",
+            );
             if (data.success && data.symbols) {
                 displaySymbolSuggestions(data.symbols);
             } else {
-                console.error("Search failed:", data.error || "No symbols returned");
+                console.error(
+                    "Search failed:",
+                    data.error || "No symbols returned",
+                );
                 displaySymbolSuggestions([]);
             }
         })
@@ -527,7 +564,7 @@ function showSearchLoading() {
             </div>
         `;
         suggestionsDiv.classList.remove("d-none");
-        suggestionsDiv.style.display = 'block';
+        suggestionsDiv.style.display = "block";
         console.log("🔄 Loading state displayed");
     }
 }
@@ -549,7 +586,8 @@ function selectSymbol(symbol) {
                 selectedSymbolData = data.symbol;
                 displaySelectedSymbolDetails();
                 hideSuggestions();
-                const symbolInput = document.getElementById("symbolSearchInput");
+                const symbolInput =
+                    document.getElementById("symbolSearchInput");
                 const addBtn = document.getElementById("addSymbolBtn");
                 if (symbolInput) symbolInput.value = symbol;
                 if (addBtn) addBtn.disabled = false;
@@ -591,14 +629,14 @@ function displaySelectedSymbolDetails() {
 function updateSymbolSearch() {
     const searchInput = document.getElementById("symbolSearchInput");
     if (!searchInput) return;
-    
+
     const searchTerm = searchInput.value.trim();
-    
+
     // Show suggestions even with empty search if filters are selected
     const companyFilter = document.getElementById("companyFilter");
     const sectorFilter = document.getElementById("sectorFilter");
     const subSectorFilter = document.getElementById("subSectorFilter");
-    
+
     const hasFilters =
         (companyFilter && companyFilter.value) ||
         (sectorFilter && sectorFilter.value) ||
@@ -616,13 +654,14 @@ function validateAndAddDirectSymbol(symbol) {
     // Show loading state
     const addBtn = document.getElementById("addSymbolBtn");
     const originalText = addBtn.innerHTML;
-    addBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Validating...';
+    addBtn.innerHTML =
+        '<i class="fas fa-spinner fa-spin me-1"></i>Validating...';
     addBtn.disabled = true;
-    
+
     // Try to get symbol details from API
     fetch(`/api/symbols/${encodeURIComponent(symbol)}/details`)
-        .then(response => response.json())
-        .then(data => {
+        .then((response) => response.json())
+        .then((data) => {
             if (data.success && data.symbol) {
                 // Symbol exists, use it
                 selectedSymbolData = data.symbol;
@@ -635,20 +674,20 @@ function validateAndAddDirectSymbol(symbol) {
                     company: "Unknown",
                     sector: "Unknown",
                     sub_sector: "Unknown",
-                    categories: {}
+                    categories: {},
                 };
                 addSymbolToCurrentWatchlist();
             }
         })
-        .catch(error => {
-            console.error('Error validating symbol:', error);
+        .catch((error) => {
+            console.error("Error validating symbol:", error);
             // Even on error, allow adding the symbol
             selectedSymbolData = {
                 symbol: symbol,
                 company: "Unknown",
-                sector: "Unknown", 
+                sector: "Unknown",
                 sub_sector: "Unknown",
-                categories: {}
+                categories: {},
             };
             addSymbolToCurrentWatchlist();
         })
@@ -659,109 +698,119 @@ function validateAndAddDirectSymbol(symbol) {
         });
 }
 
-// Function to open Add Symbol modal with context  
+// Function to open Add Symbol modal with context
 function addSymbolToWatchlist(watchlistName) {
     // Set the current watchlist context
     window.currentWatchlistName = watchlistName;
-    
+
     // Initialize modal when opened
     initializeAddSymbolModal();
-    
+
     // Show the modal
-    const modal = new bootstrap.Modal(document.getElementById('addSymbolModal'));
+    const modal = new bootstrap.Modal(
+        document.getElementById("addSymbolModal"),
+    );
     modal.show();
 }
 
 // Initialize the Add Symbol modal
 function initializeAddSymbolModal() {
     console.log("Initializing Add Symbol modal...");
-    
+
     // Clear previous selections
-    const symbolInput = document.getElementById('symbolSearchInput');
+    const symbolInput = document.getElementById("symbolSearchInput");
     if (symbolInput) {
-        symbolInput.value = '';
+        symbolInput.value = "";
     }
-    
+
     // Hide suggestions
     hideSuggestions();
-    
+
     // Clear selected symbol data
     selectedSymbolData = null;
-    
+
     // Load filter options if not already loaded
     if (filterOptions.companies.length === 0) {
         console.log("Loading filter options for modal...");
         loadFilterOptions();
     }
-    
+
     // Enable Nifty by default
-    const niftyCheck = document.getElementById('niftyCheck');
+    const niftyCheck = document.getElementById("niftyCheck");
     if (niftyCheck) {
         niftyCheck.checked = true;
     }
-    
+
     console.log("✓ Add Symbol modal initialized");
 }
 
 // Add symbol to current watchlist
 function addSymbolToCurrentWatchlist() {
     if (!selectedSymbolData) return;
-    
+
     // Check if we're adding to a custom watchlist
     if (window.currentWatchlistName) {
         // Add to custom watchlist
-        fetch(`/api/market-watch/watchlists/${encodeURIComponent(window.currentWatchlistName)}/symbols`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
+        fetch(
+            `/api/market-watch/watchlists/${encodeURIComponent(window.currentWatchlistName)}/symbols`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    symbol: selectedSymbolData.symbol,
+                }),
             },
-            body: JSON.stringify({
-                symbol: selectedSymbolData.symbol
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Reload the specific watchlist using enhanced version
-                if (window.currentWatchlistName) {
-                    loadWatchlistMarketDataEnhanced(window.currentWatchlistName);
+        )
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.success) {
+                    // Reload the specific watchlist using enhanced version
+                    if (window.currentWatchlistName) {
+                        loadWatchlistMarketDataEnhanced(
+                            window.currentWatchlistName,
+                        );
+                    }
+
+                    Swal.fire({
+                        icon: "success",
+                        title: "Symbol Added",
+                        text: data.message,
+                        background: "#1a1a1a",
+                        color: "#fff",
+                        timer: 2000,
+                        showConfirmButton: false,
+                    });
+
+                    // Close modal and clear selection
+                    const modal = bootstrap.Modal.getInstance(
+                        document.getElementById("addSymbolModal"),
+                    );
+                    if (modal) modal.hide();
+                    clearSymbolSelection();
+                    loadCustomWatchlists();
+                } else {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: data.error || "Failed to add symbol to watchlist",
+                        background: "#1a1a1a",
+                        color: "#fff",
+                    });
                 }
-                
+            })
+            .catch((error) => {
+                console.error("Error adding symbol to watchlist:", error);
                 Swal.fire({
-                    icon: 'success',
-                    title: 'Symbol Added',
-                    text: data.message,
-                    background: '#1a1a1a',
-                    color: '#fff',
-                    timer: 2000,
-                    showConfirmButton: false
+                    icon: "error",
+                    title: "Error",
+                    text: "Failed to add symbol. Please try again.",
+                    background: "#1a1a1a",
+                    color: "#fff",
                 });
-                
-                // Close modal and clear selection
-                const modal = bootstrap.Modal.getInstance(document.getElementById("addSymbolModal"));
-                if (modal) modal.hide();
-                clearSymbolSelection();
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: data.error || 'Failed to add symbol to watchlist',
-                    background: '#1a1a1a',
-                    color: '#fff'
-                });
-            }
-        })
-        .catch(error => {
-            console.error('Error adding symbol to watchlist:', error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Failed to add symbol. Please try again.',
-                background: '#1a1a1a',
-                color: '#fff'
             });
-        });
-        
+
         // Clear current watchlist name
         window.currentWatchlistName = null;
     }
@@ -780,7 +829,7 @@ window.initializeAddSymbolModal = initializeAddSymbolModal;
 window.displaySymbolSuggestions = displaySymbolSuggestions;
 
 // Test function to manually trigger suggestions (for debugging)
-window.testSymbolSuggestions = function() {
+window.testSymbolSuggestions = function () {
     console.log("🧪 Testing symbol suggestions manually...");
     const testSymbols = [
         {
@@ -788,8 +837,8 @@ window.testSymbolSuggestions = function() {
             company: "ABB India Ltd.",
             sector: "Capital Goods",
             sub_sector: "Heavy Electrical Equipment",
-            categories: { nifty: true, nifty_500: true, etf: false }
-        }
+            categories: { nifty: true, nifty_500: true, etf: false },
+        },
     ];
     displaySymbolSuggestions(testSymbols);
 };
@@ -800,7 +849,7 @@ function clearSymbolSelection() {
     const detailsElement = document.getElementById("selectedSymbolDetails");
     const addBtn = document.getElementById("addSymbolBtn");
     const symbolInput = document.getElementById("symbolSearchInput");
-    
+
     if (detailsElement) detailsElement.classList.add("d-none");
     if (addBtn) addBtn.disabled = true;
     if (symbolInput) symbolInput.value = "";
@@ -810,14 +859,16 @@ function clearSymbolSelection() {
 // Submit advanced add symbol
 function submitAdvancedAddSymbol() {
     const symbolSearchInput = document.getElementById("symbolSearchInput");
-    const inputSymbol = symbolSearchInput ? symbolSearchInput.value.trim().toUpperCase() : "";
-    
+    const inputSymbol = symbolSearchInput
+        ? symbolSearchInput.value.trim().toUpperCase()
+        : "";
+
     // If no symbol selected but user typed a symbol, try to validate and use it
     if (!selectedSymbolData && inputSymbol) {
         validateAndAddDirectSymbol(inputSymbol);
         return;
     }
-    
+
     if (!selectedSymbolData) {
         Swal.fire({
             icon: "error",
@@ -858,8 +909,6 @@ function updateSymbolSearch() {
     searchSymbols();
 }
 
-
-
 // Generate sample market data for a symbol
 function generateSymbolData(symbol, id) {
     var basePrice = Math.random() * 3000 + 100; // Random price between 100-3100
@@ -889,16 +938,19 @@ function generateSymbolData(symbol, id) {
 // Update default market watch table with pagination
 function updateDefaultMarketWatchTable() {
     var tableBody = document.getElementById("defaultMarketWatchTableBody");
-    
+
     // Use filtered data if available, otherwise use all data
-    var dataToShow = filteredDefaultData.length > 0 ? filteredDefaultData : defaultMarketWatchData;
+    var dataToShow =
+        filteredDefaultData.length > 0
+            ? filteredDefaultData
+            : defaultMarketWatchData;
 
     if (dataToShow.length === 0) {
         tableBody.innerHTML = `
             <tr class="no-data-row">
                 <td colspan="10" class="text-center text-muted py-4">
                     <i class="fas fa-chart-line fa-2x mb-2"></i><br>
-                    ${filteredDefaultData.length === 0 && defaultMarketWatchData.length > 0 ? 'No symbols found matching your search' : 'Loading default market watch data...'}
+                    ${filteredDefaultData.length === 0 && defaultMarketWatchData.length > 0 ? "No symbols found matching your search" : "Loading default market watch data..."}
                 </td>
             </tr>
         `;
@@ -941,20 +993,23 @@ function updateDefaultMarketWatchTable() {
     updateDefaultCounts();
 }
 
-
-
 // Update default counts with pagination info
 function updateDefaultCounts() {
-    var dataToShow = filteredDefaultData.length > 0 ? filteredDefaultData : defaultMarketWatchData;
+    var dataToShow =
+        filteredDefaultData.length > 0
+            ? filteredDefaultData
+            : defaultMarketWatchData;
     var startIndex = (defaultCurrentPage - 1) * defaultPageSize;
     var endIndex = Math.min(startIndex + defaultPageSize, dataToShow.length);
-    
+
     document.getElementById("defaultCount").textContent = dataToShow.length;
-    document.getElementById("defaultTotalCount").textContent = dataToShow.length;
-    document.getElementById("defaultShowingCount").textContent = Math.min(defaultPageSize, dataToShow.length - startIndex);
+    document.getElementById("defaultTotalCount").textContent =
+        dataToShow.length;
+    document.getElementById("defaultShowingCount").textContent = Math.min(
+        defaultPageSize,
+        dataToShow.length - startIndex,
+    );
 }
-
-
 
 // Load default market watch data from API with async/await and loader
 async function loadDefaultMarketWatch() {
@@ -1127,13 +1182,13 @@ function refreshDefaultList() {
 
 function refreshMarketWatch() {
     console.log("Refreshing all market watch data...");
-    
+
     // Refresh default market watch
     loadDefaultMarketWatch();
-    
+
     // Refresh all custom watchlists
     loadCustomWatchlists();
-    
+
     Swal.fire({
         icon: "success",
         title: "Refreshed",
@@ -1151,7 +1206,7 @@ window.refreshMarketWatch = refreshMarketWatch;
 // Export function
 function exportMarketWatch() {
     var data = {
-        defaultList: "Default market watch data"
+        defaultList: "Default market watch data",
     };
 
     var dataStr = JSON.stringify(data, null, 2);
@@ -1165,119 +1220,125 @@ function exportMarketWatch() {
 }
 
 // Custom Watchlist Management Functions
-window.createNewWatchlist = function() {
-    const nameInput = document.getElementById('newListNameInput');
+window.createNewWatchlist = function () {
+    const nameInput = document.getElementById("newListNameInput");
     const listName = nameInput.value.trim();
-    
+
     if (!listName) {
         Swal.fire({
-            icon: 'error',
-            title: 'Invalid Input',
-            text: 'Please enter a valid list name.',
-            background: '#1a1a1a',
-            color: '#fff'
+            icon: "error",
+            title: "Invalid Input",
+            text: "Please enter a valid list name.",
+            background: "#1a1a1a",
+            color: "#fff",
         });
         return;
     }
-    
+
     if (listName.length > 50) {
         Swal.fire({
-            icon: 'error',
-            title: 'Name Too Long',
-            text: 'List name must be 50 characters or less.',
-            background: '#1a1a1a',
-            color: '#fff'
+            icon: "error",
+            title: "Name Too Long",
+            text: "List name must be 50 characters or less.",
+            background: "#1a1a1a",
+            color: "#fff",
         });
         return;
     }
-    
+
     // Create watchlist via API
-    fetch('/api/market-watch/watchlists', {
-        method: 'POST',
+    fetch("/api/market-watch/watchlists", {
+        method: "POST",
         headers: {
-            'Content-Type': 'application/json'
+            "Content-Type": "application/json",
         },
         body: JSON.stringify({
-            name: listName
+            name: listName,
+        }),
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success) {
+                // Clear input
+                nameInput.value = "";
+
+                // Reload custom watchlists
+                loadCustomWatchlists();
+
+                Swal.fire({
+                    icon: "success",
+                    title: "Success",
+                    text: data.message,
+                    background: "#1a1a1a",
+                    color: "#fff",
+                    timer: 2000,
+                    showConfirmButton: false,
+                });
+            } else {
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text: data.error || "Failed to create watchlist",
+                    background: "#1a1a1a",
+                    color: "#fff",
+                });
+            }
         })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Clear input
-            nameInput.value = '';
-            
-            // Reload custom watchlists
-            loadCustomWatchlists();
-            
+        .catch((error) => {
+            console.error("Error creating watchlist:", error);
             Swal.fire({
-                icon: 'success',
-                title: 'Success',
-                text: data.message,
-                background: '#1a1a1a',
-                color: '#fff',
-                timer: 2000,
-                showConfirmButton: false
+                icon: "error",
+                title: "Error",
+                text: "Failed to create watchlist. Please try again.",
+                background: "#1a1a1a",
+                color: "#fff",
             });
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: data.error || 'Failed to create watchlist',
-                background: '#1a1a1a',
-                color: '#fff'
-            });
-        }
-    })
-    .catch(error => {
-        console.error('Error creating watchlist:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Failed to create watchlist. Please try again.',
-            background: '#1a1a1a',
-            color: '#fff'
         });
-    });
 };
 
 // Load and display custom watchlists
-window.loadCustomWatchlists = function() {
-    console.log('Loading custom watchlists...');
-    
-    fetch('/api/market-watch/watchlists')
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            displayCustomWatchlists(data.watchlists);
-            console.log(`✓ Loaded ${data.watchlists.length} custom watchlists`);
-            
-            // Load filter options for each watchlist
-            setTimeout(() => {
-                data.watchlists.forEach(watchlist => {
-                    loadWatchlistFilterOptions(watchlist.name);
-                });
-            }, 500); // Small delay to ensure UI elements are rendered
-        } else {
-            console.error('Error loading custom watchlists:', data.error);
-            // Show empty state for custom watchlists
-            const container = document.getElementById('customWatchlistsContainer');
-            if (container) {
-                container.innerHTML = `
+window.loadCustomWatchlists = function () {
+    console.log("Loading custom watchlists...");
+
+    fetch("/api/market-watch/watchlists")
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success) {
+                displayCustomWatchlists(data.watchlists);
+                console.log(
+                    `✓ Loaded ${data.watchlists.length} custom watchlists`,
+                );
+
+                // Load filter options for each watchlist
+                setTimeout(() => {
+                    data.watchlists.forEach((watchlist) => {
+                        loadWatchlistFilterOptions(watchlist.name);
+                    });
+                }, 500); // Small delay to ensure UI elements are rendered
+            } else {
+                console.error("Error loading custom watchlists:", data.error);
+                // Show empty state for custom watchlists
+                const container = document.getElementById(
+                    "customWatchlistsContainer",
+                );
+                if (container) {
+                    container.innerHTML = `
                     <div class="text-center text-muted py-4">
                         <i class="fas fa-list fa-2x mb-2"></i><br>
                         <p>No custom watchlists created yet.<br>Create your first watchlist above!</p>
                     </div>
                 `;
+                }
             }
-        }
-    })
-    .catch(error => {
-        console.error('Network error loading custom watchlists:', error);
-        // Show error state
-        const container = document.getElementById('customWatchlistsContainer');
-        if (container) {
-            container.innerHTML = `
+        })
+        .catch((error) => {
+            console.error("Network error loading custom watchlists:", error);
+            // Show error state
+            const container = document.getElementById(
+                "customWatchlistsContainer",
+            );
+            if (container) {
+                container.innerHTML = `
                 <div class="text-center text-danger py-4">
                     <i class="fas fa-exclamation-triangle fa-2x mb-2"></i><br>
                     <p>Error loading custom watchlists</p>
@@ -1286,14 +1347,14 @@ window.loadCustomWatchlists = function() {
                     </button>
                 </div>
             `;
-        }
-    });
+            }
+        });
 };
 
 // Display custom watchlists in the UI
 function displayCustomWatchlists(watchlists) {
-    const container = document.getElementById('customWatchlistsContainer');
-    
+    const container = document.getElementById("customWatchlistsContainer");
+
     if (watchlists.length === 0) {
         container.innerHTML = `
             <div class="text-center text-muted py-4">
@@ -1303,23 +1364,23 @@ function displayCustomWatchlists(watchlists) {
         `;
         return;
     }
-    
-    let html = '';
-    watchlists.forEach(watchlist => {
+
+    let html = "";
+    watchlists.forEach((watchlist) => {
         html += createWatchlistCard(watchlist);
     });
-    
+
     container.innerHTML = html;
-    
+
     // Load market data for all watchlists (enhanced version)
-    watchlists.forEach(watchlist => {
+    watchlists.forEach((watchlist) => {
         loadWatchlistMarketDataEnhanced(watchlist.name);
     });
 }
 
 // Create HTML for a watchlist card with enhanced search and filter functionality
 function createWatchlistCard(watchlist) {
-    const cardId = `watchlist-${watchlist.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const cardId = `watchlist-${watchlist.name.replace(/[^a-zA-Z0-9]/g, "_")}`;
     const tableId = `${cardId}-table`;
     const bodyId = `${cardId}-tbody`;
     const searchContainerId = `${cardId}-search-container`;
@@ -1327,7 +1388,7 @@ function createWatchlistCard(watchlist) {
     const companyFilterId = `${cardId}-company-filter`;
     const sectorFilterId = `${cardId}-sector-filter`;
     const searchSuggestionsId = `${cardId}-search-suggestions`;
-    
+
     return `
         <div class="card bg-secondary border-0 shadow-lg mb-4" id="${cardId}">
             <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
@@ -1496,38 +1557,44 @@ function generateSkeletonRows() {
             <td><div class="skeleton-shimmer" style="width: 30px; height: 16px;"></div></td>
         </tr>
     `;
-    
-    return Array(5).fill(skeletonRow).join('');
+
+    return Array(5).fill(skeletonRow).join("");
 }
 
 // Load market data for a specific watchlist
 function loadWatchlistMarketData(listName) {
     if (!listName) {
-        console.error('List name is required for loadWatchlistMarketData');
+        console.error("List name is required for loadWatchlistMarketData");
         return;
     }
-    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, "_")}`;
     const bodyId = `${cardId}-tbody`;
-    
-    fetch(`/api/market-watch/watchlists/${encodeURIComponent(listName)}/symbols-with-data`)
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            updateWatchlistTable(listName, data.symbols);
-        } else {
-            showErrorInWatchlistTable(listName, data.error);
-        }
-    })
-    .catch(error => {
-        console.error(`Error loading watchlist ${listName} data:`, error);
-        showErrorInWatchlistTable(listName, 'Network error loading data');
-    });
+
+    fetch(
+        `/api/market-watch/watchlists/${encodeURIComponent(listName)}/symbols-with-data`,
+    )
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success) {
+                updateWatchlistTable(listName, data.symbols);
+            } else {
+                showErrorInWatchlistTable(listName, data.error);
+            }
+        })
+        .catch((error) => {
+            console.error(`Error loading watchlist ${listName} data:`, error);
+            showErrorInWatchlistTable(listName, "Network error loading data");
+        });
 }
 
 // Enhanced version with data storage for search/pagination - compatibility function
 function loadWatchlistMarketDataEnhanced(listName) {
     // Use the proper enhanced version defined at the bottom of the file
-    if (window.loadWatchlistMarketDataEnhanced && window.loadWatchlistMarketDataEnhanced !== loadWatchlistMarketDataEnhanced) {
+    if (
+        window.loadWatchlistMarketDataEnhanced &&
+        window.loadWatchlistMarketDataEnhanced !==
+            loadWatchlistMarketDataEnhanced
+    ) {
         window.loadWatchlistMarketDataEnhanced(listName);
     } else {
         loadWatchlistMarketData(listName);
@@ -1536,12 +1603,12 @@ function loadWatchlistMarketDataEnhanced(listName) {
 
 // Update watchlist table with market data
 function updateWatchlistTable(listName, symbols) {
-    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, "_")}`;
     const bodyId = `${cardId}-tbody`;
     const tbody = document.getElementById(bodyId);
-    
+
     if (!tbody) return;
-    
+
     if (symbols.length === 0) {
         tbody.innerHTML = `
             <tr class="no-data-row">
@@ -1556,24 +1623,26 @@ function updateWatchlistTable(listName, symbols) {
         `;
         return;
     }
-    
-    let html = '';
+
+    let html = "";
     symbols.forEach((symbol, index) => {
         const change7dStyle = getGradientBackgroundColor(symbol.change_7d_pct);
-        const change30dStyle = getGradientBackgroundColor(symbol.change_30d_pct);
+        const change30dStyle = getGradientBackgroundColor(
+            symbol.change_30d_pct,
+        );
         const changePctStyle = getGradientBackgroundColor(symbol.change_pct);
-        
+
         html += `
             <tr>
                 <td>${index + 1}</td>
                 <td><strong>${symbol.symbol}</strong></td>
-                <td>${symbol.price_7d || '--'}</td>
-                <td>${symbol.price_30d || '--'}</td>
-                <td style="${change7dStyle}">${symbol.change_7d_pct || '--'}</td>
-                <td style="${change30dStyle}">${symbol.change_30d_pct || '--'}</td>
-                <td><strong>${symbol.cmp || '--'}</strong></td>
-                <td style="${changePctStyle}">${symbol.change_pct || '--'}</td>
-                <td>${symbol.change_val || '--'}</td>
+                <td>${symbol.price_7d || "--"}</td>
+                <td>${symbol.price_30d || "--"}</td>
+                <td style="${change7dStyle}">${symbol.change_7d_pct || "--"}</td>
+                <td style="${change30dStyle}">${symbol.change_30d_pct || "--"}</td>
+                <td><strong>${symbol.cmp || "--"}</strong></td>
+                <td style="${changePctStyle}">${symbol.change_pct || "--"}</td>
+                <td>${symbol.change_val || "--"}</td>
                 <td>
                     <button class="btn btn-sm btn-outline-danger" onclick="removeSymbolFromWatchlist('${listName}', '${symbol.symbol}')" title="Remove symbol">
                         <i class="fas fa-trash"></i>
@@ -1582,14 +1651,14 @@ function updateWatchlistTable(listName, symbols) {
             </tr>
         `;
     });
-    
+
     tbody.innerHTML = html;
-    
+
     // Update counts
     const countElement = document.getElementById(`${cardId}-count`);
     const showingElement = document.getElementById(`${cardId}-showing`);
     const totalElement = document.getElementById(`${cardId}-total`);
-    
+
     if (countElement) countElement.textContent = symbols.length;
     if (showingElement) showingElement.textContent = symbols.length;
     if (totalElement) totalElement.textContent = symbols.length;
@@ -1597,12 +1666,12 @@ function updateWatchlistTable(listName, symbols) {
 
 // Show error in watchlist table
 function showErrorInWatchlistTable(listName, message) {
-    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, "_")}`;
     const bodyId = `${cardId}-tbody`;
     const tbody = document.getElementById(bodyId);
-    
+
     if (!tbody) return;
-    
+
     tbody.innerHTML = `
         <tr class="error-row">
             <td colspan="10" class="text-center text-danger py-4">
@@ -1617,150 +1686,160 @@ function showErrorInWatchlistTable(listName, message) {
 }
 
 // Add symbol to specific watchlist
-window.addSymbolToWatchlist = function(listName) {
+window.addSymbolToWatchlist = function (listName) {
     // Store the current list name for the modal
     window.currentWatchlistName = listName;
-    
+
     // Open the add symbol modal
-    const modal = new bootstrap.Modal(document.getElementById('addSymbolModal'));
+    const modal = new bootstrap.Modal(
+        document.getElementById("addSymbolModal"),
+    );
     modal.show();
-    
+
     // Update modal title
-    const modalTitle = document.querySelector('#addSymbolModal .modal-title');
+    const modalTitle = document.querySelector("#addSymbolModal .modal-title");
     if (modalTitle) {
         modalTitle.innerHTML = `<i class="fas fa-plus me-2"></i>Add Symbol to ${listName}`;
     }
-    
+
     // Clear any previous symbol selection
     clearSymbolSelection();
 };
 
 // Remove symbol from watchlist
-window.removeSymbolFromWatchlist = function(listName, symbol) {
+window.removeSymbolFromWatchlist = function (listName, symbol) {
     Swal.fire({
-        title: 'Remove Symbol',
+        title: "Remove Symbol",
         text: `Are you sure you want to remove ${symbol} from ${listName}?`,
-        icon: 'warning',
+        icon: "warning",
         showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Yes, remove it!',
-        background: '#1a1a1a',
-        color: '#fff'
-    }).then(result => {
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Yes, remove it!",
+        background: "#1a1a1a",
+        color: "#fff",
+    }).then((result) => {
         if (result.isConfirmed) {
-            fetch(`/api/market-watch/watchlists/${encodeURIComponent(listName)}/symbols`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json'
+            fetch(
+                `/api/market-watch/watchlists/${encodeURIComponent(listName)}/symbols`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ symbol: symbol }),
                 },
-                body: JSON.stringify({ symbol: symbol })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    loadWatchlistMarketDataEnhanced(listName);
+            )
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.success) {
+                        loadCustomWatchlists();
+                        loadWatchlistMarketDataEnhanced(listName);
+                        Swal.fire({
+                            icon: "success",
+                            title: "Removed",
+                            text: data.message,
+                            background: "#1a1a1a",
+                            color: "#fff",
+                            timer: 2000,
+                            showConfirmButton: false,
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Error",
+                            text: data.error || "Failed to remove symbol",
+                            background: "#1a1a1a",
+                            color: "#fff",
+                        });
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error removing symbol:", error);
                     Swal.fire({
-                        icon: 'success',
-                        title: 'Removed',
-                        text: data.message,
-                        background: '#1a1a1a',
-                        color: '#fff',
-                        timer: 2000,
-                        showConfirmButton: false
+                        icon: "error",
+                        title: "Error",
+                        text: "Failed to remove symbol. Please try again.",
+                        background: "#1a1a1a",
+                        color: "#fff",
                     });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: data.error || 'Failed to remove symbol',
-                        background: '#1a1a1a',
-                        color: '#fff'
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error removing symbol:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Failed to remove symbol. Please try again.',
-                    background: '#1a1a1a',
-                    color: '#fff'
                 });
-            });
         }
     });
 };
 
 // Edit watchlist name - Updated to call the correct function
-window.editWatchlistName = function(listName) {
+window.editWatchlistName = function (listName) {
     Swal.fire({
-        title: 'Edit Watchlist Name',
-        input: 'text',
+        title: "Edit Watchlist Name",
+        input: "text",
         inputValue: listName,
-        inputPlaceholder: 'Enter new name for the watchlist',
+        inputPlaceholder: "Enter new name for the watchlist",
         inputAttributes: {
-            maxlength: 50
+            maxlength: 50,
         },
         showCancelButton: true,
-        confirmButtonText: 'Update',
-        background: '#1a1a1a',
-        color: '#fff',
+        confirmButtonText: "Update",
+        background: "#1a1a1a",
+        color: "#fff",
         inputValidator: (value) => {
             if (!value || value.trim().length === 0) {
-                return 'Please enter a valid name';
+                return "Please enter a valid name";
             }
             if (value.length > 50) {
-                return 'Name must be 50 characters or less';
+                return "Name must be 50 characters or less";
             }
-        }
-    }).then(result => {
+        },
+    }).then((result) => {
         if (result.isConfirmed) {
             const newName = result.value.trim();
-            
+
             // Try to update watchlist name via API
-            fetch(`/api/market-watch/watchlists/${encodeURIComponent(listName)}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
+            fetch(
+                `/api/market-watch/watchlists/${encodeURIComponent(listName)}`,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ name: newName }),
                 },
-                body: JSON.stringify({ name: newName })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Reload custom watchlists to show the updated name
-                    loadCustomWatchlists();
+            )
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.success) {
+                        // Reload custom watchlists to show the updated name
+                        loadCustomWatchlists();
+                        Swal.fire({
+                            icon: "success",
+                            title: "Updated",
+                            text: data.message,
+                            background: "#1a1a1a",
+                            color: "#fff",
+                            timer: 2000,
+                            showConfirmButton: false,
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Error",
+                            text:
+                                data.error || "Failed to update watchlist name",
+                            background: "#1a1a1a",
+                            color: "#fff",
+                        });
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error updating watchlist name:", error);
                     Swal.fire({
-                        icon: 'success',
-                        title: 'Updated',
-                        text: data.message,
-                        background: '#1a1a1a',
-                        color: '#fff',
-                        timer: 2000,
-                        showConfirmButton: false
+                        icon: "error",
+                        title: "Error",
+                        text: "Failed to update watchlist name. Please try again.",
+                        background: "#1a1a1a",
+                        color: "#fff",
                     });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: data.error || 'Failed to update watchlist name',
-                        background: '#1a1a1a',
-                        color: '#fff'
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error updating watchlist name:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error', 
-                    text: 'Failed to update watchlist name. Please try again.',
-                    background: '#1a1a1a',
-                    color: '#fff'
                 });
-            });
         }
     });
 };
@@ -1769,249 +1848,253 @@ window.editWatchlistName = function(listName) {
 window.editWatchlist = window.editWatchlistName;
 
 // Delete watchlist
-window.deleteWatchlist = function(listName) {
+window.deleteWatchlist = function (listName) {
     Swal.fire({
-        title: 'Delete Watchlist',
+        title: "Delete Watchlist",
         text: `Are you sure you want to delete the watchlist "${listName}"? This action cannot be undone.`,
-        icon: 'warning',
+        icon: "warning",
         showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Yes, delete it!',
-        background: '#1a1a1a',
-        color: '#fff'
-    }).then(result => {
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Yes, delete it!",
+        background: "#1a1a1a",
+        color: "#fff",
+    }).then((result) => {
         if (result.isConfirmed) {
-            fetch(`/api/market-watch/watchlists/${encodeURIComponent(listName)}`, {
-                method: 'DELETE'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    loadCustomWatchlists();
+            fetch(
+                `/api/market-watch/watchlists/${encodeURIComponent(listName)}`,
+                {
+                    method: "DELETE",
+                },
+            )
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.success) {
+                        Swal.fire({
+                            icon: "success",
+                            title: "Deleted",
+                            text: data.message,
+                            background: "#1a1a1a",
+                            color: "#fff",
+                            timer: 2000,
+                            showConfirmButton: false,
+                        });
+                        loadCustomWatchlists();
+                    } else {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Error",
+                            text: data.error || "Failed to delete watchlist",
+                            background: "#1a1a1a",
+                            color: "#fff",
+                        });
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error deleting watchlist:", error);
                     Swal.fire({
-                        icon: 'success',
-                        title: 'Deleted',
-                        text: data.message,
-                        background: '#1a1a1a',
-                        color: '#fff',
-                        timer: 2000,
-                        showConfirmButton: false
+                        icon: "error",
+                        title: "Error",
+                        text: "Failed to delete watchlist. Please try again.",
+                        background: "#1a1a1a",
+                        color: "#fff",
                     });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: data.error || 'Failed to delete watchlist',
-                        background: '#1a1a1a',
-                        color: '#fff'
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error deleting watchlist:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Failed to delete watchlist. Please try again.',
-                    background: '#1a1a1a',
-                    color: '#fff'
                 });
-            });
         }
     });
 };
 
 // Refresh watchlist data
-window.refreshWatchlistData = function(listName) {
+window.refreshWatchlistData = function (listName) {
     loadWatchlistMarketDataEnhanced(listName);
 };
 
 // Export watchlist to CSV
-window.exportWatchlist = function(listName) {
-    fetch(`/api/market-watch/watchlists/${encodeURIComponent(listName)}/symbols`)
-    .then(response => response.json())
-    .then(data => {
-        if (data.success && data.symbols.length > 0) {
-            // Create CSV content according to user's format: Market Watch Name, Symbol 1, Symbol 2, etc.
-            const symbols = data.symbols.map(s => s.symbol).join(',');
-            const csvContent = `Market Watch Name,Symbol 1,Symbol 2,Symbol 3,Symbol 4,Symbol 5\n${listName},${symbols}`;
-            
-            // Create and download file
-            const blob = new Blob([csvContent], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${listName.replace(/[^a-zA-Z0-9]/g, '_')}_watchlist.csv`;
-            a.click();
-            window.URL.revokeObjectURL(url);
-            
+window.exportWatchlist = function (listName) {
+    fetch(
+        `/api/market-watch/watchlists/${encodeURIComponent(listName)}/symbols`,
+    )
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success && data.symbols.length > 0) {
+                // Create CSV content according to user's format: Market Watch Name, Symbol 1, Symbol 2, etc.
+                const symbols = data.symbols.map((s) => s.symbol).join(",");
+                const csvContent = `Market Watch Name,Symbol 1,Symbol 2,Symbol 3,Symbol 4,Symbol 5\n${listName},${symbols}`;
+
+                // Create and download file
+                const blob = new Blob([csvContent], { type: "text/csv" });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `${listName.replace(/[^a-zA-Z0-9]/g, "_")}_watchlist.csv`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+
+                Swal.fire({
+                    icon: "success",
+                    title: "Exported",
+                    text: "Watchlist exported successfully!",
+                    background: "#1a1a1a",
+                    color: "#fff",
+                    timer: 2000,
+                    showConfirmButton: false,
+                });
+            } else {
+                Swal.fire({
+                    icon: "warning",
+                    title: "No Data",
+                    text: "No symbols to export in this watchlist.",
+                    background: "#1a1a1a",
+                    color: "#fff",
+                });
+            }
+        })
+        .catch((error) => {
+            console.error("Error exporting watchlist:", error);
             Swal.fire({
-                icon: 'success',
-                title: 'Exported',
-                text: 'Watchlist exported successfully!',
-                background: '#1a1a1a',
-                color: '#fff',
-                timer: 2000,
-                showConfirmButton: false
+                icon: "error",
+                title: "Error",
+                text: "Failed to export watchlist. Please try again.",
+                background: "#1a1a1a",
+                color: "#fff",
             });
-        } else {
-            Swal.fire({
-                icon: 'warning',
-                title: 'No Data',
-                text: 'No symbols to export in this watchlist.',
-                background: '#1a1a1a',
-                color: '#fff'
-            });
-        }
-    })
-    .catch(error => {
-        console.error('Error exporting watchlist:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Failed to export watchlist. Please try again.',
-            background: '#1a1a1a',
-            color: '#fff'
         });
-    });
 };
 
 // Edit watchlist name function
-window.editWatchlistName = function(listName) {
+window.editWatchlistName = function (listName) {
     Swal.fire({
-        title: 'Edit Watchlist Name',
-        input: 'text',
+        title: "Edit Watchlist Name",
+        input: "text",
         inputValue: listName,
-        inputPlaceholder: 'Enter new name for the watchlist',
-        background: '#1a1a1a',
-        color: '#fff',
+        inputPlaceholder: "Enter new name for the watchlist",
+        background: "#1a1a1a",
+        color: "#fff",
         showCancelButton: true,
-        confirmButtonText: 'Save',
-        cancelButtonText: 'Cancel',
-        confirmButtonColor: '#007bff',
-        cancelButtonColor: '#6c757d',
+        confirmButtonText: "Save",
+        cancelButtonText: "Cancel",
+        confirmButtonColor: "#007bff",
+        cancelButtonColor: "#6c757d",
         inputValidator: (value) => {
             if (!value || value.trim().length === 0) {
-                return 'Please enter a valid name';
+                return "Please enter a valid name";
             }
             if (value.trim().length > 50) {
-                return 'Name must be 50 characters or less';
+                return "Name must be 50 characters or less";
             }
             if (value.trim() === listName) {
-                return 'Please enter a different name';
+                return "Please enter a different name";
             }
             return null;
-        }
+        },
     }).then((result) => {
         if (result.isConfirmed) {
             const newName = result.value.trim();
-            
-            fetch(`/api/market-watch/watchlists/${encodeURIComponent(listName)}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
+
+            fetch(
+                `/api/market-watch/watchlists/${encodeURIComponent(listName)}`,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        name: newName,
+                    }),
                 },
-                body: JSON.stringify({
-                    name: newName
+            )
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.success) {
+                        Swal.fire({
+                            icon: "success",
+                            title: "Success",
+                            text: data.message,
+                            background: "#1a1a1a",
+                            color: "#fff",
+                            timer: 2000,
+                            showConfirmButton: false,
+                        });
+
+                        // Reload custom watchlists to reflect the change
+                        setTimeout(() => {
+                            loadCustomWatchlists();
+                        }, 500);
+                    } else {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Error",
+                            text: data.error || "Failed to rename watchlist",
+                            background: "#1a1a1a",
+                            color: "#fff",
+                        });
+                    }
                 })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
+                .catch((error) => {
+                    console.error("Error editing watchlist name:", error);
                     Swal.fire({
-                        icon: 'success',
-                        title: 'Success',
-                        text: data.message,
-                        background: '#1a1a1a',
-                        color: '#fff',
-                        timer: 2000,
-                        showConfirmButton: false
+                        icon: "error",
+                        title: "Error",
+                        text: "Failed to rename watchlist. Please try again.",
+                        background: "#1a1a1a",
+                        color: "#fff",
                     });
-                    
-                    // Reload custom watchlists to reflect the change
-                    setTimeout(() => {
-                        loadCustomWatchlists();
-                    }, 500);
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: data.error || 'Failed to rename watchlist',
-                        background: '#1a1a1a',
-                        color: '#fff'
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error editing watchlist name:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Failed to rename watchlist. Please try again.',
-                    background: '#1a1a1a',
-                    color: '#fff'
                 });
-            });
         }
     });
 };
 
-
-
 // Toggle section visibility functions
-window.toggleDefaultSection = function() {
-    const container = document.getElementById('defaultTableContainer');
-    const icon = document.getElementById('defaultMinimizeIcon');
-    
-    if (container.style.display === 'none') {
-        container.style.display = 'block';
-        icon.className = 'fas fa-minus';
+window.toggleDefaultSection = function () {
+    const container = document.getElementById("defaultTableContainer");
+    const icon = document.getElementById("defaultMinimizeIcon");
+
+    if (container.style.display === "none") {
+        container.style.display = "block";
+        icon.className = "fas fa-minus";
     } else {
-        container.style.display = 'none';
-        icon.className = 'fas fa-plus';
+        container.style.display = "none";
+        icon.className = "fas fa-plus";
     }
 };
 
+window.toggleCreateSection = function () {
+    const container = document.getElementById("createFormContainer");
+    const icon = document.getElementById("createMinimizeIcon");
 
-
-window.toggleCreateSection = function() {
-    const container = document.getElementById('createFormContainer');
-    const icon = document.getElementById('createMinimizeIcon');
-    
-    if (container.style.display === 'none') {
-        container.style.display = 'block';
-        icon.className = 'fas fa-minus';
+    if (container.style.display === "none") {
+        container.style.display = "block";
+        icon.className = "fas fa-minus";
     } else {
-        container.style.display = 'none';
-        icon.className = 'fas fa-plus';
+        container.style.display = "none";
+        icon.className = "fas fa-plus";
     }
 };
 
 // Search watchlists functionality
-window.searchWatchlists = function() {
-    const input = document.getElementById('watchlistSearchInput');
-    const suggestions = document.getElementById('watchlistSuggestions');
+window.searchWatchlists = function () {
+    const input = document.getElementById("watchlistSearchInput");
+    const suggestions = document.getElementById("watchlistSuggestions");
     const query = input.value.trim().toLowerCase();
-    
+
     if (query.length < 1) {
-        suggestions.classList.add('d-none');
+        suggestions.classList.add("d-none");
         return;
     }
-    
+
     // Get all existing watchlists
-    fetch('/api/market-watch/watchlists')
-    .then(response => response.json())
-    .then(data => {
-        if (data.success && data.watchlists.length > 0) {
-            const filtered = data.watchlists.filter(w => 
-                w.name.toLowerCase().includes(query)
-            );
-            
-            if (filtered.length > 0) {
-                let html = '';
-                filtered.forEach(watchlist => {
-                    html += `
+    fetch("/api/market-watch/watchlists")
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success && data.watchlists.length > 0) {
+                const filtered = data.watchlists.filter((w) =>
+                    w.name.toLowerCase().includes(query),
+                );
+
+                if (filtered.length > 0) {
+                    let html = "";
+                    filtered.forEach((watchlist) => {
+                        html += `
                         <div class="p-2 border-bottom border-secondary suggestion-item" 
                              style="cursor: pointer;"
                              onmouseover="this.style.backgroundColor='#343a40'"
@@ -2025,112 +2108,111 @@ window.searchWatchlists = function() {
                             </div>
                         </div>
                     `;
-                });
-                suggestions.innerHTML = html;
-                suggestions.classList.remove('d-none');
+                    });
+                    suggestions.innerHTML = html;
+                    suggestions.classList.remove("d-none");
+                } else {
+                    suggestions.innerHTML =
+                        '<div class="p-2 text-muted text-center">No watchlists found</div>';
+                    suggestions.classList.remove("d-none");
+                }
             } else {
-                suggestions.innerHTML = '<div class="p-2 text-muted text-center">No watchlists found</div>';
-                suggestions.classList.remove('d-none');
+                suggestions.classList.add("d-none");
             }
-        } else {
-            suggestions.classList.add('d-none');
-        }
-    })
-    .catch(error => {
-        console.error('Error searching watchlists:', error);
-        suggestions.classList.add('d-none');
-    });
+        })
+        .catch((error) => {
+            console.error("Error searching watchlists:", error);
+            suggestions.classList.add("d-none");
+        });
 };
 
 // Jump to specific watchlist
-window.jumpToWatchlist = function(listName) {
-    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+window.jumpToWatchlist = function (listName) {
+    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, "_")}`;
     const element = document.getElementById(cardId);
-    
+
     if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        element.scrollIntoView({ behavior: "smooth", block: "start" });
         // Highlight the card briefly
-        element.style.boxShadow = '0 0 20px rgba(0, 123, 255, 0.5)';
+        element.style.boxShadow = "0 0 20px rgba(0, 123, 255, 0.5)";
         setTimeout(() => {
-            element.style.boxShadow = '';
+            element.style.boxShadow = "";
         }, 2000);
     }
-    
+
     // Clear search
-    document.getElementById('watchlistSearchInput').value = '';
-    document.getElementById('watchlistSuggestions').classList.add('d-none');
+    document.getElementById("watchlistSearchInput").value = "";
+    document.getElementById("watchlistSuggestions").classList.add("d-none");
 };
 
 // Sorting functionality
-let defaultSortState = { column: null, direction: 'asc' };
-let userSortState = { column: null, direction: 'asc' };
+let defaultSortState = { column: null, direction: "asc" };
+let userSortState = { column: null, direction: "asc" };
 
-window.sortDefaultTable = function(column) {
+window.sortDefaultTable = function (column) {
     // Update sort state
     if (defaultSortState.column === column) {
-        defaultSortState.direction = defaultSortState.direction === 'asc' ? 'desc' : 'asc';
+        defaultSortState.direction =
+            defaultSortState.direction === "asc" ? "desc" : "asc";
     } else {
         defaultSortState.column = column;
-        defaultSortState.direction = 'asc';
+        defaultSortState.direction = "asc";
     }
-    
+
     // Update sort icons
-    updateSortIcons('default', column, defaultSortState.direction);
-    
+    updateSortIcons("default", column, defaultSortState.direction);
+
     // Sort the data
     if (defaultMarketWatchData && defaultMarketWatchData.length > 0) {
         defaultMarketWatchData.sort((a, b) => {
-            let valueA = a[column] || '';
-            let valueB = b[column] || '';
-            
+            let valueA = a[column] || "";
+            let valueB = b[column] || "";
+
             // Convert to numbers if possible
             if (!isNaN(valueA) && !isNaN(valueB)) {
                 valueA = parseFloat(valueA);
                 valueB = parseFloat(valueB);
             }
-            
-            if (defaultSortState.direction === 'asc') {
+
+            if (defaultSortState.direction === "asc") {
                 return valueA > valueB ? 1 : -1;
             } else {
                 return valueA < valueB ? 1 : -1;
             }
         });
-        
+
         updateDefaultMarketWatchTable();
     }
 };
 
-
-
 function updateSortIcons(tableType, activeColumn, direction) {
     // Reset all icons for this table
-    const prefix = tableType === 'default' ? 'default-sort-' : 'sort-';
-    document.querySelectorAll(`[id^="${prefix}"]`).forEach(icon => {
-        icon.className = 'fas fa-sort';
+    const prefix = tableType === "default" ? "default-sort-" : "sort-";
+    document.querySelectorAll(`[id^="${prefix}"]`).forEach((icon) => {
+        icon.className = "fas fa-sort";
     });
-    
+
     // Set active icon
     const activeIcon = document.getElementById(`${prefix}${activeColumn}`);
     if (activeIcon) {
-        activeIcon.className = direction === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
+        activeIcon.className =
+            direction === "asc" ? "fas fa-sort-up" : "fas fa-sort-down";
     }
 }
 
-
-
 // Toggle individual watchlist sections
-window.toggleWatchlistSection = function(listName) {
-    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+window.toggleWatchlistSection = function (listName) {
+    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, "_")}`;
     const container = document.getElementById(`${cardId}-table-container`);
     const icon = document.getElementById(`${cardId}-minimize-icon`);
-    
+
     if (container && icon) {
-        if (container.style.display === 'none') {
-            container.style.display = 'block';
-            icon.className = 'fas fa-minus';
+        if (container.style.display === "none") {
+            container.style.display = "block";
+            icon.className = "fas fa-minus";
         } else {
-            container.style.display = 'none';
-            icon.className = 'fas fa-plus';
+            container.style.display = "none";
+            icon.className = "fas fa-plus";
         }
     }
 };
@@ -2138,84 +2220,89 @@ window.toggleWatchlistSection = function(listName) {
 // Sort individual watchlist tables
 let watchlistSortStates = {};
 
-window.sortWatchlistTable = function(listName, column) {
+window.sortWatchlistTable = function (listName, column) {
     // Initialize sort state for this watchlist if it doesn't exist
     if (!watchlistSortStates[listName]) {
-        watchlistSortStates[listName] = { column: null, direction: 'asc' };
+        watchlistSortStates[listName] = { column: null, direction: "asc" };
     }
-    
+
     const sortState = watchlistSortStates[listName];
-    
+
     // Update sort state
     if (sortState.column === column) {
-        sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+        sortState.direction = sortState.direction === "asc" ? "desc" : "asc";
     } else {
         sortState.column = column;
-        sortState.direction = 'asc';
+        sortState.direction = "asc";
     }
-    
+
     // Update sort icons for this watchlist
-    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, "_")}`;
     updateWatchlistSortIcons(cardId, column, sortState.direction);
-    
+
     // Reload data and apply sorting
-    fetch(`/api/market-watch/watchlists/${encodeURIComponent(listName)}/symbols-with-data`)
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Sort the data
-            data.symbols.sort((a, b) => {
-                let valueA = a[column] || '';
-                let valueB = b[column] || '';
-                
-                // Convert to numbers if possible
-                if (!isNaN(valueA) && !isNaN(valueB)) {
-                    valueA = parseFloat(valueA);
-                    valueB = parseFloat(valueB);
-                } else {
-                    // Convert to strings for comparison
-                    valueA = String(valueA).toLowerCase();
-                    valueB = String(valueB).toLowerCase();
-                }
-                
-                if (sortState.direction === 'asc') {
-                    return valueA > valueB ? 1 : -1;
-                } else {
-                    return valueA < valueB ? 1 : -1;
-                }
-            });
-            
-            updateWatchlistTable(listName, data.symbols);
-        }
-    })
-    .catch(error => {
-        console.error(`Error sorting watchlist ${listName}:`, error);
-    });
+    fetch(
+        `/api/market-watch/watchlists/${encodeURIComponent(listName)}/symbols-with-data`,
+    )
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success) {
+                // Sort the data
+                data.symbols.sort((a, b) => {
+                    let valueA = a[column] || "";
+                    let valueB = b[column] || "";
+
+                    // Convert to numbers if possible
+                    if (!isNaN(valueA) && !isNaN(valueB)) {
+                        valueA = parseFloat(valueA);
+                        valueB = parseFloat(valueB);
+                    } else {
+                        // Convert to strings for comparison
+                        valueA = String(valueA).toLowerCase();
+                        valueB = String(valueB).toLowerCase();
+                    }
+
+                    if (sortState.direction === "asc") {
+                        return valueA > valueB ? 1 : -1;
+                    } else {
+                        return valueA < valueB ? 1 : -1;
+                    }
+                });
+
+                updateWatchlistTable(listName, data.symbols);
+            }
+        })
+        .catch((error) => {
+            console.error(`Error sorting watchlist ${listName}:`, error);
+        });
 };
 
 function updateWatchlistSortIcons(cardId, activeColumn, direction) {
     // Reset all icons for this watchlist
-    document.querySelectorAll(`[id^="${cardId}-sort-"]`).forEach(icon => {
-        icon.className = 'fas fa-sort';
+    document.querySelectorAll(`[id^="${cardId}-sort-"]`).forEach((icon) => {
+        icon.className = "fas fa-sort";
     });
-    
+
     // Set active icon
-    const activeIcon = document.getElementById(`${cardId}-sort-${activeColumn}`);
+    const activeIcon = document.getElementById(
+        `${cardId}-sort-${activeColumn}`,
+    );
     if (activeIcon) {
-        activeIcon.className = direction === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
+        activeIcon.className =
+            direction === "asc" ? "fas fa-sort-up" : "fas fa-sort-down";
     }
 }
 
 // Initialize on page load
 document.addEventListener("DOMContentLoaded", function () {
     console.log("Initializing Market Watch page...");
-    
+
     // Initialize advanced symbol modal
     initializeAdvancedSymbolModal();
-    
+
     // Load market watch lists
     loadDefaultMarketWatch();
-    
+
     // Load custom watchlists
     setTimeout(() => {
         loadCustomWatchlists();
@@ -2229,7 +2316,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (symbolInput) {
         symbolInput.addEventListener("input", function () {
             this.value = this.value.toUpperCase();
-            
+
             // Enable/disable Add Symbol button based on input
             const addBtn = document.getElementById("addSymbolBtn");
             if (addBtn) {
@@ -2266,13 +2353,15 @@ document.addEventListener("DOMContentLoaded", function () {
         ) {
             hideSuggestions();
         }
-        
+
         // Hide watchlist suggestions when clicking outside
         if (
             !e.target.closest("#watchlistSearchInput") &&
             !e.target.closest("#watchlistSuggestions")
         ) {
-            const watchlistSuggestions = document.getElementById("watchlistSuggestions");
+            const watchlistSuggestions = document.getElementById(
+                "watchlistSuggestions",
+            );
             if (watchlistSuggestions) {
                 watchlistSuggestions.classList.add("d-none");
             }
@@ -2282,14 +2371,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Pagination functions for default market watch
 function updateDefaultPagination() {
-    var dataToShow = filteredDefaultData.length > 0 ? filteredDefaultData : defaultMarketWatchData;
+    var dataToShow =
+        filteredDefaultData.length > 0
+            ? filteredDefaultData
+            : defaultMarketWatchData;
     defaultTotalPages = Math.ceil(dataToShow.length / defaultPageSize);
-    
+
     var currentPageElement = document.getElementById("defaultCurrentPage");
     var totalPagesElement = document.getElementById("defaultTotalPages");
     var prevBtn = document.getElementById("defaultPrevBtn");
     var nextBtn = document.getElementById("defaultNextBtn");
-    
+
     if (currentPageElement) currentPageElement.textContent = defaultCurrentPage;
     if (totalPagesElement) totalPagesElement.textContent = defaultTotalPages;
     if (prevBtn) prevBtn.disabled = defaultCurrentPage <= 1;
@@ -2316,31 +2408,51 @@ function performDefaultSearch() {
     if (defaultSearchTimeout) {
         clearTimeout(defaultSearchTimeout);
     }
-    
+
     // Set timeout to avoid too many API calls while typing
-    defaultSearchTimeout = setTimeout(function() {
-        var searchTerm = document.getElementById("defaultSymbolSearchInput").value.toLowerCase().trim();
-        var companyFilter = document.getElementById("defaultCompanyFilter").value.toLowerCase();
-        var sectorFilter = document.getElementById("defaultSectorFilter").value.toLowerCase();
-        
+    defaultSearchTimeout = setTimeout(function () {
+        var searchTerm = document
+            .getElementById("defaultSymbolSearchInput")
+            .value.toLowerCase()
+            .trim();
+        var companyFilter = document
+            .getElementById("defaultCompanyFilter")
+            .value.toLowerCase();
+        var sectorFilter = document
+            .getElementById("defaultSectorFilter")
+            .value.toLowerCase();
+
         if (!searchTerm && !companyFilter && !sectorFilter) {
             filteredDefaultData = [];
             hideDefaultSearchSuggestions();
         } else {
-            filteredDefaultData = defaultMarketWatchData.filter(function(item) {
-                var matchesSearch = !searchTerm || 
-                    (item.symbol && item.symbol.toLowerCase().startsWith(searchTerm)) ||
-                    (item.company_name && item.company_name.toLowerCase().includes(searchTerm));
-                
-                var matchesCompany = !companyFilter || 
-                    (item.company_name && item.company_name.toLowerCase().includes(companyFilter));
-                
-                var matchesSector = !sectorFilter || 
-                    (item.sector && item.sector.toLowerCase().includes(sectorFilter));
-                
-                return matchesSearch && matchesCompany && matchesSector;
-            });
-            
+            filteredDefaultData = defaultMarketWatchData.filter(
+                function (item) {
+                    var matchesSearch =
+                        !searchTerm ||
+                        (item.symbol &&
+                            item.symbol.toLowerCase().startsWith(searchTerm)) ||
+                        (item.company_name &&
+                            item.company_name
+                                .toLowerCase()
+                                .includes(searchTerm));
+
+                    var matchesCompany =
+                        !companyFilter ||
+                        (item.company_name &&
+                            item.company_name
+                                .toLowerCase()
+                                .includes(companyFilter));
+
+                    var matchesSector =
+                        !sectorFilter ||
+                        (item.sector &&
+                            item.sector.toLowerCase().includes(sectorFilter));
+
+                    return matchesSearch && matchesCompany && matchesSector;
+                },
+            );
+
             // Show search suggestions if only searching by symbol
             if (searchTerm && !companyFilter && !sectorFilter) {
                 showDefaultSearchSuggestions(searchTerm);
@@ -2348,35 +2460,40 @@ function performDefaultSearch() {
                 hideDefaultSearchSuggestions();
             }
         }
-        
+
         defaultCurrentPage = 1; // Reset to first page
         updateDefaultMarketWatchTable();
     }, 300);
 }
 
 function showDefaultSearchSuggestions(searchTerm) {
-    var suggestions = defaultMarketWatchData.filter(function(item) {
-        return item.symbol && item.symbol.toLowerCase().startsWith(searchTerm.toLowerCase());
-    }).slice(0, 8); // Show max 8 suggestions
-    
+    var suggestions = defaultMarketWatchData
+        .filter(function (item) {
+            return (
+                item.symbol &&
+                item.symbol.toLowerCase().startsWith(searchTerm.toLowerCase())
+            );
+        })
+        .slice(0, 8); // Show max 8 suggestions
+
     var suggestionsDiv = document.getElementById("defaultSearchSuggestions");
     if (!suggestionsDiv) return;
-    
+
     if (suggestions.length === 0) {
         hideDefaultSearchSuggestions();
         return;
     }
-    
-    var html = '';
-    suggestions.forEach(function(item) {
+
+    var html = "";
+    suggestions.forEach(function (item) {
         html += `
             <div class="dropdown-item" onclick="selectDefaultSymbol('${item.symbol}')">
                 <strong>${item.symbol}</strong>
-                ${item.company_name ? `<small class="text-muted d-block">${item.company_name}</small>` : ''}
+                ${item.company_name ? `<small class="text-muted d-block">${item.company_name}</small>` : ""}
             </div>
         `;
     });
-    
+
     suggestionsDiv.innerHTML = html;
     suggestionsDiv.classList.remove("d-none");
 }
@@ -2407,23 +2524,35 @@ function clearDefaultSearch() {
 // Initialize filter options
 function initializeFilterOptions() {
     if (!defaultMarketWatchData || defaultMarketWatchData.length === 0) return;
-    
-    var companies = [...new Set(defaultMarketWatchData.map(item => item.company_name).filter(name => name))].sort();
-    var sectors = [...new Set(defaultMarketWatchData.map(item => item.sector).filter(sector => sector))].sort();
-    
+
+    var companies = [
+        ...new Set(
+            defaultMarketWatchData
+                .map((item) => item.company_name)
+                .filter((name) => name),
+        ),
+    ].sort();
+    var sectors = [
+        ...new Set(
+            defaultMarketWatchData
+                .map((item) => item.sector)
+                .filter((sector) => sector),
+        ),
+    ].sort();
+
     var companySelect = document.getElementById("defaultCompanyFilter");
     var sectorSelect = document.getElementById("defaultSectorFilter");
-    
+
     if (companySelect) {
         companySelect.innerHTML = '<option value="">All Companies</option>';
-        companies.forEach(function(company) {
+        companies.forEach(function (company) {
             companySelect.innerHTML += `<option value="${company}">${company}</option>`;
         });
     }
-    
+
     if (sectorSelect) {
         sectorSelect.innerHTML = '<option value="">All Sectors</option>';
-        sectors.forEach(function(sector) {
+        sectors.forEach(function (sector) {
             sectorSelect.innerHTML += `<option value="${sector}">${sector}</option>`;
         });
     }
@@ -2444,26 +2573,26 @@ function loadWatchlistFilterOptions(listName) {
 
 // Populate filter dropdowns for a specific watchlist
 function populateWatchlistFilterDropdowns(listName, filterOptions) {
-    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, '_')}`;
-    
+    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, "_")}`;
+
     // Populate company filter
     const companySelect = document.getElementById(`${cardId}-company-filter`);
     if (companySelect) {
         companySelect.innerHTML = '<option value="">All Companies</option>';
-        filterOptions.companies.slice(0, 50).forEach(company => {
-            const option = document.createElement('option');
+        filterOptions.companies.slice(0, 50).forEach((company) => {
+            const option = document.createElement("option");
             option.value = company;
             option.textContent = company;
             companySelect.appendChild(option);
         });
     }
-    
+
     // Populate sector filter
     const sectorSelect = document.getElementById(`${cardId}-sector-filter`);
     if (sectorSelect) {
         sectorSelect.innerHTML = '<option value="">All Sectors</option>';
-        filterOptions.sectors.forEach(sector => {
-            const option = document.createElement('option');
+        filterOptions.sectors.forEach((sector) => {
+            const option = document.createElement("option");
             option.value = sector;
             option.textContent = sector;
             sectorSelect.appendChild(option);
@@ -2473,61 +2602,73 @@ function populateWatchlistFilterDropdowns(listName, filterOptions) {
 
 // Search functionality for custom watchlists
 function performWatchlistSearch(listName) {
-    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, "_")}`;
     const searchInput = document.getElementById(`${cardId}-symbol-search`);
     const companyFilter = document.getElementById(`${cardId}-company-filter`);
     const sectorFilter = document.getElementById(`${cardId}-sector-filter`);
-    
+
     if (!searchInput || !watchlistData[listName]) return;
-    
+
     const searchTerm = searchInput.value.trim().toLowerCase();
-    const companyFilterValue = companyFilter ? companyFilter.value : '';
-    const sectorFilterValue = sectorFilter ? sectorFilter.value : '';
-    
+    const companyFilterValue = companyFilter ? companyFilter.value : "";
+    const sectorFilterValue = sectorFilter ? sectorFilter.value : "";
+
     // Clear previous timeout
     if (watchlistSearchTimeouts[listName]) {
         clearTimeout(watchlistSearchTimeouts[listName]);
     }
-    
+
     // Debounce search
     watchlistSearchTimeouts[listName] = setTimeout(() => {
         let filteredData = watchlistData[listName];
-        
+
         // Apply search filter
         if (searchTerm) {
-            filteredData = filteredData.filter(symbol => 
-                symbol.symbol.toLowerCase().includes(searchTerm) ||
-                (symbol.company && symbol.company.toLowerCase().includes(searchTerm))
+            filteredData = filteredData.filter(
+                (symbol) =>
+                    symbol.symbol.toLowerCase().includes(searchTerm) ||
+                    (symbol.company &&
+                        symbol.company.toLowerCase().includes(searchTerm)),
             );
         }
-        
+
         // Apply company filter
         if (companyFilterValue) {
-            filteredData = filteredData.filter(symbol => 
-                symbol.company && symbol.company.toLowerCase().includes(companyFilterValue.toLowerCase())
+            filteredData = filteredData.filter(
+                (symbol) =>
+                    symbol.company &&
+                    symbol.company
+                        .toLowerCase()
+                        .includes(companyFilterValue.toLowerCase()),
             );
         }
-        
+
         // Apply sector filter
         if (sectorFilterValue) {
-            filteredData = filteredData.filter(symbol => 
-                symbol.sector && symbol.sector.toLowerCase().includes(sectorFilterValue.toLowerCase())
+            filteredData = filteredData.filter(
+                (symbol) =>
+                    symbol.sector &&
+                    symbol.sector
+                        .toLowerCase()
+                        .includes(sectorFilterValue.toLowerCase()),
             );
         }
-        
+
         watchlistFilteredData[listName] = filteredData;
-        
+
         // Reset pagination
         if (!watchlistPagination[listName]) {
             watchlistPagination[listName] = {
                 currentPage: 1,
                 pageSize: 10,
-                totalPages: 1
+                totalPages: 1,
             };
         }
         watchlistPagination[listName].currentPage = 1;
-        watchlistPagination[listName].totalPages = Math.ceil(filteredData.length / watchlistPagination[listName].pageSize);
-        
+        watchlistPagination[listName].totalPages = Math.ceil(
+            filteredData.length / watchlistPagination[listName].pageSize,
+        );
+
         updateWatchlistTableWithPagination(listName, filteredData);
         updateWatchlistPaginationControls(listName);
     }, 300);
@@ -2535,25 +2676,26 @@ function performWatchlistSearch(listName) {
 
 // Clear search for specific watchlist
 function clearWatchlistSearch(listName) {
-    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, "_")}`;
     const searchInput = document.getElementById(`${cardId}-symbol-search`);
     const companyFilter = document.getElementById(`${cardId}-company-filter`);
     const sectorFilter = document.getElementById(`${cardId}-sector-filter`);
-    
-    if (searchInput) searchInput.value = '';
-    if (companyFilter) companyFilter.value = '';
-    if (sectorFilter) sectorFilter.value = '';
-    
+
+    if (searchInput) searchInput.value = "";
+    if (companyFilter) companyFilter.value = "";
+    if (sectorFilter) sectorFilter.value = "";
+
     performWatchlistSearch(listName);
 }
 
 // Pagination functions for watchlists
 function previousWatchlistPage(listName) {
     if (!watchlistPagination[listName]) return;
-    
+
     if (watchlistPagination[listName].currentPage > 1) {
         watchlistPagination[listName].currentPage--;
-        const filteredData = watchlistFilteredData[listName] || watchlistData[listName] || [];
+        const filteredData =
+            watchlistFilteredData[listName] || watchlistData[listName] || [];
         updateWatchlistTableWithPagination(listName, filteredData);
         updateWatchlistPaginationControls(listName);
     }
@@ -2561,10 +2703,14 @@ function previousWatchlistPage(listName) {
 
 function nextWatchlistPage(listName) {
     if (!watchlistPagination[listName]) return;
-    
-    if (watchlistPagination[listName].currentPage < watchlistPagination[listName].totalPages) {
+
+    if (
+        watchlistPagination[listName].currentPage <
+        watchlistPagination[listName].totalPages
+    ) {
         watchlistPagination[listName].currentPage++;
-        const filteredData = watchlistFilteredData[listName] || watchlistData[listName] || [];
+        const filteredData =
+            watchlistFilteredData[listName] || watchlistData[listName] || [];
         updateWatchlistTableWithPagination(listName, filteredData);
         updateWatchlistPaginationControls(listName);
     }
@@ -2572,32 +2718,32 @@ function nextWatchlistPage(listName) {
 
 // Update watchlist table with pagination
 function updateWatchlistTableWithPagination(listName, symbols) {
-    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, "_")}`;
     const bodyId = `${cardId}-tbody`;
     const tbody = document.getElementById(bodyId);
-    
+
     if (!tbody) return;
-    
+
     // Initialize pagination if not exists
     if (!watchlistPagination[listName]) {
         watchlistPagination[listName] = {
             currentPage: 1,
             pageSize: 10,
-            totalPages: Math.ceil(symbols.length / 10)
+            totalPages: Math.ceil(symbols.length / 10),
         };
     }
-    
+
     const pagination = watchlistPagination[listName];
     const startIndex = (pagination.currentPage - 1) * pagination.pageSize;
     const endIndex = startIndex + pagination.pageSize;
     const paginatedSymbols = symbols.slice(startIndex, endIndex);
-    
+
     if (paginatedSymbols.length === 0) {
         tbody.innerHTML = `
             <tr class="no-data-row">
                 <td colspan="10" class="text-center text-muted py-4">
                     <i class="fas fa-chart-line fa-2x mb-2"></i><br>
-                    ${symbols.length === 0 ? 'No symbols in this watchlist' : 'No symbols found matching your search'}<br>
+                    ${symbols.length === 0 ? "No symbols in this watchlist" : "No symbols found matching your search"}<br>
                     <button class="btn btn-sm btn-primary mt-2" onclick="addSymbolToWatchlist('${listName}')">
                         <i class="fas fa-plus me-1"></i>Add Symbol
                     </button>
@@ -2606,13 +2752,15 @@ function updateWatchlistTableWithPagination(listName, symbols) {
         `;
         return;
     }
-    
-    let html = '';
+
+    let html = "";
     paginatedSymbols.forEach((symbol, index) => {
         const change7dStyle = getGradientBackgroundColor(symbol.change_7d_pct);
-        const change30dStyle = getGradientBackgroundColor(symbol.change_30d_pct);
+        const change30dStyle = getGradientBackgroundColor(
+            symbol.change_30d_pct,
+        );
         const changePctStyle = getGradientBackgroundColor(symbol.change_pct);
-        
+
         html += `
             <tr>
                 <td>${startIndex + index + 1}</td>
@@ -2634,9 +2782,9 @@ function updateWatchlistTableWithPagination(listName, symbols) {
             </tr>
         `;
     });
-    
+
     tbody.innerHTML = html;
-    
+
     // Update counts
     const showingElement = document.getElementById(`${cardId}-showing`);
     const totalElement = document.getElementById(`${cardId}-total`);
@@ -2646,56 +2794,63 @@ function updateWatchlistTableWithPagination(listName, symbols) {
 
 // Update pagination controls for watchlists
 function updateWatchlistPaginationControls(listName) {
-    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, "_")}`;
     const pagination = watchlistPagination[listName];
-    
+
     if (!pagination) return;
-    
+
     // Update page display
-    const currentPageElement = document.getElementById(`${cardId}-current-page`);
+    const currentPageElement = document.getElementById(
+        `${cardId}-current-page`,
+    );
     const totalPagesElement = document.getElementById(`${cardId}-total-pages`);
-    if (currentPageElement) currentPageElement.textContent = pagination.currentPage;
-    if (totalPagesElement) totalPagesElement.textContent = pagination.totalPages;
-    
+    if (currentPageElement)
+        currentPageElement.textContent = pagination.currentPage;
+    if (totalPagesElement)
+        totalPagesElement.textContent = pagination.totalPages;
+
     // Update button states
     const prevBtn = document.getElementById(`${cardId}-prev-btn`);
     const nextBtn = document.getElementById(`${cardId}-next-btn`);
     if (prevBtn) prevBtn.disabled = pagination.currentPage <= 1;
-    if (nextBtn) nextBtn.disabled = pagination.currentPage >= pagination.totalPages;
+    if (nextBtn)
+        nextBtn.disabled = pagination.currentPage >= pagination.totalPages;
 }
 
 // Enhanced loadWatchlistMarketData with data storage for search/pagination
-window.loadWatchlistMarketDataEnhanced = function(listName) {
+window.loadWatchlistMarketDataEnhanced = function (listName) {
     if (!listName) {
-        console.error('List name is required for loadWatchlistMarketData');
+        console.error("List name is required for loadWatchlistMarketData");
         return;
     }
-    
-    fetch(`/api/market-watch/watchlists/${encodeURIComponent(listName)}/symbols-with-data`)
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Store data for search and pagination
-            watchlistData[listName] = data.symbols;
-            watchlistFilteredData[listName] = data.symbols;
-            
-            // Initialize pagination
-            if (!watchlistPagination[listName]) {
-                watchlistPagination[listName] = {
-                    currentPage: 1,
-                    pageSize: 10,
-                    totalPages: Math.ceil(data.symbols.length / 10)
-                };
+
+    fetch(
+        `/api/market-watch/watchlists/${encodeURIComponent(listName)}/symbols-with-data`,
+    )
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success) {
+                // Store data for search and pagination
+                watchlistData[listName] = data.symbols;
+                watchlistFilteredData[listName] = data.symbols;
+
+                // Initialize pagination
+                if (!watchlistPagination[listName]) {
+                    watchlistPagination[listName] = {
+                        currentPage: 1,
+                        pageSize: 10,
+                        totalPages: Math.ceil(data.symbols.length / 10),
+                    };
+                }
+
+                updateWatchlistTableWithPagination(listName, data.symbols);
+                updateWatchlistPaginationControls(listName);
+            } else {
+                showErrorInWatchlistTable(listName, data.error);
             }
-            
-            updateWatchlistTableWithPagination(listName, data.symbols);
-            updateWatchlistPaginationControls(listName);
-        } else {
-            showErrorInWatchlistTable(listName, data.error);
-        }
-    })
-    .catch(error => {
-        console.error(`Error loading watchlist ${listName} data:`, error);
-        showErrorInWatchlistTable(listName, 'Network error loading data');
-    });
+        })
+        .catch((error) => {
+            console.error(`Error loading watchlist ${listName} data:`, error);
+            showErrorInWatchlistTable(listName, "Network error loading data");
+        });
 };
