@@ -342,12 +342,12 @@ var selectedSymbolData = null;
 var searchTimeout = null;
 var filterOptions = { companies: [], sectors: [], sub_sectors: [] };
 
-// Initialize advanced symbol modal
+// Initialize advanced symbol modal and call it
 function initializeAdvancedSymbolModal() {
     // Load filter options when modal opens
-    document
-        .getElementById("addSymbolModal")
-        .addEventListener("shown.bs.modal", function () {
+    const modalElement = document.getElementById("addSymbolModal");
+    if (modalElement) {
+        modalElement.addEventListener("shown.bs.modal", function () {
             loadFilterOptions();
             clearSymbolSelection();
             // Show initial symbols based on default Nifty selection
@@ -355,7 +355,14 @@ function initializeAdvancedSymbolModal() {
                 updateSymbolSearch();
             }, 500);
         });
+        console.log("Advanced symbol modal initialized successfully");
+    }
 }
+
+// Initialize when document is ready
+document.addEventListener('DOMContentLoaded', function() {
+    initializeAdvancedSymbolModal();
+});
 
 // Load filter options from API
 function loadFilterOptions() {
@@ -687,6 +694,16 @@ function validateAndAddDirectSymbol(symbol) {
         });
 }
 
+// Function to open Add Symbol modal with context  
+function addSymbolToWatchlist(watchlistName) {
+    // Set the current watchlist context
+    window.currentWatchlistName = watchlistName;
+    
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('addSymbolModal'));
+    modal.show();
+}
+
 // Add symbol to current watchlist
 function addSymbolToCurrentWatchlist() {
     if (!selectedSymbolData) return;
@@ -754,6 +771,9 @@ function addSymbolToCurrentWatchlist() {
 // Make sure functions are available globally
 window.searchSymbols = searchSymbols;
 window.updateSymbolSearch = updateSymbolSearch;
+window.submitAdvancedAddSymbol = submitAdvancedAddSymbol;
+window.addSymbolToWatchlist = addSymbolToWatchlist;
+window.selectSymbol = selectSymbol;
 
 // Clear symbol selection
 function clearSymbolSelection() {
@@ -797,6 +817,15 @@ function submitAdvancedAddSymbol() {
 // Legacy function for backward compatibility
 function submitAddSymbol() {
     submitAdvancedAddSymbol();
+}
+
+// Clear search function for symbol search input
+function clearSymbolSearch() {
+    const symbolInput = document.getElementById("symbolAutocompleteInput");
+    if (symbolInput) {
+        symbolInput.value = "";
+        hideSymbolSuggestions();
+    }
 }
 
 

@@ -126,6 +126,100 @@
 }
 
 .company-name {
+    color: #adb5bd;
+    font-size: 0.85em;
+}
+
+.symbol-details {
+    text-align: right;
+    font-size: 0.8em;
+    color: #6c757d;
+}
+
+/* Add Symbol Modal Specific Styles */
+#addSymbolModal .modal-dialog {
+    max-width: 900px;
+}
+
+#addSymbolModal #symbolSuggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #2d3436;
+    border: 1px solid #495057;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1055;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+#addSymbolModal .suggestion-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #495057;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    color: #ffffff;
+}
+
+#addSymbolModal .suggestion-item:hover,
+#addSymbolModal .suggestion-item.active {
+    background-color: #0d6efd;
+}
+
+#addSymbolModal .suggestion-item:last-child {
+    border-bottom: none;
+}
+
+/* Badge colors for categories */
+#addSymbolModal .badge.bg-success {
+    background-color: #198754 !important;
+}
+
+#addSymbolModal .badge.bg-primary {
+    background-color: #0d6efd !important;
+}
+
+#addSymbolModal .badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #000 !important;
+}
+
+/* Filter sections styling */
+#addSymbolModal .form-check-label {
+    cursor: pointer;
+}
+
+#addSymbolModal .form-select {
+    background-color: #495057;
+    border: 1px solid #6c757d;
+    color: #ffffff;
+}
+
+#addSymbolModal .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+#addSymbolModal .form-control {
+    background-color: #495057;
+    border: 1px solid #6c757d;
+    color: #ffffff;
+}
+
+#addSymbolModal .form-control:focus {
+    background-color: #495057;
+    border-color: #0d6efd;
+    color: #ffffff;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+#addSymbolModal .form-control::placeholder {
+    color: #adb5bd;
+}
+
+.company-name {
     font-size: 0.85em;
     color: #adb5bd;
     margin-top: 2px;
