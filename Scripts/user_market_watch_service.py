@@ -287,6 +287,49 @@ class UserMarketWatchService:
             logger.error(f"❌ Error deleting watchlist '{list_name}' for user {username}: {e}")
             return False
     
+    def edit_watchlist_name(self, username: str, old_name: str, new_name: str) -> bool:
+        """Edit/rename a watchlist"""
+        try:
+            filename = self.get_user_csv_filename(username)
+            
+            if not os.path.exists(filename):
+                logger.warning(f"CSV file doesn't exist for user: {username}")
+                return False
+            
+            # Check if new name already exists
+            if self.watchlist_exists(username, new_name):
+                logger.warning(f"Watchlist '{new_name}' already exists for user {username}")
+                return False
+            
+            # Read all lines and update the watchlist name
+            lines = []
+            found = False
+            
+            with open(filename, 'r', newline='', encoding='utf-8') as csvfile:
+                reader = csv.reader(csvfile)
+                for row in reader:
+                    if row and row[0] == old_name:
+                        # Update the watchlist name
+                        row[0] = new_name
+                        found = True
+                    lines.append(row)
+            
+            if not found:
+                logger.warning(f"Watchlist '{old_name}' not found for user {username}")
+                return False
+            
+            # Write back the updated lines
+            with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerows(lines)
+            
+            logger.info(f"✓ Renamed watchlist '{old_name}' to '{new_name}' for user {username}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Error editing watchlist name from '{old_name}' to '{new_name}' for user {username}: {e}")
+            return False
+    
     def get_watchlist_count(self, username: str, list_name: str = None) -> int:
         """Get count of symbols in a specific watchlist or total count"""
         try:

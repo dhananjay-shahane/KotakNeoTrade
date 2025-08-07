@@ -563,29 +563,56 @@ def manage_watchlist_symbols(list_name):
             return jsonify({"error": "Failed to remove symbol"}), 500
 
 
-@market_watch_api.route('/api/market-watch/watchlists/<list_name>', methods=['DELETE'])
-def delete_watchlist(list_name):
+@market_watch_api.route('/api/market-watch/watchlists/<list_name>', methods=['PUT', 'DELETE'])
+def manage_watchlist(list_name):
     """
-    Delete a watchlist
+    Manage a watchlist (edit name or delete)
     """
     username = session.get('username') or session.get('user_id') or 'demo_user'
     if not username or username == 'None':
         username = 'demo_user'
     
-    try:
-        success = user_watchlist_service.delete_watchlist(username, list_name)
+    if request.method == 'PUT':
+        # Edit watchlist name
+        json_data = request.json or {}
+        new_name = json_data.get('name', '').strip()
         
-        if success:
-            return jsonify({
-                "success": True,
-                "message": f"Watchlist '{list_name}' deleted successfully"
-            })
-        else:
-            return jsonify({"error": "Failed to delete watchlist or watchlist not found"}), 404
+        if not new_name:
+            return jsonify({"error": "New list name is required"}), 400
+        
+        try:
+            success = user_watchlist_service.edit_watchlist_name(username, list_name, new_name)
+            
+            if success:
+                return jsonify({
+                    "success": True,
+                    "message": f"Watchlist renamed from '{list_name}' to '{new_name}'",
+                    "old_name": list_name,
+                    "new_name": new_name
+                })
+            else:
+                return jsonify({"error": "Failed to rename watchlist or new name already exists"}), 400
+        
+        except Exception as e:
+            logger.error(f"Error editing watchlist name: {e}")
+            return jsonify({"error": "Failed to rename watchlist"}), 500
     
-    except Exception as e:
-        logger.error(f"Error deleting watchlist: {e}")
-        return jsonify({"error": "Failed to delete watchlist"}), 500
+    elif request.method == 'DELETE':
+        # Delete watchlist
+        try:
+            success = user_watchlist_service.delete_watchlist(username, list_name)
+            
+            if success:
+                return jsonify({
+                    "success": True,
+                    "message": f"Watchlist '{list_name}' deleted successfully"
+                })
+            else:
+                return jsonify({"error": "Failed to delete watchlist or watchlist not found"}), 404
+        
+        except Exception as e:
+            logger.error(f"Error deleting watchlist: {e}")
+            return jsonify({"error": "Failed to delete watchlist"}), 500
 
 
 @market_watch_api.route('/api/market-watch/watchlists/<list_name>/symbols-with-data', methods=['GET'])

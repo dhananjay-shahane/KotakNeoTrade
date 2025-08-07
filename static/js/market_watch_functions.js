@@ -811,6 +811,78 @@ function loadUserWatchlist() {
         });
 }
 
+// Update user market watch table (missing function)
+function updateUserMarketWatchTable() {
+    console.log("Updating user market watch table...");
+    
+    const userTableBody = document.getElementById("userMarketWatchTableBody");
+    if (!userTableBody) {
+        console.error("User market watch table body not found");
+        return;
+    }
+    
+    if (!userMarketWatchData || userMarketWatchData.length === 0) {
+        userTableBody.innerHTML = `
+            <tr class="no-data-row">
+                <td colspan="12" class="text-center text-muted py-4">
+                    <i class="fas fa-chart-line fa-2x mb-2"></i><br>
+                    No symbols in your watchlist<br>
+                    <button class="btn btn-sm btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#addSymbolModal">
+                        <i class="fas fa-plus me-1"></i>Add Symbol
+                    </button>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    let tableContent = "";
+    userMarketWatchData.forEach((symbol, index) => {
+        const change = parseFloat(symbol.change || 0);
+        const changePct = parseFloat(symbol.change_pct || 0);
+        
+        // Color classes based on change
+        const changeColorClass = change >= 0 ? "text-success" : "text-danger";
+        const changeIcon = change >= 0 ? "fas fa-arrow-up" : "fas fa-arrow-down";
+        
+        tableContent += `
+            <tr>
+                <td>${index + 1}</td>
+                <td class="fw-bold">${symbol.symbol || '-'}</td>
+                <td><small class="text-muted">${symbol.company_name || '-'}</small></td>
+                <td>${symbol.sector || '-'}</td>
+                <td class="text-end">₹${parseFloat(symbol.cmp || 0).toFixed(2)}</td>
+                <td class="text-end ${changeColorClass}">
+                    <i class="${changeIcon} me-1"></i>
+                    ₹${Math.abs(change).toFixed(2)}
+                </td>
+                <td class="text-end ${changeColorClass}">
+                    ${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}%
+                </td>
+                <td class="text-end">₹${parseFloat(symbol.open || 0).toFixed(2)}</td>
+                <td class="text-end">₹${parseFloat(symbol.high || 0).toFixed(2)}</td>
+                <td class="text-end">₹${parseFloat(symbol.low || 0).toFixed(2)}</td>
+                <td class="text-end">₹${parseFloat(symbol.close || 0).toFixed(2)}</td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeFromUserList('${symbol.id || symbol.symbol}')" title="Remove from watchlist">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    userTableBody.innerHTML = tableContent;
+}
+
+// Update user counts function
+function updateUserCounts() {
+    const countElement = document.getElementById("userSymbolCount");
+    if (countElement) {
+        countElement.textContent = userMarketWatchData.length;
+    }
+}
+
 // Custom Watchlist Management Functions
 window.createNewWatchlist = function() {
     const nameInput = document.getElementById('newListNameInput');
@@ -951,7 +1023,7 @@ function createWatchlistCard(watchlist) {
                     <button class="btn btn-sm btn-success" onclick="addSymbolToWatchlist('${watchlist.name}')">
                         <i class="fas fa-plus me-1"></i>Add Symbol
                     </button>
-                    <button class="btn btn-sm btn-outline-light" onclick="editWatchlist('${watchlist.name}')">
+                    <button class="btn btn-sm btn-outline-light" onclick="editWatchlistName('${watchlist.name}')">
                         <i class="fas fa-edit me-1"></i>Edit
                     </button>
                     <button class="btn btn-sm btn-outline-danger" onclick="deleteWatchlist('${watchlist.name}')">
@@ -1012,6 +1084,10 @@ function createWatchlistCard(watchlist) {
 
 // Load market data for a specific watchlist
 function loadWatchlistMarketData(listName) {
+    if (!listName) {
+        console.error('List name is required for loadWatchlistMarketData');
+        return;
+    }
     const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, '_')}`;
     const bodyId = `${cardId}-tbody`;
     
@@ -1330,6 +1406,88 @@ window.exportWatchlist = function(listName) {
         });
     });
 };
+
+// Edit watchlist name function
+window.editWatchlistName = function(listName) {
+    Swal.fire({
+        title: 'Edit Watchlist Name',
+        input: 'text',
+        inputValue: listName,
+        inputPlaceholder: 'Enter new name for the watchlist',
+        background: '#1a1a1a',
+        color: '#fff',
+        showCancelButton: true,
+        confirmButtonText: 'Save',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#007bff',
+        cancelButtonColor: '#6c757d',
+        inputValidator: (value) => {
+            if (!value || value.trim().length === 0) {
+                return 'Please enter a valid name';
+            }
+            if (value.trim().length > 50) {
+                return 'Name must be 50 characters or less';
+            }
+            if (value.trim() === listName) {
+                return 'Please enter a different name';
+            }
+            return null;
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const newName = result.value.trim();
+            
+            fetch(`/api/market-watch/watchlists/${encodeURIComponent(listName)}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: newName
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: data.message,
+                        background: '#1a1a1a',
+                        color: '#fff',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    
+                    // Reload custom watchlists to reflect the change
+                    setTimeout(() => {
+                        loadCustomWatchlists();
+                    }, 500);
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.error || 'Failed to rename watchlist',
+                        background: '#1a1a1a',
+                        color: '#fff'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error editing watchlist name:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to rename watchlist. Please try again.',
+                    background: '#1a1a1a',
+                    color: '#fff'
+                });
+            });
+        }
+    });
+};
+
+
 
 // Initialize on page load
 document.addEventListener("DOMContentLoaded", function () {
