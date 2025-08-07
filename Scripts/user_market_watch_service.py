@@ -38,11 +38,14 @@ class UserMarketWatchService:
                 logger.info(f"✓ CSV file already exists for user: {username}")
                 return True
             
-            # Create empty file - no headers needed as each line is a watchlist
+            # Create file with headers: market watch, symbol 1, symbol 2, symbol 3...
             with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
-                pass  # Create empty file
+                writer = csv.writer(csvfile)
+                # Write header row
+                header = ['market watch'] + [f'symbol {i}' for i in range(1, 21)]  # Support up to 20 symbols per watchlist
+                writer.writerow(header)
             
-            logger.info(f"✓ Created CSV file for user: {username}")
+            logger.info(f"✓ Created CSV file with headers for user: {username}")
             return True
             
         except Exception as e:
@@ -63,10 +66,12 @@ class UserMarketWatchService:
                 logger.warning(f"Watchlist '{list_name}' already exists for user {username}")
                 return False
             
-            # Add new watchlist line (just the list name)
+            # Add new watchlist line (market watch name in first column, empty symbols)
             with open(filename, 'a', newline='', encoding='utf-8') as csvfile:
                 writer = csv.writer(csvfile)
-                writer.writerow([list_name])
+                # Create row with list name and empty symbol columns
+                row = [list_name] + [''] * 20  # Empty symbol columns
+                writer.writerow(row)
             
             logger.info(f"✓ Created watchlist '{list_name}' for user {username}")
             return True
@@ -175,8 +180,22 @@ class UserMarketWatchService:
             watchlists = {}
             with open(filename, 'r', newline='', encoding='utf-8') as csvfile:
                 reader = csv.reader(csvfile)
+                
+                # Skip header row if it exists
+                first_row = next(reader, None)
+                if first_row and first_row[0] == 'market watch':
+                    # Header row detected, continue with data rows
+                    pass
+                elif first_row:
+                    # No header, process first row as data
+                    if first_row[0]:  # Skip empty lines
+                        list_name = first_row[0]
+                        symbols = [s.upper() for s in first_row[1:] if s.strip()]
+                        watchlists[list_name] = symbols
+                
+                # Process remaining rows
                 for row in reader:
-                    if row:  # Skip empty lines
+                    if row and row[0]:  # Skip empty lines and rows with empty list names
                         list_name = row[0]
                         symbols = [s.upper() for s in row[1:] if s.strip()]
                         watchlists[list_name] = symbols

@@ -144,7 +144,7 @@ function populateFilterDropdowns() {
 // Search symbols with current filters
 function searchSymbols() {
     const searchInput = document.getElementById("symbolSearchInput");
-    const searchTerm = searchInput.value.trim();
+    const searchTerm = searchInput.value.trim().toUpperCase();
 
     // Clear previous timeout
     if (searchTimeout) {
@@ -734,6 +734,13 @@ window.loadCustomWatchlists = function() {
         if (data.success) {
             displayCustomWatchlists(data.watchlists);
             console.log(`✓ Loaded ${data.watchlists.length} custom watchlists`);
+            
+            // Load filter options for each watchlist
+            setTimeout(() => {
+                data.watchlists.forEach(watchlist => {
+                    loadWatchlistFilterOptions(watchlist.name);
+                });
+            }, 500); // Small delay to ensure UI elements are rendered
         } else {
             console.error('Error loading custom watchlists:', data.error);
         }
@@ -764,17 +771,22 @@ function displayCustomWatchlists(watchlists) {
     
     container.innerHTML = html;
     
-    // Load market data for all watchlists
+    // Load market data for all watchlists (enhanced version)
     watchlists.forEach(watchlist => {
-        loadWatchlistMarketData(watchlist.name);
+        loadWatchlistMarketDataEnhanced(watchlist.name);
     });
 }
 
-// Create HTML for a watchlist card
+// Create HTML for a watchlist card with enhanced search and filter functionality
 function createWatchlistCard(watchlist) {
     const cardId = `watchlist-${watchlist.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
     const tableId = `${cardId}-table`;
     const bodyId = `${cardId}-tbody`;
+    const searchContainerId = `${cardId}-search-container`;
+    const symbolSearchId = `${cardId}-symbol-search`;
+    const companyFilterId = `${cardId}-company-filter`;
+    const sectorFilterId = `${cardId}-sector-filter`;
+    const searchSuggestionsId = `${cardId}-search-suggestions`;
     
     return `
         <div class="card bg-secondary border-0 shadow-lg mb-4" id="${cardId}">
@@ -799,6 +811,51 @@ function createWatchlistCard(watchlist) {
                     <button class="btn btn-sm btn-outline-light" onclick="refreshWatchlistData('${watchlist.name}')">
                         <i class="fas fa-sync-alt me-1"></i>Refresh
                     </button>
+                </div>
+            </div>
+            
+            <!-- Search and Filter Section for Custom Watchlist -->
+            <div class="border-bottom border-secondary p-3" id="${searchContainerId}">
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary border-0">
+                                <i class="fas fa-search text-light"></i>
+                            </span>
+                            <input
+                                type="text"
+                                class="form-control bg-dark text-light border-0"
+                                id="${symbolSearchId}"
+                                placeholder="Search by symbol name (e.g. 'A' for AAPL, ADANI...)"
+                                onkeyup="performWatchlistSearch('${watchlist.name}')"
+                                autocomplete="off"
+                            />
+                            <button
+                                class="btn btn-sm btn-outline-light"
+                                type="button"
+                                onclick="clearWatchlistSearch('${watchlist.name}')"
+                                title="Clear search"
+                            >
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <!-- Search suggestions dropdown -->
+                        <div class="position-relative">
+                            <div id="${searchSuggestionsId}" class="dropdown-menu bg-dark border-secondary d-none" style="width: 100%; max-height: 200px; overflow-y: auto; position: absolute; z-index: 1000;">
+                                <!-- Search suggestions will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select bg-dark text-light border-secondary" id="${companyFilterId}" onchange="performWatchlistSearch('${watchlist.name}')">
+                            <option value="">All Companies</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select bg-dark text-light border-secondary" id="${sectorFilterId}" onchange="performWatchlistSearch('${watchlist.name}')">
+                            <option value="">All Sectors</option>
+                        </select>
+                    </div>
                 </div>
             </div>
             
@@ -857,7 +914,38 @@ function createWatchlistCard(watchlist) {
                 <div class="d-flex align-items-center gap-3">
                     <small>Showing <span id="${cardId}-showing">${watchlist.count}</span> of <span id="${cardId}-total">${watchlist.count}</span> symbols</small>
                 </div>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 align-items-center">
+                    <button class="btn btn-sm btn-outline-light" onclick="refreshWatchlistData('${watchlist.name}')">
+                        <i class="fas fa-sync-alt me-1"></i>Refresh
+                    </button>
+                    <div class="btn-group" role="group">
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-light"
+                            onclick="previousWatchlistPage('${watchlist.name}')"
+                            id="${cardId}-prev-btn"
+                            disabled
+                        >
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-light"
+                            disabled
+                        >
+                            Page <span id="${cardId}-current-page">1</span> of
+                            <span id="${cardId}-total-pages">1</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-light"
+                            onclick="nextWatchlistPage('${watchlist.name}')"
+                            id="${cardId}-next-btn"
+                            disabled
+                        >
+                            Next <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
                     <button class="btn btn-sm btn-outline-light" onclick="exportWatchlist('${watchlist.name}')">
                         <i class="fas fa-download me-1"></i>Export
                     </button>
@@ -1720,3 +1808,281 @@ function initializeFilterOptions() {
         });
     }
 }
+
+// Variables to store watchlist data for search and pagination
+var watchlistData = {};
+var watchlistFilteredData = {};
+var watchlistPagination = {};
+var watchlistSearchTimeouts = {};
+
+// Load filter options for a specific watchlist
+function loadWatchlistFilterOptions(listName) {
+    fetch('/api/symbols/filters')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            populateWatchlistFilterDropdowns(listName, data);
+        }
+    })
+    .catch(error => {
+        console.error(`Error loading filter options for ${listName}:`, error);
+    });
+}
+
+// Populate filter dropdowns for a specific watchlist
+function populateWatchlistFilterDropdowns(listName, filterOptions) {
+    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    
+    // Populate company filter
+    const companySelect = document.getElementById(`${cardId}-company-filter`);
+    if (companySelect) {
+        companySelect.innerHTML = '<option value="">All Companies</option>';
+        filterOptions.companies.slice(0, 50).forEach(company => {
+            const option = document.createElement('option');
+            option.value = company;
+            option.textContent = company;
+            companySelect.appendChild(option);
+        });
+    }
+    
+    // Populate sector filter
+    const sectorSelect = document.getElementById(`${cardId}-sector-filter`);
+    if (sectorSelect) {
+        sectorSelect.innerHTML = '<option value="">All Sectors</option>';
+        filterOptions.sectors.forEach(sector => {
+            const option = document.createElement('option');
+            option.value = sector;
+            option.textContent = sector;
+            sectorSelect.appendChild(option);
+        });
+    }
+}
+
+// Search functionality for custom watchlists
+function performWatchlistSearch(listName) {
+    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const searchInput = document.getElementById(`${cardId}-symbol-search`);
+    const companyFilter = document.getElementById(`${cardId}-company-filter`);
+    const sectorFilter = document.getElementById(`${cardId}-sector-filter`);
+    
+    if (!searchInput || !watchlistData[listName]) return;
+    
+    const searchTerm = searchInput.value.trim().toLowerCase();
+    const companyFilterValue = companyFilter ? companyFilter.value : '';
+    const sectorFilterValue = sectorFilter ? sectorFilter.value : '';
+    
+    // Clear previous timeout
+    if (watchlistSearchTimeouts[listName]) {
+        clearTimeout(watchlistSearchTimeouts[listName]);
+    }
+    
+    // Debounce search
+    watchlistSearchTimeouts[listName] = setTimeout(() => {
+        let filteredData = watchlistData[listName];
+        
+        // Apply search filter
+        if (searchTerm) {
+            filteredData = filteredData.filter(symbol => 
+                symbol.symbol.toLowerCase().includes(searchTerm) ||
+                (symbol.company && symbol.company.toLowerCase().includes(searchTerm))
+            );
+        }
+        
+        // Apply company filter
+        if (companyFilterValue) {
+            filteredData = filteredData.filter(symbol => 
+                symbol.company && symbol.company.toLowerCase().includes(companyFilterValue.toLowerCase())
+            );
+        }
+        
+        // Apply sector filter
+        if (sectorFilterValue) {
+            filteredData = filteredData.filter(symbol => 
+                symbol.sector && symbol.sector.toLowerCase().includes(sectorFilterValue.toLowerCase())
+            );
+        }
+        
+        watchlistFilteredData[listName] = filteredData;
+        
+        // Reset pagination
+        if (!watchlistPagination[listName]) {
+            watchlistPagination[listName] = {
+                currentPage: 1,
+                pageSize: 10,
+                totalPages: 1
+            };
+        }
+        watchlistPagination[listName].currentPage = 1;
+        watchlistPagination[listName].totalPages = Math.ceil(filteredData.length / watchlistPagination[listName].pageSize);
+        
+        updateWatchlistTableWithPagination(listName, filteredData);
+        updateWatchlistPaginationControls(listName);
+    }, 300);
+}
+
+// Clear search for specific watchlist
+function clearWatchlistSearch(listName) {
+    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const searchInput = document.getElementById(`${cardId}-symbol-search`);
+    const companyFilter = document.getElementById(`${cardId}-company-filter`);
+    const sectorFilter = document.getElementById(`${cardId}-sector-filter`);
+    
+    if (searchInput) searchInput.value = '';
+    if (companyFilter) companyFilter.value = '';
+    if (sectorFilter) sectorFilter.value = '';
+    
+    performWatchlistSearch(listName);
+}
+
+// Pagination functions for watchlists
+function previousWatchlistPage(listName) {
+    if (!watchlistPagination[listName]) return;
+    
+    if (watchlistPagination[listName].currentPage > 1) {
+        watchlistPagination[listName].currentPage--;
+        const filteredData = watchlistFilteredData[listName] || watchlistData[listName] || [];
+        updateWatchlistTableWithPagination(listName, filteredData);
+        updateWatchlistPaginationControls(listName);
+    }
+}
+
+function nextWatchlistPage(listName) {
+    if (!watchlistPagination[listName]) return;
+    
+    if (watchlistPagination[listName].currentPage < watchlistPagination[listName].totalPages) {
+        watchlistPagination[listName].currentPage++;
+        const filteredData = watchlistFilteredData[listName] || watchlistData[listName] || [];
+        updateWatchlistTableWithPagination(listName, filteredData);
+        updateWatchlistPaginationControls(listName);
+    }
+}
+
+// Update watchlist table with pagination
+function updateWatchlistTableWithPagination(listName, symbols) {
+    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const bodyId = `${cardId}-tbody`;
+    const tbody = document.getElementById(bodyId);
+    
+    if (!tbody) return;
+    
+    // Initialize pagination if not exists
+    if (!watchlistPagination[listName]) {
+        watchlistPagination[listName] = {
+            currentPage: 1,
+            pageSize: 10,
+            totalPages: Math.ceil(symbols.length / 10)
+        };
+    }
+    
+    const pagination = watchlistPagination[listName];
+    const startIndex = (pagination.currentPage - 1) * pagination.pageSize;
+    const endIndex = startIndex + pagination.pageSize;
+    const paginatedSymbols = symbols.slice(startIndex, endIndex);
+    
+    if (paginatedSymbols.length === 0) {
+        tbody.innerHTML = `
+            <tr class="no-data-row">
+                <td colspan="10" class="text-center text-muted py-4">
+                    <i class="fas fa-chart-line fa-2x mb-2"></i><br>
+                    ${symbols.length === 0 ? 'No symbols in this watchlist' : 'No symbols found matching your search'}<br>
+                    <button class="btn btn-sm btn-primary mt-2" onclick="addSymbolToWatchlist('${listName}')">
+                        <i class="fas fa-plus me-1"></i>Add Symbol
+                    </button>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    let html = '';
+    paginatedSymbols.forEach((symbol, index) => {
+        const change7dStyle = getGradientBackgroundColor(symbol.change_7d_pct);
+        const change30dStyle = getGradientBackgroundColor(symbol.change_30d_pct);
+        const changePctStyle = getGradientBackgroundColor(symbol.change_pct);
+        
+        html += `
+            <tr>
+                <td>${startIndex + index + 1}</td>
+                <td class="text-center">
+                    <span class="fw-bold text-warning">${symbol.symbol}</span>
+                </td>
+                <td class="text-center">${symbol.price_7d}</td>
+                <td class="text-center">${symbol.price_30d}</td>
+                <td class="text-center" style="${change7dStyle}">${symbol.change_7d_pct}</td>
+                <td class="text-center" style="${change30dStyle}">${symbol.change_30d_pct}</td>
+                <td class="text-center fw-bold text-info">${symbol.cmp}</td>
+                <td class="text-center" style="${changePctStyle}">${symbol.change_pct}</td>
+                <td class="text-center">${symbol.change_val}</td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeSymbolFromWatchlist('${listName}', '${symbol.symbol}')" title="Remove Symbol">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    tbody.innerHTML = html;
+    
+    // Update counts
+    const showingElement = document.getElementById(`${cardId}-showing`);
+    const totalElement = document.getElementById(`${cardId}-total`);
+    if (showingElement) showingElement.textContent = paginatedSymbols.length;
+    if (totalElement) totalElement.textContent = symbols.length;
+}
+
+// Update pagination controls for watchlists
+function updateWatchlistPaginationControls(listName) {
+    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const pagination = watchlistPagination[listName];
+    
+    if (!pagination) return;
+    
+    // Update page display
+    const currentPageElement = document.getElementById(`${cardId}-current-page`);
+    const totalPagesElement = document.getElementById(`${cardId}-total-pages`);
+    if (currentPageElement) currentPageElement.textContent = pagination.currentPage;
+    if (totalPagesElement) totalPagesElement.textContent = pagination.totalPages;
+    
+    // Update button states
+    const prevBtn = document.getElementById(`${cardId}-prev-btn`);
+    const nextBtn = document.getElementById(`${cardId}-next-btn`);
+    if (prevBtn) prevBtn.disabled = pagination.currentPage <= 1;
+    if (nextBtn) nextBtn.disabled = pagination.currentPage >= pagination.totalPages;
+}
+
+// Enhanced loadWatchlistMarketData with data storage for search/pagination
+window.loadWatchlistMarketDataEnhanced = function(listName) {
+    if (!listName) {
+        console.error('List name is required for loadWatchlistMarketData');
+        return;
+    }
+    
+    fetch(`/api/market-watch/watchlists/${encodeURIComponent(listName)}/symbols-with-data`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Store data for search and pagination
+            watchlistData[listName] = data.symbols;
+            watchlistFilteredData[listName] = data.symbols;
+            
+            // Initialize pagination
+            if (!watchlistPagination[listName]) {
+                watchlistPagination[listName] = {
+                    currentPage: 1,
+                    pageSize: 10,
+                    totalPages: Math.ceil(data.symbols.length / 10)
+                };
+            }
+            
+            updateWatchlistTableWithPagination(listName, data.symbols);
+            updateWatchlistPaginationControls(listName);
+        } else {
+            showErrorInWatchlistTable(listName, data.error);
+        }
+    })
+    .catch(error => {
+        console.error(`Error loading watchlist ${listName} data:`, error);
+        showErrorInWatchlistTable(listName, 'Network error loading data');
+    });
+};
