@@ -803,19 +803,12 @@ def get_default_symbols_with_market_data():
                     'sub_sector': symbol_details.get('sub_sector', 'N/A')
                 }
 
-                # Get market data with simplified approach (to avoid database timeout)
+                # Get current market price only (simplified approach)
                 cmp = None
-                price_7d = None
-                price_30d = None
                 
-                # For now, use fallback values to ensure CSV loading works
-                # Market data integration can be improved separately
                 try:
                     if price_fetcher:
                         cmp = price_fetcher.get_cmp(symbol)
-                    # Skip historical data for now to avoid timeout issues
-                    # price_7d = historical_fetcher.get_offset_price(symbol, 5)
-                    # price_30d = historical_fetcher.get_offset_price(symbol, 20)
                 except Exception as market_error:
                     logger.warning(f"Market data error for {symbol}: {market_error}")
                     # Continue with basic symbol info even if market data fails

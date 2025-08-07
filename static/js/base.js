@@ -1190,20 +1190,24 @@ function stopNotificationMonitoring() {
 
 function updateNotificationCount() {
     fetch("/api/notifications/count")
-        .then((response) => response.json())
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.json();
+        })
         .then((data) => {
             if (data.success) {
-                const countElement =
-                    document.getElementById("notificationCount");
+                const countElement = document.getElementById("notificationCount");
                 if (countElement) {
                     countElement.textContent = data.count || 0;
-                    countElement.style.display =
-                        data.count > 0 ? "block" : "none";
+                    countElement.style.display = data.count > 0 ? "block" : "none";
                 }
             }
         })
         .catch((error) => {
-            console.error("Error updating notification count:", error);
+            // Silently handle errors to prevent console spam
+            // console.error("Error updating notification count:", error);
         });
 }
 

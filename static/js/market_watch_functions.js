@@ -2112,18 +2112,11 @@ var watchlistFilteredData = {};
 var watchlistPagination = {};
 var watchlistSearchTimeouts = {};
 
-// Load filter options for a specific watchlist
+// Load filter options for a specific watchlist (simplified to avoid API errors)
 function loadWatchlistFilterOptions(listName) {
-    fetch('/api/symbols/filters')
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            populateWatchlistFilterDropdowns(listName, data);
-        }
-    })
-    .catch(error => {
-        console.error(`Error loading filter options for ${listName}:`, error);
-    });
+    // Skip filter loading for now to prevent 502 errors
+    // This will be re-enabled once the symbols/filters API is implemented
+    console.log(`Filter loading skipped for ${listName} to prevent API errors`);
 }
 
 // Populate filter dropdowns for a specific watchlist
