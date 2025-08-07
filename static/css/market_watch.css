@@ -73,6 +73,95 @@
     background-color: rgba(255, 255, 255, 0.1);
 }
 
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+    .signals-table {
+        font-size: 0.65rem;
+    }
+    
+    .signals-table th {
+        padding: 4px 2px;
+        font-size: 0.6rem;
+    }
+    
+    .signals-table td {
+        padding: 3px 2px;
+        font-size: 0.65rem;
+    }
+    
+    .table-responsive {
+        max-height: 350px;
+    }
+    
+    /* Compact button styles for mobile */
+    .btn-sm {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.75rem;
+    }
+    
+    /* Symbol search modal adjustments */
+    .modal-dialog {
+        margin: 1rem;
+    }
+    
+    .modal-body {
+        padding: 1rem;
+    }
+    
+    /* Watchlist card spacing */
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    /* Search input responsive */
+    #symbolSearchInput {
+        font-size: 14px;
+    }
+    
+    /* Pagination controls mobile */
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .signals-table {
+        font-size: 0.6rem;
+    }
+    
+    .signals-table th,
+    .signals-table td {
+        padding: 2px 1px;
+    }
+    
+    .signals-table th {
+        font-size: 0.55rem;
+    }
+    
+    .table-responsive {
+        max-height: 300px;
+    }
+    
+    /* Hide less important columns on very small screens */
+    .signals-table th:nth-child(3),
+    .signals-table td:nth-child(3),
+    .signals-table th:nth-child(4),
+    .signals-table td:nth-child(4) {
+        display: none;
+    }
+    
+    /* Stack header elements */
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .input-group {
+        min-width: auto !important;
+    }
+}
+
 .sort-icon {
     margin-left: 4px;
     font-size: 0.6rem;

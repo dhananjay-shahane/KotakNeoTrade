@@ -172,6 +172,9 @@ function searchSymbols() {
         return;
     }
 
+    // Show loading state immediately
+    showSearchLoading();
+    
     // Debounce search
     searchTimeout = setTimeout(() => {
         performSymbolSearch(searchTerm || "");
@@ -275,6 +278,22 @@ function displaySymbolSuggestions(symbols) {
     suggestionsDiv.classList.remove("d-none");
 
     console.log("Displayed", symbols.length, "symbol suggestions");
+}
+
+// Show search loading state
+function showSearchLoading() {
+    const suggestionsDiv = document.getElementById("symbolSuggestions");
+    if (suggestionsDiv) {
+        suggestionsDiv.innerHTML = `
+            <div class="p-3 text-center">
+                <div class="d-flex align-items-center justify-content-center">
+                    <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                    <span class="text-muted">Searching symbols...</span>
+                </div>
+            </div>
+        `;
+        suggestionsDiv.classList.remove("d-none");
+    }
 }
 
 // Hide suggestions
@@ -1000,16 +1019,7 @@ function createWatchlistCard(watchlist) {
                             </tr>
                         </thead>
                         <tbody id="${bodyId}">
-                            <tr class="loading-row">
-                                <td colspan="10" class="text-center py-4">
-                                    <div class="d-flex justify-content-center align-items-center">
-                                        <div class="spinner-border text-warning me-2" role="status">
-                                            <span class="visually-hidden">Loading...</span>
-                                        </div>
-                                        <span class="text-muted">Loading ${watchlist.name} data...</span>
-                                    </div>
-                                </td>
-                            </tr>
+                            ${generateSkeletonRows()}
                         </tbody>
                     </table>
                 </div>
@@ -1054,6 +1064,26 @@ function createWatchlistCard(watchlist) {
     `;
 }
 
+// Generate skeleton shimmer rows for loading state
+function generateSkeletonRows() {
+    const skeletonRow = `
+        <tr class="skeleton-row">
+            <td><div class="skeleton-shimmer" style="width: 20px; height: 16px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 60px; height: 16px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 50px; height: 16px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 50px; height: 16px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 45px; height: 16px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 45px; height: 16px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 55px; height: 16px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 50px; height: 16px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 50px; height: 16px;"></div></td>
+            <td><div class="skeleton-shimmer" style="width: 30px; height: 16px;"></div></td>
+        </tr>
+    `;
+    
+    return Array(5).fill(skeletonRow).join('');
+}
+
 // Load market data for a specific watchlist
 function loadWatchlistMarketData(listName) {
     if (!listName) {
@@ -1076,6 +1106,11 @@ function loadWatchlistMarketData(listName) {
         console.error(`Error loading watchlist ${listName} data:`, error);
         showErrorInWatchlistTable(listName, 'Network error loading data');
     });
+}
+
+// Enhanced version - same as loadWatchlistMarketData for compatibility
+function loadWatchlistMarketDataEnhanced(listName) {
+    loadWatchlistMarketData(listName);
 }
 
 // Update watchlist table with market data
