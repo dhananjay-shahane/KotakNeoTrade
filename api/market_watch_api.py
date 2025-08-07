@@ -175,7 +175,9 @@ def search_symbols():
         if search_term:
             query += " AND (UPPER(symbol) LIKE UPPER(%s) OR UPPER(company) LIKE UPPER(%s) OR UPPER(sector) LIKE UPPER(%s) OR UPPER(sub_sector) LIKE UPPER(%s))"
             search_pattern = f"%{search_term}%"
-            params.extend([search_pattern, search_pattern, search_pattern, search_pattern])
+            params.extend([
+                search_pattern, search_pattern, search_pattern, search_pattern
+            ])
 
         # Add company filter
         if company_filter:
@@ -439,7 +441,7 @@ def get_user_watchlists():
 
     try:
         watchlists = user_watchlist_service.get_user_watchlists(username)
-        
+
         # Format for frontend
         formatted_lists = []
         for list_name, symbols in watchlists.items():
@@ -448,13 +450,13 @@ def get_user_watchlists():
                 'symbols': symbols,
                 'count': len(symbols)
             })
-        
+
         return jsonify({
             "success": True,
             "watchlists": formatted_lists,
             "count": len(formatted_lists)
         })
-    
+
     except Exception as e:
         logger.error(f"Error getting user watchlists: {e}")
         return jsonify({"error": "Failed to get watchlists"}), 500
@@ -468,16 +470,16 @@ def create_watchlist():
     username = session.get('username') or session.get('user_id') or 'demo_user'
     if not username or username == 'None':
         username = 'demo_user'
-    
+
     json_data = request.json or {}
     list_name = json_data.get('name', '').strip()
-    
+
     if not list_name:
         return jsonify({"error": "List name is required"}), 400
-    
+
     try:
         success = user_watchlist_service.create_watchlist(username, list_name)
-        
+
         if success:
             return jsonify({
                 "success": True,
@@ -485,14 +487,17 @@ def create_watchlist():
                 "name": list_name
             })
         else:
-            return jsonify({"error": "Failed to create watchlist or list already exists"}), 400
-    
+            return jsonify(
+                {"error":
+                 "Failed to create watchlist or list already exists"}), 400
+
     except Exception as e:
         logger.error(f"Error creating watchlist: {e}")
         return jsonify({"error": "Failed to create watchlist"}), 500
 
 
-@market_watch_api.route('/api/market-watch/watchlists/<list_name>/symbols', methods=['GET', 'POST', 'DELETE'])
+@market_watch_api.route('/api/market-watch/watchlists/<list_name>/symbols',
+                        methods=['GET', 'POST', 'DELETE'])
 def manage_watchlist_symbols(list_name):
     """
     Manage symbols in a specific watchlist
@@ -503,11 +508,12 @@ def manage_watchlist_symbols(list_name):
     username = session.get('username') or session.get('user_id') or 'demo_user'
     if not username or username == 'None':
         username = 'demo_user'
-    
+
     if request.method == 'GET':
         try:
-            symbols = user_watchlist_service.get_watchlist_symbols(username, list_name)
-            
+            symbols = user_watchlist_service.get_watchlist_symbols(
+                username, list_name)
+
             # Format for frontend
             symbols_with_data = []
             for i, symbol in enumerate(symbols, 1):
@@ -516,32 +522,35 @@ def manage_watchlist_symbols(list_name):
                     'symbol': symbol,
                     'list_name': list_name
                 })
-            
+
             return jsonify({
                 "success": True,
                 "symbols": symbols_with_data,
                 "count": len(symbols_with_data),
                 "list_name": list_name
             })
-        
+
         except Exception as e:
-            logger.error(f"Error getting symbols from watchlist '{list_name}': {e}")
+            logger.error(
+                f"Error getting symbols from watchlist '{list_name}': {e}")
             return jsonify({"error": "Failed to get symbols"}), 500
-    
+
     elif request.method == 'POST':
         json_data = request.json or {}
         symbol = json_data.get('symbol', '').upper()
-        
+
         if not symbol:
             return jsonify({"error": "Symbol is required"}), 400
-        
+
         # Check if symbol exists in nse_symbols table
         if not is_valid_symbol(symbol):
-            return jsonify({"error": "Invalid symbol or not found in market data"}), 404
-        
+            return jsonify(
+                {"error": "Invalid symbol or not found in market data"}), 404
+
         try:
-            success = user_watchlist_service.add_symbol_to_watchlist(username, list_name, symbol)
-            
+            success = user_watchlist_service.add_symbol_to_watchlist(
+                username, list_name, symbol)
+
             if success:
                 return jsonify({
                     "success": True,
@@ -550,22 +559,25 @@ def manage_watchlist_symbols(list_name):
                     "list_name": list_name
                 })
             else:
-                return jsonify({"error": "Failed to add symbol or symbol already exists"}), 400
-        
+                return jsonify(
+                    {"error":
+                     "Failed to add symbol or symbol already exists"}), 400
+
         except Exception as e:
             logger.error(f"Error adding symbol to watchlist: {e}")
             return jsonify({"error": "Failed to add symbol"}), 500
-    
+
     elif request.method == 'DELETE':
         json_data = request.json or {}
         symbol = json_data.get('symbol', '').upper()
-        
+
         if not symbol:
             return jsonify({"error": "Symbol is required"}), 400
-        
+
         try:
-            success = user_watchlist_service.remove_symbol_from_watchlist(username, list_name, symbol)
-            
+            success = user_watchlist_service.remove_symbol_from_watchlist(
+                username, list_name, symbol)
+
             if success:
                 return jsonify({
                     "success": True,
@@ -574,14 +586,17 @@ def manage_watchlist_symbols(list_name):
                     "list_name": list_name
                 })
             else:
-                return jsonify({"error": "Failed to remove symbol or symbol not found"}), 404
-        
+                return jsonify(
+                    {"error":
+                     "Failed to remove symbol or symbol not found"}), 404
+
         except Exception as e:
             logger.error(f"Error removing symbol from watchlist: {e}")
             return jsonify({"error": "Failed to remove symbol"}), 500
 
 
-@market_watch_api.route('/api/market-watch/watchlists/<list_name>', methods=['PUT', 'DELETE'])
+@market_watch_api.route('/api/market-watch/watchlists/<list_name>',
+                        methods=['PUT', 'DELETE'])
 def manage_watchlist(list_name):
     """
     Manage a watchlist (edit name or delete)
@@ -589,51 +604,64 @@ def manage_watchlist(list_name):
     username = session.get('username') or session.get('user_id') or 'demo_user'
     if not username or username == 'None':
         username = 'demo_user'
-    
+
     if request.method == 'PUT':
         # Edit watchlist name
         json_data = request.json or {}
         new_name = json_data.get('name', '').strip()
-        
+
         if not new_name:
             return jsonify({"error": "New list name is required"}), 400
-        
+
         try:
-            success = user_watchlist_service.edit_watchlist_name(username, list_name, new_name)
-            
+            success = user_watchlist_service.edit_watchlist_name(
+                username, list_name, new_name)
+
             if success:
                 return jsonify({
                     "success": True,
-                    "message": f"Watchlist renamed from '{list_name}' to '{new_name}'",
+                    "message":
+                    f"Watchlist renamed from '{list_name}' to '{new_name}'",
                     "old_name": list_name,
                     "new_name": new_name
                 })
             else:
-                return jsonify({"error": "Failed to rename watchlist or new name already exists"}), 400
-        
+                return jsonify({
+                    "error":
+                    "Failed to rename watchlist or new name already exists"
+                }), 400
+
         except Exception as e:
             logger.error(f"Error editing watchlist name: {e}")
             return jsonify({"error": "Failed to rename watchlist"}), 500
-    
+
     elif request.method == 'DELETE':
         # Delete watchlist
         try:
-            success = user_watchlist_service.delete_watchlist(username, list_name)
-            
+            success = user_watchlist_service.delete_watchlist(
+                username, list_name)
+
             if success:
                 return jsonify({
-                    "success": True,
-                    "message": f"Watchlist '{list_name}' deleted successfully"
+                    "success":
+                    True,
+                    "message":
+                    f"Watchlist '{list_name}' deleted successfully"
                 })
             else:
-                return jsonify({"error": "Failed to delete watchlist or watchlist not found"}), 404
-        
+                return jsonify({
+                    "error":
+                    "Failed to delete watchlist or watchlist not found"
+                }), 404
+
         except Exception as e:
             logger.error(f"Error deleting watchlist: {e}")
             return jsonify({"error": "Failed to delete watchlist"}), 500
 
 
-@market_watch_api.route('/api/market-watch/watchlists/<list_name>/symbols-with-data', methods=['GET'])
+@market_watch_api.route(
+    '/api/market-watch/watchlists/<list_name>/symbols-with-data',
+    methods=['GET'])
 def get_watchlist_symbols_with_market_data(list_name):
     """
     Get symbols from a specific watchlist with market data
@@ -641,21 +669,18 @@ def get_watchlist_symbols_with_market_data(list_name):
     username = session.get('username') or session.get('user_id') or 'demo_user'
     if not username or username == 'None':
         username = 'demo_user'
-    
+
     try:
-        symbols = user_watchlist_service.get_watchlist_symbols(username, list_name)
-        
+        symbols = user_watchlist_service.get_watchlist_symbols(
+            username, list_name)
+
         # Get market data for each symbol
         symbols_with_market_data = []
         for i, symbol in enumerate(symbols, 1):
             market_data = get_market_data_for_symbol(symbol)
-            
-            symbol_info = {
-                'id': i,
-                'symbol': symbol,
-                'list_name': list_name
-            }
-            
+
+            symbol_info = {'id': i, 'symbol': symbol, 'list_name': list_name}
+
             # Add market data if available
             if market_data:
                 symbol_info.update(market_data)
@@ -672,19 +697,22 @@ def get_watchlist_symbols_with_market_data(list_name):
                     'change_pct': '--',
                     'change_val': '--'
                 })
-            
+
             symbols_with_market_data.append(symbol_info)
-        
+
         return jsonify({
             "success": True,
             "symbols": symbols_with_market_data,
             "count": len(symbols_with_market_data),
             "list_name": list_name
         })
-    
+
     except Exception as e:
-        logger.error(f"Error getting symbols with market data from watchlist '{list_name}': {e}")
-        return jsonify({"error": "Failed to get symbols with market data"}), 500
+        logger.error(
+            f"Error getting symbols with market data from watchlist '{list_name}': {e}"
+        )
+        return jsonify({"error":
+                        "Failed to get symbols with market data"}), 500
 
 
 @market_watch_api.route('/api/market-watch/user-symbols-with-data',
@@ -768,12 +796,14 @@ def get_default_symbols_with_market_data():
             return jsonify({"error": "Database connection failed"}), 500
 
         symbols_with_market_data = []
-        
+
         try:
-            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
+            with conn.cursor(
+                    cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
                 # Bulk query for all symbols at once
                 placeholders = ','.join(['%s'] * len(default_symbols))
-                cursor.execute(f"""
+                cursor.execute(
+                    f"""
                     SELECT symbol, company, sector, sub_sector
                     FROM nse_symbols 
                     WHERE UPPER(symbol) = ANY(ARRAY[{placeholders}]::text[])
@@ -783,13 +813,16 @@ def get_default_symbols_with_market_data():
             conn.close()
 
         # Create lookup dictionary for faster access
-        symbol_lookup = {row['symbol'].upper(): row for row in all_symbol_details}
+        symbol_lookup = {
+            row['symbol'].upper(): row
+            for row in all_symbol_details
+        }
 
         for idx, symbol in enumerate(default_symbols, 1):
             try:
                 symbol_upper = symbol.upper()
                 symbol_details = symbol_lookup.get(symbol_upper)
-                
+
                 if not symbol_details:
                     logger.warning(f"Symbol details not found for {symbol}")
                     continue
@@ -805,20 +838,23 @@ def get_default_symbols_with_market_data():
 
                 # Get current market price only (simplified approach)
                 cmp = None
-                
+
                 try:
                     if price_fetcher:
                         cmp = price_fetcher.get_cmp(symbol)
                 except Exception as market_error:
-                    logger.warning(f"Market data error for {symbol}: {market_error}")
+                    logger.warning(
+                        f"Market data error for {symbol}: {market_error}")
                     # Continue with basic symbol info even if market data fails
 
                 # Show CMP if available, otherwise show placeholder values
                 if cmp is not None:
                     symbol_info.update({
                         'cmp': f"{cmp:.2f}",
-                        'price_7d': '--',  # Historical data temporarily disabled
-                        'price_30d': '--',  # Historical data temporarily disabled  
+                        'price_7d':
+                        '--',  # Historical data temporarily disabled
+                        'price_30d':
+                        '--',  # Historical data temporarily disabled  
                         'change_7d_pct': '--',
                         'change_30d_pct': '--',
                         'change_7d': '--',
@@ -876,10 +912,10 @@ def load_default_symbols_from_csv():
     """
     import csv
     import os
-    
+
     csv_file_path = os.path.join('data', 'default_market_watch_symbols.csv')
     default_symbols = []
-    
+
     try:
         if os.path.exists(csv_file_path):
             with open(csv_file_path, 'r', encoding='utf-8') as csvfile:
@@ -891,16 +927,19 @@ def load_default_symbols_from_csv():
                         symbol = row[0].strip().upper()
                         if symbol:
                             default_symbols.append(symbol)
-            
-            logger.info(f"✓ Loaded {len(default_symbols)} default symbols from CSV")
+
+            logger.info(
+                f"✓ Loaded {len(default_symbols)} default symbols from CSV")
         else:
             # Fallback to hardcoded symbols if CSV doesn't exist
             default_symbols = [
                 'RELIANCE', 'HDFCBANK', 'INFY', 'HINDUNILVR', 'ICICIBANK',
                 'KOTAKBANK', 'BHARTIARTL', 'LT', 'MARUTI', 'TCS'
             ]
-            logger.warning(f"CSV file not found, using fallback symbols: {len(default_symbols)} symbols")
-    
+            logger.warning(
+                f"CSV file not found, using fallback symbols: {len(default_symbols)} symbols"
+            )
+
     except Exception as e:
         logger.error(f"Error loading default symbols from CSV: {e}")
         # Fallback to hardcoded symbols
@@ -908,8 +947,10 @@ def load_default_symbols_from_csv():
             'RELIANCE', 'HDFCBANK', 'INFY', 'HINDUNILVR', 'ICICIBANK',
             'KOTAKBANK', 'BHARTIARTL', 'LT', 'MARUTI', 'TCS'
         ]
-        logger.warning(f"Using fallback symbols due to error: {len(default_symbols)} symbols")
-    
+        logger.warning(
+            f"Using fallback symbols due to error: {len(default_symbols)} symbols"
+        )
+
     return default_symbols
 
 
@@ -942,7 +983,8 @@ def is_valid_symbol(symbol: str) -> bool:
         return False
 
 
-@market_watch_api.route('/api/market-watch/default-symbols/manage', methods=['GET', 'POST', 'PUT', 'DELETE'])
+@market_watch_api.route('/api/market-watch/default-symbols/manage',
+                        methods=['GET', 'POST', 'PUT', 'DELETE'])
 def manage_default_symbols():
     """
     Manage default symbols in CSV file
@@ -954,9 +996,9 @@ def manage_default_symbols():
     import csv
     import os
     from flask import request, jsonify
-    
+
     csv_file_path = os.path.join('data', 'default_market_watch_symbols.csv')
-    
+
     if request.method == 'GET':
         # Return current default symbols from CSV
         try:
@@ -966,15 +1008,20 @@ def manage_default_symbols():
                     reader = csv.DictReader(csvfile)
                     for row in reader:
                         symbols_data.append({
-                            'symbol': row.get('symbol', ''),
-                            'company': row.get('company', ''),
-                            'sector': row.get('sector', ''),
-                            'priority': int(row.get('priority', 999)) if row.get('priority', '').isdigit() else 999
+                            'symbol':
+                            row.get('symbol', ''),
+                            'company':
+                            row.get('company', ''),
+                            'sector':
+                            row.get('sector', ''),
+                            'priority':
+                            int(row.get('priority', 999)) if row.get(
+                                'priority', '').isdigit() else 999
                         })
-                
+
                 # Sort by priority
                 symbols_data.sort(key=lambda x: x['priority'])
-                
+
             return jsonify({
                 "success": True,
                 "symbols": symbols_data,
@@ -983,7 +1030,7 @@ def manage_default_symbols():
         except Exception as e:
             logger.error(f"Error reading default symbols: {e}")
             return jsonify({"error": "Failed to read default symbols"}), 500
-    
+
     elif request.method == 'POST':
         # Add new symbol to CSV
         json_data = request.json or {}
@@ -991,47 +1038,53 @@ def manage_default_symbols():
         company = json_data.get('company', '').strip()
         sector = json_data.get('sector', '').strip()
         priority = json_data.get('priority', 999)
-        
+
         if not symbol:
             return jsonify({"error": "Symbol is required"}), 400
-        
+
         try:
             # Check if symbol already exists
             existing_symbols = []
             if os.path.exists(csv_file_path):
                 with open(csv_file_path, 'r', encoding='utf-8') as csvfile:
                     reader = csv.DictReader(csvfile)
-                    existing_symbols = [row['symbol'].upper() for row in reader]
-            
+                    existing_symbols = [
+                        row['symbol'].upper() for row in reader
+                    ]
+
             if symbol in existing_symbols:
-                return jsonify({"error": "Symbol already exists in default list"}), 400
-            
+                return jsonify(
+                    {"error": "Symbol already exists in default list"}), 400
+
             # Append new symbol to CSV
-            with open(csv_file_path, 'a', newline='', encoding='utf-8') as csvfile:
+            with open(csv_file_path, 'a', newline='',
+                      encoding='utf-8') as csvfile:
                 fieldnames = ['symbol', 'company', 'sector', 'priority']
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                
+
                 # Write header if file is empty
                 if os.path.getsize(csv_file_path) == 0:
                     writer.writeheader()
-                
+
                 writer.writerow({
                     'symbol': symbol,
                     'company': company,
                     'sector': sector,
                     'priority': priority
                 })
-            
+
             logger.info(f"✓ Added symbol {symbol} to default symbols CSV")
             return jsonify({
-                "success": True,
-                "message": f"Symbol {symbol} added to default market watch"
+                "success":
+                True,
+                "message":
+                f"Symbol {symbol} added to default market watch"
             })
-            
+
         except Exception as e:
             logger.error(f"Error adding symbol to CSV: {e}")
             return jsonify({"error": "Failed to add symbol"}), 500
-    
+
     else:
         return jsonify({"error": "Method not implemented"}), 501
 
