@@ -294,8 +294,10 @@ function selectSymbol(symbol) {
                 selectedSymbolData = data.symbol;
                 displaySelectedSymbolDetails();
                 hideSuggestions();
-                document.getElementById("symbolSearchInput").value = symbol;
-                document.getElementById("addSymbolBtn").disabled = false;
+                const symbolInput = document.getElementById("symbolSearchInput");
+                const addBtn = document.getElementById("addSymbolBtn");
+                if (symbolInput) symbolInput.value = symbol;
+                if (addBtn) addBtn.disabled = false;
             }
         })
         .catch((error) => {
@@ -354,32 +356,58 @@ function updateSymbolSearch() {
     }
 }
 
-// Make sure functions are available globally
-window.searchSymbols = searchSymbols;
-window.updateSymbolSearch = updateSymbolSearch;
-
-// Clear symbol selection
-function clearSymbolSelection() {
-    selectedSymbolData = null;
-    document.getElementById("selectedSymbolDetails").classList.add("d-none");
-    document.getElementById("addSymbolBtn").disabled = true;
-    document.getElementById("symbolSearchInput").value = "";
-    hideSuggestions();
+// Validate and add direct symbol entry
+function validateAndAddDirectSymbol(symbol) {
+    // Show loading state
+    const addBtn = document.getElementById("addSymbolBtn");
+    const originalText = addBtn.innerHTML;
+    addBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Validating...';
+    addBtn.disabled = true;
+    
+    // Try to get symbol details from API
+    fetch(`/api/symbols/${encodeURIComponent(symbol)}/details`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.symbol) {
+                // Symbol exists, use it
+                selectedSymbolData = data.symbol;
+                displaySelectedSymbolDetails();
+                addSymbolToCurrentWatchlist();
+            } else {
+                // Symbol not found, but still allow adding it
+                selectedSymbolData = {
+                    symbol: symbol,
+                    company: "Unknown",
+                    sector: "Unknown",
+                    sub_sector: "Unknown",
+                    categories: {}
+                };
+                addSymbolToCurrentWatchlist();
+            }
+        })
+        .catch(error => {
+            console.error('Error validating symbol:', error);
+            // Even on error, allow adding the symbol
+            selectedSymbolData = {
+                symbol: symbol,
+                company: "Unknown",
+                sector: "Unknown", 
+                sub_sector: "Unknown",
+                categories: {}
+            };
+            addSymbolToCurrentWatchlist();
+        })
+        .finally(() => {
+            // Restore button state
+            addBtn.innerHTML = originalText;
+            addBtn.disabled = false;
+        });
 }
 
-// Submit advanced add symbol
-function submitAdvancedAddSymbol() {
-    if (!selectedSymbolData) {
-        Swal.fire({
-            icon: "error",
-            title: "No Symbol Selected",
-            text: "Please select a symbol first.",
-            background: "#1a1a1a",
-            color: "#fff",
-        });
-        return;
-    }
-
+// Add symbol to current watchlist
+function addSymbolToCurrentWatchlist() {
+    if (!selectedSymbolData) return;
+    
     // Check if we're adding to a custom watchlist
     if (window.currentWatchlistName) {
         // Add to custom watchlist
@@ -409,6 +437,11 @@ function submitAdvancedAddSymbol() {
                     timer: 2000,
                     showConfirmButton: false
                 });
+                
+                // Close modal and clear selection
+                const modal = bootstrap.Modal.getInstance(document.getElementById("addSymbolModal"));
+                if (modal) modal.hide();
+                clearSymbolSelection();
             } else {
                 Swal.fire({
                     icon: 'error',
@@ -433,13 +466,49 @@ function submitAdvancedAddSymbol() {
         // Clear current watchlist name
         window.currentWatchlistName = null;
     }
+}
 
-    // Close modal and clear selection
-    var modal = bootstrap.Modal.getInstance(
-        document.getElementById("addSymbolModal"),
-    );
-    modal.hide();
-    clearSymbolSelection();
+// Make sure functions are available globally
+window.searchSymbols = searchSymbols;
+window.updateSymbolSearch = updateSymbolSearch;
+
+// Clear symbol selection
+function clearSymbolSelection() {
+    selectedSymbolData = null;
+    const detailsElement = document.getElementById("selectedSymbolDetails");
+    const addBtn = document.getElementById("addSymbolBtn");
+    const symbolInput = document.getElementById("symbolSearchInput");
+    
+    if (detailsElement) detailsElement.classList.add("d-none");
+    if (addBtn) addBtn.disabled = true;
+    if (symbolInput) symbolInput.value = "";
+    hideSuggestions();
+}
+
+// Submit advanced add symbol
+function submitAdvancedAddSymbol() {
+    const symbolSearchInput = document.getElementById("symbolSearchInput");
+    const inputSymbol = symbolSearchInput ? symbolSearchInput.value.trim().toUpperCase() : "";
+    
+    // If no symbol selected but user typed a symbol, try to validate and use it
+    if (!selectedSymbolData && inputSymbol) {
+        validateAndAddDirectSymbol(inputSymbol);
+        return;
+    }
+    
+    if (!selectedSymbolData) {
+        Swal.fire({
+            icon: "error",
+            title: "No Symbol Selected",
+            text: "Please enter a symbol name or select from suggestions.",
+            background: "#1a1a1a",
+            color: "#fff",
+        });
+        return;
+    }
+
+    // Use the new function to add symbol
+    addSymbolToCurrentWatchlist();
 }
 
 // Legacy function for backward compatibility
@@ -1652,18 +1721,36 @@ document.addEventListener("DOMContentLoaded", function () {
     // Initialize advanced symbol modal
     initializeAdvancedSymbolModal();
 
-    // Auto-uppercase symbol input
+    // Auto-uppercase symbol input and enable button
     var symbolInput = document.getElementById("symbolSearchInput");
     if (symbolInput) {
         symbolInput.addEventListener("input", function () {
             this.value = this.value.toUpperCase();
+            
+            // Enable/disable Add Symbol button based on input
+            const addBtn = document.getElementById("addSymbolBtn");
+            if (addBtn) {
+                if (this.value.trim().length > 0) {
+                    addBtn.disabled = false;
+                } else if (!selectedSymbolData) {
+                    addBtn.disabled = true;
+                }
+            }
         });
 
         // Enter key submission
         symbolInput.addEventListener("keypress", function (e) {
             if (e.key === "Enter") {
                 e.preventDefault();
-                // Don't submit, just search
+                const trimmedValue = this.value.trim();
+                if (trimmedValue.length > 0) {
+                    // If there's a selected suggestion, use it; otherwise validate direct entry
+                    if (selectedSymbolData) {
+                        submitAdvancedAddSymbol();
+                    } else {
+                        validateAndAddDirectSymbol(trimmedValue.toUpperCase());
+                    }
+                }
             }
         });
     }
