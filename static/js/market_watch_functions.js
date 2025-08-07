@@ -12,6 +12,9 @@ var defaultTotalPages = 1;
 
 // Search variables
 var defaultSearchTimeout = null;
+var symbolSearchTimeout = null;
+var cachedSymbols = []; // Cache for symbol suggestions
+var isSymbolSuggestionsVisible = false;
 
 
 // Gradient Background Color Function for percentage values
@@ -69,6 +72,252 @@ function getGradientBackgroundColor(value) {
     }
 
     return "";
+}
+
+// Symbol Autocomplete Functions
+function showSymbolSuggestions(searchTerm) {
+    // Clear previous timeout
+    if (symbolSearchTimeout) {
+        clearTimeout(symbolSearchTimeout);
+    }
+    
+    // Add delay for better performance
+    symbolSearchTimeout = setTimeout(() => {
+        const trimmedTerm = (searchTerm || '').trim().toLowerCase();
+        
+        if (trimmedTerm.length < 1) {
+            hideSymbolSuggestions();
+            return;
+        }
+        
+        // Show loading state
+        showSuggestionsLoading();
+        
+        // Fetch symbol suggestions from API
+        fetchSymbolSuggestions(trimmedTerm);
+    }, 300);
+}
+
+function fetchSymbolSuggestions(searchTerm) {
+    const maxSuggestions = 10;
+    const url = `/api/symbols/search?q=${encodeURIComponent(searchTerm)}&limit=${maxSuggestions}`;
+    
+    fetch(url)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success && data.symbols && Array.isArray(data.symbols)) {
+                displaySymbolSuggestions(data.symbols, searchTerm);
+            } else {
+                displayNoSuggestions();
+            }
+        })
+        .catch(error => {
+            console.warn('Symbol search error:', error);
+            displayNoSuggestions();
+        });
+}
+
+function displaySymbolSuggestions(symbols, searchTerm) {
+    const suggestionsList = document.getElementById('suggestionsList');
+    const suggestionsContainer = document.getElementById('symbolSuggestions');
+    
+    if (!suggestionsList || !suggestionsContainer) {
+        return;
+    }
+    
+    // Clear previous suggestions
+    suggestionsList.innerHTML = '';
+    
+    if (symbols.length === 0) {
+        displayNoSuggestions();
+        return;
+    }
+    
+    symbols.forEach((symbol, index) => {
+        const suggestionItem = document.createElement('div');
+        suggestionItem.className = 'suggestion-item';
+        suggestionItem.setAttribute('data-symbol', symbol.symbol);
+        
+        // Highlight matching text
+        const highlightedSymbol = highlightSearchTerm(symbol.symbol, searchTerm);
+        const highlightedCompany = highlightSearchTerm(symbol.company || '', searchTerm);
+        
+        suggestionItem.innerHTML = `
+            <div class="symbol-info">
+                <div>
+                    <div class="symbol-name">${highlightedSymbol}</div>
+                    <div class="company-name">${highlightedCompany}</div>
+                </div>
+                <div class="symbol-details">
+                    <div>${symbol.sector || 'N/A'}</div>
+                    <div style="font-size: 0.75em; color: #495057;">${symbol.sub_sector || ''}</div>
+                </div>
+            </div>
+        `;
+        
+        // Add click event to select symbol
+        suggestionItem.addEventListener('mousedown', (e) => {
+            e.preventDefault(); // Prevent input blur
+            selectSymbol(symbol.symbol);
+        });
+        
+        suggestionsList.appendChild(suggestionItem);
+    });
+    
+    // Show suggestions dropdown
+    suggestionsContainer.style.display = 'block';
+    isSymbolSuggestionsVisible = true;
+}
+
+function highlightSearchTerm(text, searchTerm) {
+    if (!text || !searchTerm) return text;
+    
+    const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return text.replace(regex, '<strong style="color: #ffc107;">$1</strong>');
+}
+
+function displayNoSuggestions() {
+    const suggestionsList = document.getElementById('suggestionsList');
+    const suggestionsContainer = document.getElementById('symbolSuggestions');
+    
+    if (!suggestionsList || !suggestionsContainer) {
+        return;
+    }
+    
+    suggestionsList.innerHTML = '<div class="suggestion-empty">No symbols found matching your search</div>';
+    suggestionsContainer.style.display = 'block';
+    isSymbolSuggestionsVisible = true;
+}
+
+function showSuggestionsLoading() {
+    const suggestionsList = document.getElementById('suggestionsList');
+    const suggestionsContainer = document.getElementById('symbolSuggestions');
+    
+    if (!suggestionsList || !suggestionsContainer) {
+        return;
+    }
+    
+    suggestionsList.innerHTML = '<div class="suggestion-empty">Searching symbols...</div>';
+    suggestionsContainer.style.display = 'block';
+    isSymbolSuggestionsVisible = true;
+}
+
+function hideSymbolSuggestions() {
+    const suggestionsContainer = document.getElementById('symbolSuggestions');
+    if (suggestionsContainer) {
+        // Add small delay to allow for selection clicks
+        setTimeout(() => {
+            suggestionsContainer.style.display = 'none';
+            isSymbolSuggestionsVisible = false;
+        }, 150);
+    }
+}
+
+function selectSymbol(symbolName) {
+    const input = document.getElementById('symbolAutocompleteInput');
+    if (input) {
+        input.value = symbolName;
+        hideSymbolSuggestions();
+        
+        // Optionally trigger search or add to watchlist
+        console.log('Selected symbol:', symbolName);
+        
+        // Show success message
+        showNotification('Symbol selected: ' + symbolName, 'success');
+        
+        // Auto-add to default watchlist or show add modal
+        // You can customize this behavior as needed
+    }
+}
+
+function clearSymbolSearch() {
+    const input = document.getElementById('symbolAutocompleteInput');
+    if (input) {
+        input.value = '';
+        hideSymbolSuggestions();
+        input.focus();
+    }
+}
+
+// Add keyboard navigation support
+document.addEventListener('DOMContentLoaded', function() {
+    const symbolInput = document.getElementById('symbolAutocompleteInput');
+    if (symbolInput) {
+        let selectedIndex = -1;
+        
+        symbolInput.addEventListener('keydown', function(e) {
+            const suggestionsList = document.getElementById('suggestionsList');
+            const suggestions = suggestionsList ? suggestionsList.querySelectorAll('.suggestion-item') : [];
+            
+            switch(e.key) {
+                case 'ArrowDown':
+                    e.preventDefault();
+                    if (suggestions.length > 0) {
+                        selectedIndex = Math.min(selectedIndex + 1, suggestions.length - 1);
+                        updateSelectedSuggestion(suggestions, selectedIndex);
+                    }
+                    break;
+                    
+                case 'ArrowUp':
+                    e.preventDefault();
+                    if (suggestions.length > 0) {
+                        selectedIndex = Math.max(selectedIndex - 1, -1);
+                        updateSelectedSuggestion(suggestions, selectedIndex);
+                    }
+                    break;
+                    
+                case 'Enter':
+                    e.preventDefault();
+                    if (selectedIndex >= 0 && suggestions[selectedIndex]) {
+                        const symbol = suggestions[selectedIndex].getAttribute('data-symbol');
+                        selectSymbol(symbol);
+                    }
+                    break;
+                    
+                case 'Escape':
+                    hideSymbolSuggestions();
+                    selectedIndex = -1;
+                    break;
+            }
+        });
+        
+        // Reset selection when suggestions change
+        symbolInput.addEventListener('input', function() {
+            selectedIndex = -1;
+        });
+    }
+});
+
+function updateSelectedSuggestion(suggestions, index) {
+    suggestions.forEach((item, i) => {
+        if (i === index) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
+    });
+}
+
+// Utility function for notifications
+function showNotification(message, type = 'info') {
+    // Use existing notification system or create simple one
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: message,
+            icon: type,
+            timer: 2000,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end'
+        });
+    } else {
+        console.log(`${type.toUpperCase()}: ${message}`);
+    }
 }
 
 
