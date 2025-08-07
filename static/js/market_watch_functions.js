@@ -1,8 +1,17 @@
 // Market Watch Functionality
 
 // Market watch data storage
-
 var defaultMarketWatchData = [];
+var filteredDefaultData = [];
+var allSymbolsData = []; // For search suggestions
+
+// Pagination variables
+var defaultCurrentPage = 1;
+var defaultPageSize = 10;
+var defaultTotalPages = 1;
+
+// Search variables
+var defaultSearchTimeout = null;
 
 
 // Gradient Background Color Function for percentage values
@@ -430,24 +439,33 @@ function generateSymbolData(symbol, id) {
     };
 }
 
-// Update default market watch table
+// Update default market watch table with pagination
 function updateDefaultMarketWatchTable() {
     var tableBody = document.getElementById("defaultMarketWatchTableBody");
+    
+    // Use filtered data if available, otherwise use all data
+    var dataToShow = filteredDefaultData.length > 0 ? filteredDefaultData : defaultMarketWatchData;
 
-    if (defaultMarketWatchData.length === 0) {
+    if (dataToShow.length === 0) {
         tableBody.innerHTML = `
             <tr class="no-data-row">
                 <td colspan="10" class="text-center text-muted py-4">
                     <i class="fas fa-chart-line fa-2x mb-2"></i><br>
-                    Loading default market watch data...
+                    ${filteredDefaultData.length === 0 && defaultMarketWatchData.length > 0 ? 'No symbols found matching your search' : 'Loading default market watch data...'}
                 </td>
             </tr>
         `;
+        updateDefaultPagination();
         return;
     }
 
+    // Calculate pagination
+    var startIndex = (defaultCurrentPage - 1) * defaultPageSize;
+    var endIndex = startIndex + defaultPageSize;
+    var pageData = dataToShow.slice(startIndex, endIndex);
+
     var html = "";
-    defaultMarketWatchData.forEach(function (item) {
+    pageData.forEach(function (item) {
         // Get gradient styles for percentage columns
         var change7dStyle = getGradientBackgroundColor(item.change_7d_pct);
         var change30dStyle = getGradientBackgroundColor(item.change_30d_pct);
@@ -472,16 +490,21 @@ function updateDefaultMarketWatchTable() {
     });
 
     tableBody.innerHTML = html;
+    updateDefaultPagination();
+    updateDefaultCounts();
 }
 
 
 
-// Update default counts
+// Update default counts with pagination info
 function updateDefaultCounts() {
-    var count = defaultMarketWatchData.length;
-    document.getElementById("defaultCount").textContent = count;
-    document.getElementById("defaultTotalCount").textContent = count;
-    document.getElementById("defaultShowingCount").textContent = count;
+    var dataToShow = filteredDefaultData.length > 0 ? filteredDefaultData : defaultMarketWatchData;
+    var startIndex = (defaultCurrentPage - 1) * defaultPageSize;
+    var endIndex = Math.min(startIndex + defaultPageSize, dataToShow.length);
+    
+    document.getElementById("defaultCount").textContent = dataToShow.length;
+    document.getElementById("defaultTotalCount").textContent = dataToShow.length;
+    document.getElementById("defaultShowingCount").textContent = Math.min(defaultPageSize, dataToShow.length - startIndex);
 }
 
 
@@ -501,8 +524,11 @@ async function loadDefaultMarketWatch() {
 
         if (data.success) {
             defaultMarketWatchData = data.symbols;
+            allSymbolsData = data.symbols; // Store for search suggestions
+            filteredDefaultData = []; // Reset filter
+            defaultCurrentPage = 1; // Reset to first page
             updateDefaultMarketWatchTable();
-            updateDefaultCounts();
+            initializeFilterOptions();
             console.log(`✓ Loaded ${data.symbols.length} default symbols`);
         } else {
             console.error("Error loading default market watch:", data.error);
@@ -1545,3 +1571,152 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 });
+
+// Pagination functions for default market watch
+function updateDefaultPagination() {
+    var dataToShow = filteredDefaultData.length > 0 ? filteredDefaultData : defaultMarketWatchData;
+    defaultTotalPages = Math.ceil(dataToShow.length / defaultPageSize);
+    
+    var currentPageElement = document.getElementById("defaultCurrentPage");
+    var totalPagesElement = document.getElementById("defaultTotalPages");
+    var prevBtn = document.getElementById("defaultPrevBtn");
+    var nextBtn = document.getElementById("defaultNextBtn");
+    
+    if (currentPageElement) currentPageElement.textContent = defaultCurrentPage;
+    if (totalPagesElement) totalPagesElement.textContent = defaultTotalPages;
+    if (prevBtn) prevBtn.disabled = defaultCurrentPage <= 1;
+    if (nextBtn) nextBtn.disabled = defaultCurrentPage >= defaultTotalPages;
+}
+
+function previousDefaultPage() {
+    if (defaultCurrentPage > 1) {
+        defaultCurrentPage--;
+        updateDefaultMarketWatchTable();
+    }
+}
+
+function nextDefaultPage() {
+    if (defaultCurrentPage < defaultTotalPages) {
+        defaultCurrentPage++;
+        updateDefaultMarketWatchTable();
+    }
+}
+
+// Search and filter functions for default market watch
+function performDefaultSearch() {
+    // Clear previous timeout
+    if (defaultSearchTimeout) {
+        clearTimeout(defaultSearchTimeout);
+    }
+    
+    // Set timeout to avoid too many API calls while typing
+    defaultSearchTimeout = setTimeout(function() {
+        var searchTerm = document.getElementById("defaultSymbolSearchInput").value.toLowerCase().trim();
+        var companyFilter = document.getElementById("defaultCompanyFilter").value.toLowerCase();
+        var sectorFilter = document.getElementById("defaultSectorFilter").value.toLowerCase();
+        
+        if (!searchTerm && !companyFilter && !sectorFilter) {
+            filteredDefaultData = [];
+            hideDefaultSearchSuggestions();
+        } else {
+            filteredDefaultData = defaultMarketWatchData.filter(function(item) {
+                var matchesSearch = !searchTerm || 
+                    (item.symbol && item.symbol.toLowerCase().startsWith(searchTerm)) ||
+                    (item.company_name && item.company_name.toLowerCase().includes(searchTerm));
+                
+                var matchesCompany = !companyFilter || 
+                    (item.company_name && item.company_name.toLowerCase().includes(companyFilter));
+                
+                var matchesSector = !sectorFilter || 
+                    (item.sector && item.sector.toLowerCase().includes(sectorFilter));
+                
+                return matchesSearch && matchesCompany && matchesSector;
+            });
+            
+            // Show search suggestions if only searching by symbol
+            if (searchTerm && !companyFilter && !sectorFilter) {
+                showDefaultSearchSuggestions(searchTerm);
+            } else {
+                hideDefaultSearchSuggestions();
+            }
+        }
+        
+        defaultCurrentPage = 1; // Reset to first page
+        updateDefaultMarketWatchTable();
+    }, 300);
+}
+
+function showDefaultSearchSuggestions(searchTerm) {
+    var suggestions = defaultMarketWatchData.filter(function(item) {
+        return item.symbol && item.symbol.toLowerCase().startsWith(searchTerm.toLowerCase());
+    }).slice(0, 8); // Show max 8 suggestions
+    
+    var suggestionsDiv = document.getElementById("defaultSearchSuggestions");
+    if (!suggestionsDiv) return;
+    
+    if (suggestions.length === 0) {
+        hideDefaultSearchSuggestions();
+        return;
+    }
+    
+    var html = '';
+    suggestions.forEach(function(item) {
+        html += `
+            <div class="dropdown-item" onclick="selectDefaultSymbol('${item.symbol}')">
+                <strong>${item.symbol}</strong>
+                ${item.company_name ? `<small class="text-muted d-block">${item.company_name}</small>` : ''}
+            </div>
+        `;
+    });
+    
+    suggestionsDiv.innerHTML = html;
+    suggestionsDiv.classList.remove("d-none");
+}
+
+function hideDefaultSearchSuggestions() {
+    var suggestionsDiv = document.getElementById("defaultSearchSuggestions");
+    if (suggestionsDiv) {
+        suggestionsDiv.classList.add("d-none");
+    }
+}
+
+function selectDefaultSymbol(symbol) {
+    document.getElementById("defaultSymbolSearchInput").value = symbol;
+    hideDefaultSearchSuggestions();
+    performDefaultSearch();
+}
+
+function clearDefaultSearch() {
+    document.getElementById("defaultSymbolSearchInput").value = "";
+    document.getElementById("defaultCompanyFilter").value = "";
+    document.getElementById("defaultSectorFilter").value = "";
+    filteredDefaultData = [];
+    defaultCurrentPage = 1;
+    hideDefaultSearchSuggestions();
+    updateDefaultMarketWatchTable();
+}
+
+// Initialize filter options
+function initializeFilterOptions() {
+    if (!defaultMarketWatchData || defaultMarketWatchData.length === 0) return;
+    
+    var companies = [...new Set(defaultMarketWatchData.map(item => item.company_name).filter(name => name))].sort();
+    var sectors = [...new Set(defaultMarketWatchData.map(item => item.sector).filter(sector => sector))].sort();
+    
+    var companySelect = document.getElementById("defaultCompanyFilter");
+    var sectorSelect = document.getElementById("defaultSectorFilter");
+    
+    if (companySelect) {
+        companySelect.innerHTML = '<option value="">All Companies</option>';
+        companies.forEach(function(company) {
+            companySelect.innerHTML += `<option value="${company}">${company}</option>`;
+        });
+    }
+    
+    if (sectorSelect) {
+        sectorSelect.innerHTML = '<option value="">All Sectors</option>';
+        sectors.forEach(function(sector) {
+            sectorSelect.innerHTML += `<option value="${sector}">${sector}</option>`;
+        });
+    }
+}

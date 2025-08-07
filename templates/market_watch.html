@@ -158,6 +158,51 @@ endblock %} {% block head %}
                     </button>
                 </div>
             </div>
+            
+            <!-- Search and Filter Section for Default Market Watch -->
+            <div class="border-bottom border-secondary p-3" id="defaultSearchContainer">
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary border-0">
+                                <i class="fas fa-search text-light"></i>
+                            </span>
+                            <input
+                                type="text"
+                                class="form-control bg-dark text-light border-0"
+                                id="defaultSymbolSearchInput"
+                                placeholder="Search by symbol name (e.g. 'A' for AAPL, ADANI...)"
+                                onkeyup="performDefaultSearch()"
+                                autocomplete="off"
+                            />
+                            <button
+                                class="btn btn-sm btn-outline-light"
+                                type="button"
+                                onclick="clearDefaultSearch()"
+                                title="Clear search"
+                            >
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <!-- Search suggestions dropdown -->
+                        <div class="position-relative">
+                            <div id="defaultSearchSuggestions" class="dropdown-menu bg-dark border-secondary d-none" style="width: 100%; max-height: 200px; overflow-y: auto; position: absolute; z-index: 1000;">
+                                <!-- Search suggestions will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select bg-dark text-light border-secondary" id="defaultCompanyFilter" onchange="performDefaultSearch()">
+                            <option value="">All Companies</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select bg-dark text-light border-secondary" id="defaultSectorFilter" onchange="performDefaultSearch()">
+                            <option value="">All Sectors</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
 
             <div class="card-body p-0" id="defaultTableContainer">
                 <div class="table-responsive" style="overflow-y: auto; max-height: 400px;">
@@ -234,13 +279,41 @@ endblock %} {% block head %}
                         stocks</small
                     >
                 </div>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 align-items-center">
                     <button
                         class="btn btn-sm btn-outline-light"
                         onclick="refreshDefaultList()"
                     >
                         <i class="fas fa-sync-alt me-1"></i>Refresh
                     </button>
+                    <div class="btn-group" role="group">
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-light"
+                            onclick="previousDefaultPage()"
+                            id="defaultPrevBtn"
+                            disabled
+                        >
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-light"
+                            disabled
+                        >
+                            Page <span id="defaultCurrentPage">1</span> of
+                            <span id="defaultTotalPages">1</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-light"
+                            onclick="nextDefaultPage()"
+                            id="defaultNextBtn"
+                            disabled
+                        >
+                            Next <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
