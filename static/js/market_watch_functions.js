@@ -1108,9 +1108,14 @@ function loadWatchlistMarketData(listName) {
     });
 }
 
-// Enhanced version - same as loadWatchlistMarketData for compatibility
+// Enhanced version with data storage for search/pagination - compatibility function
 function loadWatchlistMarketDataEnhanced(listName) {
-    loadWatchlistMarketData(listName);
+    // Use the proper enhanced version defined at the bottom of the file
+    if (window.loadWatchlistMarketDataEnhanced && window.loadWatchlistMarketDataEnhanced !== loadWatchlistMarketDataEnhanced) {
+        window.loadWatchlistMarketDataEnhanced(listName);
+    } else {
+        loadWatchlistMarketData(listName);
+    }
 }
 
 // Update watchlist table with market data
