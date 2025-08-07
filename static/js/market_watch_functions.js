@@ -62,36 +62,6 @@ function getGradientBackgroundColor(value) {
     return "";
 }
 
-// Load user watchlist from CSV API with real market data - async version
-async function loadUserWatchlist() {
-    console.log("Loading user market watch data...");
-
-    // Show loading state
-    showUserTableLoader();
-
-    try {
-        const response = await fetch(
-            "/api/market-watch/user-symbols-with-data",
-        );
-        const data = await response.json();
-
-        if (data.success) {
-            userMarketWatchData = data.symbols;
-            updateUserMarketWatchTable();
-            updateUserCounts();
-            console.log(`✓ Loaded ${data.symbols.length} user symbols`);
-        } else {
-            console.error("Failed to load user watchlist:", data.error);
-            showErrorInUserTable(
-                "Failed to load your watchlist: " + data.error,
-            );
-        }
-    } catch (error) {
-        console.error("Error loading user watchlist:", error);
-        showErrorInUserTable("Network error loading watchlist data");
-    }
-}
-
 // Add symbol to user list from default list
 function addToUserList(symbol) {
     // Make API call to add symbol to user's CSV watchlist
@@ -414,8 +384,60 @@ function submitAdvancedAddSymbol() {
         return;
     }
 
-    // Use the same API call as the simple add function
-    addToUserList(selectedSymbolData.symbol);
+    // Check if we're adding to a custom watchlist
+    if (window.currentWatchlistName) {
+        // Add to custom watchlist
+        fetch(`/api/market-watch/watchlists/${encodeURIComponent(window.currentWatchlistName)}/symbols`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                symbol: selectedSymbolData.symbol
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Reload the specific watchlist
+                loadWatchlistMarketData(window.currentWatchlistName);
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Symbol Added',
+                    text: data.message,
+                    background: '#1a1a1a',
+                    color: '#fff',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.error || 'Failed to add symbol to watchlist',
+                    background: '#1a1a1a',
+                    color: '#fff'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error adding symbol to watchlist:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to add symbol. Please try again.',
+                background: '#1a1a1a',
+                color: '#fff'
+            });
+        });
+        
+        // Clear current watchlist name
+        window.currentWatchlistName = null;
+    } else {
+        // Use the same API call as the simple add function for default user list
+        addToUserList(selectedSymbolData.symbol);
+    }
 
     // Close modal and clear selection
     var modal = bootstrap.Modal.getInstance(
@@ -529,40 +551,6 @@ function generateSymbolData(symbol, id) {
         thirtyDayPercent: thirtyDayPercent.toFixed(2),
         cpl: change.toFixed(2),
     };
-}
-
-// Update user market watch table
-function updateUserMarketWatchTable() {
-    var tableBody = document.getElementById("userMarketWatchTableBody");
-
-    var html = "";
-    userMarketWatchData.forEach(function (item) {
-        // Get gradient styles for percentage columns
-        var change7dStyle = getGradientBackgroundColor(item.change_7d_pct);
-        var change30dStyle = getGradientBackgroundColor(item.change_30d_pct);
-        var changePctStyle = getGradientBackgroundColor(item.change_pct);
-
-        html += `
-            <tr>
-                <td>${item.id}</td>
-                <td><strong>${item.symbol}</strong></td>
-                <td>${item.price_7d || "--"}</td>
-                <td>${item.price_30d || "--"}</td>
-                <td style="${change7dStyle}">${item.change_7d_pct || "--"}</td>
-                <td style="${change30dStyle}">${item.change_30d_pct || "--"}</td>
-                <td><strong>${item.cmp || "--"}</strong></td>
-                <td style="${changePctStyle}">${item.change_pct || "--"}</td>
-                <td>${item.change_val || "--"}</td>
-                <td>
-                    <button class="btn btn-sm btn-danger" onclick="removeFromUserList(${item.id})">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            </tr>
-        `;
-    });
-
-    tableBody.innerHTML = html;
 }
 
 // Update default market watch table
@@ -795,11 +783,564 @@ function exportMarketWatch() {
     URL.revokeObjectURL(url);
 }
 
+// Load user watchlist data from API (missing function)
+function loadUserWatchlist() {
+    console.log("Loading user watchlist data...");
+    
+    // Show loading state
+    showUserTableLoader();
+    
+    fetch("/api/market-watch/user-symbols-with-data")
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success) {
+                userMarketWatchData = data.symbols;
+                updateUserMarketWatchTable();
+                updateUserCounts();
+                console.log(`✓ Loaded ${data.symbols.length} user symbols`);
+            } else {
+                console.error("Error loading user watchlist:", data.error);
+                showErrorInUserTable(
+                    "Failed to load your watchlist: " + data.error,
+                );
+            }
+        })
+        .catch((error) => {
+            console.error("Network error loading user watchlist:", error);
+            showErrorInUserTable("Network error loading your watchlist");
+        });
+}
+
+// Custom Watchlist Management Functions
+window.createNewWatchlist = function() {
+    const nameInput = document.getElementById('newListNameInput');
+    const listName = nameInput.value.trim();
+    
+    if (!listName) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Invalid Input',
+            text: 'Please enter a valid list name.',
+            background: '#1a1a1a',
+            color: '#fff'
+        });
+        return;
+    }
+    
+    if (listName.length > 50) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Name Too Long',
+            text: 'List name must be 50 characters or less.',
+            background: '#1a1a1a',
+            color: '#fff'
+        });
+        return;
+    }
+    
+    // Create watchlist via API
+    fetch('/api/market-watch/watchlists', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            name: listName
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Clear input
+            nameInput.value = '';
+            
+            // Reload custom watchlists
+            loadCustomWatchlists();
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: data.message,
+                background: '#1a1a1a',
+                color: '#fff',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.error || 'Failed to create watchlist',
+                background: '#1a1a1a',
+                color: '#fff'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error creating watchlist:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Failed to create watchlist. Please try again.',
+            background: '#1a1a1a',
+            color: '#fff'
+        });
+    });
+};
+
+// Load and display custom watchlists
+window.loadCustomWatchlists = function() {
+    console.log('Loading custom watchlists...');
+    
+    fetch('/api/market-watch/watchlists')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayCustomWatchlists(data.watchlists);
+            console.log(`✓ Loaded ${data.watchlists.length} custom watchlists`);
+        } else {
+            console.error('Error loading custom watchlists:', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Network error loading custom watchlists:', error);
+    });
+};
+
+// Display custom watchlists in the UI
+function displayCustomWatchlists(watchlists) {
+    const container = document.getElementById('customWatchlistsContainer');
+    
+    if (watchlists.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="fas fa-list fa-2x mb-2"></i><br>
+                <p>No custom watchlists created yet.<br>Create your first watchlist above!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    watchlists.forEach(watchlist => {
+        html += createWatchlistCard(watchlist);
+    });
+    
+    container.innerHTML = html;
+    
+    // Load market data for all watchlists
+    watchlists.forEach(watchlist => {
+        loadWatchlistMarketData(watchlist.name);
+    });
+}
+
+// Create HTML for a watchlist card
+function createWatchlistCard(watchlist) {
+    const cardId = `watchlist-${watchlist.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const tableId = `${cardId}-table`;
+    const bodyId = `${cardId}-tbody`;
+    
+    return `
+        <div class="card bg-secondary border-0 shadow-lg mb-4" id="${cardId}">
+            <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-light">
+                    <i class="fas fa-list me-2 text-warning"></i>${watchlist.name}
+                    <span class="badge bg-warning text-dark ms-2" id="${cardId}-count">${watchlist.count}</span>
+                </h5>
+                <div class="d-flex gap-2 align-items-center">
+                    <button class="btn btn-sm btn-success" onclick="addSymbolToWatchlist('${watchlist.name}')">
+                        <i class="fas fa-plus me-1"></i>Add Symbol
+                    </button>
+                    <button class="btn btn-sm btn-outline-light" onclick="editWatchlist('${watchlist.name}')">
+                        <i class="fas fa-edit me-1"></i>Edit
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteWatchlist('${watchlist.name}')">
+                        <i class="fas fa-trash me-1"></i>Delete
+                    </button>
+                    <button class="btn btn-sm btn-outline-light" onclick="refreshWatchlistData('${watchlist.name}')">
+                        <i class="fas fa-sync-alt me-1"></i>Refresh
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card-body p-0">
+                <div class="table-responsive" style="overflow-y: auto; max-height: 400px;">
+                    <table class="table table-dark table-hover mb-0 signals-table" id="${tableId}">
+                        <thead class="sticky-top">
+                            <tr>
+                                <th style="width: 50px">ID</th>
+                                <th style="width: 80px">Symbol</th>
+                                <th style="width: 70px">7D</th>
+                                <th style="width: 70px">30D</th>
+                                <th style="width: 60px">7D%</th>
+                                <th style="width: 60px">30D%</th>
+                                <th style="width: 70px">CMP</th>
+                                <th style="width: 70px">%CHAN</th>
+                                <th style="width: 70px">CPL</th>
+                                <th style="width: 100px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="${bodyId}">
+                            <tr class="loading-row">
+                                <td colspan="10" class="text-center py-4">
+                                    <div class="d-flex justify-content-center align-items-center">
+                                        <div class="spinner-border text-warning me-2" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <span class="text-muted">Loading ${watchlist.name} data...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="card-footer bg-dark border-0 d-flex justify-content-between align-items-center text-light">
+                <div class="d-flex align-items-center gap-3">
+                    <small>Showing <span id="${cardId}-showing">${watchlist.count}</span> of <span id="${cardId}-total">${watchlist.count}</span> symbols</small>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-light" onclick="exportWatchlist('${watchlist.name}')">
+                        <i class="fas fa-download me-1"></i>Export
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Load market data for a specific watchlist
+function loadWatchlistMarketData(listName) {
+    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const bodyId = `${cardId}-tbody`;
+    
+    fetch(`/api/market-watch/watchlists/${encodeURIComponent(listName)}/symbols-with-data`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateWatchlistTable(listName, data.symbols);
+        } else {
+            showErrorInWatchlistTable(listName, data.error);
+        }
+    })
+    .catch(error => {
+        console.error(`Error loading watchlist ${listName} data:`, error);
+        showErrorInWatchlistTable(listName, 'Network error loading data');
+    });
+}
+
+// Update watchlist table with market data
+function updateWatchlistTable(listName, symbols) {
+    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const bodyId = `${cardId}-tbody`;
+    const tbody = document.getElementById(bodyId);
+    
+    if (!tbody) return;
+    
+    if (symbols.length === 0) {
+        tbody.innerHTML = `
+            <tr class="no-data-row">
+                <td colspan="10" class="text-center text-muted py-4">
+                    <i class="fas fa-chart-line fa-2x mb-2"></i><br>
+                    No symbols in this watchlist<br>
+                    <button class="btn btn-sm btn-primary mt-2" onclick="addSymbolToWatchlist('${listName}')">
+                        <i class="fas fa-plus me-1"></i>Add Symbol
+                    </button>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    let html = '';
+    symbols.forEach((symbol, index) => {
+        const change7dStyle = getGradientBackgroundColor(symbol.change_7d_pct);
+        const change30dStyle = getGradientBackgroundColor(symbol.change_30d_pct);
+        const changePctStyle = getGradientBackgroundColor(symbol.change_pct);
+        
+        html += `
+            <tr>
+                <td>${index + 1}</td>
+                <td><strong>${symbol.symbol}</strong></td>
+                <td>${symbol.price_7d || '--'}</td>
+                <td>${symbol.price_30d || '--'}</td>
+                <td style="${change7dStyle}">${symbol.change_7d_pct || '--'}</td>
+                <td style="${change30dStyle}">${symbol.change_30d_pct || '--'}</td>
+                <td><strong>${symbol.cmp || '--'}</strong></td>
+                <td style="${changePctStyle}">${symbol.change_pct || '--'}</td>
+                <td>${symbol.change_val || '--'}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeSymbolFromWatchlist('${listName}', '${symbol.symbol}')" title="Remove symbol">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    tbody.innerHTML = html;
+    
+    // Update counts
+    const countElement = document.getElementById(`${cardId}-count`);
+    const showingElement = document.getElementById(`${cardId}-showing`);
+    const totalElement = document.getElementById(`${cardId}-total`);
+    
+    if (countElement) countElement.textContent = symbols.length;
+    if (showingElement) showingElement.textContent = symbols.length;
+    if (totalElement) totalElement.textContent = symbols.length;
+}
+
+// Show error in watchlist table
+function showErrorInWatchlistTable(listName, message) {
+    const cardId = `watchlist-${listName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const bodyId = `${cardId}-tbody`;
+    const tbody = document.getElementById(bodyId);
+    
+    if (!tbody) return;
+    
+    tbody.innerHTML = `
+        <tr class="error-row">
+            <td colspan="10" class="text-center text-danger py-4">
+                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i><br>
+                ${message}<br>
+                <button class="btn btn-sm btn-outline-light mt-2" onclick="loadWatchlistMarketData('${listName}')">
+                    <i class="fas fa-retry me-1"></i>Retry
+                </button>
+            </td>
+        </tr>
+    `;
+}
+
+// Add symbol to specific watchlist
+window.addSymbolToWatchlist = function(listName) {
+    // Store the current list name for the modal
+    window.currentWatchlistName = listName;
+    
+    // Open the add symbol modal
+    const modal = new bootstrap.Modal(document.getElementById('addSymbolModal'));
+    modal.show();
+    
+    // Update modal title
+    const modalTitle = document.querySelector('#addSymbolModal .modal-title');
+    modalTitle.innerHTML = `<i class="fas fa-plus me-2"></i>Add Symbol to ${listName}`;
+};
+
+// Remove symbol from watchlist
+window.removeSymbolFromWatchlist = function(listName, symbol) {
+    Swal.fire({
+        title: 'Remove Symbol',
+        text: `Are you sure you want to remove ${symbol} from ${listName}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, remove it!',
+        background: '#1a1a1a',
+        color: '#fff'
+    }).then(result => {
+        if (result.isConfirmed) {
+            fetch(`/api/market-watch/watchlists/${encodeURIComponent(listName)}/symbols`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ symbol: symbol })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadWatchlistMarketData(listName);
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Removed',
+                        text: data.message,
+                        background: '#1a1a1a',
+                        color: '#fff',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.error || 'Failed to remove symbol',
+                        background: '#1a1a1a',
+                        color: '#fff'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error removing symbol:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to remove symbol. Please try again.',
+                    background: '#1a1a1a',
+                    color: '#fff'
+                });
+            });
+        }
+    });
+};
+
+// Edit watchlist name
+window.editWatchlist = function(listName) {
+    Swal.fire({
+        title: 'Edit Watchlist Name',
+        input: 'text',
+        inputValue: listName,
+        inputPlaceholder: 'Enter new name for the watchlist',
+        inputAttributes: {
+            maxlength: 50
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Update',
+        background: '#1a1a1a',
+        color: '#fff',
+        inputValidator: (value) => {
+            if (!value || value.trim().length === 0) {
+                return 'Please enter a valid name';
+            }
+            if (value.length > 50) {
+                return 'Name must be 50 characters or less';
+            }
+        }
+    }).then(result => {
+        if (result.isConfirmed) {
+            const newName = result.value.trim();
+            
+            // For now, show info that edit is not implemented in backend
+            Swal.fire({
+                icon: 'info',
+                title: 'Feature Coming Soon',
+                text: 'Watchlist renaming will be available in the next update. For now, you can delete and recreate the list.',
+                background: '#1a1a1a',
+                color: '#fff'
+            });
+        }
+    });
+};
+
+// Delete watchlist
+window.deleteWatchlist = function(listName) {
+    Swal.fire({
+        title: 'Delete Watchlist',
+        text: `Are you sure you want to delete the watchlist "${listName}"? This action cannot be undone.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, delete it!',
+        background: '#1a1a1a',
+        color: '#fff'
+    }).then(result => {
+        if (result.isConfirmed) {
+            fetch(`/api/market-watch/watchlists/${encodeURIComponent(listName)}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadCustomWatchlists();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Deleted',
+                        text: data.message,
+                        background: '#1a1a1a',
+                        color: '#fff',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.error || 'Failed to delete watchlist',
+                        background: '#1a1a1a',
+                        color: '#fff'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting watchlist:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to delete watchlist. Please try again.',
+                    background: '#1a1a1a',
+                    color: '#fff'
+                });
+            });
+        }
+    });
+};
+
+// Refresh watchlist data
+window.refreshWatchlistData = function(listName) {
+    loadWatchlistMarketData(listName);
+};
+
+// Export watchlist to CSV
+window.exportWatchlist = function(listName) {
+    fetch(`/api/market-watch/watchlists/${encodeURIComponent(listName)}/symbols`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.symbols.length > 0) {
+            // Create CSV content according to user's format: Market Watch Name, Symbol 1, Symbol 2, etc.
+            const symbols = data.symbols.map(s => s.symbol).join(',');
+            const csvContent = `Market Watch Name,Symbol 1,Symbol 2,Symbol 3,Symbol 4,Symbol 5\n${listName},${symbols}`;
+            
+            // Create and download file
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${listName.replace(/[^a-zA-Z0-9]/g, '_')}_watchlist.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Exported',
+                text: 'Watchlist exported successfully!',
+                background: '#1a1a1a',
+                color: '#fff',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        } else {
+            Swal.fire({
+                icon: 'warning',
+                title: 'No Data',
+                text: 'No symbols to export in this watchlist.',
+                background: '#1a1a1a',
+                color: '#fff'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error exporting watchlist:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Failed to export watchlist. Please try again.',
+            background: '#1a1a1a',
+            color: '#fff'
+        });
+    });
+};
+
 // Initialize on page load
 document.addEventListener("DOMContentLoaded", function () {
     // Load both market watch lists
     loadDefaultMarketWatch();
     loadUserWatchlist();
+    
+    // Load custom watchlists
+    setTimeout(() => {
+        loadCustomWatchlists();
+    }, 1000);
 
     // Initialize advanced symbol modal
     initializeAdvancedSymbolModal();

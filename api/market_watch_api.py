@@ -374,7 +374,7 @@ def manage_user_symbols():
                 {"error": "Invalid symbol or not found in market data"}), 404
 
         # Add symbol to user's watchlist
-        success = user_watchlist_service.add_symbol_to_watchlist(
+        success = user_watchlist_service.add_symbol_to_watchlist_old(
             username, symbol)
 
         if success:
@@ -396,7 +396,7 @@ def manage_user_symbols():
             return jsonify({"error": "Symbol is required"}), 400
 
         # Remove symbol from user's watchlist
-        success = user_watchlist_service.remove_symbol_from_watchlist(
+        success = user_watchlist_service.remove_symbol_from_watchlist_old(
             username, symbol)
 
         if success:
@@ -561,6 +561,31 @@ def manage_watchlist_symbols(list_name):
         except Exception as e:
             logger.error(f"Error removing symbol from watchlist: {e}")
             return jsonify({"error": "Failed to remove symbol"}), 500
+
+
+@market_watch_api.route('/api/market-watch/watchlists/<list_name>', methods=['DELETE'])
+def delete_watchlist(list_name):
+    """
+    Delete a watchlist
+    """
+    username = session.get('username') or session.get('user_id') or 'demo_user'
+    if not username or username == 'None':
+        username = 'demo_user'
+    
+    try:
+        success = user_watchlist_service.delete_watchlist(username, list_name)
+        
+        if success:
+            return jsonify({
+                "success": True,
+                "message": f"Watchlist '{list_name}' deleted successfully"
+            })
+        else:
+            return jsonify({"error": "Failed to delete watchlist or watchlist not found"}), 404
+    
+    except Exception as e:
+        logger.error(f"Error deleting watchlist: {e}")
+        return jsonify({"error": "Failed to delete watchlist"}), 500
 
 
 @market_watch_api.route('/api/market-watch/watchlists/<list_name>/symbols-with-data', methods=['GET'])
@@ -853,7 +878,7 @@ def is_valid_symbol(symbol: str) -> bool:
                 """, (symbol, ))
 
                 result = cursor.fetchone()
-                return result and result[0] > 0
+                return bool(result and result[0] > 0)
 
         finally:
             conn.close()
