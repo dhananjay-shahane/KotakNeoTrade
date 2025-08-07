@@ -3192,4 +3192,520 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     }
+
+    // Initialize custom watchlists
+    loadCustomWatchlists();
+});
+
+// Custom Watchlists Functionality
+function createNewWatchlist() {
+    const listNameInput = document.getElementById('newListNameInput');
+    const listName = listNameInput.value.trim();
+    
+    if (!listName) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Name Required',
+            text: 'Please enter a name for your watchlist',
+            background: '#1e1e1e',
+            color: '#fff'
+        });
+        return;
+    }
+    
+    // Validate list name
+    if (listName.length > 50) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Name Too Long',
+            text: 'List name must be 50 characters or less',
+            background: '#1e1e1e',
+            color: '#fff'
+        });
+        return;
+    }
+    
+    const createBtn = document.getElementById('createListBtn');
+    createBtn.disabled = true;
+    createBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Creating...';
+    
+    fetch('/api/market-watch/watchlists', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            name: listName
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: `Watchlist "${listName}" created successfully`,
+                background: '#1e1e1e',
+                color: '#fff',
+                timer: 2000,
+                showConfirmButton: false
+            });
+            
+            // Clear input
+            listNameInput.value = '';
+            
+            // Reload custom watchlists
+            loadCustomWatchlists();
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.error || 'Failed to create watchlist',
+                background: '#1e1e1e',
+                color: '#fff'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error creating watchlist:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Network Error',
+            text: 'Failed to create watchlist. Please check your connection.',
+            background: '#1e1e1e',
+            color: '#fff'
+        });
+    })
+    .finally(() => {
+        createBtn.disabled = false;
+        createBtn.innerHTML = '<i class="fas fa-plus me-1"></i>Add List';
+    });
+}
+
+function loadCustomWatchlists() {
+    const container = document.getElementById('customWatchlistsContainer');
+    
+    fetch('/api/market-watch/watchlists')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            container.innerHTML = '';
+            
+            data.watchlists.forEach((watchlist, index) => {
+                createWatchlistCard(watchlist, container);
+            });
+        } else {
+            console.error('Failed to load watchlists:', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading watchlists:', error);
+    });
+}
+
+function createWatchlistCard(watchlist, container) {
+    const cardHtml = `
+        <div class="card bg-secondary border-0 shadow-lg mb-4" id="watchlist-${watchlist.name.replace(/\s+/g, '-')}">
+            <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-light">
+                    <i class="fas fa-list me-2 text-warning"></i>${watchlist.name}
+                    <span class="badge bg-warning text-dark ms-2" id="count-${watchlist.name.replace(/\s+/g, '-')}">${watchlist.count}</span>
+                </h5>
+                <div class="d-flex gap-2 align-items-center">
+                    <button 
+                        class="btn btn-sm btn-success" 
+                        onclick="showAddSymbolModal('${watchlist.name}')"
+                    >
+                        <i class="fas fa-plus me-1"></i>Add Symbol to Market Watch
+                    </button>
+                    <button 
+                        class="btn btn-sm btn-outline-light" 
+                        onclick="refreshWatchlist('${watchlist.name}')"
+                    >
+                        <i class="fas fa-sync-alt me-1"></i>Refresh
+                    </button>
+                    <button 
+                        class="btn btn-sm btn-outline-danger" 
+                        onclick="deleteWatchlist('${watchlist.name}')"
+                    >
+                        <i class="fas fa-trash me-1"></i>Delete
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="overflow-y: auto">
+                    <table class="table table-dark table-hover mb-0 signals-table" id="table-${watchlist.name.replace(/\s+/g, '-')}">
+                        <thead class="sticky-top">
+                            <tr>
+                                <th style="width: 50px">ID</th>
+                                <th style="width: 80px">Symbol</th>
+                                <th style="width: 70px">7D</th>
+                                <th style="width: 70px">30D</th>
+                                <th style="width: 60px">7D%</th>
+                                <th style="width: 60px">30D%</th>
+                                <th style="width: 70px">CMP</th>
+                                <th style="width: 70px">%CHAN</th>
+                                <th style="width: 70px">CPL</th>
+                                <th style="width: 100px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-${watchlist.name.replace(/\s+/g, '-')}">
+                            <tr class="loading-row">
+                                <td colspan="10" class="text-center py-4">
+                                    <div class="d-flex justify-content-center align-items-center">
+                                        <div class="spinner-border text-primary me-2" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <span class="text-muted">Loading ${watchlist.name} data...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-dark border-0 d-flex justify-content-between align-items-center text-light">
+                <div class="d-flex align-items-center gap-3">
+                    <small>Showing <span id="showing-${watchlist.name.replace(/\s+/g, '-')}">0</span> of <span id="total-${watchlist.name.replace(/\s+/g, '-')}">0</span> symbols</small>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML += cardHtml;
+    
+    // Load market data for this watchlist
+    loadWatchlistData(watchlist.name);
+}
+
+function loadWatchlistData(listName) {
+    const tableId = `tbody-${listName.replace(/\s+/g, '-')}`;
+    const countId = `count-${listName.replace(/\s+/g, '-')}`;
+    const showingId = `showing-${listName.replace(/\s+/g, '-')}`;
+    const totalId = `total-${listName.replace(/\s+/g, '-')}`;
+    
+    fetch(`/api/market-watch/watchlists/${encodeURIComponent(listName)}/symbols-with-data`)
+    .then(response => response.json())
+    .then(data => {
+        const tbody = document.getElementById(tableId);
+        const countElement = document.getElementById(countId);
+        const showingElement = document.getElementById(showingId);
+        const totalElement = document.getElementById(totalId);
+        
+        if (data.success) {
+            tbody.innerHTML = '';
+            
+            if (data.symbols.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="text-center py-4 text-muted">
+                            <i class="fas fa-info-circle me-2"></i>No symbols in this watchlist
+                        </td>
+                    </tr>
+                `;
+            } else {
+                data.symbols.forEach(symbol => {
+                    const row = createWatchlistSymbolRow(symbol, listName);
+                    tbody.innerHTML += row;
+                });
+            }
+            
+            // Update counts
+            if (countElement) countElement.textContent = data.count;
+            if (showingElement) showingElement.textContent = data.count;
+            if (totalElement) totalElement.textContent = data.count;
+        } else {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="10" class="text-center py-4 text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Failed to load data
+                    </td>
+                </tr>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error(`Error loading watchlist ${listName}:`, error);
+        const tbody = document.getElementById(tableId);
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="10" class="text-center py-4 text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Network error
+                    </td>
+                </tr>
+            `;
+        }
+    });
+}
+
+function createWatchlistSymbolRow(symbol, listName) {
+    const changeClass = symbol.change_pct && symbol.change_pct !== '--' ? 
+        (parseFloat(symbol.change_pct) >= 0 ? 'text-success' : 'text-danger') : '';
+    
+    return `
+        <tr>
+            <td class="text-center">${symbol.id}</td>
+            <td class="text-center fw-bold">${symbol.symbol}</td>
+            <td class="text-center">${symbol.price_7d || '--'}</td>
+            <td class="text-center">${symbol.price_30d || '--'}</td>
+            <td class="text-center ${changeClass}">${symbol.change_7d_pct || '--'}</td>
+            <td class="text-center ${changeClass}">${symbol.change_30d_pct || '--'}</td>
+            <td class="text-center fw-bold">${symbol.cmp || '--'}</td>
+            <td class="text-center ${changeClass}">${symbol.change_pct || '--'}</td>
+            <td class="text-center">${symbol.change_val || '--'}</td>
+            <td class="text-center">
+                <button 
+                    class="btn btn-sm btn-outline-danger" 
+                    onclick="removeSymbolFromWatchlist('${listName}', '${symbol.symbol}')"
+                    title="Remove symbol"
+                >
+                    <i class="fas fa-times"></i>
+                </button>
+            </td>
+        </tr>
+    `;
+}
+
+function showAddSymbolModal(listName) {
+    // Store the target list name for later use
+    window.targetWatchlistName = listName;
+    
+    // Show the existing add symbol modal
+    const modal = new bootstrap.Modal(document.getElementById('addSymbolModal'));
+    modal.show();
+    
+    // Update modal title to show which list we're adding to
+    const modalTitle = document.querySelector('#addSymbolModal .modal-title');
+    if (modalTitle) {
+        modalTitle.innerHTML = `<i class="fas fa-plus me-2"></i>Add Symbol to ${listName}`;
+    }
+}
+
+function removeSymbolFromWatchlist(listName, symbol) {
+    Swal.fire({
+        title: 'Remove Symbol?',
+        text: `Are you sure you want to remove ${symbol} from "${listName}"?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, remove it!',
+        background: '#1e1e1e',
+        color: '#fff'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/api/market-watch/watchlists/${encodeURIComponent(listName)}/symbols`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    symbol: symbol
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Removed!',
+                        text: `${symbol} removed from ${listName}`,
+                        background: '#1e1e1e',
+                        color: '#fff',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    
+                    // Reload the watchlist
+                    loadWatchlistData(listName);
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.error || 'Failed to remove symbol',
+                        background: '#1e1e1e',
+                        color: '#fff'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error removing symbol:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Network Error',
+                    text: 'Failed to remove symbol. Please check your connection.',
+                    background: '#1e1e1e',
+                    color: '#fff'
+                });
+            });
+        }
+    });
+}
+
+function deleteWatchlist(listName) {
+    Swal.fire({
+        title: 'Delete Watchlist?',
+        text: `Are you sure you want to delete "${listName}"? This action cannot be undone.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!',
+        background: '#1e1e1e',
+        color: '#fff'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/api/market-watch/watchlists/${encodeURIComponent(listName)}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Deleted!',
+                        text: `Watchlist "${listName}" has been deleted`,
+                        background: '#1e1e1e',
+                        color: '#fff',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    
+                    // Remove the watchlist card from DOM
+                    const cardId = `watchlist-${listName.replace(/\s+/g, '-')}`;
+                    const card = document.getElementById(cardId);
+                    if (card) {
+                        card.remove();
+                    }
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.error || 'Failed to delete watchlist',
+                        background: '#1e1e1e',
+                        color: '#fff'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting watchlist:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Network Error',
+                    text: 'Failed to delete watchlist. Please check your connection.',
+                    background: '#1e1e1e',
+                    color: '#fff'
+                });
+            });
+        }
+    });
+}
+
+function refreshWatchlist(listName) {
+    loadWatchlistData(listName);
+}
+
+// Allow Enter key to create watchlist
+document.addEventListener('DOMContentLoaded', function() {
+    const listNameInput = document.getElementById('newListNameInput');
+    if (listNameInput) {
+        listNameInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                createNewWatchlist();
+            }
+        });
+    }
+});
+
+// Override the addSelectedSymbol function to handle custom watchlists
+const originalAddSelectedSymbol = window.addSelectedSymbol;
+window.addSelectedSymbol = function() {
+    const targetList = window.targetWatchlistName;
+    
+    if (targetList) {
+        // Add to custom watchlist
+        addSymbolToCustomWatchlist(targetList);
+    } else {
+        // Use original function for default watchlist
+        if (originalAddSelectedSymbol) {
+            originalAddSelectedSymbol();
+        }
+    }
+};
+
+function addSymbolToCustomWatchlist(listName) {
+    const symbolInput = document.getElementById('selectedSymbolInput');
+    const symbol = symbolInput ? symbolInput.value.trim().toUpperCase() : '';
+    
+    if (!symbol) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Symbol Required',
+            text: 'Please select a symbol first',
+            background: '#1e1e1e',
+            color: '#fff'
+        });
+        return;
+    }
+    
+    fetch(`/api/market-watch/watchlists/${encodeURIComponent(listName)}/symbols`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            symbol: symbol
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: `${symbol} added to ${listName}`,
+                background: '#1e1e1e',
+                color: '#fff',
+                timer: 2000,
+                showConfirmButton: false
+            });
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addSymbolModal'));
+            if (modal) {
+                modal.hide();
+            }
+            
+            // Clear selection
+            if (symbolInput) {
+                symbolInput.value = '';
+            }
+            
+            // Clear target list name
+            window.targetWatchlistName = null;
+            
+            // Reload the watchlist
+            loadWatchlistData(listName);
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.error || 'Failed to add symbol',
+                background: '#1e1e1e',
+                color: '#fff'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error adding symbol:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Network Error',
+            text: 'Failed to add symbol. Please check your connection.',
+            background: '#1e1e1e',
+            color: '#fff'
+        });
+    });
+}
 });

@@ -410,6 +410,213 @@ def manage_user_symbols():
                 {"error": "Failed to remove symbol or symbol not found"}), 400
 
 
+@market_watch_api.route('/api/market-watch/watchlists', methods=['GET'])
+def get_user_watchlists():
+    """
+    Get all user's watchlists
+    """
+    username = session.get('username') or session.get('user_id') or 'demo_user'
+    if not username or username == 'None':
+        username = 'demo_user'
+
+    try:
+        watchlists = user_watchlist_service.get_user_watchlists(username)
+        
+        # Format for frontend
+        formatted_lists = []
+        for list_name, symbols in watchlists.items():
+            formatted_lists.append({
+                'name': list_name,
+                'symbols': symbols,
+                'count': len(symbols)
+            })
+        
+        return jsonify({
+            "success": True,
+            "watchlists": formatted_lists,
+            "count": len(formatted_lists)
+        })
+    
+    except Exception as e:
+        logger.error(f"Error getting user watchlists: {e}")
+        return jsonify({"error": "Failed to get watchlists"}), 500
+
+
+@market_watch_api.route('/api/market-watch/watchlists', methods=['POST'])
+def create_watchlist():
+    """
+    Create a new watchlist
+    """
+    username = session.get('username') or session.get('user_id') or 'demo_user'
+    if not username or username == 'None':
+        username = 'demo_user'
+    
+    json_data = request.json or {}
+    list_name = json_data.get('name', '').strip()
+    
+    if not list_name:
+        return jsonify({"error": "List name is required"}), 400
+    
+    try:
+        success = user_watchlist_service.create_watchlist(username, list_name)
+        
+        if success:
+            return jsonify({
+                "success": True,
+                "message": f"Watchlist '{list_name}' created successfully",
+                "name": list_name
+            })
+        else:
+            return jsonify({"error": "Failed to create watchlist or list already exists"}), 400
+    
+    except Exception as e:
+        logger.error(f"Error creating watchlist: {e}")
+        return jsonify({"error": "Failed to create watchlist"}), 500
+
+
+@market_watch_api.route('/api/market-watch/watchlists/<list_name>/symbols', methods=['GET', 'POST', 'DELETE'])
+def manage_watchlist_symbols(list_name):
+    """
+    Manage symbols in a specific watchlist
+    GET: Get symbols in the list
+    POST: Add symbol to the list
+    DELETE: Remove symbol from the list
+    """
+    username = session.get('username') or session.get('user_id') or 'demo_user'
+    if not username or username == 'None':
+        username = 'demo_user'
+    
+    if request.method == 'GET':
+        try:
+            symbols = user_watchlist_service.get_watchlist_symbols(username, list_name)
+            
+            # Format for frontend
+            symbols_with_data = []
+            for i, symbol in enumerate(symbols, 1):
+                symbols_with_data.append({
+                    'id': i,
+                    'symbol': symbol,
+                    'list_name': list_name
+                })
+            
+            return jsonify({
+                "success": True,
+                "symbols": symbols_with_data,
+                "count": len(symbols_with_data),
+                "list_name": list_name
+            })
+        
+        except Exception as e:
+            logger.error(f"Error getting symbols from watchlist '{list_name}': {e}")
+            return jsonify({"error": "Failed to get symbols"}), 500
+    
+    elif request.method == 'POST':
+        json_data = request.json or {}
+        symbol = json_data.get('symbol', '').upper()
+        
+        if not symbol:
+            return jsonify({"error": "Symbol is required"}), 400
+        
+        # Check if symbol exists in nse_symbols table
+        if not is_valid_symbol(symbol):
+            return jsonify({"error": "Invalid symbol or not found in market data"}), 404
+        
+        try:
+            success = user_watchlist_service.add_symbol_to_watchlist(username, list_name, symbol)
+            
+            if success:
+                return jsonify({
+                    "success": True,
+                    "message": f"Symbol {symbol} added to '{list_name}'",
+                    "symbol": symbol,
+                    "list_name": list_name
+                })
+            else:
+                return jsonify({"error": "Failed to add symbol or symbol already exists"}), 400
+        
+        except Exception as e:
+            logger.error(f"Error adding symbol to watchlist: {e}")
+            return jsonify({"error": "Failed to add symbol"}), 500
+    
+    elif request.method == 'DELETE':
+        json_data = request.json or {}
+        symbol = json_data.get('symbol', '').upper()
+        
+        if not symbol:
+            return jsonify({"error": "Symbol is required"}), 400
+        
+        try:
+            success = user_watchlist_service.remove_symbol_from_watchlist(username, list_name, symbol)
+            
+            if success:
+                return jsonify({
+                    "success": True,
+                    "message": f"Symbol {symbol} removed from '{list_name}'",
+                    "symbol": symbol,
+                    "list_name": list_name
+                })
+            else:
+                return jsonify({"error": "Failed to remove symbol or symbol not found"}), 404
+        
+        except Exception as e:
+            logger.error(f"Error removing symbol from watchlist: {e}")
+            return jsonify({"error": "Failed to remove symbol"}), 500
+
+
+@market_watch_api.route('/api/market-watch/watchlists/<list_name>/symbols-with-data', methods=['GET'])
+def get_watchlist_symbols_with_market_data(list_name):
+    """
+    Get symbols from a specific watchlist with market data
+    """
+    username = session.get('username') or session.get('user_id') or 'demo_user'
+    if not username or username == 'None':
+        username = 'demo_user'
+    
+    try:
+        symbols = user_watchlist_service.get_watchlist_symbols(username, list_name)
+        
+        # Get market data for each symbol
+        symbols_with_market_data = []
+        for i, symbol in enumerate(symbols, 1):
+            market_data = get_market_data_for_symbol(symbol)
+            
+            symbol_info = {
+                'id': i,
+                'symbol': symbol,
+                'list_name': list_name
+            }
+            
+            # Add market data if available
+            if market_data:
+                symbol_info.update(market_data)
+            else:
+                # Fallback values when market data is not available
+                symbol_info.update({
+                    'cmp': '--',
+                    'price_7d': '--',
+                    'price_30d': '--',
+                    'change_7d_pct': '--',
+                    'change_30d_pct': '--',
+                    'change_7d': '--',
+                    'change_30d': '--',
+                    'change_pct': '--',
+                    'change_val': '--'
+                })
+            
+            symbols_with_market_data.append(symbol_info)
+        
+        return jsonify({
+            "success": True,
+            "symbols": symbols_with_market_data,
+            "count": len(symbols_with_market_data),
+            "list_name": list_name
+        })
+    
+    except Exception as e:
+        logger.error(f"Error getting symbols with market data from watchlist '{list_name}': {e}")
+        return jsonify({"error": "Failed to get symbols with market data"}), 500
+
+
 @market_watch_api.route('/api/market-watch/user-symbols-with-data',
                         methods=['GET'])
 def get_user_symbols_with_market_data():
