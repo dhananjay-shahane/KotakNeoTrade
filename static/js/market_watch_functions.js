@@ -699,9 +699,43 @@ function addSymbolToWatchlist(watchlistName) {
     // Set the current watchlist context
     window.currentWatchlistName = watchlistName;
     
+    // Initialize modal when opened
+    initializeAddSymbolModal();
+    
     // Show the modal
     const modal = new bootstrap.Modal(document.getElementById('addSymbolModal'));
     modal.show();
+}
+
+// Initialize the Add Symbol modal
+function initializeAddSymbolModal() {
+    console.log("Initializing Add Symbol modal...");
+    
+    // Clear previous selections
+    const symbolInput = document.getElementById('symbolSearchInput');
+    if (symbolInput) {
+        symbolInput.value = '';
+    }
+    
+    // Hide suggestions
+    hideSuggestions();
+    
+    // Clear selected symbol data
+    selectedSymbolData = null;
+    
+    // Load filter options if not already loaded
+    if (filterOptions.companies.length === 0) {
+        console.log("Loading filter options for modal...");
+        loadFilterOptions();
+    }
+    
+    // Enable Nifty by default
+    const niftyCheck = document.getElementById('niftyCheck');
+    if (niftyCheck) {
+        niftyCheck.checked = true;
+    }
+    
+    console.log("✓ Add Symbol modal initialized");
 }
 
 // Add symbol to current watchlist
@@ -774,6 +808,10 @@ window.updateSymbolSearch = updateSymbolSearch;
 window.submitAdvancedAddSymbol = submitAdvancedAddSymbol;
 window.addSymbolToWatchlist = addSymbolToWatchlist;
 window.selectSymbol = selectSymbol;
+window.hideSuggestions = hideSuggestions;
+window.hideSymbolSuggestions = hideSymbolSuggestions;
+window.clearSymbolSearch = clearSymbolSearch;
+window.initializeAddSymbolModal = initializeAddSymbolModal;
 
 // Clear symbol selection
 function clearSymbolSelection() {
@@ -821,11 +859,22 @@ function submitAddSymbol() {
 
 // Clear search function for symbol search input
 function clearSymbolSearch() {
-    const symbolInput = document.getElementById("symbolAutocompleteInput");
+    const symbolInput = document.getElementById("symbolSearchInput");
     if (symbolInput) {
         symbolInput.value = "";
         hideSymbolSuggestions();
     }
+}
+
+// Hide symbol suggestions (alias for hideSuggestions)
+function hideSymbolSuggestions() {
+    hideSuggestions();
+}
+
+// Update symbol search when filters change
+function updateSymbolSearch() {
+    console.log("Filters changed, updating search...");
+    searchSymbols();
 }
 
 
