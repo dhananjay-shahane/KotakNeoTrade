@@ -51,7 +51,7 @@ function ETFSignalsManager() {
     this.dateFilters = {
         startDate: null,
         endDate: null,
-        quickFilter: null
+        quickFilter: null,
     };
 
     // Initialize when DOM is ready
@@ -152,29 +152,30 @@ ETFSignalsManager.prototype.generateDynamicHeaders = function () {
         // Add sorting functionality for most columns
         if (column.key !== "actions") {
             th.className += " sortable-header";
-            
+
             // Check if this column is currently being sorted
-            var isActiveSort = (self.sortField === column.key);
+            var isActiveSort = self.sortField === column.key;
             if (isActiveSort) {
                 th.className += " active";
             }
-            
+
             th.onclick = (function (columnKey) {
                 return function () {
                     self.sortSignalsByColumn(columnKey);
                 };
             })(column.key);
-            
-            var sortIcon = '';
+
+            var sortIcon = "";
             if (isActiveSort) {
-                sortIcon = self.sortDirection === "asc" 
-                    ? '<i class="fas fa-sort-up sort-icon sort-asc"></i>'
-                    : '<i class="fas fa-sort-down sort-icon sort-desc"></i>';
+                sortIcon =
+                    self.sortDirection === "asc"
+                        ? '<i class="fas fa-sort-up sort-icon sort-asc"></i>'
+                        : '<i class="fas fa-sort-down sort-icon sort-desc"></i>';
             } else {
                 sortIcon = '<i class="fas fa-sort sort-icon"></i>';
             }
-            
-            th.innerHTML = column.label + ' ' + sortIcon;
+
+            th.innerHTML = column.label + " " + sortIcon;
             th.title = self.getColumnTooltip(column.key) + " - Click to sort";
         } else {
             th.innerHTML = column.label;
@@ -2029,7 +2030,7 @@ function proceedWithAddingDeal(
             tp: signal.tp || signal.TP || 0,
             date: signal.date || new Date().toISOString().split("T")[0],
         },
-        force_add: forceAdd || false
+        force_add: forceAdd || false,
     };
 
     var xhr = new XMLHttpRequest();
@@ -2079,7 +2080,9 @@ function proceedWithAddingDeal(
                         if (typeof Swal !== "undefined") {
                             Swal.fire({
                                 title: "Duplicate Deal Detected",
-                                html: response.message + "<br><br>Do you want to add it anyway?",
+                                html:
+                                    response.message +
+                                    "<br><br>Do you want to add it anyway?",
                                 icon: "warning",
                                 showCancelButton: true,
                                 confirmButtonColor: "#ff6b35",
@@ -2096,17 +2099,36 @@ function proceedWithAddingDeal(
                                     // Add force_add flag and retry
                                     var retryRequestData = {
                                         signal_data: requestData.signal_data,
-                                        force_add: true
+                                        force_add: true,
                                     };
-                                    
+
                                     // Retry with force_add flag
-                                    proceedWithAddingDeal(signal, symbol, price, quantity, investment, true);
+                                    proceedWithAddingDeal(
+                                        signal,
+                                        symbol,
+                                        price,
+                                        quantity,
+                                        investment,
+                                        true,
+                                    );
                                 }
                             });
                         } else {
                             // Fallback confirm dialog
-                            if (confirm(response.message + "\n\nDo you want to add it anyway?")) {
-                                proceedWithAddingDeal(signal, symbol, price, quantity, investment, true);
+                            if (
+                                confirm(
+                                    response.message +
+                                        "\n\nDo you want to add it anyway?",
+                                )
+                            ) {
+                                proceedWithAddingDeal(
+                                    signal,
+                                    symbol,
+                                    price,
+                                    quantity,
+                                    investment,
+                                    true,
+                                );
                             }
                         }
                     } else {
@@ -2116,7 +2138,10 @@ function proceedWithAddingDeal(
                         );
                     }
                 } catch (parseError) {
-                    console.error("Failed to parse duplicate response:", parseError);
+                    console.error(
+                        "Failed to parse duplicate response:",
+                        parseError,
+                    );
                     showSwalMessage(
                         "Duplicate deal detected but failed to parse response",
                         "error",
@@ -2806,7 +2831,7 @@ ETFSignalsManager.prototype.setupNewFeatures = function () {
     console.log("Setting up new enhanced features");
     this.setupDateFilters();
     this.initializeCharts();
-    
+
     // Calculate performance metrics only if signals are already loaded
     if (this.signals && this.signals.length > 0) {
         this.calculatePerformanceMetrics();
@@ -2815,10 +2840,14 @@ ETFSignalsManager.prototype.setupNewFeatures = function () {
 
 // Performance Metrics Calculation
 ETFSignalsManager.prototype.calculatePerformanceMetrics = function () {
-    console.log('Calculating performance metrics for', this.signals ? this.signals.length : 0, 'signals');
-    
+    console.log(
+        "Calculating performance metrics for",
+        this.signals ? this.signals.length : 0,
+        "signals",
+    );
+
     if (!this.signals || this.signals.length === 0) {
-        console.log('No signals data available for performance calculation');
+        console.log("No signals data available for performance calculation");
         this.updatePerformanceDisplay({
             totalSignals: 0,
             activeSignals: 0,
@@ -2828,7 +2857,7 @@ ETFSignalsManager.prototype.calculatePerformanceMetrics = function () {
             totalCurrentValue: 0,
             totalPnl: 0,
             topPerformers: [],
-            worstPerformers: []
+            worstPerformers: [],
         });
         return;
     }
@@ -2841,11 +2870,11 @@ ETFSignalsManager.prototype.calculatePerformanceMetrics = function () {
     var totalPnl = 0;
     var topPerformers = [];
 
-    console.log('Processing', totalSignals, 'signals for performance metrics');
+    console.log("Processing", totalSignals, "signals for performance metrics");
 
-    this.signals.forEach(function(signal, index) {
-        console.log('Processing signal', index + 1, ':', signal);
-        
+    this.signals.forEach(function (signal, index) {
+        console.log("Processing signal", index + 1, ":", signal);
+
         // Use the actual property names from your real data
         var quantity = parseFloat(signal.QTY || signal.qty || 0);
         var entryPrice = parseFloat(signal.EP || signal.ep || 0);
@@ -2853,8 +2882,8 @@ ETFSignalsManager.prototype.calculatePerformanceMetrics = function () {
         var investment = parseFloat(signal.INV || signal.inv || 0);
         var currentValue = parseFloat(signal.TVA || signal.tva || 0);
         var pnl = parseFloat(signal.CPL || signal.cpl || 0);
-        var chanPercent = signal['%CHAN'] || signal.chan || '0%';
-        
+        var chanPercent = signal["%CHAN"] || signal.chan || "0%";
+
         // If INV and TVA are not available, calculate them
         if (!investment && quantity && entryPrice) {
             investment = quantity * entryPrice;
@@ -2865,40 +2894,55 @@ ETFSignalsManager.prototype.calculatePerformanceMetrics = function () {
         if (!pnl && investment && currentValue) {
             pnl = currentValue - investment;
         }
-        
-        console.log('Signal calculations - Investment:', investment, 'Current Value:', currentValue, 'P&L:', pnl);
-        
+
+        console.log(
+            "Signal calculations - Investment:",
+            investment,
+            "Current Value:",
+            currentValue,
+            "P&L:",
+            pnl,
+        );
+
         totalInvestment += investment;
         totalCurrentValue += currentValue;
         totalPnl += pnl;
-        
+
         if (pnl > 0) profitableSignals++;
         activeSignals++; // Assuming all loaded signals are active
-        
+
         // Collect for top/worst performers
         topPerformers.push({
-            symbol: signal.Symbol || signal.symbol || signal.etf || signal.scrip || 'Signal-' + (index + 1),
+            symbol:
+                signal.Symbol ||
+                signal.symbol ||
+                signal.etf ||
+                signal.scrip ||
+                "Signal-" + (index + 1),
             pnl: pnl,
             pct: chanPercent,
             investment: investment,
-            currentValue: currentValue
+            currentValue: currentValue,
         });
     });
 
-    var winRate = totalSignals > 0 ? (profitableSignals / totalSignals * 100) : 0;
+    var winRate =
+        totalSignals > 0 ? (profitableSignals / totalSignals) * 100 : 0;
 
-    console.log('Performance Summary:', {
+    console.log("Performance Summary:", {
         totalSignals: totalSignals,
         activeSignals: activeSignals,
         profitableSignals: profitableSignals,
         winRate: winRate,
         totalInvestment: totalInvestment,
         totalCurrentValue: totalCurrentValue,
-        totalPnl: totalPnl
+        totalPnl: totalPnl,
     });
 
     // Sort performers by P&L
-    topPerformers.sort(function(a, b) { return b.pnl - a.pnl; });
+    topPerformers.sort(function (a, b) {
+        return b.pnl - a.pnl;
+    });
     var worstPerformers = topPerformers.slice().reverse().slice(0, 5);
 
     this.updatePerformanceDisplay({
@@ -2910,110 +2954,153 @@ ETFSignalsManager.prototype.calculatePerformanceMetrics = function () {
         totalCurrentValue: totalCurrentValue,
         totalPnl: totalPnl,
         topPerformers: topPerformers.slice(0, 5),
-        worstPerformers: worstPerformers
+        worstPerformers: worstPerformers,
     });
 };
 
 ETFSignalsManager.prototype.updatePerformanceDisplay = function (metrics) {
     // Update summary cards
-    this.updateElement('totalSignalsCount', metrics.totalSignals);
-    this.updateElement('activeSignalsCount', metrics.activeSignals);
-    this.updateElement('profitableSignalsCount', metrics.profitableSignals);
-    this.updateElement('winRatePercentage', metrics.winRate.toFixed(1) + '%');
-    this.updateElement('totalInvestmentAmount', '₹' + this.formatNumber(metrics.totalInvestment));
-    this.updateElement('totalCurrentValue', '₹' + this.formatNumber(metrics.totalCurrentValue));
-    
-    var pnlElement = document.getElementById('totalPnlAmount');
+    this.updateElement("totalSignalsCount", metrics.totalSignals);
+    this.updateElement("activeSignalsCount", metrics.activeSignals);
+    this.updateElement("profitableSignalsCount", metrics.profitableSignals);
+    this.updateElement("winRatePercentage", metrics.winRate.toFixed(1) + "%");
+    this.updateElement(
+        "totalInvestmentAmount",
+        "₹" + this.formatNumber(metrics.totalInvestment),
+    );
+    this.updateElement(
+        "totalCurrentValue",
+        "₹" + this.formatNumber(metrics.totalCurrentValue),
+    );
+
+    var pnlElement = document.getElementById("totalPnlAmount");
     if (pnlElement) {
-        pnlElement.textContent = '₹' + this.formatNumber(metrics.totalPnl);
-        pnlElement.className = 'mb-0 ' + (metrics.totalPnl >= 0 ? 'text-success' : 'text-danger');
+        pnlElement.textContent = "₹" + this.formatNumber(metrics.totalPnl);
+        pnlElement.className =
+            "mb-0 " + (metrics.totalPnl >= 0 ? "text-success" : "text-danger");
     }
 
     // Update performers tables
-    this.updatePerformersTable('topPerformersTable', metrics.topPerformers || []);
-    this.updatePerformersTable('lowPerformersTable', metrics.worstPerformers || []);
+    this.updatePerformersTable(
+        "topPerformersTable",
+        metrics.topPerformers || [],
+    );
+    this.updatePerformersTable(
+        "lowPerformersTable",
+        metrics.worstPerformers || [],
+    );
 };
 
 ETFSignalsManager.prototype.updateElement = function (id, value) {
     var element = document.getElementById(id);
     if (element) {
         element.textContent = value;
-        console.log('Updated element', id, 'with value:', value);
+        console.log("Updated element", id, "with value:", value);
     } else {
-        console.log('Element not found:', id);
+        console.log("Element not found:", id);
     }
 };
 
 ETFSignalsManager.prototype.formatNumber = function (num) {
-    return new Intl.NumberFormat('en-IN').format(Math.abs(num));
+    return new Intl.NumberFormat("en-IN").format(Math.abs(num));
 };
 
-ETFSignalsManager.prototype.updatePerformersTable = function (tableId, performers) {
+ETFSignalsManager.prototype.updatePerformersTable = function (
+    tableId,
+    performers,
+) {
     var tbody = document.getElementById(tableId);
     if (!tbody) {
-        console.log('Table body not found:', tableId);
+        console.log("Table body not found:", tableId);
         return;
     }
 
     if (!performers || performers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No data available</td></tr>';
+        tbody.innerHTML =
+            '<tr><td colspan="3" class="text-center text-muted">No data available</td></tr>';
         return;
     }
 
-    var html = '';
-    performers.forEach(function(performer) {
-        var pnlClass = performer.pnl >= 0 ? 'text-success' : 'text-danger';
-        var formattedPnl = isNaN(performer.pnl) ? '₹0.00' : '₹' + performer.pnl.toFixed(2);
-        html += '<tr>' +
-            '<td>' + (performer.symbol || 'N/A') + '</td>' +
-            '<td class="' + pnlClass + '">' + formattedPnl + '</td>' +
-            '<td class="' + pnlClass + '">' + (performer.pct || '0%') + '</td>' +
-            '</tr>';
+    var html = "";
+    performers.forEach(function (performer) {
+        var pnlClass = performer.pnl >= 0 ? "text-success" : "text-danger";
+        var formattedPnl = isNaN(performer.pnl)
+            ? "₹0.00"
+            : "₹" + performer.pnl.toFixed(2);
+        html +=
+            "<tr>" +
+            "<td>" +
+            (performer.symbol || "N/A") +
+            "</td>" +
+            '<td class="' +
+            pnlClass +
+            '">' +
+            formattedPnl +
+            "</td>" +
+            '<td class="' +
+            pnlClass +
+            '">' +
+            (performer.pct || "0%") +
+            "</td>" +
+            "</tr>";
     });
     tbody.innerHTML = html;
-    console.log('Updated performers table:', tableId, 'with', performers.length, 'entries');
+    console.log(
+        "Updated performers table:",
+        tableId,
+        "with",
+        performers.length,
+        "entries",
+    );
 };
 
 // Date Filter Functions
 ETFSignalsManager.prototype.setupDateFilters = function () {
-    var startDateInput = document.getElementById('startDateFilter');
-    var endDateInput = document.getElementById('endDateFilter');
-    
+    var startDateInput = document.getElementById("startDateFilter");
+    var endDateInput = document.getElementById("endDateFilter");
+
     if (startDateInput) {
-        startDateInput.addEventListener('change', this.applyDateFilters.bind(this));
+        startDateInput.addEventListener(
+            "change",
+            this.applyDateFilters.bind(this),
+        );
     }
     if (endDateInput) {
-        endDateInput.addEventListener('change', this.applyDateFilters.bind(this));
+        endDateInput.addEventListener(
+            "change",
+            this.applyDateFilters.bind(this),
+        );
     }
 };
 
 // Global functions for date filtering
 function applyQuickDateFilter(days) {
-    console.log('Applying quick date filter for', days, 'days');
+    console.log("Applying quick date filter for", days, "days");
     if (window.etfSignalsManager) {
         var endDate = new Date();
         var startDate = new Date();
         startDate.setDate(startDate.getDate() - days);
-        
+
         window.etfSignalsManager.dateFilters.startDate = startDate;
         window.etfSignalsManager.dateFilters.endDate = endDate;
         window.etfSignalsManager.dateFilters.quickFilter = days;
-        
+
         // Update input fields
-        var startInput = document.getElementById('startDateFilter');
-        var endInput = document.getElementById('endDateFilter');
-        
-        if (startInput) startInput.value = startDate.toISOString().split('T')[0];
-        if (endInput) endInput.value = endDate.toISOString().split('T')[0];
-        
+        var startInput = document.getElementById("startDateFilter");
+        var endInput = document.getElementById("endDateFilter");
+
+        if (startInput)
+            startInput.value = startDate.toISOString().split("T")[0];
+        if (endInput) endInput.value = endDate.toISOString().split("T")[0];
+
         // Apply the filter immediately
         window.etfSignalsManager.filterAndRenderSignals();
-        
+
         // Show a success message
-        console.log('Date filter applied: Last', days, 'days');
-        
+        console.log("Date filter applied: Last", days, "days");
+
         // Close the modal if it's open
-        var modal = document.getElementById('signalFiltersModal');
+        var modal = document.getElementById("signalFiltersModal");
         if (modal) {
             var modalInstance = bootstrap.Modal.getInstance(modal);
             if (modalInstance) {
@@ -3028,103 +3115,129 @@ function clearDateFilter() {
         window.etfSignalsManager.dateFilters = {
             startDate: null,
             endDate: null,
-            quickFilter: null
+            quickFilter: null,
         };
-        
-        var startInput = document.getElementById('startDateFilter');
-        var endInput = document.getElementById('endDateFilter');
-        
-        if (startInput) startInput.value = '';
-        if (endInput) endInput.value = '';
-        
+
+        var startInput = document.getElementById("startDateFilter");
+        var endInput = document.getElementById("endDateFilter");
+
+        if (startInput) startInput.value = "";
+        if (endInput) endInput.value = "";
+
         window.etfSignalsManager.applyDateFilters();
     }
 }
 
 ETFSignalsManager.prototype.applyDateFilters = function () {
-    var startDateInput = document.getElementById('startDateFilter');
-    var endDateInput = document.getElementById('endDateFilter');
-    
+    var startDateInput = document.getElementById("startDateFilter");
+    var endDateInput = document.getElementById("endDateFilter");
+
     if (startDateInput && startDateInput.value) {
         this.dateFilters.startDate = new Date(startDateInput.value);
     }
     if (endDateInput && endDateInput.value) {
         this.dateFilters.endDate = new Date(endDateInput.value);
     }
-    
+
     this.filterAndRenderSignals();
 };
 
 // Section Toggle Functions - Direct style manipulation approach
 function toggleTableSection() {
-    var content = document.getElementById('signalsContent');
-    var icon = document.getElementById('tableToggleIcon');
+    var content = document.getElementById("signalsContent");
+    var icon = document.getElementById("tableToggleIcon");
     var button = document.querySelector('[onclick="toggleTableSection()"]');
-    
-    var cardBody = content ? content.querySelector('.card-body') : null;
-    
-    if (cardBody && cardBody.style.display === 'none') {
-        cardBody.style.display = 'block';
-        if (icon) icon.className = 'fas fa-minus me-1';
-        if (button) button.innerHTML = '<i class="fas fa-minus me-1" id="tableToggleIcon"></i>Minimize';
+
+    var cardBody = content ? content.querySelector(".card-body") : null;
+
+    if (cardBody && cardBody.style.display === "none") {
+        cardBody.style.display = "block";
+        if (icon) icon.className = "fas fa-minus me-1";
+        if (button)
+            button.innerHTML =
+                '<i class="fas fa-minus me-1" id="tableToggleIcon"></i>Minimize';
     } else if (cardBody) {
-        cardBody.style.display = 'none';
-        if (icon) icon.className = 'fas fa-plus me-1';
-        if (button) button.innerHTML = '<i class="fas fa-plus me-1" id="tableToggleIcon"></i>Maximize';
+        cardBody.style.display = "none";
+        if (icon) icon.className = "fas fa-plus me-1";
+        if (button)
+            button.innerHTML =
+                '<i class="fas fa-plus me-1" id="tableToggleIcon"></i>Maximize';
     }
 }
 
 function togglePerformanceSection() {
-    var cardBody = document.getElementById('performanceBody');
-    var icon = document.getElementById('performanceToggleIcon');
-    var button = document.querySelector('[onclick="togglePerformanceSection()"]');
-    
-    console.log('Toggling performance section - cardBody:', cardBody, 'display:', cardBody ? cardBody.style.display : 'not found');
-    
-    if (cardBody && cardBody.style.display === 'none') {
-        cardBody.style.display = 'block';
-        if (icon) icon.className = 'fas fa-minus me-1';
-        if (button) button.innerHTML = '<i class="fas fa-minus me-1" id="performanceToggleIcon"></i>Minimize';
+    var cardBody = document.getElementById("performanceBody");
+    var icon = document.getElementById("performanceToggleIcon");
+    var button = document.querySelector(
+        '[onclick="togglePerformanceSection()"]',
+    );
+
+    console.log(
+        "Toggling performance section - cardBody:",
+        cardBody,
+        "display:",
+        cardBody ? cardBody.style.display : "not found",
+    );
+
+    if (cardBody && cardBody.style.display === "none") {
+        cardBody.style.display = "block";
+        if (icon) icon.className = "fas fa-minus me-1";
+        if (button)
+            button.innerHTML =
+                '<i class="fas fa-minus me-1" id="performanceToggleIcon"></i>Minimize';
     } else if (cardBody) {
-        cardBody.style.display = 'none';
-        if (icon) icon.className = 'fas fa-plus me-1';
-        if (button) button.innerHTML = '<i class="fas fa-plus me-1" id="performanceToggleIcon"></i>Maximize';
+        cardBody.style.display = "none";
+        if (icon) icon.className = "fas fa-plus me-1";
+        if (button)
+            button.innerHTML =
+                '<i class="fas fa-plus me-1" id="performanceToggleIcon"></i>Maximize';
     }
 }
 
 function toggleAnalyticsSection() {
-    var cardBody = document.getElementById('analyticsBody');
-    var icon = document.getElementById('analyticsToggleIcon');
+    var cardBody = document.getElementById("analyticsBody");
+    var icon = document.getElementById("analyticsToggleIcon");
     var button = document.querySelector('[onclick="toggleAnalyticsSection()"]');
-    
-    console.log('Toggling analytics section - cardBody:', cardBody, 'display:', cardBody ? cardBody.style.display : 'not found');
-    
-    if (cardBody && cardBody.style.display === 'none') {
-        cardBody.style.display = 'block';
-        if (icon) icon.className = 'fas fa-minus me-1';
-        if (button) button.innerHTML = '<i class="fas fa-minus me-1" id="analyticsToggleIcon"></i>Minimize';
+
+    console.log(
+        "Toggling analytics section - cardBody:",
+        cardBody,
+        "display:",
+        cardBody ? cardBody.style.display : "not found",
+    );
+
+    if (cardBody && cardBody.style.display === "none") {
+        cardBody.style.display = "block";
+        if (icon) icon.className = "fas fa-minus me-1";
+        if (button)
+            button.innerHTML =
+                '<i class="fas fa-minus me-1" id="analyticsToggleIcon"></i>Minimize';
     } else if (cardBody) {
-        cardBody.style.display = 'none';
-        if (icon) icon.className = 'fas fa-plus me-1';
-        if (button) button.innerHTML = '<i class="fas fa-plus me-1" id="analyticsToggleIcon"></i>Maximize';
+        cardBody.style.display = "none";
+        if (icon) icon.className = "fas fa-plus me-1";
+        if (button)
+            button.innerHTML =
+                '<i class="fas fa-plus me-1" id="analyticsToggleIcon"></i>Maximize';
     }
 }
 
 // Full Screen Functions
 function toggleFullScreen() {
-    var modal = document.getElementById('fullScreenModal');
-    var tableContainer = document.querySelector('.table-responsive');
-    var fullScreenContainer = document.getElementById('fullScreenTableContainer');
-    
+    var modal = document.getElementById("fullScreenModal");
+    var tableContainer = document.querySelector(".table-responsive");
+    var fullScreenContainer = document.getElementById(
+        "fullScreenTableContainer",
+    );
+
     if (modal) {
         // Move table to full screen container
         if (tableContainer && fullScreenContainer) {
             var tableClone = tableContainer.cloneNode(true);
-            tableClone.classList.add('full-screen-table');
-            fullScreenContainer.innerHTML = '';
+            tableClone.classList.add("full-screen-table");
+            fullScreenContainer.innerHTML = "";
             fullScreenContainer.appendChild(tableClone);
         }
-        
+
         // Show modal
         var modalInstance = new bootstrap.Modal(modal);
         modalInstance.show();
@@ -3132,7 +3245,7 @@ function toggleFullScreen() {
 }
 
 function exitFullScreen() {
-    var modal = document.getElementById('fullScreenModal');
+    var modal = document.getElementById("fullScreenModal");
     if (modal) {
         var modalInstance = bootstrap.Modal.getInstance(modal);
         if (modalInstance) {
@@ -3150,11 +3263,11 @@ ETFSignalsManager.prototype.initializeCharts = function () {
 ETFSignalsManager.prototype.calculateAdvancedAnalytics = function () {
     if (!this.signals || this.signals.length === 0) {
         this.updateAdvancedAnalyticsDisplay({
-            avgHoldPeriod: '0 days',
-            maxDrawdown: '0%',
-            sharpeRatio: '0.00',
-            riskRewardRatio: '1:0',
-            successRate: '0%'
+            avgHoldPeriod: "0 days",
+            maxDrawdown: "0%",
+            sharpeRatio: "0.00",
+            riskRewardRatio: "1:0",
+            successRate: "0%",
         });
         return;
     }
@@ -3163,13 +3276,13 @@ ETFSignalsManager.prototype.calculateAdvancedAnalytics = function () {
     var profitableSignals = 0;
     var totalReturn = 0;
     var returns = [];
-    
-    this.signals.forEach(function(signal) {
+
+    this.signals.forEach(function (signal) {
         var pnl = parseFloat(signal.CPL || signal.cpl || 0);
         var investment = parseFloat(signal.INV || signal.inv || 0);
-        
+
         if (pnl > 0) profitableSignals++;
-        
+
         if (investment > 0) {
             var returnPct = (pnl / investment) * 100;
             returns.push(returnPct);
@@ -3177,26 +3290,27 @@ ETFSignalsManager.prototype.calculateAdvancedAnalytics = function () {
         }
     });
 
-    var successRate = totalSignals > 0 ? (profitableSignals / totalSignals * 100) : 0;
+    var successRate =
+        totalSignals > 0 ? (profitableSignals / totalSignals) * 100 : 0;
     var avgReturn = returns.length > 0 ? totalReturn / returns.length : 0;
-    
+
     // Calculate risk metrics (simplified)
     var variance = 0;
     if (returns.length > 1) {
-        returns.forEach(function(ret) {
+        returns.forEach(function (ret) {
             variance += Math.pow(ret - avgReturn, 2);
         });
         variance = variance / (returns.length - 1);
     }
     var volatility = Math.sqrt(variance);
     var sharpeRatio = volatility > 0 ? avgReturn / volatility : 0;
-    
+
     // Find max drawdown (simplified)
     var maxDrawdown = 0;
     var peak = 0;
     var runningPnl = 0;
-    
-    this.signals.forEach(function(signal) {
+
+    this.signals.forEach(function (signal) {
         var pnl = parseFloat(signal.CPL || signal.cpl || 0);
         runningPnl += pnl;
         if (runningPnl > peak) peak = runningPnl;
@@ -3205,80 +3319,117 @@ ETFSignalsManager.prototype.calculateAdvancedAnalytics = function () {
     });
 
     this.updateAdvancedAnalyticsDisplay({
-        avgHoldPeriod: '5 days', // Placeholder - would need entry/exit dates
-        maxDrawdown: maxDrawdown.toFixed(2) + '%',
+        avgHoldPeriod: "5 days", // Placeholder - would need entry/exit dates
+        maxDrawdown: maxDrawdown.toFixed(2) + "%",
         sharpeRatio: sharpeRatio.toFixed(2),
-        riskRewardRatio: '1:' + (avgReturn > 0 ? (avgReturn/10).toFixed(1) : '0'),
-        successRate: successRate.toFixed(1) + '%'
+        riskRewardRatio:
+            "1:" + (avgReturn > 0 ? (avgReturn / 10).toFixed(1) : "0"),
+        successRate: successRate.toFixed(1) + "%",
     });
 };
 
-ETFSignalsManager.prototype.updateAdvancedAnalyticsDisplay = function (analytics) {
-    this.updateElement('avgHoldPeriod', analytics.avgHoldPeriod);
-    this.updateElement('maxDrawdown', analytics.maxDrawdown);
-    this.updateElement('sharpeRatio', analytics.sharpeRatio);
-    this.updateElement('riskRewardRatio', analytics.riskRewardRatio);
-    this.updateElement('successRate', analytics.successRate);
-    
-    console.log('Updated advanced analytics:', analytics);
+ETFSignalsManager.prototype.updateAdvancedAnalyticsDisplay = function (
+    analytics,
+) {
+    this.updateElement("avgHoldPeriod", analytics.avgHoldPeriod);
+    this.updateElement("maxDrawdown", analytics.maxDrawdown);
+    this.updateElement("sharpeRatio", analytics.sharpeRatio);
+    this.updateElement("riskRewardRatio", analytics.riskRewardRatio);
+    this.updateElement("successRate", analytics.successRate);
+
+    console.log("Updated advanced analytics:", analytics);
 };
 
 // Enhanced filtering with date support
 ETFSignalsManager.prototype.filterAndRenderSignals = function () {
-    console.log('Filtering signals with date filters:', this.dateFilters);
-    
-    this.filteredSignals = this.signals.filter(function(signal) {
-        var passesFilters = true;
-        
-        // Date filtering
-        if (this.dateFilters.startDate || this.dateFilters.endDate) {
-            // Try multiple date field variations
-            var signalDateStr = signal.date || signal.DATE || signal.created_at || signal.timestamp;
-            var signalDate;
-            
-            if (signalDateStr) {
-                // Handle different date formats
-                if (typeof signalDateStr === 'string') {
-                    // Try to parse DDMMYY format if it looks like one
-                    if (signalDateStr.length === 6 && /^\d{6}$/.test(signalDateStr)) {
-                        var day = signalDateStr.substring(0, 2);
-                        var month = signalDateStr.substring(2, 4);
-                        var year = '20' + signalDateStr.substring(4, 6);
-                        signalDate = new Date(year + '-' + month + '-' + day);
+    console.log("Filtering signals with date filters:", this.dateFilters);
+
+    this.filteredSignals = this.signals.filter(
+        function (signal) {
+            var passesFilters = true;
+
+            // Date filtering
+            if (this.dateFilters.startDate || this.dateFilters.endDate) {
+                // Try multiple date field variations
+                var signalDateStr =
+                    signal.date ||
+                    signal.DATE ||
+                    signal.created_at ||
+                    signal.timestamp;
+                var signalDate;
+
+                if (signalDateStr) {
+                    // Handle different date formats
+                    if (typeof signalDateStr === "string") {
+                        // Try to parse DDMMYY format if it looks like one
+                        if (
+                            signalDateStr.length === 6 &&
+                            /^\d{6}$/.test(signalDateStr)
+                        ) {
+                            var day = signalDateStr.substring(0, 2);
+                            var month = signalDateStr.substring(2, 4);
+                            var year = "20" + signalDateStr.substring(4, 6);
+                            signalDate = new Date(
+                                year + "-" + month + "-" + day,
+                            );
+                        } else {
+                            signalDate = new Date(signalDateStr);
+                        }
                     } else {
                         signalDate = new Date(signalDateStr);
                     }
+
+                    // If date is invalid, use current date as fallback
+                    if (isNaN(signalDate.getTime())) {
+                        console.log(
+                            "Invalid date for signal:",
+                            signalDateStr,
+                            "using current date",
+                        );
+                        signalDate = new Date();
+                    }
                 } else {
-                    signalDate = new Date(signalDateStr);
-                }
-                
-                // If date is invalid, use current date as fallback
-                if (isNaN(signalDate.getTime())) {
-                    console.log('Invalid date for signal:', signalDateStr, 'using current date');
+                    // No date found, use current date
                     signalDate = new Date();
                 }
-            } else {
-                // No date found, use current date
-                signalDate = new Date();
+
+                console.log(
+                    "Signal date:",
+                    signalDate,
+                    "Start filter:",
+                    this.dateFilters.startDate,
+                    "End filter:",
+                    this.dateFilters.endDate,
+                );
+
+                if (
+                    this.dateFilters.startDate &&
+                    signalDate < this.dateFilters.startDate
+                ) {
+                    passesFilters = false;
+                    console.log("Signal filtered out by start date");
+                }
+                if (
+                    this.dateFilters.endDate &&
+                    signalDate > this.dateFilters.endDate
+                ) {
+                    passesFilters = false;
+                    console.log("Signal filtered out by end date");
+                }
             }
-            
-            console.log('Signal date:', signalDate, 'Start filter:', this.dateFilters.startDate, 'End filter:', this.dateFilters.endDate);
-            
-            if (this.dateFilters.startDate && signalDate < this.dateFilters.startDate) {
-                passesFilters = false;
-                console.log('Signal filtered out by start date');
-            }
-            if (this.dateFilters.endDate && signalDate > this.dateFilters.endDate) {
-                passesFilters = false;
-                console.log('Signal filtered out by end date');
-            }
-        }
-        
-        return passesFilters;
-    }.bind(this));
-    
-    console.log('Filtered', this.filteredSignals.length, 'signals from', this.signals.length, 'total');
-    
+
+            return passesFilters;
+        }.bind(this),
+    );
+
+    console.log(
+        "Filtered",
+        this.filteredSignals.length,
+        "signals from",
+        this.signals.length,
+        "total",
+    );
+
     this.renderSignalsTable();
     this.calculatePerformanceMetrics();
     this.updateSignalCounts();
@@ -3295,166 +3446,236 @@ if (document.readyState === "loading") {
 
 // Date filtering functions
 function applyQuickDateFilter(days) {
-    console.log('Applying quick date filter for last', days, 'days');
-    
+    console.log("Applying quick date filter for last", days, "days");
+
     var endDate = new Date();
     var startDate = new Date();
     startDate.setDate(endDate.getDate() - days);
-    
-    var startDateStr = startDate.toISOString().split('T')[0];
-    var endDateStr = endDate.toISOString().split('T')[0];
-    
-    console.log('Date range:', startDateStr, 'to', endDateStr);
-    
-    var startDateInput = document.getElementById('startDateFilter');
-    var endDateInput = document.getElementById('endDateFilter');
-    
+
+    var startDateStr = startDate.toISOString().split("T")[0];
+    var endDateStr = endDate.toISOString().split("T")[0];
+
+    console.log("Date range:", startDateStr, "to", endDateStr);
+
+    var startDateInput = document.getElementById("startDateFilter");
+    var endDateInput = document.getElementById("endDateFilter");
+
     if (startDateInput) startDateInput.value = startDateStr;
     if (endDateInput) endDateInput.value = endDateStr;
-    
+
     if (window.etfSignalsManager) {
         window.etfSignalsManager.dateFilters.startDate = startDateStr;
         window.etfSignalsManager.dateFilters.endDate = endDateStr;
         window.etfSignalsManager.dateFilters.quickFilter = days;
-        
+
         // Show loading for performance analysis
         window.etfSignalsManager.showPerformanceLoading();
-        
+
         // Apply filters with a small delay to show loading
-        setTimeout(function() {
+        setTimeout(function () {
             window.etfSignalsManager.applyFilters();
         }, 100);
     }
-    
-    console.log('Quick date filter applied for last', days, 'days');
+
+    console.log("Quick date filter applied for last", days, "days");
 }
 
 function clearDateFilter() {
-    var startDateInput = document.getElementById('startDateFilter');
-    var endDateInput = document.getElementById('endDateFilter');
-    
-    if (startDateInput) startDateInput.value = '';
-    if (endDateInput) endDateInput.value = '';
-    
+    var startDateInput = document.getElementById("startDateFilter");
+    var endDateInput = document.getElementById("endDateFilter");
+
+    if (startDateInput) startDateInput.value = "";
+    if (endDateInput) endDateInput.value = "";
+
     if (window.etfSignalsManager) {
-        window.etfSignalsManager.dateFilters = { startDate: null, endDate: null, quickFilter: null };
+        window.etfSignalsManager.dateFilters = {
+            startDate: null,
+            endDate: null,
+            quickFilter: null,
+        };
         window.etfSignalsManager.applyFilters();
     }
-    
-    console.log('Cleared date filters');
+
+    console.log("Cleared date filters");
 }
 
 function applyFilters() {
     if (!window.etfSignalsManager) return;
-    
-    var startDate = document.getElementById('startDateFilter')?.value;
-    var endDate = document.getElementById('endDateFilter')?.value;
-    
+
+    var startDate = document.getElementById("startDateFilter")?.value;
+    var endDate = document.getElementById("endDateFilter")?.value;
+
     window.etfSignalsManager.dateFilters.startDate = startDate;
     window.etfSignalsManager.dateFilters.endDate = endDate;
     window.etfSignalsManager.applyFilters();
 }
 
 function clearFilters() {
-    var inputs = ['startDateFilter', 'endDateFilter', 'positionTypeFilter', 'modalStatusFilter', 'modalSymbolFilter'];
-    inputs.forEach(function(id) {
+    var inputs = [
+        "startDateFilter",
+        "endDateFilter",
+        "positionTypeFilter",
+        "modalStatusFilter",
+        "modalSymbolFilter",
+    ];
+    inputs.forEach(function (id) {
         var input = document.getElementById(id);
-        if (input) input.value = '';
+        if (input) input.value = "";
     });
-    
+
     if (window.etfSignalsManager) {
-        window.etfSignalsManager.dateFilters = { startDate: null, endDate: null, quickFilter: null };
+        window.etfSignalsManager.dateFilters = {
+            startDate: null,
+            endDate: null,
+            quickFilter: null,
+        };
         window.etfSignalsManager.applyFilters();
     }
 }
 
 // Enhanced applyFilters method with better date parsing
-ETFSignalsManager.prototype.applyFilters = function() {
-    console.log('Applying filters with date range:', this.dateFilters);
-    
+ETFSignalsManager.prototype.applyFilters = function () {
+    console.log("Applying filters with date range:", this.dateFilters);
+
     var filteredSignals = this.signals.slice();
-    
+
     // Apply date filtering if dates are set
     if (this.dateFilters.startDate || this.dateFilters.endDate) {
-        var startDate = this.dateFilters.startDate ? new Date(this.dateFilters.startDate) : null;
-        var endDate = this.dateFilters.endDate ? new Date(this.dateFilters.endDate) : null;
-        
-        filteredSignals = filteredSignals.filter(function(signal) {
+        var startDate = this.dateFilters.startDate
+            ? new Date(this.dateFilters.startDate)
+            : null;
+        var endDate = this.dateFilters.endDate
+            ? new Date(this.dateFilters.endDate)
+            : null;
+
+        filteredSignals = filteredSignals.filter(function (signal) {
             var signalDate = signal.DATE || signal.date;
-            if (!signalDate || signalDate === '--') return true;
-            
-            console.log('Processing signal date:', signalDate, 'Length:', signalDate.length);
+            if (!signalDate || signalDate === "--") return true;
+
+            console.log(
+                "Processing signal date:",
+                signalDate,
+                "Length:",
+                signalDate.length,
+            );
             var parsedDate = null;
-            
+
             // Handle different date formats
             if (signalDate.length === 7) {
                 // Format: "12Dec24"
                 var day = signalDate.substring(0, 2);
                 var monthStr = signalDate.substring(2, 5);
-                var year = '20' + signalDate.substring(5, 7);
-                
+                var year = "20" + signalDate.substring(5, 7);
+
                 var monthMap = {
-                    'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
-                    'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
-                    'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+                    Jan: "01",
+                    Feb: "02",
+                    Mar: "03",
+                    Apr: "04",
+                    May: "05",
+                    Jun: "06",
+                    Jul: "07",
+                    Aug: "08",
+                    Sep: "09",
+                    Oct: "10",
+                    Nov: "11",
+                    Dec: "12",
                 };
-                
+
                 var monthNum = monthMap[monthStr];
                 if (monthNum) {
-                    parsedDate = new Date(year + '-' + monthNum + '-' + day);
+                    parsedDate = new Date(year + "-" + monthNum + "-" + day);
                 }
             } else if (signalDate.length === 6) {
-                // Format: "1Dec24" 
+                // Format: "1Dec24"
                 var day = signalDate.substring(0, 1);
                 var monthStr = signalDate.substring(1, 4);
-                var year = '20' + signalDate.substring(4, 6);
-                
+                var year = "20" + signalDate.substring(4, 6);
+
                 var monthMap = {
-                    'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
-                    'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
-                    'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+                    Jan: "01",
+                    Feb: "02",
+                    Mar: "03",
+                    Apr: "04",
+                    May: "05",
+                    Jun: "06",
+                    Jul: "07",
+                    Aug: "08",
+                    Sep: "09",
+                    Oct: "10",
+                    Nov: "11",
+                    Dec: "12",
                 };
-                
+
                 var monthNum = monthMap[monthStr];
                 if (monthNum) {
-                    parsedDate = new Date(year + '-' + monthNum + '-0' + day);
+                    parsedDate = new Date(year + "-" + monthNum + "-0" + day);
                 }
-            } else if (signalDate.includes('-')) {
+            } else if (signalDate.includes("-")) {
                 // Format: "2024-12-01" or similar
                 parsedDate = new Date(signalDate);
-            } else if (signalDate.includes('/')) {
+            } else if (signalDate.includes("/")) {
                 // Format: "12/01/2024" or similar
                 parsedDate = new Date(signalDate);
             }
-            
+
             if (parsedDate && !isNaN(parsedDate.getTime())) {
                 // Set time to beginning/end of day for proper comparison
-                var compareDate = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate());
-                var compareStart = startDate ? new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()) : null;
-                var compareEnd = endDate ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()) : null;
-                
-                console.log('Date comparison:', compareDate, 'vs start:', compareStart, 'vs end:', compareEnd);
+                var compareDate = new Date(
+                    parsedDate.getFullYear(),
+                    parsedDate.getMonth(),
+                    parsedDate.getDate(),
+                );
+                var compareStart = startDate
+                    ? new Date(
+                          startDate.getFullYear(),
+                          startDate.getMonth(),
+                          startDate.getDate(),
+                      )
+                    : null;
+                var compareEnd = endDate
+                    ? new Date(
+                          endDate.getFullYear(),
+                          endDate.getMonth(),
+                          endDate.getDate(),
+                      )
+                    : null;
+
+                console.log(
+                    "Date comparison:",
+                    compareDate,
+                    "vs start:",
+                    compareStart,
+                    "vs end:",
+                    compareEnd,
+                );
                 if (compareStart && compareDate < compareStart) {
-                    console.log('Filtering out signal - before start date');
+                    console.log("Filtering out signal - before start date");
                     return false;
                 }
                 if (compareEnd && compareDate > compareEnd) {
-                    console.log('Filtering out signal - after end date');
+                    console.log("Filtering out signal - after end date");
                     return false;
                 }
             }
-            
+
             return true;
         });
-        
-        console.log('Filtered from', this.signals.length, 'to', filteredSignals.length, 'signals');
+
+        console.log(
+            "Filtered from",
+            this.signals.length,
+            "to",
+            filteredSignals.length,
+            "signals",
+        );
     }
-    
+
     this.filteredSignals = filteredSignals;
     this.currentPage = 1;
     this.updatePagination();
     this.renderSignalsTable();
-    
+
     // Update performance analysis with filtered data
     if (this.updatePerformanceAnalysis) {
         this.updatePerformanceAnalysis();
@@ -3462,9 +3683,9 @@ ETFSignalsManager.prototype.applyFilters = function() {
 };
 
 // Update Performance Analysis with real data
-ETFSignalsManager.prototype.updatePerformanceAnalysis = function() {
+ETFSignalsManager.prototype.updatePerformanceAnalysis = function () {
     if (!this.filteredSignals || this.filteredSignals.length === 0) return;
-    
+
     var totalSignals = this.filteredSignals.length;
     var activeSignals = 0;
     var profitableSignals = 0;
@@ -3473,25 +3694,27 @@ ETFSignalsManager.prototype.updatePerformanceAnalysis = function() {
     var totalPnl = 0;
     var topPerformers = [];
     var worstPerformers = [];
-    
-    this.filteredSignals.forEach(function(signal) {
+
+    this.filteredSignals.forEach(function (signal) {
         var investment = parseFloat(signal.INV || signal.investment || 0);
         var pnl = parseFloat(signal.CPL || signal.pnl || 0);
         var cmp = parseFloat(signal.CMP || signal.current_price || 0);
         var qty = parseFloat(signal.QTY || signal.qty || 0);
         var symbol = signal.Symbol || signal.symbol || signal.etf;
-        var changePercent = parseFloat(String(signal['%CHAN'] || '0').replace('%', ''));
-        
+        var changePercent = parseFloat(
+            String(signal["%CHAN"] || "0").replace("%", ""),
+        );
+
         totalInvestment += investment;
-        totalCurrentValue += (cmp * qty);
+        totalCurrentValue += cmp * qty;
         totalPnl += pnl;
-        
+
         if (pnl > 0) profitableSignals++;
-        if (signal.status !== 'CLOSED') activeSignals++;
-        
-        if (symbol && symbol !== '--') {
+        if (signal.status !== "CLOSED") activeSignals++;
+
+        if (symbol && symbol !== "--") {
             var perfData = { symbol: symbol, pnl: pnl, percent: changePercent };
-            
+
             if (pnl > 0) {
                 topPerformers.push(perfData);
             } else if (pnl < 0) {
@@ -3499,87 +3722,124 @@ ETFSignalsManager.prototype.updatePerformanceAnalysis = function() {
             }
         }
     });
-    
+
     // Sort performers
-    topPerformers.sort(function(a, b) { return b.pnl - a.pnl; });
-    worstPerformers.sort(function(a, b) { return a.pnl - b.pnl; });
-    
-    var winRate = totalSignals > 0 ? ((profitableSignals / totalSignals) * 100) : 0;
-    
+    topPerformers.sort(function (a, b) {
+        return b.pnl - a.pnl;
+    });
+    worstPerformers.sort(function (a, b) {
+        return a.pnl - b.pnl;
+    });
+
+    var winRate =
+        totalSignals > 0 ? (profitableSignals / totalSignals) * 100 : 0;
+
     // Update summary cards
-    document.getElementById('totalSignalsCount').textContent = totalSignals;
-    document.getElementById('activeSignalsCount').textContent = activeSignals;
-    document.getElementById('profitableSignalsCount').textContent = profitableSignals;
-    document.getElementById('winRatePercentage').textContent = winRate.toFixed(1) + '%';
-    document.getElementById('totalInvestmentAmount').textContent = '₹' + totalInvestment.toLocaleString();
-    document.getElementById('totalCurrentValue').textContent = '₹' + totalCurrentValue.toLocaleString();
-    
-    var pnlElement = document.getElementById('totalPnlAmount');
-    pnlElement.textContent = '₹' + totalPnl.toLocaleString();
-    pnlElement.className = 'mb-0 ' + (totalPnl >= 0 ? 'text-success' : 'text-danger');
-    
+    document.getElementById("totalSignalsCount").textContent = totalSignals;
+    document.getElementById("activeSignalsCount").textContent = activeSignals;
+    document.getElementById("profitableSignalsCount").textContent =
+        profitableSignals;
+    document.getElementById("winRatePercentage").textContent =
+        winRate.toFixed(1) + "%";
+    document.getElementById("totalInvestmentAmount").textContent =
+        "₹" + totalInvestment.toLocaleString();
+    document.getElementById("totalCurrentValue").textContent =
+        "₹" + totalCurrentValue.toLocaleString();
+
+    var pnlElement = document.getElementById("totalPnlAmount");
+    pnlElement.textContent = "₹" + totalPnl.toLocaleString();
+    pnlElement.className =
+        "mb-0 " + (totalPnl >= 0 ? "text-success" : "text-danger");
+
     // Update performer tables
-    this.updatePerformerTable('topPerformersTable', topPerformers.slice(0, 5), true);
-    this.updatePerformerTable('lowPerformersTable', worstPerformers.slice(0, 5), false);
+    this.updatePerformerTable(
+        "topPerformersTable",
+        topPerformers.slice(0, 5),
+        true,
+    );
+    this.updatePerformerTable(
+        "lowPerformersTable",
+        worstPerformers.slice(0, 5),
+        false,
+    );
 };
 
-ETFSignalsManager.prototype.updatePerformerTable = function(tableId, data, isPositive) {
+ETFSignalsManager.prototype.updatePerformerTable = function (
+    tableId,
+    data,
+    isPositive,
+) {
     var tbody = document.getElementById(tableId);
     if (!tbody) return;
-    
-    tbody.innerHTML = '';
-    
+
+    tbody.innerHTML = "";
+
     if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No data available</td></tr>';
+        tbody.innerHTML =
+            '<tr><td colspan="3" class="text-center text-muted">No data available</td></tr>';
         return;
     }
-    
-    data.forEach(function(item) {
-        var row = document.createElement('tr');
-        var pnlClass = isPositive ? 'text-success' : 'text-danger';
-        var percentClass = item.percent >= 0 ? 'text-success' : 'text-danger';
-        
-        row.innerHTML = '<td>' + item.symbol + '</td>' +
-                       '<td class="' + pnlClass + '">₹' + item.pnl.toLocaleString() + '</td>' +
-                       '<td class="' + percentClass + '">' + item.percent.toFixed(2) + '%</td>';
+
+    data.forEach(function (item) {
+        var row = document.createElement("tr");
+        var pnlClass = isPositive ? "text-success" : "text-danger";
+        var percentClass = item.percent >= 0 ? "text-success" : "text-danger";
+
+        row.innerHTML =
+            "<td>" +
+            item.symbol +
+            "</td>" +
+            '<td class="' +
+            pnlClass +
+            '">₹' +
+            item.pnl.toLocaleString() +
+            "</td>" +
+            '<td class="' +
+            percentClass +
+            '">' +
+            item.percent.toFixed(2) +
+            "%</td>";
         tbody.appendChild(row);
     });
 };
 
 // Show loading state for performance analysis
-ETFSignalsManager.prototype.showPerformanceLoading = function() {
+ETFSignalsManager.prototype.showPerformanceLoading = function () {
     var loadingElements = [
-        'totalSignalsCount',
-        'activeSignalsCount', 
-        'profitableSignalsCount',
-        'winRatePercentage',
-        'totalInvestmentAmount',
-        'totalCurrentValue',
-        'totalPnlAmount'
+        "totalSignalsCount",
+        "activeSignalsCount",
+        "profitableSignalsCount",
+        "winRatePercentage",
+        "totalInvestmentAmount",
+        "totalCurrentValue",
+        "totalPnlAmount",
     ];
-    
-    loadingElements.forEach(function(elementId) {
+
+    loadingElements.forEach(function (elementId) {
         var element = document.getElementById(elementId);
         if (element) {
-            element.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Loading...';
+            element.innerHTML =
+                '<i class="fas fa-spinner fa-spin me-2"></i>Loading...';
         }
     });
-    
+
     // Show loading for performer tables
-    var topPerformersTable = document.getElementById('topPerformersTable');
-    var lowPerformersTable = document.getElementById('lowPerformersTable');
-    
+    var topPerformersTable = document.getElementById("topPerformersTable");
+    var lowPerformersTable = document.getElementById("lowPerformersTable");
+
     if (topPerformersTable) {
-        topPerformersTable.innerHTML = '<tr><td colspan="3" class="text-center text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Loading...</td></tr>';
+        topPerformersTable.innerHTML =
+            '<tr><td colspan="3" class="text-center text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Loading...</td></tr>';
     }
-    
+
     if (lowPerformersTable) {
-        lowPerformersTable.innerHTML = '<tr><td colspan="3" class="text-center text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Loading...</td></tr>';
+        lowPerformersTable.innerHTML =
+            '<tr><td colspan="3" class="text-center text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Loading...</td></tr>';
     }
 };
 
 // Global pagination functions
-window.goToPage = function(page) {
+window.goToPage = function (page) {
     if (window.etfSignalsManager) {
         window.etfSignalsManager.currentPage = page;
         window.etfSignalsManager.updateDisplayedSignals();
@@ -3588,7 +3848,7 @@ window.goToPage = function(page) {
     }
 };
 
-window.changeItemsPerPage = function(newPerPage) {
+window.changeItemsPerPage = function (newPerPage) {
     if (window.etfSignalsManager) {
         window.etfSignalsManager.itemsPerPage = parseInt(newPerPage);
         window.etfSignalsManager.currentPage = 1;
@@ -3600,4 +3860,3 @@ window.changeItemsPerPage = function(newPerPage) {
 
 // Initialize ETF Signals Manager when DOM is ready
 window.etfSignalsManager = new ETFSignalsManager();
-
