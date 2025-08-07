@@ -803,8 +803,27 @@ function refreshDefaultList() {
 }
 
 function refreshMarketWatch() {
-    refreshDefaultList();
+    console.log("Refreshing all market watch data...");
+    
+    // Refresh default market watch
+    loadDefaultMarketWatch();
+    
+    // Refresh all custom watchlists
+    loadCustomWatchlists();
+    
+    Swal.fire({
+        icon: "success",
+        title: "Refreshed",
+        text: "All market watch data has been refreshed with latest market data.",
+        background: "#1a1a1a",
+        color: "#fff",
+        timer: 1500,
+        showConfirmButton: false,
+    });
 }
+
+// Global refresh function that can be called from HTML
+window.refreshMarketWatch = refreshMarketWatch;
 
 // Export function
 function exportMarketWatch() {
@@ -918,10 +937,33 @@ window.loadCustomWatchlists = function() {
             }, 500); // Small delay to ensure UI elements are rendered
         } else {
             console.error('Error loading custom watchlists:', data.error);
+            // Show empty state for custom watchlists
+            const container = document.getElementById('customWatchlistsContainer');
+            if (container) {
+                container.innerHTML = `
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-list fa-2x mb-2"></i><br>
+                        <p>No custom watchlists created yet.<br>Create your first watchlist above!</p>
+                    </div>
+                `;
+            }
         }
     })
     .catch(error => {
         console.error('Network error loading custom watchlists:', error);
+        // Show error state
+        const container = document.getElementById('customWatchlistsContainer');
+        if (container) {
+            container.innerHTML = `
+                <div class="text-center text-danger py-4">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-2"></i><br>
+                    <p>Error loading custom watchlists</p>
+                    <button class="btn btn-sm btn-outline-light mt-2" onclick="loadCustomWatchlists()">
+                        <i class="fas fa-retry me-1"></i>Retry
+                    </button>
+                </div>
+            `;
+        }
     });
 };
 
@@ -1262,7 +1304,12 @@ window.addSymbolToWatchlist = function(listName) {
     
     // Update modal title
     const modalTitle = document.querySelector('#addSymbolModal .modal-title');
-    modalTitle.innerHTML = `<i class="fas fa-plus me-2"></i>Add Symbol to ${listName}`;
+    if (modalTitle) {
+        modalTitle.innerHTML = `<i class="fas fa-plus me-2"></i>Add Symbol to ${listName}`;
+    }
+    
+    // Clear any previous symbol selection
+    clearSymbolSelection();
 };
 
 // Remove symbol from watchlist
@@ -1323,8 +1370,8 @@ window.removeSymbolFromWatchlist = function(listName, symbol) {
     });
 };
 
-// Edit watchlist name
-window.editWatchlist = function(listName) {
+// Edit watchlist name - Updated to call the correct function
+window.editWatchlistName = function(listName) {
     Swal.fire({
         title: 'Edit Watchlist Name',
         input: 'text',
@@ -1349,17 +1396,54 @@ window.editWatchlist = function(listName) {
         if (result.isConfirmed) {
             const newName = result.value.trim();
             
-            // For now, show info that edit is not implemented in backend
-            Swal.fire({
-                icon: 'info',
-                title: 'Feature Coming Soon',
-                text: 'Watchlist renaming will be available in the next update. For now, you can delete and recreate the list.',
-                background: '#1a1a1a',
-                color: '#fff'
+            // Try to update watchlist name via API
+            fetch(`/api/market-watch/watchlists/${encodeURIComponent(listName)}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name: newName })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reload custom watchlists to show the updated name
+                    loadCustomWatchlists();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Updated',
+                        text: data.message,
+                        background: '#1a1a1a',
+                        color: '#fff',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.error || 'Failed to update watchlist name',
+                        background: '#1a1a1a',
+                        color: '#fff'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error updating watchlist name:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error', 
+                    text: 'Failed to update watchlist name. Please try again.',
+                    background: '#1a1a1a',
+                    color: '#fff'
+                });
             });
         }
     });
 };
+
+// Keep the old function name for backward compatibility
+window.editWatchlist = window.editWatchlistName;
 
 // Delete watchlist
 window.deleteWatchlist = function(listName) {
@@ -1801,6 +1885,11 @@ function updateWatchlistSortIcons(cardId, activeColumn, direction) {
 
 // Initialize on page load
 document.addEventListener("DOMContentLoaded", function () {
+    console.log("Initializing Market Watch page...");
+    
+    // Initialize advanced symbol modal
+    initializeAdvancedSymbolModal();
+    
     // Load market watch lists
     loadDefaultMarketWatch();
     
@@ -1809,8 +1898,21 @@ document.addEventListener("DOMContentLoaded", function () {
         loadCustomWatchlists();
     }, 1000);
 
-    // Initialize advanced symbol modal
-    initializeAdvancedSymbolModal();
+    // Set up auto-refresh for market data (every 30 seconds)
+    setInterval(() => {
+        if (document.getElementById('autoRefreshToggle') && document.getElementById('autoRefreshToggle').checked) {
+            console.log("Auto-refreshing market data...");
+            loadDefaultMarketWatch();
+            // Reload all visible custom watchlists
+            const watchlistElements = document.querySelectorAll('[id^="watchlist-"]');
+            watchlistElements.forEach(element => {
+                const listName = element.id.replace('watchlist-', '').replace(/_/g, ' ');
+                if (listName) {
+                    loadWatchlistMarketDataEnhanced(listName);
+                }
+            });
+        }
+    }, 30000); // 30 seconds
 
     // Auto-uppercase symbol input and enable button
     var symbolInput = document.getElementById("symbolSearchInput");

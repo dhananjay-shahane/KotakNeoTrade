@@ -56,6 +56,24 @@ def try_percent(cmp_val, hist_val):
         return '--'
 
 
+def try_percent_calc(cmp_val, hist_val):
+    """
+    Calculate percent change as a number (not string) for further calculations
+    """
+    try:
+        if (cmp_val is not None and hist_val is not None
+                and isinstance(cmp_val, (int, float))
+                and isinstance(hist_val, (int, float)) and hist_val != 0
+                and not pd.isna(cmp_val) and not pd.isna(hist_val)):
+            pct_change = (float(cmp_val) -
+                          float(hist_val)) / float(hist_val) * 100
+            return pct_change
+        else:
+            return None
+    except Exception:
+        return None
+
+
 def get_market_data_for_symbol(symbol):
     """
     Get real market data for a symbol including CMP, historical prices, and calculated percentages
