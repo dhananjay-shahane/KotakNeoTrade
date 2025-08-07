@@ -144,6 +144,11 @@ function populateFilterDropdowns() {
 // Search symbols with current filters
 function searchSymbols() {
     const searchInput = document.getElementById("symbolSearchInput");
+    if (!searchInput) {
+        console.error("symbolSearchInput element not found");
+        return;
+    }
+    
     const searchTerm = searchInput.value.trim().toUpperCase();
 
     // Clear previous timeout
@@ -152,10 +157,14 @@ function searchSymbols() {
     }
 
     // Check if we have any filters selected
+    const companyFilter = document.getElementById("companyFilter");
+    const sectorFilter = document.getElementById("sectorFilter");
+    const subSectorFilter = document.getElementById("subSectorFilter");
+    
     const hasFilters =
-        document.getElementById("companyFilter").value ||
-        document.getElementById("sectorFilter").value ||
-        document.getElementById("subSectorFilter").value;
+        (companyFilter && companyFilter.value) ||
+        (sectorFilter && sectorFilter.value) ||
+        (subSectorFilter && subSectorFilter.value);
 
     // Show suggestions if search term is >= 1 char OR filters are selected
     if (searchTerm.length < 1 && !hasFilters) {
@@ -165,23 +174,30 @@ function searchSymbols() {
 
     // Debounce search
     searchTimeout = setTimeout(() => {
-        performSymbolSearch(searchTerm || "*");
+        performSymbolSearch(searchTerm || "");
     }, 300);
 }
 
 // Perform actual symbol search
 function performSymbolSearch(searchTerm) {
-    // Use empty string instead of '*' for wildcard search
-    const finalSearchTerm = searchTerm === "*" ? "" : searchTerm;
+    const finalSearchTerm = searchTerm || "";
+
+    // Get filter elements safely
+    const niftyCheck = document.getElementById("niftyCheck");
+    const nifty500Check = document.getElementById("nifty500Check");
+    const etfCheck = document.getElementById("etfCheck");
+    const companyFilter = document.getElementById("companyFilter");
+    const sectorFilter = document.getElementById("sectorFilter");
+    const subSectorFilter = document.getElementById("subSectorFilter");
 
     const params = new URLSearchParams({
         q: finalSearchTerm,
-        nifty: document.getElementById("niftyCheck").checked ? "1" : "0",
-        nifty_500: document.getElementById("nifty500Check").checked ? "1" : "0",
-        etf: document.getElementById("etfCheck").checked ? "1" : "0",
-        company: document.getElementById("companyFilter").value,
-        sector: document.getElementById("sectorFilter").value,
-        sub_sector: document.getElementById("subSectorFilter").value,
+        nifty: niftyCheck && niftyCheck.checked ? "1" : "0",
+        nifty_500: nifty500Check && nifty500Check.checked ? "1" : "0", 
+        etf: etfCheck && etfCheck.checked ? "1" : "0",
+        company: companyFilter ? companyFilter.value : "",
+        sector: sectorFilter ? sectorFilter.value : "",
+        sub_sector: subSectorFilter ? subSectorFilter.value : "",
         limit: "15",
     });
 
@@ -207,6 +223,11 @@ function performSymbolSearch(searchTerm) {
 // Display symbol suggestions
 function displaySymbolSuggestions(symbols) {
     const suggestionsDiv = document.getElementById("symbolSuggestions");
+    
+    if (!suggestionsDiv) {
+        console.error("symbolSuggestions element not found");
+        return;
+    }
 
     if (symbols.length === 0) {
         suggestionsDiv.innerHTML =
@@ -218,13 +239,13 @@ function displaySymbolSuggestions(symbols) {
     let html = "";
     symbols.forEach((symbol) => {
         const categories = [];
-        if (symbol.categories.nifty)
+        if (symbol.categories && symbol.categories.nifty)
             categories.push('<span class="badge bg-success me-1">Nifty</span>');
-        if (symbol.categories.nifty_500)
+        if (symbol.categories && symbol.categories.nifty_500)
             categories.push(
                 '<span class="badge bg-primary me-1">Nifty 500</span>',
             );
-        if (symbol.categories.etf)
+        if (symbol.categories && symbol.categories.etf)
             categories.push('<span class="badge bg-warning me-1">ETF</span>');
 
         html += `
@@ -258,7 +279,10 @@ function displaySymbolSuggestions(symbols) {
 
 // Hide suggestions
 function hideSuggestions() {
-    document.getElementById("symbolSuggestions").classList.add("d-none");
+    const suggestionsDiv = document.getElementById("symbolSuggestions");
+    if (suggestionsDiv) {
+        suggestionsDiv.classList.add("d-none");
+    }
 }
 
 // Select a symbol from suggestions
@@ -309,20 +333,30 @@ function displaySelectedSymbolDetails() {
 // Update symbol search when filters change
 function updateSymbolSearch() {
     const searchInput = document.getElementById("symbolSearchInput");
+    if (!searchInput) return;
+    
     const searchTerm = searchInput.value.trim();
-
+    
     // Show suggestions even with empty search if filters are selected
+    const companyFilter = document.getElementById("companyFilter");
+    const sectorFilter = document.getElementById("sectorFilter");
+    const subSectorFilter = document.getElementById("subSectorFilter");
+    
     const hasFilters =
-        document.getElementById("companyFilter").value ||
-        document.getElementById("sectorFilter").value ||
-        document.getElementById("subSectorFilter").value;
+        (companyFilter && companyFilter.value) ||
+        (sectorFilter && sectorFilter.value) ||
+        (subSectorFilter && subSectorFilter.value);
 
     if (searchTerm.length >= 1 || hasFilters) {
-        performSymbolSearch(searchTerm || "*");
+        performSymbolSearch(searchTerm || "");
     } else {
         hideSuggestions();
     }
 }
+
+// Make sure functions are available globally
+window.searchSymbols = searchSymbols;
+window.updateSymbolSearch = updateSymbolSearch;
 
 // Clear symbol selection
 function clearSymbolSelection() {
@@ -361,8 +395,10 @@ function submitAdvancedAddSymbol() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Reload the specific watchlist
-                loadWatchlistMarketData(window.currentWatchlistName);
+                // Reload the specific watchlist using enhanced version
+                if (window.currentWatchlistName) {
+                    loadWatchlistMarketDataEnhanced(window.currentWatchlistName);
+                }
                 
                 Swal.fire({
                     icon: 'success',
@@ -915,9 +951,6 @@ function createWatchlistCard(watchlist) {
                     <small>Showing <span id="${cardId}-showing">${watchlist.count}</span> of <span id="${cardId}-total">${watchlist.count}</span> symbols</small>
                 </div>
                 <div class="d-flex gap-2 align-items-center">
-                    <button class="btn btn-sm btn-outline-light" onclick="refreshWatchlistData('${watchlist.name}')">
-                        <i class="fas fa-sync-alt me-1"></i>Refresh
-                    </button>
                     <div class="btn-group" role="group">
                         <button
                             type="button"
@@ -946,9 +979,6 @@ function createWatchlistCard(watchlist) {
                             Next <i class="fas fa-chevron-right"></i>
                         </button>
                     </div>
-                    <button class="btn btn-sm btn-outline-light" onclick="exportWatchlist('${watchlist.name}')">
-                        <i class="fas fa-download me-1"></i>Export
-                    </button>
                 </div>
             </div>
         </div>
@@ -1053,7 +1083,7 @@ function showErrorInWatchlistTable(listName, message) {
             <td colspan="10" class="text-center text-danger py-4">
                 <i class="fas fa-exclamation-triangle fa-2x mb-2"></i><br>
                 ${message}<br>
-                <button class="btn btn-sm btn-outline-light mt-2" onclick="loadWatchlistMarketData('${listName}')">
+                <button class="btn btn-sm btn-outline-light mt-2" onclick="loadWatchlistMarketDataEnhanced('${listName}')">
                     <i class="fas fa-retry me-1"></i>Retry
                 </button>
             </td>
@@ -1099,7 +1129,7 @@ window.removeSymbolFromWatchlist = function(listName, symbol) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    loadWatchlistMarketData(listName);
+                    loadWatchlistMarketDataEnhanced(listName);
                     Swal.fire({
                         icon: 'success',
                         title: 'Removed',
@@ -1227,7 +1257,7 @@ window.deleteWatchlist = function(listName) {
 
 // Refresh watchlist data
 window.refreshWatchlistData = function(listName) {
-    loadWatchlistMarketData(listName);
+    loadWatchlistMarketDataEnhanced(listName);
 };
 
 // Export watchlist to CSV
