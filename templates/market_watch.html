@@ -71,13 +71,19 @@ endblock %} {% block head %}
     <!-- Content Container with relative positioning -->
     <div style="position: relative; min-height: 600px">
         <!-- Default Market Watch List -->
-        <div class="card bg-secondary border-0 shadow-lg mb-4" id="defaultMarketWatchContent">
+        <div
+            class="card bg-secondary border-0 shadow-lg mb-4"
+            id="defaultMarketWatchContent"
+        >
             <div
                 class="card-header bg-dark border-0 d-flex justify-content-between align-items-center"
             >
                 <h5 class="mb-0 text-light">
-                    <i class="fas fa-chart-line me-2 text-success"></i>Default Market Watch
-                    <span class="badge bg-success ms-2" id="defaultCount">5</span>
+                    <i class="fas fa-chart-line me-2 text-success"></i>Default
+                    Market Watch
+                    <span class="badge bg-success ms-2" id="defaultCount"
+                        >5</span
+                    >
                 </h5>
 
                 <div class="d-flex gap-2 align-items-center">
@@ -158,27 +164,37 @@ endblock %} {% block head %}
                     >
                         <thead class="sticky-top">
                             <tr>
-                                <th style="width: 50px;">ID</th>
-                                <th style="width: 80px;">Symbol</th>
-                                <th style="width: 70px;">7D</th>
-                                <th style="width: 70px;">30D</th>
-                                <th style="width: 60px;">7D%</th>
-                                <th style="width: 60px;">30D%</th>
-                                <th style="width: 70px;">CMP</th>
-                                <th style="width: 70px;">%CHAN</th>
-                                <th style="width: 70px;">CPL</th>
-                                <th style="width: 100px;">Actions</th>
+                                <th style="width: 50px">ID</th>
+                                <th style="width: 80px">Symbol</th>
+                                <th style="width: 70px">7D</th>
+                                <th style="width: 70px">30D</th>
+                                <th style="width: 60px">7D%</th>
+                                <th style="width: 60px">30D%</th>
+                                <th style="width: 70px">CMP</th>
+                                <th style="width: 70px">%CHAN</th>
+                                <th style="width: 70px">CPL</th>
+                                <th style="width: 100px">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="defaultMarketWatchTableBody">
                             <!-- Loading state - will be replaced by JavaScript -->
                             <tr class="loading-row">
                                 <td colspan="10" class="text-center py-4">
-                                    <div class="d-flex justify-content-center align-items-center">
-                                        <div class="spinner-border text-primary me-2" role="status">
-                                            <span class="visually-hidden">Loading...</span>
+                                    <div
+                                        class="d-flex justify-content-center align-items-center"
+                                    >
+                                        <div
+                                            class="spinner-border text-primary me-2"
+                                            role="status"
+                                        >
+                                            <span class="visually-hidden"
+                                                >Loading...</span
+                                            >
                                         </div>
-                                        <span class="text-muted">Loading default market watch data...</span>
+                                        <span class="text-muted"
+                                            >Loading default market watch
+                                            data...</span
+                                        >
                                     </div>
                                 </td>
                             </tr>
@@ -191,10 +207,17 @@ endblock %} {% block head %}
                 class="card-footer bg-dark border-0 d-flex justify-content-between align-items-center text-light"
             >
                 <div class="d-flex align-items-center gap-3">
-                    <small>Showing <span id="defaultShowingCount">0</span> of <span id="defaultTotalCount">0</span> default stocks</small>
+                    <small
+                        >Showing <span id="defaultShowingCount">0</span> of
+                        <span id="defaultTotalCount">0</span> default
+                        stocks</small
+                    >
                 </div>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-light" onclick="refreshDefaultList()">
+                    <button
+                        class="btn btn-sm btn-outline-light"
+                        onclick="refreshDefaultList()"
+                    >
                         <i class="fas fa-sync-alt me-1"></i>Refresh
                     </button>
                 </div>
@@ -202,7 +225,10 @@ endblock %} {% block head %}
         </div>
 
         <!-- User Custom Market Watch List -->
-        <div class="card bg-secondary border-0 shadow-lg" id="userMarketWatchContent">
+        <div
+            class="card bg-secondary border-0 shadow-lg"
+            id="userMarketWatchContent"
+        >
             <div
                 class="card-header bg-dark border-0 d-flex justify-content-between align-items-center"
             >
@@ -218,7 +244,10 @@ endblock %} {% block head %}
                     >
                         <i class="fas fa-plus me-1"></i>Add Symbol
                     </button>
-                    <button class="btn btn-sm btn-outline-light" onclick="refreshUserList()">
+                    <button
+                        class="btn btn-sm btn-outline-light"
+                        onclick="refreshUserList()"
+                    >
                         <i class="fas fa-sync-alt me-1"></i>Refresh
                     </button>
                 </div>
@@ -232,35 +261,19 @@ endblock %} {% block head %}
                     >
                         <thead class="sticky-top">
                             <tr>
-                                <th style="width: 50px;">ID</th>
-                                <th style="width: 80px;">Symbol</th>
-                                <th style="width: 70px;">7D</th>
-                                <th style="width: 70px;">30D</th>
-                                <th style="width: 60px;">7D%</th>
-                                <th style="width: 60px;">30D%</th>
-                                <th style="width: 70px;">CMP</th>
-                                <th style="width: 70px;">%CHAN</th>
-                                <th style="width: 70px;">CPL</th>
-                                <th style="width: 100px;">Actions</th>
+                                <th style="width: 50px">ID</th>
+                                <th style="width: 80px">Symbol</th>
+                                <th style="width: 70px">7D</th>
+                                <th style="width: 70px">30D</th>
+                                <th style="width: 60px">7D%</th>
+                                <th style="width: 60px">30D%</th>
+                                <th style="width: 70px">CMP</th>
+                                <th style="width: 70px">%CHAN</th>
+                                <th style="width: 70px">CPL</th>
+                                <th style="width: 100px">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="userMarketWatchTableBody">
-                            <!-- Loading state - will be replaced by JavaScript -->
-                            <tr class="loading-row">
-                                <td colspan="11" class="text-center py-4">
-                                    <div class="d-flex justify-content-center align-items-center">
-                                        <div class="spinner-border text-success me-2" role="status">
-                                            <span class="visually-hidden">Loading...</span>
-                                        </div>
-                                        <span class="text-muted">Loading your market watch data...</span>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                                    No symbols added yet. Click "Add Symbol" to start building your watchlist.
-                                </td>
-                            </tr>
-                        </tbody>
+                        <tbody id="userMarketWatchTableBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -321,7 +334,8 @@ endblock %} {% block head %}
                     </div>
                     <div class="modal-body">
                         <p class="text-muted">
-                            Select which columns to display in the market watch table:
+                            Select which columns to display in the market watch
+                            table:
                         </p>
                         <div class="row" id="columnCheckboxes">
                             <!-- Column checkboxes will be populated here -->
@@ -370,7 +384,8 @@ endblock %} {% block head %}
                 <div class="modal-content bg-dark">
                     <div class="modal-header border-bottom border-secondary">
                         <h5 class="modal-title text-light">
-                            <i class="fas fa-plus me-2"></i>Add Symbol to Market Watch
+                            <i class="fas fa-plus me-2"></i>Add Symbol to Market
+                            Watch
                         </h5>
                         <button
                             type="button"
@@ -382,7 +397,8 @@ endblock %} {% block head %}
                         <!-- Step 1: Category Selection -->
                         <div class="mb-4">
                             <label class="form-label text-light">
-                                <i class="fas fa-filter me-1"></i>Symbol Categories
+                                <i class="fas fa-filter me-1"></i>Symbol
+                                Categories
                             </label>
                             <div class="row">
                                 <div class="col-md-4">
@@ -394,8 +410,14 @@ endblock %} {% block head %}
                                             checked
                                             onchange="updateSymbolSearch()"
                                         />
-                                        <label class="form-check-label text-light" for="niftyCheck">
-                                            <i class="fas fa-chart-line text-success me-1"></i>Nifty
+                                        <label
+                                            class="form-check-label text-light"
+                                            for="niftyCheck"
+                                        >
+                                            <i
+                                                class="fas fa-chart-line text-success me-1"
+                                            ></i
+                                            >Nifty
                                         </label>
                                     </div>
                                 </div>
@@ -407,8 +429,14 @@ endblock %} {% block head %}
                                             id="nifty500Check"
                                             onchange="updateSymbolSearch()"
                                         />
-                                        <label class="form-check-label text-light" for="nifty500Check">
-                                            <i class="fas fa-chart-area text-primary me-1"></i>Nifty 500
+                                        <label
+                                            class="form-check-label text-light"
+                                            for="nifty500Check"
+                                        >
+                                            <i
+                                                class="fas fa-chart-area text-primary me-1"
+                                            ></i
+                                            >Nifty 500
                                         </label>
                                     </div>
                                 </div>
@@ -420,8 +448,14 @@ endblock %} {% block head %}
                                             id="etfCheck"
                                             onchange="updateSymbolSearch()"
                                         />
-                                        <label class="form-check-label text-light" for="etfCheck">
-                                            <i class="fas fa-briefcase text-warning me-1"></i>ETF
+                                        <label
+                                            class="form-check-label text-light"
+                                            for="etfCheck"
+                                        >
+                                            <i
+                                                class="fas fa-briefcase text-warning me-1"
+                                            ></i
+                                            >ETF
                                         </label>
                                     </div>
                                 </div>
@@ -431,25 +465,46 @@ endblock %} {% block head %}
                         <!-- Step 2: Advanced Filters -->
                         <div class="mb-4">
                             <label class="form-label text-light">
-                                <i class="fas fa-sliders-h me-1"></i>Filter by Company/Sector
+                                <i class="fas fa-sliders-h me-1"></i>Filter by
+                                Company/Sector
                             </label>
                             <div class="row">
                                 <div class="col-md-4">
-                                    <label class="form-label text-light">Company</label>
-                                    <select class="form-select bg-secondary text-light border-0" id="companyFilter" onchange="updateSymbolSearch()">
+                                    <label class="form-label text-light"
+                                        >Company</label
+                                    >
+                                    <select
+                                        class="form-select bg-secondary text-light border-0"
+                                        id="companyFilter"
+                                        onchange="updateSymbolSearch()"
+                                    >
                                         <option value="">All Companies</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label text-light">Sector</label>
-                                    <select class="form-select bg-secondary text-light border-0" id="sectorFilter" onchange="updateSymbolSearch()">
+                                    <label class="form-label text-light"
+                                        >Sector</label
+                                    >
+                                    <select
+                                        class="form-select bg-secondary text-light border-0"
+                                        id="sectorFilter"
+                                        onchange="updateSymbolSearch()"
+                                    >
                                         <option value="">All Sectors</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label text-light">Sub Sector</label>
-                                    <select class="form-select bg-secondary text-light border-0" id="subSectorFilter" onchange="updateSymbolSearch()">
-                                        <option value="">All Sub Sectors</option>
+                                    <label class="form-label text-light"
+                                        >Sub Sector</label
+                                    >
+                                    <select
+                                        class="form-select bg-secondary text-light border-0"
+                                        id="subSectorFilter"
+                                        onchange="updateSymbolSearch()"
+                                    >
+                                        <option value="">
+                                            All Sub Sectors
+                                        </option>
                                     </select>
                                 </div>
                             </div>
@@ -472,11 +527,21 @@ endblock %} {% block head %}
                                 <div
                                     id="symbolSuggestions"
                                     class="position-absolute w-100 bg-dark border rounded mt-1 d-none"
-                                    style="z-index: 1050; max-height: 250px; overflow-y: auto; border: 1px solid #495057 !important;"
+                                    style="
+                                        z-index: 1050;
+                                        max-height: 250px;
+                                        overflow-y: auto;
+                                        border: 1px solid #495057 !important;
+                                    "
                                 ></div>
                             </div>
                             <div class="form-text text-muted">
-                                <small><i class="fas fa-info-circle me-1"></i>Start typing to see filtered suggestions based on your category and filter selections</small>
+                                <small
+                                    ><i class="fas fa-info-circle me-1"></i
+                                    >Start typing to see filtered suggestions
+                                    based on your category and filter
+                                    selections</small
+                                >
                             </div>
                         </div>
 
@@ -485,33 +550,67 @@ endblock %} {% block head %}
                             <div class="card bg-secondary border-0 mb-3">
                                 <div class="card-header bg-dark border-0">
                                     <h6 class="text-light mb-0">
-                                        <i class="fas fa-info-circle me-1"></i>Selected Symbol Details
+                                        <i class="fas fa-info-circle me-1"></i
+                                        >Selected Symbol Details
                                     </h6>
                                 </div>
                                 <div class="card-body">
                                     <div class="row">
                                         <div class="col-md-6">
-                                            <small class="text-muted">Symbol:</small>
-                                            <div class="text-light fw-bold" id="detailSymbol">-</div>
+                                            <small class="text-muted"
+                                                >Symbol:</small
+                                            >
+                                            <div
+                                                class="text-light fw-bold"
+                                                id="detailSymbol"
+                                            >
+                                                -
+                                            </div>
                                         </div>
                                         <div class="col-md-6">
-                                            <small class="text-muted">Company:</small>
-                                            <div class="text-light" id="detailCompany">-</div>
+                                            <small class="text-muted"
+                                                >Company:</small
+                                            >
+                                            <div
+                                                class="text-light"
+                                                id="detailCompany"
+                                            >
+                                                -
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="row mt-2">
                                         <div class="col-md-6">
-                                            <small class="text-muted">Sector:</small>
-                                            <div class="text-light" id="detailSector">-</div>
+                                            <small class="text-muted"
+                                                >Sector:</small
+                                            >
+                                            <div
+                                                class="text-light"
+                                                id="detailSector"
+                                            >
+                                                -
+                                            </div>
                                         </div>
                                         <div class="col-md-6">
-                                            <small class="text-muted">Sub Sector:</small>
-                                            <div class="text-light" id="detailSubSector">-</div>
+                                            <small class="text-muted"
+                                                >Sub Sector:</small
+                                            >
+                                            <div
+                                                class="text-light"
+                                                id="detailSubSector"
+                                            >
+                                                -
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="mt-2">
-                                        <small class="text-muted">Categories:</small>
-                                        <div id="detailCategories" class="mt-1"></div>
+                                        <small class="text-muted"
+                                            >Categories:</small
+                                        >
+                                        <div
+                                            id="detailCategories"
+                                            class="mt-1"
+                                        ></div>
                                     </div>
                                 </div>
                             </div>
@@ -545,7 +644,8 @@ endblock %} {% block head %}
                 <div class="modal-content bg-dark">
                     <div class="modal-header border-bottom border-secondary">
                         <h5 class="modal-title text-light">
-                            <i class="fas fa-filter me-2"></i>Market Watch Filters
+                            <i class="fas fa-filter me-2"></i>Market Watch
+                            Filters
                         </h5>
                         <button
                             type="button"
@@ -1037,8 +1137,9 @@ endblock %} {% block head %}
                     <div class="modal-header border-bottom border-secondary">
                         <h5 class="modal-title text-light">
                             <i class="fas fa-calendar-alt me-2 text-info"></i
-                            >Edit Exit Date - ID: <span id="editExitModalDealId"></span> | 
-                            Symbol: <span id="editExitModalSymbol"></span>
+                            >Edit Exit Date - ID:
+                            <span id="editExitModalDealId"></span> | Symbol:
+                            <span id="editExitModalSymbol"></span>
                         </h5>
                         <button
                             type="button"
@@ -1052,7 +1153,9 @@ endblock %} {% block head %}
                             <div class="mb-3">
                                 <label class="form-label text-light"
                                     >Exit Date
-                                    <small class="text-muted">(dd/mm/yy format)</small>
+                                    <small class="text-muted"
+                                        >(dd/mm/yy format)</small
+                                    >
                                     <span class="text-danger">*</span></label
                                 >
                                 <input
@@ -1067,7 +1170,8 @@ endblock %} {% block head %}
                                 <div class="form-text text-muted">
                                     <small
                                         ><i class="fas fa-info-circle me-1"></i
-                                        >Enter date in dd/mm/yy format with slashes</small
+                                        >Enter date in dd/mm/yy format with
+                                        slashes</small
                                     >
                                 </div>
                             </div>
