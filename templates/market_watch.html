@@ -36,7 +36,7 @@ endblock %} {% block head %}
                         style="font-size: 14px"
                         oninput="showSymbolSuggestions(this.value)"
                         onfocus="showSymbolSuggestions(this.value)"
-                        onblur="hideSymbolSuggestions()"
+                        onblur="setTimeout(hideSymbolSuggestions, 200)"
                     />
                     <button
                         class="btn btn-sm btn-outline-light"

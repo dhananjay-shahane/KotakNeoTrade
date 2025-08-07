@@ -171,11 +171,11 @@ def search_symbols():
             if category_conditions:
                 query += f" AND ({' OR '.join(category_conditions)})"
 
-        # Add search term filter (symbol or company name)
+        # Add search term filter (symbol, company name, sector, or sub_sector)
         if search_term:
-            query += " AND (UPPER(symbol) LIKE UPPER(%s) OR UPPER(company) LIKE UPPER(%s))"
+            query += " AND (UPPER(symbol) LIKE UPPER(%s) OR UPPER(company) LIKE UPPER(%s) OR UPPER(sector) LIKE UPPER(%s) OR UPPER(sub_sector) LIKE UPPER(%s))"
             search_pattern = f"%{search_term}%"
-            params.extend([search_pattern, search_pattern])
+            params.extend([search_pattern, search_pattern, search_pattern, search_pattern])
 
         # Add company filter
         if company_filter:
@@ -192,9 +192,9 @@ def search_symbols():
             query += " AND UPPER(sub_sector) LIKE UPPER(%s)"
             params.append(f"%{sub_sector_filter}%")
 
-        # Add ordering and limit
-        query += " ORDER BY symbol LIMIT %s"
-        params.append(limit)
+        # Add ordering and limit - prioritize exact symbol matches first
+        query += " ORDER BY CASE WHEN UPPER(symbol) = UPPER(%s) THEN 1 WHEN UPPER(symbol) LIKE UPPER(%s) THEN 2 ELSE 3 END, symbol LIMIT %s"
+        params.extend([search_term, f"{search_term}%", limit])
 
         # Execute query
         conn = db_config.get_connection()

@@ -76,6 +76,8 @@ function getGradientBackgroundColor(value) {
 
 // Symbol Autocomplete Functions
 function showSymbolSuggestions(searchTerm) {
+    console.log('showSymbolSuggestions called with:', searchTerm);
+    
     // Clear previous timeout
     if (symbolSearchTimeout) {
         clearTimeout(symbolSearchTimeout);
@@ -83,7 +85,8 @@ function showSymbolSuggestions(searchTerm) {
     
     // Add delay for better performance
     symbolSearchTimeout = setTimeout(() => {
-        const trimmedTerm = (searchTerm || '').trim().toLowerCase();
+        const trimmedTerm = (searchTerm || '').trim();
+        console.log('Processing search term:', trimmedTerm);
         
         if (trimmedTerm.length < 1) {
             hideSymbolSuggestions();
@@ -95,29 +98,34 @@ function showSymbolSuggestions(searchTerm) {
         
         // Fetch symbol suggestions from API
         fetchSymbolSuggestions(trimmedTerm);
-    }, 300);
+    }, 200);
 }
 
 function fetchSymbolSuggestions(searchTerm) {
     const maxSuggestions = 10;
     const url = `/api/symbols/search?q=${encodeURIComponent(searchTerm)}&limit=${maxSuggestions}`;
     
+    console.log('Fetching symbols from:', url);
+    
     fetch(url)
         .then(response => {
+            console.log('API response status:', response.status);
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
             }
             return response.json();
         })
         .then(data => {
+            console.log('API response data:', data);
             if (data.success && data.symbols && Array.isArray(data.symbols)) {
                 displaySymbolSuggestions(data.symbols, searchTerm);
             } else {
+                console.warn('Invalid API response format:', data);
                 displayNoSuggestions();
             }
         })
         .catch(error => {
-            console.warn('Symbol search error:', error);
+            console.error('Symbol search error:', error);
             displayNoSuggestions();
         });
 }
@@ -126,7 +134,10 @@ function displaySymbolSuggestions(symbols, searchTerm) {
     const suggestionsList = document.getElementById('suggestionsList');
     const suggestionsContainer = document.getElementById('symbolSuggestions');
     
+    console.log('displaySymbolSuggestions called with:', symbols.length, 'symbols');
+    
     if (!suggestionsList || !suggestionsContainer) {
+        console.error('Suggestion elements not found:', { suggestionsList, suggestionsContainer });
         return;
     }
     
@@ -198,13 +209,17 @@ function showSuggestionsLoading() {
     const suggestionsList = document.getElementById('suggestionsList');
     const suggestionsContainer = document.getElementById('symbolSuggestions');
     
+    console.log('showSuggestionsLoading called');
+    
     if (!suggestionsList || !suggestionsContainer) {
+        console.error('Loading elements not found:', { suggestionsList, suggestionsContainer });
         return;
     }
     
     suggestionsList.innerHTML = '<div class="suggestion-empty">Searching symbols...</div>';
     suggestionsContainer.style.display = 'block';
     isSymbolSuggestionsVisible = true;
+    console.log('Loading state shown');
 }
 
 function hideSymbolSuggestions() {
