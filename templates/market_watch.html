@@ -224,9 +224,50 @@ endblock %} {% block head %}
             </div>
         </div>
 
+        <!-- Create New Watchlist Section -->
+        <div
+            class="card bg-secondary border-0 shadow-lg mb-4"
+            id="createWatchlistSection"
+        >
+            <div
+                class="card-header bg-dark border-0 d-flex justify-content-between align-items-center"
+            >
+                <h5 class="mb-0 text-light">
+                    <i class="fas fa-plus-circle me-2 text-info"></i>Create New
+                    Market Watch List
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-end">
+                    <div class="col-md-8">
+                        <label class="form-label text-light"
+                            >Enter list name</label
+                        >
+                        <input
+                            type="text"
+                            class="form-control bg-dark text-light border-secondary"
+                            id="newListNameInput"
+                            placeholder="e.g., Tech Stocks, Banking Stocks, My Favorites"
+                            maxlength="50"
+                        />
+                        <small class="text-muted">Maximum 50 characters</small>
+                    </div>
+                    <div class="col-md-4">
+                        <button
+                            class="btn btn-primary w-100"
+                            onclick="createNewWatchlist()"
+                            id="createListBtn"
+                        >
+                            <i class="fas fa-plus me-1"></i>Add List
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- User Custom Market Watch List -->
         <div
-            class="card bg-secondary border-0 shadow-lg"
+            class="card bg-secondary border-0 shadow-lg mb-4"
             id="userMarketWatchContent"
         >
             <div
@@ -314,39 +355,6 @@ endblock %} {% block head %}
                     >
                         Next <i class="fas fa-chevron-right"></i>
                     </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Create New Watchlist Section -->
-        <div class="card bg-secondary border-0 shadow-lg mb-4" id="createWatchlistSection">
-            <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 text-light">
-                    <i class="fas fa-plus-circle me-2 text-info"></i>Create New Market Watch List
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row align-items-end">
-                    <div class="col-md-8">
-                        <label class="form-label text-light">Enter list name</label>
-                        <input 
-                            type="text" 
-                            class="form-control bg-dark text-light border-secondary" 
-                            id="newListNameInput" 
-                            placeholder="e.g., Tech Stocks, Banking Stocks, My Favorites"
-                            maxlength="50"
-                        />
-                        <small class="text-muted">Maximum 50 characters</small>
-                    </div>
-                    <div class="col-md-4">
-                        <button 
-                            class="btn btn-primary w-100" 
-                            onclick="createNewWatchlist()"
-                            id="createListBtn"
-                        >
-                            <i class="fas fa-plus me-1"></i>Add List
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>

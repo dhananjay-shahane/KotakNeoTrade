@@ -3198,7 +3198,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // Custom Watchlists Functionality
-function createNewWatchlist() {
+window.createNewWatchlist = function() {
     const listNameInput = document.getElementById('newListNameInput');
     const listName = listNameInput.value.trim();
     
@@ -3467,7 +3467,7 @@ function createWatchlistSymbolRow(symbol, listName) {
     `;
 }
 
-function showAddSymbolModal(listName) {
+window.showAddSymbolModal = function(listName) {
     // Store the target list name for later use
     window.targetWatchlistName = listName;
     
@@ -3482,7 +3482,7 @@ function showAddSymbolModal(listName) {
     }
 }
 
-function removeSymbolFromWatchlist(listName, symbol) {
+window.removeSymbolFromWatchlist = function(listName, symbol) {
     Swal.fire({
         title: 'Remove Symbol?',
         text: `Are you sure you want to remove ${symbol} from "${listName}"?`,
@@ -3543,7 +3543,7 @@ function removeSymbolFromWatchlist(listName, symbol) {
     });
 }
 
-function deleteWatchlist(listName) {
+window.deleteWatchlist = function(listName) {
     Swal.fire({
         title: 'Delete Watchlist?',
         text: `Are you sure you want to delete "${listName}"? This action cannot be undone.`,
@@ -3602,7 +3602,7 @@ function deleteWatchlist(listName) {
     });
 }
 
-function refreshWatchlist(listName) {
+window.refreshWatchlist = function(listName) {
     loadWatchlistData(listName);
 }
 
