@@ -130,59 +130,67 @@ function fetchSymbolSuggestions(searchTerm) {
         });
 }
 
-function displaySymbolSuggestions(symbols, searchTerm) {
-    const suggestionsList = document.getElementById('suggestionsList');
-    const suggestionsContainer = document.getElementById('symbolSuggestions');
+// This function handles suggestions for the modal (updated to work with modal structure)
+function displaySymbolSuggestions(symbols, searchTerm = '') {
+    const suggestionsDiv = document.getElementById("symbolSuggestions");
     
-    console.log('displaySymbolSuggestions called with:', symbols.length, 'symbols');
+    console.log('displaySymbolSuggestions called with:', symbols.length, 'symbols for modal');
     
-    if (!suggestionsList || !suggestionsContainer) {
-        console.error('Suggestion elements not found:', { suggestionsList, suggestionsContainer });
+    if (!suggestionsDiv) {
+        console.error("symbolSuggestions element not found");
         return;
     }
-    
-    // Clear previous suggestions
-    suggestionsList.innerHTML = '';
-    
+
     if (symbols.length === 0) {
-        displayNoSuggestions();
+        suggestionsDiv.innerHTML =
+            '<div class="p-3 text-muted text-center"><i class="fas fa-search me-2"></i>No symbols found matching your criteria</div>';
+        suggestionsDiv.classList.remove("d-none");
         return;
     }
-    
-    symbols.forEach((symbol, index) => {
-        const suggestionItem = document.createElement('div');
-        suggestionItem.className = 'suggestion-item';
-        suggestionItem.setAttribute('data-symbol', symbol.symbol);
-        
-        // Highlight matching text
-        const highlightedSymbol = highlightSearchTerm(symbol.symbol, searchTerm);
-        const highlightedCompany = highlightSearchTerm(symbol.company || '', searchTerm);
-        
-        suggestionItem.innerHTML = `
-            <div class="symbol-info">
-                <div>
-                    <div class="symbol-name">${highlightedSymbol}</div>
-                    <div class="company-name">${highlightedCompany}</div>
-                </div>
-                <div class="symbol-details">
-                    <div>${symbol.sector || 'N/A'}</div>
-                    <div style="font-size: 0.75em; color: #495057;">${symbol.sub_sector || ''}</div>
+
+    let html = "";
+    symbols.forEach((symbol) => {
+        const categories = [];
+        if (symbol.categories && symbol.categories.nifty)
+            categories.push('<span class="badge bg-success me-1">Nifty</span>');
+        if (symbol.categories && symbol.categories.nifty_500)
+            categories.push(
+                '<span class="badge bg-primary me-1">Nifty 500</span>',
+            );
+        if (symbol.categories && symbol.categories.etf)
+            categories.push('<span class="badge bg-warning me-1">ETF</span>');
+
+        // Highlight search term if provided
+        const highlightedSymbol = searchTerm ? highlightSearchTerm(symbol.symbol, searchTerm) : symbol.symbol;
+        const highlightedCompany = searchTerm ? highlightSearchTerm(symbol.company || '', searchTerm) : (symbol.company || 'N/A');
+
+        html += `
+            <div class="suggestion-item p-3 border-bottom border-secondary" 
+                 onclick="selectSymbol('${symbol.symbol}')" 
+                 style="cursor: pointer; transition: background-color 0.2s;"
+                 onmouseover="this.style.backgroundColor='#495057'" 
+                 onmouseout="this.style.backgroundColor='transparent'">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div style="flex: 1;">
+                        <div class="d-flex align-items-center mb-1">
+                            <strong class="text-light me-2" style="font-size: 14px;">${highlightedSymbol}</strong>
+                            ${categories.join("")}
+                        </div>
+                        <div class="text-muted small mb-1">${highlightedCompany}</div>
+                        <div class="text-muted small">${symbol.sector || "N/A"} • ${symbol.sub_sector || "N/A"}</div>
+                    </div>
+                    <div class="text-end">
+                        <i class="fas fa-plus-circle text-success" style="font-size: 18px;"></i>
+                    </div>
                 </div>
             </div>
         `;
-        
-        // Add click event to select symbol
-        suggestionItem.addEventListener('mousedown', (e) => {
-            e.preventDefault(); // Prevent input blur
-            selectSymbol(symbol.symbol);
-        });
-        
-        suggestionsList.appendChild(suggestionItem);
     });
-    
-    // Show suggestions dropdown
-    suggestionsContainer.style.display = 'block';
-    isSymbolSuggestionsVisible = true;
+
+    suggestionsDiv.innerHTML = html;
+    suggestionsDiv.classList.remove("d-none");
+
+    console.log("✓ Displayed", symbols.length, "symbol suggestions in modal");
 }
 
 function highlightSearchTerm(text, searchTerm) {
@@ -494,62 +502,7 @@ function performSymbolSearch(searchTerm) {
         });
 }
 
-// Display symbol suggestions
-function displaySymbolSuggestions(symbols) {
-    const suggestionsDiv = document.getElementById("symbolSuggestions");
-    
-    if (!suggestionsDiv) {
-        console.error("symbolSuggestions element not found");
-        return;
-    }
-
-    if (symbols.length === 0) {
-        suggestionsDiv.innerHTML =
-            '<div class="p-3 text-muted text-center"><i class="fas fa-search me-2"></i>No symbols found matching your criteria</div>';
-        suggestionsDiv.classList.remove("d-none");
-        return;
-    }
-
-    let html = "";
-    symbols.forEach((symbol) => {
-        const categories = [];
-        if (symbol.categories && symbol.categories.nifty)
-            categories.push('<span class="badge bg-success me-1">Nifty</span>');
-        if (symbol.categories && symbol.categories.nifty_500)
-            categories.push(
-                '<span class="badge bg-primary me-1">Nifty 500</span>',
-            );
-        if (symbol.categories && symbol.categories.etf)
-            categories.push('<span class="badge bg-warning me-1">ETF</span>');
-
-        html += `
-            <div class="suggestion-item p-3 border-bottom border-secondary" 
-                 onclick="selectSymbol('${symbol.symbol}')" 
-                 style="cursor: pointer; transition: background-color 0.2s;"
-                 onmouseover="this.style.backgroundColor='#495057'" 
-                 onmouseout="this.style.backgroundColor='transparent'">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div style="flex: 1;">
-                        <div class="d-flex align-items-center mb-1">
-                            <strong class="text-light me-2" style="font-size: 14px;">${symbol.symbol}</strong>
-                            ${categories.join("")}
-                        </div>
-                        <div class="text-muted small mb-1">${symbol.company || "N/A"}</div>
-                        <div class="text-muted small">${symbol.sector || "N/A"} • ${symbol.sub_sector || "N/A"}</div>
-                    </div>
-                    <div class="text-end">
-                        <i class="fas fa-plus-circle text-success" style="font-size: 18px;"></i>
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-
-    suggestionsDiv.innerHTML = html;
-    suggestionsDiv.classList.remove("d-none");
-
-    console.log("Displayed", symbols.length, "symbol suggestions");
-}
+// Duplicate function removed - using the modal-compatible version above
 
 // Show search loading state
 function showSearchLoading() {
