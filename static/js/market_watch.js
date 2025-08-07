@@ -3708,4 +3708,3 @@ function addSymbolToCustomWatchlist(listName) {
         });
     });
 }
-});
