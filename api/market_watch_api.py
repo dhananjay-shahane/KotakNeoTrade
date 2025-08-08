@@ -874,7 +874,7 @@ def get_default_symbols_with_market_data():
                         'change_7d_pct': change_7d_pct,
                         'change_30d_pct': change_30d_pct,
                         'change_pct': change_pct,
-                        'change_val': change_val if change_val else
+                        'change_val': change_val if change_val else '--'
                     })
                 else:
                     # Fallback values when market data is not available
