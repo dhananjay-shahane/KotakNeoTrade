@@ -1462,7 +1462,7 @@ function createWatchlistCard(watchlist) {
             
             <div class="card-body p-0" id="${cardId}-table-container">
                 <div class="table-responsive" style="overflow-y: auto; max-height: 400px;">
-                    <table class="table table-dark table-hover mb-0 signals-table" id="${tableId}">
+                    <table class="table table-hover mb-0 signals-table" id="${tableId}">
                         <thead class="sticky-top">
                             <tr>
                                 <th style="width: 50px" onclick="sortWatchlistTable('${watchlist.name}', 'id')">

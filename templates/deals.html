@@ -28,7 +28,7 @@ endblock %} {% block head %}
                 </span>
                 <input
                     type="text"
-                    class="form-control bg-dark text-light border-0"
+                    class="form-control bg-secodary border-secondary"
                     id="symbolSearchInput"
                     placeholder="Search by symbol, status, or any field..."
                     onkeyup="performSearch()"
@@ -36,7 +36,7 @@ endblock %} {% block head %}
                     style="font-size: 14px"
                 />
                 <button
-                    class="btn btn-sm btn-outline-light"
+                    class="btn btn-sm btn-outline-danger"
                     type="button"
                     onclick="clearSearch()"
                     title="Clear search"
@@ -58,13 +58,13 @@ endblock %} {% block head %}
             >
                 <i class="fas fa-cog me-1"></i>Columns
             </button>
-            <button
+            <!-- <button
                 class="btn btn-sm btn-primary"
                 data-bs-toggle="modal"
                 data-bs-target="#dealFiltersModal"
             >
                 <i class="fas fa-filter me-1"></i>Filters
-            </button>
+            </button> -->
         </div>
     </div>
 
@@ -154,7 +154,7 @@ endblock %} {% block head %}
             <div class="card-body p-0">
                 <div class="table-responsive" style="overflow-y: auto">
                     <table
-                        class="table table-dark table-hover mb-0 signals-table"
+                        class="table table-hover mb-0 signals-table"
                         id="dealsTable"
                     >
                         <thead class="sticky-top">
@@ -766,8 +766,9 @@ endblock %} {% block head %}
                     <div class="modal-header border-bottom border-secondary">
                         <h5 class="modal-title text-light">
                             <i class="fas fa-calendar-alt me-2 text-info"></i
-                            >Edit Exit Date - ID: <span id="editExitModalDealId"></span> | 
-                            Symbol: <span id="editExitModalSymbol"></span>
+                            >Edit Exit Date - ID:
+                            <span id="editExitModalDealId"></span> | Symbol:
+                            <span id="editExitModalSymbol"></span>
                         </h5>
                         <button
                             type="button"
@@ -781,7 +782,9 @@ endblock %} {% block head %}
                             <div class="mb-3">
                                 <label class="form-label text-light"
                                     >Exit Date
-                                    <small class="text-muted">(dd/mm/yy format)</small>
+                                    <small class="text-muted"
+                                        >(dd/mm/yy format)</small
+                                    >
                                     <span class="text-danger">*</span></label
                                 >
                                 <input
@@ -796,7 +799,8 @@ endblock %} {% block head %}
                                 <div class="form-text text-muted">
                                     <small
                                         ><i class="fas fa-info-circle me-1"></i
-                                        >Enter date in dd/mm/yy format with slashes</small
+                                        >Enter date in dd/mm/yy format with
+                                        slashes</small
                                     >
                                 </div>
                             </div>
