@@ -757,54 +757,6 @@ DealsManager.prototype.renderDealsTable = function () {
                     break;
                 case "ip":
                     cellContent = deal.ip || "--";
-                    break;
-                case "tva":
-                    cellContent = deal.tva
-                        ? "₹" + deal.tva.toLocaleString("en-IN")
-                        : "";
-                    break;
-                case "tpr":
-                    cellContent = deal.tp
-                        ? "₹" + parseFloat(deal.tp).toFixed(2)
-                        : "0";
-                    break;
-                case "pl":
-                    if (deal.pl !== undefined) {
-                        var plValue = deal.pl;
-                        style = self.getGradientBackgroundColor(plValue);
-                        cellContent =
-                            "₹" +
-                            (deal.pl >= 0 ? "+" : "") +
-                            deal.pl.toFixed(0);
-                    }
-                    break;
-                case "ed":
-                    // Format exit date to show only date without time (second occurrence)
-                    if (deal.ed && deal.ed !== "--" && deal.ed !== null) {
-                        var exitDate = new Date(deal.ed);
-                        if (!isNaN(exitDate.getTime())) {
-                            cellContent = exitDate.toLocaleDateString("en-CA");
-                        } else {
-                            cellContent = deal.ed;
-                        }
-                    } else {
-                        cellContent = "--";
-                    }
-                    break;
-                case "pr":
-                    cellContent = deal.pr || "-";
-                    break;
-                case "pp":
-                    cellContent = deal.pp || "-";
-                    break;
-                case "iv":
-                    cellContent =
-                        '<span class="badge bg-info">' +
-                        (deal.iv || "--") +
-                        "</span>";
-                    break;
-                case "ip":
-                    cellContent = deal.ip || "-";
                     if (deal.change_pct > 0) {
                         cell.style.color = "var(--success-color)";
                     } else if (deal.change_pct < 0) {
@@ -904,78 +856,52 @@ DealsManager.prototype.renderDealsTable = function () {
                     }
                     break;
                 case "actions":
-                    // Check if deal is closed
-                    var isClosed =
-                        deal.status === "CLOSED" ||
-                        (deal.ed && deal.ed !== "--" && deal.ed !== null);
+                    var dealIdForAction = deal.id || deal.trade_signal_id || "";
+                    var dealStatus = deal.status || "ACTIVE";
 
-                    if (isClosed) {
-                        // Show only exit date edit button for closed deals
+                    // Different actions based on deal status
+                    if (dealStatus.toUpperCase() === 'CLOSED') {
                         cellContent =
                             '<div class="btn-group btn-group-sm">' +
-                            '<button class="btn btn-secondary btn-sm" onclick="editExitDate(\'' +
-                            (deal.id || deal.trade_signal_id || "") +
-                            "', '" +
-                            (deal.symbol || "") +
-                            "', '" +
-                            (deal.ed || "") +
-                            '\')" title="Edit exit date only">' +
-                            '<i class="fas fa-calendar-alt"></i> Edit Date</button>' +
-                            '<button class="btn btn-danger btn-sm" disabled title="Deal already closed">' +
-                            '<i class="fas fa-times"></i> Closed' +
-                            "</button>" +
-                            "</button>" +
-                            '<button class="btn btn-outline-danger btn-sm remove-deal-btn" data-deal-id="' +
-                            (deal.id || "") +
-                            '" data-symbol="' +
-                            (deal.symbol || "") +
-                            '" title="Remove this deal permanently">' +
-                            '<i class="fas fa-trash"></i> Remove' +
-                            "</button>" +
-                            "</div>";
+                            '<button class="btn btn-secondary btn-sm" disabled>' +
+                            '<i class="fas fa-check"></i> Closed' +
+                            '</button>' +
+                            '</div>';
                     } else {
-                        // Show enabled buttons for active deals
-                        var dealId = deal.id || deal.trade_signal_id || "";
-                        var symbol = deal.symbol || "";
-                        var date = deal.date || "";
-                        var qty = deal.qty || 0;
-                        var entryPrice = deal.entry_price || deal.ep || 0;
-                        var tprPrice = deal.tp || 0; // Use tp (target price) as TPR price
-                        var targetPricePerc = deal.tpr || 0;
-
                         cellContent =
                             '<div class="btn-group btn-group-sm">' +
                             '<button class="btn btn-warning btn-sm edit-deal-btn" data-deal-id="' +
-                            dealId +
+                            dealIdForAction +
                             '" data-symbol="' +
-                            symbol +
+                            (deal.symbol || "") +
                             '" data-date="' +
-                            date +
+                            (deal.date || "") +
                             '" data-qty="' +
-                            qty +
+                            (deal.qty || 0) +
                             '" data-entry-price="' +
-                            entryPrice +
+                            (deal.entry_price || deal.ep || 0) +
                             '" data-tpr-price="' +
-                            tprPrice +
+                            (deal.tp || 0) +
                             '" data-target-price="' +
-                            targetPricePerc +
+                            (deal.tpr || 0) +
                             '">' +
-                            '<i class="fas fa-edit"></i> Edit </button>' +
+                            '<i class="fas fa-edit"></i>' +
+                            '</button>' +
                             '<button class="btn btn-danger btn-sm close-deal-btn" data-deal-id="' +
-                            dealId +
+                            dealIdForAction +
                             '" data-symbol="' +
-                            symbol +
+                            (deal.symbol || "") +
                             '">' +
-                            '<i class="fas fa-times"></i> Close' +
-                            "</button>" +
-                            '<button class="btn btn-outline-danger btn-sm remove-deal-btn" data-deal-id="' +
-                            dealId +
+                            '<i class="fas fa-times"></i>' +
+                            '</button>' +
+                            '<button class="btn btn-info btn-sm remove-deal-btn" data-deal-id="' +
+                            dealIdForAction +
                             '" data-symbol="' +
-                            symbol +
+                            (deal.symbol || "") +
                             '" title="Remove this deal permanently">' +
-                            '<i class="fas fa-trash"></i> Remove' +
-                            "</button>" +
-                            "</div>";
+                            '<i class="fas fa-trash"></i>' +
+                            '</button>' +
+                            '</div>';
                     }
                     break;
                 default:
@@ -1089,7 +1015,7 @@ DealsManager.prototype.showLoadingSpinner = function () {
         "</div>" +
         '<h6 class="text-light mb-2">Loading Deals Data</h6>' +
         '<p class="text-muted mb-3">Fetching data from database...</p>' +
-        '<small class="text-warning">This may take up to 15 seconds</small>' +
+        '<small class="text-warning d-block mt-1">This may take up to 15 seconds</small>' +
         "</div>" +
         "</td>" +
         "</tr>";
@@ -1461,8 +1387,8 @@ function submitEditDeal() {
         date: date,
         quantity: qty,
         entryPrice: entryPrice,
-        tprPercent: tpPercent,
-        tpPrice: tpPrice,
+        tprPrice: tpPrice,
+        tpPercent: tpPercent,
     };
 
     var hasChanges = false;
@@ -1608,99 +1534,155 @@ function submitEditDeal() {
 
 // Close Deal Functions
 
-function submitCloseDeal() {
-    var dealId = document.getElementById("closeDealId").value;
-    var symbol = document.getElementById("closeSymbol").value;
-    var exitDate = document.getElementById("exitDate").value;
+function closeDeal(dealId, symbol) {
+    console.log("Closing deal with ID:", dealId, "Symbol:", symbol);
 
-    if (!exitDate) {
+    // Validate parameters
+    if (!dealId || dealId === 'undefined' || dealId === 'null') {
+        console.error("Invalid deal ID:", dealId);
         Swal.fire({
             icon: "error",
-            title: "Validation Error",
-            text: "Please select an exit date",
+            title: "Error",
+            text: "Invalid deal ID. Please try again.",
             background: "#1e1e1e",
             color: "#fff",
         });
         return;
     }
 
-    // Validate exit date is not in the future
-    var selectedDate = new Date(exitDate);
-    var today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (selectedDate > today) {
+    if (!symbol || symbol.trim() === '') {
+        console.error("Invalid symbol:", symbol);
         Swal.fire({
             icon: "error",
-            title: "Invalid Date",
-            text: "Exit date cannot be in the future",
+            title: "Error",
+            text: "Invalid symbol. Please try again.",
             background: "#1e1e1e",
             color: "#fff",
         });
         return;
     }
 
-    // Show loading
+    // Show confirmation dialog
     Swal.fire({
-        title: "Closing Deal...",
-        text: "Please wait while we close your deal",
-        allowOutsideClick: false,
-        didOpen: () => {
-            Swal.showLoading();
-        },
+        title: 'Close Deal',
+        text: `Are you sure you want to close the deal for ${symbol}? (ID: ${dealId})`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, close it!',
         background: "#1e1e1e",
         color: "#fff",
-    });
-
-    // Make API call
-    fetch("/api/close-deal", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            deal_id: dealId,
-            symbol: symbol,
-            exit_date: exitDate,
-        }),
-    })
-        .then((response) => response.json())
-        .then((data) => {
-            if (data.success) {
-                Swal.fire({
-                    icon: "success",
-                    title: "Deal Closed!",
-                    text: data.message,
-                    background: "#1e1e1e",
-                    color: "#fff",
-                }).then(() => {
-                    // Close modal and refresh deals
-                    var modal = bootstrap.Modal.getInstance(
-                        document.getElementById("closeDealModal"),
-                    );
-                    modal.hide();
-                    window.dealsManager.loadDeals();
-                });
-            } else {
-                Swal.fire({
-                    icon: "error",
-                    title: "Close Failed",
-                    text: data.error || "Failed to close deal",
-                    background: "#1e1e1e",
-                    color: "#fff",
-                });
-            }
-        })
-        .catch((error) => {
-            console.error("Error closing deal:", error);
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Get exit date and price from user
             Swal.fire({
-                icon: "error",
-                title: "Network Error",
-                text: "Failed to close deal. Please try again.",
+                title: 'Deal Closure Details',
+                html: `
+                    <div class="mb-3">
+                        <label for="exitDate" class="form-label text-light">Exit Date (DDMMYY)</label>
+                        <input type="text" id="exitDate" class="form-control bg-dark text-light" 
+                               placeholder="e.g., 150125 for 15th Jan 2025" maxlength="6">
+                    </div>
+                    <div class="mb-3">
+                        <label for="exitPrice" class="form-label text-light">Exit Price (₹)</label>
+                        <input type="number" id="exitPrice" class="form-control bg-dark text-light" 
+                               placeholder="Enter exit price" step="0.01" min="0">
+                    </div>
+                `,
                 background: "#1e1e1e",
                 color: "#fff",
+                showCancelButton: true,
+                confirmButtonText: 'Close Deal',
+                cancelButtonText: 'Cancel',
+                preConfirm: () => {
+                    const exitDate = document.getElementById('exitDate').value;
+                    const exitPrice = parseFloat(document.getElementById('exitPrice').value);
+
+                    if (!exitDate || exitDate.length !== 6) {
+                        Swal.showValidationMessage('Please enter a valid exit date in DDMMYY format');
+                        return false;
+                    }
+
+                    if (!exitPrice || exitPrice <= 0) {
+                        Swal.showValidationMessage('Please enter a valid exit price');
+                        return false;
+                    }
+
+                    return { exitDate, exitPrice };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const { exitDate, exitPrice } = result.value;
+
+                    console.log("Sending close deal request:", {
+                        deal_id: String(dealId),
+                        symbol: symbol.trim(),
+                        exit_date: exitDate,
+                        exit_price: exitPrice
+                    });
+
+                    // Make API call to close deal
+                    fetch("/api/close-deal", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            deal_id: String(dealId), // Ensure it's a string
+                            symbol: symbol.trim(),
+                            exit_date: exitDate,
+                            exit_price: exitPrice,
+                        }),
+                    })
+                        .then((response) => {
+                            console.log("Close deal response status:", response.status);
+                            return response.json();
+                        })
+                        .then((data) => {
+                            console.log("Close deal API response:", data);
+
+                            if (data.success) {
+                                Swal.fire({
+                                    icon: "success",
+                                    title: "Deal Closed!",
+                                    text: `Deal closed successfully for ${symbol}`,
+                                    background: "#1e1e1e",
+                                    color: "#fff",
+                                    timer: 2000,
+                                    showConfirmButton: false,
+                                });
+
+                                // Refresh deals data
+                                setTimeout(() => {
+                                    if (window.dealsManager) {
+                                        window.dealsManager.loadDeals();
+                                    }
+                                }, 1000);
+                            } else {
+                                Swal.fire({
+                                    icon: "error",
+                                    title: "Close Failed",
+                                    text: data.error || "Failed to close deal",
+                                    background: "#1e1e1e",
+                                    color: "#fff",
+                                });
+                            }
+                        })
+                        .catch((error) => {
+                            console.error("Error closing deal:", error);
+                            Swal.fire({
+                                icon: "error",
+                                title: "Network Error",
+                                text: "An error occurred while closing the deal. Please try again.",
+                                background: "#1e1e1e",
+                                color: "#fff",
+                            });
+                        });
+                }
             });
-        });
+        }
+    });
 }
 
 // Edit Exit Date for Closed Deals
@@ -2859,185 +2841,154 @@ DealsManager.prototype.updateDealsCountBadge = function () {
 // Edit and Close Deal functions
 
 function closeDeal(dealId, symbol) {
-    // Set modal values
-    document.getElementById("closeDealId").value = dealId;
-    document.getElementById("closeDealSymbol").value = symbol;
+    console.log("Closing deal with ID:", dealId, "Symbol:", symbol);
 
-    // Set modal heading
-    document.getElementById("closeModalDealId").textContent = dealId;
-    document.getElementById("closeModalSymbol").textContent = symbol;
-
-    // Set default exit date to today in dd/mm/yy format
-    var today = new Date();
-    var day = String(today.getDate()).padStart(2, "0");
-    var month = String(today.getMonth() + 1).padStart(2, "0");
-    var year = String(today.getFullYear()).slice(-2);
-    var todayFormatted = day + "/" + month + "/" + year;
-
-    document.getElementById("closeDealExitDate").value = todayFormatted;
-    document.getElementById("closeDealExitPrice").value = "";
-
-    // Show close deal modal
-    var modal = new bootstrap.Modal(document.getElementById("closeDealModal"));
-    modal.show();
-}
-
-function submitCloseDeal() {
-    var dealId = document.getElementById("closeDealId").value;
-    var symbol = document.getElementById("closeDealSymbol").value;
-    var exitDate = document.getElementById("closeDealExitDate").value;
-    var exitPrice = document.getElementById("closeDealExitPrice").value;
-
-    // Validate required fields
-    if (!dealId || !symbol) {
+    // Validate parameters
+    if (!dealId || dealId === 'undefined' || dealId === 'null') {
+        console.error("Invalid deal ID:", dealId);
         Swal.fire({
             icon: "error",
-            title: "Validation Error",
-            text: "Deal ID and symbol are required",
+            title: "Error",
+            text: "Invalid deal ID. Please try again.",
             background: "#1e1e1e",
             color: "#fff",
         });
         return;
     }
 
-    if (!exitDate) {
+    if (!symbol || symbol.trim() === '') {
+        console.error("Invalid symbol:", symbol);
         Swal.fire({
             icon: "error",
-            title: "Validation Error",
-            text: "Please enter an exit date",
+            title: "Error",
+            text: "Invalid symbol. Please try again.",
             background: "#1e1e1e",
             color: "#fff",
         });
         return;
     }
 
-    if (!exitPrice) {
-        Swal.fire({
-            icon: "error",
-            title: "Validation Error",
-            text: "Please enter an exit price",
-            background: "#1e1e1e",
-            color: "#fff",
-        });
-        return;
-    }
-
-    // Validate date format dd/mm/yy
-    if (!/^\d{2}\/\d{2}\/\d{2}$/.test(exitDate)) {
-        Swal.fire({
-            icon: "error",
-            title: "Invalid Date Format",
-            text: "Please enter date in dd/mm/yy format (e.g., 02/12/25)",
-            background: "#1e1e1e",
-            color: "#fff",
-        });
-        return;
-    }
-
-    // Validate exit price is a positive number
-    var exitPriceFloat = parseFloat(exitPrice);
-    if (isNaN(exitPriceFloat) || exitPriceFloat <= 0) {
-        Swal.fire({
-            icon: "error",
-            title: "Invalid Exit Price",
-            text: "Please enter a valid positive exit price",
-            background: "#1e1e1e",
-            color: "#fff",
-        });
-        return;
-    }
-
-    // Convert exit date from dd/mm/yy to ddmmyy format for API
-    var exitDateForAPI = "";
-    if (exitDate && exitDate.trim()) {
-        exitDate = exitDate.trim();
-        // Check if date is in dd/mm/yy format
-        if (/^\d{2}\/\d{2}\/\d{2}$/.test(exitDate)) {
-            exitDateForAPI = exitDate.replace(/\//g, ""); // Remove slashes for API
-        } else if (/^\d{6}$/.test(exitDate)) {
-            exitDateForAPI = exitDate; // Already in ddmmyy format
-        } else {
-            Swal.fire({
-                icon: "error",
-                title: "Invalid Date Format",
-                text: "Exit date must be in dd/mm/yy format (e.g., 02/08/25)",
-                background: "#1e1e1e",
-                color: "#fff",
-            });
-            return;
-        }
-    }
-
-    // Show loading
+    // Show confirmation dialog
     Swal.fire({
-        title: "Closing Deal...",
-        text: "Please wait while we close your deal",
-        allowOutsideClick: false,
-        didOpen: () => {
-            Swal.showLoading();
-        },
+        title: 'Close Deal',
+        text: `Are you sure you want to close the deal for ${symbol}? (ID: ${dealId})`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, close it!',
         background: "#1e1e1e",
         color: "#fff",
-    });
-
-    // Make API call to close deal
-    fetch("/api/close-deal", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            deal_id: dealId,
-            symbol: symbol,
-            exit_date: exitDateForAPI, // ed parameter
-            exit_price: exitPriceFloat, // exp parameter
-        }),
-    })
-        .then((response) => response.json())
-        .then((data) => {
-            if (data.success) {
-                Swal.fire({
-                    icon: "success",
-                    title: "Deal Closed!",
-                    text: `Deal closed successfully for ${symbol}`,
-                    background: "#1e1e1e",
-                    color: "#fff",
-                    timer: 2000,
-                    showConfirmButton: false,
-                });
-
-                // Hide modal
-                var modal = bootstrap.Modal.getInstance(
-                    document.getElementById("closeDealModal"),
-                );
-                modal.hide();
-
-                // Refresh deals table
-                if (window.dealsManager) {
-                    window.dealsManager.loadDeals();
-                }
-            } else {
-                Swal.fire({
-                    icon: "error",
-                    title: "Error",
-                    text:
-                        data.message ||
-                        "Failed to close deal. Please try again.",
-                    background: "#1e1e1e",
-                    color: "#fff",
-                });
-            }
-        })
-        .catch((error) => {
-            console.error("Error closing deal:", error);
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Get exit date and price from user
             Swal.fire({
-                icon: "error",
-                title: "Network Error",
-                text: "Failed to close deal. Please check your connection.",
+                title: 'Deal Closure Details',
+                html: `
+                    <div class="mb-3">
+                        <label for="exitDate" class="form-label text-light">Exit Date (DDMMYY)</label>
+                        <input type="text" id="exitDate" class="form-control bg-dark text-light" 
+                               placeholder="e.g., 150125 for 15th Jan 2025" maxlength="6">
+                    </div>
+                    <div class="mb-3">
+                        <label for="exitPrice" class="form-label text-light">Exit Price (₹)</label>
+                        <input type="number" id="exitPrice" class="form-control bg-dark text-light" 
+                               placeholder="Enter exit price" step="0.01" min="0">
+                    </div>
+                `,
                 background: "#1e1e1e",
                 color: "#fff",
+                showCancelButton: true,
+                confirmButtonText: 'Close Deal',
+                cancelButtonText: 'Cancel',
+                preConfirm: () => {
+                    const exitDate = document.getElementById('exitDate').value;
+                    const exitPrice = parseFloat(document.getElementById('exitPrice').value);
+
+                    if (!exitDate || exitDate.length !== 6) {
+                        Swal.showValidationMessage('Please enter a valid exit date in DDMMYY format');
+                        return false;
+                    }
+
+                    if (!exitPrice || exitPrice <= 0) {
+                        Swal.showValidationMessage('Please enter a valid exit price');
+                        return false;
+                    }
+
+                    return { exitDate, exitPrice };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const { exitDate, exitPrice } = result.value;
+
+                    console.log("Sending close deal request:", {
+                        deal_id: String(dealId),
+                        symbol: symbol.trim(),
+                        exit_date: exitDate,
+                        exit_price: exitPrice
+                    });
+
+                    // Make API call to close deal
+                    fetch("/api/close-deal", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            deal_id: String(dealId), // Ensure it's a string
+                            symbol: symbol.trim(),
+                            exit_date: exitDate,
+                            exit_price: exitPrice,
+                        }),
+                    })
+                        .then((response) => {
+                            console.log("Close deal response status:", response.status);
+                            return response.json();
+                        })
+                        .then((data) => {
+                            console.log("Close deal API response:", data);
+
+                            if (data.success) {
+                                Swal.fire({
+                                    icon: "success",
+                                    title: "Deal Closed!",
+                                    text: `Deal closed successfully for ${symbol}`,
+                                    background: "#1e1e1e",
+                                    color: "#fff",
+                                    timer: 2000,
+                                    showConfirmButton: false,
+                                });
+
+                                // Refresh deals data
+                                setTimeout(() => {
+                                    if (window.dealsManager) {
+                                        window.dealsManager.loadDeals();
+                                    }
+                                }, 1000);
+                            } else {
+                                Swal.fire({
+                                    icon: "error",
+                                    title: "Close Failed",
+                                    text: data.error || "Failed to close deal",
+                                    background: "#1e1e1e",
+                                    color: "#fff",
+                                });
+                            }
+                        })
+                        .catch((error) => {
+                            console.error("Error closing deal:", error);
+                            Swal.fire({
+                                icon: "error",
+                                title: "Network Error",
+                                text: "An error occurred while closing the deal. Please try again.",
+                                background: "#1e1e1e",
+                                color: "#fff",
+                            });
+                        });
+                }
             });
-        });
+        }
+    });
 }
 
 function removeDeal(dealId, symbol) {
