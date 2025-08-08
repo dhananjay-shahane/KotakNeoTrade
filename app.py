@@ -1212,6 +1212,14 @@ try:
 except Exception as e:
     print(f"✗ Error registering market_watch_api: {e}")
 
+# Register health check API blueprint
+try:
+    from api.health_check import health_bp
+    app.register_blueprint(health_bp)
+    print("✓ Registered health_check blueprint")
+except Exception as e:
+    print(f"✗ Error registering health_check: {e}")
+
 # Register email settings API routes
 @app.route('/api/email-settings', methods=['GET'])
 def api_get_email_settings():

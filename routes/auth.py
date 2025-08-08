@@ -104,7 +104,9 @@ def login():
             session['sid'] = sid or 'default_sid'
             session['ucc'] = ucc
             session['client'] = client
-            session['login_time'] = datetime.now().strftime('%B %d, %Y at %I:%M:%S %p')
+            # Convert to IST (UTC+5:30)
+            ist_time = datetime.now() + timedelta(hours=5, minutes=30)
+            session['login_time'] = ist_time.strftime('%B %d, %Y at %I:%M:%S %p IST')
             session['greeting_name'] = session_data.get('greetingName') or session_data.get('greeting_name') or ucc
             session['session_created_at'] = datetime.now().isoformat()
             session['session_expires_at'] = (datetime.now() + timedelta(hours=24)).isoformat()

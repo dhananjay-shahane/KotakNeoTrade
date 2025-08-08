@@ -651,19 +651,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Function to format date in the desired format: DD/MM/YYYY HH:MM AM/PM
+// Function to format date in IST format: DD/MM/YYYY HH:MM AM/PM IST
 function formatLoginTime(date) {
-    var day = String(date.getDate()).padStart(2, '0');
-    var month = String(date.getMonth() + 1).padStart(2, '0');
-    var year = date.getFullYear();
+    // Convert to IST (UTC+5:30)
+    var istDate = new Date(date.getTime() + (5.5 * 60 * 60 * 1000));
     
-    var hours = date.getHours();
-    var minutes = String(date.getMinutes()).padStart(2, '0');
+    var day = String(istDate.getUTCDate()).padStart(2, '0');
+    var month = String(istDate.getUTCMonth() + 1).padStart(2, '0');
+    var year = istDate.getUTCFullYear();
+    
+    var hours = istDate.getUTCHours();
+    var minutes = String(istDate.getUTCMinutes()).padStart(2, '0');
     var ampm = hours >= 12 ? 'PM' : 'AM';
     hours = hours % 12;
     hours = hours ? hours : 12; // the hour '0' should be '12'
     
-    return `${day}/${month}/${year} ${hours}:${minutes}${ampm}`;
+    return `${day}/${month}/${year} ${hours}:${minutes} ${ampm} IST`;
 }
 
 // Function to load user profile data

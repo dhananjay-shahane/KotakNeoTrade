@@ -821,7 +821,8 @@ body {
 }
 
 :root[data-theme="light"] .table-hover tbody tr:hover td {
-    background: rgba(59, 130, 246, 0.05);
+    background: rgba(59, 130, 246, 0.05) !important;
+    color: #111827 !important;
 }
 
 :root[data-theme="light"] .modal-content {
