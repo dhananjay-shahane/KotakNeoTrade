@@ -1757,7 +1757,7 @@ function editExitDate(dealId, symbol, currentExitDate) {
 }
 
 function submitEditExitDate() {
-    var dealId = document.getElementById("editExitDealId").value;
+    var dealId = document.getElementById("editExitModalDealId").value;
     var exitDate = document.getElementById("editExitDateInput").value;
 
     if (!exitDate) {
@@ -2887,6 +2887,8 @@ function submitCloseDeal() {
     var symbol = document.getElementById("closeDealSymbol").value;
     var exitDate = document.getElementById("closeDealExitDate").value;
     var exitPrice = document.getElementById("closeDealExitPrice").value;
+
+    console.log(dealId);
 
     // Validate required fields
     if (!dealId || !symbol) {

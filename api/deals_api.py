@@ -1175,7 +1175,7 @@ def close_deal():
         exit_date = data.get('exit_date', '').strip()
         exit_price = data.get('exit_price')
 
-        if not deal_id or not symbol:
+        if not deal_id:
             return jsonify({
                 'success': False,
                 'error': 'Deal ID and symbol are required'
@@ -1187,25 +1187,25 @@ def close_deal():
                 'error': 'Exit date is required'
             }), 400
 
-        if not exit_price:
-            return jsonify({
-                'success': False,
-                'error': 'Exit price is required'
-            }), 400
+        # if not exit_price:
+        #     return jsonify({
+        #         'success': False,
+        #         'error': 'Exit price is required'
+        #     }), 400
 
         # Validate exit price
-        try:
-            exit_price = float(exit_price)
-            if exit_price <= 0:
-                return jsonify({
-                    'success': False,
-                    'error': 'Exit price must be a positive number'
-                }), 400
-        except (ValueError, TypeError):
-            return jsonify({
-                'success': False,
-                'error': 'Invalid exit price value'
-            }), 400
+        # try:
+        #     exit_price = float(exit_price)
+        #     if exit_price <= 0:
+        #         return jsonify({
+        #             'success': False,
+        #             'error': 'Exit price must be a positive number'
+        #         }), 400
+        # except (ValueError, TypeError):
+        #     return jsonify({
+        #         'success': False,
+        #         'error': 'Invalid exit price value'
+        #     }), 400
 
         # Validate exit date format (ddmmyy)
         if not re.match(r'^\d{6}$', exit_date):
@@ -1312,19 +1312,22 @@ def close_deal():
         # Send email notification for closed deal (Case 4)
         try:
             from api.email_functions import trigger_deal_status_email
-            
+
             # Calculate P&L for email
             try:
-                entry_price = float(current_deal.get('ep', 0)) if current_deal else 0
-                quantity = int(current_deal.get('qty', 0)) if current_deal else 0
+                entry_price = float(current_deal.get('ep',
+                                                     0)) if current_deal else 0
+                quantity = int(current_deal.get('qty',
+                                                0)) if current_deal else 0
                 invested_amount = entry_price * quantity
                 exit_amount = exit_price * quantity
                 pnl_amount = exit_amount - invested_amount
-                pnl_percent = (pnl_amount / invested_amount * 100) if invested_amount > 0 else 0
+                pnl_percent = (pnl_amount / invested_amount *
+                               100) if invested_amount > 0 else 0
             except:
                 pnl_amount = 0
                 pnl_percent = 0
-            
+
             deal_email_data = {
                 'symbol': symbol,
                 'deal_id': deal_id,
@@ -1336,13 +1339,14 @@ def close_deal():
                 'pnl_percent': round(pnl_percent, 2),
                 'username': username
             }
-            
+
             # Call the centralized email function
             trigger_deal_status_email(username, deal_email_data, 'closed')
             logger.info(f"✅ Deal closure email triggered for {username}")
-                    
+
         except Exception as e:
-            logger.error(f"❌ Error sending deal closure notification email: {e}")
+            logger.error(
+                f"❌ Error sending deal closure notification email: {e}")
             # Don't fail the deal closure if email fails
 
         return jsonify({
@@ -1441,7 +1445,7 @@ def remove_deal():
 
         # Get deal details before deletion for email notification
         deal_details = dynamic_deals_service.get_deal_by_id(username, deal_id)
-        
+
         # Remove deal from user's dynamic table
         success = dynamic_deals_service.delete_deal(username, deal_id)
 
@@ -1454,7 +1458,7 @@ def remove_deal():
         # Send email notification for deleted deal (Case 4)
         try:
             from api.email_functions import trigger_deal_status_email
-            
+
             if deal_details:
                 deal_email_data = {
                     'symbol': symbol,
@@ -1464,13 +1468,14 @@ def remove_deal():
                     'date': datetime.now().strftime('%d/%m/%Y'),
                     'username': username
                 }
-                
+
                 # Call the centralized email function
                 trigger_deal_status_email(username, deal_email_data, 'deleted')
                 logger.info(f"✅ Deal deletion email triggered for {username}")
-                        
+
         except Exception as e:
-            logger.error(f"❌ Error sending deal deletion notification email: {e}")
+            logger.error(
+                f"❌ Error sending deal deletion notification email: {e}")
             # Don't fail the deal deletion if email fails
 
         return jsonify({
@@ -1628,15 +1633,17 @@ def create_deal_from_signal():
             logger.info(
                 f"✓ Created deal from signal: {symbol} - Deal ID: {deal_id} for user: {username}"
             )
-            
+
             # Send email notification for new deal (Case 2)
             try:
-                logger.info(f"🔔 Attempting to send email notification for deal creation: {username}")
-                
+                logger.info(
+                    f"🔔 Attempting to send email notification for deal creation: {username}"
+                )
+
                 # Use the centralized email service approach
                 from api.email_service import EmailService
                 email_service = EmailService()
-                
+
                 deal_email_data = {
                     'symbol': symbol,
                     'deal_id': deal_id,
@@ -1646,19 +1653,25 @@ def create_deal_from_signal():
                     'date': datetime.now().strftime('%d/%m/%Y'),
                     'username': username
                 }
-                
-                success = email_service.send_deal_creation_notification(username, deal_email_data)
+
+                success = email_service.send_deal_creation_notification(
+                    username, deal_email_data)
                 if success:
-                    logger.info(f"✅ Deal creation email sent successfully for {username}")
+                    logger.info(
+                        f"✅ Deal creation email sent successfully for {username}"
+                    )
                 else:
-                    logger.warning(f"⚠️ Failed to send deal creation email for {username}")
-                        
+                    logger.warning(
+                        f"⚠️ Failed to send deal creation email for {username}"
+                    )
+
             except Exception as e:
-                logger.error(f"❌ Error sending deal notification email: {str(e)}")
+                logger.error(
+                    f"❌ Error sending deal notification email: {str(e)}")
                 import traceback
                 logger.error(f"Full traceback: {traceback.format_exc()}")
                 # Don't fail the deal creation if email fails
-            
+
             return jsonify({
                 'success': True,
                 'message': f'Deal created successfully for {symbol}',
