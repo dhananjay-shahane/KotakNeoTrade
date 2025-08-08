@@ -178,6 +178,65 @@ function setDefaultEmailSettingsInModal() {
     }
 }
 
+// Function to load email settings specifically for page initialization
+function loadEmailSettingsOnPageLoad() {
+    console.log("🔄 Loading email settings on page load...");
+
+    fetch("/api/check-email-notification-status", {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+        },
+    })
+        .then((response) => {
+            if (!response.ok) {
+                console.warn("❌ Failed to load email settings on page load:", response.status);
+                return { success: false, authenticated: false };
+            }
+
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                console.error("❌ API returned non-JSON response on page load");
+                return { success: false, authenticated: false };
+            }
+
+            return response.json();
+        })
+        .then((data) => {
+            if (data && data.success && data.authenticated) {
+                const status = data.status;
+
+                // Update email notification toggle switch
+                const emailNotificationToggle = document.getElementById("sendDealsInMail");
+                if (emailNotificationToggle) {
+                    emailNotificationToggle.checked = Boolean(status.email_notification);
+                    console.log("✅ Email notification toggle loaded on page load:", status.email_notification);
+                }
+
+                // Update other settings elements if they exist
+                const dailyChangeToggle = document.getElementById("sendDailyChangeData");
+                if (dailyChangeToggle) {
+                    dailyChangeToggle.checked = status.send_daily_change_data || false;
+                    toggleDailyEmailTimeContainer(status.send_daily_change_data || false);
+                }
+
+                const userEmailField = document.getElementById("userEmail");
+                if (userEmailField && status.user_email) {
+                    userEmailField.value = status.user_email;
+                }
+            } else {
+                console.warn("❌ Not authenticated or failed to load email settings on page load");
+                setDefaultEmailSettingsInModal();
+            }
+        })
+        .catch((error) => {
+            console.error("❌ Error loading email settings on page load:", error);
+            setDefaultEmailSettingsInModal();
+        });
+}
+
 function toggleDailyEmailTimeContainer(show) {
     const container = document.getElementById("dailyEmailTimeContainer");
     container.style.display = show ? "block" : "none";
@@ -313,8 +372,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // Add a small delay to ensure all elements are ready
     setTimeout(() => {
         try {
-            loadEmailSettings();
-            saveEmailSettings();
+            // Load email settings specifically for page initialization
+            loadEmailSettingsOnPageLoad();
         } catch (error) {
             console.error("Error initializing email settings:", error);
         }
@@ -748,13 +807,15 @@ function showSettingsModal() {
 
     // Load email settings when modal opens
     console.log("🔄 Opening settings modal, loading email settings...");
+    
+    // Load settings immediately when showing modal
+    loadEmailSettings();
 
     // Setup toggle listener after modal is shown
     modalElement.addEventListener(
         "shown.bs.modal",
         function () {
             console.log("🎯 Modal shown event fired");
-            loadEmailSettings();
             setupEmailNotificationToggle();
         },
         { once: true },
