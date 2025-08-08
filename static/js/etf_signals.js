@@ -1390,30 +1390,55 @@ ETFSignalsManager.prototype.updatePagination = function () {
 ETFSignalsManager.prototype.updatePaginationControls = function () {
     // Update global currentPage variable
     window.currentPage = this.currentPage;
+    
+    // Calculate total pages
+    this.totalPages = Math.ceil(this.filteredSignals.length / this.itemsPerPage) || 1;
 
-    var prevPageItem = document.getElementById("prevPageItem");
-    var nextPageItem = document.getElementById("nextPageItem");
-    var currentPageDisplay = document.getElementById("currentPageDisplay");
-
-    if (prevPageItem) {
+    // Update pagination buttons
+    var prevBtn = document.getElementById("prevBtn");
+    var nextBtn = document.getElementById("nextBtn");
+    var currentPageSpan = document.getElementById("currentPage");
+    var totalPagesSpan = document.getElementById("totalPages");
+    
+    // Update showing count
+    var showingCount = document.getElementById("showingCount");
+    var totalCount = document.getElementById("totalCount");
+    
+    if (prevBtn) {
         if (this.currentPage <= 1) {
-            prevPageItem.classList.add("disabled");
+            prevBtn.disabled = true;
         } else {
-            prevPageItem.classList.remove("disabled");
+            prevBtn.disabled = false;
         }
     }
 
-    if (nextPageItem) {
+    if (nextBtn) {
         if (this.currentPage >= this.totalPages) {
-            nextPageItem.classList.add("disabled");
+            nextBtn.disabled = true;
         } else {
-            nextPageItem.classList.remove("disabled");
+            nextBtn.disabled = false;
         }
     }
 
-    if (currentPageDisplay) {
-        currentPageDisplay.textContent =
-            this.currentPage + " of " + this.totalPages;
+    if (currentPageSpan) {
+        currentPageSpan.textContent = this.currentPage;
+    }
+    
+    if (totalPagesSpan) {
+        totalPagesSpan.textContent = this.totalPages;
+    }
+    
+    // Update showing count (showing X of Y signals)
+    if (showingCount && totalCount) {
+        var startIndex = (this.currentPage - 1) * this.itemsPerPage + 1;
+        var endIndex = Math.min(this.currentPage * this.itemsPerPage, this.filteredSignals.length);
+        
+        if (this.filteredSignals.length === 0) {
+            showingCount.textContent = "0";
+        } else {
+            showingCount.textContent = startIndex + "-" + endIndex;
+        }
+        totalCount.textContent = this.filteredSignals.length;
     }
 };
 
@@ -3855,6 +3880,25 @@ window.changeItemsPerPage = function (newPerPage) {
         window.etfSignalsManager.updateDisplayedSignals();
         window.etfSignalsManager.renderSignalsTable();
         window.etfSignalsManager.updatePagination();
+    }
+};
+
+// Global pagination functions for template compatibility
+window.previousPage = function() {
+    if (window.etfSignalsManager && window.etfSignalsManager.currentPage > 1) {
+        window.etfSignalsManager.currentPage--;
+        window.etfSignalsManager.updateDisplayedSignals();
+        window.etfSignalsManager.renderSignalsTable();
+        window.etfSignalsManager.updatePaginationControls();
+    }
+};
+
+window.nextPage = function() {
+    if (window.etfSignalsManager && window.etfSignalsManager.currentPage < window.etfSignalsManager.totalPages) {
+        window.etfSignalsManager.currentPage++;
+        window.etfSignalsManager.updateDisplayedSignals();
+        window.etfSignalsManager.renderSignalsTable();
+        window.etfSignalsManager.updatePaginationControls();
     }
 };
 
