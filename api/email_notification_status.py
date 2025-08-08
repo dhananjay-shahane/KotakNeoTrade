@@ -80,10 +80,30 @@ def check_email_notification_status():
                     }
                 })
             else:
-                return jsonify({
-                    'success': False,
-                    'error': 'User not found in external_users table'
-                }), 404
+                # User not found, create entry with default values
+                try:
+                    cursor.execute("""
+                        INSERT INTO external_users (username, email_notification, email) 
+                        VALUES (%s, FALSE, %s)
+                        ON CONFLICT (username) DO NOTHING
+                    """, (username, session.get('email', '')))
+                    conn.commit()
+                    
+                    return jsonify({
+                        'success': True,
+                        'authenticated': True,
+                        'status': {
+                            'email_notification': False,
+                            'user_email': session.get('email', ''),
+                            'username': username
+                        }
+                    })
+                except Exception as insert_error:
+                    logger.error(f"❌ Error creating user entry: {insert_error}")
+                    return jsonify({
+                        'success': False,
+                        'error': 'User not found in external_users table'
+                    }), 404
 
     except Exception as e:
         logger.error(f"❌ Error checking email notification status: {e}")

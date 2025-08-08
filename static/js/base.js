@@ -43,7 +43,14 @@ function loadEmailSettings() {
             Accept: "application/json",
         },
     })
-        .then((response) => response.json())
+        .then((response) => {
+            if (!response.ok) {
+                console.warn(`API returned ${response.status}: ${response.statusText}`);
+                // Don't throw error, just return default response
+                return { success: false, authenticated: false, error: 'API error' };
+            }
+            return response.json();
+        })
         .then((data) => {
             if (data.success && data.authenticated) {
                 const status = data.status;
@@ -185,15 +192,18 @@ function saveEmailSettings() {
             });
     }
 
-    // Handle other settings if they exist
+    // Handle other settings if they exist - with null checks
+    const sendDailyChangeElement = document.getElementById("sendDailyChangeData");
+    const dailyEmailTimeElement = document.getElementById("dailyEmailTime");
+    const userEmailElement = document.getElementById("userEmail");
+    
     const settings = {
         send_deals_in_mail: document.getElementById("sendDealsInMail")
             ? document.getElementById("sendDealsInMail").checked
             : false,
-        send_daily_change_data: document.getElementById("sendDailyChangeData")
-            .checked,
-        daily_email_time: document.getElementById("dailyEmailTime").value,
-        user_email: document.getElementById("userEmail").value.trim(),
+        send_daily_change_data: sendDailyChangeElement ? sendDailyChangeElement.checked : false,
+        daily_email_time: dailyEmailTimeElement ? dailyEmailTimeElement.value : "09:00",
+        user_email: userEmailElement ? userEmailElement.value.trim() : "",
     };
 
     fetch("/api/email-settings", {
@@ -241,7 +251,10 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
-window.onload(loadEmailSettings());
+// Load email settings when page loads
+document.addEventListener("DOMContentLoaded", function() {
+    loadEmailSettings();
+});
 
 window.applySettings = applySettings;
 
