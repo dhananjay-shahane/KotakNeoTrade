@@ -1717,7 +1717,7 @@ function editExitDate(dealId, symbol, currentExitDate) {
     document.getElementById("editExitModalSymbol").textContent = symbol;
 
     // Set modal values
-    document.getElementById("editExitDealId").value = dealId;
+    document.getElementById("editExitModalDealId").value = dealId;
 
     // Convert currentExitDate to dd/mm/yy format if needed
     var dateFormatted = "";
