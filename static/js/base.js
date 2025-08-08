@@ -48,17 +48,20 @@ function loadEmailSettings() {
                 console.warn(
                     `API returned ${response.status}: ${response.statusText}`,
                 );
-                // Don't throw error, just return default response
-                return {
-                    success: false,
-                    authenticated: false,
-                    error: "API error",
-                };
+                throw new Error(`HTTP ${response.status}`);
             }
+            
+            // Check if response is actually JSON
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                console.error("API returned non-JSON response:", contentType);
+                throw new Error("Invalid response type");
+            }
+            
             return response.json();
         })
         .then((data) => {
-            if (data.success && data.authenticated) {
+            if (data && data.success && data.authenticated) {
                 const status = data.status;
 
                 // Update email notification toggle switch in settings modal
@@ -114,6 +117,10 @@ function loadEmailSettings() {
         })
         .catch((error) => {
             console.error("❌ Error loading email settings:", error);
+            // Show user-friendly error message
+            if (typeof showToaster === "function") {
+                showToaster("Warning", "Unable to load email settings", "warning", 3000);
+            }
             setDefaultEmailSettingsInModal();
         });
 }
@@ -265,7 +272,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Load email settings when page loads
 document.addEventListener("DOMContentLoaded", function () {
-    loadEmailSettings();
+    // Add a small delay to ensure all elements are ready
+    setTimeout(() => {
+        try {
+            loadEmailSettings();
+        } catch (error) {
+            console.error("Error initializing email settings:", error);
+        }
+    }, 500);
 });
 
 window.applySettings = applySettings;

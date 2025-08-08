@@ -65,10 +65,11 @@ def check_email_notification_status():
             """, (username,))
             
             result = cursor.fetchone()
+            logger.info(f"Database query result for {username}: {result}")
             
             if result:
-                email_notification = result[0] if result[0] is not None else False
-                user_email = result[1] if result[1] else session.get('email', '')
+                email_notification = result.get('email_notification') if isinstance(result, dict) else (result[0] if result[0] is not None else False)
+                user_email = result.get('email') if isinstance(result, dict) else (result[1] if len(result) > 1 and result[1] else session.get('email', ''))
                 
                 return jsonify({
                     'success': True,
@@ -107,9 +108,11 @@ def check_email_notification_status():
 
     except Exception as e:
         logger.error(f"❌ Error checking email notification status: {e}")
+        logger.error(f"❌ Exception type: {type(e)}")
+        logger.error(f"❌ Exception args: {e.args}")
         return jsonify({
             'success': False,
-            'error': 'Failed to check email notification status'
+            'error': f'Failed to check email notification status: {str(e)}'
         }), 500
     finally:
         if conn:
