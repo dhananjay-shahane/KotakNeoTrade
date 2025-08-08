@@ -85,12 +85,11 @@ function loadEmailSettings() {
                 const emailNotificationToggle =
                     document.getElementById("sendDealsInMail");
                 if (emailNotificationToggle) {
-                    emailNotificationToggle.checked = Boolean(
-                        status.email_notification,
-                    );
+                    const emailNotificationValue = Boolean(status.email_notification);
+                    emailNotificationToggle.checked = emailNotificationValue;
                     console.log(
-                        "📧 Email notification toggle loaded:",
-                        status.email_notification,
+                        "📧 Email notification toggle loaded from database:",
+                        emailNotificationValue, "(raw:", status.email_notification, ")"
                     );
                 }
 
@@ -100,15 +99,17 @@ function loadEmailSettings() {
                     userEmailField.value = status.user_email;
                 }
 
-                // Handle other settings if they exist
+                // Handle daily change data toggle
                 const dailyChangeToggle = document.getElementById(
                     "sendDailyChangeData",
                 );
                 if (dailyChangeToggle) {
-                    dailyChangeToggle.checked =
-                        status.send_daily_change_data || false;
-                    toggleDailyEmailTimeContainer(
-                        status.send_daily_change_data || false,
+                    const dailyChangeValue = Boolean(status.send_daily_change_data);
+                    dailyChangeToggle.checked = dailyChangeValue;
+                    toggleDailyEmailTimeContainer(dailyChangeValue);
+                    console.log(
+                        "📊 Daily change data toggle loaded from database:",
+                        dailyChangeValue, "(raw:", status.send_daily_change_data, ")"
                     );
                 }
 
@@ -164,7 +165,7 @@ function loadEmailSettings() {
 }
 
 function setDefaultEmailSettingsInModal() {
-    // Set safe defaults in the settings modal
+    // Set safe defaults in the settings modal - explicitly set to false
     const emailNotificationToggle = document.getElementById("sendDealsInMail");
     if (emailNotificationToggle) {
         emailNotificationToggle.checked = false;
@@ -175,6 +176,7 @@ function setDefaultEmailSettingsInModal() {
     if (dailyChangeToggle) {
         dailyChangeToggle.checked = false;
         toggleDailyEmailTimeContainer(false);
+        console.log("📊 Set default daily change data to: false");
     }
 }
 
@@ -211,15 +213,18 @@ function loadEmailSettingsOnPageLoad() {
                 // Update email notification toggle switch
                 const emailNotificationToggle = document.getElementById("sendDealsInMail");
                 if (emailNotificationToggle) {
-                    emailNotificationToggle.checked = Boolean(status.email_notification);
-                    console.log("✅ Email notification toggle loaded on page load:", status.email_notification);
+                    const emailNotificationValue = Boolean(status.email_notification);
+                    emailNotificationToggle.checked = emailNotificationValue;
+                    console.log("✅ Email notification toggle loaded on page load:", emailNotificationValue, "(raw:", status.email_notification, ")");
                 }
 
-                // Update other settings elements if they exist
+                // Update daily change data toggle
                 const dailyChangeToggle = document.getElementById("sendDailyChangeData");
                 if (dailyChangeToggle) {
-                    dailyChangeToggle.checked = status.send_daily_change_data || false;
-                    toggleDailyEmailTimeContainer(status.send_daily_change_data || false);
+                    const dailyChangeValue = Boolean(status.send_daily_change_data);
+                    dailyChangeToggle.checked = dailyChangeValue;
+                    toggleDailyEmailTimeContainer(dailyChangeValue);
+                    console.log("✅ Daily change data toggle loaded on page load:", dailyChangeValue, "(raw:", status.send_daily_change_data, ")");
                 }
 
                 const userEmailField = document.getElementById("userEmail");
@@ -369,13 +374,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Load email settings when page loads
 document.addEventListener("DOMContentLoaded", function () {
+    // Immediately set default values to prevent flash of "on" state
+    console.log("🔧 Setting default email settings to prevent switch flash...");
+    setDefaultEmailSettingsInModal();
+    
     // Add a small delay to ensure all elements are ready
     setTimeout(() => {
         try {
+            console.log("🔄 Initializing email settings from database...");
             // Load email settings specifically for page initialization
             loadEmailSettingsOnPageLoad();
         } catch (error) {
-            console.error("Error initializing email settings:", error);
+            console.error("❌ Error initializing email settings:", error);
+            setDefaultEmailSettingsInModal();
         }
     }, 500);
 });

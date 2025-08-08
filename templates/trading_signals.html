@@ -152,48 +152,49 @@ endblock %} {% block extra_css %}
                             </tbody>
                         </table>
                     </div>
+            <div
+                    class="card-footer bg-dark border-0 d-flex justify-content-between align-items-center text-light"
+                >
+                    <div class="d-flex align-items-center gap-3">
+                        <small
+                            >Showing <span id="showingCount">0</span> of
+                            <span id="totalCount">0</span> signals</small
+                        >
+                    </div>
+                    <div class="btn-group" role="group">
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-light"
+                            onclick="previousPage()"
+                            id="prevBtn"
+                            disabled
+                        >
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-light"
+                            disabled
+                        >
+                            Page <span id="currentPage">1</span> of
+                            <span id="totalPages">1</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-light"
+                            onclick="nextPage()"
+                            id="nextBtn"
+                            disabled
+                        >
+                            Next <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
                 </div>
         </div>
 
-        <div
-            class="card-footer bg-dark border-0 d-flex justify-content-between align-items-center text-light"
-        >
-            <div class="d-flex align-items-center gap-3">
-                <small
-                    >Showing <span id="showingCount">0</span> of
-                    <span id="totalCount">0</span> signals</small
-                >
-            </div>
-            <div class="btn-group" role="group">
-                <button
-                    type="button"
-                    class="btn btn-sm btn-outline-light"
-                    onclick="previousPage()"
-                    id="prevBtn"
-                    disabled
-                >
-                    <i class="fas fa-chevron-left"></i> Previous
-                </button>
-                <button
-                    type="button"
-                    class="btn btn-sm btn-outline-light"
-                    disabled
-                >
-                    Page <span id="currentPage">1</span> of
-                    <span id="totalPages">1</span>
-                </button>
-                <button
-                    type="button"
-                    class="btn btn-sm btn-outline-light"
-                    onclick="nextPage()"
-                    id="nextBtn"
-                    disabled
-                >
-                    Next <i class="fas fa-chevron-right"></i>
-                </button>
-            </div>
-        </div>
-    </div>
+    
 
 
     <!-- Column Settings Modal -->

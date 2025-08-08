@@ -1390,20 +1390,21 @@ ETFSignalsManager.prototype.updatePagination = function () {
 ETFSignalsManager.prototype.updatePaginationControls = function () {
     // Update global currentPage variable
     window.currentPage = this.currentPage;
-    
+
     // Calculate total pages
-    this.totalPages = Math.ceil(this.filteredSignals.length / this.itemsPerPage) || 1;
+    this.totalPages =
+        Math.ceil(this.filteredSignals.length / this.itemsPerPage) || 1;
 
     // Update pagination buttons
     var prevBtn = document.getElementById("prevBtn");
     var nextBtn = document.getElementById("nextBtn");
     var currentPageSpan = document.getElementById("currentPage");
     var totalPagesSpan = document.getElementById("totalPages");
-    
+
     // Update showing count
     var showingCount = document.getElementById("showingCount");
     var totalCount = document.getElementById("totalCount");
-    
+
     if (prevBtn) {
         if (this.currentPage <= 1) {
             prevBtn.disabled = true;
@@ -1423,16 +1424,19 @@ ETFSignalsManager.prototype.updatePaginationControls = function () {
     if (currentPageSpan) {
         currentPageSpan.textContent = this.currentPage;
     }
-    
+
     if (totalPagesSpan) {
         totalPagesSpan.textContent = this.totalPages;
     }
-    
+
     // Update showing count (showing X of Y signals)
     if (showingCount && totalCount) {
         var startIndex = (this.currentPage - 1) * this.itemsPerPage + 1;
-        var endIndex = Math.min(this.currentPage * this.itemsPerPage, this.filteredSignals.length);
-        
+        var endIndex = Math.min(
+            this.currentPage * this.itemsPerPage,
+            this.filteredSignals.length,
+        );
+
         if (this.filteredSignals.length === 0) {
             showingCount.textContent = "0";
         } else {
@@ -1454,13 +1458,13 @@ ETFSignalsManager.prototype.createPaginationControls = function () {
         }
     }
 
-    if (cardFooter) {
-        var paginationHTML =
-            '<div id="paginationContainer" class="d-flex justify-content-between align-items-center mt-3">' +
-            "</div>";
+    // if (cardFooter) {
+    //     var paginationHTML =
+    //         '<div id="paginationContainer" class="d-flex justify-content-between align-items-center mt-3">' +
+    //         "</div>";
 
-        cardFooter.insertAdjacentHTML("beforeend", paginationHTML);
-    }
+    //     cardFooter.insertAdjacentHTML("beforeend", paginationHTML);
+    // }
 };
 
 ETFSignalsManager.prototype.renderPaginationHTML = function () {
@@ -3884,7 +3888,7 @@ window.changeItemsPerPage = function (newPerPage) {
 };
 
 // Global pagination functions for template compatibility
-window.previousPage = function() {
+window.previousPage = function () {
     if (window.etfSignalsManager && window.etfSignalsManager.currentPage > 1) {
         window.etfSignalsManager.currentPage--;
         window.etfSignalsManager.updateDisplayedSignals();
@@ -3893,8 +3897,12 @@ window.previousPage = function() {
     }
 };
 
-window.nextPage = function() {
-    if (window.etfSignalsManager && window.etfSignalsManager.currentPage < window.etfSignalsManager.totalPages) {
+window.nextPage = function () {
+    if (
+        window.etfSignalsManager &&
+        window.etfSignalsManager.currentPage <
+            window.etfSignalsManager.totalPages
+    ) {
         window.etfSignalsManager.currentPage++;
         window.etfSignalsManager.updateDisplayedSignals();
         window.etfSignalsManager.renderSignalsTable();
