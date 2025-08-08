@@ -26,7 +26,7 @@ window.toggleSidebar = toggleSidebar;
 
 // Email Settings Modal Functions
 function showSettingsModal() {
-    const modal = new bootstrap.Modal(document.getElementById('settingsModal'));
+    const modal = new bootstrap.Modal(document.getElementById("settingsModal"));
     loadEmailSettings();
     modal.show();
 }
@@ -36,67 +36,84 @@ window.showSettingsModal = showSettingsModal;
 
 function loadEmailSettings() {
     // Load email notification settings from new dedicated API
-    fetch('/api/check-email-notification-status', {
-        method: 'GET',
-        credentials: 'same-origin',
+    fetch("/api/check-email-notification-status", {
+        method: "GET",
+        credentials: "same-origin",
         headers: {
-            'Accept': 'application/json'
-        }
+            Accept: "application/json",
+        },
     })
-        .then(response => response.json())
-        .then(data => {
+        .then((response) => response.json())
+        .then((data) => {
             if (data.success && data.authenticated) {
                 const status = data.status;
-                
+
                 // Update email notification toggle switch in settings modal
-                const emailNotificationToggle = document.getElementById('sendDealsInMail');
+                const emailNotificationToggle =
+                    document.getElementById("sendDealsInMail");
                 if (emailNotificationToggle) {
-                    emailNotificationToggle.checked = Boolean(status.email_notification);
-                    console.log('📧 Email notification toggle loaded:', status.email_notification);
+                    emailNotificationToggle.checked = Boolean(
+                        status.email_notification,
+                    );
+                    console.log(
+                        "📧 Email notification toggle loaded:",
+                        status.email_notification,
+                    );
                 }
-                
+
                 // Update email field
-                const userEmailField = document.getElementById('userEmail');
+                const userEmailField = document.getElementById("userEmail");
                 if (userEmailField && status.user_email) {
                     userEmailField.value = status.user_email;
                 }
-                
+
                 // Handle other settings if they exist
-                const dailyChangeToggle = document.getElementById('sendDailyChangeData');
+                const dailyChangeToggle = document.getElementById(
+                    "sendDailyChangeData",
+                );
                 if (dailyChangeToggle) {
-                    dailyChangeToggle.checked = status.send_daily_change_data || false;
-                    toggleDailyEmailTimeContainer(status.send_daily_change_data || false);
+                    dailyChangeToggle.checked =
+                        status.send_daily_change_data || false;
+                    toggleDailyEmailTimeContainer(
+                        status.send_daily_change_data || false,
+                    );
                 }
-                
-                const dailyTimeField = document.getElementById('dailyEmailTime');
+
+                const dailyTimeField =
+                    document.getElementById("dailyEmailTime");
                 if (dailyTimeField && status.daily_email_time) {
                     dailyTimeField.value = status.daily_email_time;
                 }
             } else {
                 if (!data.authenticated) {
-                    console.warn('🔒 User not authenticated for email settings');
+                    console.warn(
+                        "🔒 User not authenticated for email settings",
+                    );
                 } else {
-                    console.error('❌ Failed to load email settings:', data.error);
+                    console.error(
+                        "❌ Failed to load email settings:",
+                        data.error,
+                    );
                 }
                 // Set default values for unauthenticated users
                 setDefaultEmailSettingsInModal();
             }
         })
-        .catch(error => {
-            console.error('❌ Error loading email settings:', error);
+        .catch((error) => {
+            console.error("❌ Error loading email settings:", error);
             setDefaultEmailSettingsInModal();
         });
 }
 
 function setDefaultEmailSettingsInModal() {
     // Set safe defaults in the settings modal
-    const emailNotificationToggle = document.getElementById('sendDealsInMail');
+    const emailNotificationToggle = document.getElementById("sendDealsInMail");
     if (emailNotificationToggle) {
         emailNotificationToggle.checked = false;
-        console.log('📧 Set default email notification to: false');
+        console.log("📧 Set default email notification to: false");
     }
-    
-    const dailyChangeToggle = document.getElementById('sendDailyChangeData');
+
+    const dailyChangeToggle = document.getElementById("sendDailyChangeData");
     if (dailyChangeToggle) {
         dailyChangeToggle.checked = false;
         toggleDailyEmailTimeContainer(false);
@@ -104,102 +121,127 @@ function setDefaultEmailSettingsInModal() {
 }
 
 function toggleDailyEmailTimeContainer(show) {
-    const container = document.getElementById('dailyEmailTimeContainer');
-    container.style.display = show ? 'block' : 'none';
-}
-
-function applySettings() {
-    // Save font settings (existing functionality)
-    const fontSize = document.getElementById('fontSizeSelect').value;
-    localStorage.setItem('website-font-size', fontSize);
-    document.documentElement.style.setProperty('--global-font-size', fontSize + 'px');
-    
-    // Save email settings
-    saveEmailSettings();
+    const container = document.getElementById("dailyEmailTimeContainer");
+    container.style.display = show ? "block" : "none";
 }
 
 function saveEmailSettings() {
     // Save email notification setting using new dedicated API
-    const emailNotificationToggle = document.getElementById('sendDealsInMail');
-    
+    const emailNotificationToggle = document.getElementById("sendDealsInMail");
+
     if (emailNotificationToggle) {
         const isEnabled = Boolean(emailNotificationToggle.checked);
-        
-        console.log('💾 Saving email notification status:', isEnabled);
-        
-        fetch('/api/update-email-notification-status', {
-            method: 'POST',
-            credentials: 'same-origin',
+
+        console.log("💾 Saving email notification status:", isEnabled);
+
+        fetch("/api/update-email-notification-status", {
+            method: "POST",
+            credentials: "same-origin",
             headers: {
-                'Content-Type': 'application/json',
+                "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                email_notification: isEnabled
-            })
+                email_notification: isEnabled,
+            }),
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                console.log('✅ Email notification status saved:', data.status.email_notification);
-                showToaster('Success', 'Email notification setting saved', 'success');
-            } else {
-                if (!data.authenticated) {
-                    console.warn('🔒 Authentication required for saving email settings');
-                    showToaster('Warning', 'Please login to save email settings', 'warning');
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.success) {
+                    console.log(
+                        "✅ Email notification status saved:",
+                        data.status.email_notification,
+                    );
+                    showToaster(
+                        "Success",
+                        "Email notification setting saved",
+                        "success",
+                    );
                 } else {
-                    console.error('❌ Failed to save email settings:', data.error);
-                    showToaster('Error', 'Failed to save email settings', 'error');
+                    if (!data.authenticated) {
+                        console.warn(
+                            "🔒 Authentication required for saving email settings",
+                        );
+                        showToaster(
+                            "Warning",
+                            "Please login to save email settings",
+                            "warning",
+                        );
+                    } else {
+                        console.error(
+                            "❌ Failed to save email settings:",
+                            data.error,
+                        );
+                        showToaster(
+                            "Error",
+                            "Failed to save email settings",
+                            "error",
+                        );
+                    }
                 }
-            }
-        })
-        .catch(error => {
-            console.error('❌ Error saving email settings:', error);
-            showToaster('Error', 'Error saving email settings', 'error');
-        });
+            })
+            .catch((error) => {
+                console.error("❌ Error saving email settings:", error);
+                showToaster("Error", "Error saving email settings", "error");
+            });
     }
-    
+
     // Handle other settings if they exist
     const settings = {
-        send_deals_in_mail: document.getElementById('sendDealsInMail') ? document.getElementById('sendDealsInMail').checked : false,
-        send_daily_change_data: document.getElementById('sendDailyChangeData').checked,
-        daily_email_time: document.getElementById('dailyEmailTime').value,
-        user_email: document.getElementById('userEmail').value.trim()
+        send_deals_in_mail: document.getElementById("sendDealsInMail")
+            ? document.getElementById("sendDealsInMail").checked
+            : false,
+        send_daily_change_data: document.getElementById("sendDailyChangeData")
+            .checked,
+        daily_email_time: document.getElementById("dailyEmailTime").value,
+        user_email: document.getElementById("userEmail").value.trim(),
     };
 
-    fetch('/api/email-settings', {
-        method: 'POST',
+    fetch("/api/email-settings", {
+        method: "POST",
         headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
         },
-        body: JSON.stringify(settings)
+        body: JSON.stringify(settings),
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showToaster('Success', 'Email settings saved successfully', 'success');
-            // Close modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
-            modal.hide();
-        } else {
-            showToaster('Error', data.error || 'Failed to save settings', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error saving email settings:', error);
-        showToaster('Error', 'Failed to save email settings', 'error');
-    });
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success) {
+                showToaster(
+                    "Success",
+                    "Email settings saved successfully",
+                    "success",
+                );
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(
+                    document.getElementById("settingsModal"),
+                );
+                modal.hide();
+            } else {
+                showToaster(
+                    "Error",
+                    data.error || "Failed to save settings",
+                    "error",
+                );
+            }
+        })
+        .catch((error) => {
+            console.error("Error saving email settings:", error);
+            showToaster("Error", "Failed to save email settings", "error");
+        });
 }
 
 // Event listeners for email settings
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", function () {
     // Toggle time container when daily data switch changes
-    const dailyDataSwitch = document.getElementById('sendDailyChangeData');
+    const dailyDataSwitch = document.getElementById("sendDailyChangeData");
     if (dailyDataSwitch) {
-        dailyDataSwitch.addEventListener('change', function() {
+        dailyDataSwitch.addEventListener("change", function () {
             toggleDailyEmailTimeContainer(this.checked);
         });
     }
 });
+
+window.onload(loadEmailSettings());
 
 window.applySettings = applySettings;
 
@@ -510,106 +552,138 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Initialize notification system
     initializeNotifications();
-    
+
     // Note: Email notification toggle setup happens when modal is shown
-    
+
     // Debug: Verify all functions are loaded
-    console.log('🔍 Function availability check:');
-    console.log('- showSettingsModal:', typeof showSettingsModal);
-    console.log('- loadEmailSettings:', typeof loadEmailSettings);
-    console.log('- setupEmailNotificationToggle:', typeof setupEmailNotificationToggle);
-    console.log('- Bootstrap available:', typeof bootstrap !== 'undefined' ? 'YES' : 'NO');
+    console.log("🔍 Function availability check:");
+    console.log("- showSettingsModal:", typeof showSettingsModal);
+    console.log("- loadEmailSettings:", typeof loadEmailSettings);
+    console.log(
+        "- setupEmailNotificationToggle:",
+        typeof setupEmailNotificationToggle,
+    );
+    console.log(
+        "- Bootstrap available:",
+        typeof bootstrap !== "undefined" ? "YES" : "NO",
+    );
 });
 
 // Setup email notification toggle for immediate saving
 function setupEmailNotificationToggle() {
-    console.log('🔧 Setting up email notification toggle...');
-    const emailNotificationToggle = document.getElementById('sendDealsInMail');
-    console.log('🔍 Email toggle element found:', emailNotificationToggle ? 'YES' : 'NO');
-    
+    console.log("🔧 Setting up email notification toggle...");
+    const emailNotificationToggle = document.getElementById("sendDealsInMail");
+    console.log(
+        "🔍 Email toggle element found:",
+        emailNotificationToggle ? "YES" : "NO",
+    );
+
     if (emailNotificationToggle) {
         // Remove any existing event listeners first
-        emailNotificationToggle.removeEventListener('change', emailToggleHandler);
-        
+        emailNotificationToggle.removeEventListener(
+            "change",
+            emailToggleHandler,
+        );
+
         // Add the new event listener
-        emailNotificationToggle.addEventListener('change', emailToggleHandler);
-        console.log('✅ Email notification toggle listener setup complete');
+        emailNotificationToggle.addEventListener("change", emailToggleHandler);
+        console.log("✅ Email notification toggle listener setup complete");
     } else {
-        console.error('❌ Email notification toggle element NOT FOUND');
+        console.error("❌ Email notification toggle element NOT FOUND");
     }
 }
 
 // Separate handler function to avoid duplicate listeners
 function emailToggleHandler() {
     const isEnabled = Boolean(this.checked);
-    console.log('📧 Email notification toggle changed to:', isEnabled);
-    
+    console.log("📧 Email notification toggle changed to:", isEnabled);
+
     // Save immediately when user toggles the switch
-    fetch('/api/update-email-notification-status', {
-        method: 'POST',
-        credentials: 'same-origin',
+    fetch("/api/update-email-notification-status", {
+        method: "POST",
+        credentials: "same-origin",
         headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
         },
         body: JSON.stringify({
-            email_notification: isEnabled
+            email_notification: isEnabled,
+        }),
+    })
+        .then((response) => {
+            console.log("🌐 API Response status:", response.status);
+            return response.json();
         })
-    })
-    .then(response => {
-        console.log('🌐 API Response status:', response.status);
-        return response.json();
-    })
-    .then(data => {
-        console.log('📊 API Response data:', data);
-        if (data.success) {
-            console.log('✅ Email notification status auto-saved:', data.status.email_notification);
-            if (typeof showToaster === 'function') {
-                showToaster('Success', 'Email notification setting saved', 'success', 2000);
+        .then((data) => {
+            console.log("📊 API Response data:", data);
+            if (data.success) {
+                console.log(
+                    "✅ Email notification status auto-saved:",
+                    data.status.email_notification,
+                );
+                if (typeof showToaster === "function") {
+                    showToaster(
+                        "Success",
+                        "Email notification setting saved",
+                        "success",
+                        2000,
+                    );
+                }
+            } else {
+                console.error(
+                    "❌ Failed to auto-save email notification status:",
+                    data.error,
+                );
+                if (typeof showToaster === "function") {
+                    showToaster(
+                        "Error",
+                        "Failed to save setting",
+                        "error",
+                        3000,
+                    );
+                }
+                // Revert toggle state if save failed
+                this.checked = !isEnabled;
             }
-        } else {
-            console.error('❌ Failed to auto-save email notification status:', data.error);
-            if (typeof showToaster === 'function') {
-                showToaster('Error', 'Failed to save setting', 'error', 3000);
+        })
+        .catch((error) => {
+            console.error("❌ Error auto-saving email notification:", error);
+            if (typeof showToaster === "function") {
+                showToaster("Error", "Connection error", "error", 3000);
             }
             // Revert toggle state if save failed
             this.checked = !isEnabled;
-        }
-    })
-    .catch(error => {
-        console.error('❌ Error auto-saving email notification:', error);
-        if (typeof showToaster === 'function') {
-            showToaster('Error', 'Connection error', 'error', 3000);
-        }
-        // Revert toggle state if save failed
-        this.checked = !isEnabled;
-    });
+        });
 }
 
 // Settings Modal functionality
 function showSettingsModal() {
-    console.log('⚙️ showSettingsModal() called!');
+    console.log("⚙️ showSettingsModal() called!");
     const modalElement = document.getElementById("settingsModal");
-    console.log('🔍 Modal element found:', modalElement ? 'YES' : 'NO');
-    
+    console.log("🔍 Modal element found:", modalElement ? "YES" : "NO");
+
     if (!modalElement) {
-        console.error('❌ Settings modal element not found!');
+        console.error("❌ Settings modal element not found!");
         return;
     }
-    
+
     const modal = new bootstrap.Modal(modalElement);
-    
+
     // Load email settings when modal opens
-    console.log('🔄 Opening settings modal, loading email settings...');
-    
+    console.log("🔄 Opening settings modal, loading email settings...");
+
     // Setup toggle listener after modal is shown
-    modalElement.addEventListener('shown.bs.modal', function () {
-        console.log('🎯 Modal shown event fired');
-        loadEmailSettings();
-        setupEmailNotificationToggle();
-    }, { once: true }); // Only setup once per modal show
-    
+    modalElement.addEventListener(
+        "shown.bs.modal",
+        function () {
+            console.log("🎯 Modal shown event fired");
+            loadEmailSettings();
+            setupEmailNotificationToggle();
+        },
+        { once: true },
+    ); // Only setup once per modal show
+
     modal.show();
-    console.log('✅ Modal.show() called');
+    console.log("✅ Modal.show() called");
 }
 
 // Notification functionality
@@ -687,7 +761,8 @@ function applySettings() {
         }
     }
 
-    // Close modal
+    saveEmailSettings();
+
     const modal = bootstrap.Modal.getInstance(
         document.getElementById("settingsModal"),
     );
@@ -1098,66 +1173,66 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // Settings modal functionality
-function applySettings() {
-    const fontSizeSelect = document.getElementById("fontSizeSelect");
+// function applySettings() {
+//     const fontSizeSelect = document.getElementById("fontSizeSelect");
 
-    if (fontSizeSelect) {
-        const newFontSize = fontSizeSelect.value;
-        document.documentElement.style.setProperty(
-            "--global-font-size",
-            newFontSize + "px",
-        );
-        localStorage.setItem("website-font-size", newFontSize);
-    }
+//     if (fontSizeSelect) {
+//         const newFontSize = fontSizeSelect.value;
+//         document.documentElement.style.setProperty(
+//             "--global-font-size",
+//             newFontSize + "px",
+//         );
+//         localStorage.setItem("website-font-size", newFontSize);
+//     }
 
-    // Close modal
-    const modal = bootstrap.Modal.getInstance(
-        document.getElementById("settingsModal"),
-    );
-    if (modal) {
-        modal.hide();
-    }
+//     // Close modal
+//     const modal = bootstrap.Modal.getInstance(
+//         document.getElementById("settingsModal"),
+//     );
+//     if (modal) {
+//         modal.hide();
+//     }
 
-    // Show success message
-    if (typeof showToaster === "function") {
-        showToaster(
-            "Settings Applied",
-            "Your preferences have been saved",
-            "success",
-        );
-    }
-}
+//     // Show success message
+//     if (typeof showToaster === "function") {
+//         showToaster(
+//             "Settings Applied",
+//             "Your preferences have been saved",
+//             "success",
+//         );
+//     }
+// }
 
-// Settings modal functionality
-function applySettings() {
-    const fontSizeSelect = document.getElementById("fontSizeSelect");
+// // Settings modal functionality
+// function applySettings() {
+//     const fontSizeSelect = document.getElementById("fontSizeSelect");
 
-    if (fontSizeSelect) {
-        const newFontSize = fontSizeSelect.value;
-        document.documentElement.style.setProperty(
-            "--global-font-size",
-            newFontSize + "px",
-        );
-        localStorage.setItem("website-font-size", newFontSize);
-    }
+//     if (fontSizeSelect) {
+//         const newFontSize = fontSizeSelect.value;
+//         document.documentElement.style.setProperty(
+//             "--global-font-size",
+//             newFontSize + "px",
+//         );
+//         localStorage.setItem("website-font-size", newFontSize);
+//     }
 
-    // Close modal
-    const modal = bootstrap.Modal.getInstance(
-        document.getElementById("settingsModal"),
-    );
-    if (modal) {
-        modal.hide();
-    }
+//     // Close modal
+//     const modal = bootstrap.Modal.getInstance(
+//         document.getElementById("settingsModal"),
+//     );
+//     if (modal) {
+//         modal.hide();
+//     }
 
-    // Show success message
-    if (typeof showToaster === "function") {
-        showToaster(
-            "Settings Applied",
-            "Your preferences have been saved",
-            "success",
-        );
-    }
-}
+//     // Show success message
+//     if (typeof showToaster === "function") {
+//         showToaster(
+//             "Settings Applied",
+//             "Your preferences have been saved",
+//             "success",
+//         );
+//     }
+// }
 
 // Notification inbox functionality
 let notificationInterval = null;
@@ -1198,10 +1273,12 @@ function updateNotificationCount() {
         })
         .then((data) => {
             if (data.success) {
-                const countElement = document.getElementById("notificationCount");
+                const countElement =
+                    document.getElementById("notificationCount");
                 if (countElement) {
                     countElement.textContent = data.count || 0;
-                    countElement.style.display = data.count > 0 ? "block" : "none";
+                    countElement.style.display =
+                        data.count > 0 ? "block" : "none";
                 }
             }
         })
