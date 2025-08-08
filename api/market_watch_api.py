@@ -858,8 +858,7 @@ def get_default_symbols_with_market_data():
                         latest_close = historical_fetcher.get_latest_close(
                             symbol)
                         change_pct = try_percent(cmp, latest_close)
-                        change_val = round(cmp - latest_close,
-                                           2) if latest_close else None
+                        change_val = round(cmp - latest_close, 2) if latest_close else None
                 except Exception as market_error:
                     logger.warning(
                         f"Market data error for {symbol}: {market_error}")
