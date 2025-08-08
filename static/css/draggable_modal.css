@@ -16,8 +16,8 @@
 .modal-draggable .modal-header {
     cursor: move;
     user-select: none;
-    background: linear-gradient(45deg, #198754, #20c997);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(45deg, #198754, #20c997) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 .modal-draggable .modal-header:hover {
@@ -131,25 +131,25 @@
 }
 
 /* Remove backdrop completely for draggable modals */
-#editDealModal.modal-draggable + .modal-backdrop,
-#closeDealModal.modal-draggable + .modal-backdrop,
-#editExitDateModal.modal-draggable + .modal-backdrop {
+#editDealModal.modal-draggable+.modal-backdrop,
+#closeDealModal.modal-draggable+.modal-backdrop,
+#editExitDateModal.modal-draggable+.modal-backdrop {
     display: none !important;
 }
 
-#editDealModal.modal-draggable.show + .modal-backdrop.show,
-#closeDealModal.modal-draggable.show + .modal-backdrop.show,
-#editExitDateModal.modal-draggable.show + .modal-backdrop.show {
+#editDealModal.modal-draggable.show+.modal-backdrop.show,
+#closeDealModal.modal-draggable.show+.modal-backdrop.show,
+#editExitDateModal.modal-draggable.show+.modal-backdrop.show {
     display: none !important;
 }
 
 /* Hide backdrop during interactions */
-#editDealModal.modal-dragging + .modal-backdrop,
-#editDealModal.modal-resizing + .modal-backdrop,
-#closeDealModal.modal-dragging + .modal-backdrop,
-#closeDealModal.modal-resizing + .modal-backdrop,
-#editExitDateModal.modal-dragging + .modal-backdrop,
-#editExitDateModal.modal-resizing + .modal-backdrop {
+#editDealModal.modal-dragging+.modal-backdrop,
+#editDealModal.modal-resizing+.modal-backdrop,
+#closeDealModal.modal-dragging+.modal-backdrop,
+#closeDealModal.modal-resizing+.modal-backdrop,
+#editExitDateModal.modal-dragging+.modal-backdrop,
+#editExitDateModal.modal-resizing+.modal-backdrop {
     display: none !important;
 }
 
@@ -173,19 +173,21 @@
         min-width: 280px;
         max-width: 95vw;
     }
-    
+
     .resize-handle {
         width: 20px !important;
         height: 20px !important;
     }
-    
-    .resize-n, .resize-s {
+
+    .resize-n,
+    .resize-s {
         height: 8px;
         left: 20px;
         right: 20px;
     }
-    
-    .resize-e, .resize-w {
+
+    .resize-e,
+    .resize-w {
         width: 8px;
         top: 20px;
         bottom: 20px;
