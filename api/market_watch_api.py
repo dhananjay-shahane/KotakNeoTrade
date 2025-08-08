@@ -148,7 +148,7 @@ def search_symbols():
         company_filter = request.args.get('company', '').strip()
         sector_filter = request.args.get('sector', '').strip()
         sub_sector_filter = request.args.get('sub_sector', '').strip()
-        limit = int(request.args.get('limit', 20))
+        limit = int(request.args.get('limit', 3000))
 
         # Build base query
         query = """
@@ -776,6 +776,9 @@ def get_user_symbols_with_market_data():
         }), 500
 
 
+# *************** MARKET WATCH DEFAULT SYMBOLS ***************
+
+
 @market_watch_api.route('/api/market-watch/default-symbols-with-data',
                         methods=['GET'])
 def get_default_symbols_with_market_data():
@@ -842,7 +845,21 @@ def get_default_symbols_with_market_data():
                 try:
                     if price_fetcher:
                         cmp = price_fetcher.get_cmp(symbol)
+                        # Get historical prices
+                        price_7d = historical_fetcher.get_offset_price(
+                            symbol, 5)
+                        price_30d = historical_fetcher.get_offset_price(
+                            symbol, 20)
+                        # Calculate percentage changes
+                        change_7d_pct = try_percent(cmp, price_7d)
+                        change_30d_pct = try_percent(cmp, price_30d)
 
+                        # Calculate change percentage from previous day (CPL - Change from Previous Day)
+                        latest_close = historical_fetcher.get_latest_close(
+                            symbol)
+                        change_pct = try_percent(cmp, latest_close)
+                        change_val = round(cmp - latest_close,
+                                           2) if latest_close else None
                 except Exception as market_error:
                     logger.warning(
                         f"Market data error for {symbol}: {market_error}")
@@ -852,16 +869,12 @@ def get_default_symbols_with_market_data():
                 if cmp is not None:
                     symbol_info.update({
                         'cmp': f"{cmp:.2f}",
-                        'price_7d':
-                        '--',  # Historical data temporarily disabled
-                        'price_30d':
-                        '--',  # Historical data temporarily disabled  
-                        'change_7d_pct': '--',
-                        'change_30d_pct': '--',
-                        'change_7d': '--',
-                        'change_30d': '--',
-                        'change_pct': '--',
-                        'change_val': '--'
+                        'price_7d': price_7d,
+                        'price_30d': price_30d,
+                        'change_7d_pct': change_7d_pct,
+                        'change_30d_pct': change_30d_pct,
+                        'change_pct': change_pct,
+                        'change_val': change_val if change_val else
                     })
                 else:
                     # Fallback values when market data is not available
@@ -871,8 +884,6 @@ def get_default_symbols_with_market_data():
                         'price_30d': '--',
                         'change_7d_pct': '--',
                         'change_30d_pct': '--',
-                        'change_7d': '--',
-                        'change_30d': '--',
                         'change_pct': '--',
                         'change_val': '--'
                     })
