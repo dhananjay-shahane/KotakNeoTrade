@@ -501,7 +501,7 @@ function logoutKotakOnly(event) {
     }
 
     // Make AJAX request to logout only from Kotak
-    fetch("/logout-kotak", {
+    fetch("/auth/logout-kotak", {
         method: "GET",
         credentials: "same-origin",
     })

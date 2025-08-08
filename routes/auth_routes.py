@@ -274,7 +274,7 @@ def logout():
     return redirect(url_for('auth_routes.trading_account_login'))
 
 
-@auth_bp.route('/logout-kotak')
+@auth_bp.route('/logout-kotak', methods=['GET', 'POST'])
 def logout_kotak():
     """Logout only from Kotak account while keeping trading account session"""
     # Clear only Kotak-specific session data but preserve trading account data
