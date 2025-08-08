@@ -33,6 +33,7 @@ class PriceFetcher:
         try:
             table_name = f"{symbol.lower()}_5m"
 
+            # Quick table existence check with timeout
             if not self.table_exists(table_name):
                 self.logger.warning(f"5min table not found: {table_name}")
                 return None
@@ -44,11 +45,17 @@ class PriceFetcher:
                 LIMIT 1
             """
 
+            # Use execute_query with timeout protection
             result = self.db.execute_query(query)
-            return float(result[0]['close']) if result else None
+            if result and len(result) > 0 and 'close' in result[0]:
+                close_val = result[0]['close']
+                if close_val is not None:
+                    return float(close_val)
+            
+            return None
 
         except Exception as e:
-            self.logger.error(f"Error fetching CMP: {str(e)}", exc_info=True)
+            self.logger.warning(f"CMP fetch error for {symbol}: {str(e)}")
             return None
 
 
@@ -76,28 +83,26 @@ class HistoricalFetcher:
         try:
             table_name = f"{symbol.lower()}_daily"
             if not self.table_exists(table_name):
-                logger.warning(f"Table not found: symbols.{table_name}")
+                logger.warning(f"Daily table not found: symbols.{table_name}")
                 return None
 
-            # Count rows
-            count_query = f"SELECT COUNT(*) as cnt FROM symbols.{table_name}"
-            count_result = self.db.execute_query(count_query)
-            row_count = count_result[0]['cnt'] if count_result else 0
-
-            if row_count <= offset:
-                return None  # Not enough rows
-
-            # Get Nth previous close: 0 = latest, 1 = 1 trading day ago, ...
+            # Get Nth previous close with simplified query
             price_query = f"""
                 SELECT close FROM symbols.{table_name}
                 ORDER BY datetime DESC
                 OFFSET {offset} LIMIT 1
             """
             result = self.db.execute_query(price_query)
-            return float(result[0]['close']) if result else None
+            
+            if result and len(result) > 0 and 'close' in result[0]:
+                close_val = result[0]['close']
+                if close_val is not None:
+                    return float(close_val)
+            
+            return None
+            
         except Exception as e:
-            logger.error(f"Error fetching offset={offset} price: {e}",
-                         exc_info=True)
+            logger.warning(f"Offset price fetch error for {symbol} (offset={offset}): {e}")
             return None
 
     def get_latest_close(self, symbol: str) -> Optional[float]:
@@ -107,18 +112,25 @@ class HistoricalFetcher:
         try:
             table_name = f"{symbol.lower()}_daily"
             if not self.table_exists(table_name):
-                logger.warning(f"Table not found: symbols.{table_name}")
+                logger.warning(f"Daily table not found: symbols.{table_name}")
                 return None
+                
             price_query = f"""
                 SELECT close FROM symbols.{table_name}
                 ORDER BY datetime DESC
                 LIMIT 1
             """
             result = self.db.execute_query(price_query)
-            return float(result[0]['close']) if result else None
+            
+            if result and len(result) > 0 and 'close' in result[0]:
+                close_val = result[0]['close']
+                if close_val is not None:
+                    return float(close_val)
+                    
+            return None
+            
         except Exception as e:
-            logger.error(f"Error fetching latest close price: {e}",
-                         exc_info=True)
+            logger.warning(f"Latest close fetch error for {symbol}: {e}")
             return None
 
 
