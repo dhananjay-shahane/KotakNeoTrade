@@ -21,8 +21,11 @@ def check_email_notification_status():
     """
     conn = None
     try:
+        logger.info("📧 Email notification status check initiated")
+        
         # Check authentication
         if not session.get('authenticated'):
+            logger.warning("🔒 User not authenticated for email settings")
             return jsonify({
                 'success': False,
                 'authenticated': False,
@@ -110,13 +113,24 @@ def check_email_notification_status():
         logger.error(f"❌ Error checking email notification status: {e}")
         logger.error(f"❌ Exception type: {type(e)}")
         logger.error(f"❌ Exception args: {e.args}")
-        return jsonify({
-            'success': False,
-            'error': f'Failed to check email notification status: {str(e)}'
-        }), 500
+        
+        # Return proper JSON response even for errors
+        try:
+            return jsonify({
+                'success': False,
+                'authenticated': False,
+                'error': f'Database error: {str(e)}'
+            }), 500
+        except Exception as json_error:
+            logger.error(f"❌ Failed to create JSON response: {json_error}")
+            # Return plain text as last resort
+            return f"Error: {str(e)}", 500
     finally:
         if conn:
-            conn.close()
+            try:
+                conn.close()
+            except:
+                pass
 
 
 @email_status_bp.route('/update-email-notification-status', methods=['POST'])

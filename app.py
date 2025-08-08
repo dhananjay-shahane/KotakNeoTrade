@@ -1191,8 +1191,18 @@ try:
     from api.email_notification_status import email_status_bp
     app.register_blueprint(email_status_bp)
     print("✓ Registered email_notification_status blueprint")
+    
+    # Test the blueprint registration
+    with app.app_context():
+        print("✓ Available routes:")
+        for rule in app.url_map.iter_rules():
+            if 'email-notification' in rule.rule:
+                print(f"  - {rule.rule} [{rule.methods}]")
+                
 except Exception as e:
     print(f"✗ Error registering email_notification_status: {e}")
+    import traceback
+    print(f"✗ Full traceback: {traceback.format_exc()}")
 
 # Register market watch API blueprint
 try:

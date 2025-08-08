@@ -35,27 +35,36 @@ function showSettingsModal() {
 window.showSettingsModal = showSettingsModal;
 
 function loadEmailSettings() {
+    console.log("🔄 Loading email settings...");
+    
     // Load email notification settings from new dedicated API
     fetch("/api/check-email-notification-status", {
         method: "GET",
         credentials: "same-origin",
         headers: {
             Accept: "application/json",
+            "Content-Type": "application/json"
         },
     })
         .then((response) => {
+            console.log("📡 API Response status:", response.status, response.statusText);
+            
             if (!response.ok) {
                 console.warn(
                     `API returned ${response.status}: ${response.statusText}`,
                 );
-                throw new Error(`HTTP ${response.status}`);
+                // For 502 errors, try fallback or show specific message
+                if (response.status === 502) {
+                    throw new Error("Server temporarily unavailable. Please try again.");
+                }
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             
             // Check if response is actually JSON
             const contentType = response.headers.get("content-type");
             if (!contentType || !contentType.includes("application/json")) {
                 console.error("API returned non-JSON response:", contentType);
-                throw new Error("Invalid response type");
+                throw new Error("Server returned invalid response format");
             }
             
             return response.json();
@@ -117,10 +126,30 @@ function loadEmailSettings() {
         })
         .catch((error) => {
             console.error("❌ Error loading email settings:", error);
-            // Show user-friendly error message
-            if (typeof showToaster === "function") {
-                showToaster("Warning", "Unable to load email settings", "warning", 3000);
+            
+            // Show user-friendly error message based on error type
+            let errorMessage = "Unable to load email settings";
+            let errorType = "warning";
+            
+            if (error.message.includes("502")) {
+                errorMessage = "Server temporarily unavailable. Trying again...";
+                errorType = "error";
+                // Retry after 2 seconds for 502 errors
+                setTimeout(() => {
+                    console.log("🔄 Retrying email settings load...");
+                    loadEmailSettings();
+                }, 2000);
+            } else if (error.message.includes("401")) {
+                errorMessage = "Please login to load email settings";
+            } else if (error.message.includes("invalid response")) {
+                errorMessage = "Server configuration error";
+                errorType = "error";
             }
+            
+            if (typeof showToaster === "function") {
+                showToaster("Email Settings", errorMessage, errorType, 4000);
+            }
+            
             setDefaultEmailSettingsInModal();
         });
 }
