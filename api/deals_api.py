@@ -1187,25 +1187,23 @@ def close_deal():
                 'error': 'Exit date is required'
             }), 400
 
-        # if not exit_price:
-        #     return jsonify({
-        #         'success': False,
-        #         'error': 'Exit price is required'
-        #     }), 400
-
-        # Validate exit price
-        # try:
-        #     exit_price = float(exit_price)
-        #     if exit_price <= 0:
-        #         return jsonify({
-        #             'success': False,
-        #             'error': 'Exit price must be a positive number'
-        #         }), 400
-        # except (ValueError, TypeError):
-        #     return jsonify({
-        #         'success': False,
-        #         'error': 'Invalid exit price value'
-        #     }), 400
+        # Validate exit price if provided
+        if exit_price is not None:
+            try:
+                exit_price = float(exit_price)
+                if exit_price <= 0:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Exit price must be a positive number'
+                    }), 400
+            except (ValueError, TypeError):
+                return jsonify({
+                    'success': False,
+                    'error': 'Invalid exit price value'
+                }), 400
+        else:
+            # If no exit price provided, we'll get it from current market price or entry price
+            exit_price = None
 
         # Validate exit date format (ddmmyy)
         if not re.match(r'^\d{6}$', exit_date):
@@ -1280,7 +1278,27 @@ def close_deal():
             entry_price = float(current_deal.get('ep', 0))
             quantity = float(current_deal.get('qty', 0))
 
-            if entry_price > 0 and quantity > 0:
+            # If no exit price provided, try to get current market price or use entry price
+            if exit_price is None:
+                try:
+                    # Try to get current market price
+                    from config.database_config import get_database_url, DatabaseConnector
+                    external_db_url = get_database_url()
+                    db_connector = DatabaseConnector(external_db_url)
+                    price_fetcher = PriceFetcher(db_connector)
+                    cmp = price_fetcher.get_cmp(symbol)
+                    
+                    if cmp and cmp > 0:
+                        exit_price = float(cmp)
+                    else:
+                        exit_price = entry_price  # Fallback to entry price (no profit/loss)
+                    
+                    db_connector.close()
+                except Exception as e:
+                    logger.warning(f"Could not fetch current price for {symbol}: {e}")
+                    exit_price = entry_price  # Fallback to entry price
+
+            if entry_price > 0 and quantity > 0 and exit_price is not None:
                 # Calculate profit amount: (exit_price - entry_price) * quantity
                 pr_value = int((exit_price - entry_price) * quantity)
 
@@ -1289,17 +1307,19 @@ def close_deal():
                     ((exit_price - entry_price) / entry_price) * 100)
 
         # Update deal status to CLOSED, set exit date (ed), exit price (exp), pos to 0
-        success = dynamic_deals_service.update_deal(
-            username,
-            deal_id,
-            {
-                'status': 'CLOSED',
-                'ed': exit_date_obj,  # ed = exit date for closed deals
-                'exp': exit_price,  # exp = exit price for closed deals
-                'pos': '0',  # Set position to 0 to indicate closed deal
-                'pr': pr_value,  # Profit amount as integer
-                'pp': pp_value  # Profit percentage as integer
-            })
+        update_fields = {
+            'status': 'CLOSED',
+            'ed': exit_date_obj,  # ed = exit date for closed deals
+            'pos': '0',  # Set position to 0 to indicate closed deal
+            'pr': pr_value,  # Profit amount as integer
+            'pp': pp_value  # Profit percentage as integer
+        }
+        
+        # Only set exp if we have a valid exit_price
+        if exit_price is not None:
+            update_fields['exp'] = exit_price  # exp = exit price for closed deals
+            
+        success = dynamic_deals_service.update_deal(username, deal_id, update_fields)
 
         # Case 4: Send email notification for closed deal
 
@@ -1349,10 +1369,13 @@ def close_deal():
                 f"❌ Error sending deal closure notification email: {e}")
             # Don't fail the deal closure if email fails
 
+        message = f'Deal closed successfully for {symbol}'
+        if exit_price is not None:
+            message += f' at ₹{exit_price}'
+            
         return jsonify({
             'success': True,
-            'message':
-            f'Deal closed successfully for {symbol} at ₹{exit_price}',
+            'message': message,
             'deal_id': deal_id,
             'symbol': symbol,
             'status': 'CLOSED',
