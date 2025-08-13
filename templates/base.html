@@ -164,42 +164,54 @@
         <!-- Fixed Sidebar -->
         <nav class="sidebar" id="sidebar">
             <div class="sidebar-nav">
+                {% if is_component_visible('portfolio') %}
                 <div class="nav-item">
                     <a href="{{ url_for('portfolio') }}" class="nav-link">
                         <i class="fas fa-briefcase nav-icon"></i>
                         <span>Portfolio</span>
                     </a>
                 </div>
+                {% endif %}
+                {% if is_component_visible('trading_signals') %}
                 <div class="nav-item">
                     <a href="{{ url_for('trading_signals') }}" class="nav-link">
                         <i class="fas fa-chart-bar nav-icon"></i>
                         <span>Trading Signals</span>
                     </a>
                 </div>
+                {% endif %}
+                {% if is_component_visible('deals') %}
                 <div class="nav-item">
                     <a href="{{ url_for('deals') }}" class="nav-link">
                         <i class="fas fa-handshake nav-icon"></i>
                         <span>Deals</span>
                     </a>
                 </div>
+                {% endif %}
+                {% if is_component_visible('market_watch') %}
                 <div class="nav-item">
                     <a href="{{ url_for('market_watch') }}" class="nav-link">
                         <i class="fas fa-eye nav-icon"></i>
                         <span>Market Watch</span>
                     </a>
                 </div>
+                {% endif %}
+                {% if is_component_visible('default_deals') %}
                 <div class="nav-item">
                     <a href="{{ url_for('default_deals') }}" class="nav-link">
                         <i class="fas fa-list nav-icon"></i>
                         <span>Default Deals</span>
                     </a>
                 </div>
+                {% endif %}
+                {% if is_component_visible('charts') %}
                 <div class="nav-item">
                     <a href="{{ url_for('show_charts') }}" class="nav-link">
                         <i class="fas fa-chart-line nav-icon"></i>
                         <span>Charts</span>
                     </a>
                 </div>
+                {% endif %}
             </div>
 
             <!-- Kotak Neo Trading Section (shown only after Kotak login) -->
@@ -211,6 +223,7 @@
                 style="display: block"
             >
                 <div class="nav-items">
+                    {% if is_component_visible('dashboard') %}
                     <div class="nav-item">
                         <a
                             href="{{ url_for('show_dashboard') }}"
@@ -220,13 +233,16 @@
                             <span>Dashboard</span>
                         </a>
                     </div>
+                    {% endif %}
+                    {% if is_component_visible('orders') %}
                     <div class="nav-item">
                         <a href="{{ url_for('show_orders') }}" class="nav-link">
                             <i class="fas fa-list-alt nav-icon"></i>
                             <span>Orders</span>
                         </a>
                     </div>
-
+                    {% endif %}
+                    {% if is_component_visible('positions') %}
                     <div class="nav-item">
                         <a
                             href="{{ url_for('show_positions') }}"
@@ -236,7 +252,8 @@
                             <span>Positions</span>
                         </a>
                     </div>
-
+                    {% endif %}
+                    {% if is_component_visible('holdings') %}
                     <div class="nav-item">
                         <a
                             href="{{ url_for('show_holdings') }}"
@@ -246,6 +263,7 @@
                             <span>Holdings</span>
                         </a>
                     </div>
+                    {% endif %}
                 </div>
             </div>
             {% endif %}

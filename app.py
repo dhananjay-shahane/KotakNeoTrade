@@ -1061,8 +1061,16 @@ try:
     from api.signals_api import signals_bp
     app.register_blueprint(signals_bp, url_prefix='/api')
     print("✓ Registered signals_api blueprint")
+except ImportError as e:
+    print(f"Warning: Could not register signals API blueprint: {e}")
+
+# Register component visibility API blueprint
+try:
+    from api.component_visibility_api import component_visibility_bp
+    app.register_blueprint(component_visibility_bp, url_prefix='/api')
+    print("✓ Registered component_visibility_api blueprint")
 except Exception as e:
-    print(f"✗ Error registering signals_api: {e}")
+    print(f"✗ Error registering component visibility API: {e}")
 
 # Additional blueprints
 try:
@@ -1533,6 +1541,14 @@ def health_check():
 # ========================================
 # APPLICATION INITIALIZATION
 # ========================================
+
+# Register template helpers for component visibility
+try:
+    from utils.template_helpers import register_template_helpers
+    register_template_helpers(app)
+    print("✓ Component visibility template helpers registered")
+except Exception as e:
+    print(f"Template helpers warning: {e}")
 
 if __name__ == '__main__':
     with app.app_context():
