@@ -241,3 +241,16 @@ class ComponentVisibilityManager:
 
 # Global instance for use throughout the application
 component_manager = ComponentVisibilityManager()
+
+def is_component_visible_for_user(component_name: str, username: str) -> bool:
+    """
+    Helper function for easy import - Check if a component is visible for a user
+    
+    Args:
+        component_name: The component to check (e.g., 'portfolio', 'charts')
+        username: The username to check
+        
+    Returns:
+        True if component should be visible, False otherwise
+    """
+    return component_manager.is_component_visible(username, component_name)

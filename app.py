@@ -399,10 +399,22 @@ def positions_redirect():
 
 @app.route('/')
 def index():
-    """Home page - redirect to portfolio if authenticated, else to login"""
+    """Home page - redirect to an available page if authenticated, else to login"""
     # Check if user is authenticated
     if session.get('authenticated') or session.get('kotak_logged_in'):
-        return redirect(url_for('portfolio'))
+        # Find the first available page for this user
+        from utils.component_visibility import is_component_visible_for_user
+        username = session.get('username') or session.get('user_id', 'guest')
+        
+        # Priority order for redirect
+        available_pages = ['portfolio', 'trading_signals', 'deals', 'market_watch', 'default_deals', 'show_charts']
+        for page in available_pages:
+            if is_component_visible_for_user(page.replace('show_', ''), username):
+                return redirect(url_for(page))
+        
+        # If no pages available, show a message and redirect to login
+        flash('No pages are currently available. Please contact admin.', 'warning')
+        return redirect(url_for('auth_routes.trading_account_login'))
     else:
         return redirect(url_for('auth_routes.trading_account_login'))
 
@@ -412,6 +424,20 @@ def portfolio():
     """Portfolio page - show portfolio.html template - authentication required"""
     # Check if user is authenticated - no guest access allowed
     if not (session.get('authenticated') or session.get('kotak_logged_in')):
+        return redirect(url_for('auth_routes.trading_account_login'))
+    
+    # Check if portfolio component is visible for this user
+    from utils.component_visibility import is_component_visible_for_user
+    username = session.get('username') or session.get('user_id', 'guest')
+    if not is_component_visible_for_user('portfolio', username):
+        # Portfolio is hidden, redirect to an available page
+        available_pages = ['trading_signals', 'deals', 'market_watch', 'default_deals', 'show_charts']
+        for page in available_pages:
+            if is_component_visible_for_user(page.replace('show_', ''), username):
+                flash('Portfolio page is currently unavailable', 'info')
+                return redirect(url_for(page))
+        # If no pages available, redirect to login
+        flash('No pages are currently available. Please contact admin.', 'warning')
         return redirect(url_for('auth_routes.trading_account_login'))
 
     # Prepare account data for sidebar if logged in
@@ -438,6 +464,19 @@ def trading_signals():
     """Trading Signals page - authentication required"""
     # Check if user is authenticated - no guest access allowed
     if not (session.get('authenticated') or session.get('kotak_logged_in')):
+        return redirect(url_for('auth_routes.trading_account_login'))
+    
+    # Check if trading_signals component is visible for this user
+    from utils.component_visibility import is_component_visible_for_user
+    username = session.get('username') or session.get('user_id', 'guest')
+    if not is_component_visible_for_user('trading_signals', username):
+        # Trading Signals is hidden, redirect to an available page
+        available_pages = ['portfolio', 'deals', 'market_watch', 'default_deals', 'show_charts']
+        for page in available_pages:
+            if is_component_visible_for_user(page.replace('show_', ''), username):
+                flash('Trading Signals page is currently unavailable', 'info')
+                return redirect(url_for(page))
+        flash('No pages are currently available. Please contact admin.', 'warning')
         return redirect(url_for('auth_routes.trading_account_login'))
 
     # Prepare account data for sidebar if logged in
@@ -466,6 +505,19 @@ def deals():
     # Check if user is authenticated - no guest access allowed
     if not (session.get('authenticated') or session.get('kotak_logged_in')):
         return redirect(url_for('auth_routes.trading_account_login'))
+    
+    # Check if deals component is visible for this user
+    from utils.component_visibility import is_component_visible_for_user
+    username = session.get('username') or session.get('user_id', 'guest')
+    if not is_component_visible_for_user('deals', username):
+        # Deals is hidden, redirect to an available page
+        available_pages = ['portfolio', 'trading_signals', 'market_watch', 'default_deals', 'show_charts']
+        for page in available_pages:
+            if is_component_visible_for_user(page.replace('show_', ''), username):
+                flash('Deals page is currently unavailable', 'info')
+                return redirect(url_for(page))
+        flash('No pages are currently available. Please contact admin.', 'warning')
+        return redirect(url_for('auth_routes.trading_account_login'))
 
     # Prepare account data for sidebar if logged in
     kotak_account_data = None
@@ -489,6 +541,19 @@ def deals():
 @app.route('/market-watch')
 def market_watch():
     """Market Watch page - public access allowed for viewing market data"""
+    # Check if market_watch component is visible for this user (if authenticated)
+    if session.get('authenticated') or session.get('kotak_logged_in'):
+        from utils.component_visibility import is_component_visible_for_user
+        username = session.get('username') or session.get('user_id', 'guest')
+        if not is_component_visible_for_user('market_watch', username):
+            # Market Watch is hidden, redirect to an available page
+            available_pages = ['portfolio', 'trading_signals', 'deals', 'default_deals', 'show_charts']
+            for page in available_pages:
+                if is_component_visible_for_user(page.replace('show_', ''), username):
+                    flash('Market Watch page is currently unavailable', 'info')
+                    return redirect(url_for(page))
+            flash('No pages are currently available. Please contact admin.', 'warning')
+            return redirect(url_for('auth_routes.trading_account_login'))
     # Prepare account data for sidebar if logged in
     kotak_account_data = None
     if session.get('kotak_logged_in') or session.get('authenticated'):
@@ -507,6 +572,19 @@ def market_watch():
 def show_positions():
     # Check if user is authenticated with any login method
     if not (session.get('authenticated') or session.get('kotak_logged_in')):
+        return redirect(url_for('auth_routes.trading_account_login'))
+    
+    # Check if positions component is visible for this user
+    from utils.component_visibility import is_component_visible_for_user
+    username = session.get('username') or session.get('user_id', 'guest')
+    if not is_component_visible_for_user('positions', username):
+        # Positions is hidden, redirect to an available page
+        available_pages = ['portfolio', 'trading_signals', 'deals', 'market_watch', 'default_deals', 'show_charts']
+        for page in available_pages:
+            if is_component_visible_for_user(page.replace('show_', ''), username):
+                flash('Positions page is currently unavailable', 'info')
+                return redirect(url_for(page))
+        flash('No pages are currently available. Please contact admin.', 'warning')
         return redirect(url_for('auth_routes.trading_account_login'))
 
     # Prepare account data for sidebar if logged in
@@ -540,6 +618,19 @@ def show_positions():
 def show_holdings():
     # Check if user is authenticated with any login method
     if not (session.get('authenticated') or session.get('kotak_logged_in')):
+        return redirect(url_for('auth_routes.trading_account_login'))
+    
+    # Check if holdings component is visible for this user
+    from utils.component_visibility import is_component_visible_for_user
+    username = session.get('username') or session.get('user_id', 'guest')
+    if not is_component_visible_for_user('holdings', username):
+        # Holdings is hidden, redirect to an available page
+        available_pages = ['portfolio', 'trading_signals', 'deals', 'market_watch', 'default_deals', 'show_charts']
+        for page in available_pages:
+            if is_component_visible_for_user(page.replace('show_', ''), username):
+                flash('Holdings page is currently unavailable', 'info')
+                return redirect(url_for(page))
+        flash('No pages are currently available. Please contact admin.', 'warning')
         return redirect(url_for('auth_routes.trading_account_login'))
 
     # Prepare account data for sidebar if logged in
@@ -591,6 +682,19 @@ def show_orders():
     # Check if user is authenticated with any login method
     if not (session.get('authenticated') or session.get('kotak_logged_in')):
         return redirect(url_for('auth_routes.trading_account_login'))
+    
+    # Check if orders component is visible for this user
+    from utils.component_visibility import is_component_visible_for_user
+    username = session.get('username') or session.get('user_id', 'guest')
+    if not is_component_visible_for_user('orders', username):
+        # Orders is hidden, redirect to an available page
+        available_pages = ['portfolio', 'trading_signals', 'deals', 'market_watch', 'default_deals', 'show_charts']
+        for page in available_pages:
+            if is_component_visible_for_user(page.replace('show_', ''), username):
+                flash('Orders page is currently unavailable', 'info')
+                return redirect(url_for(page))
+        flash('No pages are currently available. Please contact admin.', 'warning')
+        return redirect(url_for('auth_routes.trading_account_login'))
 
     # Prepare account data for sidebar if logged in
     kotak_account_data = None
@@ -624,6 +728,20 @@ def show_charts():
     # In production, enable authentication by uncommenting below
     # if not (session.get('authenticated') or session.get('kotak_logged_in')):
     #     return redirect(url_for('auth_routes.trading_account_login'))
+    
+    # Check if charts component is visible for this user (if authenticated)
+    if session.get('authenticated') or session.get('kotak_logged_in'):
+        from utils.component_visibility import is_component_visible_for_user
+        username = session.get('username') or session.get('user_id', 'guest')
+        if not is_component_visible_for_user('charts', username):
+            # Charts is hidden, redirect to an available page
+            available_pages = ['portfolio', 'trading_signals', 'deals', 'market_watch', 'default_deals']
+            for page in available_pages:
+                if is_component_visible_for_user(page, username):
+                    flash('Charts page is currently unavailable', 'info')
+                    return redirect(url_for(page))
+            flash('No pages are currently available. Please contact admin.', 'warning')
+            return redirect(url_for('auth_routes.trading_account_login'))
 
     # Prepare account data for sidebar if logged in
     kotak_account_data = None
