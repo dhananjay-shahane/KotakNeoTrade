@@ -1,4 +1,4 @@
-modules = ["python-3.11", "nodejs-20", "web", "c-clang14", "postgresql-16"]
+modules = ["python-3.11", "nodejs-20", "web", "c-clang14"]
 run = "flask run"
 
 [nix]
