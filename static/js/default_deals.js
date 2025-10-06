@@ -275,7 +275,7 @@ DefaultDealsManager.prototype.formatCellValue = function (deal, columnKey) {
 
         case "seven":
         case "thirty":
-            return typeof value === "number" ? Math.round(value).toString() : value;
+            return typeof value === "number" ? `₹${value.toFixed(2)}` : value;
 
         case "chan_percent":
         case "seven_percent":
