@@ -835,15 +835,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pandas-ta"
-version = "0.3.14b0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pandas" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/f7/0b/1666f0a185d4f08215f53cc088122a73c92421447b04028f0464fabe1ce6/pandas_ta-0.3.14b.tar.gz", hash = "sha256:0fa35aec831d2815ea30b871688a8d20a76b288a7be2d26cc00c35cd8c09a993", size = 115089 }
-
-[[package]]
 name = "plotly"
 version = "6.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1101,9 +1092,9 @@ dependencies = [
     { name = "gunicorn" },
     { name = "jinja2" },
     { name = "neo-api-client" },
+    { name = "numpy" },
     { name = "oauthlib" },
     { name = "pandas" },
-    { name = "pandas-ta" },
     { name = "plotly" },
     { name = "psycopg2-binary" },
     { name = "pyjwt" },
@@ -1136,9 +1127,9 @@ requires-dist = [
     { name = "gunicorn", specifier = ">=23.0.0" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "neo-api-client", git = "https://github.com/Kotak-Neo/kotak-neo-api.git" },
+    { name = "numpy", specifier = "==1.24.2" },
     { name = "oauthlib", specifier = ">=3.3.1" },
     { name = "pandas", specifier = ">=2.0.0" },
-    { name = "pandas-ta", specifier = ">=0.3.14b0" },
     { name = "plotly", specifier = ">=6.2.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.10" },
     { name = "pyjwt", specifier = ">=2.6.0" },
