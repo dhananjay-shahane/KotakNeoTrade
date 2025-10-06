@@ -273,6 +273,10 @@ DefaultDealsManager.prototype.formatCellValue = function (deal, columnKey) {
         case "inv":
             return typeof value === "number" ? value.toFixed(2) : value;
 
+        case "seven":
+        case "thirty":
+            return typeof value === "number" ? Math.round(value).toString() : value;
+
         case "chan_percent":
         case "seven_percent":
         case "thirty_percent":
@@ -285,7 +289,8 @@ DefaultDealsManager.prototype.formatCellValue = function (deal, columnKey) {
         case "pl":
             if (typeof value === "number") {
                 const formatted = value.toFixed(2);
-                return value >= 0 ? `+${formatted}` : formatted;
+                const sign = value >= 0 ? "+" : "";
+                return `₹${sign}${formatted}`;
             }
             return value;
 
