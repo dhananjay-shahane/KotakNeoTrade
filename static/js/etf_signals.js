@@ -586,7 +586,20 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                     '<span class="fw-bold text-white">' + dhValue + "</span>";
                 break;
             case "date":
-                cellValue = signal.DATE || signal.date || "--";
+                var dateValue = signal.DATE || signal.date || "--";
+                if (dateValue !== "--") {
+                    try {
+                        var dateObj = new Date(dateValue);
+                        var day = String(dateObj.getDate()).padStart(2, '0');
+                        var month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                        var year = String(dateObj.getFullYear()).slice(-2);
+                        cellValue = day + '/' + month + '/' + year;
+                    } catch (e) {
+                        cellValue = dateValue;
+                    }
+                } else {
+                    cellValue = "--";
+                }
                 break;
             case "qty":
                 cellValue =
@@ -634,13 +647,9 @@ ETFSignalsManager.prototype.createSignalRow = function (signal) {
                 }
                 break;
             case "cpl":
-                var plClass = pnl >= 0 ? "text-success" : "text-danger";
-                cellValue =
-                    '<span class="fw-bold ' +
-                    plClass +
-                    '">₹' +
-                    pnl.toFixed(2) +
-                    "</span>";
+                var bgColor = this.getGradientBackgroundColor(pnl);
+                cellStyle = bgColor;
+                cellValue = '<span class="fw-bold">₹' + pnl.toFixed(2) + "</span>";
                 break;
             case "ed":
                 cellValue = signal.ed || "--";
